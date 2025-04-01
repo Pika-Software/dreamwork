@@ -1,1 +1,0 @@
--- TODO: Decal class
