@@ -26,14 +26,12 @@ end
 ---@field GAME_VERSION integer The version of the game. (Garry's Mod)
 ---@field SYSTEM_ENDIANNESS `true` if the operating system is big endianness, `false` if not.
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
----@field HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
----@field BATTERY_LEVEL integer The battery level, from `0` to `100`.
+---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
+---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
 ---@field OSX boolean `true` if the game is running on OSX.
 ---@field LINUX boolean `true` if the game is running on Linux.
 ---@field WINDOWS boolean `true` if the game is running on Windows.
 ---@field DEVELOPER integer A cached value of `developer` console variable.
----@field TICK_TIME number The time it takes to run one tick.
----@field TPS number The number of ticks per second.
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
 local std = dreamwork.std
@@ -1770,11 +1768,11 @@ if glua_system ~= nil then
             if battery_power ~= system_BatteryPower() then
                 battery_power = system_BatteryPower()
                 if battery_power == 255 then
-                    std.HAS_BATTERY = false
-                    std.BATTERY_LEVEL = 100
+                    std.SYSTEM_HAS_BATTERY = false
+                    std.SYSTEM_BATTERY_LEVEL = 100
                 else
-                    std.HAS_BATTERY = true
-                    std.BATTERY_LEVEL = battery_power
+                    std.SYSTEM_HAS_BATTERY = true
+                    std.SYSTEM_BATTERY_LEVEL = battery_power
                 end
             end
         end
