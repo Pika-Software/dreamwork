@@ -9,7 +9,7 @@ Garry's Mod Lua project aimed at expanding the game's functionality and improvin
 
 The project includes a package manager and supports many third-party APIs. The framework itself greatly expands the capabilities of developers for designing complex and comprehensive systems and games based on Garry's Mod.
 
-After many years of hard work I can finally say that we have created a trully powerful runtime for developers ;>
+After many years of hard work I can finally say that we have created a truly powerful runtime for developers ;>
 
 ## Bugs and Suggestions
 If you have any ideas or found a bug or error, please report it to us, we will try to fix it or explain what the problem is.
