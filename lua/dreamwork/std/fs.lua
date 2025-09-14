@@ -773,7 +773,7 @@ local function create_directory( parent, name, forced )
                 if deletable_mounts[ mount_point ] then
                     file_Delete( mount_path, mount_point )
                 else
-                    return nil, "Path '" .. abs_path( parent, name ) .. "' does not support file deletion."
+                    return nil, "Path '" .. abs_path( parent, name ) .. "' does not support file removal."
                 end
 
                 eject( parent, name )
@@ -801,7 +801,7 @@ local function create_directory( parent, name, forced )
         ---@cast directory_object dreamwork.std.Directory
         return directory_object, nil
     elseif forced then
-        local mount_point = mount_points[ parent ]
+        local mount_point = mount_points[ directory_object ]
         if mount_point == nil then
             eject( parent, name )
             return DirectoryClass( name ), nil
@@ -812,7 +812,7 @@ local function create_directory( parent, name, forced )
         if deletable_mounts[ mount_point ] then
             file_Delete( mount_path, mount_point )
         else
-            return nil, "Path '" .. abs_path( parent, name ) .. "' does not support file deletion."
+            return nil, "Path '" .. abs_path( parent, name ) .. "' does not support file removal."
         end
 
         eject( parent, name )
@@ -849,23 +849,23 @@ function Directory:makeDirectory( directory_path, forced )
     return self
 end
 
----@param file_name string
+---@param name string
 ---@return dreamwork.std.File | dreamwork.std.Directory object
 ---@return boolean is_directory
-function Directory:touch( file_name )
-    if string_byte( file_name, 1, 1 ) == nil then
-        error( "file name cannot be empty", 2 )
+function Directory:touch( name )
+    if string_byte( name, 1, 1 ) == nil then
+        error( "file or directory name cannot be empty", 2 )
     end
 
-    local mount_point = mount_points[ self ]
-    if mount_point == nil or not writeable_mounts[ mount_point ] then
-        error( "Path '" .. abs_path( self, file_name ) .. "' does not support file or directory creation.", 2 )
-    end
-
-    local object = descendants[ self ][ file_name ]
+    local object = descendants[ self ][ name ]
 
     if object == nil then
-        local mount_path = abs_path( self, file_name )
+        local mount_point = mount_points[ self ]
+        if mount_point == nil or not writeable_mounts[ mount_point ] then
+            error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
+        end
+
+        local mount_path = rel_path( self, name )
 
         local handler = file_Open( mount_path, "wb", mount_point )
         if handler == nil then
@@ -874,17 +874,22 @@ function Directory:touch( file_name )
 
         FILE_Close( handler )
 
-        object = FileClass( file_name, mount_point, mount_path )
+        object = FileClass( name, mount_point, mount_path )
         insert( self, object )
         return object, false
+    end
+
+    local mount_point = mount_points[ object ]
+    if mount_point == nil or not writeable_mounts[ mount_point ] then
+        error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
     end
 
     if is_directory_object[ object ] then
         -- Doesn't work...
         ---@diagnostic disable-next-line: redundant-parameter
-        -- file_CreateDir( rel_path( self, file_name ), mount_point )
+        -- file_CreateDir( rel_path( self, name ), mount_point )
 
-        local tmp_path = rel_path( self, file_name .. "/^dreamwork_tmp$.dat" )
+        local tmp_path = rel_path( self, name .. "/^dreamwork_tmp$.dat" )
 
         local handler = file_Open( tmp_path, "wb", mount_point )
         if handler == nil then
@@ -895,7 +900,7 @@ function Directory:touch( file_name )
 
         file_Delete( tmp_path, mount_point )
 
-        local new_time = file_Time( rel_path( self, file_name ), mount_point )
+        local new_time = file_Time( rel_path( self, name ), mount_point )
         update_time( self, new_time )
         times[ object ] = new_time
 
@@ -916,6 +921,90 @@ function Directory:touch( file_name )
     times[ object ] = new_time
 
     return object, false
+end
+
+---@param name string
+---@param forced? boolean
+---@param recursive? boolean
+function Directory:remove( name, forced, recursive )
+    if string_byte( name, 1, 1 ) == nil then
+        error( "file or directory name cannot be empty", 2 )
+    end
+
+    local object = descendants[ self ][ name ]
+
+    if object == nil then
+        local mount_point = mount_points[ self ]
+        if mount_point == nil or not deletable_mounts[ mount_point ] then
+            error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
+        end
+
+        local mount_path = rel_path( self, name )
+
+        if file_Exists( mount_path, mount_point ) then
+            if file_IsDir( mount_path, mount_point ) then
+                if recursive then
+                    local directory_object = DirectoryClass( name, mount_point, mount_path )
+                    local files, file_count, directories, directory_count = directory_object:select()
+
+                    for i = 1, file_count, 1 do
+                        local file_object = files[ i ]
+                        file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
+                        eject( self, file_object.name )
+                    end
+
+                    for i = 1, directory_count, 1 do
+                        directory_object:remove( directories[ i ].name, forced, recursive )
+                    end
+                else
+
+                    local files, directories = file_Find( mount_path .. "/*", mount_point )
+                    if ( #files + #directories ) ~= 0 then
+                        error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
+                    end
+
+                end
+            end
+        elseif not forced then
+            error( "Path '" .. abs_path( self, name ) .. "' does not exist.", 2 )
+        end
+
+        file_Delete( mount_path, mount_point )
+        eject( self, name )
+        return
+    end
+
+    local mount_point = mount_points[ object ]
+    if mount_point == nil or not deletable_mounts[ mount_point ] then
+        error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
+    end
+
+    if is_directory_object[ object ] then
+        ---@cast object dreamwork.std.Directory
+        if recursive then
+            local files, file_count, directories, directory_count = object:select()
+
+            for i = 1, file_count, 1 do
+                local file_object = files[ i ]
+                file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
+                eject( self, file_object.name )
+            end
+
+            for i = 1, directory_count, 1 do
+                object:remove( directories[ i ].name, forced, recursive )
+            end
+        else
+
+            local files, directories = file_Find( mount_points[ object ] .. "/*", mount_point )
+            if ( #files + #directories ) ~= 0 then
+                error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
+            end
+
+        end
+    end
+
+    file_Delete( mount_paths[ object ], mount_point )
+    eject( self, name )
 end
 
 ---@param prefix? string
@@ -1088,6 +1177,35 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Removes a file or directory by given path.
+---
+---@param path_to string The path to the file or directory.
+---@param forced? boolean If `true`, the file or directory will be deleted if it already exists.
+---@param recursive? boolean If `true`, the directory will be deleted recursively.
+function fs.remove( path_to, forced, recursive )
+    local directory_path, file_name = path_split( prepare_path( path_to ), false )
+
+    local directory, is_directory = root:get( directory_path )
+    if directory == nil then
+        if forced then
+            return
+        else
+            error( "Path '" .. directory_path .. "' does not exist.", 2 )
+        end
+    elseif not is_directory then
+        if forced then
+            return
+        else
+            error( "Path '" .. directory_path .. "' is not a directory.", 2 )
+        end
+    end
+
+    ---@cast directory dreamwork.std.Directory
+    return directory:remove( file_name, forced, recursive )
+end
+
+--- [SHARED AND MENU]
+---
 --- Checks if a file or directory exists by given path.
 ---
 ---@param path_to string The path to the file or directory.
@@ -1226,10 +1344,6 @@ do
         end
     end
 
-end
-
-function fs.remove( path_to, forced, recursive )
-    -- TODO: ...
 end
 
 local function do_tralling_slash( str )
