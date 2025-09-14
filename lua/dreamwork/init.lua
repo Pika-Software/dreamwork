@@ -50,7 +50,7 @@ std.GAME_VERSION = _G.VERSION or 0
 local dofile = _G.include or _G.dofile
 
 if dofile == nil then
-    error( "failed to get `dofile`, critical environment corruption detected, startup failed!" )
+    error( "Functions `dofile` & `include` not found, dreamwork cannot be loaded!" )
 end
 
 ---@diagnostic disable-next-line: undefined-field
@@ -63,7 +63,7 @@ if os_clock == nil then
     end
 
     if os_clock == nil then
-        error( "failed to get `os.clock`, critical environment corruption detected, startup failed!" )
+        error( "Functions `os.clock` or `os.time` not found, dreamwork cannot be loaded!" )
     end
 end
 
@@ -465,7 +465,7 @@ do
 
     local glua_coroutine = _G.coroutine
     if glua_coroutine == nil then
-        error( "coroutine library not found, critical environment corruption detected, startup failed!" )
+        error( "The `coroutine` library not found, dreamwork cannot be loaded!" )
     end
 
     coroutine.create = coroutine.create or glua_coroutine.create
@@ -1340,7 +1340,7 @@ do
     function std.sleep( seconds )
         local co = futures.running()
         if co == nil then
-            error( "sleep cannot be called from main thread", 2 )
+            error( "`sleep` cannot be called from main thread!", 2 )
         end
 
         ---@cast co thread

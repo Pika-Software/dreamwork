@@ -86,7 +86,7 @@ do
             base = debug_getmetatable( template )
 
             if base == nil then
-                error( "userdata metatable is missing, lua is corrupted" )
+                error( "`userdata` metatable is missing, Lua environment is corrupted!" )
             end
 
             templates[ base ] = template
@@ -106,7 +106,7 @@ do
         if parent ~= nil then
             local parent_base = raw_get( parent, "__base" )
             if parent_base == nil then
-                error( "parent class has no base", 2 )
+                error( "Parent class has no `__base` variable.", 2 )
             end
 
             ---@cast parent_base dreamwork.std.Object
@@ -176,7 +176,7 @@ do
         ---@type dreamwork.std.Object | nil
         local base = raw_get( self, "__base" )
         if base == nil then
-            error( "class base is missing, class creation failed.", 2 )
+            error( "Class variable `__base` is missing, class creation failed.", 2 )
         end
 
         ---@type dreamwork.std.Object | nil
@@ -224,7 +224,7 @@ function class.create( base )
         ---@type dreamwork.std.Class | nil
         local parent = raw_get( parent_base, "__class" )
         if parent == nil then
-            error( "parent class has no class", 2 )
+            error( "Parent class has no `__class` variable.", 2 )
         else
             ---@type dreamwork.std.Class.__inherited | nil
             local inherited_fn = raw_get( parent, "__inherited" )

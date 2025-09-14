@@ -174,7 +174,7 @@ do
                 return self
             end
 
-            error( "invalid sign", 2 )
+            error( "Invalid sign, how did you get here?", 2 )
         end
 
         raw_set( self, key, value )
@@ -634,7 +634,7 @@ do
         local binary_str, binary_length, err_msg = reader:readCountedString( 16, false )
 
         if binary_str == nil then
-            error( "failed to deserialize big integer, " .. err_msg, 3 )
+            error( "Big integer serialization failed: " .. err_msg, 3 )
         end
 
         for i = 1, binary_length, 1 do
@@ -765,7 +765,7 @@ do
 
             local number = tonumber( value, base )
             if number == nil then
-                error( "value must be a string or number to be converted to big integer", 2 )
+                error( "Failed to convert value to big integer.", 2 )
             end
 
             return from_number( setmetatable( {}, BigInt ), number )
@@ -803,7 +803,7 @@ do
     ---@return integer number The number that the big integer object represents.
     function toInteger( object )
         if compare_unsigned( object, max_number ) == 1 then
-            error( "big integer is too big to be converted to lua number", 2 )
+            error( "Big integer is too large to be converted to Lua number.", 2 )
         end
 
         local result = 0
@@ -1956,7 +1956,7 @@ function BigInt:toSigned( byte_amt )
 
     local size = math_max( byte_amt or byte_count, 1 )
     if byte_count > size then
-        error( "twos complement overflow", 2 )
+        error( "Two's complement overflow.", 2 )
     end
 
     if self[ 0 ] == 1 and ( self[ size ] or 0 ) > 0x7f then
@@ -1979,7 +1979,7 @@ function BigInt:toUnsigned( byte_amt )
 
     local size = math_max( byte_amt or byte_count, 1 )
     if byte_count > size then
-        error( "twos complement overflow", 2 )
+        error( "Two's complement overflow.", 2 )
     end
 
     if self[ 0 ] == -1 then

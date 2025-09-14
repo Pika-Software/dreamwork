@@ -153,7 +153,7 @@ if std.SERVER then
     function repositories.removeRepository( repository )
         local repository_id = getRepositoryID( repository )
         if repository_id == nil then
-            error( "invalid repository '" .. tostring( repository ) .. "' was given as #1 argument", 2 )
+            error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
         end
 
         local repositoryIDStr = tostring( repository_id )
@@ -182,7 +182,7 @@ if std.SERVER then
     function repositories.getPackage( repository, name )
         local repository_id = getRepositoryID( repository )
         if repository_id == nil then
-            error( "invalid repository '" .. tostring( repository ) .. "' was given as #1 argument", 2 )
+            error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
         end
 
         local pkg = sqlite_queryOne( "select * from 'dreamwork.packages' where name=? and repositoryID=?", name, tostring( repository_id ) )
@@ -201,7 +201,7 @@ if std.SERVER then
     function repositories.getPackages( repository )
         local repository_id = getRepositoryID( repository )
         if repository_id == nil then
-            error( "invalid repository '" .. tostring( repository ) .. "' was given as #1 argument", 2 )
+            error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
         end
 
         local packages = sqlite_query( "select * from 'dreamwork.packages' where repositoryID=?", tostring( repository_id ) )
@@ -228,7 +228,7 @@ if std.SERVER then
     function repositories.updateRepository( repository, packages )
         local repository_id = getRepositoryID( repository )
         if repository_id == nil then
-            error( "invalid repository '" .. tostring( repository ) .. "' was given as #1 argument", 2 )
+            error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
         end
 
         local repositoryIDStr = tostring( repository_id )
@@ -463,7 +463,7 @@ do
         local iscallable = std.iscallable
 
         local function display_error( msg )
-            error( msg, -2 )
+            error( "Database migration failed: " .. msg, -2 )
         end
 
         --- [SHARED AND MENU]
@@ -474,7 +474,7 @@ do
         ---@return boolean success Returns `true` if successful, `false` if failed.
         function migrateByTable( migration )
             if not iscallable( migration.execute ) then
-                error( "Migration '" .. tostring( migration.name ) .. "' does not have an execute function", 2 )
+                error( "Database migration failed: '" .. tostring( migration.name ) .. "' does not have an 'execute' function.", 2 )
             end
 
             dreamwork.Logger:info( "Running migration '" .. tostring( migration.name ) .. "'...")
@@ -504,7 +504,7 @@ do
 
         -- find if given migration name exists
         if not migrationExists( name ) then
-            error( "Migration '" .. name .. "' not found", 2 )
+            error( "Database migration failed: '" .. name .. "' does not exist.", 2 )
         end
 
         -- first execute migrations

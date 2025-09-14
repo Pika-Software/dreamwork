@@ -247,7 +247,7 @@ if engine.consoleCommandCatch == nil then
             local exists = run_callbacks( ply, cmd, args, argument_string ) == true
 
             if not exists then
-                dreamwork.Logger:error( "Console command '%s' not found.", cmd )
+                dreamwork.Logger:error( "Catched attempt to run unknown console command: '%s'", cmd )
             end
 
             return exists

@@ -999,6 +999,7 @@ do
         if isstring( name ) then
             ---@diagnostic disable-next-line: redundant-parameter
             color = NamedColor( name )
+
             if color == nil then
                 color = from_rgba( 255, 255, 255, 255 )
             else
@@ -1007,7 +1008,7 @@ do
         elseif isnumber( name ) then
             color = from_rgba( name, name, name, 255 )
         else
-            error( "wrong color name", 3 )
+            error( "Color name must be string or integer!", 3 )
         end
 
         scheme[ name ] = color
