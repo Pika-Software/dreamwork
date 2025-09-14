@@ -216,7 +216,7 @@ end
 ---@param str_end string The end string.
 ---@return boolean is_ends `true` if the string ends with the end string, otherwise `false`.
 function string.endsWith( str, str_end )
-    return str_end == "" or str == str_end or
+    return string_byte( str_end, 1, 1 ) == nil or str == str_end or
         string_sub( str, -string_len( str_end ) ) == str_end
 end
 
@@ -231,7 +231,7 @@ end
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer index The index of the searchable string, otherwise `-1`.
 function string.indexOf( str, searchable, position, with_pattern, str_length )
-    if searchable == nil or searchable == "" then
+    if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
         return 0
     end
 
@@ -306,7 +306,7 @@ function string.split( str, pattern_str, start_position, with_pattern, str_lengt
         str_length = string_len( str )
     end
 
-    if pattern_str == nil or pattern_str == "" then
+    if pattern_str == nil or string_byte( pattern_str, 1, 1 ) == nil then
         for index = 1, str_length, 1 do
             segments[ index ] = string_sub( str, index, index )
         end
@@ -351,7 +351,7 @@ function string.count( str, pattern_str, with_pattern, str_length )
         str_length = string_len( str )
     end
 
-    if pattern_str == nil or pattern_str == "" then
+    if pattern_str == nil or string_byte( pattern_str, 1, 1 ) == nil then
         return str_length
     end
 
@@ -380,7 +380,7 @@ end
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer byte_count The number of occurrences.
 function string.byteCount( str, counted_byte, str_length )
-    if counted_byte == nil or str == "" then
+    if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
     end
 
@@ -397,21 +397,98 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the number of consecutive repetitions of the specified byte.
+---
+---@param str string The string to count.
+---@param counted_byte? integer The byte to count.
+---@param direction? boolean If `true`, the direction will be from left to right. If `false`, the direction will be from right to left.
+---@param start_position? integer The start position to count from.
+---@param end_position? integer The end position to count to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return integer byte_count The number of occurrences.
+function string.byteCountConsecutive( str, counted_byte, direction, start_position, end_position, str_length )
+    if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
+        return 0
+    end
+
+     if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        if direction then
+            start_position = 1
+        else
+            start_position = str_length
+        end
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        if direction then
+            end_position = str_length
+        else
+            end_position = 1
+        end
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    local byte_count = 0
+
+    for index = start_position, end_position, direction and 1 or -1 do
+        if string_byte( str, index, index ) == counted_byte then
+            byte_count = byte_count + 1
+        else
+            break
+        end
+    end
+
+    return byte_count
+end
+
+--- [SHARED AND MENU]
+---
 --- Returns the string trimmed by the specified byte.
 ---
 ---@param str string The string to trim.
 ---@param trailing_byte? integer The byte to trim trailing characters.
 ---@param direction boolean | nil The trim direction, `true` for right, `false` for left, `nil` for both.
+---@param start_position? integer The start position to trim from.
+---@param end_position? integer The end position to trim to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
-function string.byteTrim( str, trailing_byte, direction, str_length )
-    local start_position, end_position = 1, str_length or string_len( str )
+function string.byteTrim( str, trailing_byte, direction, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
 
     if direction ~= true then
         while string_byte( str, start_position, start_position ) == trailing_byte do
             if start_position == end_position then
-                return "", 0
+                return string_sub( str, end_position + 1, str_length ), str_length - end_position
             else
                 start_position = start_position + 1
             end
@@ -419,8 +496,8 @@ function string.byteTrim( str, trailing_byte, direction, str_length )
     end
 
     if direction ~= false then
-        while string_byte( str, end_position ) == trailing_byte do
-            if end_position == 0 then
+        while string_byte( str, end_position, end_position ) == trailing_byte do
+            if end_position == 1 then
                 return "", 0
             else
                 end_position = end_position - 1
