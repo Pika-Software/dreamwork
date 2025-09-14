@@ -1436,6 +1436,8 @@ dofile( "std/fs.lua" )
 -- Content Watcher
 do
 
+    local bytepack_writeUInt32 = std.pack.bytes.writeUInt32
+
     logger:info( "Content Watcher - Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
 
     ---@param game_info dreamwork.engine.GameInfo
@@ -1450,12 +1452,15 @@ do
 
     ---@param addon_info dreamwork.engine.AddonInfo
     engine.hookCatch( "AddonMounted", function( addon_info )
-        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d) was mounted.", addon_info.title, addon_info.wsid )
+        local folder = string_format( "gma_%x%x%x%x", bytepack_writeUInt32( addon_info.index ) )
+        addon_info.folder = folder
+
+        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
     engine.hookCatch( "AddonUnmounted", function( addon_info )
-        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d) was unmounted.", addon_info.title, addon_info.wsid )
+        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
     end, 1 )
 
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )

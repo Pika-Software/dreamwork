@@ -737,6 +737,7 @@ do
     ---@field owned boolean Whether the game is owned or not.
     ---@field mounted boolean Whether the game is mounted or not.
     ---@field installed boolean Whether the game is installed or not.
+    ---@field index integer The game's index in the game list.
 
     ---@class dreamwork.engine.AddonInfo
     ---@field downloaded boolean Whether the addon is downloaded or not.
@@ -749,6 +750,8 @@ do
     ---@field tags string The addon's tags.
     ---@field wsid string The addon's Steam Workshop ID.
     ---@field timeadded integer The addon's time added, in Unix timestamp.
+    ---@field index integer The addon's index in the addon list.
+    ---@field folder string The addon's folder name.
 
     ---@type table<integer, dreamwork.engine.GameInfo>
     local supported_games = {}
@@ -786,6 +789,7 @@ do
         -- Mounted & Supported Games - Sync
         for i = 1, game_count, 1 do
             local game_info = game_list[ i ]
+            game_info.index = i
 
             local app_id = game_info.depot
             supported_games[ app_id ] = game_info
@@ -835,6 +839,7 @@ do
         -- Mounted Addons - Sync
         for i = 1, addon_count, 1 do
             local addon_info = addon_list[ i ]
+            addon_info.index = i
 
             local addon_title = addon_info.title
             addon_hash[ addon_title ] = addon_info
