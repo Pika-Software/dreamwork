@@ -709,7 +709,7 @@ do
     local fs_write = fs.write
     local fs_exists = fs.exists
 
-    fs.createDirectory( "/data/dreamwork/cache/workshop", true )
+    fs.makeDirectory( "/garrysmod/data/dreamwork/cache/workshop", true )
 
     --- [SHARED AND MENU]
     ---
