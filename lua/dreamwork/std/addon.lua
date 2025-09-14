@@ -26,13 +26,7 @@ end
 
 
 local function find_workshop_item( wsid )
-    local addons = engine.addons
-    for i = 1, engine.addon_count, 1 do
-        local data = addons[ i ]
-        if data.wsid == wsid then
-            return data
-        end
-    end
+
 end
 
 --- [SHARED AND MENU]
@@ -42,13 +36,7 @@ end
 ---@return dreamwork.std.game.Addon[] items The subscribed addons.
 ---@return integer item_count The length of the addons found array (`#addons`).
 function AddonClass.getDownloaded()
-    local addons, count = engine.addons, engine.addon_count
 
-    for i = 1, count, 1 do
-        addons[ i ] = ItemClass( addons[ i ].wsid )
-    end
-
-    return addons, count
 end
 
 --- [SHARED AND MENU]

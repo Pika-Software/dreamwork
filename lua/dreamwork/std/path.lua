@@ -167,7 +167,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
----@return string directory The directory from the file path.
+---@return string directory_path The directory from the file path.
 ---@return string file_name The file from the file path.
 local function split( file_path, keep_trailing_slash )
     for index = string_len( file_path ), 1, -1 do
