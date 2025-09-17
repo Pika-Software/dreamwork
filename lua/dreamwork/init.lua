@@ -759,32 +759,27 @@ local string = std.string
 STRING.__len = string.len
 
 local string_format = string.format
+local string_byte = string.byte
 
-do
+--- [SHARED AND MENU]
+---
+--- Returns the value of the key in a table.
+---
+---@param tbl table The table.
+---@param key any The key.
+---@return any
+function raw.index( tbl, key )
+    if isstring( key ) then
+        ---@cast key string
 
-    local string_byte = string.byte
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the value of the key in a table.
-    ---
-    ---@param tbl table The table.
-    ---@param key any The key.
-    ---@return any
-    function raw.index( tbl, key )
-        if isstring( key ) then
-            ---@cast key string
-
-            local uint8_1, uint8_2 = string_byte( key, 1, 2 )
-            if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
-                return nil
-            end
-
+        local uint8_1, uint8_2 = string_byte( key, 1, 2 )
+        if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
+            return nil
         end
 
-        return raw_get( tbl, key )
     end
 
+    return raw_get( tbl, key )
 end
 
 std.SYSTEM_ENDIANNESS = std.SYSTEM_ENDIANNESS or string.byte( string.dump( std.debug.fempty ), 7 ) == 0x00
@@ -970,6 +965,50 @@ local time_elapsed = time.elapsed
 
 dofile( "std/version.lua" )
 dofile( "std/bigint.lua" )
+dofile( "std/color.lua" )
+
+local color_scheme
+do
+
+    local Color = std.Color
+    color_scheme = Color.scheme
+
+    color_scheme.white = Color( 255, 255, 255, 255 )
+    color_scheme.black = Color( 0, 0, 0, 255 )
+
+    color_scheme.red = Color( 255, 0, 0, 255 )
+    color_scheme.green = Color( 0, 255, 0, 255 )
+    color_scheme.blue = Color( 0, 0, 255, 255 )
+
+    color_scheme.yellow = Color( 255, 255, 0, 255 )
+    color_scheme.cyan = Color( 0, 255, 255, 255 )
+    color_scheme.magenta = Color( 255, 0, 255, 255 )
+
+    color_scheme.gray = Color( 128, 128, 128, 255 )
+
+    color_scheme.info = Color( 70, 135, 255 )
+    color_scheme.warn = Color( 255, 130, 90 )
+    color_scheme.error = Color( 250, 55, 40 )
+    color_scheme.debug = Color( 0, 200, 150 )
+
+    color_scheme.text_primary = Color( 200 )
+    color_scheme.text_secondary = Color( 150 )
+
+    color_scheme.realm_menu = Color( 75, 175, 80 )
+    color_scheme.realm_client = Color( 225, 170, 10 )
+    color_scheme.realm_server = Color( 5, 170, 250 )
+
+    if CLIENT then
+        color_scheme.realm = color_scheme.realm_client
+    elseif SERVER then
+        color_scheme.realm = color_scheme.realm_server
+    else
+        color_scheme.realm = color_scheme.realm_menu
+    end
+
+    color_scheme.dreamwork = Color( 180, 180, 255 )
+
+end
 
 dofile( "engine.lua" )
 
@@ -977,71 +1016,22 @@ local engine = dreamwork.engine
 
 do
 
-    local patched_print
+    local console_message = engine.consoleMessage
 
-    local Msg = _G.Msg
-    if Msg == nil then
-        patched_print = print
-    else
+    --- [SHARED AND MENU]
+    ---
+    --- Prints the given arguments to the console.
+    ---
+    ---@param ... any The arguments to print.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function std.print( ... )
+        local args, arg_count = { ... }, select( "#", ... )
 
-        local string_len = string.len
-        local string_sub = string.sub
-        local math_min = math.min
-
-        local queue = std.Queue()
-        local buffer_size = 4095
-
-        engine.hookCatch( "Tick", function()
-            if queue:isEmpty() then
-                buffer_size = 4095
-            else
-                Msg( queue:pop() )
-            end
-        end, ( CLIENT or MENU ) and 3 or 2 )
-
-        --- [SHARED AND MENU]
-        ---
-        --- Prints the given arguments to the console.
-        ---
-        ---@param ... any The arguments to print.
-        function patched_print( ... )
-            local args, arg_count = { ... }, select( "#", ... )
-
-            for i = 1, arg_count, 1 do
-                local arg_str = tostring( args[ i ] )
-                args[ i ] = arg_str
-            end
-
-            local str = table_concat( args, "\t", 1, arg_count ) .. "\n"
-            local pointer, str_length = 1, string_len( str )
-
-            while str_length ~= 0 do
-                local segment_length = math_min( 4095, str_length )
-
-                if buffer_size == 0 then
-                    queue:push( string_sub( str, pointer, pointer + segment_length ) )
-                else
-
-                    local output_size = math_min( buffer_size, segment_length )
-                    buffer_size = buffer_size - output_size
-
-                    Msg( string_sub( str, pointer, pointer + output_size ) )
-
-                    local remainder = segment_length - output_size
-                    if remainder ~= 0 then
-                        queue:push( string_sub( str, pointer + output_size, pointer + segment_length ) )
-                    end
-
-                end
-
-                str_length = str_length - segment_length
-                pointer = pointer + segment_length
-            end
+        for ang_num = 1, arg_count, 1 do
+            args[ ang_num ] = tostring( args[ ang_num ] )
         end
 
-        ---@diagnostic disable-next-line: duplicate-set-field
-        std.print = patched_print
-
+        console_message( table_concat( args, "\t", 1, arg_count ) .. "\n" )
     end
 
     --- [SHARED AND MENU]
@@ -1052,7 +1042,171 @@ do
     ---@param fmt string The format string.
     ---@param ... any The arguments to format/interpolate.
     function std.printf( fmt, ... )
-        return patched_print( string_format( fmt, ... ) )
+        return console_message( string_format( fmt, ... ) )
+    end
+
+    do
+
+        local console_message_colored = engine.consoleMessageColored
+        local realm_color = color_scheme.realm
+        local iscolor = std.iscolor
+        local tocolor = std.tocolor
+
+        --- [SHARED AND MENU]
+        ---
+        --- Prints the given arguments to the console with colors!
+        ---
+        ---@param ... any The arguments to print.
+        function std.printc( ... )
+            local color = realm_color
+            local args = { ... }
+
+            for ang_num = 1, select( "#", ... ), 1 do
+                local value = args[ ang_num ]
+                if iscolor( value ) then
+                    ---@cast value dreamwork.std.Color
+                    color = value
+                elseif isstring( value ) then
+                    ---@cast value string
+                    console_message_colored( value, color )
+                else
+                    ---@cast value any
+                    console_message_colored( tostring( value ), tocolor( value ) or color )
+                end
+            end
+
+            console_message( "\n" )
+        end
+
+        local color_fromHex = std.Color.fromHex
+        local string_char = string.char
+        local string_sub = string.sub
+        local string_len = string.len
+
+        --- [SHARED AND MENU]
+        ---
+        --- Prints a formatted string to the console with colors!
+        ---
+        --- Works very similarly to `printf`, but supports an additional `%C` specifier for colors.
+        ---
+        ---@param fmt string The format string.
+        ---@param ... any The arguments to format/interpolate.
+        function std.printfc( fmt, ... )
+            local fmt_length = string_len( fmt )
+            if fmt_length == 0 then
+                return
+            end
+
+            fmt = fmt .. "\n"
+
+            local arg_count = select( "#", ... )
+            local arg_index = 0
+            local args = { ... }
+
+            local color = realm_color
+            local break_point = 1
+            local index = 0
+
+            local buffer, buffer_length = {}, 0
+
+            while index ~= fmt_length do
+                index = index + 1
+
+                local uint8_1 = string_byte( fmt, index, index )
+                if uint8_1 == 0x25 --[[ % ]] then
+                    if ( index - break_point ) ~= 0 then
+                        buffer_length = buffer_length + 1
+                        buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
+                    end
+
+                    if index == fmt_length then
+                        buffer_length = buffer_length + 1
+                        buffer[ buffer_length ] = "%"
+                        break_point = index
+                        break
+                    end
+
+                    index = index + 1
+                    break_point = index + 1
+
+                    local uint8_2 = string_byte( fmt, index, index )
+
+                    if uint8_2 == 0x25 --[[ % ]] or uint8_2 == 0x7B --[[ { ]] or uint8_2 == 0x7D --[[ } ]] then
+                        buffer_length = buffer_length + 1
+                        buffer[ buffer_length ] = string_char( uint8_2 )
+                    else
+
+                        arg_index = arg_index + 1
+
+                        if arg_index > arg_count then
+                            error( string_format( "Argument #%d [%s] to 'printfc' is missing!", arg_index, string_char( uint8_1, uint8_2 ) ), 2 )
+                        end
+
+                        if uint8_2 == 0x43 --[[ C ]] then
+                            if buffer_length ~= 0 then
+                                console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+                                buffer_length = 0
+                            end
+
+                            color = tocolor( args[ arg_index ] ) or color
+                        else
+                            buffer_length = buffer_length + 1
+                            buffer[ buffer_length ] = string_format( string_char( uint8_1, uint8_2 ), args[ arg_index ] )
+                        end
+
+                    end
+                elseif uint8_1 == 0x7B --[[ { ]] then
+                    ---@type integer | nil
+                    local end_index
+
+                    for i = index, fmt_length, 1 do
+                        if string_byte( fmt, i, i ) == 0x7D --[[ } ]] then
+                            end_index = i
+                            break
+                        end
+                    end
+
+                    if end_index ~= nil then
+                        if ( index - break_point ) ~= 0 then
+                            buffer_length = buffer_length + 1
+                            buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
+                        end
+
+                        if buffer_length ~= 0 then
+                            console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+                            buffer_length = 0
+                        end
+
+                        index = index + 1
+
+                        if ( end_index - index ) == 0 then
+                            color = realm_color
+                        else
+                            local color_str = string_sub( fmt, index, end_index - 1 )
+                            if string_byte( color_str, 1, 1 ) == 0x23 --[[ # ]] then
+                                color = color_fromHex( color_str, false )
+                            else
+                                color = color_scheme[ color_str ] or realm_color
+                            end
+                        end
+
+                        index = end_index
+                        break_point = end_index + 1
+                    end
+
+                end
+            end
+
+            if break_point < fmt_length then
+                buffer_length = buffer_length + 1
+                buffer[ buffer_length ] = string_sub( fmt, break_point, fmt_length )
+            end
+
+            if buffer_length ~= 0 then
+                console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+            end
+        end
+
     end
 
 end
@@ -1126,42 +1280,9 @@ dofile( "std/crypto.pbkdf2.lua" )
 dofile( "std/utils.lua" )
 dofile( "std/uuid.lua" )
 
-dofile( "std/color.lua" )
 dofile( "std/timer.lua" )
 dofile( "std/hook.lua" )
 dofile( "std/url.lua" )
-
-do
-
-    local Color = std.Color
-    local scheme = Color.scheme
-
-    scheme.white = Color( 255, 255, 255, 255 )
-    scheme.black = Color( 0, 0, 0, 255 )
-
-    scheme.red = Color( 255, 0, 0, 255 )
-    scheme.green = Color( 0, 255, 0, 255 )
-    scheme.blue = Color( 0, 0, 255, 255 )
-
-    scheme.yellow = Color( 255, 255, 0, 255 )
-    scheme.cyan = Color( 0, 255, 255, 255 )
-    scheme.magenta = Color( 255, 0, 255, 255 )
-
-    scheme.gray = Color( 128, 128, 128, 255 )
-
-    scheme.info = Color( 70, 135, 255 )
-    scheme.warn = Color( 255, 130, 90 )
-    scheme.error = Color( 250, 55, 40 )
-    scheme.debug = Color( 0, 200, 150 )
-
-    scheme.text_primary = Color( 200 )
-    scheme.text_secondary = Color( 150 )
-
-    scheme.realm_menu = Color( 75, 175, 80 )
-    scheme.realm_client = Color( 225, 170, 10 )
-    scheme.realm_server = Color( 5, 170, 250 )
-
-end
 
 if dreamwork.TickTimer0_05 == nil then
     local timer = std.Timer( 0.05, 0, dreamwork.PREFIX .. "::TickTimer0_05" )
@@ -1209,8 +1330,8 @@ if SERVER then
 end
 
 local logger = std.console.Logger( {
+    color = color_scheme.dreamwork,
     title = dreamwork.PREFIX,
-    color = std.Color( 180, 180, 255 ),
     interpolation = false
 } )
 

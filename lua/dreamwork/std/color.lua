@@ -93,6 +93,11 @@ function Color:__unm()
     )
 end
 
+---@protected
+function Color:__tocolor()
+    return self
+end
+
 --- [SHARED AND MENU]
 ---
 --- Inverts current color.
@@ -609,45 +614,47 @@ do
     ---@param alpha_first? boolean In specific cases alpha is first hex characters, so if this is `true`, alpha will be first.
     ---@return dreamwork.std.Color color The color object.
     function Color:fromHex( hex, alpha_first )
+        local hex_length = string_len( hex )
         local index
+
         if string_byte( hex, 1 ) == 0x23 --[[ # ]] then
+            hex_length = hex_length - 1
             index = 2
         else
             index = 1
         end
 
-        local length = string_len( hex )
-        if length == 1 then
+        if hex_length == 1 then
             local uint8_1 = string_byte( hex, index, index )
             self.r = bytepack_readHex8( uint8_1, uint8_1 ) or 0
             self.g = 0
             self.b = 0
             self.a = 255
-        elseif length == 2 then
+        elseif hex_length == 2 then
             local uint8_1, uint8_2 = string_byte( hex, index, index + 1 )
             self.r = bytepack_readHex8( uint8_1, uint8_1 ) or 0
             self.g = bytepack_readHex8( uint8_2, uint8_2 ) or 0
             self.b = 0
             self.a = 255
-        elseif length == 3 then
+        elseif hex_length == 3 then
             local uint8_1, uint8_2, uint8_3 = string_byte( hex, index, index + 2 )
             self.r = bytepack_readHex8( uint8_1, uint8_1 ) or 0
             self.g = bytepack_readHex8( uint8_2, uint8_2 ) or 0
             self.b = bytepack_readHex8( uint8_3, uint8_3 ) or 0
             self.a = 255
-        elseif length == 4 then
+        elseif hex_length == 4 then
             local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( hex, index, index + 3 )
             self.r = bytepack_readHex8( uint8_1, uint8_1 ) or 0
             self.g = bytepack_readHex8( uint8_2, uint8_2 ) or 0
             self.b = bytepack_readHex8( uint8_3, uint8_3 ) or 0
             self.a = bytepack_readHex8( uint8_4, uint8_4 ) or 0
-        elseif length == 6 then
+        elseif hex_length == 6 then
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 = string_byte( hex, index, index + 5 )
             self.r = bytepack_readHex8( uint8_1, uint8_2 ) or 0
             self.g = bytepack_readHex8( uint8_3, uint8_4 ) or 0
             self.b = bytepack_readHex8( uint8_5, uint8_6 ) or 0
             self.a = 255
-        elseif length == 8 then
+        elseif hex_length == 8 then
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( hex, index, index + 7 )
             self.r = bytepack_readHex8( uint8_1, uint8_2 ) or 0
             self.g = bytepack_readHex8( uint8_3, uint8_4 ) or 0

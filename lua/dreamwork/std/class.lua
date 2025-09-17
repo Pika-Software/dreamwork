@@ -32,6 +32,7 @@ std.class = class
 ---@field protected __tostring? fun( obj: dreamwork.std.Object ): string
 ---@field protected __tonumber? fun( obj: dreamwork.std.Object ): number
 ---@field protected __toboolean? fun( obj: dreamwork.std.Object ): boolean
+---@field protected __tocolor? fun( obj: dreamwork.std.Object ): dreamwork.std.Color
 
 ---@alias Object dreamwork.std.Object
 

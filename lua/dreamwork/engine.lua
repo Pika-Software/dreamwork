@@ -4,11 +4,13 @@ local _G = _G
 local dreamwork = _G.dreamwork
 
 local std = dreamwork.std
+
+local math = std.math
 local debug = std.debug
+local string = std.string
 
 local MENU = std.MENU
 local raw_pairs = std.raw.pairs
-local math_clamp = std.math.clamp
 local debug_fempty = debug.fempty
 local setmetatable = std.setmetatable
 local table_insert = std.table.insert
@@ -194,17 +196,24 @@ end
 
 local engine_hookCall = engine.hookCall
 
----@param lst table
-local function create_catch_fn( lst )
-    ---@param fn dreamwork.std.Hook | function
-    ---@param priority integer | nil
-    return function( fn, priority )
-        if priority == nil then
-            table_insert( lst, #lst + 1, fn )
-        else
-            table_insert( lst, math_clamp( priority, 1, #lst + 1 ), fn )
+local create_catch_fn
+do
+
+    local math_clamp = math.clamp
+
+    ---@param lst table
+    function create_catch_fn( lst )
+        ---@param fn dreamwork.std.Hook | function
+        ---@param priority integer | nil
+        return function( fn, priority )
+            if priority == nil then
+                table_insert( lst, #lst + 1, fn )
+            else
+                table_insert( lst, math_clamp( priority, 1, #lst + 1 ), fn )
+            end
         end
     end
+
 end
 
 if engine.consoleCommandCatch == nil then
@@ -468,6 +477,67 @@ if engine.consoleVariableCatch == nil then
 
         run_callbacks( str_name, str_old, str_new )
     end, 1 )
+
+end
+
+do
+
+    local string_sub, string_len = string.sub, string.len
+    local Msg = _G.Msg or std.print
+    local math_min = math.min
+    local MsgC = _G.MsgC
+
+    --- [SHARED AND MENU]
+    ---
+    --- Prints the given arguments to the console.
+    ---
+    ---@param str string The string to print.
+    function engine.consoleMessage( str )
+        local index, str_length = 1, string_len( str )
+
+        while str_length ~= 0 do
+            -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
+            -- Improved version by Retr0 ( 989 characters per message, 4095 characters is test only )
+            local segment_length = math_min( 4095, str_length )
+            Msg( string_sub( str, index, index + segment_length ) )
+            str_length = str_length - segment_length
+            index = index + segment_length
+        end
+    end
+
+    if MsgC == nil then
+
+        engine.consoleMessageColored = engine.consoleMessage
+
+    else
+
+        local white_color = std.Color.scheme.white
+
+        --- [SHARED AND MENU]
+        ---
+        --- Prints the given arguments to the console.
+        ---
+        ---@param str string The string to print.
+        ---@param color dreamwork.std.Color The color to print the string with.
+        ---@diagnostic disable-next-line: duplicate-set-field
+        function engine.consoleMessageColored( str, color )
+            local index, str_length = 1, string_len( str )
+
+            if color == nil then
+                color = white_color
+            end
+
+            while str_length ~= 0 do
+                -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
+                -- Improved version by Retr0 ( 989 characters per message, 4095 characters is test only )
+                local segment_length = math_min( 4095, str_length )
+                MsgC( color, string_sub( str, index, index + segment_length ) )
+                str_length = str_length - segment_length
+                index = index + segment_length
+            end
+        end
+
+    end
 
 end
 
