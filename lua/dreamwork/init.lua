@@ -1042,7 +1042,7 @@ do
     ---@param fmt string The format string.
     ---@param ... any The arguments to format/interpolate.
     function std.printf( fmt, ... )
-        return console_message( string_format( fmt, ... ) )
+        return console_message( string_format( fmt, ... ) .. "\n" )
     end
 
     do
@@ -1098,6 +1098,7 @@ do
             end
 
             fmt = fmt .. "\n"
+            fmt_length = fmt_length + 1
 
             local arg_count = select( "#", ... )
             local arg_index = 0
