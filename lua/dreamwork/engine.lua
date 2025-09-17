@@ -497,8 +497,8 @@ do
 
         while str_length ~= 0 do
             -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
-            -- Improved version by Retr0 ( 989 characters per message, 4095 characters is test only )
-            local segment_length = math_min( 4095, str_length )
+            -- by Retr0 ( 989 characters per message )
+            local segment_length = math_min( 989, str_length )
             Msg( string_sub( str, index, index + segment_length ) )
             str_length = str_length - segment_length
             index = index + segment_length
@@ -529,8 +529,8 @@ do
 
             while str_length ~= 0 do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
-                -- Improved version by Retr0 ( 989 characters per message, 4095 characters is test only )
-                local segment_length = math_min( 4095, str_length )
+                -- by Retr0 ( 989 characters per message )
+                local segment_length = math_min( 989, str_length )
                 MsgC( color, string_sub( str, index, index + segment_length ) )
                 str_length = str_length - segment_length
                 index = index + segment_length
