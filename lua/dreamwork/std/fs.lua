@@ -54,6 +54,80 @@ local path = std.path
 local path_split = path.split
 local path_resolve = path.resolve
 
+do
+
+    local require = _G.require or debug.fempty
+
+    local is_edge = std.JIT_VERSION_INT ~= 20004
+    local is_x86 = std.x86
+
+    local head = "lua/bin/gm" .. ( ( CLIENT and not MENU ) and "cl" or "sv" ) .. "_"
+    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( std.WINDOWS and 4 or 0 ) + ( std.LINUX and 2 or 0 ) + ( is_x86 and 1 or 0 ) + 1 ]
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if a binary module is installed and returns its path.
+    ---
+    ---@param name string The binary module name.
+    ---@return boolean installed `true` if the binary module is installed, `false` otherwise.
+    ---@return string path The absolute path to the binary module.
+    local function lookupbinary( name )
+        if string.isEmpty( name ) then
+            return false, ""
+        end
+
+        local file_path = head .. name .. tail
+        if file_Exists( file_path .. ".dll", "MOD" ) then
+            return true, "/" .. file_path .. ".dll"
+        end
+
+        if file_Exists( file_path .. ".so", "MOD" ) then
+            return true, "/" .. file_path .. ".so"
+        end
+
+        if is_edge and is_x86 and tail == "_linux" then
+            file_path = head .. name .. "_linux32"
+
+            if file_Exists( file_path .. ".dll", "MOD" ) then
+                return true, "/" .. file_path .. ".dll"
+            end
+
+            if file_Exists( file_path .. ".so", "MOD" ) then
+                return true, "/" .. file_path .. ".so"
+            end
+        end
+
+        return false, "/" .. file_path .. ( std.WINDOWS and ".dll" or ".so" )
+    end
+
+    std.lookupbinary = lookupbinary
+
+    local sv_allowcslua
+
+    if SERVER then
+        sv_allowcslua = std.console.Variable.get( "sv_allowcslua", "boolean" )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Loads a binary module
+    ---@param name string The binary module name, for example: "chttp"
+    ---@return boolean success true if the binary module is installed
+    function std.loadbinary( name )
+        if lookupbinary( name ) then
+            if sv_allowcslua ~= nil and sv_allowcslua.value then
+                sv_allowcslua.value = false
+            end
+
+            require( name )
+            return true
+        end
+
+        return false
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- The filesystem library.

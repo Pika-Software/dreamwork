@@ -696,7 +696,7 @@ end
 ---@diagnostic disable-next-line: undefined-field
 if SERVER and not ( std.istable( _G.steamworks ) and std.isfunction( _G.steamworks.DownloadUGC ) ) then
     if std.loadbinary( "workshop" ) then
-        dreamwork.Logger:info( "'gmsv_workshop' was connected as server-side Steam Workshop API." )
+        dreamwork.Logger:info( "gmsv_workshop - was loaded & connected as server-side Steam Workshop API." )
     else
         dreamwork.Logger:warn( "'gmsv_workshop' is missing, `steam.workshop.download` will do nothing on server." )
     end

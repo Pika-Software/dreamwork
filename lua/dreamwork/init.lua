@@ -1614,81 +1614,12 @@ do
 
 end
 
-local loadbinary
-do
-
-    local file_isExistingFile = std.fs.isExistingFile
-    local require = _G.require or debug.fempty
-
-    local isEdge = std.JIT_VERSION_INT ~= 20004
-    local is32 = std.JIT_ARCH == "x86"
-
-    local head = "/garrysmod/lua/bin/gm" .. ( ( CLIENT and not MENU ) and "cl" or "sv" ) .. "_"
-    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( JIT_OS == "Windows" and 4 or 0 ) + ( JIT_OS == "Linux" and 2 or 0 ) + ( is32 and 1 or 0 ) + 1 ] .. ".dll"
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if a binary module is installed and returns its path.
-    ---
-    ---@param name string The binary module name.
-    ---@return boolean installed `true` if the binary module is installed, `false` otherwise.
-    ---@return string path The absolute path to the binary module.
-    local function lookupbinary( name )
-        if string.isEmpty( name ) then
-            return false, ""
-        end
-
-        local filePath = head .. name .. tail
-        if file_isExistingFile( filePath ) then
-            return true, "/" .. filePath
-        end
-
-        if isEdge and is32 and tail == "_linux.dll" then
-            filePath = head .. name .. "_linux32.dll"
-            if file_isExistingFile( filePath ) then
-                return true, "/" .. filePath
-            end
-        end
-
-        return false, "/" .. filePath
-    end
-
-    std.lookupbinary = lookupbinary
-
-    local sv_allowcslua
-
-    if SERVER then
-        sv_allowcslua = std.console.Variable.get( "sv_allowcslua", "boolean" )
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Loads a binary module
-    ---@param name string The binary module name, for example: "chttp"
-    ---@return boolean success true if the binary module is installed
-    function loadbinary( name )
-        if lookupbinary( name ) then
-            if sv_allowcslua ~= nil and sv_allowcslua.value then
-                sv_allowcslua.value = false
-            end
-
-            require( name )
-            return true
-        end
-
-        return false
-    end
-
-    std.loadbinary = loadbinary
-
-end
-
 dofile( "std/game.hooks.lua" )
 dofile( "std/audio_stream.lua" )
 
 -- https://github.com/willox/gmbc
-if loadbinary( "gmbc" ) then
-    logger:info( "'gmbc' was connected as bytecode compiler, binary code compilation avaliable." )
+if std.loadbinary( "gmbc" ) then
+    logger:info( "gmbc - was loaded & connected as LuaJIT bytecode compiler." )
 end
 
 do

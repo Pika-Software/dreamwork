@@ -392,17 +392,17 @@ if std.CLIENT_SERVER then
     if std.CLIENT then
         local available
         if std.loadbinary( "rekinect" ) then
-            dreamwork.Logger:info( "'rekinect' was connected as KinectAPI." )
+            dreamwork.Logger:info( "rekinect - was loaded & connected as Kinect API." )
             available = true
         elseif motionsensor ~= nil then
-            dreamwork.Logger:info( "'Garry's Mod' was connected as KinectAPI." )
+            dreamwork.Logger:info( "Garry's Mod - was connected as Kinect API." )
             available = true
         else
-            dreamwork.Logger:warn( "KinectAPI was not connected." )
+            dreamwork.Logger:warn( "Kinect API is not available." )
         end
 
         if available and motionsensor.IsAvailable() then
-            dreamwork.Logger:info( "Supported Kinect sensor was detected." )
+            dreamwork.Logger:info( "Supported Kinect sensor was detected and connected to the client." )
         end
     end
 
