@@ -31,6 +31,9 @@ end
 ---@field OSX boolean `true` if the game is running on OSX.
 ---@field LINUX boolean `true` if the game is running on Linux.
 ---@field WINDOWS boolean `true` if the game is running on Windows.
+---@field x64 boolean `true` if the game is running on 64-bit architecture.
+---@field x32 boolean `true` if the game is running on 32-bit architecture.
+---@field x86 boolean `true` if the game is running on 32-bit architecture.
 ---@field DEVELOPER integer A cached value of `developer` console variable.
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
@@ -186,11 +189,13 @@ local debug_getmetavalue = debug.getmetavalue
 
 local setmetatable = std.setmetatable
 
-local JIT_OS = std.JIT_OS
+std.OSX = std.JIT_OS == "OSX"
+std.LINUX = std.JIT_OS == "Linux"
+std.WINDOWS = std.JIT_OS == "Windows"
 
-std.OSX = JIT_OS == "OSX"
-std.LINUX = JIT_OS == "Linux"
-std.WINDOWS = JIT_OS == "Windows"
+std.x64 = string.match( std.JIT_ARCH, "64" ) ~= nil
+std.x32 = not std.x64
+std.x86 = std.x32
 
 ---@class dreamwork.transducers
 local transducers = dreamwork.transducers
