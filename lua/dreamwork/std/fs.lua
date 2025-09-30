@@ -9,6 +9,9 @@ local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
 local engine_hookCall = engine.hookCall
 local setmetatable = std.setmetatable
 
+local futures = std.futures
+local Future = futures.Future
+
 -- TODO: https://wiki.facepunch.com/gmod/resource
 -- TODO: https://wiki.facepunch.com/gmod/Global.AddCSLuaFile
 
@@ -27,6 +30,7 @@ local FILE = std.debug.findmetatable( "File" )
 
 local FILE_Read, FILE_Write = FILE.Read, FILE.Write
 local FILE_Close = FILE.Close
+local FILE_Size = FILE.Size
 
 local debug = std.debug
 local gc_setTableRules = debug.gc.setTableRules
@@ -129,17 +133,112 @@ do
 
 end
 
-local async_read, async_write, async_append = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+local async_read, async_write, async_append
 
-if ( MENU or async_read == nil or async_write == nil or async_append == nil ) and std.loadbinary( "asyncio" ) then
-    async_read, async_write, async_append = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+if std.loadbinary( "asyncio" ) then
+    local file_AsyncRead, file_AsyncWrite, file_AsyncAppend = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@return string data
+    ---@async
+    function async_read( file_name, game_path )
+
+    end
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_write( file_name, game_path, data )
+
+    end
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_append( file_name, game_path, data )
+
+    end
+
     dreamwork.Logger:info( "Async File System I/O - was loaded & connected as file system driver." )
+elseif std.loadbinary( "async_write" ) then
+    local file_AsyncWrite, file_AsyncAppend = file.AsyncWrite, file.AsyncAppend
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_write( file_name, game_path, data )
+
+    end
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_append( file_name, game_path, data )
+
+    end
+
+    dreamwork.Logger:info( "Async File Write - was loaded & connected as file system driver." )
+elseif not MENU and file.AsyncRead ~= nil then
+    local file_AsyncRead = file.AsyncRead
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@return string data
+    ---@async
+    function async_read( file_name, game_path )
+
+    end
+
 end
 
-if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_write" ) then
-    async_write, async_append = file.AsyncWrite, file.AsyncAppend
-    dreamwork.Logger:info( "Async File Write - was loaded & connected as file system driver." )
+if async_read == nil then
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@return string data
+    ---@async
+    function async_read( file_name, game_path )
+        local handler = file_Open( file_name, "rb", game_path )
+        if handler == nil then
+            error( "Unknown filesystem error, file handler is not available.", 2 )
+        end
+
+        local data = FILE_Read( handler, FILE_Size( handler ) )
+        FILE_Close( handler )
+        return data
+    end
+
 end
+
+if async_write == nil then
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_write( file_name, game_path, data )
+
+    end
+
+end
+
+if async_append == nil then
+
+    ---@param file_name string
+    ---@param game_path string
+    ---@param data string
+    ---@async
+    function async_append( file_name, game_path, data )
+
+    end
+
+end
+
 
 if std.loadbinary( "efsw" ) then
 
