@@ -42,9 +42,8 @@ dreamwork.engine = engine
 
 if engine.hookCatch == nil then
 
-    local engine_hooks = {}
-
-    local custom_calls = {
+    ---@type table<string, fun( ... ): ...>
+    local custom_handlers = {
         AcceptInput = function( self, entity, input, activator, caller, value )
             entity, activator, caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
 
@@ -55,139 +54,58 @@ if engine.hookCatch == nil then
         end
     }
 
+    ---@type table<string, table<integer, dreamwork.std.Hook | fun( ... ): ...>>
+    local engine_hooks = {}
+
     do
 
-        local metatable = {
-            __call = function( self, ... )
-                for i = 1, #self, 1 do
-                    local a, b, c, d, e, f = self[ i ]( ... )
-                    if a ~= nil then return a, b, c, d, e, f end
+        ---@param self table<integer, dreamwork.std.Hook | fun( ... ): ...>
+        ---@param ... any
+        ---@return any, any, any, any, any, any
+        local function default_handler( self, ... )
+            for i = 1, #self, 1 do
+                local a, b, c, d, e, f = self[ i ]( ... )
+                if a ~= nil then
+                    return a, b, c, d, e, f
                 end
             end
-        }
+        end
 
         --- [SHARED AND MENU]
         ---
         --- Adds a callback to the `hookCatch` event.
         ---
-        ---@param event_name string
-        ---@param fn dreamwork.std.Hook | fun( ... ): ...
-        ---@param index integer
+        ---@param event_name string The name of the source engine event.
+        ---@param fn dreamwork.std.Hook | fun( ... ): ... The callback function.
+        ---@param index? integer The index to insert the callback at.
+        ---@return integer position The position of the inserted callback.
         function engine.hookCatch( event_name, fn, index )
-            local lst = engine_hooks[ event_name ]
-            if lst == nil then
-                lst = {}
-
-                if custom_calls[ event_name ] == nil then
-                    setmetatable( lst, metatable )
-                else
-                    setmetatable( lst, {
-                        __call = custom_calls[ event_name ]
-                    } )
-                end
-
-                engine_hooks[ event_name ] = lst
+            local callbacks = engine_hooks[ event_name ]
+            if callbacks == nil then
+                callbacks = {}
+                engine_hooks[ event_name ] = callbacks
             end
 
-            lst[ index ] = fn
+            if index == nil then
+               index = #callbacks + 1
+            end
+
+            ---@diagnostic disable-next-line: return-type-mismatch
+            return table_insert( callbacks, index, fn )
         end
 
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Calls a source engine event.
-    ---
-    ---@param event_name string
-    ---@param ... any
-    ---@return any, any, any, any, any, any
-    local function engine_hookCall( event_name, ... )
-        local lst = engine_hooks[ event_name ]
-        if lst ~= nil then
-            return lst( ... )
-        end
-    end
-
-    engine.hookCall = engine_hookCall
-
-    do
-
-        local hook = _G.hook
-        if hook == nil then
-            ---@diagnostic disable-next-line: inject-field
-            hook = {}; _G.hook = hook
-        end
-
-        if hook.Call == nil then
-            ---@diagnostic disable-next-line: duplicate-set-field
-            function hook.Call( event_name, _, ... )
-                local lst = engine_hooks[ event_name ]
-                if lst == nil then return end
-                return lst( ... )
+        --- [SHARED AND MENU]
+        ---
+        --- Calls a source engine event.
+        ---
+        ---@param event_name string
+        ---@param ... any
+        ---@return any, any, any, any, any, any
+        function engine.hookCall( event_name, ... )
+            local callbacks = engine_hooks[ event_name ]
+            if callbacks ~= nil then
+                return ( custom_handlers[ event_name ] or default_handler )( callbacks, ... )
             end
-        else
-            hook.Call = detour_attach( hook.Call, function( fn, event_name, gamemode_table, ... )
-                local lst = engine_hooks[ event_name ]
-                if lst ~= nil then
-                    local a, b, c, d, e, f = lst( ... )
-                    if a ~= nil then
-                        return a, b, c, d, e, f
-                    end
-                end
-
-                return fn( event_name, gamemode_table, ... )
-            end )
-        end
-
-    end
-
-    if MENU then
-
-        do
-
-            local function listAddonPresets()
-                engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
-            end
-
-            if _G.ListAddonPresets == nil then
-                _G.ListAddonPresets = listAddonPresets
-            else
-                _G.ListAddonPresets = detour_attach( _G.ListAddonPresets, function( fn )
-                    listAddonPresets()
-                    return fn()
-                end )
-            end
-
-        end
-
-        do
-
-            ---@param server_name string
-            ---@param loading_url string
-            ---@param map_name string
-            ---@param max_players integer
-            ---@param player_steamid64 string
-            ---@param gamemode_name string
-            local function gameDetails( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
-                engine_hookCall( "GameDetails", {
-                    server_name = server_name,
-                    loading_url = loading_url,
-                    map_name = map_name,
-                    max_players = max_players,
-                    player_steamid64 = player_steamid64,
-                    gamemode_name = gamemode_name
-                } )
-            end
-
-            if _G.GameDetails == nil then
-                _G.GameDetails = gameDetails
-            else
-                _G.GameDetails = detour_attach( _G.GameDetails, function( fn, ... )
-                    gameDetails( ... )
-                    return fn( ... )
-                end )
-            end
-
         end
 
     end
@@ -195,6 +113,94 @@ if engine.hookCatch == nil then
 end
 
 local engine_hookCall = engine.hookCall
+
+do
+
+    local hook = _G.hook
+    if hook == nil then
+        ---@diagnostic disable-next-line: inject-field
+        hook = {}; _G.hook = hook
+    end
+
+    if hook.Call == nil then
+        ---@diagnostic disable-next-line: duplicate-set-field
+        function hook.Call( event_name, tbl, ... )
+            return engine_hookCall( event_name, ... )
+            -- local a, b, c, d, e, f = engine_hookCall( event_name, ... )
+            -- if a ~= nil then
+            --     return a, b, c, d, e, f
+            -- end
+
+            -- local fn = tbl[ event_name ]
+            -- if fn ~= nil then
+            --     return fn( ... )
+            -- end
+
+            -- return nil
+        end
+    else
+        hook.Call = detour_attach( hook.Call, function( fn, event_name, tbl, ... )
+            local a, b, c, d, e, f = engine_hookCall( event_name, ... )
+            if a == nil then
+                return fn( event_name, tbl, ... )
+            else
+                return a, b, c, d, e, f
+            end
+        end )
+    end
+
+end
+
+if MENU then
+
+    do
+
+        local function listAddonPresets()
+            engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
+        end
+
+        if _G.ListAddonPresets == nil then
+            _G.ListAddonPresets = listAddonPresets
+        else
+            _G.ListAddonPresets = detour_attach( _G.ListAddonPresets, function( fn )
+                listAddonPresets()
+                return fn()
+            end )
+        end
+
+    end
+
+    do
+
+        ---@param server_name string
+        ---@param loading_url string
+        ---@param map_name string
+        ---@param max_players integer
+        ---@param player_steamid64 string
+        ---@param gamemode_name string
+        local function gameDetails( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
+            engine_hookCall( "GameDetails", {
+                server_name = server_name,
+                loading_url = loading_url,
+                map_name = map_name,
+                max_players = max_players,
+                player_steamid64 = player_steamid64,
+                gamemode_name = gamemode_name
+            } )
+        end
+
+        if _G.GameDetails == nil then
+            _G.GameDetails = gameDetails
+        else
+            _G.GameDetails = detour_attach( _G.GameDetails, function( fn, ... )
+                gameDetails( ... )
+                return fn( ... )
+            end )
+        end
+
+    end
+
+end
 
 local create_catch_fn
 do
