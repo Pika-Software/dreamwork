@@ -6,6 +6,7 @@ local std = dreamwork.std
 local engine = dreamwork.engine
 
 local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
+local engine_hookCall = engine.hookCall
 local setmetatable = std.setmetatable
 
 -- TODO: https://wiki.facepunch.com/gmod/resource
@@ -127,6 +128,52 @@ do
     end
 
 end
+
+local async_read, async_write, async_append = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+
+if ( MENU or async_read == nil or async_write == nil or async_append == nil ) and std.loadbinary( "asyncio" ) then
+    async_read, async_write, async_append = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+    dreamwork.Logger:info( "Async File System I/O - was loaded & connected as file system driver." )
+end
+
+if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_write" ) then
+    async_write, async_append = file.AsyncWrite, file.AsyncAppend
+    dreamwork.Logger:info( "Async File Write - was loaded & connected as file system driver." )
+end
+
+if std.loadbinary( "efsw" ) then
+
+    local hook = _G.hook
+    local hook_Add = hook.Add
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function hook.Add( event_name, identifier, fn )
+        if event_name == "Think" and identifier == "__ESFW_THINK" then
+            dreamwork.Logger:debug( "Catched gm_efsw 'Think' event function %p, re-attaching to dreamwork engine...", fn )
+            engine.hookCatch( "Tick", fn, 1 )
+        else
+            return hook_Add( event_name, identifier, fn )
+        end
+    end
+
+    if std.loadbinary( "gm_efsw" ) then
+        dreamwork.Logger:info( "Entry File System Watcher - was loaded & connected as file system watcher." )
+    else
+        dreamwork.Logger:error( "Entry File System Watcher - failed to load, unknown error." )
+    end
+
+    hook.Add = hook_Add
+
+end
+
+---@diagnostic disable-next-line: undefined-field
+local efsw = _G.efsw
+
+---@type fun( file_path: string, game_path: string ): integer
+local efsw_watch = efsw and efsw.Watch or debug.fempty
+
+---@type fun( watch_id: integer )
+local efsw_unwatch = efsw and efsw.Unwatch or debug.fempty
 
 --- [SHARED AND MENU]
 ---
@@ -337,6 +384,90 @@ end
 ---@return string
 function File:__tostring()
     return string.format( "File: %p [%s][%s][%d bytes]", self, self.path, time.toDuration( time_now() - self.time ), self.size )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the data of a file by given path.
+---
+---@return string data The data of the file.
+---@async
+function File:read()
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Replaces the data of a file.
+---
+---@param data string The new data of the file.
+---@async
+function File:write( data )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Appends data to the end of a file.
+---
+---@param data string The data to append.
+---@async
+function File:append( data )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Renames a file.
+---
+---@param name string The new name of the file.
+---@async
+function File:rename( name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Moves a file to another directory.
+---
+---@param directory dreamwork.std.Directory The directory to move the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function File:move( directory, name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Copies a file to another directory.
+---
+---@param directory dreamwork.std.Directory The directory to copy the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function File:copy( directory, name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Deletes a file.
+---
+function File:delete()
+
+end
+
+do
+
+    local handlers = {}
+
+    function File:open()
+
+    end
+
+    function File:close()
+
+    end
+
 end
 
 ---@param object dreamwork.std.File | dreamwork.std.Directory
@@ -997,6 +1128,47 @@ function Directory:touch( name )
     return object, false
 end
 
+--- [SHARED AND MENU]
+---
+--- Renames a file.
+---
+---@param name string The new name of the file.
+---@async
+function Directory:rename( name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Moves a file to another directory.
+---
+---@param directory dreamwork.std.Directory The directory to move the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function Directory:move( directory, name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Copies a file to another directory.
+---
+---@param directory dreamwork.std.Directory The directory to copy the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function Directory:copy( directory, name )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Deletes a directory.
+---
+function Directory:delete()
+
+end
+
+-- TODO: make this function local, maybe required rewrite
 ---@param name string
 ---@param forced? boolean
 ---@param recursive? boolean
@@ -1126,6 +1298,7 @@ local root = DirectoryClass( "", "BASE_PATH" )
 ---@param game_info dreamwork.engine.GameInfo
 engine.hookCatch( "GameMounted", function( game_info )
     local game_folder = game_info.folder
+    eject( root, game_folder )
     insert( root, DirectoryClass( game_folder, game_folder ) )
 end, 2 )
 
@@ -1154,7 +1327,9 @@ do
 
     ---@param addon_info dreamwork.engine.AddonInfo
     engine.hookCatch( "AddonMounted", function( addon_info )
-        insert( addons, DirectoryClass( addon_info.folder, addon_info.title ) )
+        local addon_folder = addon_info.folder
+        eject( addons, addon_folder )
+        insert( addons, DirectoryClass( addon_folder, addon_info.title ) )
     end, 2 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
@@ -1420,248 +1595,91 @@ do
 
 end
 
-local function do_tralling_slash( str )
-    return ( str == "" or string.byte( str, -1 ) == 0x2F --[[ '/' ]] ) and str or ( str .. "/" )
-end
-
-local function perform_path( absolute_path, write_mode, path_type )
-    return "fuck", "GAME"
-end
-
-
----@param source_local_path string
----@param source_game_path string
----@param target_local_path string
----@param target_game_path string
----@param error_level? integer
-local function file_Copy( source_local_path, source_game_path, target_local_path, target_game_path, error_level )
-    error_level = ( error_level or 1 ) + 1
-
-    local source_handler = file_Open( source_local_path, "rb", source_game_path )
-    if source_handler == nil then
-        error( "File '" .. source_local_path .. "' cannot be readed.", error_level )
-    end
-
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast source_handler File
-
-    local content = FILE_Read( source_handler )
-    FILE_Close( source_handler )
-
-    local target_handler = file_Open( target_local_path, "wb", target_game_path )
-    if target_handler == nil then
-        error( "file '" .. target_local_path .. "' is not writable", error_level )
-    end
-
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast target_handler File
-
-    FILE_Write( target_handler, content )
-    FILE_Close( target_handler )
-end
-
----@param source_local_path string
----@param source_game_path string
----@param target_local_path string
----@param target_game_path string
----@param error_level? integer
-local function directory_Copy( source_local_path, source_game_path, target_local_path, target_game_path, error_level )
-    if error_level == nil then error_level = 1 end
-    error_level = error_level + 1
-
-    ---@diagnostic disable-next-line: redundant-parameter
-    file_CreateDir( target_local_path, target_game_path )
-
-    local files, directories = file_Find( source_local_path .. "*", source_game_path )
-
-    for i = 1, #files, 1 do
-        local file_name = files[ i ]
-        file_Copy( source_local_path .. file_name, source_game_path, target_local_path .. file_name, target_game_path, error_level )
-    end
-
-    for i = 1, #directories, 1 do
-        local directory_name = directories[ i ]
-        directory_Copy( source_local_path .. directory_name .. "/", source_game_path, target_local_path .. directory_name .. "/", target_game_path, error_level )
-    end
-end
-
 --- [SHARED AND MENU]
 ---
---- Copies file or directory by given paths.
+--- Returns the data of a file by given path.
 ---
----@param source_path string The path to the file or directory to copy.
----@param target_path? string The path to the target file or directory.
----@param forced? boolean If `true`, the target file or directory will be deleted if it already exists.
----@return string new_path The path to the new file or directory.
-function fs.copy( source_path, target_path, forced )
-    local resolved_source_path = path_resolve( source_path )
-    local source_local_path, source_game_path = perform_path( resolved_source_path, target_path == nil, 2 )
+---@param file_path string The path to the file.
+---@return string data The data of the file.
+---@async
+function fs.read( file_path )
 
-    local resolved_target_path, target_local_path, target_game_path
-
-    if target_path == nil then
-        if file_IsDir( source_local_path, source_game_path ) then
-            target_local_path, target_game_path = source_local_path .. "-copy", source_game_path
-            resolved_target_path = resolved_source_path .. "-copy"
-        else
-
-            local directory, file_name_with_ext = path_split( source_local_path, true )
-            local file_name, extension = path.splitExtension( file_name_with_ext, true )
-            local new_file_name = file_name .. "-copy" .. extension
-
-            resolved_target_path = path_split( resolved_source_path, true ) .. new_file_name
-            target_local_path, target_game_path = directory .. new_file_name, source_game_path
-        end
-    else
-        resolved_target_path = path_resolve( target_path )
-        target_local_path, target_game_path = perform_path( resolved_target_path, true, 2 )
-        if target_game_path == source_game_path and target_local_path == source_local_path then
-            error( "source and target paths cannot be the same", 2 )
-        end
-    end
-
-    if forced and file_Exists( target_local_path, target_game_path ) and not file_IsDir( target_local_path, target_game_path ) then
-        file_Delete( target_local_path, target_game_path )
-    end
-
-    if file_IsDir( source_local_path, source_game_path ) then
-        directory_Copy( do_tralling_slash( source_local_path ), source_game_path, do_tralling_slash( target_local_path ), target_game_path, 2 )
-    else
-        file_Copy( source_local_path, source_game_path, target_local_path, target_game_path, 2 )
-    end
-
-    return resolved_target_path
-end
-
---- [SHARED AND MENU]
----
---- Moves file or directory by given paths.
----
----@param source_path string The path to the file or directory to move.
----@param target_path string The path to the target file or directory.
----@param forced? boolean If `true`, the target file or directory will be deleted if it already exists.
----@return string new_path The path to the new file or directory.
-function fs.move( source_path, target_path, forced )
-    local resolved_target_path = path_resolve( target_path )
-
-    local target_local_path, target_game_path = perform_path( resolved_target_path, true, 2 )
-    local source_local_path, source_game_path = perform_path( path_resolve( source_path ), false, 2 )
-
-    if target_game_path == source_game_path and file_IsDir( source_local_path, source_game_path ) and string.startsWith( target_local_path, source_local_path ) then
-        error( "cannot move the directory to itself", 2 )
-    end
-
-    if file_Exists( target_local_path, target_game_path ) then
-        if forced then
-            if file_IsDir( target_local_path, target_game_path ) then
-                directory_Delete( do_tralling_slash( target_local_path ), target_game_path )
-            else
-                file_Delete( target_local_path, target_game_path )
-            end
-        elseif file_IsDir( target_local_path, target_game_path ) then
-            error( "directory '" .. resolved_target_path .. "' already exists", 2 )
-        else
-            error( "file '" .. resolved_target_path .. "' already exists", 2 )
-        end
-    end
-
-    if file_IsDir( source_local_path, source_game_path ) then
-        source_local_path = do_tralling_slash( source_local_path )
-        directory_Copy( source_local_path, source_game_path, do_tralling_slash( target_local_path ), target_game_path, 2 )
-        directory_Delete( source_local_path, source_game_path )
-    else
-        file_Copy( source_local_path, source_game_path, target_local_path, target_game_path, 2 )
-        file_Delete( source_local_path, source_game_path )
-    end
-
-    return resolved_target_path
-end
-
---- [SHARED AND MENU]
----
---- Reads content from a file by given path.
----
----@param file_path string The path to the file to read.
----@param length? integer The number of bytes to read, or `nil` to read the entire file.
----@return string content The content of the file or `nil` if failed.
-function fs.read( file_path, length )
-    local resolved_path = path_resolve( file_path )
-    local local_path, game_path = perform_path( resolved_path, false, 2 )
-
-    local handler = file_Open( local_path, "rb", game_path )
-    if handler == nil then
-        error( "file '" .. resolved_path .. "' is not readable", 2 )
-    end
-
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast handler File
-
-    local content = FILE_Read( handler, length )
-    FILE_Close( handler )
-
-    return content
 end
 
 --- [SHARED AND MENU]
 ---
 --- Writes data to a file by given path.
 ---
----@param file_path string The path to the file to write.
+---@param file_path string The path to the file.
 ---@param data string The data to write to the file.
----@param forced? boolean If `true`, the directory will not be created if it does not exist.
-function fs.write( file_path, data, forced )
-    local resolved_path = path_resolve( file_path )
-    local local_path, game_path = perform_path( resolved_path, true, 2 )
+---@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be created if they don't exist.
+---@async
+function fs.write( file_path, data, forced, recursive )
 
-    if forced then
-        if file_IsDir( local_path, game_path ) then
-            directory_Delete( do_tralling_slash( local_path ), game_path )
-        else
-            directory_Create( true, path_split( local_path, false ), game_path )
-        end
-    end
-
-    local handler = file_Open( local_path, "wb", game_path )
-    if handler == nil then
-        error( "file '" .. resolved_path .. "' is not writable", 2 )
-    end
-
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast handler File
-
-    FILE_Write( handler, data )
-    FILE_Close( handler )
 end
 
 --- [SHARED AND MENU]
 ---
 --- Appends data to a file by given path.
 ---
----@param file_path string The path to the file to append.
+---@param file_path string The path to the file.
 ---@param data string The data to append to the file.
----@param forced? boolean If `true`, the directory will not be created if it does not exist.
-function fs.append( file_path, data, forced )
-    local resolved_path = path_resolve( file_path )
-    local local_path, game_path = perform_path( resolved_path, true, 2 )
+---@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be created if they don't exist.
+---@async
+function fs.append( file_path, data, forced, recursive )
 
-    if forced then
-        if file_IsDir( local_path, game_path ) then
-            directory_Delete( do_tralling_slash( local_path ), game_path )
-        else
-            directory_Create( true, path_split( local_path, false ), game_path )
-        end
-    end
+end
 
-    local handler = file_Open( local_path, "ab", game_path )
-    if handler == nil then
-        error( "file '" .. resolved_path .. "' is not writable", 2 )
-    end
+--- [SHARED AND MENU]
+---
+--- Deletes a file or directory by given path.
+---
+---@param path_to string The path to the file or directory.
+---@param forced? boolean If `true`, the file or directory will be deleted even if it is not empty.
+---@param recursive? boolean If `true`, all directories in the path will be deleted if they are empty.
+function fs.delete( path_to, forced, recursive )
 
-    ---@diagnostic disable-next-line: cast-type-mismatch
-    ---@cast handler File
+end
 
-    FILE_Write( handler, data )
-    FILE_Close( handler )
+--- [SHARED AND MENU]
+---
+--- Renames a file or directory by given path.
+---
+---@param path_to string The path to the file or directory.
+---@param name string The new name of the file or directory.
+---@param forced? boolean If `true`, the file or directory will be renamed even if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be renamed if they already exist.
+---@async
+function fs.rename( path_to, name, forced, recursive )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Copies a file or directory by given path.
+---
+---@param source_path string The path to the file or directory to copy.
+---@param target_path string The path to the file or directory to copy to.
+---@param forced? boolean If `true`, the file or directory will be copied even if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be copied if they already exist.
+---@async
+function fs.copy( source_path, target_path, forced, recursive )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Moves a file or directory by given path.
+---
+---@param source_path string The path to the file or directory to move.
+---@param target_path string The path to the file or directory to move to.
+---@param forced? boolean If `true`, the file or directory will be moved even if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be moved if they already exist.
+---@async
+function fs.move( source_path, target_path, forced, recursive )
+
 end
 
 -- TODO: Reader and Writer or something better like FileClass that can returns FileReader and FileWriter in cases

@@ -43,7 +43,7 @@ if http_client == nil then
     Logger:error( "HTTP client '%s' loading failed, sending requests is not possible.", client_name )
     http_client = std.debug.fempty
 else
-    Logger:info( "'%s' was connected as HTTP client.", client_name )
+    Logger:info( "'%s' was loaded & connected as HTTP client.", client_name )
 end
 
 ---@cast http_client fun( params: table ): boolean | nil
