@@ -15,6 +15,8 @@ local Future = futures.Future
 -- TODO: https://wiki.facepunch.com/gmod/resource
 -- TODO: https://wiki.facepunch.com/gmod/Global.AddCSLuaFile
 
+-- TODO: https://github.com/RaphaelIT7/gmod-holylib#filesystem
+
 local glua_file = _G.file
 local file_Time = glua_file.Time
 local file_Find = glua_file.Find
@@ -82,23 +84,28 @@ do
         end
 
         local file_path = head .. name .. tail
-        if file_Exists( file_path .. ".dll", "MOD" ) then
-            return true, "/" .. file_path .. ".dll"
+
+        local dll_path = file_path .. ".dll"
+        if file_Exists( dll_path, "MOD" ) then
+            return true, "/garrysmod/" .. dll_path
         end
 
-        if file_Exists( file_path .. ".so", "MOD" ) then
-            return true, "/" .. file_path .. ".so"
+        local so_path = file_path .. ".so"
+        if file_Exists( so_path, "MOD" ) then
+            return true, "/garrysmod/" .. so_path
         end
 
         if is_edge and is_x86 and tail == "_linux" then
             file_path = head .. name .. "_linux32"
 
-            if file_Exists( file_path .. ".dll", "MOD" ) then
-                return true, "/" .. file_path .. ".dll"
+            dll_path = file_path .. ".dll"
+            if file_Exists( dll_path, "MOD" ) then
+                return true, "/garrysmod/" .. dll_path
             end
 
-            if file_Exists( file_path .. ".so", "MOD" ) then
-                return true, "/" .. file_path .. ".so"
+            so_path = file_path .. ".so"
+            if file_Exists( so_path, "MOD" ) then
+                return true, "/garrysmod/" .. so_path
             end
         end
 
@@ -115,7 +122,8 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Loads a binary module
+    --- Loads a binary module by name.
+    ---
     ---@param name string The binary module name, for example: "chttp"
     ---@return boolean success true if the binary module is installed
     function std.loadbinary( name )
@@ -162,7 +170,7 @@ if std.loadbinary( "asyncio" ) then
 
     end
 
-    dreamwork.Logger:info( "Async File System I/O - was loaded & connected as file system driver." )
+    dreamwork.Logger:info( "'asyncio' was loaded & connected as file system driver." )
 elseif std.loadbinary( "async_write" ) then
     local file_AsyncWrite, file_AsyncAppend = file.AsyncWrite, file.AsyncAppend
 
@@ -182,7 +190,7 @@ elseif std.loadbinary( "async_write" ) then
 
     end
 
-    dreamwork.Logger:info( "Async File Write - was loaded & connected as file system driver." )
+    dreamwork.Logger:info( "'async_write' was loaded & connected as file system driver." )
 elseif not MENU and file.AsyncRead ~= nil then
     local file_AsyncRead = file.AsyncRead
 
@@ -248,21 +256,23 @@ if std.loadbinary( "efsw" ) then
     ---@diagnostic disable-next-line: duplicate-set-field
     function hook.Add( event_name, identifier, fn )
         if event_name == "Think" and identifier == "__ESFW_THINK" then
-            dreamwork.Logger:debug( "Catched gm_efsw 'Think' event function %p, re-attaching to dreamwork engine...", fn )
+            dreamwork.Logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", fn )
             engine.hookCatch( "Tick", fn, 1 )
         else
             return hook_Add( event_name, identifier, fn )
         end
     end
 
-    if std.loadbinary( "gm_efsw" ) then
-        dreamwork.Logger:info( "Entry File System Watcher - was loaded & connected as file system watcher." )
+    if std.loadbinary( "efsw" ) then
+        dreamwork.Logger:info( "'gm_efsw' was loaded & connected as file system watcher." )
     else
-        dreamwork.Logger:error( "Entry File System Watcher - failed to load, unknown error." )
+        dreamwork.Logger:error( "'gm_efsw' failed to load, unknown error." )
     end
 
     hook.Add = hook_Add
 
+else
+    dreamwork.Logger:warn( "'gm_efsw' is missing, file system watcher not available." )
 end
 
 ---@diagnostic disable-next-line: undefined-field

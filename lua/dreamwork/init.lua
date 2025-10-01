@@ -1619,7 +1619,9 @@ dofile( "std/audio_stream.lua" )
 
 -- https://github.com/willox/gmbc
 if std.loadbinary( "gmbc" ) then
-    logger:info( "gmbc - was loaded & connected as LuaJIT bytecode compiler." )
+    logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )
+else
+    logger:warn( "'gmbc' is missing, bytecode compilation not available." )
 end
 
 do
