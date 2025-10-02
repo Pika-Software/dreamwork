@@ -7,6 +7,8 @@ local math_random = math.random
 local math_relative = math.relative
 local math_min, math_max = math.min, math.max
 
+local raw_tonumber = std.raw.tonumber
+
 --- [SHARED AND MENU]
 ---
 --- The string type is a sequence of characters.
@@ -634,29 +636,23 @@ function string.purge( str, byte, start_position, end_position, str_length )
     return table_concat( segments, "", 1, segment_count )
 end
 
-do
-
-    local raw_tonumber = std.raw.tonumber
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the string is a number.
-    ---
-    ---@param str string The string to check.
-    ---@param base? integer The base to check the string in.
-    ---@param start_position? integer The start position to check from.
-    ---@param end_position? integer The end position to check to.
-    ---@return boolean is_number `true` if the string is a number, otherwise `false`.
-    function string.isNumber( str, base, start_position, end_position )
-        if start_position == nil and end_position == nil then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            return raw_tonumber( str, base ) ~= nil
-        else
-            ---@diagnostic disable-next-line: param-type-mismatch
-            return raw_tonumber( string_sub( str, start_position or 1, end_position ), base ) ~= nil
-        end
+--- [SHARED AND MENU]
+---
+--- Checks if the string is a number.
+---
+---@param str string The string to check.
+---@param base? integer The base to check the string in.
+---@param start_position? integer The start position to check from.
+---@param end_position? integer The end position to check to.
+---@return boolean is_number `true` if the string is a number, otherwise `false`.
+function string.isNumber( str, base, start_position, end_position )
+    if start_position == nil and end_position == nil then
+        ---@diagnostic disable-next-line: param-type-mismatch
+        return raw_tonumber( str, base ) ~= nil
+    else
+        ---@diagnostic disable-next-line: param-type-mismatch
+        return raw_tonumber( string_sub( str, start_position or 1, end_position ), base ) ~= nil
     end
-
 end
 
 do
@@ -1052,4 +1048,95 @@ do
         return string_char( table_unpack( chars, 1, char_count ) )
     end
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Interpolates a string with the given arguments.
+---
+--- The arguments are replaced in the string using the following format:
+---
+--- `{1}`, `{2}`, `{3}`, `{4}`, `{5}`, `{6}`, `{7}`, `{8}`, `{9}`
+---
+---@param str string The string to interpolate.
+---@param variables string[] The variables to interpolate into the string.
+---@param start_position? integer The start position to interpolate from.
+---@param end_position? integer The end position to interpolate to.
+---@param str_length? integer The length of the string.
+---@return string
+---
+---@see string.format
+function string.interpolate( str, variables, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    local break_position = start_position
+    local segments, segment_count = {}, 0
+
+    repeat
+
+        if string_byte( str, start_position, start_position ) == 0x7B --[[ { ]] then
+            local index_start = start_position + 1
+
+            if index_start >= end_position then
+                break
+            end
+
+            for i = index_start, math_min( index_start + 9, end_position ), 1 do
+                if string_byte( str, i, i ) == 0x7D --[[ } ]] then
+                    local index_end = i - 1
+                    start_position = i + 1
+
+                    if index_start > index_end then
+                        break
+                    end
+
+                    local arg_value = variables[ raw_tonumber( string_sub( str, index_start, index_end ), 10 ) or 0 ]
+                    if arg_value ~= nil then
+                        if break_position ~= start_position then
+                            segment_count = segment_count + 1
+                            segments[ segment_count ] = string_sub( str, break_position, index_start - 2 )
+                        end
+
+                        break_position = start_position
+
+                        segment_count = segment_count + 1
+                        segments[ segment_count ] = arg_value
+                    end
+
+                    break
+                end
+            end
+
+            if start_position <= index_start then
+                start_position = index_start
+            end
+        else
+            start_position = start_position + 1
+        end
+
+    until start_position >= end_position
+
+    if segment_count == 0 then
+        return ""
+    else
+        return table_concat( segments, "", 1, segment_count )
+    end
 end
