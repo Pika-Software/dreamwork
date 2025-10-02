@@ -17,7 +17,7 @@ local class = {}
 std.class = class
 
 ---@alias dreamwork.std.Class.__inherited fun( parent: dreamwork.std.Class, child: dreamwork.std.Class )
----@alias dreamwork.std.Object.__new fun( cls: dreamwork.std.Object, ...: any? ): dreamwork.std.Object
+---@alias dreamwork.std.Object.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
 ---@alias dreamwork.std.Object.__init fun( obj: dreamwork.std.Object, ...: any? )
 
 ---@class dreamwork.std.Object
@@ -186,7 +186,7 @@ do
         ---@type dreamwork.std.Object.__new | nil
         local new_fn = raw_get( base, "__new" )
         if new_fn ~= nil then
-            obj = new_fn( base, ... )
+            obj = new_fn( self, ... )
         end
 
         if obj == nil then
