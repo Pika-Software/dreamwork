@@ -1134,6 +1134,11 @@ function string.interpolate( str, variables, start_position, end_position, str_l
 
     until start_position >= end_position
 
+    if break_position ~= start_position then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, break_position, end_position )
+    end
+
     if segment_count == 0 then
         return ""
     else
