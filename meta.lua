@@ -569,14 +569,14 @@ do
 
     --- **READ-ONLY**
     ---
-    --- Set automatically on all cvars and console commands created by the `client` Lua state.
+    --- Sets automatically on all cvars and console commands created by the `client` Lua state.
     ---
     ---@type boolean?
     command.lua_client = nil
 
     --- **READ-ONLY**
     ---
-    --- Set automatically on all cvars and console commands created by the `server` Lua state.
+    --- Sets automatically on all cvars and console commands created by the `server` Lua state.
     ---
     ---@type boolean?
     command.lua_server = nil
