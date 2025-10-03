@@ -635,12 +635,12 @@ do
     local CONVAR = debug.findmetatable( "ConVar" ) or {}
     ---@cast CONVAR ConVar
 
-    local getMin, getMax = CONVAR.GetMin, CONVAR.GetMax
-    local getDefault = CONVAR.GetDefault
-    local getString = CONVAR.GetString
-    local getFloat = CONVAR.GetFloat
-    local getBool = CONVAR.GetBool
-    local getInt = CONVAR.GetInt
+    local convar_getMin, convar_getMax = CONVAR.GetMin, CONVAR.GetMax
+    local convar_getDefault = CONVAR.GetDefault
+    local convar_getString = CONVAR.GetString
+    local convar_getFloat = CONVAR.GetFloat
+    local convar_getBool = CONVAR.GetBool
+    local convar_getInt = CONVAR.GetInt
 
     local math_floor = std.math.floor
     local raw_type = raw.type
@@ -653,7 +653,7 @@ do
 
     do
 
-        local getName = CONVAR.GetName
+        local convar_getName = CONVAR.GetName
 
         setmetatable( names, {
             __index = function( _, self )
@@ -662,7 +662,7 @@ do
                     return "unknown"
                 end
 
-                local name = getName( cvar )
+                local name = convar_getName( cvar )
                 names[ self ] = name
                 return name
             end,
@@ -694,7 +694,7 @@ do
 
     do
 
-        local getDescription = CONVAR.GetHelpText
+        local convar_getDescription = CONVAR.GetHelpText
 
         setmetatable( descriptions, {
             __index = function( _, self )
@@ -703,7 +703,7 @@ do
                     return "unknown"
                 end
 
-                local description = getDescription( cvar )
+                local description = convar_getDescription( cvar )
                 descriptions[ self ] = description
                 return description
             end,
@@ -747,7 +747,7 @@ do
 
     do
 
-        local getFlags = CONVAR.GetFlags
+        local convar_getFlags = CONVAR.GetFlags
 
         setmetatable( flags, {
             __index = function( _, self )
@@ -756,7 +756,7 @@ do
                     return 0
                 end
 
-                local int32_flags = getFlags( cvar )
+                local int32_flags = convar_getFlags( cvar )
                 flags[ self ] = int32_flags
                 return int32_flags
             end,
@@ -790,7 +790,7 @@ do
                 return ""
             end
 
-            local str_default = getDefault( cvar )
+            local str_default = convar_getDefault( cvar )
             if number_types[ cvar_type ] then
                 local float_default = raw_tonumber( str_default, 10 ) or 0
 
@@ -824,19 +824,19 @@ do
 
             local type = types[ variable ]
             if type == "float" or type == "number" then
-                local float_value = getFloat( cvar )
+                local float_value = convar_getFloat( cvar )
                 values[ variable ] = float_value
                 return float_value
             elseif type == "integer" then
-                local integer_value = getInt( cvar )
+                local integer_value = convar_getInt( cvar )
                 values[ variable ] = integer_value
                 return integer_value
             elseif type == "boolean" then
-                local bool_value = getBool( cvar )
+                local bool_value = convar_getBool( cvar )
                 values[ variable ] = bool_value
                 return bool_value
             else
-                local str_value = getString( cvar )
+                local str_value = convar_getString( cvar )
                 values[ variable ] = str_value
                 return str_value
             end
@@ -854,7 +854,7 @@ do
                 return nil
             end
 
-            local float_min = getMin( cvar )
+            local float_min = convar_getMin( cvar )
             mins[ variable ] = float_min
             return float_min
         end,
@@ -871,7 +871,7 @@ do
                 return nil
             end
 
-            local float_max = getMax( cvar )
+            local float_max = convar_getMax( cvar )
             maxs[ variable ] = float_max
             return float_max
         end,
@@ -1089,37 +1089,16 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Sets the value of the `console.Variable` object.
-    ---
-    ---@param name string The name of the console variable.
-    ---@param value dreamwork.std.console.Variable.value The value to set.
-    function VariableClass.set( name, value )
-        local cvar_type = raw_type( value )
-        if cvar_type == "boolean" then
-            engine_consoleCommandRun( name, value and "1" or "0" )
-        elseif cvar_type == "string" then
-            engine_consoleCommandRun( name, value )
-        elseif cvar_type == "float" or cvar_type == "number" then
-            engine_consoleCommandRun( name, string_format( "%f", raw_tonumber( value, 10 ) or 0.0 ) )
-        elseif cvar_type == "integer" then
-            engine_consoleCommandRun( name, string_format( "%d", raw_tonumber( value, 10 ) or 0 ) )
-        else
-            error( "invalid value type, must be boolean, string, integer, float or number.", 2 )
-        end
-    end
-
-    --- [SHARED AND MENU]
-    ---
     --- Gets the value of the `console.Variable` object as a string.
     ---
     ---@param name string The name of the console variable.
     ---@return string value The value of the `console.Variable` object.
-    function VariableClass.getString( name )
+    function VariableClass.convar_getString( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return ""
         else
-            return getString( object )
+            return convar_getString( object )
         end
     end
 
@@ -1134,7 +1113,7 @@ do
         if object == nil then
             return 0
         else
-            return getInt( object )
+            return convar_getInt( object )
         end
     end
 
@@ -1144,16 +1123,16 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number value The value of the `console.Variable` object.
-    function VariableClass.getFloat( name )
+    function VariableClass.convar_getFloat( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0.0
         else
-            return getFloat( object )
+            return convar_getFloat( object )
         end
     end
 
-    VariableClass.getNumber = VariableClass.getFloat
+    VariableClass.getNumber = VariableClass.convar_getFloat
 
     --- [SHARED AND MENU]
     ---
@@ -1166,11 +1145,11 @@ do
         if object == nil then
             return false
         else
-            return getBool( object )
+            return convar_getBool( object )
         end
     end
 
-    VariableClass.getBool = VariableClass.getBoolean
+    VariableClass.convar_getBool = VariableClass.getBoolean
 
     --- [SHARED AND MENU]
     ---
@@ -1193,13 +1172,13 @@ do
         if object == nil then
             error( "Variable '" .. name .. "' does not exist.", 2 )
         else
-            engine_consoleCommandRun( name, getDefault( object ) )
+            engine_consoleCommandRun( name, convar_getDefault( object ) )
         end
     end
 
     do
 
-        local getHelpText = CONVAR.GetHelpText
+        local convar_getHelpText = CONVAR.GetHelpText
 
         --- [SHARED AND MENU]
         ---
@@ -1212,7 +1191,7 @@ do
             if object == nil then
                 return ""
             else
-                return getHelpText( object )
+                return convar_getHelpText( object )
             end
         end
 
@@ -1224,18 +1203,18 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return string default The default value of the `console.Variable` object.
-    function VariableClass.getDefault( name )
+    function VariableClass.convar_getDefault( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return ""
         else
-            return getDefault( object )
+            return convar_getDefault( object )
         end
     end
 
     do
 
-        local getFlags = CONVAR.GetFlags
+        local convar_getFlags = CONVAR.GetFlags
 
         --- [SHARED AND MENU]
         ---
@@ -1243,12 +1222,39 @@ do
         ---
         ---@param name string The name of the console variable.
         ---@return integer flags The flags of the `console.Variable` object.
-        function VariableClass.getFlags( name )
+        local function getFlags( name )
             local object = engine_consoleVariableGet( name )
             if object == nil then
                 return 0
             else
-                return getFlags( object )
+                return convar_getFlags( object )
+            end
+        end
+
+        VariableClass.getFlags = getFlags
+
+        --- [SHARED AND MENU]
+        ---
+        --- Sets the value of the `console.Variable` object.
+        ---
+        ---@param name string The name of the console variable.
+        ---@param value dreamwork.std.console.Variable.value The value to set.
+        function VariableClass.set( name, value )
+            if bit_band( getFlags( name ), 8192 ) ~= 0 and not SERVER then
+                error( "replicated convar is cannot be changed by client.", 2 )
+            end
+
+            local cvar_type = raw_type( value )
+            if cvar_type == "boolean" then
+                engine_consoleCommandRun( name, value and "1" or "0" )
+            elseif cvar_type == "string" then
+                engine_consoleCommandRun( name, value )
+            elseif cvar_type == "float" or cvar_type == "number" then
+                engine_consoleCommandRun( name, string_format( "%f", raw_tonumber( value, 10 ) or 0.0 ) )
+            elseif cvar_type == "integer" then
+                engine_consoleCommandRun( name, string_format( "%d", raw_tonumber( value, 10 ) or 0 ) )
+            else
+                error( "invalid value type, must be boolean, string, integer, float or number.", 2 )
             end
         end
 
@@ -1256,7 +1262,7 @@ do
 
     do
 
-        local isFlagSet = CONVAR.IsFlagSet
+        local convar_isFlagSet = CONVAR.IsFlagSet
 
         --- [SHARED AND MENU]
         ---
@@ -1270,7 +1276,7 @@ do
             if object == nil then
                 return false
             else
-                return isFlagSet( object, flags )
+                return convar_isFlagSet( object, flags )
             end
         end
 
@@ -1282,12 +1288,12 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number minimum The minimum value of the `console.Variable` object.
-    function VariableClass.getMin( name )
+    function VariableClass.convar_getMin( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0
         else
-            return getMin( object )
+            return convar_getMin( object )
         end
     end
 
@@ -1297,12 +1303,12 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number maximum The maximum value of the `console.Variable` object.
-    function VariableClass.getMax( name )
+    function VariableClass.convar_getMax( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0
         else
-            return getMax( object )
+            return convar_getMax( object )
         end
     end
 
@@ -1318,7 +1324,7 @@ do
         if object == nil then
             return 0, 0
         else
-            return getMin( object ), getMax( object )
+            return convar_getMin( object ), convar_getMax( object )
         end
     end
 
