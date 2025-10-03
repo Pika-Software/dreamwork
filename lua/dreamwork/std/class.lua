@@ -190,10 +190,10 @@ do
         end
 
         if obj == nil then
-            obj = class_new( base )
+            obj = class_init( base, class_new( base ), ... )
         end
 
-        return class_init( base, obj, ... )
+        return obj
     end
 
 end

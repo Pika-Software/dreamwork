@@ -140,6 +140,7 @@ end
 local dreamwork_http_timeout, dreamwork_http_cache_ttl
 do
 
+    ---@type dreamwork.std.console.Variable.Options
     local cvar_options = {
         name = "dreamwork.http.timeout",
         description = "The default timeout for http requests.",
