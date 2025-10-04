@@ -7,6 +7,8 @@ local math_random = math.random
 local math_relative = math.relative
 local math_min, math_max = math.min, math.max
 
+local len = std.len
+local tostring = std.tostring
 local raw_tonumber = std.raw.tonumber
 
 --- [SHARED AND MENU]
@@ -760,7 +762,7 @@ do
     local jit_version = ( {
         [ "200" ] = 0x01,
         [ "201" ] = 0x02
-    } )[ string_sub( std.tostring( std.JIT_VERSION_INT ), 1, 3 ) ]
+    } )[ string_sub( tostring( std.JIT_VERSION_INT ), 1, 3 ) ]
 
     --- [SHARED AND MENU]
     ---
@@ -1059,7 +1061,7 @@ end
 --- `{1}`, `{2}`, `{3}`, `{4}`, `{5}`, `{6}`, `{7}`, `{8}`, `{9}`
 ---
 ---@param str string The string to interpolate.
----@param variables string[] The variables to interpolate into the string.
+---@param variables string[] | table<string, string> The variables to interpolate into the string.
 ---@param start_position? integer The start position to interpolate from.
 ---@param end_position? integer The end position to interpolate to.
 ---@param str_length? integer The length of the string.
@@ -1087,6 +1089,11 @@ function string.interpolate( str, variables, start_position, end_position, str_l
         end_position = math_min( end_position, str_length )
     end
 
+    for i = 1, len( variables ), 1 do
+        variables[ tostring( i ) ] = variables[ i ]
+        variables[ i ] = nil
+    end
+
     local break_position = start_position
     local segments, segment_count = {}, 0
 
@@ -1108,7 +1115,7 @@ function string.interpolate( str, variables, start_position, end_position, str_l
                         break
                     end
 
-                    local arg_value = variables[ raw_tonumber( string_sub( str, index_start, index_end ), 10 ) or 0 ]
+                    local arg_value = variables[ string_sub( str, index_start, index_end ) ]
                     if arg_value ~= nil then
                         if break_position ~= start_position then
                             segment_count = segment_count + 1
