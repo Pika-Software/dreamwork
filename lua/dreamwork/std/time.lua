@@ -217,8 +217,8 @@ do
     --- Transforms a timestamp from one unit to another.
     ---
     ---@param timestamp integer The timestamp to transform.
-    ---@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, seconds by default.
-    ---@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, seconds by default.
+    ---@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, 's' by default.
+    ---@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, 's' by default.
     ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@param error_level? integer The error level to use, 2 by default.
     ---@return number timestamp The transformed timestamp.
@@ -286,9 +286,9 @@ end
 --- Transforms a timestamp to a different unit.
 ---
 ---@param timestamp integer The timestamp to transform.
----@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, seconds by default.
----@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, seconds by default.
----@param as_float? boolean Whether to return the timestamp as a float.
+---@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, 's' by default.
+---@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, 's' by default.
+---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
 ---@return integer
 function time.transform( timestamp, unit, target, as_float )
     return transform( timestamp, unit, target, as_float, 2 )
@@ -298,43 +298,65 @@ local seconds_elapsed = _G.SysTime or os_clock
 
 --- [SHARED AND MENU]
 ---
---- Returns the time elapsed since lua was started.
+--- Returns the time elapsed since lua/game was started.
 ---
----@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, seconds by default.
----@param as_float? boolean Whether to return the elapsed time as a float.
+---@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, 's' by default.
+---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
 ---@return number timestamp The elapsed time in the specified unit.
 function time.elapsed( unit, as_float )
     if unit == "ns" then
         local float = seconds_elapsed() * 1e9
-        if as_float then
+        if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "us" then
         local float = seconds_elapsed() * 1e6
-        if as_float then
+        if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "ms" then
         local float = os_clock() * 1e3
-        if as_float then
+        if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "s" or unit == nil then
         local float = os_clock()
-        if as_float then
+        if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     else
-        return transform( os_clock(), "s", unit, as_float, 2 )
+        return transform( os_clock(), "s", unit, as_float ~= false, 2 )
     end
+end
+
+do
+
+    local previous = 0
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the time elapsed since the last call to this function.
+    ---
+    ---@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, 's' by default.
+    ---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
+    ---@return number delta The elapsed time in the specified unit.
+    function time.tick( unit, as_float )
+        local elapsed = seconds_elapsed()
+
+        local delta = transform( elapsed - previous, nil, unit, as_float ~= false, 2 )
+        previous = elapsed
+
+        return delta
+    end
+
 end
 
 --- [SHARED AND MENU]
@@ -425,8 +447,8 @@ do
     local string_gmatch = string.gmatch
 
     ---@param duration_str dreamwork.std.time.Duration The duration string to convert.
-    ---@param unit? dreamwork.std.time.Unit The unit to convert the duration to, seconds by default.
-    ---@param as_float? boolean Whether to return the duration as a float.
+    ---@param unit? dreamwork.std.time.Unit The unit to convert the duration to, 's' by default.
+    ---@param as_float? boolean Whether to return the duration as a float, `false` by default.
     ---@param error_level? integer The error level to use, 2 by default.
     ---@return integer timestamp The duration in the specified unit.
     local function fromDuration( duration_str, unit, as_float, error_level )
@@ -497,8 +519,8 @@ do
     --- | `y`      | Year         | 365 days                    |
     ---
     ---@param duration_str dreamwork.std.time.Duration The duration string to convert.
-    ---@param unit? dreamwork.std.time.Unit The unit to convert the duration to.
-    ---@param as_float? boolean Whether to return the duration as a float.
+    ---@param unit? dreamwork.std.time.Unit The unit to convert the duration to, 's' by default.
+    ---@param as_float? boolean Whether to return the duration as a float, `false` by default.
     ---@return integer timestamp The duration in the specified unit.
     function time.fromDuration( duration_str, unit, as_float )
         return fromDuration( duration_str, unit, as_float, 2 )
@@ -524,9 +546,9 @@ do
     --- | `y`      | Year         | 365 days                    |
     ---
     ---@param timestamp integer The timestamp to add the duration to.
-    ---@param unit? dreamwork.std.time.Unit The unit to add the duration to, seconds by default.
+    ---@param unit? dreamwork.std.time.Unit The unit to add the duration to, 's' by default.
     ---@param duration_str dreamwork.std.time.Duration The duration string to add.
-    ---@param as_float? boolean Whether to return the timestamp as a float.
+    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return integer
     function time.add( timestamp, unit, duration_str, as_float )
         return timestamp + fromDuration( duration_str, unit, as_float, 2 )
@@ -552,9 +574,9 @@ do
     --- | `y`      | Year         | 365 days                    |
     ---
     ---@param timestamp integer The timestamp to subtract the duration from.
-    ---@param unit? dreamwork.std.time.Unit The unit to subtract the duration from, seconds by default.
+    ---@param unit? dreamwork.std.time.Unit The unit to subtract the duration from, 's' by default.
     ---@param duration_str dreamwork.std.time.Duration The duration string to subtract.
-    ---@param as_float? boolean Whether to return the timestamp as a float.
+    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return integer
     function time.sub( timestamp, unit, duration_str, as_float )
         return timestamp - fromDuration( duration_str, unit, as_float, 2 )
@@ -620,7 +642,7 @@ do
         --- Returns a table with the date and time components.
         ---
         ---@param timestamp? integer The timestamp to parse.
-        ---@param unit? dreamwork.std.time.Unit The unit to parse the timestamp from, seconds by default.
+        ---@param unit? dreamwork.std.time.Unit The unit to parse the timestamp from, 's' by default.
         ---@param in_utc? boolean Whether the timestamp is in UTC, `false` by default.
         ---@return dreamwork.std.time.Date date_tbl The date and time components.
         function time.parse( timestamp, unit, in_utc )
@@ -695,7 +717,7 @@ do
     --- | `y`      | Year         | 365 days                      |
     ---
     ---@param timestamp integer The timestamp to convert.
-    ---@param unit? dreamwork.std.time.Unit The unit to convert the timestamp to, seconds by default.
+    ---@param unit? dreamwork.std.time.Unit The unit to convert the timestamp to, 's' by default.
     ---@return string duration_str The duration string.
     function time.toDuration( timestamp, unit )
         local seconds, milliseconds, microseconds, nanoseconds = split( timestamp, unit, 2 )
@@ -835,7 +857,7 @@ do
     ---
     ---@param fmt string The format string.
     ---@param timestamp? integer The timestamp to format.
-    ---@param unit? dreamwork.std.time.Unit The timestamp unit, seconds by default.
+    ---@param unit? dreamwork.std.time.Unit The timestamp unit, 's' by default.
     ---@param in_utc? boolean Whether the timestamp is in UTC, `false` by default.
     ---@return string str The formatted string.
     function time.format( fmt, timestamp, unit, in_utc )

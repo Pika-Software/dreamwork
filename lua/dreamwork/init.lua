@@ -966,7 +966,6 @@ dofile( "std/futures.lua" )
 dofile( "std/time.lua" )
 
 local time = std.time
-local time_elapsed = time.elapsed
 
 dofile( "std/version.lua" )
 dofile( "std/bigint.lua" )
@@ -1421,6 +1420,8 @@ if std_metatable == nil then
 
     if CLIENT then
 
+        local time_elapsed = time.elapsed
+
         local frame_time = 0
         local fps = 0
 
@@ -1437,7 +1438,7 @@ if std_metatable == nil then
         local last_pre_render = 0
 
         engine.hookCatch( "PreRender", function()
-            local elapsed_time = time_elapsed( nil, true )
+            local elapsed_time = time_elapsed()
 
             if last_pre_render ~= 0 then
                 frame_time = elapsed_time - last_pre_render
@@ -1594,14 +1595,14 @@ do
 
     local function perform_synchronization()
         logger:debug( "Content Watcher - Changes in game content detected, synchronization started..." )
+        time.tick( "ms", false )
 
-        local start_time = time_elapsed( "ms", false )
         local game_changes, addon_changes = engine.SyncContent()
 
         if game_changes == 0 and addon_changes == 0 then
             logger:debug( "Content Watcher - No changes were detected, synchronization skipped." )
         else
-            logger:debug( "Content Watcher - Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time_elapsed( "ms", false ) - start_time )
+            logger:debug( "Content Watcher - Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
         end
     end
 

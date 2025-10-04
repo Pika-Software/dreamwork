@@ -1,15 +1,18 @@
 local std = _G.dreamwork.std
+
 ---@class dreamwork.std.http
 local http = std.http
+local http_request = http.request
 
 local json_deserialize = std.encoding.json.deserialize
 local base64_decode = std.encoding.base64.decode
+
 local raw_tonumber = std.raw.tonumber
-local time_elapsed = std.time.elapsed
 local string_gsub = std.string.gsub
-local http_request = http.request
-local futures_sleep = std.sleep
 local tostring = std.tostring
+local sleep = std.sleep
+
+local time_elapsed = std.time.elapsed
 local time_now = std.time.now
 
 ---@type string
@@ -76,11 +79,11 @@ local function request( method, pathname, headers, body, do_cache )
 
     local href = "https://api.github.com" .. pathname
 
-    local current_time = time_now( "s", true )
+    local current_time = time_now()
     if ratelimit_reset_time > current_time then
         local diff = ratelimit_reset_time - current_time
         if diff < 30 then
-            futures_sleep( diff )
+            sleep( diff )
         else
             error( "Github API rate limit exceeded (" .. href .. ")" )
         end
@@ -88,12 +91,12 @@ local function request( method, pathname, headers, body, do_cache )
 
     -- Rate limit mutative requests
     if method > 1 and method < 6 then
-        local diff = next_mutation_time - time_elapsed( "s", true )
+        local diff = next_mutation_time - time_elapsed()
         if diff > 0 then
             next_mutation_time = next_mutation_time + 1000
-            futures_sleep( diff )
+            sleep( diff )
         else
-            next_mutation_time = time_elapsed( "s", true ) + 1000
+            next_mutation_time = time_elapsed() + 1000
         end
     end
 

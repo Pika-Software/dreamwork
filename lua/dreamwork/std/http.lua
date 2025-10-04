@@ -166,6 +166,7 @@ do
 end
 
 local http_cache_get, http_cache_set = dreamwork.http_cache.get, dreamwork.http_cache.set
+
 local json_serialize = std.encoding.json.serialize
 local string_gmatch = std.string.gmatch
 local raw_tonumber = std.raw.tonumber
@@ -295,7 +296,7 @@ local function request( options )
         local identifier = json_serialize( { url, method, options.parameters, options.headers }, false )
 
         local data = session_cache[ identifier ]
-        if data ~= nil and ( time_elapsed( nil, true ) - data.start ) < data.age then
+        if data ~= nil and ( time_elapsed() - data.start ) < data.age then
             return data.future:await()
         end
 
@@ -311,7 +312,7 @@ local function request( options )
         ---@type dreamwork.std.http.Request.session_cache
         data = {
             future = f,
-            start = time_elapsed( nil, true ),
+            start = time_elapsed(),
             age = cache_ttl
         }
 

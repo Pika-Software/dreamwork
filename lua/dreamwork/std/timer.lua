@@ -307,10 +307,10 @@ do
             repetition_indexes[ self ] = repetition_index
 
             if start_times[ self ] == nil and repetition_index == 1 then
-                start_times[ self ] = time_elapsed( nil, true ) - self.interval
+                start_times[ self ] = time_elapsed() - self.interval
             end
         elseif start_times[ self ] == nil and self.repetition_index == 1 then
-            start_times[ self ] = time_elapsed( nil, true ) - self.interval
+            start_times[ self ] = time_elapsed() - self.interval
         end
 
         in_call[ self ] = true
@@ -560,7 +560,7 @@ do
             return
         end
 
-        pause_times[ self ] = time_elapsed( nil, true )
+        pause_times[ self ] = time_elapsed()
         timer_Pause( name )
         states[ self ] = 1
     end
