@@ -488,10 +488,11 @@ end
 
 do
 
-    local string_sub, string_len = string.sub, string.len
     local Msg = _G.Msg or std.print
     local math_min = math.min
-    local MsgC = _G.MsgC
+
+    local utf8 = std.encoding.utf8
+    local utf8_sub, utf8_len = utf8.sub, utf8.len
 
     --- [SHARED AND MENU]
     ---
@@ -499,22 +500,22 @@ do
     ---
     ---@param str string The string to print.
     function engine.consoleMessage( str )
-        local index, str_length = 1, string_len( str )
+        local index, str_length = 1, utf8_len( str )
 
         while str_length ~= 0 do
             -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
             -- by Retr0 ( 989 characters per message )
             local segment_length = math_min( 989, str_length )
-            Msg( string_sub( str, index, index + segment_length ) )
+            Msg( utf8_sub( str, index, index + segment_length - 1 ) )
             str_length = str_length - segment_length
             index = index + segment_length
         end
     end
 
+    local MsgC = _G.MsgC
+
     if MsgC == nil then
-
         engine.consoleMessageColored = engine.consoleMessage
-
     else
 
         local white_color = std.Color.scheme.white
@@ -527,7 +528,7 @@ do
         ---@param color dreamwork.std.Color The color to print the string with.
         ---@diagnostic disable-next-line: duplicate-set-field
         function engine.consoleMessageColored( str, color )
-            local index, str_length = 1, string_len( str )
+            local index, str_length = 1, utf8_len( str )
 
             if color == nil then
                 color = white_color
@@ -537,7 +538,7 @@ do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
                 -- by Retr0 ( 989 characters per message )
                 local segment_length = math_min( 989, str_length )
-                MsgC( color, string_sub( str, index, index + segment_length ) )
+                MsgC( color, utf8_sub( str, index, index + segment_length ) )
                 str_length = str_length - segment_length
                 index = index + segment_length
             end

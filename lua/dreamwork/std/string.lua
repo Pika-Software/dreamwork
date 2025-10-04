@@ -1060,6 +1060,10 @@ end
 ---
 --- `{1}`, `{2}`, `{3}`, `{4}`, `{5}`, `{6}`, `{7}`, `{8}`, `{9}`
 ---
+--- It's also supports named arguments:
+---
+--- `{key}`, `{my_val}`, `{something}` and etc.
+---
 ---@param str string The string to interpolate.
 ---@param variables string[] | table<string, string> The variables to interpolate into the string.
 ---@param start_position? integer The start position to interpolate from.

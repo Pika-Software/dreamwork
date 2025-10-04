@@ -1014,6 +1014,25 @@ do
 
 end
 
+--- [SHARED AND MENU]
+---
+--- The encoding/decoding libraries.
+---
+---@class dreamwork.std.encoding
+std.encoding = std.encoding or {}
+
+dofile( "std/encoding.base16.lua" )
+dofile( "std/encoding.base32.lua" )
+dofile( "std/encoding.base64.lua" )
+dofile( "std/encoding.percent.lua" )
+
+dofile( "std/encoding.utf8.lua" )
+dofile( "std/encoding.unicode.lua" )
+dofile( "std/encoding.punycode.lua" )
+
+dofile( "std/encoding.json.lua" )
+dofile( "std/encoding.vdf.lua" )
+
 dofile( "engine.lua" )
 
 local engine = dreamwork.engine
@@ -1029,13 +1048,20 @@ do
     ---@param ... any The arguments to print.
     ---@diagnostic disable-next-line: duplicate-set-field
     function std.print( ... )
-        local args, arg_count = { ... }, select( "#", ... )
+        local arg_count = select( "#", ... )
+        if arg_count == 0 then
+            console_message( "\n" )
+        elseif arg_count == 1 then
+            console_message( tostring( ... ) .. "\n" )
+        else
+            local args = { ... }
 
-        for ang_num = 1, arg_count, 1 do
-            args[ ang_num ] = tostring( args[ ang_num ] )
+            for arg_num = 1, arg_count, 1 do
+                args[ arg_num ] = tostring( args[ arg_num ] )
+            end
+
+            console_message( table_concat( args, "\t", 1, arg_count ) .. "\n" )
         end
-
-        console_message( table_concat( args, "\t", 1, arg_count ) .. "\n" )
     end
 
     --- [SHARED AND MENU]
@@ -1217,25 +1243,6 @@ do
 end
 
 dofile( "std/game.lua" )
-
---- [SHARED AND MENU]
----
---- The encoding/decoding libraries.
----
----@class dreamwork.std.encoding
-std.encoding = std.encoding or {}
-
-dofile( "std/encoding.base16.lua" )
-dofile( "std/encoding.base32.lua" )
-dofile( "std/encoding.base64.lua" )
-dofile( "std/encoding.percent.lua" )
-
-dofile( "std/encoding.utf8.lua" )
-dofile( "std/encoding.unicode.lua" )
-dofile( "std/encoding.punycode.lua" )
-
-dofile( "std/encoding.json.lua" )
-dofile( "std/encoding.vdf.lua" )
 
 --- [SHARED AND MENU]
 ---
