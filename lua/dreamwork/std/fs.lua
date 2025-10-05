@@ -958,17 +958,6 @@ else
             content_lists[ fs_object ] = content_list
             content_counts[ fs_object ] = content_count
 
-        else
-
-            ---@cast fs_object dreamwork.std.fs.File
-
-            local handler = file_Open( mount_path, "rb", mount_point )
-            if handler == nil then
-                return false, -2
-            end
-
-            FILE_Close( handler )
-
         end
 
         watch_list_size = watch_list_size + 1
