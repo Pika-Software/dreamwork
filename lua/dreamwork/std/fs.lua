@@ -8,6 +8,7 @@ local engine = dreamwork.engine
 local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
 local engine_hookCall = engine.hookCall
 local setmetatable = std.setmetatable
+local tostring = std.tostring
 
 local futures = std.futures
 local Future = futures.Future
@@ -143,175 +144,437 @@ end
 
 local async_read, async_write, async_append
 
-if std.loadbinary( "asyncio" ) then
-    local file_AsyncRead, file_AsyncWrite, file_AsyncAppend = file.AsyncRead, file.AsyncWrite, file.AsyncAppend
+---@class dreamwork.std.fs.WriteRespond
+---@field status integer
+---@field file_path string
+---@field game_path string
 
-    ---@param file_name string
-    ---@param game_path string
-    ---@return string data
-    ---@async
-    function async_read( file_name, game_path )
+---@class dreamwork.std.fs.ReadRespond : dreamwork.std.fs.WriteRespond
+---@field data string | nil
 
+---@alias async_read_callback fun( file_path: string, game_path: string, status: integer, data: string )
+
+if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~= nil and file.AsyncAppend ~= nil then
+
+    local timer = _G.timer
+    local timer_Create = timer.Create
+
+    ---@param identifier string
+    ---@param delay number
+    ---@param repetitions integer
+    ---@param event_fn function
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function timer.Create( identifier, delay, repetitions, event_fn )
+        if identifier == "__ASYNCIO_THINK" then
+            dreamwork.Logger:debug( "Catched 'gm_asyncio' tick event %s, re-attaching to dreamwork engine...", event_fn )
+            engine.hookCatch( "Tick", event_fn, 1 )
+        else
+            timer_Create( identifier, delay, repetitions, event_fn )
+        end
     end
 
-    ---@param file_name string
+    if std.loadbinary( "asyncio" ) then
+
+        ---@alias asyncio_write_callback fun( file_path: string, game_path: string, status: integer )
+
+        ---@type fun( file_path: string, game_path: string, callback: async_read_callback ): integer
+        local file_AsyncRead = file.AsyncRead
+
+        ---@type fun( file_path: string, data: string, callback: asyncio_write_callback, game_path: string ): integer
+        local file_AsyncWrite = file.AsyncWrite
+
+        ---@type fun( file_path: string, data: string, callback: asyncio_write_callback, game_path: string ): integer
+        local file_AsyncAppend = file.AsyncAppend
+
+        ---@param file_path string
+        ---@param game_path string
+        ---@return dreamwork.std.fs.ReadRespond respond
+        ---@async
+        function async_read( file_path, game_path )
+            local f = Future()
+
+            local status = file_AsyncRead( file_path, game_path, function( _, __, status, data )
+                if f:isFinished() then
+                    return
+                end
+
+                ---@type dreamwork.std.fs.ReadRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status,
+                    data = data
+                } )
+            end )
+
+            if status < 0 and not f:isFinished() then
+                ---@type dreamwork.std.fs.ReadRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status
+                } )
+            end
+
+            return f:await()
+        end
+
+        ---@param file_path string
+        ---@param game_path string
+        ---@param data string
+        ---@return dreamwork.std.fs.WriteRespond respond
+        ---@async
+        function async_write( file_path, game_path, data )
+            local f = Future()
+
+            local status = file_AsyncWrite( file_path, data, function( _, __, status )
+                if f:isFinished() then
+                    return
+                end
+
+                ---@type dreamwork.std.fs.WriteRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status
+                } )
+            end, game_path )
+
+            if status < 0 and not f:isFinished() then
+                ---@type dreamwork.std.fs.WriteRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status
+                } )
+            end
+
+            return f:await()
+        end
+
+        ---@param file_path string
+        ---@param game_path string
+        ---@param data string
+        ---@return dreamwork.std.fs.WriteRespond respond
+        ---@async
+        function async_append( file_path, game_path, data )
+            local f = Future()
+
+            local status = file_AsyncAppend( file_path, data, function( _, __, status )
+                if f:isFinished() then
+                    return
+                end
+
+                ---@type dreamwork.std.fs.WriteRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status
+                } )
+            end, game_path )
+
+            if status < 0 and not f:isFinished() then
+                ---@type dreamwork.std.fs.WriteRespond
+                f:setResult( {
+                    file_path = file_path,
+                    game_path = game_path,
+                    status = status
+                } )
+            end
+
+            return f:await()
+        end
+
+        dreamwork.Logger:info( "'asyncio' was loaded & connected as file system driver." )
+    else
+        dreamwork.Logger:error( "'asyncio' failed to load, unknown error." )
+    end
+
+    timer.Create = timer_Create
+
+end
+
+if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_write" ) and file.AsyncWrite ~= nil and file.AsyncAppend ~= nil then
+
+    ---@alias async_write_write_callback fun( file_path: string, status: integer )
+
+    ---@type fun( file_path: string, data: string, callback: async_write_write_callback, sync: boolean, game_path: string ): integer
+    local file_AsyncWrite = file.AsyncWrite
+
+    ---@type fun( file_path: string, data: string, callback: async_write_write_callback, sync: boolean, game_path: string ): integer
+    local file_AsyncAppend = file.AsyncAppend
+
+    ---@param file_path string
     ---@param game_path string
     ---@param data string
     ---@async
-    function async_write( file_name, game_path, data )
+    function async_write( file_path, game_path, data )
+        local f = Future()
 
+        local status = file_AsyncWrite( file_path, data, function( _, status )
+            if f:isFinished() then
+                return
+            end
+
+            ---@type dreamwork.std.fs.WriteRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status
+            } )
+        end, false, game_path )
+
+        if status < 0 and not f:isFinished() then
+            ---@type dreamwork.std.fs.WriteRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status
+            } )
+        end
+
+        return f:await()
     end
 
-    ---@param file_name string
+    ---@param file_path string
     ---@param game_path string
     ---@param data string
     ---@async
-    function async_append( file_name, game_path, data )
+    function async_append( file_path, game_path, data )
+        local f = Future()
 
-    end
+        local status = file_AsyncAppend( file_path, data, function( _, status )
+            if f:isFinished() then
+                return
+            end
 
-    dreamwork.Logger:info( "'asyncio' was loaded & connected as file system driver." )
-elseif std.loadbinary( "async_write" ) then
-    local file_AsyncWrite, file_AsyncAppend = file.AsyncWrite, file.AsyncAppend
+            ---@type dreamwork.std.fs.WriteRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status
+            } )
+        end, false, game_path )
 
-    ---@param file_name string
-    ---@param game_path string
-    ---@param data string
-    ---@async
-    function async_write( file_name, game_path, data )
+        if status < 0 and not f:isFinished() then
+            ---@type dreamwork.std.fs.WriteRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status
+            } )
+        end
 
-    end
-
-    ---@param file_name string
-    ---@param game_path string
-    ---@param data string
-    ---@async
-    function async_append( file_name, game_path, data )
-
+        return f:await()
     end
 
     dreamwork.Logger:info( "'async_write' was loaded & connected as file system driver." )
-elseif not MENU and file.AsyncRead ~= nil then
+
+end
+
+if async_read == nil and not MENU and file.AsyncRead ~= nil then
+
+    ---@type fun( file_path: string, game_path: string, callback: async_read_callback, sync: boolean ): integer
     local file_AsyncRead = file.AsyncRead
 
-    ---@param file_name string
+    ---@param file_path string
     ---@param game_path string
-    ---@return string data
+    ---@return dreamwork.std.fs.ReadRespond respond
     ---@async
-    function async_read( file_name, game_path )
+    function async_read( file_path, game_path )
+        local f = Future()
 
+        local status = file_AsyncRead( file_path, game_path, function( _, __, status, data )
+            if f:isFinished() then
+                return
+            end
+
+            ---@type dreamwork.std.fs.ReadRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status,
+                data = data
+            } )
+        end, false )
+
+        if status < 0 and not f:isFinished() then
+            ---@type dreamwork.std.fs.ReadRespond
+            f:setResult( {
+                file_path = file_path,
+                game_path = game_path,
+                status = status
+            } )
+        end
+
+        return f:await()
     end
 
 end
 
 if async_read == nil then
 
-    ---@param file_name string
+    ---@param file_path string
     ---@param game_path string
-    ---@return string data
+    ---@return dreamwork.std.fs.ReadRespond respond
     ---@async
-    function async_read( file_name, game_path )
-        local handler = file_Open( file_name, "rb", game_path )
+    function async_read( file_path, game_path )
+        local handler = file_Open( file_path, "rb", game_path )
         if handler == nil then
-            error( "Unknown filesystem error, file handler is not available.", 2 )
+            ---@type dreamwork.std.fs.ReadRespond
+            return {
+                file_path = file_path,
+                game_path = game_path,
+                status = -1
+            }
         end
 
         local data = FILE_Read( handler, FILE_Size( handler ) )
         FILE_Close( handler )
-        return data
+
+        ---@type dreamwork.std.fs.ReadRespond
+        return {
+            file_path = file_path,
+            game_path = game_path,
+            status = 0,
+            data = data
+        }
     end
 
 end
 
 if async_write == nil then
 
-    ---@param file_name string
+    ---@param file_path string
     ---@param game_path string
     ---@param data string
+    ---@return dreamwork.std.fs.WriteRespond respond
     ---@async
-    function async_write( file_name, game_path, data )
+    function async_write( file_path, game_path, data )
+        local handler = file_Open( file_path, "wb", game_path )
+        if handler == nil then
+            ---@type dreamwork.std.fs.WriteRespond
+            return {
+                file_path = file_path,
+                game_path = game_path,
+                status = -1
+            }
+        end
 
+        FILE_Write( handler, data )
+        FILE_Close( handler )
+
+        ---@type dreamwork.std.fs.WriteRespond
+        return {
+            file_path = file_path,
+            game_path = game_path,
+            status = 0
+        }
     end
 
 end
 
 if async_append == nil then
 
-    ---@param file_name string
+    ---@param file_path string
     ---@param game_path string
     ---@param data string
+    ---@return dreamwork.std.fs.WriteRespond respond
     ---@async
-    function async_append( file_name, game_path, data )
-
-    end
-
-end
-
-
-if std.loadbinary( "efsw" ) then
-
-    local hook = _G.hook
-    local hook_Add = hook.Add
-
-    ---@diagnostic disable-next-line: duplicate-set-field
-    function hook.Add( event_name, identifier, fn )
-        if event_name == "Think" and identifier == "__ESFW_THINK" then
-            dreamwork.Logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", fn )
-            engine.hookCatch( "Tick", fn, 1 )
-        else
-            return hook_Add( event_name, identifier, fn )
+    function async_append( file_path, game_path, data )
+        local handler = file_Open( file_path, "ab", game_path )
+        if handler == nil then
+            ---@type dreamwork.std.fs.WriteRespond
+            return {
+                file_path = file_path,
+                game_path = game_path,
+                status = -1
+            }
         end
+
+        FILE_Write( handler, data )
+        FILE_Close( handler )
+
+        ---@type dreamwork.std.fs.WriteRespond
+        return {
+            file_path = file_path,
+            game_path = game_path,
+            status = 0
+        }
     end
 
-    if std.loadbinary( "efsw" ) then
-        dreamwork.Logger:info( "'gm_efsw' was loaded & connected as file system watcher." )
-    else
-        dreamwork.Logger:error( "'gm_efsw' failed to load, unknown error." )
-    end
-
-    hook.Add = hook_Add
-
-else
-    dreamwork.Logger:warn( "'gm_efsw' is missing, file system watcher not available." )
 end
 
----@diagnostic disable-next-line: undefined-field
-local efsw = _G.efsw
+local make_async_message
+do
 
----@type fun( file_path: string, game_path: string ): integer
-local efsw_watch = efsw and efsw.Watch or debug.fempty
+    ---@type table<integer, string>
+    local status_messages = {
+        [ -16 ] = "'{1}' {2} failed, unknown error.",
+        [ -8 ]  = "'{1}' {2} failed, file name is not part of the specified file system; please try another one.",
+        [ -7 ]  = "'{1}' {2} failed, please retry later. (network problems, etc)",
+        [ -6 ]  = "'{1}' {2} failed, read parameters are invalid for unbuffered I/O.",
+        [ -5 ]  = "'{1}' {2} failed, hard subsystem failure.",
+        [ -4 ]  = "'{1}' {2} failed, read error on file.",
+        [ -3 ]  = "'{1}' {2} failed, not enough memory.",
+        [ -2 ]  = "'{1}' {2} failed, identifier provided by the caller is not recognized.",
+        [ -1 ]  = "'{1}' {2} failed, file could not be opened (bad path, not exist, etc).",
+        [ 0 ]   = "'{1}' {2} was successfully completed.",
+        [ 1 ]   = "'{1}' {2} has been properly queued and awaiting for service.",
+        [ 2 ]   = "'{1}' {2} is being accessed.",
+        [ 3 ]   = "'{1}' {2} has been interrupted by the caller.",
+        [ 4 ]   = "'{1}' {2} has not yet been queued."
+    }
 
----@type fun( watch_id: integer )
-local efsw_unwatch = efsw and efsw.Unwatch or debug.fempty
+    local tmp = {}
+
+    ---@param status integer
+    ---@param fs_object dreamwork.std.fs.Object
+    ---@param is_writing boolean
+    ---@return string
+    function make_async_message( status, fs_object, is_writing )
+        tmp[ 1 ] = tostring( fs_object )
+        tmp[ 2 ] = is_writing and "writing" or "reading"
+        return string.interpolate( status_messages[ status ] or status_messages[ -16 ], tmp )
+    end
+
+end
 
 --- [SHARED AND MENU]
 ---
 --- The filesystem library.
 ---
+--- The filesystem library provides access to the file system of the game.
+---
 ---@class dreamwork.std.fs
 local fs = std.fs or {}
 std.fs = fs
 
----@class dreamwork.std.File : dreamwork.std.Object
----@field __class dreamwork.std.FileClass
+---@class dreamwork.std.fs.File : dreamwork.std.Object
+---@field __class dreamwork.std.fs.FileClass
 ---@field name string The name of the file. **READ-ONLY**
 ---@field size integer The size of the file in bytes. **READ-ONLY**
 ---@field time integer The last modified time of the file. **READ-ONLY**
 ---@field path string The path to the file. **READ-ONLY**
----@field parent dreamwork.std.Directory | nil The parent directory. **READ-ONLY**
+---@field parent dreamwork.std.fs.Directory | nil The parent directory. **READ-ONLY**
 local File = class.base( "File", true )
 
----@class dreamwork.std.Directory : dreamwork.std.Object
----@field __class dreamwork.std.DirectoryClass
+---@class dreamwork.std.fs.Directory : dreamwork.std.Object
+---@field __class dreamwork.std.fs.DirectoryClass
 ---@field name string The name of the directory. **READ-ONLY**
 ---@field size integer The size of the directory in bytes. **READ-ONLY**
 ---@field time integer The last modified time of the directory. **READ-ONLY**
 ---@field path string The full path of the directory. **READ-ONLY**
 ---@field writeable boolean If `true`, the directory is directly writeable.
----@field parent dreamwork.std.Directory | nil The parent directory. **READ-ONLY**
+---@field parent dreamwork.std.fs.Directory | nil The parent directory. **READ-ONLY**
 local Directory = class.base( "Directory", true )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, string>
+---@diagnostic disable-next-line: duplicate-doc-alias
+---@alias File dreamwork.std.fs.File
+---@alias Directory dreamwork.std.fs.Directory
+---@alias dreamwork.std.fs.Object dreamwork.std.fs.File | dreamwork.std.fs.Directory
+
+---@type table<dreamwork.std.fs.Object, string>
 local names = {}
 
 do
@@ -336,117 +599,590 @@ do
     end
 
     setmetatable( names, {
-        __newindex = function( self, object, name )
+        __newindex = function( self, fs_object, name )
             for index = 1, string_len( name ), 1 do
                 if invalid_characters[ string_byte( name, index, index ) ] then
                     error( string.format( "directory or file name contains invalid character \\%X at index %d in '%s'", string_byte( name, index, index ), index, name ), 2 )
                 end
             end
 
-            raw_set( self, object, name )
+            raw_set( self, fs_object, name )
         end,
         __mode = "k"
     } )
 
 end
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, string>
+---@type table<dreamwork.std.fs.Object, string>
 local paths = {}
 
 setmetatable( paths, {
-    ---@param object dreamwork.std.File | dreamwork.std.Directory
-    __index = function( self, object )
-        local object_path = "/" .. names[ object ]
-        raw_set( self, object, object_path )
+    ---@param fs_object dreamwork.std.fs.Object
+    __index = function( self, fs_object )
+        local object_path = "/" .. names[ fs_object ]
+        raw_set( self, fs_object, object_path )
         return object_path
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, dreamwork.std.Directory>
+---@type table<dreamwork.std.fs.Object, dreamwork.std.fs.Directory>
 local parents = {}
 -- gc_setTableRules( parents, true, false )
 
----@type table<dreamwork.std.Directory, table<string | integer, dreamwork.std.File | dreamwork.std.Directory>>
+---@type table<dreamwork.std.fs.Directory, table<string | integer, dreamwork.std.fs.Object>>
 local descendants = {}
 
 setmetatable( descendants, {
-    __index = function( self, object )
-        ---@type table<string | integer, dreamwork.std.File | dreamwork.std.Directory>
+    __index = function( self, fs_object )
+        ---@type table<string | integer, dreamwork.std.fs.Object>
         local directory_children = {}
-        raw_set( self, object, directory_children )
+        raw_set( self, fs_object, directory_children )
         return directory_children
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.Directory, integer>
+---@type table<dreamwork.std.fs.Directory, integer>
 local descendant_counts = {}
 
 setmetatable( descendant_counts, {
-    __index = function( self, object )
+    __index = function( self, fs_object )
         return 0
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, integer>
+---@type table<dreamwork.std.fs.Object, integer>
 local indexes = {}
 gc_setTableRules( indexes, true, false )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, boolean>
+---@type table<dreamwork.std.fs.Object, boolean>
 local is_directory_object = {}
 gc_setTableRules( is_directory_object, true, false )
 
----@type table<dreamwork.std.Directory, string>
+---@type table<dreamwork.std.fs.Directory, string>
 local mount_points = {}
 gc_setTableRules( mount_points, true, false )
 
----@type table<dreamwork.std.Directory, string>
+---@type table<dreamwork.std.fs.Directory, string>
 local mount_paths = {}
 gc_setTableRules( mount_paths, true, false )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, integer>
+---@type table<dreamwork.std.fs.Object, integer>
 local sizes = {}
 
 setmetatable( sizes, {
-    ---@param object dreamwork.std.File | dreamwork.std.Directory
-    __index = function( self, object )
+    ---@param fs_object dreamwork.std.fs.Object
+    __index = function( self, fs_object )
         local object_size
 
-        local mount_point = mount_points[ object ]
-        if mount_point == nil or is_directory_object[ object ] then
+        local mount_point = mount_points[ fs_object ]
+        if mount_point == nil or is_directory_object[ fs_object ] then
             object_size = 0
         else
-            object_size = file_Size( mount_paths[ object ] or "", mount_point ) or 0
+            object_size = file_Size( mount_paths[ fs_object ] or "", mount_point ) or 0
         end
 
-        raw_set( self, object, object_size )
+        raw_set( self, fs_object, object_size )
         return object_size
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.File | dreamwork.std.Directory, integer>
+---@type table<dreamwork.std.fs.Object, integer>
 local times = {}
 
 setmetatable( times, {
-    ---@param object dreamwork.std.File | dreamwork.std.Directory
-    __index = function( self, object )
+    ---@param fs_object dreamwork.std.fs.Object
+    __index = function( self, fs_object )
         local object_time
 
-        local mount_point = mount_points[ object ]
+        local mount_point = mount_points[ fs_object ]
         if mount_point == nil then
             object_time = time_now()
         else
-            object_time = file_Time( mount_paths[ object ] or "", mount_point )
+            object_time = file_Time( mount_paths[ fs_object ] or "", mount_point )
         end
 
-        raw_set( self, object, object_time )
+        raw_set( self, fs_object, object_time )
         return object_time
     end,
     __mode = "k"
 } )
+
+local make_watchdog_message
+do
+
+    local status_messages = {
+        [ 1 ] = "File system object '{1}' created.",
+        [ 2 ] = "File system object '{1}' deleted.",
+        [ 3 ] = "File system object '{1}' modified.",
+
+        [ -1 ] = "File system object '{1}' not found.",
+        [ -2 ] = "File system object '{1}' not readable.",
+        [ -3 ] = "File system object '{1}' out of scope.",
+        [ -4 ] = "File system object '{1}' unavailable.",
+        [ -5 ] = "File system object '{1}' already watched.",
+        [ -6 ] = "File system object '{1}' unknown error.",
+    }
+
+    local tmp = {}
+
+    ---@param status integer
+    ---@param fs_object dreamwork.std.fs.Object
+    ---@return string message
+    function make_watchdog_message( status, fs_object )
+        tmp[ 1 ] = tostring( fs_object )
+        return string.interpolate( status_messages[ status ] or status_messages[ -16 ], tmp )
+    end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- The watchdog module.
+---
+--- Used for files and directories monitoring. (File creation, deletion, modification, etc.)
+---
+---@class dreamwork.std.fs.watchdog
+local watchdog = {}
+fs.watchdog = watchdog
+
+local watchdog_Created = std.Hook( "fs.watchdog.Created" )
+watchdog.Created = watchdog_Created
+
+local watchdog_Deleted = std.Hook( "fs.watchdog.Deleted" )
+watchdog.Deleted = watchdog_Deleted
+
+local watchdog_Modified = std.Hook( "fs.watchdog.Modified" )
+watchdog.Modified = watchdog_Modified
+
+if std.loadbinary( "efsw" ) then
+
+    local hook = _G.hook
+    local hook_Add = hook.Add
+
+    ---@param event_name string
+    ---@param identifier string
+    ---@param event_fn function
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function hook.Add( event_name, identifier, event_fn )
+        if event_name == "Think" and identifier == "__ESFW_THINK" then
+            dreamwork.Logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", event_fn )
+            engine.hookCatch( "Tick", event_fn, 1 )
+        else
+            hook_Add( event_name, identifier, event_fn )
+        end
+    end
+
+    if std.loadbinary( "efsw" ) then
+        dreamwork.Logger:info( "'gm_efsw' was loaded & connected as file system watcher." )
+    else
+        dreamwork.Logger:error( "'gm_efsw' failed to load, unknown error." )
+    end
+
+    hook.Add = hook_Add
+
+    ---@type table<dreamwork.std.fs.Object, integer>
+    local watch_ids = {}
+    gc_setTableRules( watch_ids, true, false )
+
+    ---@diagnostic disable-next-line: undefined-field
+    local efsw = _G.efsw
+
+    ---@type fun( file_path: string, game_path: string ): integer
+    local efsw_watch = efsw ~= nil and efsw.Watch or debug.fempty
+
+    ---@type fun( watch_id: integer )
+    local efsw_unwatch = efsw ~= nil and efsw.Unwatch or debug.fempty
+
+    --- [SHARED AND MENU]
+    ---
+    --- Starts monitoring a file or directory.
+    ---
+    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@return boolean success
+    ---@return integer watch_id
+    function watchdog.watch( fs_object )
+        local watch_id = watch_ids[ fs_object ]
+        if watch_id == nil then
+            local mount_point = mount_points[ fs_object ]
+
+            if mount_point == nil then
+                return false, -3
+            end
+
+            watch_id = efsw_watch( mount_paths[ fs_object ] or "", mount_point ) or -1
+
+            if watch_id < 0 then
+                return false, watch_id
+            else
+                watch_ids[ fs_object ] = watch_id
+            end
+        end
+
+        return true, watch_id
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Stops monitoring a file or directory.
+    ---
+    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@return boolean success
+    function watchdog.unwatch( fs_object )
+        local watch_id = watch_ids[ fs_object ]
+        if watch_id == nil then
+            return false
+        end
+
+        watch_ids[ fs_object ] = nil
+        efsw_unwatch( watch_id )
+
+        return true
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if a file or directory is being watched.
+    ---
+    ---@param fs_object string
+    ---@return boolean is_watched
+    function watchdog.isWatched( fs_object )
+        return watch_ids[ fs_object ] ~= nil
+    end
+
+    engine.hookCatch( "FileWatchEvent", function( action, watch_id, file_path )
+        if watch_id < 0 then
+            return
+        end
+
+        local fs_object = fs.get( "/garrysmod/" .. file_path )
+        if fs_object == nil then
+            return
+        end
+
+        if action == 1 then
+            watchdog_Created:call( fs_object, is_directory_object[ fs_object ] == true )
+        elseif action == 2 then
+            watchdog_Deleted:call( fs_object, is_directory_object[ fs_object ] == true )
+        elseif action == 3 then
+            watchdog_Modified:call( fs_object, is_directory_object[ fs_object ] == true )
+        end
+    end )
+
+else
+
+    ---@type table<dreamwork.std.fs.Object, integer>
+    local watch_map = {}
+    gc_setTableRules( watch_map, true, false )
+
+    ---@type dreamwork.std.fs.Object[]
+    local watch_list = {}
+    gc_setTableRules( watch_list, false, true )
+
+    ---@type integer
+    local watch_list_size = 0
+
+    ---@type table<dreamwork.std.fs.Directory, dreamwork.std.fs.Object[]>
+    local content_lists = {}
+    gc_setTableRules( content_lists, true, false )
+
+    ---@type table<dreamwork.std.fs.Directory, integer>
+    local content_counts = {}
+    gc_setTableRules( content_counts, true, false )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Starts monitoring a file or directory.
+    ---
+    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@return boolean success
+    ---@return integer watch_id
+    function watchdog.watch( fs_object )
+        local watch_id = watch_map[ fs_object ]
+        if watch_id ~= nil then
+            return true, watch_id
+        end
+
+        local mount_point = mount_points[ fs_object ]
+        if mount_point == nil then
+            return false, -3
+        end
+
+        local mount_path = mount_paths[ fs_object ] or ""
+
+        if not file_Exists( mount_path, mount_point ) then
+            return false, -1
+        end
+
+        if is_directory_object[ fs_object ] then
+
+            ---@cast fs_object dreamwork.std.fs.Directory
+
+            ---@type dreamwork.std.fs.Object[]
+            local content_list = {}
+
+            ---@type integer
+            local content_count = content_counts[ fs_object ] or 0
+
+            fs_object:scan( false, false )
+
+            ---@type dreamwork.std.fs.Object[]
+            local fs_files, fs_file_count,
+                fs_dirs, fs_dir_count = fs_object:select()
+
+            for i = 1, fs_file_count, 1 do
+                local file_object = fs_files[ i ]
+
+                local file_mount_point = mount_points[ file_object ]
+                if file_mount_point ~= nil then
+                    content_count = content_count + 1
+                    content_list[ content_count ] = file_object
+                    times[ file_object ] = file_Time( mount_paths[ file_object ] or file_object.name, file_mount_point )
+                end
+            end
+
+            for i = 1, fs_dir_count, 1 do
+                local directory_object = fs_dirs[ i ]
+
+                local directory_mount_point = mount_points[ directory_object ]
+                if directory_mount_point ~= nil then
+                    content_count = content_count + 1
+                    content_list[ content_count ] = directory_object
+                    times[ directory_object ] = file_Time( mount_paths[ directory_object ] or "", directory_mount_point )
+                end
+            end
+
+            content_lists[ fs_object ] = content_list
+            content_counts[ fs_object ] = content_count
+
+        else
+
+            ---@cast fs_object dreamwork.std.fs.File
+
+            local handler = file_Open( mount_path, "rb", mount_point )
+            if handler == nil then
+                return false, -2
+            end
+
+            FILE_Close( handler )
+
+        end
+
+        watch_list_size = watch_list_size + 1
+
+        watch_list[ watch_list_size ] = fs_object
+        watch_map[ fs_object ] = watch_list_size
+
+        times[ fs_object ] = file_Time( mount_path, mount_point )
+
+        return true, watch_list_size
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Stops monitoring a file or directory.
+    ---
+    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    function watchdog.unwatch( fs_object )
+        if watch_map[ fs_object ] == nil then
+            return
+        end
+
+        for i = watch_list_size, 1, -1 do
+            if watch_list[ i ] == fs_object then
+                table_remove( watch_list, i )
+                watch_list_size = watch_list_size - 1
+                break
+            end
+        end
+
+        watch_map[ fs_object ] = nil
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if a file or directory is being watched.
+    ---
+    ---@param fs_object string
+    ---@return boolean is_watched
+    function watchdog.isWatched( fs_object )
+        return watch_map[ fs_object ] ~= nil
+    end
+
+    do
+
+        ---@param dead_fs_object dreamwork.std.fs.Object
+        local function on_gc( dead_fs_object )
+            for i = watch_list_size, 1, -1 do
+                local fs_object = watch_list[ i ]
+                if fs_object == dead_fs_object then
+                    table_remove( watch_list, i )
+                    watch_list_size = watch_list_size - 1
+                elseif is_directory_object[ fs_object ] then
+                    ---@cast fs_object dreamwork.std.fs.Directory
+
+                    local content_list = content_lists[ fs_object ]
+                    if content_list ~= nil then
+                        local content_length = content_counts[ fs_object ] or 0
+
+                        for j = content_length, 1, -1 do
+                            if content_list[ j ] == fs_object then
+                                table_remove( content_list, j )
+                                content_length = content_length - 1
+                            end
+                        end
+
+                        content_counts[ fs_object ] = content_length
+                    end
+                end
+            end
+        end
+
+        engine.hookCatch( "DirectoryGC", on_gc, 1 )
+        engine.hookCatch( "FileGC", on_gc, 1 )
+
+    end
+
+    local function watchdog_update( fs_object )
+        local mount_path, mount_point = mount_paths[ fs_object ] or "", mount_points[ fs_object ]
+
+        if not file_Exists( mount_path, mount_point ) then
+            watchdog.unwatch( fs_object )
+            watchdog_Deleted:call( fs_object, is_directory_object[ fs_object ] == true )
+            return
+        end
+
+        local last_modified = file_Time( mount_path, mount_point )
+
+        if times[ fs_object ] == last_modified then
+            local content_list = content_lists[ fs_object ]
+            if content_list == nil then
+                return
+            end
+
+            ---@cast fs_object dreamwork.std.fs.Directory
+
+            for i = content_counts[ fs_object ] or 0, 1, -1 do
+                local fs_child = content_list[ i ]
+
+                last_modified = file_Time( mount_paths[ fs_child ] or "", mount_points[ fs_child ] )
+                if times[ fs_child ] ~= last_modified then
+                    watchdog_Modified:call( fs_child, is_directory_object[ fs_child ] == true )
+                    times[ fs_child ] = last_modified
+                end
+            end
+
+            return
+        end
+
+        times[ fs_object ] = last_modified
+        watchdog_Modified:call( fs_object, is_directory_object[ fs_object ] == true )
+
+        local content_list = content_lists[ fs_object ]
+        if content_list == nil then
+            return
+        end
+
+        ---@cast fs_object dreamwork.std.fs.Directory
+
+        ---@type integer
+        local content_length = content_counts[ fs_object ] or 0
+
+        ---@type table<string, dreamwork.std.fs.Object>
+        local directory_files = {}
+
+        for i = 1, content_length, 1 do
+            local fs_child = content_list[ i ]
+            directory_files[ fs_child.name ] = fs_child
+        end
+
+        fs_object:scan( false, false )
+
+        local fs_files, fs_file_count,
+            fs_dirs, fs_dir_count = fs_object:select()
+
+        local current_files = {}
+
+        for i = 1, fs_file_count, 1 do
+            local file_object = fs_files[ i ]
+            local name = file_object.name
+
+            if directory_files[ name ] == nil then
+                content_length = content_length + 1
+                content_list[ content_length ] = file_object
+                watchdog_Created:call( file_object, is_directory_object[ file_object ] == true )
+            end
+
+            current_files[ name ] = true
+        end
+
+        for i = 1, fs_dir_count, 1 do
+            local directory_object = fs_dirs[ i ]
+            local name = directory_object.name
+
+            if directory_files[ name ] == nil then
+                content_length = content_length + 1
+                content_list[ content_length ] = directory_object
+                watchdog_Created:call( directory_object, is_directory_object[ directory_object ] == true )
+            end
+
+            current_files[ name ] = true
+        end
+
+        for i = content_length, 1, -1 do
+            local fs_child = content_list[ i ]
+
+            if current_files[ fs_child.name ] == nil then
+                for j = content_length, 1, -1 do
+                    if content_list[ j ] == fs_child then
+                        table_remove( content_list, j )
+                        content_length = content_length - 1
+                        break
+                    end
+                end
+
+                watchdog_Deleted:call( fs_child, is_directory_object[ fs_child ] == true )
+            else
+                last_modified = file_Time( mount_paths[ fs_child ] or "", mount_points[ fs_child ] )
+                if times[ fs_child ] ~= last_modified then
+                    watchdog_Modified:call( fs_child, is_directory_object[ fs_child ] == true )
+                    times[ fs_child ] = last_modified
+                end
+            end
+        end
+
+        content_counts[ fs_object ] = content_length
+    end
+
+    local pointer = 1
+
+    engine.hookCatch( "Tick", function()
+        if watch_list_size == 0 then
+            return
+        end
+
+        -- time.tick()
+
+        watchdog_update( watch_list[ pointer ] )
+
+        if pointer == watch_list_size then
+            pointer = 1
+        else
+            pointer = pointer + 1
+        end
+
+        -- std.printf( "watchdog: %f s", time.tick() )
+    end, 1 )
+
+    dreamwork.Logger:info( "'watchdog' was loaded & connected as file system watcher." )
+
+end
+
+engine.hookCatch( "DirectoryGC", watchdog.unwatch )
+engine.hookCatch( "FileGC", watchdog.unwatch )
 
 ---@type table<string, boolean>
 local writeable_mounts = {
@@ -458,6 +1194,11 @@ local deletable_mounts = {
     ["DATA"] = true,
     ["MOD"] = MENU
 }
+
+---@protected
+function File:__gc()
+    engine_hookCall( "FileGC", self )
+end
 
 ---@protected
 ---@param name string
@@ -539,7 +1280,7 @@ end
 ---
 --- Moves a file to another directory.
 ---
----@param directory dreamwork.std.Directory The directory to move the file to.
+---@param directory dreamwork.std.fs.Directory The directory to move the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@async
 function File:move( directory, name )
@@ -550,7 +1291,7 @@ end
 ---
 --- Copies a file to another directory.
 ---
----@param directory dreamwork.std.Directory The directory to copy the file to.
+---@param directory dreamwork.std.fs.Directory The directory to copy the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@async
 function File:copy( directory, name )
@@ -579,35 +1320,35 @@ do
 
 end
 
----@param object dreamwork.std.File | dreamwork.std.Directory
----@param parent dreamwork.std.Directory | nil
-local function update_path( object, parent )
+---@param fs_object dreamwork.std.fs.Object
+---@param parent dreamwork.std.fs.Directory | nil
+local function update_path( fs_object, parent )
     if parent == nil then
-        paths[ object ] = "/" .. names[ object ]
+        paths[ fs_object ] = "/" .. names[ fs_object ]
     else
 
         local parent_path = paths[ parent ]
 
         local uint8_1, uint8_2 = string_byte( parent_path, 1, 2 )
         if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
-            paths[ object ] = parent_path .. names[ object ]
+            paths[ fs_object ] = parent_path .. names[ fs_object ]
         else
-            paths[ object ] = parent_path .. "/" .. names[ object ]
+            paths[ fs_object ] = parent_path .. "/" .. names[ fs_object ]
         end
 
     end
 
-    if is_directory_object[ object ] then
-        ---@cast object dreamwork.std.Directory
+    if is_directory_object[ fs_object ] then
+        ---@cast fs_object dreamwork.std.fs.Directory
 
-        local descendant_list = descendants[ object ]
-        for index = 1, descendant_counts[ object ], 1 do
-            update_path( descendant_list[ index ], object )
+        local descendant_list = descendants[ fs_object ]
+        for index = 1, descendant_counts[ fs_object ], 1 do
+            update_path( descendant_list[ index ], fs_object )
         end
     end
 end
 
----@param directory dreamwork.std.Directory
+---@param directory dreamwork.std.fs.Directory
 ---@param name string
 local function abs_path( directory, name )
     local directory_path = directory.path
@@ -620,7 +1361,7 @@ local function abs_path( directory, name )
     end
 end
 
----@param directory dreamwork.std.Directory
+---@param directory dreamwork.std.fs.Directory
 ---@param name string
 local function rel_path( directory, name )
     local mount_path = mount_paths[ directory ]
@@ -629,6 +1370,11 @@ local function rel_path( directory, name )
     else
         return mount_path .. "/" .. name
     end
+end
+
+---@protected
+function Directory:__gc()
+    engine_hookCall( "DirectoryGC", self )
 end
 
 ---@param name string
@@ -675,26 +1421,17 @@ function Directory:__tostring()
     return string.format( "Directory: %p [%s][%s][%d bytes][%d files][%d directories]", self, self.path, time.toDuration( time_now() - self.time ), self.size, self:count() )
 end
 
----@class dreamwork.std.FileClass : dreamwork.std.File
----@field __base dreamwork.std.File
----@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.File
+---@class dreamwork.std.fs.FileClass : dreamwork.std.fs.File
+---@field __base dreamwork.std.fs.File
+---@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.fs.File
 local FileClass = class.create( File )
 
----@class dreamwork.std.DirectoryClass : dreamwork.std.Directory
----@field __base dreamwork.std.Directory
----@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.Directory
+---@class dreamwork.std.fs.DirectoryClass : dreamwork.std.fs.Directory
+---@field __base dreamwork.std.fs.Directory
+---@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.fs.Directory
 local DirectoryClass = class.create( Directory )
 
----@param directory dreamwork.std.Directory
----@param new_time integer
-local function update_time( directory, new_time )
-    while directory ~= nil and new_time > times[ directory ] do
-        times[ directory ] = new_time
-        directory = parents[ directory ]
-    end
-end
-
----@param directory dreamwork.std.Directory
+---@param directory dreamwork.std.fs.Directory
 ---@param byte_count integer
 local function size_add( directory, byte_count )
     while directory ~= nil do
@@ -703,8 +1440,8 @@ local function size_add( directory, byte_count )
     end
 end
 
----@param directory dreamwork.std.Directory
----@param descendant dreamwork.std.File | dreamwork.std.Directory
+---@param directory dreamwork.std.fs.Directory
+---@param descendant dreamwork.std.fs.Object
 local function insert( directory, descendant )
     if is_directory_object[ descendant ] == nil then
         error( "new descendant must be a File or a Directory", 2 )
@@ -742,11 +1479,12 @@ local function insert( directory, descendant )
     descendants_table[ name ] = descendant
 
     update_path( descendant, directory )
-    update_time( directory, times[ descendant ] )
+
+    times[ directory ] = nil
     size_add( directory, sizes[ descendant ] )
 end
 
----@param directory dreamwork.std.Directory
+---@param directory dreamwork.std.fs.Directory
 ---@param name string
 local function eject( directory, name )
     local descendants_table = descendants[ directory ]
@@ -757,7 +1495,13 @@ local function eject( directory, name )
     end
 
     size_add( directory, -sizes[ descendant ] )
-    update_time( directory, time_now() )
+
+    if mount_points[ descendant ] == nil then
+        times[ directory ] = time_now()
+    else
+        times[ directory ] = nil
+    end
+
     update_path( descendant, nil )
 
     descendants_table[ name ] = nil
@@ -771,7 +1515,7 @@ local function eject( directory, name )
 end
 
 ---@param wildcard string | nil
----@return dreamwork.std.File[], integer, dreamwork.std.Directory[], integer
+---@return dreamwork.std.fs.File[], integer, dreamwork.std.fs.Directory[], integer
 function Directory:select( wildcard )
     local descendants_table = descendants[ self ]
 
@@ -779,14 +1523,14 @@ function Directory:select( wildcard )
     local files, file_count = {}, 0
 
     for index = 1, descendant_counts[ self ], 1 do
-        ---@type dreamwork.std.File | dreamwork.std.Directory
-        local object = descendants_table[ index ]
-        if is_directory_object[ object ] then
+        ---@type dreamwork.std.fs.Object
+        local fs_object = descendants_table[ index ]
+        if is_directory_object[ fs_object ] then
             directory_count = directory_count + 1
-            directories[ directory_count ] = object
+            directories[ directory_count ] = fs_object
         else
             file_count = file_count + 1
-            files[ file_count ] = object
+            files[ file_count ] = fs_object
         end
     end
 
@@ -879,11 +1623,14 @@ end
 
 ---@param deep_scan boolean
 ---@param full_update boolean
----@param callback nil | fun( directory: dreamwork.std.Directory, callback_value: any )
----@param callback_value any
-function Directory:scan( deep_scan, full_update, callback, callback_value )
+---@param on_new nil | fun( fs_object: dreamwork.std.fs.Object, is_directory: boolean )
+---@param on_finish nil | fun( directory: dreamwork.std.fs.Directory )
+function Directory:scan( deep_scan, full_update, on_new, on_finish )
     local descendant_count = descendant_counts[ self ]
     local descendants_table = descendants[ self ]
+
+    local mount_point = mount_points[ self ]
+    local mount_path = mount_paths[ self ]
 
     if full_update then
 
@@ -905,69 +1652,60 @@ function Directory:scan( deep_scan, full_update, callback, callback_value )
                 end
 
                 times[ descendant ] = unix_time
-                update_time( self, unix_time )
-
                 sizes[ descendant ] = size
+
                 size_add( self, size )
             end
         end
 
-    end
-
-    local mount_point = mount_points[ self ]
-    if mount_point ~= nil then
-
-        local mount_path = mount_paths[ self ]
-        if mount_path == nil then
-
-            local fs_files, fs_directories = file_Find( "*", mount_point )
-
-            for i = 1, #fs_files, 1 do
-                local file_name = fs_files[ i ]
-                if descendants_table[ file_name ] == nil then
-                    insert( self, FileClass( file_name, mount_point, file_name ) )
-                end
-            end
-
-            for i = 1, #fs_directories, 1 do
-                local directory_name = fs_directories[ i ]
-                if descendants_table[ directory_name ] == nil then
-                    insert( self, DirectoryClass( directory_name, mount_point, directory_name ) )
-                end
-            end
-
+        if mount_point == nil then
+            times[ self ] = time_now()
         else
-
-            local fs_files, fs_directories = file_Find( mount_path .. "/*", mount_point )
-
-             for i = 1, #fs_files, 1 do
-                local file_name = fs_files[ i ]
-                if descendants_table[ file_name ] == nil then
-                    insert( self, FileClass( file_name, mount_point, mount_path .. "/" .. file_name ) )
-                end
-            end
-
-            for i = 1, #fs_directories, 1 do
-                local directory_name = fs_directories[ i ]
-                if descendants_table[ directory_name ] == nil then
-                    insert( self, DirectoryClass( directory_name, mount_point, mount_path .. "/" .. directory_name ) )
-                end
-            end
-
+            times[ self ] = file_Time( mount_path or "", mount_point )
         end
 
     end
 
-    if callback ~= nil then
-        callback( self, callback_value )
+    if mount_point ~= nil then
+
+        local fs_files, fs_directories = file_Find( mount_path == nil and "*" or ( mount_path .. "/*" ), mount_point )
+
+        for i = 1, #fs_files, 1 do
+            local file_name = fs_files[ i ]
+            if descendants_table[ file_name ] == nil then
+                local file_object = FileClass( file_name, mount_point, mount_path == nil and file_name or ( mount_path .. "/" .. file_name ) )
+                insert( self, file_object )
+
+                if on_new ~= nil then
+                    on_new( file_object, false )
+                end
+            end
+        end
+
+        for i = 1, #fs_directories, 1 do
+            local directory_name = fs_directories[ i ]
+            if descendants_table[ directory_name ] == nil then
+                local directory_object = DirectoryClass( directory_name, mount_point, mount_path == nil and directory_name or ( mount_path .. "/" .. directory_name ) )
+                insert( self, directory_object )
+
+                if on_new ~= nil then
+                    on_new( directory_object, true )
+                end
+            end
+        end
+
+    end
+
+    if on_finish ~= nil then
+        on_finish( self )
     end
 
     if deep_scan then
         for i = 1, descendant_count, 1 do
             local directory = descendants_table[ i ]
             if is_directory_object[ directory ] then
-                ---@cast directory dreamwork.std.Directory
-                directory:scan( deep_scan, full_update, callback, callback_value )
+                ---@cast directory dreamwork.std.fs.Directory
+                directory:scan( deep_scan, full_update, on_new, on_finish )
             end
         end
     end
@@ -982,7 +1720,7 @@ function Directory:get( path_to )
         local content_value = descendants[ self ][ name ]
 
         if content_value == nil then
-            ---@cast self dreamwork.std.Directory
+            ---@cast self dreamwork.std.fs.Directory
 
             local mount_point = mount_points[ self ]
             if mount_point == nil then
@@ -1014,7 +1752,7 @@ function Directory:get( path_to )
         elseif is_directory_object[ content_value ] then
             if i == segment_count then
                 ---@diagnostic disable-next-line: cast-type-mismatch
-                ---@cast content_value dreamwork.std.File
+                ---@cast content_value dreamwork.std.fs.File
                 return content_value, true
             else
                 self = content_value
@@ -1035,10 +1773,11 @@ function Directory:isEmpty()
     return file_count == 0 and directory_count == 0
 end
 
----@param file_callback nil | fun( file: dreamwork.std.File )
----@param directory_callback nil | fun( directory: dreamwork.std.Directory )
+---@param file_callback nil | fun( file: dreamwork.std.fs.File )
+---@param directory_callback nil | fun( directory: dreamwork.std.fs.Directory )
 function Directory:foreach( file_callback, directory_callback )
-    local files, file_count, directories, directory_count = self:select()
+    local files, file_count,
+        directories, directory_count = self:select()
 
     if file_callback == nil then
         if directory_callback == nil then
@@ -1046,14 +1785,14 @@ function Directory:foreach( file_callback, directory_callback )
         end
     else
         for index = 1, file_count, 1 do
-            ---@type dreamwork.std.File
+            ---@type dreamwork.std.fs.File
             ---@diagnostic disable-next-line: param-type-mismatch
             file_callback( files[ index ] )
         end
     end
 
     for index = 1, directory_count, 1 do
-        ---@type dreamwork.std.Directory
+        ---@type dreamwork.std.fs.Directory
         ---@diagnostic disable-next-line: assign-type-mismatch
         local directory = directories[ index ]
 
@@ -1065,10 +1804,10 @@ function Directory:foreach( file_callback, directory_callback )
     end
 end
 
----@param parent dreamwork.std.Directory
+---@param parent dreamwork.std.fs.Directory
 ---@param name string
 ---@param forced? boolean
----@return dreamwork.std.Directory | nil new_directory
+---@return dreamwork.std.fs.Directory | nil new_directory
 ---@return nil | string error_message
 local function create_directory( parent, name, forced )
     local directory_object = descendants[ parent ][ name ]
@@ -1112,7 +1851,7 @@ local function create_directory( parent, name, forced )
             return nil, "Path '" .. abs_path( parent, name ) .. "' does not support directory creation."
         end
     elseif is_directory_object[ directory_object ] then
-        ---@cast directory_object dreamwork.std.Directory
+        ---@cast directory_object dreamwork.std.fs.Directory
         return directory_object, nil
     elseif forced then
         local mount_point = mount_points[ directory_object ]
@@ -1146,7 +1885,7 @@ end
 
 ---@param directory_path string
 ---@param forced? boolean
----@return dreamwork.std.Directory
+---@return dreamwork.std.fs.Directory
 function Directory:makeDirectory( directory_path, forced )
     local segments, segment_count = string_byteSplit( directory_path, 0x2F --[[ '/' ]], string_byte( directory_path, 1, 1 ) == 0x2F --[[ '/' ]] and 2 or 1 )
 
@@ -1164,16 +1903,16 @@ function Directory:makeDirectory( directory_path, forced )
 end
 
 ---@param name string
----@return dreamwork.std.File | dreamwork.std.Directory object
+---@return dreamwork.std.fs.Object fs_object
 ---@return boolean is_directory
 function Directory:touch( name )
     if string_byte( name, 1, 1 ) == nil then
         error( "file or directory name cannot be empty", 2 )
     end
 
-    local object = descendants[ self ][ name ]
+    local fs_object = descendants[ self ][ name ]
 
-    if object == nil then
+    if fs_object == nil then
         local mount_point = mount_points[ self ]
         if mount_point == nil or not writeable_mounts[ mount_point ] then
             error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
@@ -1188,17 +1927,17 @@ function Directory:touch( name )
 
         FILE_Close( handler )
 
-        object = FileClass( name, mount_point, mount_path )
-        insert( self, object )
-        return object, false
+        fs_object = FileClass( name, mount_point, mount_path )
+        insert( self, fs_object )
+        return fs_object, false
     end
 
-    local mount_point = mount_points[ object ]
+    local mount_point = mount_points[ fs_object ]
     if mount_point == nil or not writeable_mounts[ mount_point ] then
         error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
     end
 
-    if is_directory_object[ object ] then
+    if is_directory_object[ fs_object ] then
         -- Doesn't work...
         ---@diagnostic disable-next-line: redundant-parameter
         -- file_CreateDir( rel_path( self, name ), mount_point )
@@ -1214,14 +1953,12 @@ function Directory:touch( name )
 
         file_Delete( tmp_path, mount_point )
 
-        local new_time = file_Time( rel_path( self, name ), mount_point )
-        update_time( self, new_time )
-        times[ object ] = new_time
+        times[ fs_object ] = file_Time( rel_path( self, name ), mount_point )
 
-        return object, true
+        return fs_object, true
     end
 
-    local mount_path = mount_paths[ object ]
+    local mount_path = mount_paths[ fs_object ]
 
     local handler = file_Open( mount_path, "wb", mount_point )
     if handler == nil then
@@ -1230,11 +1967,9 @@ function Directory:touch( name )
 
     FILE_Close( handler )
 
-    local new_time = file_Time( mount_path, mount_point )
-    update_time( self, new_time )
-    times[ object ] = new_time
+    times[ fs_object ] = file_Time( mount_path, mount_point )
 
-    return object, false
+    return fs_object, false
 end
 
 --- [SHARED AND MENU]
@@ -1251,7 +1986,7 @@ end
 ---
 --- Moves a file to another directory.
 ---
----@param directory dreamwork.std.Directory The directory to move the file to.
+---@param directory dreamwork.std.fs.Directory The directory to move the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@async
 function Directory:move( directory, name )
@@ -1262,7 +1997,7 @@ end
 ---
 --- Copies a file to another directory.
 ---
----@param directory dreamwork.std.Directory The directory to copy the file to.
+---@param directory dreamwork.std.fs.Directory The directory to copy the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@async
 function Directory:copy( directory, name )
@@ -1286,9 +2021,9 @@ function Directory:remove( name, forced, recursive )
         error( "file or directory name cannot be empty", 2 )
     end
 
-    local object = descendants[ self ][ name ]
+    local fs_object = descendants[ self ][ name ]
 
-    if object == nil then
+    if fs_object == nil then
         local mount_point = mount_points[ self ]
         if mount_point == nil or not deletable_mounts[ mount_point ] then
             error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
@@ -1300,7 +2035,8 @@ function Directory:remove( name, forced, recursive )
             if file_IsDir( mount_path, mount_point ) then
                 if recursive then
                     local directory_object = DirectoryClass( name, mount_point, mount_path )
-                    local files, file_count, directories, directory_count = directory_object:select()
+                    local files, file_count,
+                        directories, directory_count = directory_object:select()
 
                     for i = 1, file_count, 1 do
                         local file_object = files[ i ]
@@ -1329,15 +2065,16 @@ function Directory:remove( name, forced, recursive )
         return
     end
 
-    local mount_point = mount_points[ object ]
+    local mount_point = mount_points[ fs_object ]
     if mount_point == nil or not deletable_mounts[ mount_point ] then
         error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
     end
 
-    if is_directory_object[ object ] then
-        ---@cast object dreamwork.std.Directory
+    if is_directory_object[ fs_object ] then
+        ---@cast fs_object dreamwork.std.fs.Directory
         if recursive then
-            local files, file_count, directories, directory_count = object:select()
+            local files, file_count,
+                directories, directory_count = fs_object:select()
 
             for i = 1, file_count, 1 do
                 local file_object = files[ i ]
@@ -1346,11 +2083,11 @@ function Directory:remove( name, forced, recursive )
             end
 
             for i = 1, directory_count, 1 do
-                object:remove( directories[ i ].name, forced, recursive )
+                fs_object:remove( directories[ i ].name, forced, recursive )
             end
         else
 
-            local files, directories = file_Find( mount_points[ object ] .. "/*", mount_point )
+            local files, directories = file_Find( mount_points[ fs_object ] .. "/*", mount_point )
             if ( #files + #directories ) ~= 0 then
                 error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
             end
@@ -1358,7 +2095,7 @@ function Directory:remove( name, forced, recursive )
         end
     end
 
-    file_Delete( mount_paths[ object ], mount_point )
+    file_Delete( mount_paths[ fs_object ], mount_point )
     eject( self, name )
 end
 
@@ -1372,10 +2109,10 @@ function Directory:toStringTree( prefix, is_last )
 
     local next_prefix
     if prefix == nil then
-        lines[ 1 ] = std.tostring( self )
+        lines[ 1 ] = tostring( self )
         next_prefix = " "
     else
-        lines[ 1 ] = prefix .. ( is_last and "╚═ " or "╠═ " ) .. std.tostring( self )
+        lines[ 1 ] = prefix .. ( is_last and "╚═ " or "╠═ " ) .. tostring( self )
 
         local spaces = ( is_last and "    " or " " )
         next_prefix = prefix .. ( is_last and spaces or "║  " .. spaces )
@@ -1391,10 +2128,10 @@ function Directory:toStringTree( prefix, is_last )
 
         local descendant = descendants_table[ i ]
         if is_directory_object[ descendant ] then
-            ---@cast descendant dreamwork.std.Directory
+            ---@cast descendant dreamwork.std.fs.Directory
             lines[ line_count ] = descendant:toStringTree( next_prefix, i == children_length )
         else
-            ---@cast descendant dreamwork.std.File
+            ---@cast descendant dreamwork.std.fs.File
             lines[ line_count ] = next_prefix .. string.format( "%s %s", i == children_length and "╚═ " or "╠═ ", descendant )
         end
     end
@@ -1457,12 +2194,6 @@ do
 
 end
 
--- std.setTimeout( function()
---     root:get( "workspace/lua/dreamwork" ):scan( true, true )
---     std.print( root:toStringTree())
--- end, 1 )
-
--- TODO: efsw support
 -- TODO: fs hooks
 
 local function prepare_path( path_to )
@@ -1478,10 +2209,10 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the file or directory by given path as a `dreamwork.std.File` or `dreamwork.std.Directory` object.
+--- Returns the file or directory by given path as a `dreamwork.std.fs.File` or `dreamwork.std.fs.Directory` object.
 ---
 ---@param path_to string The path to the file or directory.
----@return dreamwork.std.File | dreamwork.std.Directory | nil object The file or directory.
+---@return dreamwork.std.fs.Object | nil fs_object The file or directory.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.get( path_to )
     return root:get( prepare_path( path_to ) )
@@ -1529,7 +2260,7 @@ function fs.touch( file_path, forced )
         end
     end
 
-    ---@cast directory dreamwork.std.Directory
+    ---@cast directory dreamwork.std.fs.Directory
     return directory:touch( file_name )
 end
 
@@ -1558,7 +2289,7 @@ function fs.remove( path_to, forced, recursive )
         end
     end
 
-    ---@cast directory dreamwork.std.Directory
+    ---@cast directory dreamwork.std.fs.Directory
     return directory:remove( file_name, forced, recursive )
 end
 
@@ -1596,24 +2327,35 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Checks if a file or directory is a directory by given path.
+---
+---@param path_to string The path to the file or directory.
+---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
+function fs.isDirectory( path_to )
+    local _, is_directory = root:get( prepare_path( path_to ) )
+    return is_directory
+end
+
+--- [SHARED AND MENU]
+---
 --- Checks if a file or directory is empty by given path.
 ---
 ---@param path_to string The path to the file or directory.
 ---@return boolean empty Returns `true` if the file or directory is empty, otherwise `false`.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.isEmpty( path_to, forced )
-    local object, is_directory = root:get( prepare_path( path_to ) )
-    if object == nil then
+    local fs_object, is_directory = root:get( prepare_path( path_to ) )
+    if fs_object == nil then
         if forced then
             return true, false
         else
             error( "Path '" .. path_to .. "' does not exist.", 2 )
         end
     elseif is_directory then
-        ---@cast object dreamwork.std.Directory
-        return object:isEmpty(), true
+        ---@cast fs_object dreamwork.std.fs.Directory
+        return fs_object:isEmpty(), true
     else
-        return object.size == 0, false
+        return fs_object.size == 0, false
     end
 end
 
@@ -1624,15 +2366,15 @@ end
 ---@param file_path string The path to the file or directory.
 ---@return integer unix_time The last modified time of the file or directory.
 function fs.time( file_path, forced )
-    local object = root:get( prepare_path( file_path ) )
-    if object == nil then
+    local fs_object = root:get( prepare_path( file_path ) )
+    if fs_object == nil then
         if forced then
             return 0
         else
             error( "Path '" .. file_path .. "' does not exist.", 2 )
         end
     else
-        return object.time
+        return fs_object.time
     end
 end
 
@@ -1643,15 +2385,15 @@ end
 ---@param file_path string The path to the file or directory.
 ---@return integer size The size of the file or directory in bytes.
 function fs.size( file_path, forced )
-    local object = root:get( prepare_path( file_path ) )
-    if object == nil then
+    local fs_object = root:get( prepare_path( file_path ) )
+    if fs_object == nil then
         if forced then
             return 0
         else
             error( "Path '" .. file_path .. "' does not exist.", 2 )
         end
     else
-        return object.size
+        return fs_object.size
     end
 end
 
@@ -1663,16 +2405,16 @@ end
 ---
 ---@param directory_path string The path to the directory.
 ---@param wildcard? string The wildcard to search for.
----@return dreamwork.std.File[] files The list of files in the directory.
+---@return dreamwork.std.fs.File[] files The list of files in the directory.
 ---@return integer file_count The number of files in the directory.
----@return dreamwork.std.Directory[] directories The list of directories in the directory.
+---@return dreamwork.std.fs.Directory[] directories The list of directories in the directory.
 ---@return integer directory_count The number of directories in the directory.
 function fs.select( directory_path, wildcard )
     local directory_object, is_directory = root:get( prepare_path( directory_path ) )
     if directory_object == nil or not is_directory then
         return {}, 0, {}, 0
     else
-        ---@cast directory_object dreamwork.std.Directory
+        ---@cast directory_object dreamwork.std.fs.Directory
         return directory_object:select( wildcard )
     end
 end
@@ -1681,13 +2423,13 @@ do
 
     local futures_yield = std.futures.yield
 
-    ---@param file_object dreamwork.std.File
+    ---@param file_object dreamwork.std.fs.File
     ---@async
     local function iterate_file( file_object )
         return futures_yield( file_object.path, false )
     end
 
-    ---@param directory_object dreamwork.std.Directory
+    ---@param directory_object dreamwork.std.fs.Directory
     ---@async
     local function iterate_directory( directory_object )
         return futures_yield( directory_object.path, true )
@@ -1697,7 +2439,7 @@ do
     function fs.iterator( directory_path )
         local directory_object, is_directory = root:get( prepare_path( directory_path ) )
         if directory_object ~= nil and is_directory then
-            ---@cast directory_object dreamwork.std.Directory
+            ---@cast directory_object dreamwork.std.fs.Directory
             directory_object:foreach( iterate_file, iterate_directory )
         end
     end
@@ -1804,3 +2546,25 @@ end
     https://wiki.facepunch.com/gmod/Global.SavePresets
 
 ]]
+
+-- watchdog_Created:attach( function( fs_object )
+--     dreamwork.Logger:info( "%s '%s' was created.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
+-- end )
+
+-- watchdog_Deleted:attach( function( fs_object )
+--     dreamwork.Logger:info( "%s '%s' was deleted.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
+-- end )
+
+-- watchdog_Modified:attach( function( fs_object )
+--     dreamwork.Logger:info( "%s '%s' was modified.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
+-- end )
+
+-- watchdog.watch( fs.get( "/garrysmod/data" ) )
+
+-- fs.get( "/garrysmod/data" ):scan()
+
+-- std.setTimeout( function()
+--     root:get( "workspace/lua/dreamwork" ):scan( true, true )
+--     std.print( root:toStringTree())
+-- end, 1 )
+
