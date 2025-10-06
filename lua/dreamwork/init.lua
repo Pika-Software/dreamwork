@@ -51,6 +51,7 @@ std.GAME_VERSION = _G.VERSION or 0
 
 ---@diagnostic disable-next-line: undefined-field
 local dofile = _G.include or _G.dofile
+local error = _G.error
 
 if dofile == nil then
     error( "Functions `dofile` & `include` not found, dreamwork cannot be loaded!" )
@@ -86,6 +87,7 @@ local raw = std.raw or {}
 std.raw = raw
 
 raw.tonumber = _G.tonumber
+raw.error = error
 
 raw.ipairs = _G.ipairs
 raw.pairs = _G.pairs
@@ -184,6 +186,7 @@ dofile( "std/debug.jit.lua" )
 
 local debug = std.debug
 local debug_fempty = debug.fempty
+local debug_getinfo = debug.getinfo
 local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
@@ -838,112 +841,41 @@ end
 
 local table_concat = std.table.concat
 
-do
-
-    local coroutine_running = coroutine.running
-    local debug_getinfo = debug.getinfo
-    local string_rep = string.rep
-
-    ---@diagnostic disable-next-line: undefined-field
-    local ErrorNoHalt = _G.ErrorNoHalt or print
-
-    ---@diagnostic disable-next-line: undefined-field
-    local ErrorNoHaltWithStack = _G.ErrorNoHaltWithStack
-
-    if ErrorNoHaltWithStack == nil then
-
-        function ErrorNoHaltWithStack( message )
-            if message == nil then
-                message = "unknown"
-            end
-
-            local stack, size = { "\n[LUA ERROR] " .. message }, 1
-
-            while true do
-                local info = debug_getinfo( size + 1, "Sln" )
-                if info == nil then break end
-
-                size = size + 1
-                stack[ size ] = table_concat( { string_rep( " ", size ), ( size - 1 ), ". ", info.name or "unknown", " - ", info.short_src or "unknown", ":", info.currentline or -1 } )
-            end
-
-            size = size + 1
-            stack[ size ] = "\n"
-
-            ErrorNoHalt( table_concat( stack, "\n", 1, size ) )
-        end
-
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Throws a Lua error.
-    ---
-    ---@param message string | Error The error message to throw.
-    ---@param level dreamwork.std.ErrorType? The error level to throw.
-    function std.error( message, level )
-        -- async functions support
-        if not coroutine_running() then
-            message = tostring( message )
-        end
-
-        -- custom gmod errors: -1, -2
-        if level == -1 then
-            return ErrorNoHalt( message )
-        elseif level == -2 then
-            return ErrorNoHaltWithStack( message )
-        else
-            return error( message, level )
-        end
-    end
-
-end
-
 dofile( "std/class.lua" )
 
 do
 
-    local type
-    do
 
-        local raw_type = raw.type
+    local raw_type = raw.type
 
-        --- [SHARED AND MENU]
-        ---
-        --- Returns a string representing the name of the type of the passed object.
-        ---
-        ---@param value any The value to get the type of.
-        ---@return string type_name The type name of the given value.
-        function type( value )
-            return debug_getmetavalue( value, "__type" ) or raw_type( value )
-        end
-
-        std.type = type
-
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a string representing the name of the type of the passed object.
+    ---
+    ---@param value any The value to get the type of.
+    ---@return string type_name The type name of the given value.
+    local function type( value )
+        return debug_getmetavalue( value, "__type" ) or raw_type( value )
     end
 
-    do
+    std.type = type
 
-        local debug_getinfo = debug.getinfo
-
-        --- [SHARED AND MENU]
-        ---
-        --- Validates the type of the argument and returns a boolean and an error message.
-        ---
-        ---@param value any The argument value.
-        ---@param arg_num any The argument number/key.
-        ---@param expected_type "string" | "number" | "boolean" | "table" | "function" | "thread" | "any" | string The expected type name.
-        ---@return boolean ok Returns `true` if the argument is of the expected type, `false` otherwise.
-        ---@return string? msg The error message.
-        function std.arg( value, arg_num, expected_type )
-            local got = type( value )
-            if got == expected_type or expected_type == "any" then
-                return true, nil
-            else
-                return false, string_format( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", arg_num, debug_getinfo( 2, "n" ).name or "unknown", expected_type, got )
-            end
+    --- [SHARED AND MENU]
+    ---
+    --- Validates the type of the argument and returns a boolean and an error message.
+    ---
+    ---@param value any The argument value.
+    ---@param arg_num any The argument number/key.
+    ---@param expected_type "string" | "number" | "boolean" | "table" | "function" | "thread" | "any" | string The expected type name.
+    ---@return boolean ok Returns `true` if the argument is of the expected type, `false` otherwise.
+    ---@return string? msg The error message.
+    function std.arg( value, arg_num, expected_type )
+        local got = type( value )
+        if got == expected_type or expected_type == "any" then
+            return true, nil
+        else
+            return false, string_format( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", arg_num, debug_getinfo( 2, "n" ).name or "unknown", expected_type, got )
         end
-
     end
 
 end
@@ -1061,7 +993,86 @@ local engine = dreamwork.engine
 
 do
 
-    local console_message = engine.consoleMessage
+    local ErrorNoHalt = _G.ErrorNoHalt
+
+    if ErrorNoHalt == nil then
+        local engine_consoleMessageColored = engine.consoleMessageColored
+        local error_color = color_scheme.error
+
+        function ErrorNoHalt( str )
+            return engine_consoleMessageColored( str, error_color )
+        end
+    end
+
+    local string_match = string.match
+    local string_rep = string.rep
+
+    --- [SHARED AND MENU]
+    ---
+    --- Throws an error with the specified message and level.
+    ---
+    ---@param message? string The error message to throw.
+    ---@param stack_level? integer The stack level to throw the error.
+    ---@param dont_break? boolean If `true`, the error will not break the current stack.
+    local function std_error( message, stack_level, dont_break )
+        if message == nil then
+            message = "unknown"
+        else
+            message = tostring( message )
+        end
+
+        if stack_level == nil then
+            stack_level = 1
+        end
+
+        if dont_break then
+            local title = "LUA ERROR"
+
+            local level_info = debug_getinfo( stack_level, "S" )
+            if level_info ~= nil then
+                title = string_match( level_info.source, "^@?addons/([^/]+)" ) or title
+            end
+
+            local stack, size = { "\n[" .. title .. "] " .. message }, 1
+
+            while true do
+                local info = debug_getinfo( size + stack_level, "Sln" )
+                if info == nil then
+                    break
+                end
+
+                size = size + 1
+                stack[ size ] = table_concat( { string_rep( " ", size ), ( size - 1 ), ". ", info.name or "unknown", " - ", info.short_src or "unknown", ":", info.currentline or -1 } )
+            end
+
+            size = size + 1
+            stack[ size ] = "\n"
+
+            return ErrorNoHalt( table_concat( stack, "\n", 1, size ) )
+        end
+
+        return error( message, stack_level + 1 )
+    end
+
+    std.error = std_error
+
+    --- [SHARED AND MENU]
+    ---
+    --- Throws an error with the specified message and level.
+    ---
+    ---@param stack_level? integer The stack level to throw the error.
+    ---@param dont_break? boolean If `true`, the error will not break the current stack.
+    ---@param fmt string The error message to throw.
+    ---@param ... any The error message arguments to format/interpolate.
+    function std.errorf( stack_level, dont_break, fmt, ... )
+        return std_error( string_format( fmt, ... ), ( stack_level or 1 ) + 1, dont_break )
+    end
+
+end
+
+do
+
+    local engine_consoleMessage = engine.consoleMessage
 
     --- [SHARED AND MENU]
     ---
@@ -1072,9 +1083,9 @@ do
     function std.print( ... )
         local arg_count = select( "#", ... )
         if arg_count == 0 then
-            console_message( "\n" )
+            engine_consoleMessage( "\n" )
         elseif arg_count == 1 then
-            console_message( tostring( ... ) .. "\n" )
+            engine_consoleMessage( tostring( ... ) .. "\n" )
         else
             local args = { ... }
 
@@ -1082,7 +1093,7 @@ do
                 args[ arg_num ] = tostring( args[ arg_num ] )
             end
 
-            console_message( table_concat( args, "\t", 1, arg_count ) .. "\n" )
+            engine_consoleMessage( table_concat( args, "\t", 1, arg_count ) .. "\n" )
         end
     end
 
@@ -1094,12 +1105,12 @@ do
     ---@param fmt string The format string.
     ---@param ... any The arguments to format/interpolate.
     function std.printf( fmt, ... )
-        return console_message( string_format( fmt, ... ) .. "\n" )
+        return engine_consoleMessage( string_format( fmt, ... ) .. "\n" )
     end
 
     do
 
-        local console_message_colored = engine.consoleMessageColored
+        local engine_consoleMessageColored = engine.consoleMessageColored
         local realm_color = color_scheme.realm
         local iscolor = std.iscolor
         local tocolor = std.tocolor
@@ -1120,14 +1131,14 @@ do
                     color = value
                 elseif isstring( value ) then
                     ---@cast value string
-                    console_message_colored( value, color )
+                    engine_consoleMessageColored( value, color )
                 else
                     ---@cast value any
-                    console_message_colored( tostring( value ), tocolor( value ) or color )
+                    engine_consoleMessageColored( tostring( value ), tocolor( value ) or color )
                 end
             end
 
-            console_message( "\n" )
+            engine_consoleMessage( "\n" )
         end
 
         local color_fromHex = std.Color.fromHex
@@ -1192,12 +1203,12 @@ do
                         arg_index = arg_index + 1
 
                         if arg_index > arg_count then
-                            error( string_format( "Argument #%d [%s] to 'printfc' is missing!", arg_index, string_char( uint8_1, uint8_2 ) ), 2 )
+                            std.errorf( 2, false, fmt, "Argument #%d [%s] to 'printfc' is missing!", arg_index, string_char( uint8_1, uint8_2 ) )
                         end
 
                         if uint8_2 == 0x43 --[[ C ]] then
                             if buffer_length ~= 0 then
-                                console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+                                engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
                                 buffer_length = 0
                             end
 
@@ -1226,7 +1237,7 @@ do
                         end
 
                         if buffer_length ~= 0 then
-                            console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+                            engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
                             buffer_length = 0
                         end
 
@@ -1256,7 +1267,7 @@ do
             end
 
             if buffer_length ~= 0 then
-                console_message_colored( table_concat( buffer, "", 1, buffer_length ), color )
+                engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
             end
         end
 
