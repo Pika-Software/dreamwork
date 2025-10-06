@@ -515,7 +515,9 @@ do
     local MsgC = _G.MsgC
 
     if MsgC == nil then
-        engine.consoleMessageColored = engine.consoleMessage
+        function engine.consoleMessageColored( str, color )
+            return engine.consoleMessage( str )
+        end
     else
 
         local white_color = std.Color.scheme.white
@@ -526,7 +528,6 @@ do
         ---
         ---@param str string The string to print.
         ---@param color dreamwork.std.Color The color to print the string with.
-        ---@diagnostic disable-next-line: duplicate-set-field
         function engine.consoleMessageColored( str, color )
             local index, str_length = 1, utf8_len( str )
 
