@@ -188,7 +188,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
 
         ---@param file_path string
         ---@param game_path string
-        ---@return dreamwork.std.fs.ReadRespond respond
+        ---@return dreamwork.std.futures.Future future
         ---@async
         function async_read( file_path, game_path )
             local f = Future()
@@ -216,13 +216,13 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
                 } )
             end
 
-            return f:await()
+            return f
         end
 
         ---@param file_path string
         ---@param game_path string
         ---@param data string
-        ---@return dreamwork.std.fs.WriteRespond respond
+        ---@return dreamwork.std.futures.Future future
         ---@async
         function async_write( file_path, game_path, data )
             local f = Future()
@@ -249,13 +249,13 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
                 } )
             end
 
-            return f:await()
+            return f
         end
 
         ---@param file_path string
         ---@param game_path string
         ---@param data string
-        ---@return dreamwork.std.fs.WriteRespond respond
+        ---@return dreamwork.std.futures.Future future
         ---@async
         function async_append( file_path, game_path, data )
             local f = Future()
@@ -282,7 +282,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
                 } )
             end
 
-            return f:await()
+            return f
         end
 
         dreamwork.Logger:info( "'asyncio' was loaded & connected as file system driver." )
@@ -307,6 +307,7 @@ if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_writ
     ---@param file_path string
     ---@param game_path string
     ---@param data string
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_write( file_path, game_path, data )
         local f = Future()
@@ -333,12 +334,13 @@ if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_writ
             } )
         end
 
-        return f:await()
+        return f
     end
 
     ---@param file_path string
     ---@param game_path string
     ---@param data string
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_append( file_path, game_path, data )
         local f = Future()
@@ -365,7 +367,7 @@ if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_writ
             } )
         end
 
-        return f:await()
+        return f
     end
 
     dreamwork.Logger:info( "'async_write' was loaded & connected as file system driver." )
@@ -379,7 +381,7 @@ if async_read == nil and not MENU and file.AsyncRead ~= nil then
 
     ---@param file_path string
     ---@param game_path string
-    ---@return dreamwork.std.fs.ReadRespond respond
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_read( file_path, game_path )
         local f = Future()
@@ -407,7 +409,7 @@ if async_read == nil and not MENU and file.AsyncRead ~= nil then
             } )
         end
 
-        return f:await()
+        return f
     end
 
 end
@@ -416,29 +418,27 @@ if async_read == nil then
 
     ---@param file_path string
     ---@param game_path string
-    ---@return dreamwork.std.fs.ReadRespond respond
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_read( file_path, game_path )
-        local handler = file_Open( file_path, "rb", game_path )
-        if handler == nil then
-            ---@type dreamwork.std.fs.ReadRespond
-            return {
-                file_path = file_path,
-                game_path = game_path,
-                status = -1
-            }
-        end
-
-        local data = FILE_Read( handler, FILE_Size( handler ) )
-        FILE_Close( handler )
-
         ---@type dreamwork.std.fs.ReadRespond
-        return {
+        local respond = {
             file_path = file_path,
             game_path = game_path,
-            status = 0,
-            data = data
+            status = 0
         }
+
+        local handler = file_Open( file_path, "rb", game_path )
+        if handler == nil then
+            respond.status = -1
+        else
+            respond.data = FILE_Read( handler, FILE_Size( handler ) )
+            FILE_Close( handler )
+        end
+
+        local f = Future()
+        f:setResult( respond )
+        return f
     end
 
 end
@@ -448,28 +448,27 @@ if async_write == nil then
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.fs.WriteRespond respond
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_write( file_path, game_path, data )
-        local handler = file_Open( file_path, "wb", game_path )
-        if handler == nil then
-            ---@type dreamwork.std.fs.WriteRespond
-            return {
-                file_path = file_path,
-                game_path = game_path,
-                status = -1
-            }
-        end
-
-        FILE_Write( handler, data )
-        FILE_Close( handler )
-
         ---@type dreamwork.std.fs.WriteRespond
-        return {
+        local respond = {
             file_path = file_path,
             game_path = game_path,
             status = 0
         }
+
+        local handler = file_Open( file_path, "wb", game_path )
+        if handler == nil then
+            respond.status = -1
+        else
+            FILE_Write( handler, data )
+            FILE_Close( handler )
+        end
+
+        local f = Future()
+        f:setResult( respond )
+        return f
     end
 
 end
@@ -479,28 +478,27 @@ if async_append == nil then
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.fs.WriteRespond respond
+    ---@return dreamwork.std.futures.Future future
     ---@async
     function async_append( file_path, game_path, data )
-        local handler = file_Open( file_path, "ab", game_path )
-        if handler == nil then
-            ---@type dreamwork.std.fs.WriteRespond
-            return {
-                file_path = file_path,
-                game_path = game_path,
-                status = -1
-            }
-        end
-
-        FILE_Write( handler, data )
-        FILE_Close( handler )
-
         ---@type dreamwork.std.fs.WriteRespond
-        return {
+        local respond = {
             file_path = file_path,
             game_path = game_path,
             status = 0
         }
+
+        local handler = file_Open( file_path, "ab", game_path )
+        if handler == nil then
+            respond.status = -1
+        else
+            FILE_Write( handler, data )
+            FILE_Close( handler )
+        end
+
+        local f = Future()
+        f:setResult( respond )
+        return f
     end
 
 end
@@ -690,6 +688,15 @@ setmetatable( sizes, {
     __mode = "k"
 } )
 
+---@param directory dreamwork.std.fs.Directory
+---@param byte_count integer
+local function size_add( directory, byte_count )
+    while directory ~= nil do
+        sizes[ directory ] = sizes[ directory ] + byte_count
+        directory = parents[ directory ]
+    end
+end
+
 ---@type table<dreamwork.std.fs.Object, integer>
 local times = {}
 
@@ -801,7 +808,7 @@ if std.loadbinary( "efsw" ) then
     ---
     --- Starts monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@param fs_object dreamwork.std.fs.Object
     ---@return boolean success
     ---@return integer watch_id
     function watchdog.watch( fs_object )
@@ -829,7 +836,7 @@ if std.loadbinary( "efsw" ) then
     ---
     --- Stops monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@param fs_object dreamwork.std.fs.Object
     ---@return boolean success
     function watchdog.unwatch( fs_object )
         local watch_id = watch_ids[ fs_object ]
@@ -897,7 +904,7 @@ else
     ---
     --- Starts monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@param fs_object dreamwork.std.fs.Object
     ---@return boolean success
     ---@return integer watch_id
     function watchdog.watch( fs_object )
@@ -974,7 +981,7 @@ else
     ---
     --- Stops monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Directory | dreamwork.std.fs.File
+    ---@param fs_object dreamwork.std.fs.Object
     function watchdog.unwatch( fs_object )
         if watch_map[ fs_object ] == nil then
             return
@@ -995,7 +1002,7 @@ else
     ---
     --- Checks if a file or directory is being watched.
     ---
-    ---@param fs_object string
+    ---@param fs_object dreamwork.std.fs.Object
     ---@return boolean is_watched
     function watchdog.isWatched( fs_object )
         return watch_map[ fs_object ] ~= nil
@@ -1225,6 +1232,88 @@ function File:__tostring()
     return string.format( "File: %p [%s][%s][%d bytes]", self, self.path, time.toDuration( time_now() - self.time ), self.size )
 end
 
+local async_job_register, async_job_unregister, is_busy
+do
+
+    ---@type table<dreamwork.std.fs.Object, dreamwork.std.futures.Future[]>
+    local async_jobs = {}
+    gc_setTableRules( async_jobs, true, false )
+
+    ---@type table<dreamwork.std.fs.Object, integer>
+    local async_job_counts = {}
+    gc_setTableRules( async_job_counts, true, false )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Registers a file or directory for asynchronous monitoring.
+    ---
+    ---@param fs_object dreamwork.std.fs.Object
+    ---@param future dreamwork.std.futures.Future
+    ---@return boolean is_registered
+    function async_job_register( fs_object, future )
+        if future:isFinished() then
+            return false
+        end
+
+        local job_count = ( async_job_counts[ fs_object ] or 0 ) + 1
+
+        local jobs = async_jobs[ fs_object ]
+        if jobs == nil then
+            async_jobs[ fs_object ] = { future }
+        else
+            jobs[ job_count ] = future
+        end
+
+        async_job_counts[ fs_object ] = job_count
+
+        local directory_object = parents[ fs_object ]
+        if directory_object ~= nil then
+            async_job_register( directory_object, future )
+        end
+
+        return true
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Unregisters a file or directory from asynchronous monitoring.
+    ---
+    ---@param fs_object dreamwork.std.fs.Object
+    ---@param future dreamwork.std.futures.Future
+    ---@return boolean is_unregistered
+    function async_job_unregister( fs_object, future )
+        local job_count = async_job_counts[ fs_object ] or 0
+        local jobs = async_jobs[ fs_object ]
+
+        for i = job_count, 1, -1 do
+            if jobs[ i ] == future then
+                table_remove( jobs, i )
+                async_job_counts[ fs_object ] = job_count - 1
+
+                local directory_object = parents[ fs_object ]
+                if directory_object ~= nil then
+                    async_job_unregister( directory_object, future )
+                end
+
+                return true
+            end
+        end
+
+        return false
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `true` if the file or directory is busy, otherwise `false`.
+    ---
+    ---@param fs_object dreamwork.std.fs.Object
+    ---@return boolean is_busy
+    function is_busy( fs_object )
+        return async_job_counts[ fs_object ] ~= 0
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- Returns the data of a file by given path.
@@ -1232,7 +1321,21 @@ end
 ---@return string data The data of the file.
 ---@async
 function File:read()
+    local f = async_read( mount_paths[ self ], mount_points[ self ] )
+    local is_registered = async_job_register( self, f )
 
+    ---@type dreamwork.std.fs.ReadRespond
+    local respond = f:await()
+
+    if is_registered then
+        async_job_unregister( self, f )
+    end
+
+    if respond.status ~= 0 then
+        error( make_async_message( respond.status, self, false ), 2 )
+    end
+
+    return respond.data
 end
 
 --- [SHARED AND MENU]
@@ -1242,7 +1345,39 @@ end
 ---@param data string The new data of the file.
 ---@async
 function File:write( data )
+    local mount_path, mount_point = mount_paths[ self ], mount_points[ self ]
 
+    local f = async_write( mount_path, mount_point, data )
+    local is_registered = async_job_register( self, f )
+
+    ---@type dreamwork.std.fs.WriteRespond
+    local respond = f:await()
+
+    if is_registered then
+        async_job_unregister( self, f )
+    end
+
+    if respond.status ~= 0 then
+        error( make_async_message( respond.status, self, false ), 2 )
+    end
+
+    times[ self ] = file_Time( mount_path, mount_point )
+
+    local new_size = string_len( data )
+
+    local directory_object = parents[ self ]
+    if directory_object ~= nil then
+        size_add( directory_object, -sizes[ self ] )
+        size_add( directory_object, new_size )
+    end
+
+    sizes[ self ] = new_size
+
+    if watchdog.isWatched( self ) then
+        watchdog_Modified:call( self, false )
+    end
+
+    return respond
 end
 
 --- [SHARED AND MENU]
@@ -1252,7 +1387,39 @@ end
 ---@param data string The data to append.
 ---@async
 function File:append( data )
+    local mount_path, mount_point = mount_paths[ self ], mount_points[ self ]
 
+    local f = async_append( mount_path, mount_point, data )
+    local is_registered = async_job_register( self, f )
+
+    ---@type dreamwork.std.fs.WriteRespond
+    local respond = f:await()
+
+    if is_registered then
+        async_job_unregister( self, f )
+    end
+
+    if respond.status ~= 0 then
+        error( make_async_message( respond.status, self, false ), 2 )
+    end
+
+    times[ self ] = file_Time( mount_path, mount_point )
+
+    local new_size = file_Size( mount_path, mount_point )
+
+    local directory_object = parents[ self ]
+    if directory_object ~= nil then
+        size_add( directory_object, -sizes[ self ] )
+        size_add( directory_object, new_size )
+    end
+
+    sizes[ self ] = new_size
+
+    if watchdog.isWatched( self ) then
+        watchdog_Modified:call( self, false )
+    end
+
+    return respond
 end
 
 --- [SHARED AND MENU]
@@ -1419,15 +1586,6 @@ local FileClass = class.create( File )
 ---@field __base dreamwork.std.fs.Directory
 ---@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.fs.Directory
 local DirectoryClass = class.create( Directory )
-
----@param directory dreamwork.std.fs.Directory
----@param byte_count integer
-local function size_add( directory, byte_count )
-    while directory ~= nil do
-        sizes[ directory ] = sizes[ directory ] + byte_count
-        directory = parents[ directory ]
-    end
-end
 
 ---@param directory dreamwork.std.fs.Directory
 ---@param descendant dreamwork.std.fs.Object
