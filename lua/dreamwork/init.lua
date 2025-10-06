@@ -971,12 +971,14 @@ dofile( "std/version.lua" )
 dofile( "std/bigint.lua" )
 dofile( "std/color.lua" )
 
+---@class dreamwork.std.ColorClass.scheme
 local color_scheme
 do
 
     local Color = std.Color
     color_scheme = Color.scheme
 
+    -- General
     color_scheme.white = Color( 255, 255, 255, 255 )
     color_scheme.black = Color( 0, 0, 0, 255 )
 
@@ -990,27 +992,47 @@ do
 
     color_scheme.gray = Color( 128, 128, 128, 255 )
 
-    color_scheme.info = Color( 70, 135, 255 )
-    color_scheme.warn = Color( 255, 130, 90 )
-    color_scheme.error = Color( 250, 55, 40 )
-    color_scheme.debug = Color( 0, 200, 150 )
-
     color_scheme.text_primary = Color( 200 )
     color_scheme.text_secondary = Color( 150 )
 
-    color_scheme.realm_menu = Color( 75, 175, 80 )
-    color_scheme.realm_client = Color( 225, 170, 10 )
-    color_scheme.realm_server = Color( 5, 170, 250 )
+    -- Garry's Mod
+    -- Thank you code_gs <3
+    -- https://discord.com/channels/565105920414318602/565108080300261398/905385921283756062
+    color_scheme.server_message = Color( 156, 241, 255, 200 )
+    color_scheme.server_error = Color( 136, 221, 255, 255 )
 
+    color_scheme.client_message = Color( 255, 241, 122, 200 )
+    color_scheme.client_error = Color( 255, 221, 102, 255 )
+
+    color_scheme.menu_message = Color( 100, 220, 100, 200 )
+    color_scheme.menu_error = Color( 120, 220, 100, 255 )
+
+    -- DreamWork
+    color_scheme.dreamwork_main = Color( 180, 180, 255 )
+
+    color_scheme.dreamwork_info = Color( 70, 135, 255 )
+    color_scheme.dreamwork_warn = Color( 255, 130, 90 )
+    color_scheme.dreamwork_error = Color( 250, 55, 40 )
+    color_scheme.dreamwork_debug = Color( 0, 200, 150 )
+
+    color_scheme.dreamwork_menu = Color( 75, 175, 80 )
+    color_scheme.dreamwork_client = Color( 225, 170, 10 )
+    color_scheme.dreamwork_server = Color( 5, 170, 250 )
+
+    -- Dynamic
     if CLIENT then
-        color_scheme.realm = color_scheme.realm_client
-    elseif SERVER then
-        color_scheme.realm = color_scheme.realm_server
+        color_scheme.realm = color_scheme.dreamwork_client
+        color_scheme.message = color_scheme.client_message
+        color_scheme.error = color_scheme.client_error
+    elseif MENU then
+        color_scheme.realm = color_scheme.dreamwork_menu
+        color_scheme.message = color_scheme.menu_message
+        color_scheme.error = color_scheme.menu_error
     else
-        color_scheme.realm = color_scheme.realm_menu
+        color_scheme.realm = color_scheme.dreamwork_server
+        color_scheme.message = color_scheme.server_message
+        color_scheme.error = color_scheme.server_error
     end
-
-    color_scheme.dreamwork = Color( 180, 180, 255 )
 
 end
 
@@ -1342,7 +1364,7 @@ if SERVER then
 end
 
 local logger = std.console.Logger( {
-    color = color_scheme.dreamwork,
+    color = color_scheme.dreamwork_main,
     title = dreamwork.PREFIX,
     interpolation = false
 } )

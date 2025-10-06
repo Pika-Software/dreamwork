@@ -3,17 +3,19 @@ local std = _G.dreamwork.std
 ---@class dreamwork.std.console
 local console = std.console
 
-local scheme = std.Color.scheme
-local realm_text, realm_color
+local color_scheme = std.Color.scheme
+local realm_color = color_scheme.realm
+
+local realm_text
 
 if std.MENU then
-    realm_text, realm_color = "[Main Menu] ", scheme.realm_menu
+    realm_text = "[Main Menu] "
 elseif std.CLIENT then
-    realm_text, realm_color = "[ Client ]  ", scheme.realm_client
+    realm_text = "[ Client ]  "
 elseif std.SERVER then
-    realm_text, realm_color = "[ Server ]  ", scheme.realm_server
+    realm_text = "[ Server ]  "
 else
-    realm_text, realm_color = "[ Unknown ] ", color_white
+    realm_text = "[ Unknown ] "
 end
 
 --- [SHARED AND MENU]
@@ -57,9 +59,9 @@ else
 
 end
 
-local white_color = scheme.white
-local primary_text_color = scheme.text_primary
-local secondary_text_color = scheme.text_secondary
+local white_color = color_scheme.white
+local primary_text_color = color_scheme.text_primary
+local secondary_text_color = color_scheme.text_secondary
 
 ---@protected
 function Logger:__init( options )
@@ -159,7 +161,7 @@ end
 
 do
 
-    local info_color = scheme.info
+    local info_color = color_scheme.dreamwork_info
 
     --- [SHARED AND MENU]
     ---
@@ -172,7 +174,7 @@ end
 
 do
 
-    local warn_color = scheme.warn
+    local warn_color = color_scheme.dreamwork_warn
 
     --- [SHARED AND MENU]
     ---
@@ -185,7 +187,7 @@ end
 
 do
 
-    local error_color = scheme.error
+    local error_color = color_scheme.dreamwork_error
 
     --- [SHARED AND MENU]
     ---
@@ -198,7 +200,7 @@ end
 
 do
 
-    local debug_color = scheme.debug
+    local debug_color = color_scheme.dreamwork_debug
 
     --- [SHARED AND MENU]
     ---
