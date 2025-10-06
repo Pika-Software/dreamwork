@@ -62,6 +62,10 @@ local path = std.path
 local path_split = path.split
 local path_resolve = path.resolve
 
+local reserved_names = {
+    [ "^dreamwork_tmp$.dat" ] = true
+}
+
 do
 
     local require = _G.require or debug.fempty
@@ -600,7 +604,7 @@ do
         __newindex = function( self, fs_object, name )
             for index = 1, string_len( name ), 1 do
                 if invalid_characters[ string_byte( name, index, index ) ] then
-                    error( string.format( "directory or file name contains invalid character \\%X at index %d in '%s'", string_byte( name, index, index ), index, name ), 2 )
+                    std.errorf( 2, false, "directory or file name contains invalid character \\%X at index %d in '%s'", string_byte( name, index, index ), index, name )
                 end
             end
 
@@ -659,11 +663,11 @@ gc_setTableRules( indexes, true, false )
 local is_directory_object = {}
 gc_setTableRules( is_directory_object, true, false )
 
----@type table<dreamwork.std.fs.Directory, string>
+---@type table<dreamwork.std.fs.Object, string>
 local mount_points = {}
 gc_setTableRules( mount_points, true, false )
 
----@type table<dreamwork.std.fs.Directory, string>
+---@type table<dreamwork.std.fs.Object, string>
 local mount_paths = {}
 gc_setTableRules( mount_paths, true, false )
 
@@ -688,15 +692,6 @@ setmetatable( sizes, {
     __mode = "k"
 } )
 
----@param directory dreamwork.std.fs.Directory
----@param byte_count integer
-local function size_add( directory, byte_count )
-    while directory ~= nil do
-        sizes[ directory ] = sizes[ directory ] + byte_count
-        directory = parents[ directory ]
-    end
-end
-
 ---@type table<dreamwork.std.fs.Object, integer>
 local times = {}
 
@@ -717,6 +712,141 @@ setmetatable( times, {
     end,
     __mode = "k"
 } )
+
+---@param fs_object dreamwork.std.fs.Object
+---@param parent dreamwork.std.fs.Directory | nil
+local function update_path( fs_object, parent )
+    if parent == nil then
+        paths[ fs_object ] = "/" .. names[ fs_object ]
+    else
+
+        local parent_path = paths[ parent ]
+
+        local uint8_1, uint8_2 = string_byte( parent_path, 1, 2 )
+        if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
+            paths[ fs_object ] = parent_path .. names[ fs_object ]
+        else
+            paths[ fs_object ] = parent_path .. "/" .. names[ fs_object ]
+        end
+
+    end
+
+    if is_directory_object[ fs_object ] then
+        ---@cast fs_object dreamwork.std.fs.Directory
+
+        local descendant_list = descendants[ fs_object ]
+        for index = 1, descendant_counts[ fs_object ], 1 do
+            update_path( descendant_list[ index ], fs_object )
+        end
+    end
+end
+
+---@param directory dreamwork.std.fs.Directory
+---@param name string
+local function abs_path( directory, name )
+    local directory_path = directory.path
+
+    local uint8_1, uint8_2 = string_byte( directory_path, 1, 2 )
+    if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
+        return directory_path .. name
+    else
+        return directory_path .. "/" .. name
+    end
+end
+
+---@param directory dreamwork.std.fs.Directory
+---@param name string
+local function rel_path( directory, name )
+    local mount_path = mount_paths[ directory ]
+    if mount_path == nil then
+        return name
+    else
+        return mount_path .. "/" .. name
+    end
+end
+
+---@param directory dreamwork.std.fs.Directory
+---@param byte_count integer
+local function size_add( directory, byte_count )
+    while directory ~= nil do
+        sizes[ directory ] = sizes[ directory ] + byte_count
+        directory = parents[ directory ]
+    end
+end
+
+---@param directory dreamwork.std.fs.Directory
+---@param descendant dreamwork.std.fs.Object
+local function insert( directory, descendant )
+    if is_directory_object[ descendant ] == nil then
+        error( "new descendant must be a File or a Directory", 2 )
+    end
+
+    local name = names[ descendant ]
+    local descendants_table = descendants[ directory ]
+
+    local previous = descendants_table[ name ]
+    if previous ~= nil then
+        if previous == descendant then
+            return
+        else
+            error( "file or directory with the same name already exists", 2 )
+        end
+    end
+
+    local parent = directory
+    while parent ~= nil do
+        if parent == descendant then
+            error( "descendant directory cannot be parent", 2 )
+        end
+
+        parent = parents[ parent ]
+    end
+
+    parents[ descendant ] = directory
+
+    local index = descendant_counts[ directory ] + 1
+    descendant_counts[ directory ] = index
+
+    indexes[ descendant ] = index
+
+    descendants_table[ index ] = descendant
+    descendants_table[ name ] = descendant
+
+    update_path( descendant, directory )
+
+    times[ directory ] = nil
+    size_add( directory, sizes[ descendant ] )
+end
+
+---@param directory dreamwork.std.fs.Directory
+---@param name string
+local function eject( directory, name )
+    local descendants_table = descendants[ directory ]
+
+    local descendant = descendants_table[ name ]
+    if descendant == nil then
+        return
+    end
+
+    size_add( directory, -sizes[ descendant ] )
+
+    if mount_points[ descendant ] == nil then
+        times[ directory ] = time_now()
+    else
+        times[ directory ] = nil
+    end
+
+    update_path( descendant, nil )
+
+    descendants_table[ name ] = nil
+    table_remove( descendants_table, indexes[ descendant ] )
+
+    indexes[ descendant ] = nil
+
+    descendant_counts[ directory ] = descendant_counts[ directory ] - 1
+
+    parents[ descendant ] = nil
+end
 
 local make_watchdog_message
 do
@@ -866,7 +996,7 @@ if std.loadbinary( "efsw" ) then
         end
 
         local fs_object = fs.get( "/garrysmod/" .. file_path )
-        if fs_object == nil then
+        if fs_object == nil or reserved_names[ path.getName( file_path, true ) ] then
             return
         end
 
@@ -911,6 +1041,10 @@ else
         local watch_id = watch_map[ fs_object ]
         if watch_id ~= nil then
             return true, watch_id
+        end
+
+        if reserved_names[ names[ fs_object ] ] then
+            return false, -4
         end
 
         local mount_point = mount_points[ fs_object ]
@@ -1232,86 +1366,99 @@ function File:__tostring()
     return string.format( "File: %p [%s][%s][%d bytes]", self, self.path, time.toDuration( time_now() - self.time ), self.size )
 end
 
-local async_job_register, async_job_unregister, is_busy
-do
+---@type table<dreamwork.std.fs.Object, dreamwork.std.futures.Future[]>
+local async_jobs = {}
+gc_setTableRules( async_jobs, true, false )
 
-    ---@type table<dreamwork.std.fs.Object, dreamwork.std.futures.Future[]>
-    local async_jobs = {}
-    gc_setTableRules( async_jobs, true, false )
+---@type table<dreamwork.std.fs.Object, integer>
+local async_job_counts = {}
 
-    ---@type table<dreamwork.std.fs.Object, integer>
-    local async_job_counts = {}
-    gc_setTableRules( async_job_counts, true, false )
+setmetatable( async_job_counts, {
+    __index = function()
+        return 0
+    end,
+    __mode = "k"
+} )
 
-    --- [SHARED AND MENU]
-    ---
-    --- Registers a file or directory for asynchronous monitoring.
-    ---
-    ---@param fs_object dreamwork.std.fs.Object
-    ---@param future dreamwork.std.futures.Future
-    ---@return boolean is_registered
-    function async_job_register( fs_object, future )
-        if future:isFinished() then
-            return false
-        end
-
-        local job_count = ( async_job_counts[ fs_object ] or 0 ) + 1
-
-        local jobs = async_jobs[ fs_object ]
-        if jobs == nil then
-            async_jobs[ fs_object ] = { future }
-        else
-            jobs[ job_count ] = future
-        end
-
-        async_job_counts[ fs_object ] = job_count
-
-        local directory_object = parents[ fs_object ]
-        if directory_object ~= nil then
-            async_job_register( directory_object, future )
-        end
-
-        return true
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Unregisters a file or directory from asynchronous monitoring.
-    ---
-    ---@param fs_object dreamwork.std.fs.Object
-    ---@param future dreamwork.std.futures.Future
-    ---@return boolean is_unregistered
-    function async_job_unregister( fs_object, future )
-        local job_count = async_job_counts[ fs_object ] or 0
-        local jobs = async_jobs[ fs_object ]
-
-        for i = job_count, 1, -1 do
-            if jobs[ i ] == future then
-                table_remove( jobs, i )
-                async_job_counts[ fs_object ] = job_count - 1
-
-                local directory_object = parents[ fs_object ]
-                if directory_object ~= nil then
-                    async_job_unregister( directory_object, future )
-                end
-
-                return true
-            end
-        end
-
+--- [SHARED AND MENU]
+---
+--- Registers a file or directory for asynchronous monitoring.
+---
+---@param fs_object dreamwork.std.fs.Object
+---@param future dreamwork.std.futures.Future
+---@return boolean is_registered
+local function async_job_register( fs_object, future )
+    if future:isFinished() then
         return false
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns `true` if the file or directory is busy, otherwise `false`.
-    ---
-    ---@param fs_object dreamwork.std.fs.Object
-    ---@return boolean is_busy
-    function is_busy( fs_object )
-        return async_job_counts[ fs_object ] ~= 0
+    local job_count = async_job_counts[ fs_object ]
+
+    if job_count == 0 then
+        async_jobs[ fs_object ] = { [ 0 ] = Future() }
     end
 
+    job_count = job_count + 1
+    async_jobs[ fs_object ][ job_count ] = future
+
+    async_job_counts[ fs_object ] = job_count
+
+    local directory_object = parents[ fs_object ]
+    if directory_object ~= nil then
+        async_job_register( directory_object, future )
+    end
+
+    return true
+end
+
+--- [SHARED AND MENU]
+---
+--- Unregisters a file or directory from asynchronous monitoring.
+---
+---@param fs_object dreamwork.std.fs.Object
+---@param future dreamwork.std.futures.Future
+---@return boolean is_unregistered
+local function async_job_unregister( fs_object, future )
+    local job_count = async_job_counts[ fs_object ]
+    if job_count == 0 then
+        return false
+    end
+
+    local jobs = async_jobs[ fs_object ]
+
+    for i = job_count, 1, -1 do
+        if jobs[ i ] == future then
+            table_remove( jobs, i )
+            job_count = job_count - 1
+
+            if job_count == 0 then
+                jobs[ 0 ]:setResult()
+                async_jobs[ fs_object ] = nil
+                async_job_counts[ fs_object ] = nil
+            else
+                async_job_counts[ fs_object ] = job_count
+            end
+
+            local directory_object = parents[ fs_object ]
+            if directory_object ~= nil then
+                async_job_unregister( directory_object, future )
+            end
+
+            return true
+        end
+    end
+
+    return false
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns `true` if the file or directory is busy, otherwise `false`.
+---
+---@param fs_object dreamwork.std.fs.Object
+---@return boolean is_busy
+local function is_busy( fs_object )
+    return async_job_counts[ fs_object ] ~= 0
 end
 
 --- [SHARED AND MENU]
@@ -1424,23 +1571,81 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames a file.
+--- Deletes a file.
 ---
----@param name string The new name of the file.
 ---@async
-function File:rename( name )
+function File:delete()
+    local mount_point = mount_points[ self ]
+    if mount_point == nil or deletable_mounts[ mount_point ] ~= true then
+        std.errorf( 2, false, "'%s' is not in a deletable directory and cannot be deleted.", self )
+        return
+    end
 
+    if is_busy( self ) then
+        async_jobs[ self ][ 0 ]:await()
+    end
+
+    file_Delete( mount_paths[ self ], mount_point )
+    eject( parents[ self ], names[ self ] )
 end
 
 --- [SHARED AND MENU]
 ---
---- Moves a file to another directory.
+--- Renames a file.
 ---
----@param directory dreamwork.std.fs.Directory The directory to move the file to.
----@param name? string The new name of the file. If `nil`, the original name will be used.
+---@param name string The new name of the file.
+---@param forced? boolean If `true`, the file will be overwritten if it already exists.
 ---@async
-function File:move( directory, name )
+function File:rename( name, forced )
+    if async_job_counts[ self ] ~= 0 then
+        async_jobs[ self ][ 0 ]:await()
+    end
 
+    local mount_point = mount_points[ self ]
+    if mount_point == nil or writeable_mounts[ mount_point ] ~= true then
+        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be renamed.", self )
+        return
+    end
+
+    local parent = parents[ self ]
+    if parent == nil then
+        std.errorf( 2, false, "'%s' has no parent directory and cannot be renamed.", self )
+        return
+    end
+
+    if parent:get( self.name ) ~= self then
+        std.errorf( 2, false, "'%s' is not in its parent directory '%s' and cannot be renamed.", self, parent )
+        return
+    end
+
+    local existing_object = parent:get( name )
+    if existing_object ~= nil then
+        if forced then
+            if deletable_mounts[ mount_point ] ~= true then
+                std.errorf( 2, false, "'%s' is not in a deletable directory and cannot be overwritten.", self )
+                return
+            end
+
+            existing_object:delete()
+        else
+            std.errorf( 2, false, "File '%' already exists in directory '%'. Use forced=true to overwrite it.", name, parent )
+            return
+        end
+    end
+
+    local data = self:read()
+
+    if is_busy( self ) then
+        async_jobs[ self ][ 0 ]:await()
+    end
+
+    file_Delete( mount_paths[ self ], mount_point )
+    mount_paths[ self ] = rel_path( parent, name )
+
+    names[ self ] = name
+    update_path( self, parent )
+
+    self:write( data )
 end
 
 --- [SHARED AND MENU]
@@ -1456,9 +1661,12 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Deletes a file.
+--- Moves a file to another directory.
 ---
-function File:delete()
+---@param directory dreamwork.std.fs.Directory The directory to move the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function File:move( directory, name )
 
 end
 
@@ -1474,58 +1682,6 @@ do
 
     end
 
-end
-
----@param fs_object dreamwork.std.fs.Object
----@param parent dreamwork.std.fs.Directory | nil
-local function update_path( fs_object, parent )
-    if parent == nil then
-        paths[ fs_object ] = "/" .. names[ fs_object ]
-    else
-
-        local parent_path = paths[ parent ]
-
-        local uint8_1, uint8_2 = string_byte( parent_path, 1, 2 )
-        if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
-            paths[ fs_object ] = parent_path .. names[ fs_object ]
-        else
-            paths[ fs_object ] = parent_path .. "/" .. names[ fs_object ]
-        end
-
-    end
-
-    if is_directory_object[ fs_object ] then
-        ---@cast fs_object dreamwork.std.fs.Directory
-
-        local descendant_list = descendants[ fs_object ]
-        for index = 1, descendant_counts[ fs_object ], 1 do
-            update_path( descendant_list[ index ], fs_object )
-        end
-    end
-end
-
----@param directory dreamwork.std.fs.Directory
----@param name string
-local function abs_path( directory, name )
-    local directory_path = directory.path
-
-    local uint8_1, uint8_2 = string_byte( directory_path, 1, 2 )
-    if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
-        return directory_path .. name
-    else
-        return directory_path .. "/" .. name
-    end
-end
-
----@param directory dreamwork.std.fs.Directory
----@param name string
-local function rel_path( directory, name )
-    local mount_path = mount_paths[ directory ]
-    if mount_path == nil then
-        return name
-    else
-        return mount_path .. "/" .. name
-    end
 end
 
 ---@protected
@@ -1587,80 +1743,6 @@ local FileClass = class.create( File )
 ---@overload fun( name: string, mount_point: string | nil, mount_path: string | nil ): dreamwork.std.fs.Directory
 local DirectoryClass = class.create( Directory )
 
----@param directory dreamwork.std.fs.Directory
----@param descendant dreamwork.std.fs.Object
-local function insert( directory, descendant )
-    if is_directory_object[ descendant ] == nil then
-        error( "new descendant must be a File or a Directory", 2 )
-    end
-
-    local name = names[ descendant ]
-    local descendants_table = descendants[ directory ]
-
-    local previous = descendants_table[ name ]
-    if previous ~= nil then
-        if previous == descendant then
-            return
-        else
-            error( "file or directory with the same name already exists", 2 )
-        end
-    end
-
-    local parent = directory
-    while parent ~= nil do
-        if parent == descendant then
-            error( "descendant directory cannot be parent", 2 )
-        end
-
-        parent = parents[ parent ]
-    end
-
-    parents[ descendant ] = directory
-
-    local index = descendant_counts[ directory ] + 1
-    descendant_counts[ directory ] = index
-
-    indexes[ descendant ] = index
-
-    descendants_table[ index ] = descendant
-    descendants_table[ name ] = descendant
-
-    update_path( descendant, directory )
-
-    times[ directory ] = nil
-    size_add( directory, sizes[ descendant ] )
-end
-
----@param directory dreamwork.std.fs.Directory
----@param name string
-local function eject( directory, name )
-    local descendants_table = descendants[ directory ]
-
-    local descendant = descendants_table[ name ]
-    if descendant == nil then
-        return
-    end
-
-    size_add( directory, -sizes[ descendant ] )
-
-    if mount_points[ descendant ] == nil then
-        times[ directory ] = time_now()
-    else
-        times[ directory ] = nil
-    end
-
-    update_path( descendant, nil )
-
-    descendants_table[ name ] = nil
-    table_remove( descendants_table, indexes[ descendant ] )
-
-    indexes[ descendant ] = nil
-
-    descendant_counts[ directory ] = descendant_counts[ directory ] - 1
-
-    parents[ descendant ] = nil
-end
-
 ---@param wildcard string | nil
 ---@return dreamwork.std.fs.File[], integer, dreamwork.std.fs.Directory[], integer
 function Directory:select( wildcard )
@@ -1700,7 +1782,7 @@ function Directory:select( wildcard )
 
         for index = 1, #fs_files, 1 do
             local file_name = fs_files[ index ]
-            if descendants_table[ file_name ] == nil then
+            if descendants_table[ file_name ] == nil and not reserved_names[ file_name ] then
                 local file_object = FileClass( file_name, mount_point, file_name )
                 insert( self, file_object )
 
@@ -1711,7 +1793,7 @@ function Directory:select( wildcard )
 
         for index = 1, #fs_directories, 1 do
             local directory_name = fs_directories[ index ]
-            if descendants_table[ directory_name ] == nil and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
+            if descendants_table[ directory_name ] == nil and not reserved_names[ directory_name ] and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
                 local directory_object = DirectoryClass( directory_name, mount_point, directory_name )
                 insert( self, directory_object )
 
@@ -1727,7 +1809,7 @@ function Directory:select( wildcard )
 
         for index = 1, #fs_files, 1 do
             local file_name = fs_files[ index ]
-            if descendants_table[ file_name ] == nil then
+            if descendants_table[ file_name ] == nil and not reserved_names[ file_name ] then
                 local file_object = FileClass( file_name, mount_point, mount_path .. "/" .. file_name )
                 insert( self, file_object )
 
@@ -1738,7 +1820,7 @@ function Directory:select( wildcard )
 
         for index = 1, #fs_directories, 1 do
             local directory_name = fs_directories[ index ]
-            if descendants_table[ directory_name ] == nil and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
+            if descendants_table[ directory_name ] == nil and not reserved_names[ directory_name ] and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
                 local directory_object = DirectoryClass( directory_name, mount_point, mount_path .. "/" .. directory_name )
                 insert( self, directory_object )
 
@@ -1779,23 +1861,23 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
     local mount_point = mount_points[ self ]
     local mount_path = mount_paths[ self ]
 
-    if full_update then
+    if full_update and descendant_count ~= 0 then
 
         size_add( self, -sizes[ self ] )
 
         for index = 1, descendant_count, 1 do
             local descendant = descendants[ self ][ index ]
             if not is_directory_object[ descendant ] then
-                local mount_point = mount_points[ descendant ]
+                local descendant_mount_point = mount_points[ descendant ]
                 local size, unix_time
 
-                if mount_point == nil then
+                if descendant_mount_point == nil then
                     size = sizes[ descendant ]
                     unix_time = times[ descendant ]
                 else
-                    local mount_path = mount_paths[ descendant ] or ""
-                    size = file_Size( mount_path, mount_point )
-                    unix_time = file_Time( mount_path, mount_point )
+                    local descendant_mount_path = mount_paths[ descendant ] or ""
+                    size = file_Size( descendant_mount_path, descendant_mount_point )
+                    unix_time = file_Time( descendant_mount_path, descendant_mount_point )
                 end
 
                 times[ descendant ] = unix_time
@@ -1819,7 +1901,7 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
 
         for i = 1, #fs_files, 1 do
             local file_name = fs_files[ i ]
-            if descendants_table[ file_name ] == nil then
+            if descendants_table[ file_name ] == nil and not reserved_names[ file_name ] then
                 local file_object = FileClass( file_name, mount_point, mount_path == nil and file_name or ( mount_path .. "/" .. file_name ) )
                 insert( self, file_object )
 
@@ -1831,7 +1913,7 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
 
         for i = 1, #fs_directories, 1 do
             local directory_name = fs_directories[ i ]
-            if descendants_table[ directory_name ] == nil then
+            if descendants_table[ directory_name ] == nil and not reserved_names[ directory_name ] then
                 local directory_object = DirectoryClass( directory_name, mount_point, mount_path == nil and directory_name or ( mount_path .. "/" .. directory_name ) )
                 insert( self, directory_object )
 
@@ -1864,6 +1946,11 @@ function Directory:get( path_to )
 
     for i = 1, segment_count, 1 do
         local name = segments[ i ]
+
+        if reserved_names[ name ] then
+            return nil, false
+        end
+
         local content_value = descendants[ self ][ name ]
 
         if content_value == nil then
@@ -1957,6 +2044,10 @@ end
 ---@return dreamwork.std.fs.Directory | nil new_directory
 ---@return nil | string error_message
 local function create_directory( parent, name, forced )
+    if reserved_names[ name ] then
+        return nil, "Directory cannot be created with reserved name."
+    end
+
     local directory_object = descendants[ parent ][ name ]
     if directory_object == nil then
         local mount_point = mount_points[ parent ]
@@ -2054,7 +2145,9 @@ end
 ---@return boolean is_directory
 function Directory:touch( name )
     if string_byte( name, 1, 1 ) == nil then
-        error( "file or directory name cannot be empty", 2 )
+        error( "File or directory cannot be created with empty name.", 2 )
+    elseif reserved_names[ name ] then
+        error( "File or directory cannot be created with reserved name.", 2 )
     end
 
     local fs_object = descendants[ self ][ name ]
@@ -2121,22 +2214,19 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames a file.
+--- Deletes a directory.
 ---
----@param name string The new name of the file.
----@async
-function Directory:rename( name )
+function Directory:delete()
 
 end
 
 --- [SHARED AND MENU]
 ---
---- Moves a file to another directory.
+--- Renames a file.
 ---
----@param directory dreamwork.std.fs.Directory The directory to move the file to.
----@param name? string The new name of the file. If `nil`, the original name will be used.
+---@param name string The new name of the file.
 ---@async
-function Directory:move( directory, name )
+function Directory:rename( name )
 
 end
 
@@ -2153,98 +2243,101 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Deletes a directory.
+--- Moves a file to another directory.
 ---
-function Directory:delete()
+---@param directory dreamwork.std.fs.Directory The directory to move the file to.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@async
+function Directory:move( directory, name )
 
 end
 
--- TODO: make this function local, maybe required rewrite
----@param name string
----@param forced? boolean
----@param recursive? boolean
-function Directory:remove( name, forced, recursive )
-    if string_byte( name, 1, 1 ) == nil then
-        error( "file or directory name cannot be empty", 2 )
-    end
+-- -- TODO: make this function local, maybe required rewrite
+-- ---@param name string
+-- ---@param forced? boolean
+-- ---@param recursive? boolean
+-- local function delete( self, name, forced, recursive )
+--     if string_byte( name, 1, 1 ) == nil then
+--         error( "file or directory name cannot be empty", 2 )
+--     end
 
-    local fs_object = descendants[ self ][ name ]
+--     local fs_object = descendants[ self ][ name ]
 
-    if fs_object == nil then
-        local mount_point = mount_points[ self ]
-        if mount_point == nil or not deletable_mounts[ mount_point ] then
-            error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
-        end
+--     if fs_object == nil then
+--         local mount_point = mount_points[ self ]
+--         if mount_point == nil or not deletable_mounts[ mount_point ] then
+--             error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
+--         end
 
-        local mount_path = rel_path( self, name )
+--         local mount_path = rel_path( self, name )
 
-        if file_Exists( mount_path, mount_point ) then
-            if file_IsDir( mount_path, mount_point ) then
-                if recursive then
-                    local directory_object = DirectoryClass( name, mount_point, mount_path )
-                    local files, file_count,
-                        directories, directory_count = directory_object:select()
+--         if file_Exists( mount_path, mount_point ) then
+--             if file_IsDir( mount_path, mount_point ) then
+--                 if recursive then
+--                     local directory_object = DirectoryClass( name, mount_point, mount_path )
+--                     local files, file_count,
+--                         directories, directory_count = directory_object:select()
 
-                    for i = 1, file_count, 1 do
-                        local file_object = files[ i ]
-                        file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
-                        eject( self, file_object.name )
-                    end
+--                     for i = 1, file_count, 1 do
+--                         local file_object = files[ i ]
+--                         file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
+--                         eject( self, file_object.name )
+--                     end
 
-                    for i = 1, directory_count, 1 do
-                        directory_object:remove( directories[ i ].name, forced, recursive )
-                    end
-                else
+--                     for i = 1, directory_count, 1 do
+--                         directory_object:delete( directories[ i ].name, forced, recursive )
+--                     end
+--                 else
 
-                    local files, directories = file_Find( mount_path .. "/*", mount_point )
-                    if ( #files + #directories ) ~= 0 then
-                        error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
-                    end
+--                     local files, directories = file_Find( mount_path .. "/*", mount_point )
+--                     if ( #files + #directories ) ~= 0 then
+--                         error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
+--                     end
 
-                end
-            end
-        elseif not forced then
-            error( "Path '" .. abs_path( self, name ) .. "' does not exist.", 2 )
-        end
+--                 end
+--             end
+--         elseif not forced then
+--             error( "Path '" .. abs_path( self, name ) .. "' does not exist.", 2 )
+--         end
 
-        file_Delete( mount_path, mount_point )
-        eject( self, name )
-        return
-    end
+--         file_Delete( mount_path, mount_point )
+--         eject( self, name )
+--         return
+--     end
 
-    local mount_point = mount_points[ fs_object ]
-    if mount_point == nil or not deletable_mounts[ mount_point ] then
-        error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
-    end
+--     local mount_point = mount_points[ fs_object ]
+--     if mount_point == nil or not deletable_mounts[ mount_point ] then
+--         error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory removal.", 2 )
+--     end
 
-    if is_directory_object[ fs_object ] then
-        ---@cast fs_object dreamwork.std.fs.Directory
-        if recursive then
-            local files, file_count,
-                directories, directory_count = fs_object:select()
+--     if is_directory_object[ fs_object ] then
+--         ---@cast fs_object dreamwork.std.fs.Directory
+--         if recursive then
+--             local files, file_count,
+--                 directories, directory_count = fs_object:select()
 
-            for i = 1, file_count, 1 do
-                local file_object = files[ i ]
-                file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
-                eject( self, file_object.name )
-            end
+--             for i = 1, file_count, 1 do
+--                 local file_object = files[ i ]
+--                 file_Delete( mount_paths[ file_object ], mount_points[ file_object ] )
+--                 eject( self, file_object.name )
+--             end
 
-            for i = 1, directory_count, 1 do
-                fs_object:remove( directories[ i ].name, forced, recursive )
-            end
-        else
+--             for i = 1, directory_count, 1 do
+--                 fs_object:delete( directories[ i ].name, forced, recursive )
+--             end
+--         else
 
-            local files, directories = file_Find( mount_points[ fs_object ] .. "/*", mount_point )
-            if ( #files + #directories ) ~= 0 then
-                error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
-            end
+--             local files, directories = file_Find( mount_points[ fs_object ] .. "/*", mount_point )
+--             if ( #files + #directories ) ~= 0 then
+--                 error( "Directory '" .. abs_path( self, name ) .. "' is not empty.", 2 )
+--             end
 
-        end
-    end
+--         end
+--     end
 
-    file_Delete( mount_paths[ fs_object ], mount_point )
-    eject( self, name )
-end
+--     file_Delete( mount_paths[ fs_object ], mount_point )
+--     eject( self, name )
+-- end
 
 ---@param prefix? string
 ---@param is_last? boolean
@@ -2411,34 +2504,34 @@ function fs.touch( file_path, forced )
     return directory:touch( file_name )
 end
 
---- [SHARED AND MENU]
----
---- Removes a file or directory by given path.
----
----@param path_to string The path to the file or directory.
----@param forced? boolean If `true`, the file or directory will be deleted if it already exists.
----@param recursive? boolean If `true`, the directory will be deleted recursively.
-function fs.remove( path_to, forced, recursive )
-    local directory_path, file_name = path_split( prepare_path( path_to ), false )
+-- --- [SHARED AND MENU]
+-- ---
+-- --- Removes a file or directory by given path.
+-- ---
+-- ---@param path_to string The path to the file or directory.
+-- ---@param forced? boolean If `true`, the file or directory will be deleted if it already exists.
+-- ---@param recursive? boolean If `true`, the directory will be deleted recursively.
+-- function fs.remove( path_to, forced, recursive )
+--     local directory_path, file_name = path_split( prepare_path( path_to ), false )
 
-    local directory, is_directory = root:get( directory_path )
-    if directory == nil then
-        if forced then
-            return
-        else
-            error( "Path '" .. directory_path .. "' does not exist.", 2 )
-        end
-    elseif not is_directory then
-        if forced then
-            return
-        else
-            error( "Path '" .. directory_path .. "' is not a directory.", 2 )
-        end
-    end
+--     local directory, is_directory = root:get( directory_path )
+--     if directory == nil then
+--         if forced then
+--             return
+--         else
+--             error( "Path '" .. directory_path .. "' does not exist.", 2 )
+--         end
+--     elseif not is_directory then
+--         if forced then
+--             return
+--         else
+--             error( "Path '" .. directory_path .. "' is not a directory.", 2 )
+--         end
+--     end
 
-    ---@cast directory dreamwork.std.fs.Directory
-    return directory:remove( file_name, forced, recursive )
-end
+--     ---@cast directory dreamwork.std.fs.Directory
+--     return directory:delete( file_name, forced, recursive )
+-- end
 
 --- [SHARED AND MENU]
 ---
@@ -2714,4 +2807,3 @@ end
 --     root:get( "workspace/lua/dreamwork" ):scan( true, true )
 --     std.print( root:toStringTree())
 -- end, 1 )
-
