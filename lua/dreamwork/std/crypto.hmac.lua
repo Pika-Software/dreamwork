@@ -138,7 +138,7 @@ do
 
     hmac.hash = hash
 
-    local hashes = std.hash
+    local std_hash = std.hash
 
     --- [SHARED AND MENU]
     ---
@@ -147,9 +147,9 @@ do
     ---@param hash_name string The name of the hash function to use.
     ---@return fun( message: string, key: string, as_hex?: boolean ): string
     function hmac.preset( hash_name )
-        local hash_class = hashes[ hash_name ]
+        local hash_class = std_hash[ hash_name ]
         if hash_class == nil then
-            error( string.format( "hash class '%s' not found", hash_name ), 2 )
+            std.errorf( 2, false, "hash.%sClass not found.", hash_name )
         end
 
         ---@cast hash_class dreamwork.std.hash.MD5Class

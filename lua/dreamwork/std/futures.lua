@@ -82,8 +82,11 @@ local coroutine_create = coroutine.create
 local coroutine_status = coroutine.status
 local coroutine_yield = coroutine.yield
 
+-- TODO: replace this crap with normal errors
+local ErrorNoHaltWithStack = _G.ErrorNoHaltWithStack
+
 local function display_error( message )
-    return std.error( message, -2 )
+    return ErrorNoHaltWithStack( message )
 end
 
 local async_thread_result
@@ -104,7 +107,7 @@ do
                 return
             end
 
-            std.error( value, -2 )
+            ErrorNoHaltWithStack( value )
         end
     end
 
@@ -150,11 +153,12 @@ local function futures_run( target, callback, ... )
     listeners[ co ] = callback
 
     local ok, err = coroutine_resume( co, target, ... )
-    if ok then
-        return co
-    else
-        error( err, 2 )
+
+    if not ok then
+        ErrorNoHaltWithStack( err )
     end
+
+    return co
 end
 
 futures.run = futures_run
@@ -296,7 +300,7 @@ local function handle_yield( ok, value, ... )
     elseif value == ACTION_RESUME then
         return ...
     elseif value ~= nil then
-        std.error( "invalid yield action: " .. tostring( value ), -2 )
+        ErrorNoHaltWithStack( "invalid yield action: " .. tostring( value ) )
     else
         -- caller probably went sleeping
         return handle_yield( true, coroutine_yield() )
@@ -358,7 +362,7 @@ local function handle_anext( co, ok, value, ... )
     elseif value == RESULT_ERROR then
         return error( ... )
     elseif value ~= nil then
-        std.error( "invalid anext result: " .. tostring( value ), -2 )
+        ErrorNoHaltWithStack( "invalid anext result: " .. tostring( value ) )
     end
 
     -- iterator went sleeping, wait until it wakes us up

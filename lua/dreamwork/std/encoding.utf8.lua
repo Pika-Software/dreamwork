@@ -70,18 +70,22 @@ do
 	---@param index integer
 	---@param str_length integer
 	---@param strict boolean
-	---@param error_level integer
+	---@param stack_level integer
 	---@return dreamwork.std.encoding.utf8.Codepoint | nil
 	---@return integer | nil
-	function decode( utf8_string, index, str_length, strict, error_level )
-		error_level = ( error_level or 1 ) + 1
+	function decode( utf8_string, index, str_length, strict, stack_level )
+		if stack_level == nil then
+			stack_level = 1
+		end
+
+		stack_level = stack_level + 1
 
 		local uint8_1 = string_byte( utf8_string, index, index )
 		if uint8_1 < 0x80 then
 			return uint8_1, 1
 		elseif uint8_1 < 0xC2 then
 			if strict then
-				error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (reserved continuation)", 1, uint8_1, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (reserved continuation)", 1, uint8_1, index )
 			end
 
 			return uint8_1, nil
@@ -91,7 +95,7 @@ do
 
 		if sequence_length == 0 then
 			if strict then
-				error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", 1, uint8_1, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", 1, uint8_1, index )
 			end
 
 			return uint8_1, nil
@@ -109,7 +113,7 @@ do
 
 		if index == str_length then
 			if strict then
-				error( string.format( "invalid %d-byte continuation byte at position %d (unexpected end of string)", 2, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte at position %d (unexpected end of string)", 2, index )
 			end
 
 			return nil, 1
@@ -119,7 +123,7 @@ do
 
 		if sequence_length == 2 then
 			if strict and not isContinuation( uint8_2 ) then
-				error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_2, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_2, index )
 			end
 
 			local utf8_codepoint = bit_bor(
@@ -135,7 +139,7 @@ do
 
 		if index == str_length then
 			if strict then
-				error( string.format( "invalid %d-byte continuation byte at position %d (unexpected end of string)", 3, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte at position %d (unexpected end of string)", 3, index )
 			end
 
 			return nil, 2
@@ -146,11 +150,11 @@ do
 		if sequence_length == 3 then
 			if strict then
 				if not isContinuation( uint8_3 ) then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_3, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_3, index )
 				elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_3, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_3, index )
 				elseif uint8_1 == 0xED and uint8_2 > 0x9F then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (UTF-16 surrogate code point)", sequence_length, uint8_3, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (UTF-16 surrogate code point)", sequence_length, uint8_3, index )
 				end
 			end
 
@@ -168,7 +172,7 @@ do
 
 		if index == str_length then
 			if strict then
-				error( string.format( "invalid %d-byte continuation byte at position %d (unexpected end of string)", sequence_length, index ), error_level )
+				std.errorf( stack_level, false, "invalid %d-byte continuation byte at position %d (unexpected end of string)", sequence_length, index )
 			end
 
 			return nil, 3
@@ -179,11 +183,11 @@ do
 		if sequence_length == 4 then
 			if strict then
 				if not isContinuation( uint8_4 ) then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_4, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_4, index )
 				elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_4, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_4, index )
 				elseif uint8_1 == 0xF4 and uint8_2 > 0x8F then
-					error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (code point exceeds U+10FFFF)", sequence_length, uint8_4, index ), error_level )
+					std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (code point exceeds U+10FFFF)", sequence_length, uint8_4, index )
 				end
 			end
 
@@ -199,7 +203,7 @@ do
 		end
 
 		if strict then
-			error( string.format( "invalid %d-byte continuation byte '0x%02X' at position %d (too large)", 1, uint8_1, index - 3 ), error_level )
+			std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (too large)", 1, uint8_1, index - 3 )
 		end
 
 		return nil, sequence_length
@@ -214,8 +218,8 @@ do
 
 	---@param utf8_codepoint dreamwork.std.encoding.utf8.Codepoint
 	---@param strict boolean
-	---@param error_level? integer
-	function encode( utf8_codepoint, strict, error_level )
+	---@param stack_level? integer
+	function encode( utf8_codepoint, strict, stack_level )
 		local utf8_sequence = cache[ utf8_codepoint ]
 		if utf8_sequence ~= nil then
 			return utf8_sequence
@@ -250,7 +254,7 @@ do
 				bit_bor( 0x80, bit_band( utf8_codepoint, 0x3F ) )
 			)
 		elseif strict then
-			error( string.format( "invalid UTF-8 code point 0x%08X (code point exceeds U+10FFFF)", utf8_codepoint ), ( error_level or 1 ) + 1 )
+			std.errorf( ( stack_level or 1 ) + 1, false, "invalid UTF-8 code point 0x%08X (code point exceeds U+10FFFF)", utf8_codepoint )
 		else
 			return ""
 		end
@@ -480,7 +484,7 @@ function utf8.sub( utf8_string, start_position, end_position, lax )
 		sequence_length, error_position = len( utf8_string, 1, str_length, lax )
 
 		if sequence_length == nil then
-			error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
+			std.errorf( 2, false, "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position )
 		end
 
         if ( 0 - start_position ) > sequence_length then
@@ -496,7 +500,7 @@ function utf8.sub( utf8_string, start_position, end_position, lax )
 			sequence_length, error_position = len( utf8_string, 1, str_length, lax )
 
 			if sequence_length == nil then
-				error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
+				std.errorf( 2, false, "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position )
 			end
 		end
 
@@ -519,9 +523,9 @@ function utf8.sub( utf8_string, start_position, end_position, lax )
 		if lax then
 			if utf8_sequence_length == 0 then
 				if error_position == index then
-					error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, index, index ), index ), 2 )
+					std.errorf( 2, false, "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, index, index ), index )
 				else
-					error( string.format( "Corrupt UTF-8 sequence byte '0x%02X' in position %d-%d", string_byte( utf8_string, index, index ), index, error_position ), 2 )
+					std.errorf( 2, false, "Corrupt UTF-8 sequence byte '0x%02X' in position %d-%d", string_byte( utf8_string, index, index ), index, error_position )
 				end
 			end
 		elseif utf8_sequence_length == 0 then
@@ -578,9 +582,9 @@ do
 		local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, strict, 2 )
 		if strict then
 			if utf8_codepoint == nil or utf8_codepoint > 0x10FFFF then
-				error( string.format( "invalid UTF-8 code point '0x%08X' at position %d", utf8_codepoint, index ), 2 )
+				std.errorf( 2, false, "invalid UTF-8 code point '0x%08X' at position %d", utf8_codepoint, index )
 			elseif utf8_sequence_length == nil then
-				error( string.format( "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index ), 2 )
+				std.errorf( 2, false, "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index )
 			end
 
 			return index + utf8_sequence_length, utf8_codepoint
@@ -677,7 +681,7 @@ function utf8.offset( utf8_string, index, offset, lax )
 		local sequence_length, error_position = len( utf8_string, offset, str_length, lax )
 
 		if sequence_length == nil then
-			error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
+			std.errorf( 2, false, "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position )
 		end
 
 		if ( 0 - index ) > sequence_length then

@@ -21,7 +21,7 @@ local table_concat, table_unpack = std.table.concat, std.table.unpack
 local isfunction = std.isfunction
 local math_ceil = std.math.ceil
 
-local hash = std.hash
+local std_hash = std.hash
 
 --- [SHARED AND MENU]
 ---
@@ -42,9 +42,9 @@ function crypto.pbkdf2( options )
         error( "hash name not specified", 2 )
     end
 
-    local hash_class = hash[ hash_name ]
+    local hash_class = std_hash[ hash_name ]
     if hash_class == nil or isfunction( hash_class ) then
-        error( string.format( "hash class '%s' not found", hash_name ), 2 )
+        std.errorf( 2, false, "hash.%sClass not found.", hash_name )
     end
 
     ---@cast hash_class dreamwork.std.hash.MD5Class
