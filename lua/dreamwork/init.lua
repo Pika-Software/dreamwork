@@ -1026,14 +1026,14 @@ do
         end
 
         if dont_break then
-            local title = "LUA ERROR"
+            local title
 
             local level_info = debug_getinfo( stack_level, "S" )
             if level_info ~= nil then
-                title = string_match( level_info.source, "^@?addons/([^/]+)" ) or title
+                title = string_match( level_info.source, "^@?addons/([^/]+)" )
             end
 
-            local stack, size = { "\n[" .. title .. "] " .. message }, 1
+            local stack, size = { "\n[" .. ( title or "LUA ERROR" ) .. "] " .. message }, 1
 
             while true do
                 local info = debug_getinfo( size + stack_level, "Sln" )
@@ -1634,13 +1634,13 @@ do
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )
 
     local function perform_synchronization()
-        logger:debug( "Content Watcher - Changes in game content detected, synchronization started..." )
+        logger:debug( "Content Watcher - Game content change triggered, synchronization..." )
         time.tick( "ms", false )
 
         local game_changes, addon_changes = engine.SyncContent()
 
         if game_changes == 0 and addon_changes == 0 then
-            logger:debug( "Content Watcher - No changes were detected, synchronization skipped." )
+            logger:debug( "Content Watcher - No changes found, skipped." )
         else
             logger:debug( "Content Watcher - Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
         end

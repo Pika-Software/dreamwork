@@ -872,7 +872,7 @@ do
             local app_id = game_info.depot
             supported_games[ app_id ] = game_info
 
-            if game_info.installed and game_info.mounted then
+            if game_info.mounted then
                 if actual_game_hash[ app_id ] == nil then
                     engine_hookCall( "GameMounted", game_info )
                     game_changes = game_changes + 1
@@ -882,16 +882,15 @@ do
             end
         end
 
-        for i = 1, actual_game_count, 1 do
+        for i = actual_game_count, 1, -1 do
             local game_info = actual_game_list[ i ]
-            if actual_addon_hash[ game_info.depot ] ~= nil and game_hash[ game_info.depot ] == nil then
+            local depot = game_info.depot
+
+            if actual_game_hash[ depot ] ~= nil and game_hash[ depot ] == nil then
                 engine_hookCall( "GameUnmounted", game_info )
                 game_changes = game_changes + 1
             end
-        end
 
-        -- Game List - Cleanup
-        for i = 1, actual_game_count, 1 do
             actual_game_list[ i ] = nil
         end
 
@@ -919,25 +918,27 @@ do
             local addon_info = addon_list[ i ]
             addon_info.index = i
 
-            local addon_title = addon_info.title
-            addon_hash[ addon_title ] = addon_info
+            if addon_info.mounted then
+                local addon_title = addon_info.title
 
-            if addon_info.mounted and actual_addon_hash[ addon_title ] == nil then
-                engine_hookCall( "AddonMounted", addon_info )
-                addon_changes = addon_changes + 1
+                if actual_addon_hash[ addon_title ] == nil then
+                    engine_hookCall( "AddonMounted", addon_info )
+                    addon_changes = addon_changes + 1
+                end
+
+                addon_hash[ addon_title ] = addon_info
             end
         end
 
-        for i = 1, actual_addon_count, 1 do
+        for i = actual_addon_count, 1, -1 do
             local addon_info = actual_addon_list[ i ]
-            if actual_game_hash[ addon_info.title ] ~= nil and addon_hash[ addon_info.title ] == nil then
+            local addon_title = addon_info.title
+
+            if actual_addon_hash[ addon_title ] ~= nil and addon_hash[ addon_title ] == nil then
                 engine_hookCall( "AddonUnmounted", addon_info )
                 addon_changes = addon_changes + 1
             end
-        end
 
-        -- Addon List - Cleanup
-        for i = 1, actual_addon_count, 1 do
             actual_addon_list[ i ] = nil
         end
 
