@@ -17,7 +17,7 @@ std.render = render
 if std.CLIENT then
     --- [CLIENT]
     ---
-    --- Various fog rendering functions
+    --- Various fog rendering functions.
     ---@class dreamwork.std.render.fog
     render.fog = render.fog or {}
     render.fog.getMode = render.fog.getMode or glua_render.GetFogMode
@@ -30,5 +30,15 @@ if std.CLIENT then
     render.fog.getMaxDensity = render.fog.getMaxDensity or glua_render.GetFogMaxDensity
     render.fog.setMaxDensity = render.fog.setMaxDensity or glua_render.FogMaxDensity
     render.fog.setZ = render.fog.setZ or glua_render.SetFogZ
+
+    --- [CLIENT]
+    ---
+    --- [Beam](https://wiki.facepunch.com/gmod/render_beams) rendering functions.
+    ---@class dreamwork.std.render.beam
+    render.beam = render.beam or {}
+    render.beam.start = render.beam.start or glua_render.StartBeam
+    render.beam.finish = render.beam.finish or glua_render.EndBeam
+    render.beam.addSegment = render.beam.addSegment or glua_render.AddBeam
+    render.beam.draw = render.beam.draw or glua_render.DrawBeam
 end
 
