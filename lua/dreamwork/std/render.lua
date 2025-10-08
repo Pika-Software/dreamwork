@@ -40,5 +40,22 @@ if std.CLIENT then
     render.beam.finish = render.beam.finish or glua_render.EndBeam
     render.beam.addSegment = render.beam.addSegment or glua_render.AddBeam
     render.beam.draw = render.beam.draw or glua_render.DrawBeam
+
+    render.setMaterial = render.setMaterial or glua_render.SetMaterial
+    if not render.setColorMaterial then
+        --- [CLIENT]
+        ---
+        --- Set the current drawing material to `color`
+        --- or `color_ignorez` if `ignore_z` is set to true.
+        ---@param ignore_z? boolean
+        render.setColorMaterial = function(ignore_z)
+            render.setMaterial(Material(ignore_z and "color_ignorez" or "color"))
+        end
+    end
+    render.overrideEntityMaterial = render.overrideEntityMaterial or glua_render.MaterialOverride
+    render.overrideEntityMaterialByIndex = render.overrideEntityMaterialByIndex or glua_render.MaterialOverrideByIndex
+    render.overrideModelMaterial = render.overrideModelMaterial or glua_render.ModelMaterialOverride
+    render.overrideBrushMaterial = render.overrideBrushMaterial or glua_render.BrushMaterialOverride
+    render.overrideWorldMaterial = render.overrideWorldMaterial or glua_render.WorldMaterialOverride
 end
 
