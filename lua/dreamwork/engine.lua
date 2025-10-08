@@ -156,7 +156,7 @@ if MENU then
     do
 
         local function listAddonPresets()
-            engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
+            engine_hookCall( "engine.Addon.presetsLoaded", _G.LoadAddonPresets() )
         end
 
         if _G.ListAddonPresets == nil then
@@ -179,7 +179,7 @@ if MENU then
         ---@param player_steamid64 string
         ---@param gamemode_name string
         local function gameDetails( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
-            engine_hookCall( "GameDetails", {
+            engine_hookCall( "server.Details", {
                 server_name = server_name,
                 loading_url = loading_url,
                 map_name = map_name,
@@ -596,11 +596,11 @@ if engine.entityCreationCatch == nil then
     if scripted_ents.OnLoaded == nil then
         ---@diagnostic disable-next-line: duplicate-set-field
         function scripted_ents.OnLoaded( name )
-            engine_hookCall( "EntityLoaded", name )
+            engine_hookCall( "engine.Entity.loaded", name )
         end
     else
         scripted_ents.OnLoaded = detour_attach( scripted_ents.OnLoaded, function( fn, name )
-            engine_hookCall( "EntityLoaded", name )
+            engine_hookCall( "engine.Entity.loaded", name )
             return fn( name )
         end )
     end
@@ -658,14 +658,14 @@ if engine.weaponCreationCatch == nil then
         ---@param name string
         ---@diagnostic disable-next-line: duplicate-set-field
         function weapons.OnLoaded( name )
-            engine_hookCall( "WeaponLoaded", name )
+            engine_hookCall( "engine.Weapon.loaded", name )
         end
 
     else
 
         ---@param name string
         weapons.OnLoaded = detour_attach( weapons.OnLoaded, function( fn, name )
-            engine_hookCall( "WeaponLoaded", name )
+            engine_hookCall( "engine.Weapon.loaded", name )
             return fn( name )
         end )
 
@@ -874,7 +874,7 @@ do
 
             if game_info.mounted then
                 if actual_game_hash[ app_id ] == nil then
-                    engine_hookCall( "GameMounted", game_info )
+                    engine_hookCall( "engine.Game.mounted", game_info )
                     game_changes = game_changes + 1
                 end
 
@@ -887,7 +887,7 @@ do
             local depot = game_info.depot
 
             if actual_game_hash[ depot ] ~= nil and game_hash[ depot ] == nil then
-                engine_hookCall( "GameUnmounted", game_info )
+                engine_hookCall( "engine.Game.unmounted", game_info )
                 game_changes = game_changes + 1
             end
 
@@ -922,7 +922,7 @@ do
                 local addon_title = addon_info.title
 
                 if actual_addon_hash[ addon_title ] == nil then
-                    engine_hookCall( "AddonMounted", addon_info )
+                    engine_hookCall( "engine.Addon.mounted", addon_info )
                     addon_changes = addon_changes + 1
                 end
 
@@ -935,7 +935,7 @@ do
             local addon_title = addon_info.title
 
             if actual_addon_hash[ addon_title ] ~= nil and addon_hash[ addon_title ] == nil then
-                engine_hookCall( "AddonUnmounted", addon_info )
+                engine_hookCall( "engine.Addon.unmounted", addon_info )
                 addon_changes = addon_changes + 1
             end
 
@@ -972,11 +972,11 @@ end
 
 if entity_meta.__gc == nil then
     function entity_meta.__gc( entity_userdata )
-        engine_hookCall( "EntityGC", entity_userdata )
+        engine_hookCall( "engine.Entity.__gc", entity_userdata )
     end
 else
     entity_meta.__gc = detour_attach( entity_meta.__gc, function( fn, entity_userdata )
-        engine_hookCall( "EntityGC", entity_userdata )
+        engine_hookCall( "engine.Entity.__gc", entity_userdata )
         fn( entity_userdata )
     end )
 end
@@ -989,11 +989,11 @@ end
 
 if player_meta.__gc == nil then
     function player_meta.__gc( player_userdata )
-        engine_hookCall( "EntityGC", player_userdata )
+        engine_hookCall( "engine.Entity.__gc", player_userdata )
     end
 else
     player_meta.__gc = detour_attach( player_meta.__gc, function( fn, player_userdata )
-        engine_hookCall( "EntityGC", player_userdata )
+        engine_hookCall( "engine.Entity.__gc", player_userdata )
         fn( player_userdata )
     end )
 end
@@ -1006,11 +1006,11 @@ end
 
 if weapon_meta.__gc == nil then
     function weapon_meta.__gc( weapon_userdata )
-        engine_hookCall( "EntityGC", weapon_userdata )
+        engine_hookCall( "engine.Entity.__gc", weapon_userdata )
     end
 else
     weapon_meta.__gc = detour_attach( weapon_meta.__gc, function( fn, weapon_userdata )
-        engine_hookCall( "EntityGC", weapon_userdata )
+        engine_hookCall( "engine.Entity.__gc", weapon_userdata )
         fn( weapon_userdata )
     end )
 end
@@ -1023,11 +1023,11 @@ end
 
 if vehicle_meta.__gc == nil then
     function vehicle_meta.__gc( vehicle_userdata )
-        engine_hookCall( "EntityGC", vehicle_userdata )
+        engine_hookCall( "engine.Entity.__gc", vehicle_userdata )
     end
 else
     vehicle_meta.__gc = detour_attach( vehicle_meta.__gc, function( fn, vehicle_userdata )
-        engine_hookCall( "EntityGC", vehicle_userdata )
+        engine_hookCall( "engine.Entity.__gc", vehicle_userdata )
         fn( vehicle_userdata )
     end )
 end
@@ -1040,11 +1040,11 @@ end
 
 if npc_meta.__gc == nil then
     function npc_meta.__gc( npc_userdata )
-        engine_hookCall( "EntityGC", npc_userdata )
+        engine_hookCall( "engine.Entity.__gc", npc_userdata )
     end
 else
     npc_meta.__gc = detour_attach( npc_meta.__gc, function( fn, npc_userdata )
-        engine_hookCall( "EntityGC", npc_userdata )
+        engine_hookCall( "engine.Entity.__gc", npc_userdata )
         fn( npc_userdata )
     end )
 end
@@ -1057,11 +1057,11 @@ end
 
 if nextbot_meta.__gc == nil then
     function nextbot_meta.__gc( nextbot_userdata )
-        engine_hookCall( "EntityGC", nextbot_userdata )
+        engine_hookCall( "engine.Entity.__gc", nextbot_userdata )
     end
 else
     nextbot_meta.__gc = detour_attach( nextbot_meta.__gc, function( fn, nextbot_userdata )
-        engine_hookCall( "EntityGC", nextbot_userdata )
+        engine_hookCall( "engine.Entity.__gc", nextbot_userdata )
         fn( nextbot_userdata )
     end )
 end

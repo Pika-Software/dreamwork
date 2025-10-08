@@ -61,29 +61,29 @@ SHA1Class.digest_size = 20
 SHA1Class.block_size = 64
 
 function SHA1:update( str )
-    local str_length = string_len( str )
+    -- local str_length = string_len( str )
 
-    local message_length = self.message_length + str_length
-    self.message_length = message_length
+    -- local message_length = self.message_length + str_length
+    -- self.message_length = message_length
 
-    if message_length < 64 then
-        self.message = self.message .. str
-    else
-        local message, position, blocks_size = self.message .. str, self.position, bucket64( message_length )
+    -- if message_length < 64 then
+    --     self.message = self.message .. str
+    -- else
+    --     local message, position, blocks_size = self.message .. str, self.position, bucket64( message_length )
 
-        local a, b, c, d = self.a, self.b, self.c, self.d
+    --     local a, b, c, d = self.a, self.b, self.c, self.d
 
-        for index = position + 1, blocks_size, 64 do
-            a, b, c, d = transform( a, b, c, d, message, index )
-        end
+    --     for index = position + 1, blocks_size, 64 do
+    --         a, b, c, d = transform( a, b, c, d, message, index )
+    --     end
 
-        self.a, self.b, self.c, self.d = a, b, c, d
+    --     self.a, self.b, self.c, self.d = a, b, c, d
 
-        self.position = position + blocks_size
-        self.message = message
-    end
+    --     self.position = position + blocks_size
+    --     self.message = message
+    -- end
 
-    return self
+    -- return self
 end
 
 function SHA1:digest( as_hex )

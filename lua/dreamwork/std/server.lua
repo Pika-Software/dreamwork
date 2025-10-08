@@ -186,11 +186,11 @@ if std.MENU then
 
     --- [MENU]
     ---
-    --- Called when the game details are updated.
+    --- Called when the server details are received from the server.
     ---
-    local GameDetails = std.Hook( "server.GameDetails" )
-    engine_hookCatch( "GameDetails", GameDetails, 1 )
-    server.GameDetails = GameDetails
+    local server_Details = std.Hook( "server.GameDetails" )
+    engine_hookCatch( "server.Details", server_Details, 1 )
+    server.Details = server_Details
 
 end
 

@@ -1609,17 +1609,17 @@ do
     logger:info( "Content Watcher - Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
 
     ---@param game_info dreamwork.engine.GameInfo
-    engine.hookCatch( "GameMounted", function( game_info )
+    engine.hookCatch( "engine.Game.mounted", function( game_info )
         logger:debug( "Content Watcher - Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param game_info dreamwork.engine.GameInfo
-    engine.hookCatch( "GameUnmounted", function( game_info )
+    engine.hookCatch( "engine.Game.unmounted", function( game_info )
         logger:debug( "Content Watcher - Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "AddonMounted", function( addon_info )
+    engine.hookCatch( "engine.Addon.mounted", function( addon_info )
         local folder = string_format( "gma_%x%x%x%x", bytepack_writeUInt32( addon_info.index ) )
         addon_info.folder = folder
 
@@ -1627,7 +1627,7 @@ do
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "AddonUnmounted", function( addon_info )
+    engine.hookCatch( "engine.Addon.unmounted", function( addon_info )
         logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
     end, 1 )
 

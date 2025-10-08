@@ -1088,15 +1088,6 @@ end
 local watchdog = {}
 fs.watchdog = watchdog
 
-local watchdog_Created = std.Hook( "fs.watchdog.Created" )
-watchdog.Created = watchdog_Created
-
-local watchdog_Deleted = std.Hook( "fs.watchdog.Deleted" )
-watchdog.Deleted = watchdog_Deleted
-
-local watchdog_Modified = std.Hook( "fs.watchdog.Modified" )
-watchdog.Modified = watchdog_Modified
-
 if std.loadbinary( "efsw" ) then
 
     local hook = _G.hook
@@ -1373,8 +1364,8 @@ else
             end
         end
 
-        engine.hookCatch( "DirectoryGC", on_gc, 1 )
-        engine.hookCatch( "FileGC", on_gc, 1 )
+        engine.hookCatch( "fs.Directory.__gc", on_gc, 1 )
+        engine.hookCatch( "fs.File.__gc", on_gc, 1 )
 
     end
 
@@ -1515,12 +1506,28 @@ else
 
 end
 
-engine.hookCatch( "DirectoryGC", watchdog.unwatch )
-engine.hookCatch( "FileGC", watchdog.unwatch )
+engine.hookCatch( "fs.Directory.__gc", watchdog.unwatch )
+engine.hookCatch( "fs.File.__gc", watchdog.unwatch )
+
+do
+
+    local watchdog_Created = std.Hook( "fs.watchdog.Created" )
+    engine.hookCatch( "fs.watchdog.Created", watchdog_Created )
+    watchdog.Created = watchdog_Created
+
+    local watchdog_Deleted = std.Hook( "fs.watchdog.Deleted" )
+    engine.hookCatch( "fs.watchdog.Deleted", watchdog_Deleted )
+    watchdog.Deleted = watchdog_Deleted
+
+    local watchdog_Modified = std.Hook( "fs.watchdog.Modified" )
+    engine.hookCatch( "fs.watchdog.Modified", watchdog_Modified )
+    watchdog.Modified = watchdog_Modified
+
+end
 
 ---@protected
 function File:__gc()
-    engine_hookCall( "FileGC", self )
+    engine_hookCall( "fs.File.__gc", self )
 end
 
 ---@protected
@@ -1879,7 +1886,7 @@ end
 
 ---@protected
 function Directory:__gc()
-    engine_hookCall( "DirectoryGC", self )
+    engine_hookCall( "fs.Directory.__gc", self )
 end
 
 ---@param name string
@@ -2398,14 +2405,14 @@ end
 local root = DirectoryClass( "", "BASE_PATH" )
 
 ---@param game_info dreamwork.engine.GameInfo
-engine.hookCatch( "GameMounted", function( game_info )
+engine.hookCatch( "engine.Game.mounted", function( game_info )
     local game_folder = game_info.folder
     eject( root, game_folder )
     insert( root, DirectoryClass( game_folder, game_folder ) )
 end, 2 )
 
 ---@param game_info dreamwork.engine.GameInfo
-engine.hookCatch( "GameUnmounted", function( game_info )
+engine.hookCatch( "engine.Game.unmounted", function( game_info )
     eject( root, game_info.folder )
 end, 2 )
 
@@ -2428,14 +2435,14 @@ do
     insert( workspace, addons )
 
     ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "AddonMounted", function( addon_info )
+    engine.hookCatch( "engine.Addon.mounted", function( addon_info )
         local addon_folder = addon_info.folder
         eject( addons, addon_folder )
         insert( addons, DirectoryClass( addon_folder, addon_info.title ) )
     end, 2 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "AddonUnmounted", function( addon_info )
+    engine.hookCatch( "engine.Addon.unmounted", function( addon_info )
         eject( addons, addon_info.folder )
     end, 2 )
 
