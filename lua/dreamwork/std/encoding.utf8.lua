@@ -214,11 +214,13 @@ end
 local encode
 do
 
+	---@type table<dreamwork.std.encoding.utf8.Codepoint, string>
 	local cache = {}
 
 	---@param utf8_codepoint dreamwork.std.encoding.utf8.Codepoint
 	---@param strict boolean
 	---@param stack_level? integer
+	---@return string utf8_sequence
 	function encode( utf8_codepoint, strict, stack_level )
 		local utf8_sequence = cache[ utf8_codepoint ]
 		if utf8_sequence ~= nil then
@@ -258,6 +260,8 @@ do
 		else
 			return ""
 		end
+
+		---@cast utf8_sequence string
 
 		cache[ utf8_codepoint ] = utf8_sequence
 		return utf8_sequence
