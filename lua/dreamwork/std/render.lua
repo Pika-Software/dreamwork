@@ -15,6 +15,9 @@ std.render = render
 -- TODO: add render/draw/surface functions
 
 if std.CLIENT then
+    render.getViewportWidth = render.getViewportWidth or _G.ScrW
+    render.getViewportHeight = render.getViewportHeight or _G.ScrH
+
     do
         --- [CLIENT]
         ---
@@ -126,6 +129,99 @@ if std.CLIENT then
                 stencil_setTestMask(255)
                 stencil_setPassOp(op_keep)
                 stencil_setZFailOp(op_keep)
+            end
+        end
+    end
+
+    do
+        local glua_cam = _G.cam
+        local r_getVPW, r_getVPH = render.getViewportWidth, render.getViewportHeight
+
+        --- [CLIENT]
+        ---
+        --- Rendering context utilities
+        ---@class dreamwork.std.render.context
+        local context = render.context or {}
+        render.context = context
+
+        if not context.r2d then
+            --- [CLIENT]
+            ---
+            --- Two-dimensional context
+            ---@class dreamwork.std.render.context.r2d
+            local r2d = {}
+            context.r2d = r2d
+
+            r2d.capturePixels = r2d.capturePixels or glua_render.CapturePixels
+            r2d.readPixel = r2d.readPixel or glua_render.ReadPixel
+            if not r2d.run then
+                local gr_SetViewPort = glua_render.SetViewPort
+
+                --- [CLIENT]
+                ---
+                --- Wraps the given function in 2D rendering context
+                ---@param func function
+                ---@param vpx? number viewport X origin. Default: 0
+                ---@param vpy? number viewport Y origin. Default: 0
+                ---@param vpw? number viewport width. Default: current viewport width
+                ---@param vph? number viewport height. Default: current viewport height
+                r2d.run = function(func, vpx, vpy, vpw, vph)
+                    local w, h = r_getVPW(), r_getVPH() -- store previous viewport sizes
+                    vpx, vpy, vpw, vph = vpx or 0, vpy or 0, vpw or w, vph or h
+                    gr_SetViewPort(vpx, vpy, vpw, vph)
+                    glua_cam.Start2D()
+                    func()
+                    glua_cam.End2D()
+                    gr_SetViewPort(0, 0, w, h)
+                end
+            end
+        end
+
+        if not context.r3d then
+            --- [CLIENT]
+            ---
+            --- Three-dimensional context
+            ---@class dreamwork.std.render.context.r3d
+            local r3d = {}
+            context.r3d = r3d
+
+            if not r3d.run then
+                --- [CLIENT]
+                ---
+                --- Wraps the given function in 3D rendering context
+                ---@param func function
+                ---@param pos? dreamwork.std.Vector3 camera position. Default: current position
+                ---@param ang? dreamwork.std.Angle3 camera angle. Default: current angle
+                ---@param fov? number field of view. Default: current FOV
+                ---@param vpx? number viewport X origin. Default: current vierport X origin
+                ---@param vpy? number viewport Y origin. Default: current viewport Y origin
+                ---@param vpw? number viewport width. Default: current viewport width
+                ---@param vph? number viewport height. Default: current viewport height
+                ---@param z_near? number near clipping plane distance. Default: current distance of near clip
+                ---@param z_far? number far clipping plane distance. Default: current distance of far clip
+                r3d.run = function(func, pos, ang, fov, vpx, vpy, vpw, vph, z_near, z_far)
+                    glua_cam.Start3D(
+                        pos and Vector(pos:unpack()), ang and Angle(ang:unpack()),
+                        fov, vpx, vpy, vpw, vph, z_near, z_far)
+                    func()
+                    glua_cam.End3D()
+                end
+            end
+
+            if not r3d.runOrtho then
+                --- [CLIENT]
+                ---
+                --- Wraps the given function in 3D rendering context which uses orthographic projection
+                ---@param func function
+                ---@param left? number the left plane offset. Default: 0
+                ---@param top? number the top plane offset. Default: 0
+                ---@param right? number the right plane offset. Default: current viewport width
+                ---@param bottom? number the bottom plane offset. Default: current viewport height
+                r3d.runOrtho = function(func, left, top, right, bottom)
+                    glua_cam.StartOrthoView(left or 0, top or 0, right or r_getVPW(), bottom or r_getVPH())
+                    func()
+                    glua_cam.EndOrthoView()
+                end
             end
         end
     end
