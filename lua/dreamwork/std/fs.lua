@@ -1005,21 +1005,23 @@ local function delete_file( file_object, stack_level )
 
     stack_level = stack_level + 1
 
-    local parent = parents[ file_object ]
-    if parent == nil then
-        std.errorf( stack_level, false, "'%s' cannot be deleted, file is root.", paths[ file_object ] )
-        return
-    end
-
     local mount_point = mount_points[ file_object ]
     if mount_point == nil or not deletable_mounts[ mount_point ] then
         std.errorf( stack_level, false, "'%s' cannot be deleted, path does not support file or directory removal.", paths[ file_object ] )
-        return
     end
+
+    ---@cast mount_point string
 
     if is_busy( file_object ) then
         async_jobs[ file_object ][ 0 ]:await()
     end
+
+    local parent = parents[ file_object ]
+    if parent == nil then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, file already deleted.", paths[ file_object ] )
+    end
+
+    ---@cast parent dreamwork.std.fs.Directory
 
     eject( parent, names[ file_object ] )
     file_Delete( mount_paths[ file_object ], mount_point )
@@ -1038,13 +1040,6 @@ local function delete_directory( directory_object, recursive, stack_level )
     if async_job_counts[ directory_object ] ~= 0 then
         async_jobs[ directory_object ][ 0 ]:await()
     end
-
-    local parent = parents[ directory_object ]
-    if parent == nil then
-        std.errorf( stack_level, false, "'%s' cannot be deleted, directory is root.", paths[ directory_object ] )
-    end
-
-    ---@cast parent dreamwork.std.fs.Directory
 
     local mount_point = mount_points[ directory_object ]
     if mount_point == nil or not deletable_mounts[ mount_point ] then
@@ -1086,6 +1081,13 @@ local function delete_directory( directory_object, recursive, stack_level )
     if is_busy( directory_object ) then
         async_jobs[ directory_object ][ 0 ]:await()
     end
+
+    local parent = parents[ directory_object ]
+    if parent == nil then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, directory is root or already deleted.", paths[ directory_object ] )
+    end
+
+    ---@cast parent dreamwork.std.fs.Directory
 
     eject( parent, names[ directory_object ] )
     file_Delete( mount_path, mount_point )
@@ -1880,10 +1882,6 @@ end
 ---@param forced? boolean If `true`, the file will be overwritten if it already exists.
 ---@async
 function File:rename( name, forced )
-    if async_job_counts[ self ] ~= 0 then
-        async_jobs[ self ][ 0 ]:await()
-    end
-
     local mount_point = mount_points[ self ]
     if mount_point == nil or writeable_mounts[ mount_point ] ~= true then
         std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be renamed.", self )
@@ -1891,16 +1889,16 @@ function File:rename( name, forced )
 
     ---@cast mount_point string
 
+    if async_job_counts[ self ] ~= 0 then
+        async_jobs[ self ][ 0 ]:await()
+    end
+
     local parent = parents[ self ]
-    if parent == nil then
+    if parents[ self ] == nil then
         std.errorf( 2, false, "'%s' has no parent directory and cannot be renamed.", self )
     end
 
     ---@cast parent dreamwork.std.fs.Directory
-
-    if parent:get( self.name ) ~= self then
-        std.errorf( 2, false, "'%s' is not in its parent directory '%s' and cannot be renamed.", self, parent )
-    end
 
     local existing_object = parent:get( name )
     if existing_object ~= nil then
@@ -1921,6 +1919,15 @@ function File:rename( name, forced )
     if is_busy( self ) then
         async_jobs[ self ][ 0 ]:await()
     end
+
+    -- TODO: recheck conflicts here
+
+    parent = parents[ self ]
+    if parent == nil then
+        std.errorf( 2, false, "'%s' has no parent directory and cannot be renamed.", self )
+    end
+
+    ---@cast parent dreamwork.std.fs.Directory
 
     file_Delete( mount_paths[ self ], mount_point )
     mount_paths[ self ] = rel_path( parent, name )
@@ -2021,6 +2028,8 @@ end
 do
 
     local handlers = {}
+
+    -- TODO: Reader and Writer or something better like FileClass that can returns FileReader and FileWriter in cases
 
     function File:open()
 
@@ -2405,73 +2414,72 @@ end
 ---@param name string
 ---@return dreamwork.std.fs.Object fs_object
 ---@return boolean is_directory
+---@async
 function Directory:touch( name )
-    if string_byte( name, 1, 1 ) == nil then
-        error( "File or directory cannot be created with empty name.", 2 )
-    elseif reserved_names[ name ] then
-        error( "File or directory cannot be created with reserved name.", 2 )
+    if reserved_names[ name ] then
+        error( "File or directory cannot be touched with reserved name.", 2 )
     end
 
-    local fs_object = descendants[ self ][ name ]
-
+    local fs_object, is_directory = self:get( name )
     if fs_object == nil then
-        local mount_point = mount_points[ self ]
-        if mount_point == nil or not writeable_mounts[ mount_point ] then
-            error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
-        end
-
-        local mount_path = rel_path( self, name )
-
-        local handler = file_Open( mount_path, "wb", mount_point )
-        if handler == nil then
-            error( "Unknown filesystem error, handler is not available.", 2 )
-        end
-
-        FILE_Close( handler )
-
-        fs_object = FileClass( name, mount_point, mount_path )
-        insert( self, fs_object )
-        return fs_object, false
+        return make_file( self, name, false, 2 ), false
     end
 
     local mount_point = mount_points[ fs_object ]
     if mount_point == nil or not writeable_mounts[ mount_point ] then
-        error( "Path '" .. abs_path( self, name ) .. "' does not support file or directory creation.", 2 )
+        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be touched.", fs_object )
     end
 
-    if is_directory_object[ fs_object ] then
-        -- Doesn't work...
-        ---@diagnostic disable-next-line: redundant-parameter
-        -- file_CreateDir( rel_path( self, name ), mount_point )
+    ---@cast mount_point string
 
-        local tmp_path = rel_path( self, name .. "/^dreamwork_tmp$.dat" )
+    if is_busy( fs_object ) then
+        async_jobs[ fs_object ][ 0 ]:await()
+    end
 
-        local handler = file_Open( tmp_path, "wb", mount_point )
-        if handler == nil then
-            error( "Unknown filesystem error, handler is not available.", 2 )
-        else
-            FILE_Close( handler )
+    if parents[ fs_object ] ~= self then
+        std.errorf( 2, false, "'%s' changed directory and cannot be touched.", fs_object )
+    end
+
+    if is_directory then
+        ---@cast fs_object dreamwork.std.fs.Directory
+
+        local mount_path = rel_path( fs_object, "^dreamwork_tmp$.dat" )
+        local f = async_write( mount_path, mount_point, "" )
+        local is_registered = async_job_register( fs_object, f )
+
+        ---@type dreamwork.std.fs.WriteRespond
+        local respond = f:await()
+
+        if is_registered then
+            async_job_unregister( fs_object, f )
         end
 
-        file_Delete( tmp_path, mount_point )
+        if respond.status ~= 0 then
+            error( make_async_message( respond.status, fs_object, false ), 2 )
+        end
 
-        times[ fs_object ] = file_Time( rel_path( self, name ), mount_point )
+        file_Delete( mount_path, mount_point )
 
-        return fs_object, true
+        times[ fs_object ] = file_Time( mount_paths[ fs_object ] or "", mount_point )
+
+    else
+        ---@cast fs_object dreamwork.std.fs.File
+
+        local mount_path = mount_paths[ fs_object ] or fs_object.name
+
+        local handler = file_Open( mount_path, "wb", mount_point )
+        if handler == nil then
+            std.errorf( 2, false, "Failed to open file '%s' for writing.", fs_object )
+        end
+
+        ---@diagnostic disable-next-line: cast-type-mismatch
+        ---@cast handler File
+        FILE_Close( handler )
+
+        times[ fs_object ] = file_Time( mount_path, mount_point )
     end
 
-    local mount_path = mount_paths[ fs_object ]
-
-    local handler = file_Open( mount_path, "wb", mount_point )
-    if handler == nil then
-        error( "Unknown filesystem error, handler is not available.", 2 )
-    end
-
-    FILE_Close( handler )
-
-    times[ fs_object ] = file_Time( mount_path, mount_point )
-
-    return fs_object, false
+    return fs_object, is_directory
 end
 
 --- [SHARED AND MENU]
@@ -2481,7 +2489,7 @@ end
 ---@param recursive? boolean If `true`, the directory will be deleted even if it contains files or directories.
 ---@async
 function Directory:delete( recursive )
-    return delete_directory( self, recursive == true, 2 )
+    delete_directory( self, recursive == true, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -2489,8 +2497,9 @@ end
 --- Renames a file.
 ---
 ---@param name string The new name of the file.
+---@param forced? boolean If `true`, the file will be renamed even if it already exists.
 ---@async
-function Directory:rename( name )
+function Directory:rename( name, forced )
 
 end
 
@@ -2500,8 +2509,9 @@ end
 ---
 ---@param directory_object dreamwork.std.fs.Directory The directory to copy the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@param forced? boolean If `true`, the file will be overwritten if it already exists.
 ---@async
-function Directory:copy( directory_object, name )
+function Directory:copy( directory_object, name, forced )
 
 end
 
@@ -2511,8 +2521,9 @@ end
 ---
 ---@param directory_object dreamwork.std.fs.Directory The directory to move the file to.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
+---@param forced? boolean If `true`, the file will be overwritten if it already exists.
 ---@async
-function Directory:move( directory_object, name )
+function Directory:move( directory_object, name, forced )
 
 end
 
@@ -2611,7 +2622,19 @@ do
 
 end
 
--- TODO: fs hooks
+--[[
+
+    TODO: make fake fs file for addon presets that will exists only in menu realm
+
+    _G.LoadAddonPresets
+    _G.SaveAddonPresets
+
+    https://wiki.facepunch.com/gmod/Global.LoadPresets
+    https://wiki.facepunch.com/gmod/Global.SavePresets
+
+]]
+
+-- TODO: add more fs hooks
 
 local function prepare_path( path_to )
     local resolved_path = path_resolve( path_to )
@@ -2719,35 +2742,6 @@ function fs.touch( file_path, forced )
     ---@cast directory_object dreamwork.std.fs.Directory
     return directory_object:touch( file_name )
 end
-
--- --- [SHARED AND MENU]
--- ---
--- --- Removes a file or directory by given path.
--- ---
--- ---@param path_to string The path to the file or directory.
--- ---@param forced? boolean If `true`, the file or directory will be deleted if it already exists.
--- ---@param recursive? boolean If `true`, the directory will be deleted recursively.
--- function fs.remove( path_to, forced, recursive )
---     local directory_path, file_name = path_split( prepare_path( path_to ), false )
-
---     local directory_object, is_directory = root:get( directory_path )
---     if directory_object == nil then
---         if forced then
---             return
---         else
---             error( "Path '" .. directory_path .. "' does not exist.", 2 )
---         end
---     elseif not is_directory then
---         if forced then
---             return
---         else
---             error( "Path '" .. directory_path .. "' is not a directory.", 2 )
---         end
---     end
-
---     ---@cast directory_object dreamwork.std.fs.Directory
---     return directory_object:delete( file_name, forced, recursive )
--- end
 
 --- [SHARED AND MENU]
 ---
@@ -2961,10 +2955,25 @@ end
 --- Deletes a file or directory by given path.
 ---
 ---@param path_to string The path to the file or directory.
----@param forced? boolean If `true`, the file or directory will be deleted even if it is not empty.
----@param recursive? boolean If `true`, all directories in the path will be deleted if they are empty.
-function fs.delete( path_to, forced, recursive )
+---@param recursive? boolean If `true`, the file or directory will be deleted even if it contains files or directories.
+---@async
+function fs.delete( path_to, recursive )
+    local full_path = prepare_path( path_to )
 
+    local fs_object, is_directory = root:get( full_path )
+    if fs_object == nil then
+        std.errorf( 2, false, "Path '%s' does not exist.", full_path )
+    end
+
+    ---@cast fs_object dreamwork.std.fs.Object
+
+    if is_directory then
+        ---@cast fs_object dreamwork.std.fs.Directory
+        fs_object:delete( recursive )
+    else
+        ---@cast fs_object dreamwork.std.fs.File
+        fs_object:delete()
+    end
 end
 
 --- [SHARED AND MENU]
@@ -3005,54 +3014,3 @@ end
 function fs.move( source_path, target_path, forced, recursive )
 
 end
-
--- TODO: Reader and Writer or something better like FileClass that can returns FileReader and FileWriter in cases
-
---[[
-
-    TODO:
-
-    _G.LoadAddonPresets
-    _G.SaveAddonPresets
-
-    https://wiki.facepunch.com/gmod/Global.LoadPresets
-    https://wiki.facepunch.com/gmod/Global.SavePresets
-
-]]
-
--- watchdog_Created:attach( function( fs_object )
---     dreamwork.Logger:info( "%s '%s' was created.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
--- end )
-
--- watchdog_Deleted:attach( function( fs_object )
---     dreamwork.Logger:info( "%s '%s' was deleted.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
--- end )
-
--- watchdog_Modified:attach( function( fs_object )
---     dreamwork.Logger:info( "%s '%s' was modified.", is_directory_object[ fs_object ] and "Directory" or "File", fs_object.path )
--- end )
-
--- watchdog.watch( fs.get( "/garrysmod/data" ) )
-
--- ---@async
--- std.futures.run( function ()
---     -- ---@type dreamwork.std.fs.File
---     -- ---@diagnostic disable-next-line: assign-type-mismatch
---     -- local obj = fs.get( "/garrysmod/data/alium/test/a/b/test.txt" )
---     -- -- if obj ~= nil then
---     -- --     obj:rename( "trollface.png" )
---     -- -- end
-
---     -- ---@type dreamwork.std.fs.Directory
---     -- ---@diagnostic disable-next-line: assign-type-mismatch
---     -- local obj2 = fs.get( "/garrysmod/data/alium/test/a" )
---     -- obj:move( obj2 )
-
---     -- fs.makeFile( "/garrysmod/data/alium/test/a/b/test.txt" )
-
--- end )
-
--- std.setTimeout( function()
---     root:get( "workspace/lua/dreamwork" ):scan( true, true )
---     std.print( root:toStringTree())
--- end, 1 )
