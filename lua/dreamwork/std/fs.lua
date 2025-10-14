@@ -61,22 +61,55 @@ local raw_index = raw.index
 local path = std.path
 local path_split = path.split
 local path_resolve = path.resolve
+local path_getExtension = path.getExtension
 
 ---@type table<string, boolean>
 local reserved_names = {
     [ "^dreamwork_tmp$.dat" ] = true
 }
 
----@type table<string, boolean>
-local writeable_mounts = {
-    ["DATA"] = true
+---@class dreamwork.std.fs.MountInfo
+---@field writable boolean If `true` the mount allows creating directories inside.
+---@field writable_extensions table<string, boolean> The extension map of allowed extensions to write.
+---@field deletable boolean If `true` the mount allows deleting files and directories.
+
+---@type table<string, dreamwork.std.fs.MountInfo>
+local fstab = {
+    [ "DATA" ] = {
+        writable = true,
+        deletable = true,
+        writable_extensions = {
+            -- Taken from https://wiki.facepunch.com/gmod/file.Write
+            txt = true,
+            dat = true,
+            json = true,
+            xml = true,
+            csv = true,
+            dem = true,
+            vcd = true,
+            gma = true,
+            mdl = true,
+            phy = true,
+            vvd = true,
+            vtx = true,
+            ani = true,
+            vtf = true,
+            vmt = true,
+            png = true,
+            jpg = true,
+            jpeg = true,
+            mp3 = true,
+            wav = true,
+            ogg = true
+        }
+    },
+    [ "MOD" ] = {
+        writable = false,
+        deletable = MENU,
+        writable_extensions = {}
+    }
 }
 
----@type table<string, boolean>
-local deletable_mounts = {
-    ["DATA"] = true,
-    ["MOD"] = MENU
-}
 
 do
 
@@ -541,6 +574,7 @@ do
     }
 
     local tmp = {}
+    gc_setTableRules( tmp, false, true )
 
     ---@param status integer
     ---@param fs_object dreamwork.std.fs.Object
@@ -571,6 +605,7 @@ do
     }
 
     local tmp = {}
+    gc_setTableRules( tmp, false, true )
 
     ---@param status integer
     ---@param fs_object dreamwork.std.fs.Object
@@ -607,7 +642,7 @@ local File = class.base( "File", true )
 ---@field size integer The size of the directory in bytes. **READ-ONLY**
 ---@field time integer The last modified time of the directory. **READ-ONLY**
 ---@field path string The full path of the directory. **READ-ONLY**
----@field writeable boolean If `true`, the directory is directly writeable.
+---@field writable boolean If `true`, the directory is directly writable.
 ---@field parent dreamwork.std.fs.Directory | nil The parent directory. **READ-ONLY**
 local Directory = class.base( "Directory", true )
 
@@ -882,8 +917,8 @@ local function update_path( fs_object, parent )
         ---@cast fs_object dreamwork.std.fs.Directory
 
         local descendant_list = descendants[ fs_object ]
-        for index = 1, descendant_counts[ fs_object ], 1 do
-            update_path( descendant_list[ index ], fs_object )
+        for i = 1, descendant_counts[ fs_object ], 1 do
+            update_path( descendant_list[ i ], fs_object )
         end
     end
 end
@@ -891,7 +926,7 @@ end
 ---@param directory_object dreamwork.std.fs.Directory
 ---@param name string
 local function abs_path( directory_object, name )
-    local directory_path = directory_object.path
+    local directory_path = paths[ directory_object ]
 
     local uint8_1, uint8_2 = string_byte( directory_path, 1, 2 )
     if uint8_1 == 0x2F --[[ '/' ]] and uint8_2 == nil then
@@ -1006,11 +1041,18 @@ local function delete_file( file_object, stack_level )
     stack_level = stack_level + 1
 
     local mount_point = mount_points[ file_object ]
-    if mount_point == nil or not deletable_mounts[ mount_point ] then
-        std.errorf( stack_level, false, "'%s' cannot be deleted, path does not support file or directory removal.", paths[ file_object ] )
+    if mount_point == nil then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, file is not mounted.", file_object )
     end
 
     ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not mount_info.deletable then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, parent directory is not allowing file deletion.", file_object )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
 
     if is_busy( file_object ) then
         async_jobs[ file_object ][ 0 ]:await()
@@ -1042,11 +1084,18 @@ local function delete_directory( directory_object, recursive, stack_level )
     end
 
     local mount_point = mount_points[ directory_object ]
-    if mount_point == nil or not deletable_mounts[ mount_point ] then
-        std.errorf( stack_level, false, "'%s' cannot be deleted, path does not support file or directory removal.", paths[ directory_object ] )
+    if mount_point == nil then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, directory is not mounted.", directory_object )
     end
 
     ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not mount_info.deletable then
+        std.errorf( stack_level, false, "'%s' cannot be deleted, parent directory is not allowing directory deletion.", directory_object )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
 
     local mount_path = mount_paths[ directory_object ] or ""
 
@@ -1113,36 +1162,29 @@ local function make_directory( parent, name, forced, stack_level )
         if is_directory then
             ---@cast fs_object dreamwork.std.fs.Directory
             return fs_object
-        else
+        elseif forced then
             ---@cast fs_object dreamwork.std.fs.File
             fs_object:delete()
+        else
+            std.errorf( stack_level, false, "Directory cannot be created with name '%s', '%s' already exists.", name, fs_object )
         end
     end
 
     local mount_point = mount_points[ parent ]
-    if mount_point == nil or not writeable_mounts[ mount_point ] then
-        std.errorf( stack_level, false, "'%s' does not support file or directory creation.", parent )
+    if mount_point == nil then
+        std.errorf( stack_level, false, "'%s' won't allow directory creation, directory is not mounted.", parent )
     end
 
     ---@cast mount_point string
 
-    local mount_path = rel_path( parent, name )
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( stack_level, false, "'%s' won't allow directory creation, parent directory is not writable.", parent )
+    end
 
-    -- if file_Exists( mount_path, mount_point ) then
-    --     if file_IsDir( mount_path, mount_point ) then
-    --         local directory_object = DirectoryClass( name, mount_point, mount_path )
-    --         insert( parent, directory_object )
-    --         return directory_object
-    --     elseif forced then
-    --         if deletable_mounts[ mount_point ] then
-    --             file_Delete( mount_path, mount_point )
-    --         else
-    --             std.errorf( stack_level, false, "Path '%s' does not support file removal.", abs_path( parent, name ) )
-    --         end
-    --     else
-    --         std.errorf( stack_level, false, "Path '%s' is already occupied by a file.", abs_path( parent, name ) )
-    --     end
-    -- end
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    local mount_path = rel_path( parent, name )
 
     ---@diagnostic disable-next-line: redundant-parameter
     file_CreateDir( mount_path, mount_point )
@@ -1150,88 +1192,16 @@ local function make_directory( parent, name, forced, stack_level )
     local directory_object = DirectoryClass( name, mount_point, mount_path )
     insert( parent, directory_object )
     return directory_object
-
-    -- local directory_object = descendants[ parent ][ name ]
-    -- if directory_object == nil then
-    --     local mount_point = mount_points[ parent ]
-    --     if mount_point == nil then
-    --         return DirectoryClass( name )
-    --     end
-
-    --     local mount_path = rel_path( parent, name )
-
-    --     if file_Exists( mount_path, mount_point ) then
-    --         if file_IsDir( mount_path, mount_point ) then
-    --             return DirectoryClass( name, mount_point, mount_path )
-    --         elseif forced then
-    --             if deletable_mounts[ mount_point ] then
-    --                 file_Delete( mount_path, mount_point )
-    --             else
-    --                 std.errorf( stack_level, false, "Path '%s' does not support file removal.", abs_path( parent, name ) )
-    --             end
-
-    --             eject( parent, name )
-
-    --             if writeable_mounts[ mount_point ] then
-    --                 ---@diagnostic disable-next-line: redundant-parameter
-    --                 file_CreateDir( mount_path, mount_point )
-    --             else
-    --                 std.errorf( stack_level, false, "Path '%s' does not support directory creation.", abs_path( parent, name ) )
-    --             end
-
-    --             return DirectoryClass( name, mount_point, mount_path )
-    --         else
-    --             std.errorf( stack_level, false, "Path '%s' is already occupied by a file.", abs_path( parent, name ) )
-    --         end
-    --     elseif writeable_mounts[ mount_point ] then
-    --         ---@diagnostic disable-next-line: redundant-parameter
-    --         file_CreateDir( mount_path, mount_point )
-
-    --         return DirectoryClass( name, mount_point, mount_path )
-    --     else
-    --         std.errorf( stack_level, false, "Path '%s' does not support directory creation.", abs_path( parent, name ) )
-    --     end
-    -- elseif is_directory_object[ directory_object ] then
-    --     ---@cast directory_object dreamwork.std.fs.Directory
-    --     return directory_object
-    -- elseif forced then
-    --     local mount_point = mount_points[ directory_object ]
-    --     if mount_point == nil then
-    --         eject( parent, name )
-    --         return DirectoryClass( name )
-    --     end
-
-    --     local mount_path = rel_path( parent, name )
-
-    --     if deletable_mounts[ mount_point ] then
-    --         file_Delete( mount_path, mount_point )
-    --     else
-    --         std.errorf( stack_level, false, "Path '%s' does not support file removal.", abs_path( parent, name ) )
-    --     end
-
-    --     eject( parent, name )
-
-    --     if writeable_mounts[ mount_point ] then
-    --         ---@diagnostic disable-next-line: redundant-parameter
-    --         file_CreateDir( mount_path, mount_point )
-    --     else
-    --         std.errorf( stack_level, false, "Path '%s' does not support directory creation.", abs_path( parent, name ) )
-    --     end
-
-    --     return DirectoryClass( name, mount_point, mount_path )
-    -- else
-    --     std.errorf( stack_level, false, "Path '%s' is already occupied by a file.", abs_path( parent, name ) )
-    --     ---@diagnostic disable-next-line: missing-return
-    -- end
 end
 
 ---@param parent dreamwork.std.fs.Directory
 ---@param name string
 ---@param forced boolean
 ---@param stack_level? integer
+---@param data? string
 ---@return dreamwork.std.fs.File
 ---@async
-local function make_file( parent, name, forced, stack_level )
+local function make_file( parent, name, forced, stack_level, data )
     if stack_level == nil then
         stack_level = 1
     end
@@ -1245,8 +1215,12 @@ local function make_file( parent, name, forced, stack_level )
     local fs_object, is_directory = parent:get( name )
     if fs_object ~= nil then
         if is_directory then
-            ---@cast fs_object dreamwork.std.fs.Directory
-            fs_object:delete( forced )
+            if forced then
+                ---@cast fs_object dreamwork.std.fs.Directory
+                fs_object:delete( true )
+            else
+                std.errorf( stack_level, false, "File cannot be created with name '%s', '%s' already exists.", name, fs_object )
+            end
         else
             ---@cast fs_object dreamwork.std.fs.File
             return fs_object
@@ -1254,15 +1228,31 @@ local function make_file( parent, name, forced, stack_level )
     end
 
     local mount_point = mount_points[ parent ]
-    if mount_point == nil or not writeable_mounts[ mount_point ] then
-        std.errorf( stack_level, false, "'%s' does not support file or directory creation.", parent )
+    if mount_point == nil then
+        std.errorf( stack_level, false, "'%s' won't allow file creation, directory is not mounted.", parent )
     end
 
     ---@cast mount_point string
 
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil then
+        std.errorf( stack_level, false, "'%s' won't allow file creation, parent directory is not writable.", parent )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+        if forced then
+            name = name .. ".dat"
+        else
+            std.errorf( stack_level, false, "'%s' won't allow file creation with name '%s', parent directory is not allowing this extension.", parent, name )
+        end
+    end
+
     local file_object = FileClass( name, mount_point, rel_path( parent, name ) )
     insert( parent, file_object )
-    file_object:write( "" )
+
+    file_object:write( data or "" )
 
     return file_object
 end
@@ -1463,7 +1453,7 @@ else
                 if file_mount_point ~= nil then
                     content_count = content_count + 1
                     content_list[ content_count ] = file_object
-                    times[ file_object ] = file_Time( mount_paths[ file_object ] or file_object.name, file_mount_point )
+                    times[ file_object ] = file_Time( mount_paths[ file_object ] or names[ file_object ], file_mount_point )
                 end
             end
 
@@ -1612,7 +1602,7 @@ else
 
         for i = 1, content_length, 1 do
             local fs_child = content_list[ i ]
-            directory_files[ fs_child.name ] = fs_child
+            directory_files[ names[ fs_child ] ] = fs_child
         end
 
         fs_object:scan( false, false )
@@ -1624,7 +1614,7 @@ else
 
         for i = 1, fs_file_count, 1 do
             local file_object = fs_files[ i ]
-            local name = file_object.name
+            local name = names[ file_object ]
 
             if directory_files[ name ] == nil then
                 content_length = content_length + 1
@@ -1637,7 +1627,7 @@ else
 
         for i = 1, fs_dir_count, 1 do
             local directory_object = fs_dirs[ i ]
-            local name = directory_object.name
+            local name = names[ directory_object ]
 
             if directory_files[ name ] == nil then
                 content_length = content_length + 1
@@ -1651,7 +1641,7 @@ else
         for i = content_length, 1, -1 do
             local fs_child = content_list[ i ]
 
-            if current_files[ fs_child.name ] == nil then
+            if current_files[ names[ fs_child ] ] == nil then
                 for j = content_length, 1, -1 do
                     if content_list[ j ] == fs_child then
                         table_remove( content_list, j )
@@ -1726,8 +1716,9 @@ end
 ---@param mount_point string | nil
 ---@param mount_path string | nil
 function File:__init( name, mount_point, mount_path )
-    names[ self ] = name
     is_directory_object[ self ] = false
+    names[ self ] = name
+
     mount_paths[ self ] = mount_path
     mount_points[ self ] = mount_point
 end
@@ -1883,14 +1874,25 @@ end
 ---@async
 function File:rename( name, forced )
     local mount_point = mount_points[ self ]
-    if mount_point == nil or writeable_mounts[ mount_point ] ~= true then
-        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be renamed.", self )
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not mounted.", self )
     end
 
     ---@cast mount_point string
 
-    if async_job_counts[ self ] ~= 0 then
-        async_jobs[ self ][ 0 ]:await()
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+        std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+        if forced then
+            name = name .. ".dat"
+        else
+            std.errorf( 2, false, "'%s' cannot be renamed to '%s', parent directory is not allowing this extension.", self, name )
+        end
     end
 
     local parent = parents[ self ]
@@ -1900,19 +1902,22 @@ function File:rename( name, forced )
 
     ---@cast parent dreamwork.std.fs.Directory
 
-    local existing_object = parent:get( name )
+    local existing_object, is_directory = parent:get( name )
     if existing_object ~= nil then
         if forced then
-            if deletable_mounts[ mount_point ] ~= true then
-                std.errorf( 2, false, "'%s' is not in a deletable directory and cannot be overwritten.", self )
+            if is_directory then
+                ---@cast existing_object dreamwork.std.fs.Directory
+                existing_object:delete( forced )
+            else
+                ---@cast existing_object dreamwork.std.fs.File
+                existing_object:delete()
             end
-
-            ---@cast existing_object dreamwork.std.fs.Directory
-            existing_object:delete( forced )
         else
-            std.errorf( 2, false, "File '%' already exists in directory '%'. Use forced=true to overwrite it.", name, parent )
+            std.errorf( 2, false, "'%s' already exists in '%'. Use `forced=true` to overwrite it.", existing_object, parent )
         end
     end
+
+    ---@cast existing_object nil
 
     local data = self:read()
 
@@ -1920,11 +1925,8 @@ function File:rename( name, forced )
         async_jobs[ self ][ 0 ]:await()
     end
 
-    -- TODO: recheck conflicts here
-
-    parent = parents[ self ]
-    if parent == nil then
-        std.errorf( 2, false, "'%s' has no parent directory and cannot be renamed.", self )
+    if parents[ self ] ~= parent then
+        std.errorf( 2, false, "'%s' has changed its location or been deleted, renaming failed.", self )
     end
 
     ---@cast parent dreamwork.std.fs.Directory
@@ -1943,21 +1945,36 @@ end
 --- Copies a file to another directory.
 ---
 ---@param directory_object dreamwork.std.fs.Directory The directory to copy the file to.
----@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@return dreamwork.std.fs.File file_object The copied file.
 ---@async
-function File:copy( directory_object, name, forced )
+function File:copy( directory_object, forced, name )
     if name == nil then
         name = names[ self ]
     end
 
     local mount_point = mount_points[ directory_object ]
-    if mount_point == nil or writeable_mounts[ mount_point ] ~= true then
-        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be copied.", directory_object )
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be copied, parent directory is not mounted.", self )
     end
 
     ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( 2, false, "'%s' cannot be copied, parent directory is not writable.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+        if forced then
+            name = name .. ".dat"
+        else
+            std.errorf( 2, false, "'%s' cannot be copied with name '%s', parent directory is not allowing this extension.", self, name )
+        end
+    end
 
     local fs_object, is_directory = directory_object:get( name )
     if fs_object == nil then
@@ -1988,11 +2005,26 @@ function File:move( directory_object, name, forced )
     end
 
     local mount_point = mount_points[ directory_object ]
-    if mount_point == nil or writeable_mounts[ mount_point ] ~= true then
-        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be copied.", directory_object )
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be moved, parent directory is not mounted.", self )
     end
 
     ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+        std.errorf( 2, false, "'%s' cannot be moved, parent directory is not allowing file moving.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+        if forced then
+            name = name .. ".dat"
+        else
+            std.errorf( 2, false, "'%s' cannot be moved with name '%s', parent directory is not allowing this extension.", self, name )
+        end
+    end
 
     local data = self:read()
 
@@ -2070,13 +2102,14 @@ function Directory:__index( key )
         return times[ self ]
     elseif key == "path" then
         return paths[ self ]
-    elseif key == "writeable" then
+    elseif key == "writable" then
         local mount_point = mount_points[ self ]
         if mount_point == nil then
             return false
-        else
-            return writeable_mounts[ mount_point ] == true
         end
+
+        local mount_info = fstab[ mount_point ]
+        return mount_info ~= nil and mount_info.writable
     elseif key == "parent" then
         return parents[ self ]
     else
@@ -2098,9 +2131,9 @@ function Directory:select( wildcard )
     local directories, directory_count = {}, 0
     local files, file_count = {}, 0
 
-    for index = 1, descendant_counts[ self ], 1 do
+    for i = 1, descendant_counts[ self ], 1 do
         ---@type dreamwork.std.fs.Object
-        local fs_object = descendants_table[ index ]
+        local fs_object = descendants_table[ i ]
         if is_directory_object[ fs_object ] then
             directory_count = directory_count + 1
             directories[ directory_count ] = fs_object
@@ -2128,8 +2161,8 @@ function Directory:select( wildcard )
 
         local fs_files, fs_directories = file_Find( wildcard, mount_point )
 
-        for index = 1, #fs_files, 1 do
-            local file_name = fs_files[ index ]
+        for i = 1, #fs_files, 1 do
+            local file_name = fs_files[ i ]
             if descendants_table[ file_name ] == nil and not reserved_names[ file_name ] then
                 local file_object = FileClass( file_name, mount_point, file_name )
                 insert( self, file_object )
@@ -2139,8 +2172,8 @@ function Directory:select( wildcard )
             end
         end
 
-        for index = 1, #fs_directories, 1 do
-            local directory_name = fs_directories[ index ]
+        for i = 1, #fs_directories, 1 do
+            local directory_name = fs_directories[ i ]
             if descendants_table[ directory_name ] == nil and not reserved_names[ directory_name ] and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
                 local directory_object = DirectoryClass( directory_name, mount_point, directory_name )
                 insert( self, directory_object )
@@ -2155,8 +2188,8 @@ function Directory:select( wildcard )
 
         local fs_files, fs_directories = file_Find( mount_path .. "/" .. wildcard, mount_point )
 
-        for index = 1, #fs_files, 1 do
-            local file_name = fs_files[ index ]
+        for i = 1, #fs_files, 1 do
+            local file_name = fs_files[ i ]
             if descendants_table[ file_name ] == nil and not reserved_names[ file_name ] then
                 local file_object = FileClass( file_name, mount_point, mount_path .. "/" .. file_name )
                 insert( self, file_object )
@@ -2166,8 +2199,8 @@ function Directory:select( wildcard )
             end
         end
 
-        for index = 1, #fs_directories, 1 do
-            local directory_name = fs_directories[ index ]
+        for i = 1, #fs_directories, 1 do
+            local directory_name = fs_directories[ i ]
             if descendants_table[ directory_name ] == nil and not reserved_names[ directory_name ] and string_byte( directory_name, 1, 1 ) ~= 0x2F --[[ '/' ]] then
                 local directory_object = DirectoryClass( directory_name, mount_point, mount_path .. "/" .. directory_name )
                 insert( self, directory_object )
@@ -2188,8 +2221,8 @@ function Directory:count()
     local file_count, directory_count = 0, 0
     local descendants_table = descendants[ self ]
 
-    for index = 1, descendant_counts[ self ], 1 do
-        if is_directory_object[ descendants_table[ index ] ] then
+    for i = 1, descendant_counts[ self ], 1 do
+        if is_directory_object[ descendants_table[ i ] ] then
             directory_count = directory_count + 1
         else
             file_count = file_count + 1
@@ -2214,8 +2247,8 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
 
         size_add( self, -sizes[ self ] )
 
-        for index = 1, descendant_count, 1 do
-            local descendant = descendants[ self ][ index ]
+        for i = 1, descendant_count, 1 do
+            local descendant = descendants[ self ][ i ]
             if not is_directory_object[ descendant ] then
                 local descendant_mount_point = mount_points[ descendant ]
                 local size, unix_time
@@ -2367,17 +2400,17 @@ function Directory:foreach( file_callback, directory_callback )
             return
         end
     else
-        for index = 1, file_count, 1 do
+        for i = 1, file_count, 1 do
             ---@type dreamwork.std.fs.File
             ---@diagnostic disable-next-line: param-type-mismatch
-            file_callback( files[ index ] )
+            file_callback( files[ i ] )
         end
     end
 
-    for index = 1, directory_count, 1 do
+    for i = 1, directory_count, 1 do
         ---@type dreamwork.std.fs.Directory
         ---@diagnostic disable-next-line: assign-type-mismatch
-        local directory_object = directories[ index ]
+        local directory_object = directories[ i ]
 
         if directory_callback ~= nil then
             directory_callback( directory_object )
@@ -2426,11 +2459,18 @@ function Directory:touch( name )
     end
 
     local mount_point = mount_points[ fs_object ]
-    if mount_point == nil or not writeable_mounts[ mount_point ] then
-        std.errorf( 2, false, "'%s' is not in a writeable directory and cannot be touched.", fs_object )
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' touch failed, parent directory is not mounted.", fs_object )
     end
 
     ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+        std.errorf( 2, false, "'%s' touch failed, parent directory is not allowing touching.", fs_object )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
 
     if is_busy( fs_object ) then
         async_jobs[ fs_object ][ 0 ]:await()
@@ -2465,7 +2505,7 @@ function Directory:touch( name )
     else
         ---@cast fs_object dreamwork.std.fs.File
 
-        local mount_path = mount_paths[ fs_object ] or fs_object.name
+        local mount_path = mount_paths[ fs_object ] or names[ fs_object ]
 
         local handler = file_Open( mount_path, "wb", mount_point )
         if handler == nil then
@@ -2494,25 +2534,61 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames a file.
----
----@param name string The new name of the file.
----@param forced? boolean If `true`, the file will be renamed even if it already exists.
----@async
-function Directory:rename( name, forced )
-
-end
-
---- [SHARED AND MENU]
----
 --- Copies a file to another directory.
 ---
 ---@param directory_object dreamwork.std.fs.Directory The directory to copy the file to.
----@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@async
-function Directory:copy( directory_object, name, forced )
+function Directory:copy( directory_object, forced, name )
+    if name == nil then
+        name = names[ self ]
+    end
 
+    local mount_point = mount_points[ directory_object ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be copied, parent directory is not mounted.", self )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( 2, false, "'%s' cannot be copied, parent directory is not writable.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    -- TODO: add checks to prevent recursion copying
+
+    local fs_object, is_directory = directory_object:get( name )
+    if fs_object == nil then
+        fs_object = directory_object:makeDirectory( name, forced )
+    elseif not is_directory then
+        ---@cast fs_object dreamwork.std.fs.File
+        if forced then
+            fs_object:delete()
+            fs_object = directory_object:makeDirectory( name, forced )
+        else
+            std.errorf( 2, false, "'%s' already exists and cannot be overwritten.", fs_object )
+        end
+    end
+
+    ---@cast fs_object dreamwork.std.fs.Directory
+
+    local files, file_count, directories, directory_count = self:select()
+
+    for i = 1, directory_count, 1 do
+        directories[ i ]:copy( fs_object, forced, nil )
+    end
+
+    for i = 1, file_count, 1 do
+        files[ i ]:copy( fs_object, forced, nil )
+    end
+
+    times[ fs_object ] = file_Time( mount_paths[ fs_object ] or "", mount_point )
+
+    return fs_object
 end
 
 --- [SHARED AND MENU]
@@ -2524,6 +2600,64 @@ end
 ---@param forced? boolean If `true`, the file will be overwritten if it already exists.
 ---@async
 function Directory:move( directory_object, name, forced )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Renames a file.
+---
+---@param name string The new name of the file.
+---@param forced? boolean If `true`, the file will be renamed even if it already exists.
+---@async
+function Directory:rename( name, forced )
+    local mount_point = mount_points[ self ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not mounted.", self )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = fstab[ mount_point ]
+    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+        std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    local parent = parents[ self ]
+    if parents[ self ] == nil then
+        std.errorf( 2, false, "'%s' has no parent directory and cannot be renamed.", self )
+    end
+
+    ---@cast parent dreamwork.std.fs.Directory
+
+    local existing_object, is_directory = parent:get( name )
+    if existing_object ~= nil then
+        if forced then
+            if is_directory then
+                ---@cast existing_object dreamwork.std.fs.Directory
+                existing_object:delete( forced )
+            else
+                ---@cast existing_object dreamwork.std.fs.File
+                existing_object:delete()
+            end
+        else
+            std.errorf( 2, false, "'%s' already exists in '%'. Use `forced=true` to overwrite it.", existing_object, parent )
+        end
+    end
+
+    ---@cast existing_object nil
+
+    if parents[ self ] ~= parent then
+        std.errorf( 2, false, "'%s' has changed its location or been deleted, renaming failed.", self )
+    end
+
+    local files, file_count,
+        directories, directory_count = self:select()
+
+
+
 
 end
 
@@ -2876,13 +3010,13 @@ do
     ---@param file_object dreamwork.std.fs.File
     ---@async
     local function iterate_file( file_object )
-        return futures_yield( file_object.path, false )
+        return futures_yield( paths[ file_object ], false )
     end
 
     ---@param directory_object dreamwork.std.fs.Directory
     ---@async
     local function iterate_directory( directory_object )
-        return futures_yield( directory_object.path, true )
+        return futures_yield( paths[ directory_object ], true )
     end
 
     --- [SHARED AND MENU]
@@ -2996,10 +3130,43 @@ end
 ---@param source_path string The path to the file or directory to copy.
 ---@param target_path string The path to the file or directory to copy to.
 ---@param forced? boolean If `true`, the file or directory will be copied even if it already exists.
----@param recursive? boolean If `true`, all directories in the path will be copied if they already exist.
+---@return dreamwork.std.fs.Object object_copy The copied file or directory.
+---@return boolean is_directory `true` if copied object is a directory, otherwise `false`.
 ---@async
-function fs.copy( source_path, target_path, forced, recursive )
+function fs.copy( source_path, target_path, forced )
+    local resource_source_path = prepare_path( source_path )
 
+    local source_object, source_is_directory = root:get( resource_source_path )
+    if source_object == nil then
+        std.errorf( 2, false, "Path '%s' does not exist.", resource_source_path )
+    end
+
+    ---@cast source_object dreamwork.std.fs.Object
+
+    local resolved_target_path = prepare_path( target_path )
+    local segments, segment_count = string_byteSplit( resolved_target_path, 0x2F --[[ '/' ]], 2 )
+
+    for i = segment_count, 1, -1 do
+        local fs_object, is_directory = root:get( table_concat( segments, "/", 1, i ) )
+        if is_directory then
+            ---@cast fs_object dreamwork.std.fs.Directory
+
+            if i == segment_count then
+                return source_object:copy( fs_object, forced, nil ), source_is_directory
+            end
+
+            local segments_remaining = segment_count - i
+            if segments_remaining ~= 1 then
+                for j = 1, segments_remaining - 1, 1 do
+                    fs_object = fs_object:makeDirectory( segments[ i + j ], forced )
+                end
+            end
+
+            return source_object:copy( fs_object, forced, segments[ segment_count ] ), source_is_directory
+        end
+    end
+
+    std.errorf( 2, false, "Path '%s' does not exist.", resolved_target_path )
 end
 
 --- [SHARED AND MENU]
