@@ -617,10 +617,12 @@ do
     function Future:setResult( result )
         if self.state ~= 0 then
             error( "future is already finished", 2 )
-        else
-            self.state, self.result_value = 1, result
-            self:runCallbacks()
         end
+
+        self.state = 1
+        self.result_value = result
+
+        self:runCallbacks()
     end
 
     --- [SHARED AND MENU]
@@ -632,10 +634,12 @@ do
     function Future:setError( err )
         if self.state ~= 0 then
             error( "future is already finished", 2 )
-        else
-            self.state, self.error_value = 1, err
-            self:runCallbacks()
         end
+
+        self.state = 1
+        self.error_value = err
+
+        self:runCallbacks()
     end
 
     --- [SHARED AND MENU]
@@ -647,11 +651,11 @@ do
     function Future:cancel()
         if self.state ~= 0 then
             return false
-        else
-            self.state = 2
-            self:runCallbacks()
-            return true
         end
+
+        self.state = 2
+        self:runCallbacks()
+        return true
     end
 
     --- [SHARED AND MENU]
@@ -666,10 +670,10 @@ do
         local state = self.state
         if state == 2 then
             return "future was cancelled"
-        elseif state ~= 0 then
-            return self.error_value
-        else
+        elseif state == 0 then
             return "future is not finished"
+        else
+            return self.error_value
         end
     end
 
@@ -684,15 +688,15 @@ do
         local state = self.state
         if state == 2 then
             return error( "future was cancelled" )
-        elseif state ~= 0 then
+        elseif state == 0 then
+            return error( "future is not finished" )
+        else
             local error_value = self.error_value
             if error_value == nil then
                 return self.result_value
             else
                 error( error_value )
             end
-        else
-            return error( "future is not finished" )
         end
     end
 
@@ -704,7 +708,7 @@ do
     ---@async
     ---@return any
     function Future:await()
-        if not self.state ~= 0 then
+        if self.state == 0 then
             local co = coroutine_running()
 
             self:addCallback( function()
@@ -714,11 +718,11 @@ do
             futures_pending()
         end
 
-        if self.state ~= 0 then
-            return self:result()
-        else
+        if self.state == 0 then
             error( "future hasn't changed it's state wtf???" )
         end
+
+        return self:result()
     end
 
     --- [SHARED AND MENU]
