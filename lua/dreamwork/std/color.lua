@@ -4,7 +4,7 @@ local _G = _G
 local std = _G.dreamwork.std
 
 local math, string, bit = std.math, std.string, std.bit
-local isnumber, setmetatable = std.isnumber, std.setmetatable
+local isNumber, setmetatable = std.isNumber, std.setmetatable
 local math_abs, math_min, math_max, math_floor = math.abs, math.min, math.max, math.floor
 local string_char, string_byte, string_format, string_len = string.char, string.byte, string.format, string.len
 
@@ -135,7 +135,7 @@ end
 ---@param other dreamwork.std.Color | integer
 ---@protected
 function Color:__mul( other )
-    if isnumber( other ) then
+    if isNumber( other ) then
         ---@cast other integer
         return from_rgba(
             self.r * other,
@@ -157,7 +157,7 @@ end
 ---@param other dreamwork.std.Color | integer
 ---@protected
 function Color:__div( other )
-    if isnumber( other ) then
+    if isNumber( other ) then
         ---@cast other integer
         local multiplier = 1 / other
         return from_rgba(
@@ -963,14 +963,14 @@ end
 do
 
     local debug_getmetatable = std.debug.getmetatable
-    local isstring = std.isstring
+    local isString = std.isString
 
     --- [SHARED AND MENU]
     ---
     --- Checks if the value is a color object.
     ---@param value any The value to check.
     ---@return boolean
-    function std.iscolor( value )
+    function std.isColor( value )
         return debug_getmetatable( value ) == Color
     end
 
@@ -1003,7 +1003,7 @@ do
     ---@protected
     function metatable:__index( name )
         local color
-        if isstring( name ) then
+        if isString( name ) then
             ---@diagnostic disable-next-line: redundant-parameter
             color = NamedColor( name )
 
@@ -1012,7 +1012,7 @@ do
             else
                 setmetatable( color, Color )
             end
-        elseif isnumber( name ) then
+        elseif isNumber( name ) then
             color = from_rgba( name, name, name, 255 )
         else
             error( "Color name must be string or integer!", 3 )

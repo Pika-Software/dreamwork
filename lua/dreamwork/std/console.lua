@@ -82,6 +82,7 @@ do
     if console_write == nil then
 
         local table_concat = std.table.concat
+        local isString = std.isString
         local print = std.print
 
         --- [SHARED AND MENU]
@@ -95,7 +96,7 @@ do
 
             for i = 1, select( "#", ... ), 1 do
                 local value = args[ i ]
-                if isstring( value ) then
+                if isString( value ) then
                     buffer_size = buffer_size + 1
                     buffer[ buffer_size ] = value
                 end

@@ -102,7 +102,7 @@ do
     local math_clamp = std.math.clamp
     local math_floor = std.math.floor
     local table_inject = table.inject
-    local isnumber = std.isnumber
+    local isNumber = std.isNumber
 
     --- [SHARED AND MENU]
     ---
@@ -119,11 +119,11 @@ do
         if debug_getmetatable( fn ) == Hook then
             ---@cast fn dreamwork.std.Hook
 
-            if isnumber( identifier ) then
+            if isNumber( identifier ) then
                 ---@cast identifier number
                 ---@diagnostic disable-next-line: cast-local-type
                 hook_type = math_floor( identifier )
-            elseif not isnumber( hook_type ) then
+            elseif not isNumber( hook_type ) then
                 ---@diagnostic disable-next-line: cast-local-type
                 hook_type = 0
             end

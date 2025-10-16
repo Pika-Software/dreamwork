@@ -6,7 +6,7 @@ local Logger = dreamwork.Logger
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isnumber, isstring = std.isnumber, std.isstring
+local isNumber, isString = std.isNumber, std.isString
 local futures_Future = std.futures.Future
 local setTimeout = std.setTimeout
 
@@ -236,7 +236,7 @@ local function request( options )
             local old_value = parameters[ key ]
             if old_value == nil then
                 parameters[ key ] = value
-            elseif isstring( old_value ) then
+            elseif isString( old_value ) then
                 ---@cast old_value string
                 parameters[ key ] = { old_value, value }
             else
@@ -250,7 +250,7 @@ local function request( options )
     local url = options.url
     if url == nil then
         error( "URL is nil", 2 )
-    elseif not isstring( url ) then
+    elseif not isString( url ) then
         ---@cast url dreamwork.std.URL
         url = url.href
         options.url = url
@@ -262,7 +262,7 @@ local function request( options )
     options.method = method
 
     local timeout = options.timeout
-    if timeout == nil or not isnumber( timeout ) then
+    if timeout == nil or not isNumber( timeout ) then
         ---@diagnostic disable-next-line: cast-local-type
         timeout = dreamwork_http_timeout.value
         ---@cast timeout number
@@ -303,7 +303,7 @@ local function request( options )
         local cache_ttl = options.cache_ttl
         options.cache_ttl = nil
 
-        if not isnumber( cache_ttl ) then
+        if not isNumber( cache_ttl ) then
             cache_ttl = dreamwork_http_cache_ttl.value * 60
         end
 

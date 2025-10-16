@@ -49,7 +49,7 @@ local raw_get, raw_set = raw.get, raw.set
 
 local class = std.class
 
-local isnumber = std.isnumber
+local isNumber = std.isNumber
 local setmetatable = std.setmetatable
 
 local math = std.math
@@ -473,7 +473,7 @@ do
         ---@param value dreamwork.std.Vector2 | number
         ---@return dreamwork.std.Vector2
         function Vector2:__add( value )
-            if isnumber( value ) then
+            if isNumber( value ) then
                 ---@cast value number
                 return setmetatable( {
                     math_toFloat32( self[ 1 ] + value ),
@@ -508,7 +508,7 @@ do
         ---@param value dreamwork.std.Vector2 | number
         ---@return dreamwork.std.Vector2
         function Vector2:__sub( value )
-            if isnumber( value ) then
+            if isNumber( value ) then
                 ---@cast value number
                 return setmetatable( {
                     math_toFloat32( self[ 1 ] - value ),
@@ -543,7 +543,7 @@ do
         ---@param value dreamwork.std.Vector2 | number
         ---@return dreamwork.std.Vector2
         function Vector2:__mul( value )
-            if isnumber( value ) then
+            if isNumber( value ) then
                 ---@cast value number
                 return Vector2_scale( Vector2_copy( self ), value )
             else
@@ -567,7 +567,7 @@ do
         ---@param other dreamwork.std.Vector2 | number The other vector or a number.
         ---@return dreamwork.std.Vector2 vec2 The quotient of the two vectors or the vector divided by a number.
         local function Vector2_div( self, other )
-            if isnumber( other ) then
+            if isNumber( other ) then
                 ---@cast other number
                 return self:scale( 1 / other )
             else
@@ -998,7 +998,7 @@ do
         ---@param value dreamwork.std.Vector3 | number The other vector or a number.
         ---@return dreamwork.std.Vector3 vec3 The product of the two vectors or the vector multiplied by a number.
         local function Vector3_mul( self, value )
-            if isnumber( value ) then
+            if isNumber( value ) then
                 ---@cast value number
                 Vector3_scale( self, value )
             else
@@ -1031,7 +1031,7 @@ do
         ---@param value dreamwork.std.Vector3 | number The other vector or a number.
         ---@return dreamwork.std.Vector3 vec3 The quotient of the two vectors or the vector divided by a number.
         local function Vector3_div( self, value )
-            if isnumber( value ) then
+            if isNumber( value ) then
                 ---@cast value number
                 return Vector3_scale( self, 1 / value )
             end
@@ -1526,7 +1526,7 @@ do
         ---@param angle number | dreamwork.std.Angle3 The angle to multiply with.
         ---@return dreamwork.std.Angle3 ang3 The multiplied angle.
         local function Angle3_mul( self, angle )
-            if isnumber( angle ) then
+            if isNumber( angle ) then
                 ---@cast angle number
                 self[ 1 ] = self[ 1 ] * angle
                 self[ 2 ] = self[ 2 ] * angle
@@ -1562,7 +1562,7 @@ do
         ---@param angle number | dreamwork.std.Angle3 The angle to divide with.
         ---@return dreamwork.std.Angle3 ang3 The divided angle.
         local function Angle3_div( self, angle )
-            if isnumber( angle ) then
+            if isNumber( angle ) then
                 self[ 1 ] = self[ 1 ] / angle
                 self[ 2 ] = self[ 2 ] / angle
                 self[ 3 ] = self[ 3 ] / angle
@@ -1614,7 +1614,7 @@ do
     ---@param frac number The interpolation factor.
     ---@return dreamwork.std.Angle3 ang3 The interpolated angle.
     function Angle3:lerp( angle, frac )
-        if isnumber( angle ) then
+        if isNumber( angle ) then
             ---@cast angle number
             self[ 1 ] = math_lerp( frac, self[ 1 ], angle )
             self[ 2 ] = math_lerp( frac, self[ 2 ], angle )

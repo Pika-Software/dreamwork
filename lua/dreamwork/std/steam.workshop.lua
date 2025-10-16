@@ -8,7 +8,7 @@ local string = std.string
 
 local futures_Future = std.futures.Future
 local setTimeout = std.setTimeout
-local isstring = std.isstring
+local isString = std.isString
 
 ---@class dreamwork.std.steam
 local steam = std.steam
@@ -228,7 +228,7 @@ do
     ---@param id? string
     ---@return boolean
     function workshop.isValidID( id )
-        return id or id ~= "0" and isstring( id ) and string_match( id, "^%d+$", 1 )
+        return id or id ~= "0" and isString( id ) and string_match( id, "^%d+$", 1 )
     end
 
 end
@@ -694,7 +694,7 @@ end
 
 -- https://github.com/WilliamVenner/gmsv_workshop
 ---@diagnostic disable-next-line: undefined-field
-if SERVER and not ( std.istable( _G.steamworks ) and std.isfunction( _G.steamworks.DownloadUGC ) ) then
+if SERVER and not ( std.isTable( _G.steamworks ) and std.isFunction( _G.steamworks.DownloadUGC ) ) then
     if std.loadbinary( "workshop" ) then
         dreamwork.Logger:info( "'gmsv_workshop' was loaded & connected as server-side Steam Workshop API." )
     else
@@ -913,7 +913,7 @@ if std.MENU then
         end
 
         steamworks_Publish( filePath, imagePath, title, description or "", tags, function( wsid, errorMsg )
-            if isstring( errorMsg ) then
+            if isString( errorMsg ) then
                 f:setError( errorMsg )
             else
                 f:setResult( wsid )
@@ -956,7 +956,7 @@ if std.MENU then
         end
 
         steamworks_Publish( filePath, imagePath, title, description or "", tags, function( _, errorMsg )
-            if isstring( errorMsg ) then
+            if isString( errorMsg ) then
                 f:setError( errorMsg )
             else
                 f:setResult( true )

@@ -1,8 +1,5 @@
----@class dreamwork
-local dreamwork = _G.dreamwork
-
 ---@class dreamwork.std
-local std = dreamwork.std
+local std = _G.dreamwork.std
 
 local class = std.class
 local table_remove = std.table.remove
@@ -521,6 +518,3 @@ do
     end
 
 end
-
--- TODO: LinQ
--- https://github.com/Nak2/NikNaks/blob/main/lua/niknaks/modules/sh_linq_module.lua

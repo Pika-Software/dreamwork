@@ -4,7 +4,7 @@ local std = _G.dreamwork.std
 local raw = std.raw
 local raw_get, raw_set, raw_pairs, raw_tonumber = raw.get, raw.set, raw.pairs, raw.tonumber
 
-local isstring, isnumber, istable = std.isstring, std.isnumber, std.istable
+local isString, isNumber, isTable = std.isString, std.isNumber, std.isTable
 local tostring = std.tostring
 
 -- TODO: glua functions below
@@ -25,7 +25,7 @@ local function compileCharacterTable( chars )
 	local result = {}
 	for _index_0 = 1, #chars do
 		local v = chars[ _index_0 ]
-		if istable( v ) then
+		if isTable( v ) then
 			for i = string_byte( v[ 1 ] ), string_byte( v[ 2 ] ) do
 				result[ i ] = true
 			end
@@ -143,14 +143,14 @@ local function compilePercentEncodeSet( encodeSet, ... )
 	local _list_1 = { ... }
 	for _index_0 = 1, #_list_1 do
 		local ch = _list_1[ _index_0 ]
-		if isstring( ch ) then
+		if isString( ch ) then
 			ch = string_byte( ch )
 		end
 
-		if isnumber( ch ) then
+		if isNumber( ch ) then
 			encodeSet[ string_char( ch ) ] = "%" .. bit.tohex( ch, 2 ):upper()
-		elseif istable( ch ) then
-			for i = isstring( ch[ 1 ] ) and string_byte( ch[ 1 ] ) or ch[ 1 ], isstring( ch[ 2 ] ) and string_byte( ch[ 2 ] ) or ch[ 2 ], 1 do
+		elseif isTable( ch ) then
+			for i = isString( ch[ 1 ] ) and string_byte( ch[ 1 ] ) or ch[ 1 ], isString( ch[ 2 ] ) and string_byte( ch[ 2 ] ) or ch[ 2 ], 1 do
 				encodeSet[ string_char( i ) ] = "%" .. bit.tohex( i, 2 ):upper()
 			end
 		end
@@ -918,7 +918,7 @@ end
 
 parseNoScheme = function(self, str, startPos, endPos, base)
 	local startsWithFragment = string_byte(str, startPos) == 0x23
-	local baseHasOpaquePath = base and isstring(base.path)
+	local baseHasOpaquePath = base and isString(base.path)
 	if not base or (baseHasOpaquePath and not startsWithFragment) then
 		error("Invalid URL: Missing scheme")
 	end
@@ -1393,11 +1393,11 @@ function parseFragment( self, str, startPos, endPos )
 end
 
 local function parse( self, str, base )
-	if not isstring( str ) then
+	if not isString( str ) then
 		error( "Invalid URL: URL must be a string" )
 	end
 
-	if isstring( base ) then
+	if isString( base ) then
 		-- yeah, we dont even need to full URL object for this
 		local url = {}
 		parse( url, base )
@@ -1473,9 +1473,9 @@ local function serializeIPv6( address )
 end
 
 local function serializeHost( host )
-	if istable( host ) then
+	if isTable( host ) then
 		return "[" .. serializeIPv6( host ) .. "]"
-	elseif isnumber( host ) then
+	elseif isNumber( host ) then
 		local address = {}
 		for i = 1, 4 do
 			address[ 5 - i ] = string_format( "%u", host % 256 )
@@ -1489,7 +1489,7 @@ local function serializeHost( host )
 end
 
 local function serializeQuery( query )
-	if not istable( query ) then
+	if not isTable( query ) then
 		return query
 	end
 
@@ -1535,7 +1535,7 @@ local function serialize( state, excludeFragment )
 	local path = state.path
 	local query = state.query
 	local fragment = state.fragment
-	local isOpaque = isstring( path )
+	local isOpaque = isString( path )
 
 	local output, length = {}, 0
 
@@ -1600,7 +1600,7 @@ local function serialize( state, excludeFragment )
 		output[ length ] = "?"
 
 		length = length + 1
-		if isstring( query ) then
+		if isString( query ) then
 			---@cast query string
 			output[ length ] = query
 		else
@@ -1626,7 +1626,7 @@ local function getOrigin( self )
 		return self.scheme, self.hostname, self.port
 	elseif scheme == "blob" then
 		local pathURL = self.path
-		if not isstring( pathURL ) then
+		if not isString( pathURL ) then
 			return
 		end
 
@@ -1684,13 +1684,13 @@ local SearchParamsClass = std.class.create( SearchParams )
 function SearchParams:__init( query, url )
 	self.url = url
 
-	if isstring( query ) then
+	if isString( query ) then
 		if string_byte( query, 1 ) == 0x3F then
 			query = string_sub( query, 2 )
 		end
 
 		parseQueryString( query, self )
-	elseif istable( query ) then
+	elseif isTable( query ) then
 		for i = 1, #query do
 			self[ i ] = query[ i ]
 		end
@@ -2069,7 +2069,7 @@ function URL:__index( key )
 		end
 
 		local path = state.path
-		if istable( path ) then
+		if isTable( path ) then
 			---@cast path table
 			return cacheValue( self, "_pathname", "/" .. table_concat( path, "/" ) )
 		else
@@ -2116,7 +2116,7 @@ function URL:__newindex( key, value )
 			if not state.hostname or state.hostname == "" or state.scheme == "file" then return end
 			state.password = value
 		elseif "hostname" == key then
-			if isstring( state.path ) then return end
+			if isString( state.path ) then return end
 			parseHost( state, value, 1, #value, state.scheme and SPECIAL_SCHEMAS[ state.scheme ], "hostname" )
 		elseif "port" == key then
 			if not state.hostname or state.hostname == "" or state.scheme == "file" then
@@ -2150,12 +2150,12 @@ function URL:__newindex( key, value )
 		resetCache( self )
 		parseScheme( state, value, 1, #value, nil, true )
 	elseif "host" == key then
-		if isstring( state.path ) then return end
+		if isString( state.path ) then return end
 
 		resetCache( self )
 		parseHost( state, value, 1, #value, state.scheme and SPECIAL_SCHEMAS[ state.scheme ], "host" )
 	elseif "pathname" == key then
-		if isstring( state.path ) then return end
+		if isString( state.path ) then return end
 		resetCache( self )
 
 		state.path = {}

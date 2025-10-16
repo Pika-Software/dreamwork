@@ -5,7 +5,7 @@ local std = dreamwork.std
 
 local gc_setTableRules = std.debug.gc.setTableRules
 local pcall, xpcall = std.pcall, std.xpcall
-local isfunction = std.isfunction
+local isFunction = std.isFunction
 local tostring = std.tostring
 
 local coroutine = std.coroutine
@@ -93,17 +93,17 @@ local async_thread_result
 do
 
     local string_find = string.find
-    local isstring = std.isstring
+    local isString = std.isString
 
     ---@async
     ---@param ok boolean
     function async_thread_result( ok, value, ... )
         local fn = listeners[ coroutine_running() ]
-        if isfunction( fn ) then
+        if isFunction( fn ) then
             fn( ok, value, ... )
         elseif not ok then
             -- TODO: use errors instead of this string
-            if isstring( value ) and string_find( value, "Operation was cancelled" ) then
+            if isString( value ) and string_find( value, "Operation was cancelled" ) then
                 return
             end
 
@@ -1002,7 +1002,7 @@ end
 local function cancelList( awaitables )
     for i = 1, #awaitables do
         local awaitable = awaitables[ i ]
-        if isfunction( awaitable.cancel ) then
+        if isFunction( awaitable.cancel ) then
             awaitable:cancel()
         end
     end

@@ -1,6 +1,6 @@
 local _G = _G
 local std = _G.dreamwork.std
-local isstring = std.isstring
+local isString = std.isString
 local setmetatable = std.setmetatable
 local physenv, util = _G.physenv, _G.util
 
@@ -121,7 +121,7 @@ do
             error( "Invalid surface data", 2 )
         else
             local name = data.name
-            if isstring( name ) then
+            if isString( name ) then
                 physenv_AddSurfaceData( "\"" .. name .. "\"\n{\n" .. table_concat( buffer, "", 1, length ) .. "}" )
             else
                 error( "Invalid surface name", 2 )

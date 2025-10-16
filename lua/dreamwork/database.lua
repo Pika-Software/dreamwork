@@ -125,24 +125,29 @@ if std.SERVER then
         return sqlite_queryOne( "insert or ignore into 'dreamwork.repositories' (url) values (?); select * from 'dreamwork.repositories' where url=?", url, url )
     end
 
-    local isstring, isnumber, istable = std.isstring, std.isnumber, std.istable
+    local getRepositoryID
+    do
 
-    --- [SERVER]
-    ---
-    --- Returns the repository ID for the specified repository.
-    ---@param value table | number | string The repository to get the ID for.
-    ---@return number? id The repository ID, or `nil` if the repository does not exist.
-    local function getRepositoryID( value )
-        if istable( value ) then
-            ---@cast value table
-            return value.id or getRepositoryID( value.url )
-        elseif isnumber( value ) then
-            ---@cast value number
-            return value
-        elseif isstring( value ) then
-            ---@cast value string
-            return sqlite_queryValue( "select id from 'dreamwork.repositories' where url=?", value )
+        local isString, isNumber, isTable = std.isString, std.isNumber, std.isTable
+
+        --- [SERVER]
+        ---
+        --- Returns the repository ID for the specified repository.
+        ---@param value table | number | string The repository to get the ID for.
+        ---@return number? id The repository ID, or `nil` if the repository does not exist.
+        function getRepositoryID( value )
+            if isTable( value ) then
+                ---@cast value table
+                return value.id or getRepositoryID( value.url )
+            elseif isNumber( value ) then
+                ---@cast value number
+                return value
+            elseif isString( value ) then
+                ---@cast value string
+                return sqlite_queryValue( "select id from 'dreamwork.repositories' where url=?", value )
+            end
         end
+
     end
 
     --- [SERVER]

@@ -2603,6 +2603,8 @@ function Directory:move( directory_object, name, forced )
 
 end
 
+-- TODO: finish directory methods
+
 --- [SHARED AND MENU]
 ---
 --- Renames a file.
@@ -3084,6 +3086,8 @@ function fs.append( file_path, data, forced, recursive )
 
 end
 
+-- TODO: finish fs file functions
+
 --- [SHARED AND MENU]
 ---
 --- Deletes a file or directory by given path.
@@ -3108,19 +3112,6 @@ function fs.delete( path_to, recursive )
         ---@cast fs_object dreamwork.std.fs.File
         fs_object:delete()
     end
-end
-
---- [SHARED AND MENU]
----
---- Renames a file or directory by given path.
----
----@param path_to string The path to the file or directory.
----@param name string The new name of the file or directory.
----@param forced? boolean If `true`, the file or directory will be renamed even if it already exists.
----@param recursive? boolean If `true`, all directories in the path will be renamed if they already exist.
----@async
-function fs.rename( path_to, name, forced, recursive )
-
 end
 
 --- [SHARED AND MENU]
@@ -3169,6 +3160,8 @@ function fs.copy( source_path, target_path, forced )
     std.errorf( 2, false, "Path '%s' does not exist.", resolved_target_path )
 end
 
+-- TODO: finish fs functions
+
 --- [SHARED AND MENU]
 ---
 --- Moves a file or directory by given path.
@@ -3179,5 +3172,18 @@ end
 ---@param recursive? boolean If `true`, all directories in the path will be moved if they already exist.
 ---@async
 function fs.move( source_path, target_path, forced, recursive )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Renames a file or directory by given path.
+---
+---@param path_to string The path to the file or directory.
+---@param name string The new name of the file or directory.
+---@param forced? boolean If `true`, the file or directory will be renamed even if it already exists.
+---@param recursive? boolean If `true`, all directories in the path will be renamed if they already exist.
+---@async
+function fs.rename( path_to, name, forced, recursive )
 
 end

@@ -744,7 +744,7 @@ do
 
     do
 
-        local isstring, isnumber = std.isstring, std.isnumber
+        local isString, isNumber = std.isString, std.isNumber
         local debug_getmetatable = std.debug.getmetatable
 
         --- [SHARED AND MENU]
@@ -757,9 +757,9 @@ do
         function tobigint( value, base )
             if debug_getmetatable( value ) == BigInt then
                 return value
-            elseif isstring( value ) then
+            elseif isString( value ) then
                 return from_string( setmetatable( {}, BigInt ), value, base )
-            elseif isnumber( value ) then
+            elseif isNumber( value ) then
                 return from_number( setmetatable( {}, BigInt ), value )
             end
 

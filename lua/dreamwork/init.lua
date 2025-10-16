@@ -510,8 +510,8 @@ do
 end
 
 ---@diagnostic disable-next-line : undefined-field
-local istable = _G.istable
-if istable == nil then
+local isTable = _G.isTable
+if isTable == nil then
 
     local raw_type = raw.type
 
@@ -521,13 +521,13 @@ if istable == nil then
     ---
     ---@param value any The value to check.
     ---@return boolean is_table Returns `true` if the value is a table, otherwise `false`.
-    function istable( value )
+    function isTable( value )
         return raw_type( value ) == "table"
     end
 
 end
 
-local isstring, STRING, NUMBER
+local isString, STRING, NUMBER
 do
 
     local debug_registermetatable = debug.registermetatable
@@ -558,6 +558,16 @@ do
         end
 
         NIL.__len = NIL.__tonumber
+
+        --- [SHARED AND MENU]
+        ---
+        --- Checks if the value type is `nil`.
+        ---
+        ---@param value any The value to check.
+        ---@return boolean is_nil Returns `true` if the value is `nil`, otherwise `false`.
+        function std.isNil( value )
+            return value == nil
+        end
 
     end
 
@@ -593,9 +603,10 @@ do
         --- [SHARED AND MENU]
         ---
         --- Checks if the value type is a `boolean`.
+        ---
         ---@param value any The value to check.
         ---@return boolean is_bool Returns `true` if the value is a boolean, otherwise `false`.
-        function std.isboolean( value )
+        function std.isBoolean( value )
             return value == true or value == false
         end
 
@@ -628,9 +639,10 @@ do
         --- [SHARED AND MENU]
         ---
         --- Checks if the value type is a `number`.
+        ---
         ---@param value any The value to check.
         ---@return boolean is_number Returns `true` if the value is a number, otherwise `false`.
-        function std.isnumber( value )
+        function std.isNumber( value )
             return debug_getmetatable( value ) == NUMBER
         end
 
@@ -660,18 +672,19 @@ do
         --- [SHARED AND MENU]
         ---
         --- Checks if the value type is a `string`.
+        ---
         ---@param value any The value to check.
         ---@return boolean is_string Returns `true` if the value is a string, otherwise `false`.
-        function isstring( value )
+        function isString( value )
             return debug_getmetatable( value ) == STRING
         end
 
-        std.isstring = isstring
+        std.isString = isString
 
     end
 
     -- table ( 5 )
-    std.istable = istable
+    std.isTable = isTable
 
     -- function ( 6 )
     do
@@ -687,15 +700,17 @@ do
         --- [SHARED AND MENU]
         ---
         --- Checks if the value type is a `function`.
+        ---
         ---@param value any
         ---@return boolean isFunction returns true if the value is a function, otherwise false
-        function std.isfunction( value )
+        function std.isFunction( value )
             return debug_getmetatable( value ) == FUNCTION
         end
 
         --- [SHARED AND MENU]
         ---
         --- Checks if the value is callable.
+        ---
         ---@param value any The value to check.
         ---@return boolean is_callable Returns `true` if the value is can be called (like a function), otherwise `false`.
         function std.iscallable( value )
@@ -721,9 +736,10 @@ do
         --- [SHARED AND MENU]
         ---
         --- Checks if the value type is a `thread`.
+        ---
         ---@param value any The value to check.
         ---@return boolean is_thread Returns `true` if the value is a thread, otherwise `false`.
-        function std.isthread( value )
+        function std.isThread( value )
             return debug_getmetatable( value ) == THREAD
         end
 
@@ -777,7 +793,7 @@ local string_byte = string.byte
 ---@param key any The key.
 ---@return any
 function raw.index( tbl, key )
-    if isstring( key ) then
+    if isString( key ) then
         ---@cast key string
 
         local uint8_1, uint8_2 = string_byte( key, 1, 2 )
@@ -1112,7 +1128,7 @@ do
 
         local engine_consoleMessageColored = engine.consoleMessageColored
         local realm_color = color_scheme.realm
-        local iscolor = std.iscolor
+        local isColor = std.isColor
         local tocolor = std.tocolor
 
         --- [SHARED AND MENU]
@@ -1126,10 +1142,10 @@ do
 
             for ang_num = 1, select( "#", ... ), 1 do
                 local value = args[ ang_num ]
-                if iscolor( value ) then
+                if isColor( value ) then
                     ---@cast value dreamwork.std.Color
                     color = value
-                elseif isstring( value ) then
+                elseif isString( value ) then
                     ---@cast value string
                     engine_consoleMessageColored( value, color )
                 else
@@ -1701,7 +1717,7 @@ do
         local fn = CompileString( lua_code, chunk_name or "=(loadstring)", false )
         if fn == nil then
             return nil, "lua code compilation failed"
-        elseif isstring( fn ) then
+        elseif isString( fn ) then
             ---@diagnostic disable-next-line: cast-type-mismatch
             ---@cast fn string
             return nil, fn

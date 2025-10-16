@@ -71,7 +71,7 @@ end
 
 do
 
-    local istable = std.istable
+    local isTable = std.isTable
 
     --- [SHARED AND MENU]
     ---
@@ -116,7 +116,7 @@ do
                     end
 
                     local tbl_value = tbl[ key ]
-                    if tbl_value ~= nil and istable( tbl_value ) then
+                    if tbl_value ~= nil and isTable( tbl_value ) then
                         tbl = tbl_value
                     else
                         local new_tbl = {}

@@ -18,7 +18,7 @@ local string_char, string_byte = string.char, string.byte
 local bit_bxor = std.bit.bxor
 
 local table_concat, table_unpack = std.table.concat, std.table.unpack
-local isfunction = std.isfunction
+local isFunction = std.isFunction
 local math_ceil = std.math.ceil
 
 local std_hash = std.hash
@@ -43,7 +43,7 @@ function crypto.pbkdf2( options )
     end
 
     local hash_class = std_hash[ hash_name ]
-    if hash_class == nil or isfunction( hash_class ) then
+    if hash_class == nil or isFunction( hash_class ) then
         std.errorf( 2, false, "hash.%sClass not found.", hash_name )
     end
 

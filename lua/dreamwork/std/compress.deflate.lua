@@ -459,22 +459,22 @@ local _compression_level_configs = {
 local validate_dictionary, validate_configs
 do
 
-    local istable, isnumber = std.istable, std.isnumber
+    local isTable, isNumber = std.isTable, std.isNumber
 
     function validate_dictionary( dictionary, error_level )
         if error_level == nil then error_level = 1 end
         error_level = error_level + 1
 
-        if not isnumber( dictionary.adler32 ) then
+        if not isNumber( dictionary.adler32 ) then
             error( "'dictionary' - missing required field 'adler32'.", error_level )
         end
 
         local string_table = dictionary.string_table
-        if not istable( dictionary.string_table ) then
+        if not isTable( dictionary.string_table ) then
             error( "'dictionary' - missing required field 'string_table'.", error_level )
         end
 
-        if not isnumber( dictionary.strlen ) then
+        if not isNumber( dictionary.strlen ) then
             error( "'dictionary' - missing required field 'strlen'.", error_level )
         end
 
@@ -487,7 +487,7 @@ do
             error( "'dictionary' - 'strlen' does not match the length of 'string_table'.", error_level )
         end
 
-        if not istable( dictionary.hash_tables ) then
+        if not isTable( dictionary.hash_tables ) then
             error( "'dictionary' - missing required field 'hash_tables'.", error_level )
         end
     end

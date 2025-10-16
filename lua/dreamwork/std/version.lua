@@ -27,7 +27,7 @@ do
 	bit_band, bit_bor, bit_lshift, bit_rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 end
 
-local isstring, isnumber = std.isstring, std.isnumber
+local isString, isNumber = std.isString, std.isNumber
 local math_isuint, math_max = std.math.isuint, std.math.max
 
 local string = std.string
@@ -191,7 +191,7 @@ local function parse( major, minor, patch, pre_release, build, error_level )
 		error( "at least one parameter is needed", error_level )
 	end
 
-	if isnumber( major ) then
+	if isNumber( major ) then
 		---@cast major number
 
 		if not math_isuint( major ) then
@@ -202,7 +202,7 @@ local function parse( major, minor, patch, pre_release, build, error_level )
 
 		if minor == nil then
 			minor = 0
-		elseif not ( isnumber( minor ) and math_isuint( minor ) ) then
+		elseif not ( isNumber( minor ) and math_isuint( minor ) ) then
 			error( "minor version must be unsigned integer number", error_level )
 			error( "minor version must be a number", error_level )
 		end
@@ -211,22 +211,22 @@ local function parse( major, minor, patch, pre_release, build, error_level )
 
 		if patch == nil then
 			patch = 0
-		elseif not ( isnumber( patch ) and math_isuint( patch ) ) then
+		elseif not ( isNumber( patch ) and math_isuint( patch ) ) then
 			error( "patch version must be unsigned integer number", error_level )
 		end
 
 		---@cast patch integer
 
-		if isstring( build ) then
+		if isString( build ) then
 			---@cast build string
 
-			if isstring( pre_release ) then
+			if isString( pre_release ) then
 				---@cast pre_release string
 				pre_release = parse_pre_release( pre_release, error_level )
 			end
 
 			build = parse_build( build )
-		elseif isnumber( pre_release ) then
+		elseif isNumber( pre_release ) then
 			---@cast pre_release number
 
 			pre_release, build = parse_pre_release_and_build( tostring( pre_release ), error_level )
