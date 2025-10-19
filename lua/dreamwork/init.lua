@@ -1827,14 +1827,14 @@ do
 
         for i = 1, in_arg_count, 1 do
             local_count = local_count + 1
-            locals[ local_count ] = "arg" .. i
+            locals[ local_count ] = "a" .. i
         end
 
         local returns, return_count = {}, 0
 
         for i = 1, out_arg_count, 1 do
             return_count = return_count + 1
-            returns[ return_count ] = "arg" .. out_args[ i ]
+            returns[ return_count ] = "a" .. out_args[ i ]
         end
 
         local fn, err_msg = loadstring( "local " .. table_concat( locals, ",", 1, local_count ) .. " = ...\r\nreturn " .. table_concat( returns, ",", 1, return_count ), "junction", empty_env )

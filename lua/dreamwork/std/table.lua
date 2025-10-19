@@ -533,9 +533,9 @@ end
 ---
 ---@param tbl table The sequential table.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return integer | nil index The index of the value.
 ---@return any value The random value.
-function table.randomIV( tbl, tbl_length )
+---@return integer | nil index The index of the value.
+function table.randomVI( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
     end
@@ -543,10 +543,10 @@ function table.randomIV( tbl, tbl_length )
     if tbl_length == 0 then
         return nil, nil
     elseif tbl_length == 1 then
-        return 1, tbl[ 1 ]
+        return tbl[ 1 ], 1
     else
         local index = math_random( 1, tbl_length )
-        return index, tbl[ index ]
+        return tbl[ index ], index
     end
 end
 
@@ -555,13 +555,17 @@ end
 --- Returns a random key and its value from the given table.
 ---
 ---@param tbl table The key-value table.
----@return any key The key of the value.
 ---@return any value The random value.
-function table.randomKV( tbl )
+---@return any key The key of the value.
+function table.randomVK( tbl )
     local key, key_count = next( tbl, nil ), 0
     while key ~= nil do
         key_count = key_count + 1
         key = next( tbl, key )
+    end
+
+    if key_count == 0 then
+        return nil, nil
     end
 
     local i = math_random( 1, key_count )
@@ -574,7 +578,7 @@ function table.randomKV( tbl )
         key, value = next( tbl, key )
     until i == 0
 
-    return key, value
+    return value, key
 end
 
 --- [SHARED AND MENU]
