@@ -469,4 +469,6 @@ do
 
     menu.options = options
 
+    -- TODO: add colorcorrectionui cmd in graphics options
+
 end

@@ -520,7 +520,7 @@ do
         end
     else
 
-        local white_color = std.Color.scheme.white
+        local white_color = std.Color.scheme.message
 
         --- [SHARED AND MENU]
         ---
