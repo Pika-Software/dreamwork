@@ -181,12 +181,12 @@ do
     do
 
         local Vector = _G.Vector
-        if Vector == nil then
-            dreamwork.Logger:error( "Vector3: Vector function is missing!" )
-        else
+        if Vector ~= nil then
+
             dreamwork.transducers[ Vector3 ] = function( vec3 )
                 return Vector( vec3[ 1 ], vec3[ 2 ], vec3[ 3 ] )
             end
+
         end
 
     end
@@ -194,15 +194,15 @@ do
     do
 
         local VECTOR = debug.findmetatable( "Vector" )
-        if VECTOR == nil then
-            dreamwork.Logger:error( "Vector3: Vector metatable is missing!" )
-        else
+        if VECTOR ~= nil then
+
             ---@cast VECTOR Vector
             local Unpack = VECTOR.Unpack
 
             dreamwork.transducers[ VECTOR ] = function( vector )
                 return setmetatable( { Unpack( vector ) }, Vector3 )
             end
+
         end
 
     end
@@ -212,12 +212,12 @@ do
     do
 
         local Angle = _G.Angle
-        if Angle == nil then
-            dreamwork.Logger:error( "Angle3: Angle function is missing!" )
-        else
+        if Angle ~= nil then
+
             dreamwork.transducers[ Angle3 ] = function( angle3 )
                 return Angle( angle3[ 1 ], angle3[ 2 ], angle3[ 3 ] )
             end
+
         end
 
     end
@@ -225,15 +225,15 @@ do
     do
 
         local ANGLE = debug.findmetatable( "Angle" )
-        if ANGLE == nil then
-            dreamwork.Logger:error( "Angle3: Angle metatable is missing!" )
-        else
+        if ANGLE ~= nil then
+
             ---@cast ANGLE Angle
             local Unpack = ANGLE.Unpack
 
             dreamwork.transducers[ ANGLE ] = function( angle )
                 return setmetatable( { Unpack( angle ) }, Angle3 )
             end
+
         end
 
     end
@@ -243,9 +243,8 @@ do
     do
 
         local Matrix = _G.Matrix
-        if Matrix == nil then
-            dreamwork.Logger:error( "VMatrix: Matrix function is missing!" )
-        else
+        if Matrix ~= nil then
+
             dreamwork.transducers[ VMatrix ] = function( matrix )
                 return Matrix( {
                     { matrix[ 1 ], matrix[ 2 ], matrix[ 3 ], matrix[ 4 ] },
@@ -254,6 +253,7 @@ do
                     { matrix[ 13 ], matrix[ 14 ], matrix[ 15 ], matrix[ 16 ] }
                 } )
             end
+
         end
 
     end
@@ -261,9 +261,7 @@ do
     do
 
         local VMATRIX = debug.findmetatable( "VMatrix" )
-        if VMATRIX == nil then
-            dreamwork.Logger:error( "VMatrix: Matrix metatable is missing!" )
-        else
+        if VMATRIX ~= nil then
 
             ---@cast VMATRIX VMatrix
             local Unpack = VMATRIX.Unpack
