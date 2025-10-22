@@ -2894,41 +2894,32 @@ end
 ---
 ---@param path_to string The path to the file or directory.
 ---@return boolean exists Returns `true` if the file or directory exists, otherwise `false`.
+---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.exists( path_to )
-    return directory_lookup( root, prepare_path( path_to ), 2 ) ~= nil
+    local fs_object, is_directory = directory_lookup( root, prepare_path( path_to ), 2 )
+    return fs_object ~= nil, is_directory
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if a directory exists and is not a file by given path.
+--- Checks if a directory exists by given path.
 ---
 ---@param directory_path string The path to the directory.
 ---@return boolean exists Returns `true` if the directory exists and is not a file, otherwise `false`.
-function fs.isExistingDirectory( directory_path )
+function fs.isDirectory( directory_path )
     local directory_object, is_directory = directory_lookup( root, prepare_path( directory_path ), 2 )
     return directory_object ~= nil and is_directory
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if a file exists and is not a directory by given path.
+--- Checks if a file exists by given path.
 ---
 ---@param file_path string The path to the fs.
 ---@return boolean exists Returns `true` if the file exists and is not a directory, otherwise `false`.
-function fs.isExistingFile( file_path )
+function fs.isFile( file_path )
     local file_object, is_directory = directory_lookup( root, prepare_path( file_path ), 2 )
     return file_object ~= nil and not is_directory
-end
-
---- [SHARED AND MENU]
----
---- Checks if a file or directory is a directory by given path.
----
----@param path_to string The path to the file or directory.
----@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
-function fs.isDirectory( path_to )
-    local _, is_directory = directory_lookup( root, prepare_path( path_to ), 2 )
-    return is_directory
 end
 
 --- [SHARED AND MENU]
@@ -2941,17 +2932,19 @@ end
 function fs.isEmpty( path_to, forced )
     local fs_object, is_directory = directory_lookup( root, prepare_path( path_to ), 2 )
     if fs_object == nil then
-        if forced then
-            return true, false
-        else
-            error( "Path '" .. path_to .. "' does not exist.", 2 )
+        if not forced then
+            std.errorf( 2, false, "Path '%s' does not exist.", path_to )
         end
-    elseif is_directory then
+
+        return true, false
+    end
+
+    if is_directory then
         ---@cast fs_object dreamwork.std.fs.Directory
         return fs_object:isEmpty(), true
-    else
-        return fs_object.size == 0, false
     end
+
+    return fs_object.size == 0, false
 end
 
 --- [SHARED AND MENU]
@@ -2963,14 +2956,14 @@ end
 function fs.time( file_path, forced )
     local fs_object = directory_lookup( root, prepare_path( file_path ), 2 )
     if fs_object == nil then
-        if forced then
-            return 0
-        else
-            error( "Path '" .. file_path .. "' does not exist.", 2 )
+        if not forced then
+            std.errorf( 2, false, "Path '%s' does not exist.", file_path )
         end
-    else
-        return fs_object.time
+
+        return 0
     end
+
+    return fs_object.time
 end
 
 --- [SHARED AND MENU]
@@ -2982,14 +2975,14 @@ end
 function fs.size( file_path, forced )
     local fs_object = directory_lookup( root, prepare_path( file_path ), 2 )
     if fs_object == nil then
-        if forced then
-            return 0
-        else
-            error( "Path '" .. file_path .. "' does not exist.", 2 )
+        if not forced then
+            std.errorf( 2, false, "Path '%s' does not exist.", file_path )
         end
-    else
-        return fs_object.size
+
+        return 0
     end
+
+    return fs_object.size
 end
 
 --- [SHARED AND MENU]
@@ -3008,10 +3001,10 @@ function fs.select( directory_path, wildcard )
     local directory_object, is_directory = directory_lookup( root, prepare_path( directory_path ), 2 )
     if directory_object == nil or not is_directory then
         return {}, 0, {}, 0
-    else
-        ---@cast directory_object dreamwork.std.fs.Directory
-        return directory_object:select( wildcard )
     end
+
+    ---@cast directory_object dreamwork.std.fs.Directory
+    return directory_object:select( wildcard )
 end
 
 do
@@ -3173,6 +3166,7 @@ function fs.copy( source_path, target_path, forced )
         end
     end
 
+    ---@diagnostic disable-next-line: missing-return
     std.errorf( 2, false, "Path '%s' does not exist.", resolved_target_path )
 end
 
