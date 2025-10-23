@@ -74,7 +74,7 @@ local reserved_names = {
 ---@field deletable boolean If `true` the mount allows deleting files and directories.
 
 ---@type table<string, dreamwork.std.fs.MountInfo>
-local fstab = {
+local mount_infos = {
     [ "DATA" ] = {
         writable = true,
         deletable = true,
@@ -109,7 +109,6 @@ local fstab = {
         writable_extensions = {}
     }
 }
-
 
 do
 
@@ -1108,7 +1107,7 @@ local function delete_file( file_object, stack_level )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not mount_info.deletable then
         std.errorf( stack_level, false, "'%s' cannot be deleted, parent directory is not allowing file deletion.", file_object )
     end
@@ -1151,7 +1150,7 @@ local function delete_directory( directory_object, recursive, stack_level )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not mount_info.deletable then
         std.errorf( stack_level, false, "'%s' cannot be deleted, parent directory is not allowing directory deletion.", directory_object )
     end
@@ -1238,7 +1237,7 @@ local function make_directory( parent, name, forced, stack_level )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not mount_info.writable then
         std.errorf( stack_level, false, "'%s' won't allow directory creation, parent directory is not writable.", parent )
     end
@@ -1295,7 +1294,7 @@ local function make_file( parent, name, forced, stack_level, data )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil then
         std.errorf( stack_level, false, "'%s' won't allow file creation, parent directory is not writable.", parent )
     end
@@ -1941,7 +1940,7 @@ function File:rename( name, forced )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
         std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
     end
@@ -2022,7 +2021,7 @@ function File:copy( directory_object, forced, name )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not mount_info.writable then
         std.errorf( 2, false, "'%s' cannot be copied, parent directory is not writable.", self )
     end
@@ -2072,7 +2071,7 @@ function File:move( directory_object, name, forced )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
         std.errorf( 2, false, "'%s' cannot be moved, parent directory is not allowing file moving.", self )
     end
@@ -2169,7 +2168,7 @@ function Directory:__index( key )
             return false
         end
 
-        local mount_info = fstab[ mount_point ]
+        local mount_info = mount_infos[ mount_point ]
         return mount_info ~= nil and mount_info.writable
     elseif key == "parent" then
         return parents[ self ]
@@ -2474,7 +2473,7 @@ end
 
 --     ---@cast mount_point string
 
---     local mount_info = fstab[ mount_point ]
+--     local mount_info = mount_infos[ mount_point ]
 --     if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
 --         std.errorf( 2, false, "'%s' touch failed, parent directory is not allowing touching.", fs_object )
 --     end
@@ -2561,7 +2560,7 @@ function Directory:copy( directory_object, forced, name )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not mount_info.writable then
         std.errorf( 2, false, "'%s' cannot be copied, parent directory is not writable.", self )
     end
@@ -2629,7 +2628,7 @@ function Directory:rename( name, forced )
 
     ---@cast mount_point string
 
-    local mount_info = fstab[ mount_point ]
+    local mount_info = mount_infos[ mount_point ]
     if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
         std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
     end
