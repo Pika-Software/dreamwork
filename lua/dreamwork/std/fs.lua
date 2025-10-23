@@ -46,7 +46,6 @@ local string = std.string
 local string_len = string.len
 local string_byte = string.byte
 local string_hasByte = string.hasByte
-local string_byteTrim = string.byteTrim
 local string_byteSplit = string.byteSplit
 
 local class = std.class
@@ -69,9 +68,9 @@ local reserved_names = {
 }
 
 ---@class dreamwork.std.fs.MountInfo
----@field writable boolean If `true` the mount allows creating directories inside.
+---@field writable boolean If `true` mount allows creating directories inside.
 ---@field writable_extensions table<string, boolean> The extension map of allowed extensions to write.
----@field deletable boolean If `true` the mount allows deleting files and directories.
+---@field deletable boolean If `true` mount allows deleting files and directories.
 
 ---@type table<string, dreamwork.std.fs.MountInfo>
 local mount_infos = {
@@ -113,6 +112,7 @@ local mount_infos = {
 do
 
     local require = _G.require or debug.fempty
+    local pcall = std.pcall or debug.fempty
 
     local is_edge = std.JIT_VERSION_INT ~= 20004
     local is_x86 = std.x86
@@ -122,11 +122,11 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Checks if a binary module is installed and returns its path.
+    --- Checks if a binary module is available and can be loaded.
     ---
     ---@param name string The binary module name.
-    ---@return boolean installed `true` if the binary module is installed, `false` otherwise.
-    ---@return string path The absolute path to the binary module.
+    ---@return boolean installed `true` if binary module is available, `false` otherwise.
+    ---@return string abs_path The absolute path to binary module.
     local function lookupbinary( name )
         if string.isEmpty( name ) then
             return false, ""
@@ -158,7 +158,7 @@ do
             end
         end
 
-        return false, "/" .. file_path .. ( std.WINDOWS and ".dll" or ".so" )
+        return false, "/garrysmod/" .. file_path .. ( std.WINDOWS and ".dll" or ".so" )
     end
 
     std.lookupbinary = lookupbinary
@@ -171,18 +171,17 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Loads a binary module by name.
+    --- Loads a binary module if available.
     ---
-    ---@param name string The binary module name, for example: "chttp"
-    ---@return boolean success true if the binary module is installed
+    ---@param name string The binary module name, for example: "chttp".
+    ---@return boolean success `true` if binary module is successfully installed, `false` otherwise.
     function std.loadbinary( name )
         if lookupbinary( name ) then
             if sv_allowcslua ~= nil and sv_allowcslua.value then
                 sv_allowcslua.value = false
             end
 
-            require( name )
-            return true
+            return pcall( require, name )
         end
 
         return false
@@ -557,18 +556,18 @@ do
     ---@type table<integer, string>
     local status_messages = {
         [ -16 ] = "'{1}' {2} failed, unknown error.",
-        [ -8 ]  = "'{1}' {2} failed, file name is not part of the specified file system; please try another one.",
+        [ -8 ]  = "'{1}' {2} failed, file name is not part of the file system; please try another one.",
         [ -7 ]  = "'{1}' {2} failed, please retry later. (network problems, etc)",
         [ -6 ]  = "'{1}' {2} failed, read parameters are invalid for unbuffered I/O.",
         [ -5 ]  = "'{1}' {2} failed, hard subsystem failure.",
         [ -4 ]  = "'{1}' {2} failed, read error on file.",
         [ -3 ]  = "'{1}' {2} failed, not enough memory.",
-        [ -2 ]  = "'{1}' {2} failed, identifier provided by the caller is not recognized.",
+        [ -2 ]  = "'{1}' {2} failed, identifier provided by caller is not recognized.",
         [ -1 ]  = "'{1}' {2} failed, file could not be opened (bad path, not exist, etc).",
         [ 0 ]   = "'{1}' {2} was successfully completed.",
         [ 1 ]   = "'{1}' {2} has been properly queued and awaiting for service.",
         [ 2 ]   = "'{1}' {2} is being accessed.",
-        [ 3 ]   = "'{1}' {2} has been interrupted by the caller.",
+        [ 3 ]   = "'{1}' {2} has been interrupted by caller.",
         [ 4 ]   = "'{1}' {2} has not yet been queued."
     }
 
@@ -618,9 +617,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- The filesystem library.
+--- The high-level filesystem library.
 ---
---- The filesystem library provides access to the file system of the game.
+--- The library provides access to the file system.
 ---
 ---@class dreamwork.std.fs
 local fs = std.fs or {}
@@ -884,10 +883,6 @@ local function async_job_unregister( fs_object, future )
     return false
 end
 
---- [SHARED AND MENU]
----
---- Returns `true` if the file or directory is busy, otherwise `false`.
----
 ---@param fs_object dreamwork.std.fs.Object
 ---@return boolean is_busy
 local function is_busy( fs_object )
@@ -1094,10 +1089,6 @@ end
 ---@param stack_level integer
 ---@async
 local function delete_file( file_object, stack_level )
-    if stack_level == nil then
-        stack_level = 1
-    end
-
     stack_level = stack_level + 1
 
     local mount_point = mount_points[ file_object ]
@@ -1131,12 +1122,9 @@ end
 
 ---@param directory_object dreamwork.std.fs.Directory
 ---@param recursive boolean
+---@param stack_level integer
 ---@async
 local function delete_directory( directory_object, recursive, stack_level )
-    if stack_level == nil then
-        stack_level = 1
-    end
-
     stack_level = stack_level + 1
 
     if async_job_counts[ directory_object ] ~= 0 then
@@ -1254,32 +1242,46 @@ local function make_directory( parent, name, forced, stack_level )
     return directory_object
 end
 
----@param parent dreamwork.std.fs.Directory
----@param name string
+---@param directory_object dreamwork.std.fs.Directory
+---@param file_name string
 ---@param forced boolean
----@param stack_level? integer
----@param data? string
+---@param stack_level integer
+---@param data string
 ---@return dreamwork.std.fs.File
 ---@async
-local function make_file( parent, name, forced, stack_level, data )
-    if stack_level == nil then
-        stack_level = 1
-    end
-
+local function make_file( directory_object, file_name, forced, stack_level, data )
     stack_level = stack_level + 1
 
-    if reserved_names[ name ] then
-        std.errorf( stack_level, false, "File cannot be created with reserved name '%s'.", name )
+    if reserved_names[ file_name ] then
+        std.errorf( stack_level, false, "File cannot be created with reserved name '%s'.", file_name )
     end
 
-    local fs_object, is_directory = directory_get( parent, name )
+    local mount_point = mount_points[ directory_object ]
+    if mount_point == nil then
+        std.errorf( stack_level, false, "'%s' won't allow file creation, directory is not mounted.", directory_object )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = mount_infos[ mount_point ]
+    if mount_info == nil then
+        std.errorf( stack_level, false, "'%s' won't allow file creation, parent directory is not writable.", directory_object )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( file_name, false ) ] then
+        std.errorf( stack_level, false, "'%s' won't allow file creation with name '%s', parent directory is not allowing this extension.", directory_object, file_name )
+    end
+
+    local fs_object, is_directory = directory_get( directory_object, file_name )
     if fs_object ~= nil then
         if is_directory then
             if forced then
                 ---@cast fs_object dreamwork.std.fs.Directory
                 fs_object:delete( true )
             else
-                std.errorf( stack_level, false, "File cannot be created with name '%s', '%s' already exists.", name, fs_object )
+                std.errorf( stack_level, false, "File cannot be created with name '%s', '%s' already exists.", file_name, fs_object )
             end
         else
             ---@cast fs_object dreamwork.std.fs.File
@@ -1287,34 +1289,48 @@ local function make_file( parent, name, forced, stack_level, data )
         end
     end
 
-    local mount_point = mount_points[ parent ]
-    if mount_point == nil then
-        std.errorf( stack_level, false, "'%s' won't allow file creation, directory is not mounted.", parent )
-    end
+    local file_object = FileClass( file_name, mount_point, rel_path( directory_object, file_name ) )
+    insert( directory_object, file_object )
 
-    ---@cast mount_point string
-
-    local mount_info = mount_infos[ mount_point ]
-    if mount_info == nil then
-        std.errorf( stack_level, false, "'%s' won't allow file creation, parent directory is not writable.", parent )
-    end
-
-    ---@cast mount_info dreamwork.std.fs.MountInfo
-
-    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
-        if forced then
-            name = name .. ".dat"
-        else
-            std.errorf( stack_level, false, "'%s' won't allow file creation with name '%s', parent directory is not allowing this extension.", parent, name )
-        end
-    end
-
-    local file_object = FileClass( name, mount_point, rel_path( parent, name ) )
-    insert( parent, file_object )
-
-    file_object:write( data or "" )
+    file_object:write( data )
 
     return file_object
+end
+
+---@param directory_object dreamwork.std.fs.Directory
+---@param lookup_path string
+---@param forced boolean
+---@param stack_level integer
+---@param start_position integer
+---@return dreamwork.std.fs.Directory directory_object
+---@async
+local function make_directory_chain( directory_object, lookup_path, forced, start_position, stack_level )
+    local segments, segment_count = string_byteSplit( lookup_path, 0x2F --[[ '/' ]], start_position )
+    stack_level = stack_level + 1
+
+    for i = 1, segment_count, 1 do
+        directory_object = make_directory( directory_object, segments[ i ], forced, stack_level )
+    end
+
+    return directory_object
+end
+
+---@param directory_object dreamwork.std.fs.Directory
+---@param file_path string
+---@param forced boolean
+---@param stack_level integer
+---@param start_position integer
+---@param data string
+---@async
+local function make_file_chain( directory_object, file_path, forced, start_position, stack_level, data )
+    local segments, segment_count = string_byteSplit( file_path, 0x2F --[[ '/' ]], start_position )
+    stack_level = stack_level + 1
+
+    for i = 1, segment_count - 1, 1 do
+        directory_object = make_directory( directory_object, segments[ i ], forced, stack_level )
+    end
+
+    return make_file( directory_object, segments[ segment_count ], forced, stack_level, data )
 end
 
 --- [SHARED AND MENU]
@@ -1810,9 +1826,71 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the data of a file by given path.
+--- Checks if file is busy by async operations.
 ---
----@return string data The data of the file.
+---@return boolean is_busy `true` if file is busy, otherwise `false`.
+function File:isBusy()
+    return async_job_counts[ self ] ~= 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks if file is empty or not.
+---
+--- **Basically checks if file size is 0.**
+---
+---@return boolean is_empty `true` if file is empty, otherwise `false`.
+function File:isEmpty()
+    return sizes[ self ] == 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Touches file and sets its last modification time to the current time.
+---
+---@return integer new_time The new last modification time of file.
+function File:touch()
+    local mount_point = mount_points[ self ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be touched, parent directory is not mounted.", self )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = mount_infos[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( 2, false, "'%s' cannot be touched, parent directory is not allowing file writing.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    local name = names[ self ]
+
+    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+        std.errorf( 2, false, "'%s' cannot be touched with its name, parent directory is not allowing this extension.", self )
+    end
+
+    local mount_path = mount_paths[ self ] or name
+
+    local handler = file_Open( mount_path, "wb", mount_point )
+    if handler == nil then
+        std.errorf( 2, false, "'%s' cannot be touched, file handler is not available.", self )
+    end
+
+    ---@diagnostic disable-next-line: cast-type-mismatch
+    ---@cast handler File
+    FILE_Close( handler )
+
+    local new_time = file_Time( mount_path, mount_point )
+    times[ self ] = new_time
+    return new_time
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns data of the file by given path.
+---
+---@return string data The file data.
 ---@async
 function File:read()
     local f = async_read( mount_paths[ self ], mount_points[ self ] )
@@ -1834,12 +1912,30 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Replaces the data of a file.
+--- Replaces whole file data with specified.
 ---
----@param data string The new data of the file.
+---@param data string The new data to replace with.
 ---@async
 function File:write( data )
-    local mount_path, mount_point = mount_paths[ self ], mount_points[ self ]
+    local mount_point = mount_points[ self ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be writen, parent directory is not mounted.", self )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = mount_infos[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( 2, false, "'%s' cannot be writen, parent directory is not allowing file writing.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( names[ self ], false ) ] then
+        std.errorf( 2, false, "'%s' cannot be writen with its name, parent directory is not allowing this extension.", self )
+    end
+
+    local mount_path = mount_paths[ self ]
 
     local f = async_write( mount_path, mount_point, data )
     local is_registered = async_job_register( self, f )
@@ -1876,12 +1972,30 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Appends data to the end of a file.
+--- Appends data to the end of the file.
 ---
 ---@param data string The data to append.
 ---@async
 function File:append( data )
-    local mount_path, mount_point = mount_paths[ self ], mount_points[ self ]
+    local mount_point = mount_points[ self ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be writen, parent directory is not mounted.", self )
+    end
+
+    ---@cast mount_point string
+
+    local mount_info = mount_infos[ mount_point ]
+    if mount_info == nil or not mount_info.writable then
+        std.errorf( 2, false, "'%s' cannot be writen, parent directory is not allowing file writing.", self )
+    end
+
+    ---@cast mount_info dreamwork.std.fs.MountInfo
+
+    if not mount_info.writable_extensions[ path_getExtension( names[ self ], false ) ] then
+        std.errorf( 2, false, "'%s' cannot be writen with its name, parent directory is not allowing this extension.", self )
+    end
+
+    local mount_path = mount_paths[ self ]
 
     local f = async_append( mount_path, mount_point, data )
     local is_registered = async_job_register( self, f )
@@ -1918,7 +2032,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Deletes a file.
+--- Deletes the file from it's parent directory.
 ---
 ---@async
 function File:delete()
@@ -1927,10 +2041,10 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames a file.
+--- Renames the file to another name in it's parent directory.
 ---
 ---@param name string The new name of the file.
----@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param forced? boolean If `true`, the file can be renamed to a name that already exists in the parent directory and old one will be deleted.
 ---@async
 function File:rename( name, forced )
     local mount_point = mount_points[ self ]
@@ -1948,11 +2062,7 @@ function File:rename( name, forced )
     ---@cast mount_info dreamwork.std.fs.MountInfo
 
     if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
-        if forced then
-            name = name .. ".dat"
-        else
-            std.errorf( 2, false, "'%s' cannot be renamed to '%s', parent directory is not allowing this extension.", self, name )
-        end
+        std.errorf( 2, false, "'%s' cannot be renamed to '%s', parent directory is not allowing this extension.", self, name )
     end
 
     local parent = parents[ self ]
@@ -2002,10 +2112,10 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Copies a file to another directory.
+--- Copies file to another directory.
 ---
 ---@param directory_object dreamwork.std.fs.Directory The directory to copy the file to.
----@param forced? boolean If `true`, the file will be overwritten if it already exists.
+---@param forced? boolean If `true`, the file can be copied to a name that already exists in the parent directory and old one will be deleted.
 ---@param name? string The new name of the file. If `nil`, the original name will be used.
 ---@return dreamwork.std.fs.File file_object The copied file.
 ---@async
@@ -2029,11 +2139,7 @@ function File:copy( directory_object, forced, name )
     ---@cast mount_info dreamwork.std.fs.MountInfo
 
     if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
-        if forced then
-            name = name .. ".dat"
-        else
-            std.errorf( 2, false, "'%s' cannot be copied with name '%s', parent directory is not allowing this extension.", self, name )
-        end
+        std.errorf( 2, false, "'%s' cannot be copied with name '%s', parent directory is not allowing this extension.", self, name )
     end
 
     local fs_object, is_directory = directory_get( directory_object, name )
@@ -2079,11 +2185,7 @@ function File:move( directory_object, name, forced )
     ---@cast mount_info dreamwork.std.fs.MountInfo
 
     if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
-        if forced then
-            name = name .. ".dat"
-        else
-            std.errorf( 2, false, "'%s' cannot be moved with name '%s', parent directory is not allowing this extension.", self, name )
-        end
+        std.errorf( 2, false, "'%s' cannot be moved with name '%s', parent directory is not allowing this extension.", self, name )
     end
 
     local data = self:read()
@@ -2181,6 +2283,15 @@ end
 ---@return string
 function Directory:__tostring()
     return string.format( "Directory: %p [%s][%s][%d bytes][%d files][%d directories]", self, self.path, time.toDuration( time_now() - self.time ), self.size, self:count() )
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks if directory is busy by async operations.
+---
+---@return boolean is_busy `true` if directory is busy, otherwise `false`.
+function Directory:isBusy()
+    return async_job_counts[ self ] ~= 0
 end
 
 ---@param relative_path string
@@ -2437,7 +2548,7 @@ end
 ---@return dreamwork.std.fs.File file_object The created file.
 ---@async
 function Directory:makeFile( file_name, forced )
-    return make_file( self, file_name, forced == true, 2 )
+    return make_file( self, file_name, forced == true, 2, "" )
 end
 
 --- [SHARED AND MENU]
@@ -2452,83 +2563,43 @@ function Directory:makeDirectory( directory_name, forced )
     return make_directory( self, directory_name, forced == true, 2 )
 end
 
--- ---@param name string
--- ---@return dreamwork.std.fs.Object fs_object
--- ---@return boolean is_directory
--- ---@async
--- function Directory:touch( name )
---     if reserved_names[ name ] then
---         error( "File or directory cannot be touched with reserved name.", 2 )
---     end
+--- [SHARED AND MENU]
+---
+--- Touches the directory and sets its last modification time to the current time.
+---
+---@return integer new_time The new last modification time of the directory.
+function Directory:touch()
+    local mount_point = mount_points[ self ]
+    if mount_point == nil then
+        std.errorf( 2, false, "'%s' cannot be touched, directory is not mounted.", self )
+    end
 
---     local fs_object, is_directory = directory_get( self, name )
---     if fs_object == nil then
---         return make_file( self, name, false, 2 ), false
---     end
+    ---@cast mount_point string
 
---     local mount_point = mount_points[ fs_object ]
---     if mount_point == nil then
---         std.errorf( 2, false, "'%s' touch failed, parent directory is not mounted.", fs_object )
---     end
+    local mount_info = mount_infos[ mount_point ]
+    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+        std.errorf( 2, false, "'%s' cannot be touched, directory is not available.", self )
+    end
 
---     ---@cast mount_point string
+    ---@cast mount_info dreamwork.std.fs.MountInfo
 
---     local mount_info = mount_infos[ mount_point ]
---     if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
---         std.errorf( 2, false, "'%s' touch failed, parent directory is not allowing touching.", fs_object )
---     end
+    local mount_path = rel_path( self, "^dreamwork_tmp$.dat" )
 
---     ---@cast mount_info dreamwork.std.fs.MountInfo
+    local handler = file_Open( mount_path, "wb", mount_point )
+    if handler == nil then
+        std.errorf( 2, false, "'%s' cannot be touched, file handler is not available.", self )
+    end
 
---     if is_busy( fs_object ) then
---         async_jobs[ fs_object ][ 0 ]:await()
---     end
+    ---@diagnostic disable-next-line: cast-type-mismatch
+    ---@cast handler File
+    FILE_Close( handler )
 
---     if parents[ fs_object ] ~= self then
---         std.errorf( 2, false, "'%s' changed directory and cannot be touched.", fs_object )
---     end
+    file_Delete( mount_path, mount_point )
 
---     if is_directory then
---         ---@cast fs_object dreamwork.std.fs.Directory
-
---         local mount_path = rel_path( fs_object, "^dreamwork_tmp$.dat" )
---         local f = async_write( mount_path, mount_point, "" )
---         local is_registered = async_job_register( fs_object, f )
-
---         ---@type dreamwork.std.fs.WriteRespond
---         local respond = f:await()
-
---         if is_registered then
---             async_job_unregister( fs_object, f )
---         end
-
---         if respond.status ~= 0 then
---             error( make_async_message( respond.status, fs_object, false ), 2 )
---         end
-
---         file_Delete( mount_path, mount_point )
-
---         times[ fs_object ] = file_Time( mount_paths[ fs_object ] or "", mount_point )
-
---     else
---         ---@cast fs_object dreamwork.std.fs.File
-
---         local mount_path = mount_paths[ fs_object ] or names[ fs_object ]
-
---         local handler = file_Open( mount_path, "wb", mount_point )
---         if handler == nil then
---             std.errorf( 2, false, "Failed to open file '%s' for writing.", fs_object )
---         end
-
---         ---@diagnostic disable-next-line: cast-type-mismatch
---         ---@cast handler File
---         FILE_Close( handler )
-
---         times[ fs_object ] = file_Time( mount_path, mount_point )
---     end
-
---     return fs_object, is_directory
--- end
+    local new_time = file_Time( mount_paths[ self ] or "", mount_point )
+    times[ self ] = new_time
+    return new_time
+end
 
 --- [SHARED AND MENU]
 ---
@@ -2780,17 +2851,6 @@ end
 
 -- TODO: add more fs hooks
 
-local function prepare_path( path_to )
-    local resolved_path = path_resolve( path_to )
-
-    local resolved_length = string_len( resolved_path )
-    if string_byte( resolved_path, resolved_length, resolved_length ) == 0x2F --[[ '/' ]] then
-        resolved_path, resolved_length = string_byteTrim( resolved_path, 0x2F, true, resolved_length )
-    end
-
-    return resolved_path
-end
-
 --- [SHARED AND MENU]
 ---
 --- Returns the file or directory by given path as a `dreamwork.std.fs.File` or `dreamwork.std.fs.Directory` object.
@@ -2799,93 +2859,8 @@ end
 ---@return dreamwork.std.fs.Object | nil fs_object The file or directory.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.lookup( path_to )
-    return directory_lookup( root, prepare_path( path_to ), 2 )
+    return directory_lookup( root, path_resolve( path_to ), 2 )
 end
-
---- [SHARED AND MENU]
----
---- Creates a file by given path.
----
---- Does nothing if the file already exists.
----
---- If `forced` is `true`, all files in the path will be deleted if they exist.
----
----@param file_path string
----@param forced? boolean
----@return dreamwork.std.fs.File file_object
----@async
-function fs.makeFile( file_path, forced )
-    local segments, segment_count = string_byteSplit( prepare_path( file_path ), 0x2F --[[ '/' ]], 2 )
-    local directory_object = root
-
-    forced = forced == true
-
-    for i = 1, segment_count - 1, 1 do
-        directory_object = make_directory( directory_object, segments[ i ], forced, 2 )
-    end
-
-    return make_file( directory_object, segments[ segment_count ], forced == true, 2 )
-end
-
---- [SHARED AND MENU]
----
---- Creates a directory by given path.
----
---- Does nothing if the directory already exists.
----
---- If `forced` is `true`, all files in the path will be deleted if they exist.
----
----@param directory_path string
----@param forced? boolean
----@return dreamwork.std.fs.Directory directory_object
----@async
-function fs.makeDirectory( directory_path, forced )
-    local segments, segment_count = string_byteSplit( prepare_path( directory_path ), 0x2F --[[ '/' ]], 2 )
-    local directory_object = root
-
-    forced = forced == true
-
-    for i = 1, segment_count, 1 do
-        directory_object = make_directory( directory_object, segments[ i ], forced, 2 )
-    end
-
-    return directory_object
-end
-
--- --- [SHARED AND MENU]
--- ---
--- --- Creates a file by given path.
--- ---
--- --- Does nothing if the file already exists.
--- ---
--- --- If `forced` is `true`, all files in the path will be deleted if they exist.
--- ---
--- ---@param file_path string The path to the file to create.
--- ---@param forced? boolean
--- ---@return dreamwork.std.fs.Object fs_object
--- ---@return boolean is_directory
--- ---@async
--- function fs.touch( file_path, forced )
---     local directory_path, file_name = path_split( prepare_path( file_path ), false )
-
---     local directory_object, is_directory = directory_lookup( root, directory_path, 2 )
---     if directory_object == nil then
---         if forced then
---             directory_object = root:makeDirectory( directory_path, true )
---         else
---             std.errorf( 2, false, "Path '%s' does not exist.", directory_path )
---         end
---     elseif not is_directory then
---         if forced then
---             directory_object = root:makeDirectory( directory_path, true )
---         else
---             std.errorf( 2, false, "'%s' is not a directory.", directory_object )
---         end
---     end
-
---     ---@cast directory_object dreamwork.std.fs.Directory
---     return directory_object:touch( file_name )
--- end
 
 --- [SHARED AND MENU]
 ---
@@ -2895,7 +2870,7 @@ end
 ---@return boolean exists Returns `true` if the file or directory exists, otherwise `false`.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.exists( path_to )
-    local fs_object, is_directory = directory_lookup( root, prepare_path( path_to ), 2 )
+    local fs_object, is_directory = directory_lookup( root, path_resolve( path_to ), 2 )
     return fs_object ~= nil, is_directory
 end
 
@@ -2906,7 +2881,7 @@ end
 ---@param directory_path string The path to the directory.
 ---@return boolean exists Returns `true` if the directory exists and is not a file, otherwise `false`.
 function fs.isDirectory( directory_path )
-    local directory_object, is_directory = directory_lookup( root, prepare_path( directory_path ), 2 )
+    local directory_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
     return directory_object ~= nil and is_directory
 end
 
@@ -2917,7 +2892,7 @@ end
 ---@param file_path string The path to the fs.
 ---@return boolean exists Returns `true` if the file exists and is not a directory, otherwise `false`.
 function fs.isFile( file_path )
-    local file_object, is_directory = directory_lookup( root, prepare_path( file_path ), 2 )
+    local file_object, is_directory = directory_lookup( root, path_resolve( file_path ), 2 )
     return file_object ~= nil and not is_directory
 end
 
@@ -2929,7 +2904,7 @@ end
 ---@return boolean empty Returns `true` if the file or directory is empty, otherwise `false`.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
 function fs.isEmpty( path_to, forced )
-    local fs_object, is_directory = directory_lookup( root, prepare_path( path_to ), 2 )
+    local fs_object, is_directory = directory_lookup( root, path_resolve( path_to ), 2 )
     if fs_object == nil then
         if not forced then
             std.errorf( 2, false, "Path '%s' does not exist.", path_to )
@@ -2938,22 +2913,75 @@ function fs.isEmpty( path_to, forced )
         return true, false
     end
 
-    if is_directory then
-        ---@cast fs_object dreamwork.std.fs.Directory
-        return fs_object:isEmpty(), true
-    end
-
-    return fs_object.size == 0, false
+    return fs_object:isEmpty(), is_directory
 end
 
 --- [SHARED AND MENU]
 ---
---- Returns the last modified time of a file or directory by given path.
+--- Creates a directory by given path.
 ---
----@param file_path string The path to the file or directory.
----@return integer unix_time The last modified time of the file or directory.
+--- If parent directory does not exist, it will be created.
+---
+---@param directory_path string The path to the directory.
+---@param forced? boolean If `true`, files in the path will be deleted.
+---@return dreamwork.std.fs.Directory directory_object The created directory.
+---@async
+function fs.makeDirectory( directory_path, forced )
+    return make_directory_chain( root, path_resolve( directory_path ), forced == true, 2, 2 )
+end
+
+--- [SHARED AND MENU]
+---
+--- Creates a file by given path.
+---
+--- If the parent directory does not exist, it will be created.
+---
+--- If file already exists, it will be returned.
+---
+---@param file_path string The path to file.
+---@param forced? boolean If `true`, files in the path will be deleted.
+---@param data? string The data to be written to file, if it does not exist.
+---@return dreamwork.std.fs.File file_object
+---@async
+function fs.makeFile( file_path, forced, data )
+    return make_file_chain( root, path_resolve( file_path ), forced == true, 2, 2, data or "" )
+end
+
+--- [SHARED AND MENU]
+---
+--- Creates a file at the specified path if it does not exist.
+---
+--- If the parent directory does not exist, it will be created.
+---
+--- If file already exists, it will be returned and its last modification time will be updated.
+--- If file at the end of the path is a directory, it will be returned and its last modification time will be updated.
+---
+---@param file_path string
+---@param forced? boolean
+---@return dreamwork.std.fs.Object fs_object
+---@return boolean is_directory
+---@async
+function fs.touch( file_path, forced )
+    local resolved_path = path_resolve( file_path )
+    local fs_object, is_directory = directory_lookup( root, resolved_path, 2 )
+
+    if fs_object == nil then
+        return make_file_chain( root, resolved_path, forced == true, 2, 2, "" ), false
+    end
+
+    fs_object:touch()
+
+    return fs_object, is_directory
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the time of the last modification of file or directory at the specified path.
+---
+---@param file_path string The path to file or directory.
+---@return integer unix_time The last modified time of file or directory.
 function fs.time( file_path, forced )
-    local fs_object = directory_lookup( root, prepare_path( file_path ), 2 )
+    local fs_object = directory_lookup( root, path_resolve( file_path ), 2 )
     if fs_object == nil then
         if not forced then
             std.errorf( 2, false, "Path '%s' does not exist.", file_path )
@@ -2972,7 +3000,7 @@ end
 ---@param file_path string The path to the file or directory.
 ---@return integer size The size of the file or directory in bytes.
 function fs.size( file_path, forced )
-    local fs_object = directory_lookup( root, prepare_path( file_path ), 2 )
+    local fs_object = directory_lookup( root, path_resolve( file_path ), 2 )
     if fs_object == nil then
         if not forced then
             std.errorf( 2, false, "Path '%s' does not exist.", file_path )
@@ -2986,7 +3014,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the list of files and directories in a directory by given path.
+--- Searches for files and directories in a directory by wildcard.
 ---
 --- Can be used for file search by setting `searchable` to a wildcard string.
 ---
@@ -2997,7 +3025,7 @@ end
 ---@return dreamwork.std.fs.Directory[] directories The list of directories in the directory.
 ---@return integer directory_count The number of directories in the directory.
 function fs.select( directory_path, wildcard )
-    local directory_object, is_directory = directory_lookup( root, prepare_path( directory_path ), 2 )
+    local directory_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
     if directory_object == nil or not is_directory then
         return {}, 0, {}, 0
     end
@@ -3030,7 +3058,7 @@ do
     ---@async
     ---@return AsyncIterator<dreamwork.std.fs.Object, boolean> iterator An async iterator that yields the path and a boolean indicating if the object is a directory.
     function fs.iterator( directory_path )
-        local fs_object, is_directory = directory_lookup( root, prepare_path( directory_path ), 2 )
+        local fs_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
         if fs_object ~= nil and is_directory then
             ---@cast fs_object dreamwork.std.fs.Directory
             fs_object:foreach( iterate_file, iterate_directory )
@@ -3041,13 +3069,13 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the data of a file by given path.
+--- Reads data from a file by given path.
 ---
 ---@param file_path string The path to the file.
 ---@return string data The data of the file.
 ---@async
 function fs.read( file_path )
-    local file_object, is_directory = directory_lookup( root, prepare_path( file_path ), 2 )
+    local file_object, is_directory = directory_lookup( root, path_resolve( file_path ), 2 )
     if file_object == nil then
         std.errorf( 2, false, "Path '%s' does not exist.", file_path )
     end
@@ -3067,18 +3095,38 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to write to the file.
+---@param forced? boolean If `true`, then the entire path to the file will be forcibly recreated, and anything that does not match the path will be deleted.
+---@return dreamwork.std.fs.File file_object The file object.
 ---@async
-function fs.write( file_path, data )
-    local full_path = prepare_path( file_path )
+function fs.write( file_path, data, forced )
+    forced = forced == true
+
+    local full_path = path_resolve( file_path )
     local directory_path, file_name = path_split( full_path, false )
 
     local directory_object, is_directory = directory_lookup( root, directory_path, 2 )
-
-    if directory_object == nil then
-
+    if directory_object ~= nil and not is_directory then
+        if forced then
+            directory_object = make_directory_chain( root, directory_path, true, 2, 2 )
+        else
+            std.errorf( 2, false, "Path '%s' is not a directory.", directory_path )
+        end
     end
 
+    ---@cast directory_object dreamwork.std.fs.Directory
 
+    local file_object
+    file_object, is_directory = directory_object:get( file_name )
+
+    ---@cast file_object dreamwork.std.fs.File | nil
+
+    if file_object == nil or is_directory then
+        file_object = make_file( directory_object, file_name, forced, 2, data )
+    else
+        file_object:write( data )
+    end
+
+    return file_object
 end
 
 --- [SHARED AND MENU]
@@ -3087,14 +3135,39 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append to the file.
----@param forced? boolean If `true`, the file will be overwritten if it already exists.
----@param recursive? boolean If `true`, all directories in the path will be created if they don't exist.
+---@param forced? boolean If `true`, then the entire path to the file will be forcibly recreated, and anything that does not match the path will be deleted.
+---@return dreamwork.std.fs.File file_object The file object.
 ---@async
-function fs.append( file_path, data, forced, recursive )
+function fs.append( file_path, data, forced )
+    forced = forced == true
 
+    local full_path = path_resolve( file_path )
+    local directory_path, file_name = path_split( full_path, false )
+
+    local directory_object, is_directory = directory_lookup( root, directory_path, 2 )
+    if directory_object == nil or not is_directory then
+        if forced then
+            directory_object = make_directory_chain( root, directory_path, true, 2, 2 )
+        else
+            std.errorf( 2, false, "Path '%s' is not a directory.", directory_path )
+        end
+    end
+
+    ---@cast directory_object dreamwork.std.fs.Directory
+
+    local file_object
+    file_object, is_directory = directory_object:get( file_name )
+
+    ---@cast file_object dreamwork.std.fs.File | nil
+
+    if file_object == nil or is_directory then
+        file_object = make_file( directory_object, file_name, forced, 2, data )
+    else
+        file_object:append( data )
+    end
+
+    return file_object
 end
-
--- TODO: finish fs file functions
 
 --- [SHARED AND MENU]
 ---
@@ -3104,7 +3177,7 @@ end
 ---@param recursive? boolean If `true`, the file or directory will be deleted even if it contains files or directories.
 ---@async
 function fs.delete( path_to, recursive )
-    local full_path = prepare_path( path_to )
+    local full_path = path_resolve( path_to )
 
     local fs_object, is_directory = directory_lookup( root, full_path, 2 )
     if fs_object == nil then
@@ -3126,14 +3199,14 @@ end
 ---
 --- Copies a file or directory by given path.
 ---
----@param source_path string The path to the file or directory to copy.
----@param target_path string The path to the file or directory to copy to.
----@param forced? boolean If `true`, the file or directory will be copied even if it already exists.
+---@param source_path string The path to file or directory to copy.
+---@param target_path string The path to file or directory to copy to.
+---@param forced? boolean If `true`, file or directory will be copied even if it already exists.
 ---@return dreamwork.std.fs.Object object_copy The copied file or directory.
 ---@return boolean is_directory `true` if copied object is a directory, otherwise `false`.
 ---@async
 function fs.copy( source_path, target_path, forced )
-    local resource_source_path = prepare_path( source_path )
+    local resource_source_path = path_resolve( source_path )
 
     local source_object, source_is_directory = directory_lookup( root, resource_source_path, 2 )
     if source_object == nil then
@@ -3142,7 +3215,7 @@ function fs.copy( source_path, target_path, forced )
 
     ---@cast source_object dreamwork.std.fs.Object
 
-    local resolved_target_path = prepare_path( target_path )
+    local resolved_target_path = path_resolve( target_path )
     local segments, segment_count = string_byteSplit( resolved_target_path, 0x2F --[[ '/' ]], 2 )
 
     for i = segment_count, 1, -1 do
@@ -3175,10 +3248,10 @@ end
 ---
 --- Moves a file or directory by given path.
 ---
----@param source_path string The path to the file or directory to move.
----@param target_path string The path to the file or directory to move to.
----@param forced? boolean If `true`, the file or directory will be moved even if it already exists.
----@param recursive? boolean If `true`, all directories in the path will be moved if they already exist.
+---@param source_path string The path to file or directory to move.
+---@param target_path string The path to file or directory to move to.
+---@param forced? boolean If `true`, file or directory will be moved even if it already exists.
+---@param recursive? boolean If `true`, all directories in path will be moved if they already exist.
 ---@async
 function fs.move( source_path, target_path, forced, recursive )
 
@@ -3188,10 +3261,10 @@ end
 ---
 --- Renames a file or directory by given path.
 ---
----@param path_to string The path to the file or directory.
----@param name string The new name of the file or directory.
----@param forced? boolean If `true`, the file or directory will be renamed even if it already exists.
----@param recursive? boolean If `true`, all directories in the path will be renamed if they already exist.
+---@param path_to string The path to file or directory.
+---@param name string The new name of file or directory.
+---@param forced? boolean If `true`, file or directory will be renamed even if it already exists.
+---@param recursive? boolean If `true`, all directories in path will be renamed if they already exist.
 ---@async
 function fs.rename( path_to, name, forced, recursive )
 
