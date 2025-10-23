@@ -2,10 +2,15 @@
 local std = _G.dreamwork.std
 
 local string = std.string
+local table = std.table
 
 local string_sub, string_gsub = string.sub, string.gsub
+local string_byteSplit = string.byteSplit
 local string_byte = string.byte
 local string_len = string.len
+
+local table_insert, table_remove = table.insert, table.remove
+local table_concat = table.concat
 
 --- [SHARED AND MENU]
 ---
@@ -392,72 +397,53 @@ do
 
 end
 
-local table = std.table
-local table_concat = table.concat
-local table_insert, table_remove = table.insert, table.remove
-
-local string_byteSplit = string.byteSplit
-
 --- [SHARED AND MENU]
 ---
 --- Normalizes a file path by removing all "." and ".." parts.
 ---
 ---@param file_path string The file path.
+---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
 ---@return string new_file_path The normalized file path.
-local function normalize( file_path )
-    local path_length = string_len( file_path )
+local function normalize( file_path, keep_trailing_slash )
+    local file_path_length = string_len( file_path )
 
-    if path_length == 0 then
-        return file_path
+    if file_path_length == 0 then
+        return "."
     end
 
-    local has_trailing_slash = string_byte( file_path, path_length ) == 0x2F --[[ / ]]
+    local has_trailing_slash = string_byte( file_path, file_path_length ) == 0x2F --[[ / ]]
     local is_abs = string_byte( file_path, 1 ) == 0x2F --[[ / ]]
 
-    if has_trailing_slash and is_abs then
-        file_path = string_sub( file_path, 2, path_length - 1 )
-    elseif has_trailing_slash then
-       file_path = string_sub( file_path, 1, path_length - 1 )
-    elseif is_abs then
-        file_path = string_sub( file_path, 2 )
-    end
-
-    local parts, length = string_byteSplit( file_path, 0x2F --[[ / ]] )
+    local segments, segment_count = string_byteSplit( file_path, 0x2F --[[ / ]], is_abs and 2 or 1, has_trailing_slash and ( file_path_length - 1 ) or file_path_length, file_path_length )
     local skip = 0
 
-    for index = length, 1, -1 do
-        local uint8_1, uint8_2, uint8_3 = string_byte( parts[ index ], 1, 3 )
+    for index = segment_count, 1, -1 do
+        local uint8_1, uint8_2, uint8_3 = string_byte( segments[ index ], 1, 3 )
         if uint8_2 == nil and uint8_1 == 0x2E --[[ . ]] then
-            table_remove( parts, index )
-            length = length - 1
+            table_remove( segments, index )
+            segment_count = segment_count - 1
         elseif uint8_3 == nil and uint8_1 == 0x2E --[[ . ]] and uint8_2 == 0x2E --[[ . ]] then
-            table_remove( parts, index )
-            length = length - 1
+            table_remove( segments, index )
+            segment_count = segment_count - 1
             skip = skip + 1
         elseif skip > 0 then
-            table_remove( parts, index )
-            length = length - 1
+            table_remove( segments, index )
+            segment_count = segment_count - 1
             skip = skip - 1
         end
     end
 
     if not is_abs then
         while skip > 0 do
-            table_insert( parts, 1, ".." )
-            length = length + 1
+            table_insert( segments, 1, ".." )
+            segment_count = segment_count + 1
             skip = skip - 1
         end
     end
 
-    local new_path
+    has_trailing_slash = has_trailing_slash and keep_trailing_slash == true
 
-    if length == 0 then
-        new_path = ""
-    else
-        new_path = table_concat( parts, "/", 1, length )
-    end
-
-    if string_byte( new_path, 1, 1 ) == nil then
+    if segment_count == 0 or ( segment_count == 1 and string_byte( segments[ 1 ], 1, 1 ) == nil ) then
         if has_trailing_slash then
             return "./"
         elseif is_abs then
@@ -467,14 +453,16 @@ local function normalize( file_path )
         end
     end
 
+    local normalized_path = table_concat( segments, "/", 1, segment_count )
+
     if has_trailing_slash and is_abs then
-        return "/" .. new_path .. "/"
+        return "/" .. normalized_path .. "/"
     elseif has_trailing_slash then
-        return new_path .. "/"
+        return normalized_path .. "/"
     elseif is_abs then
-        return "/" .. new_path
+        return "/" .. normalized_path
     else
-        return new_path
+        return normalized_path
     end
 end
 
@@ -485,12 +473,12 @@ path.normalize = normalize
 --- Resolve a file path.
 ---
 ---@param file_path string The file path.
----@return string file_path The resolved file path.
+---@return string abs_path The resolved file path.
 function path.resolve( file_path )
     if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
-        return normalize( file_path )
+        return normalize( file_path, false )
     else
-        return normalize( getCurrentDirectory( true ) .. file_path )
+        return normalize( getCurrentDirectory( true ) .. file_path, false )
     end
 end
 
