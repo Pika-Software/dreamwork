@@ -1427,7 +1427,7 @@ if std.loadbinary( "efsw" ) then
             return
         end
 
-        local fs_object, is_directory = fs.get( "/garrysmod/" .. file_path )
+        local fs_object, is_directory = fs.lookup( "/garrysmod/" .. file_path )
         if fs_object == nil or reserved_names[ path.getName( file_path, true ) ] then
             return
         end
