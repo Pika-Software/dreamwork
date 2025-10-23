@@ -330,6 +330,7 @@ function path.parse( file_path )
     return { root = is_abs and "/" or "", dir = directory, base = base, ext = ext, name = name, abs = is_abs }
 end
 
+-- TODO: this function is broken in async, fenv features required for stable working, debug stuff must be removed
 local getCurrentDirectory
 do
 
@@ -341,10 +342,10 @@ do
     ---
     --- Get the current file path.
     ---
-    ---@param level? integer The stack level to get the file path from.
+    ---@param stack_level? integer The stack stack_level to get the file path from.
     ---@return string file_path
-    function path.getCurrentFile( level )
-        local fn = debug_getfmain( ( level or 1 ) + 1 )
+    function path.getCurrentFile( stack_level )
+        local fn = debug_getfmain( ( stack_level or 1 ) + 1 )
         if fn == nil then
             return "/unknown.lua"
         end
@@ -365,10 +366,10 @@ do
     --- Get the current directory path.
     ---
     ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
-    ---@param level? integer The stack level to get the file path from.
+    ---@param stack_level? integer The stack stack_level to get the file path from.
     ---@return string directory_path
-    function getCurrentDirectory( keep_trailing_slash, level )
-        local fn = debug_getfmain( ( level or 1 ) + 1 )
+    function getCurrentDirectory( keep_trailing_slash, stack_level )
+        local fn = debug_getfmain( ( stack_level or 1 ) + 1 )
         if fn == nil then
             return "/"
         end
@@ -478,7 +479,7 @@ function path.resolve( file_path )
     if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
         return normalize( file_path, false )
     else
-        return normalize( getCurrentDirectory( true ) .. file_path, false )
+        return normalize( getCurrentDirectory( true, 2 ) .. file_path, false )
     end
 end
 
