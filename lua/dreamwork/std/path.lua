@@ -1,12 +1,14 @@
+local dreamwork = _G.dreamwork
+
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local string = std.string
 local table = std.table
 
+local string_char, string_byte = string.char, string.byte
 local string_sub, string_gsub = string.sub, string.gsub
 local string_byteSplit = string.byteSplit
-local string_byte = string.byte
 local string_len = string.len
 
 local table_insert, table_remove = table.insert, table.remove
@@ -572,6 +574,342 @@ do
         else
             return table_concat( result_parts, "/", 1, result_part_count )
         end
+    end
+
+end
+
+do
+
+    local unsafe_bytes = dreamwork.UnsafeBytes
+
+    ---@type table<integer, fun( str: string, position: integer, str_length: integer ): string, integer, boolean>
+    local wildcard_handlers = {
+        -- ? (question mark)
+        [ 0x3F --[[ ? ]] ] = function( str, position, str_length )
+            if position == str_length then
+                return "[^/]", position, true
+            else
+                return "[^/]", position + 1, false
+            end
+        end,
+        -- * (asterisk)
+        [ 0x2A --[[ * ]] ] = function( str, position, str_length )
+            if position == str_length then
+                return "[^/]*", position, true
+            end
+
+            position = position + 1
+
+            local uint8_1 = string_byte( str, position, position )
+
+            if position == str_length then
+                if uint8_1 == 0x2A --[[ * ]] then
+                    return ".*", position, true
+                else
+                    return "[^/]*", position, false
+                end
+            end
+
+            position = position + 1
+
+            local uint8_2 = string_byte( str, position, position )
+
+            if uint8_2 == 0x2F --[[ / ]] then
+                if position == str_length then
+                    return ".*%f[^%z/]", position, true
+                else
+                    return ".*%f[^%z/]", position + 1, false
+                end
+            elseif uint8_1 == 0x2A --[[ * ]] then
+                return ".*", position, false
+            else
+                return "[^/]*", position - 1, false
+            end
+        end,
+        -- [ ] (square brackets)
+        [ 0x5B --[[ [ ]] ] = function( str, position, str_length )
+            if position == str_length then
+                return "%[", position, true
+            end
+
+            local range_start = position
+            position = position + 1
+
+            if string_byte( str, position, position ) == 0x5D --[[ ] ]] then
+                if position == str_length then
+                    return "[]", position, true
+                else
+                    return "[]", position + 1, false
+                end
+            elseif position == str_length then
+                return "%[", position, false
+            end
+
+            local loop_index = range_start + 1
+
+            ::wildcard_range_loop::
+
+            if string_byte( str, loop_index, loop_index ) == 0x5D --[[ ] ]] then
+                local range_end = loop_index
+                local range_length = range_end - ( range_start + 1 )
+
+                if range_length == 0 then
+                    if range_end == str_length then
+                        return "[]", loop_index, true
+                    else
+                        return "[]", loop_index + 1, false
+                    end
+                end
+
+                loop_index = range_start + 1
+
+                if range_length == 1 then
+                    local uint8_1 = string_byte( str, loop_index, loop_index )
+
+                    local safe_segment = unsafe_bytes[ uint8_1 ]
+                    if safe_segment == nil then
+                        safe_segment = string_char( 0x5B --[[ [ ]], uint8_1, 0x5D --[[ ] ]] )
+                    else
+                        safe_segment = "[" .. safe_segment .. "]"
+                    end
+
+                    if range_end == str_length then
+                        return safe_segment, range_end, true
+                    else
+                        return safe_segment, range_end + 1, false
+                    end
+                elseif range_length == 2 then
+                    local uint8_1 = string_byte( str, loop_index, loop_index )
+
+                    loop_index = loop_index + 1
+
+                    local uint8_2 = string_byte( str, loop_index, loop_index )
+
+                    local safe_segment_1 = unsafe_bytes[ uint8_1 ]
+                    if safe_segment_1 == nil then
+                        safe_segment_1 = string_char( 0x5B --[[ [ ]], uint8_1 )
+                    else
+                        safe_segment_1 = "[" .. safe_segment_1
+                    end
+
+                    local safe_segment_2 = unsafe_bytes[ uint8_2 ]
+                    if safe_segment_2 == nil then
+                        safe_segment_2 = string_char( uint8_2, 0x5D --[[ ] ]] )
+                    else
+                        safe_segment_2 = safe_segment_2 .. "]"
+                    end
+
+                    if range_end == str_length then
+                        return safe_segment_1 .. safe_segment_2, range_end, true
+                    else
+                        return safe_segment_1 .. safe_segment_2, range_end + 1, false
+                    end
+                end
+
+                range_start = range_start + 1
+                range_end = range_end - 1
+
+                local segments, segment_count = { "[" }, 1
+
+                local safe_segment_1, safe_segment_2
+                local uint8_1, uint8_2, uint8_3 = 0x00, 0x00, 0x00
+
+                ::wildcard_range_segment_loop::
+
+                uint8_1 = string_byte( str, loop_index, loop_index )
+
+                if loop_index == range_start and ( uint8_1 == 0x21 --[[ ! ]] or uint8_1 == 0x5E --[[ ^ ]] ) then
+                    safe_segment_1 = "^"
+                else
+
+                    safe_segment_1 = unsafe_bytes[ uint8_1 ]
+
+                    if safe_segment_1 == nil then
+                        safe_segment_1 = string_char( uint8_1 )
+                    end
+
+                end
+
+                if loop_index == range_end then
+                    segment_count = segment_count + 1
+                    segments[ segment_count ] = safe_segment_1
+                    goto wildcard_range_segment_loop_end
+                end
+
+                loop_index = loop_index + 1
+
+                uint8_2 = string_byte( str, loop_index, loop_index )
+                if uint8_2 == 0x2D --[[ - ]] and loop_index ~= range_end then
+                    if loop_index == range_end then
+                        segment_count = segment_count + 1
+                        segments[ segment_count ] = safe_segment_1 .. "%-"
+                        goto wildcard_range_segment_loop_end
+                    end
+
+                    loop_index = loop_index + 1
+
+                    uint8_3 = string_byte( str, loop_index, loop_index )
+
+                    safe_segment_2 = unsafe_bytes[ uint8_3 ]
+                    if safe_segment_2 == nil then
+                        safe_segment_2 = string_char( uint8_3 )
+                    end
+
+                    segment_count = segment_count + 1
+                    segments[ segment_count ] = safe_segment_1 .. "-" .. safe_segment_2
+
+                    if loop_index == range_end then
+                        goto wildcard_range_segment_loop_end
+                    end
+
+                    loop_index = loop_index + 1
+                    goto wildcard_range_segment_loop
+                end
+
+                safe_segment_2 = unsafe_bytes[ uint8_2 ]
+                if safe_segment_2 == nil then
+                    safe_segment_2 = string_char( uint8_2 )
+                end
+
+                segment_count = segment_count + 1
+                segments[ segment_count ] = safe_segment_1 .. safe_segment_2
+
+                if loop_index ~= range_end then
+                    loop_index = loop_index + 1
+                    goto wildcard_range_segment_loop
+                end
+
+                ::wildcard_range_segment_loop_end::
+
+                segment_count = segment_count + 1
+                segments[ segment_count ] = "]"
+
+                range_end = range_end + 1
+
+                if range_end == str_length then
+                    return table_concat( segments, "", 1, segment_count ), range_end, true
+                else
+                    return table_concat( segments, "", 1, segment_count ), range_end + 1, false
+                end
+            end
+
+            if loop_index == str_length then
+                return "%[", range_start + 1, false
+            end
+
+            loop_index = loop_index + 1
+            ---@diagnostic disable-next-line: missing-return
+            goto wildcard_range_loop
+        end,
+        -- { } (curly brackets) - not supported
+        -- \ (backslash)
+        [ 0x5C --[[ \ ]] ] = function( str, position, str_length )
+            if position == str_length then
+                return "\\", position, true
+            end
+
+            position = position + 1
+
+            local uint8_1 = string_byte( str, position, position )
+
+            local safe_segment_1 = unsafe_bytes[ uint8_1 ]
+            if safe_segment_1 == nil then
+                safe_segment_1 = string_char( 0x5C --[[ \ ]], uint8_1 )
+            end
+
+            if position == str_length then
+                return safe_segment_1, position, true
+            else
+                return safe_segment_1, position + 1, false
+            end
+        end
+    }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Converts a wildcard string to a Lua pattern.
+    ---
+    ---@param wildcard_str string The path wildcard string.
+    ---@param anchor_to_slash? boolean If set to `true`, the pattern will be anchored to the first slash.
+    ---@return string pattern_str The Lua pattern that represents the wildcard string.
+    function path.wildcard( wildcard_str, anchor_to_slash )
+        if string_byte( wildcard_str, 1, 1 ) == nil then
+            return wildcard_str
+        end
+
+        local str_length = string_len( wildcard_str )
+        local break_position = 1
+        local position = 1
+
+        local segments, segment_count = { anchor_to_slash and "%f[^%z/]" or "^" }, 1
+        local segment, is_last
+
+        ::wildcard_loop_start::
+
+        local uint8_1 = string_byte( wildcard_str, position, position )
+
+        local wildcard_handler = wildcard_handlers[ uint8_1 ]
+        if wildcard_handler ~= nil then
+            if break_position ~= position then
+                segment_count = segment_count + 1
+                segments[ segment_count ] = string_sub( wildcard_str, break_position, position - 1 )
+            end
+
+            segment, position, is_last = wildcard_handler( wildcard_str, position, str_length )
+            break_position = position
+
+            if segment ~= nil then
+                segment_count = segment_count + 1
+                segments[ segment_count ] = segment
+            end
+
+            if is_last then
+                goto wildcard_loop_end
+            else
+                goto wildcard_loop_start
+            end
+        end
+
+        segment = unsafe_bytes[ uint8_1 ]
+        if segment ~= nil then
+            if break_position ~= position then
+                segment_count = segment_count + 1
+                segments[ segment_count ] = string_sub( wildcard_str, break_position, position - 1 )
+            end
+
+            segment_count = segment_count + 1
+            segments[ segment_count ] = segment
+
+            if position == str_length then
+                break_position = position
+                goto wildcard_loop_end
+            end
+
+            position = position + 1
+            break_position = position
+            goto wildcard_loop_start
+        end
+
+        if position ~= str_length then
+            position = position + 1
+            goto wildcard_loop_start
+        end
+
+        ::wildcard_loop_end::
+
+        if break_position ~= position then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( wildcard_str, break_position, str_length )
+        end
+
+        if segment_count == 1 then
+            return ""
+        end
+
+        segment_count = segment_count + 1
+        segments[ segment_count ] = "$"
+
+        return table_concat( segments, "", 1, segment_count )
     end
 
 end
