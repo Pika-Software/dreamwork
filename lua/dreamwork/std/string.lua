@@ -61,9 +61,9 @@ local table_concat = table.concat
 ---
 ---@param str string The string to search in.
 ---@param searchable_byte integer The byte to search for.
----@param start_position integer The start position of the search.
----@param end_position integer The end position of the search.
----@param str_length integer The length of the string.
+---@param start_position? integer The start position of the search.
+---@param end_position? integer The end position of the search.
+---@param str_length? integer The length of the string.
 ---@return integer | nil index The index of the byte if found, `nil` otherwise.
 local function find_byte( str, searchable_byte, start_position, end_position, str_length )
     if str_length == nil then
