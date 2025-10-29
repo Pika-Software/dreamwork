@@ -1,5 +1,7 @@
+local dreamwork = _G.dreamwork
+
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local math = std.math
 local math_floor = math.floor
@@ -55,6 +57,48 @@ local table_concat = table.concat
 
 --- [SHARED AND MENU]
 ---
+--- Finds the first byte of the given byte in the string.
+---
+---@param str string The string to search in.
+---@param searchable_byte integer The byte to search for.
+---@param start_position integer The start position of the search.
+---@param end_position integer The end position of the search.
+---@param str_length integer The length of the string.
+---@return integer | nil index The index of the byte if found, `nil` otherwise.
+local function find_byte( str, searchable_byte, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    for index = start_position, end_position, 1 do
+        if string_byte( str, index, index ) == searchable_byte then
+            return index
+        end
+    end
+
+    return nil
+end
+
+string.findByte = find_byte
+
+--- [SHARED AND MENU]
+---
 --- Checks if the string is empty.
 ---
 ---@param str string The string to check.
@@ -94,17 +138,36 @@ end
 ---
 ---@param str string The string to divide.
 ---@param pattern_str string The pattern to divide by.
----@param start_position? integer The start position to divide from.
 ---@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@param start_position? integer The start position to divide from.
+---@param end_position? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string left_part The first part of the strin.
 ---@return string right_part The second part of the string.
-function string.divide( str, pattern_str, start_position, with_pattern, str_length )
+function string.divide( str, pattern_str, with_pattern, start_position, end_position )
     local divide_start, divide_end = string_find( str, pattern_str, start_position or 1, with_pattern ~= true )
     if divide_start == nil then
         return str, ""
     else
-        return string_sub( str, 1, divide_start - 1 ), string_sub( str, divide_end + 1, str_length or string_len( str ) )
+        return string_sub( str, 1, divide_start - 1 ), string_sub( str, divide_end + 1, end_position or string_len( str ) )
+    end
+end
+
+--- [SHARED AND MENU]
+---
+--- Divides the string by the byte.
+---
+---@param str string The string to divide.
+---@param searchable_byte integer The byte to divide by.
+---@param start_position? integer The start position to divide from.
+---@param end_position? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return string left_part The first part of the strin.
+---@return string right_part The second part of the string.
+function string.divideByte( str, searchable_byte, start_position, end_position, str_length )
+    local divide_index = find_byte( str, searchable_byte, start_position, end_position, str_length )
+    if divide_index == nil then
+        return str, ""
+    else
+        return string_sub( str, 1, divide_index - 1 ), string_sub( str, divide_index + 1, end_position or string_len( str ) )
     end
 end
 
@@ -298,12 +361,13 @@ end
 ---
 ---@param str string The string to split.
 ---@param pattern_str? string The pattern to split by.
----@param start_position? integer The start position to split from.
 ---@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
+---@param start_position? integer The start position to split from.
+---@param end_position? integer The end position to split to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string[] segments The string array.
 ---@return integer segment_count The length of the array.
-function string.split( str, pattern_str, start_position, with_pattern, str_length )
+function string.split( str, pattern_str, with_pattern, start_position, end_position, str_length )
     local segments = {}
 
     if str_length == nil then
@@ -318,27 +382,45 @@ function string.split( str, pattern_str, start_position, with_pattern, str_lengt
         return segments, str_length
     end
 
+     if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
     with_pattern = with_pattern ~= true
 
     local segment_count = 0
 
-    repeat
-        local segment_start, segment_end = string_find( str, pattern_str, start_position, with_pattern )
-        if segment_start == nil then
-            break
-        else
-            segment_count = segment_count + 1
-            ---@diagnostic disable-next-line: param-type-mismatch
-            segments[ segment_count ] = string_sub( str, start_position, segment_start - 1 )
-            start_position = segment_end + 1
-        end
-    until start_position > str_length
+    ::split_loop::
+
+    local segment_start, segment_end = string_find( str, pattern_str, start_position, with_pattern )
+    if segment_start == nil or start_position > end_position then
+        segment_count = segment_count + 1
+        ---@diagnostic disable-next-line: param-type-mismatch
+        segments[ segment_count ] = string_sub( str, start_position )
+
+        return segments, segment_count
+    end
 
     segment_count = segment_count + 1
-    ---@diagnostic disable-next-line: param-type-mismatch
-    segments[ segment_count ] = string_sub( str, start_position )
 
-    return segments, segment_count
+    ---@diagnostic disable-next-line: param-type-mismatch
+    segments[ segment_count ] = string_sub( str, start_position, segment_start - 1 )
+    start_position = segment_end + 1
+
+    ---@diagnostic disable-next-line: missing-return
+    goto split_loop
 end
 
 --- [SHARED AND MENU]
@@ -363,16 +445,17 @@ function string.count( str, pattern_str, with_pattern, str_length )
 
     local index, length = 1, 0
 
-    repeat
-        local start_position, end_position = string_find( str, pattern_str, index, with_pattern )
-        if start_position == nil then
-            break
-        else
-            index, length = end_position + 1, length + 1
-        end
-    until index > str_length
+    ::count_loop::
 
-    return length
+    local start_position, end_position = string_find( str, pattern_str, index, with_pattern )
+    if start_position == nil or index > str_length then
+        return length
+    end
+
+    index, length = end_position + 1, length + 1
+
+    ---@diagnostic disable-next-line: missing-return
+    goto count_loop
 end
 
 --- [SHARED AND MENU]
@@ -381,41 +464,17 @@ end
 ---
 ---@param str string The string to count.
 ---@param counted_byte? integer The byte to count.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return integer byte_count The number of occurrences.
-function string.byteCount( str, counted_byte, str_length )
-    if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
-        return 0
-    end
-
-    local byte_count = 0
-
-    for index = 1, str_length or string_len( str ) do
-        if string_byte( str, index, index ) == counted_byte then
-            byte_count = byte_count + 1
-        end
-    end
-
-    return byte_count
-end
-
---- [SHARED AND MENU]
----
---- Returns the number of consecutive repetitions of the specified byte.
----
----@param str string The string to count.
----@param counted_byte? integer The byte to count.
 ---@param direction? boolean If `true`, the direction will be from left to right. If `false`, the direction will be from right to left.
 ---@param start_position? integer The start position to count from.
 ---@param end_position? integer The end position to count to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer byte_count The number of occurrences.
-function string.byteCountConsecutive( str, counted_byte, direction, start_position, end_position, str_length )
+function string.byteCount( str, counted_byte, direction, start_position, end_position, str_length )
     if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
     end
 
-     if str_length == nil then
+    if str_length == nil then
         str_length = string_len( str )
     end
 
@@ -445,15 +504,108 @@ function string.byteCountConsecutive( str, counted_byte, direction, start_positi
 
     local byte_count = 0
 
-    for index = start_position, end_position, direction and 1 or -1 do
-        if string_byte( str, index, index ) == counted_byte then
-            byte_count = byte_count + 1
-        else
-            break
+    if direction then
+        if start_position > end_position then
+            return byte_count
         end
+    elseif start_position < end_position then
+        return byte_count
     end
 
-    return byte_count
+    ::byte_count_loop::
+
+    if string_byte( str, start_position, start_position ) == counted_byte then
+        byte_count = byte_count + 1
+    end
+
+    if start_position == end_position then
+        return byte_count
+    end
+
+    if direction then
+        start_position = start_position + 1
+    else
+        start_position = start_position - 1
+    end
+
+    ---@diagnostic disable-next-line: missing-return
+    goto byte_count_loop
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number of consecutive repetitions of the specified byte.
+---
+---@param str string The string to count.
+---@param counted_byte? integer The byte to count.
+---@param direction? boolean If `true`, the direction will be from left to right. If `false`, the direction will be from right to left.
+---@param start_position? integer The start position to count from.
+---@param end_position? integer The end position to count to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return integer byte_count The number of occurrences.
+function string.byteCountConsecutive( str, counted_byte, direction, start_position, end_position, str_length )
+    if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
+        return 0
+    end
+
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        if direction then
+            start_position = 1
+        else
+            start_position = str_length
+        end
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        if direction then
+            end_position = str_length
+        else
+            end_position = 1
+        end
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    local byte_count = 0
+
+    if direction then
+        if start_position > end_position then
+            return byte_count
+        end
+    elseif start_position < end_position then
+        return byte_count
+    end
+
+    ::byte_count_consecutive_loop::
+
+    if string_byte( str, start_position, start_position ) == counted_byte then
+        byte_count = byte_count + 1
+    else
+        return byte_count
+    end
+
+    if start_position == end_position then
+        return byte_count
+    end
+
+    if direction then
+        start_position = start_position + 1
+    else
+        start_position = start_position - 1
+    end
+
+    ---@diagnostic disable-next-line: missing-return
+    goto byte_count_consecutive_loop
 end
 
 --- [SHARED AND MENU]
@@ -523,7 +675,7 @@ end
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string[] segments The string array.
 ---@return integer segment_count The length of the array.
-local function byteSplit( str, split_byte, start_position, end_position, str_length )
+local function byte_split( str, split_byte, start_position, end_position, str_length )
     if split_byte == nil then
         split_byte = 0x20 --[[ Space ]]
     end
@@ -556,22 +708,20 @@ local function byteSplit( str, split_byte, start_position, end_position, str_len
 
     local split_position = start_position - 1
 
-    while true do
-        local uint8 = string_byte( str, start_position, start_position )
-        if uint8 == split_byte then
-            if split_position ~= start_position then
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_sub( str, split_position + 1, start_position - 1 )
-            end
+    ::byte_split_loop::
 
-            split_position = start_position
+    if string_byte( str, start_position, start_position ) == split_byte then
+        if split_position ~= start_position then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( str, split_position + 1, start_position - 1 )
         end
 
-        if start_position == end_position then
-            break
-        else
-            start_position = start_position + 1
-        end
+        split_position = start_position
+    end
+
+    if start_position ~= end_position then
+        start_position = start_position + 1
+        goto byte_split_loop
     end
 
     if split_position ~= start_position then
@@ -582,7 +732,7 @@ local function byteSplit( str, split_byte, start_position, end_position, str_len
     return segments, segment_count
 end
 
-string.byteSplit = byteSplit
+string.byteSplit = byte_split
 
 --- [SHARED AND MENU]
 ---
@@ -615,10 +765,13 @@ function string.hasByte( str, byte, start_position, end_position, str_length )
         end_position = math_min( end_position, str_length )
     end
 
-    for index = start_position, end_position, 1 do
-        if string_byte( str, index, index ) == byte then
-            return true
-        end
+    ::has_byte_loop::
+
+    if string_byte( str, start_position, start_position ) == byte then
+        return true
+    elseif start_position ~= end_position then
+        start_position = start_position + 1
+        goto has_byte_loop
     end
 
     return false
@@ -634,7 +787,7 @@ end
 ---@param end_position? integer The end position in the string.
 ---@return string str_purged The purged string.
 function string.purge( str, byte, start_position, end_position, str_length )
-    local segments, segment_count = byteSplit( str, byte, start_position, end_position, str_length )
+    local segments, segment_count = byte_split( str, byte, start_position, end_position, str_length )
     return table_concat( segments, "", 1, segment_count )
 end
 
@@ -672,23 +825,36 @@ do
     ---@return string new_string The new string with the occurrences replaced.
     function string.replace( str, searchable, replaceable, with_pattern )
         if with_pattern then
-            str = string_gsub( str, searchable, replaceable or "" )
-        else
-            local start_position, end_position = string_find( str, searchable, 1, true )
-            if replaceable == nil then
-                while start_position ~= nil do
-                    str = string_sub( str, 1, start_position - 1 ) .. string_sub( str, end_position + 1 )
-                    start_position, end_position = string_find( str, searchable, end_position + 1, true )
-                end
-            else
-                while start_position ~= nil do
-                    str = string_sub( str, 1, start_position - 1 ) .. replaceable .. string_sub( str, end_position + 1 )
-                    start_position, end_position = string_find( str, searchable, end_position + 1, true )
-                end
-            end
+            local new_str = string_gsub( str, searchable, replaceable or "" )
+            return new_str
         end
 
-        return str
+        local start_position, end_position = string_find( str, searchable, 1, true )
+        if replaceable == nil then
+            ::replace_loop1::
+
+            str = string_sub( str, 1, start_position - 1 ) .. string_sub( str, end_position + 1 )
+            start_position, end_position = string_find( str, searchable, end_position + 1, true )
+
+            if start_position == nil then
+                return str
+            end
+
+            ---@diagnostic disable-next-line: missing-return
+            goto replace_loop1
+        end
+
+        ::replace_loop2::
+
+        str = string_sub( str, 1, start_position - 1 ) .. replaceable .. string_sub( str, end_position + 1 )
+        start_position, end_position = string_find( str, searchable, end_position + 1, true )
+
+        if start_position == nil then
+            return str
+        end
+
+        ---@diagnostic disable-next-line: missing-return
+        goto replace_loop2
     end
 
 end
@@ -784,37 +950,7 @@ end
 
 do
 
-    local unsafe_bytes = {
-        -- ()
-        [ 0x28 ] = "%(",
-        [ 0x29 ] = "%)",
-
-        -- []
-        [ 0x5B ] = "%[",
-        [ 0x5D ] = "%]",
-
-        -- .
-        [ 0x2E ] = "%.",
-
-        -- %
-        [ 0x25 ] = "%%",
-
-        -- +-
-        [ 0x2B ] = "%+",
-        [ 0x2D ] = "%-",
-
-        -- *
-        [ 0x2A ] = "%*",
-
-        -- ?
-        [ 0x3F ] = "%?",
-
-        -- ^
-        [ 0x5E ] = "%^",
-
-        -- $
-        [ 0x24 ] = "%$"
-    }
+    local unsafe_bytes = dreamwork.UnsafeBytes
 
     --- [SHARED AND MENU]
     ---
@@ -849,31 +985,29 @@ do
         local escape_position = start_position - 1
         local segments, segment_count = {}, 0
 
-        while true do
-            local uint8 = string_byte( str, start_position, start_position )
+        ::escape_pattern_loop::
 
-            local replacement
+        local uint8_1 = string_byte( str, start_position, start_position )
+        local replacement
 
-            if uint8 == 0x0 then
-                replacement = "%z"
-            else
-                replacement = unsafe_bytes[ uint8 ]
+        if uint8_1 == 0x0 then
+            replacement = "%z"
+        else
+            replacement = unsafe_bytes[ uint8_1 ]
+        end
+
+        if replacement ~= nil then
+            if escape_position ~= start_position then
+                segment_count = segment_count + 1
+                segments[ segment_count ] = string_sub( str, escape_position + 1, start_position - 1 ) .. replacement
             end
 
-            if replacement ~= nil then
-                if escape_position ~= start_position then
-                    segment_count = segment_count + 1
-                    segments[ segment_count ] = string_sub( str, escape_position + 1, start_position - 1 ) .. replacement
-                end
+            escape_position = start_position
+        end
 
-                escape_position = start_position
-            end
-
-            if start_position == end_position then
-                break
-            else
-                start_position = start_position + 1
-            end
+        if start_position ~= end_position then
+            start_position = start_position + 1
+            goto escape_pattern_loop
         end
 
         if escape_position ~= start_position then
@@ -1038,16 +1172,14 @@ do
             alphabets[ alphabet_count ] = extended_ascii_alphabet
         end
 
-        local chars, char_count = {}, 0
+        local chars = {}
 
-        for _ = 1, length, 1 do
+        for index = 1, length, 1 do
             local alphabet = alphabets[ math_random( 1, alphabet_count ) ]
-
-            char_count = char_count + 1
-            chars[ char_count ] = alphabet[ math_random( 1, alphabet[ 0 ] ) ]
+            chars[ index ] = alphabet[ math_random( 1, alphabet[ 0 ] ) ]
         end
 
-        return string_char( table_unpack( chars, 1, char_count ) )
+        return string_char( table_unpack( chars, 1, length ) )
     end
 
 end
