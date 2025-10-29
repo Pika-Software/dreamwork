@@ -1445,32 +1445,31 @@ if std_metatable == nil then
 
     do
 
-        local developer_mode = 1
+        local developer = std.console.Variable.get( "developer", "integer" )
+        if developer == nil then
 
-        local developer = std.console.Variable.get( "developer", "number" )
-        if developer ~= nil then
-            developer:attach( function( _, value )
-                ---@cast value number
-                developer_mode = math.floor( value )
-            end, "dreamwork::std" )
+            ---@private
+            function indexes.DEVELOPER()
+                return 1
+            end
 
-            ---@diagnostic disable-next-line: param-type-mismatch
-            developer_mode = math.floor( developer.value )
-        end
+        else
 
-        ---@private
-        function indexes.DEVELOPER()
-            return developer_mode
+            ---@private
+            function indexes.DEVELOPER()
+                return developer.value
+            end
+
         end
 
     end
 
     ---@private
-    function indexes:DST_TZ()
-        if self.DST then
-            return self.TZ + 1
+    function indexes.DST_TZ()
+        if std.DST then
+            return std.TZ + 1
         else
-            return self.TZ
+            return std.TZ
         end
     end
 
@@ -1557,6 +1556,7 @@ do
     local splashes = {
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
         "I'm not here to tell you how great I am!",
+        "Woah-oh-oh, tell me where you wanna go ♪",
         "We will have a great Future together.",
         "I'm here to show you how great I am!",
         "Millions of pieces without a tether",
@@ -1572,6 +1572,7 @@ do
         "Hello, " .. name .. "!",
         "Dream + Framework = <3",
         "We need more packages!",
+        "Pew-pew-pew-pew-pew! ♪",
         "Play SOMA sometime;",
         "Where's fireworks!?",
         "Looking For More ♪",
@@ -1626,21 +1627,20 @@ dofile( "std/sqlite.lua" )
 dofile( "database.lua" )
 dofile( "std/fs.lua" )
 
--- Content Watcher
 do
 
     local bytepack_writeUInt32 = std.pack.bytes.writeUInt32
 
-    logger:info( "Content Watcher - Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
+    logger:info( "dreamwork.engine / Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
 
     ---@param game_info dreamwork.engine.GameInfo
     engine.hookCatch( "engine.Game.mounted", function( game_info )
-        logger:debug( "Content Watcher - Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
+        logger:debug( "dreamwork.engine / Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param game_info dreamwork.engine.GameInfo
     engine.hookCatch( "engine.Game.unmounted", function( game_info )
-        logger:debug( "Content Watcher - Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
+        logger:debug( "dreamwork.engine / Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
@@ -1648,26 +1648,26 @@ do
         local folder = string_format( "gma_%x%x%x%x", bytepack_writeUInt32( addon_info.index ) )
         addon_info.folder = folder
 
-        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
+        logger:debug( "dreamwork.engine / Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
     engine.hookCatch( "engine.Addon.unmounted", function( addon_info )
-        logger:debug( "Content Watcher - Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
+        logger:debug( "dreamwork.engine / Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
     end, 1 )
 
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )
 
     local function perform_synchronization()
-        logger:debug( "Content Watcher - Game content change triggered, synchronization..." )
+        logger:debug( "dreamwork.engine / Game content change triggered, synchronization..." )
         time.tick( "ms", false )
 
         local game_changes, addon_changes = engine.SyncContent()
 
         if game_changes == 0 and addon_changes == 0 then
-            logger:debug( "Content Watcher - No changes found, skipped." )
+            logger:debug( "dreamwork.engine / No changes found, skipped." )
         else
-            logger:debug( "Content Watcher - Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
+            logger:debug( "dreamwork.engine / Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
         end
     end
 

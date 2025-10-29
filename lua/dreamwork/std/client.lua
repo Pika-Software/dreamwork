@@ -238,7 +238,7 @@ do
     ---
     ---@return boolean result `true` if close captions are enabled, `false` otherwise.
     function game.getCloseCaptions()
-        console_Variable.getBoolean( "closecaption" )
+        return console_Variable.getBoolean( "closecaption" )
     end
 
     --- [CLIENT AND MENU]

@@ -54,7 +54,7 @@ if developer_cvar == nil then
 else
 
     function default_debug_fn()
-        return developer_cvar.value > 0
+        return developer_cvar.value ~= 0
     end
 
 end

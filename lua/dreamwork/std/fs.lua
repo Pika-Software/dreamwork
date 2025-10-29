@@ -4,9 +4,12 @@ local dreamwork = _G.dreamwork
 ---@class dreamwork.std
 local std = dreamwork.std
 local engine = dreamwork.engine
+local dreamwork_logger = dreamwork.Logger
+
+local engine_hookCatch = engine.hookCatch
+local engine_hookCall = engine.hookCall
 
 local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
-local engine_hookCall = engine.hookCall
 local setmetatable = std.setmetatable
 local tostring = std.tostring
 
@@ -213,8 +216,8 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
     ---@diagnostic disable-next-line: duplicate-set-field
     function timer.Create( identifier, delay, repetitions, event_fn )
         if identifier == "__ASYNCIO_THINK" then
-            dreamwork.Logger:debug( "Catched 'gm_asyncio' tick event %s, re-attaching to dreamwork engine...", event_fn )
-            engine.hookCatch( "Tick", event_fn, 1 )
+            dreamwork_logger:debug( "Catched 'gm_asyncio' tick event %s, re-attaching to dreamwork engine...", event_fn )
+            engine_hookCatch( "Tick", event_fn, 1 )
         else
             timer_Create( identifier, delay, repetitions, event_fn )
         end
@@ -332,9 +335,9 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
             return f
         end
 
-        dreamwork.Logger:info( "'asyncio' was loaded & connected as file system driver." )
+        dreamwork_logger:info( "'asyncio' was loaded & connected as file system driver." )
     else
-        dreamwork.Logger:error( "'asyncio' failed to load, unknown error." )
+        dreamwork_logger:error( "'asyncio' failed to load, unknown error." )
     end
 
     timer.Create = timer_Create
@@ -417,7 +420,7 @@ if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_writ
         return f
     end
 
-    dreamwork.Logger:info( "'async_write' was loaded & connected as file system driver." )
+    dreamwork_logger:info( "'async_write' was loaded & connected as file system driver." )
 
 end
 
@@ -664,6 +667,7 @@ local names = {}
 
 do
 
+    ---@type table<integer, boolean>
     local invalid_characters = {
         [ 0x22 ] = true, -- "
         [ 0x27 ] = true, -- '
@@ -778,9 +782,9 @@ setmetatable( sizes, {
 } )
 
 ---@type table<dreamwork.std.fs.Object, integer>
-local times = {}
+local modified_times = {}
 
-setmetatable( times, {
+setmetatable( modified_times, {
     ---@param fs_object dreamwork.std.fs.Object
     __index = function( self, fs_object )
         local object_time
@@ -990,7 +994,7 @@ local function insert( parent_directory, descendant )
 
     update_path( descendant, parent_directory )
 
-    times[ parent_directory ] = nil
+    modified_times[ parent_directory ] = nil
     size_add( parent_directory, sizes[ descendant ] )
 end
 
@@ -1007,9 +1011,9 @@ local function eject( parent_directory, name )
     size_add( parent_directory, -sizes[ descendant ] )
 
     if mount_points[ descendant ] == nil then
-        times[ parent_directory ] = time_now()
+        modified_times[ parent_directory ] = time_now()
     else
-        times[ parent_directory ] = nil
+        modified_times[ parent_directory ] = nil
     end
 
     update_path( descendant, nil )
@@ -1106,17 +1110,17 @@ if std.loadbinary( "efsw" ) then
     ---@diagnostic disable-next-line: duplicate-set-field
     function hook.Add( event_name, identifier, event_fn )
         if event_name == "Think" and identifier == "__ESFW_THINK" then
-            dreamwork.Logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", event_fn )
-            engine.hookCatch( "Tick", event_fn, 1 )
+            dreamwork_logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", event_fn )
+            engine_hookCatch( "Tick", event_fn, 1 )
         else
             hook_Add( event_name, identifier, event_fn )
         end
     end
 
     if std.loadbinary( "efsw" ) then
-        dreamwork.Logger:info( "'gm_efsw' was loaded & connected as file system watcher." )
+        dreamwork_logger:info( "'gm_efsw' was loaded & connected as file system watcher." )
     else
-        dreamwork.Logger:error( "'gm_efsw' failed to load, unknown error." )
+        dreamwork_logger:error( "'gm_efsw' failed to load, unknown error." )
     end
 
     hook.Add = hook_Add
@@ -1166,8 +1170,8 @@ if std.loadbinary( "efsw" ) then
     ---
     --- Stops monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Object
-    ---@return boolean success
+    ---@param fs_object dreamwork.std.fs.Object The file or directory to stop monitoring.
+    ---@return boolean success `true` if the file or directory was successfully unwatched, `false` otherwise.
     function watchdog.unwatch( fs_object )
         local watch_id = watch_ids[ fs_object ]
         if watch_id == nil then
@@ -1281,7 +1285,7 @@ else
                 if file_mount_point ~= nil then
                     content_count = content_count + 1
                     content_list[ content_count ] = file_object
-                    times[ file_object ] = file_Time( mount_paths[ file_object ] or names[ file_object ], file_mount_point )
+                    modified_times[ file_object ] = file_Time( mount_paths[ file_object ] or names[ file_object ], file_mount_point )
                 end
             end
 
@@ -1292,7 +1296,7 @@ else
                 if directory_mount_point ~= nil then
                     content_count = content_count + 1
                     content_list[ content_count ] = directory_object
-                    times[ directory_object ] = file_Time( mount_paths[ directory_object ] or "", directory_mount_point )
+                    modified_times[ directory_object ] = file_Time( mount_paths[ directory_object ], directory_mount_point )
                 end
             end
 
@@ -1306,7 +1310,7 @@ else
         watch_list[ watch_list_size ] = fs_object
         watch_map[ fs_object ] = watch_list_size
 
-        times[ fs_object ] = file_Time( mount_path, mount_point )
+        modified_times[ fs_object ] = file_Time( mount_path, mount_point )
 
         return true, watch_list_size
     end
@@ -1315,10 +1319,11 @@ else
     ---
     --- Stops monitoring a file or directory.
     ---
-    ---@param fs_object dreamwork.std.fs.Object
+    ---@param fs_object dreamwork.std.fs.Object The file or directory to stop monitoring.
+    ---@return boolean success `true` if the file or directory was successfully unwatched, `false` otherwise.
     function watchdog.unwatch( fs_object )
         if watch_map[ fs_object ] == nil then
-            return
+            return false
         end
 
         for i = watch_list_size, 1, -1 do
@@ -1330,6 +1335,8 @@ else
         end
 
         watch_map[ fs_object ] = nil
+
+        return true
     end
 
     --- [SHARED AND MENU]
@@ -1373,8 +1380,8 @@ else
             end
         end
 
-        engine.hookCatch( "fs.Directory.__gc", on_gc, 1 )
-        engine.hookCatch( "fs.File.__gc", on_gc, 1 )
+        engine_hookCatch( "fs.Directory.__gc", on_gc, 1 )
+        engine_hookCatch( "fs.File.__gc", on_gc, 1 )
 
     end
 
@@ -1387,9 +1394,9 @@ else
             return
         end
 
-        local last_modified = file_Time( mount_path, mount_point )
+        local modified_time = file_Time( mount_path, mount_point )
 
-        if times[ fs_object ] == last_modified then
+        if modified_time == modified_times[ fs_object ] then
             local content_list = content_lists[ fs_object ]
             if content_list == nil then
                 return
@@ -1511,7 +1518,7 @@ else
         -- std.printf( "watchdog: %f s", time.tick() )
     end, 1 )
 
-    dreamwork.Logger:info( "'watchdog' was loaded & connected as file system watcher." )
+    dreamwork_logger:info( "'dreamwork' was connected as file system watcher." )
 
 end
 
@@ -1560,7 +1567,7 @@ function File:__index( key )
     elseif key == "size" then
         return sizes[ self ]
     elseif key == "time" then
-        return times[ self ]
+        return modified_times[ self ]
     elseif key == "path" then
         return paths[ self ]
     elseif key == "parent" then
@@ -1616,9 +1623,8 @@ function File:touch()
 
     ---@cast mount_info dreamwork.std.fs.MountInfo
 
-    local name = names[ self ]
-
-    if not mount_info.writable_extensions[ path_getExtension( name, false ) ] then
+    local file_name = names[ self ]
+    if not mount_info.writable_extensions[ path_getExtension( file_name, false ) ] then
         std.errorf( 2, false, "'%s' cannot be touched with its name, parent directory is not allowing this extension.", self )
     end
 
@@ -2013,7 +2019,7 @@ function Directory:__index( key )
     elseif key == "size" then
         return sizes[ self ]
     elseif key == "time" then
-        return times[ self ]
+        return modified_times[ self ]
     elseif key == "path" then
         return paths[ self ]
     elseif key == "writable" then
@@ -2187,14 +2193,14 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
 
                 if descendant_mount_point == nil then
                     size = sizes[ descendant ]
-                    unix_time = times[ descendant ]
+                    unix_time = modified_times[ descendant ]
                 else
                     local descendant_mount_path = mount_paths[ descendant ] or ""
                     size = file_Size( descendant_mount_path, descendant_mount_point )
                     unix_time = file_Time( descendant_mount_path, descendant_mount_point )
                 end
 
-                times[ descendant ] = unix_time
+                modified_times[ descendant ] = unix_time
                 sizes[ descendant ] = size
 
                 size_add( self, size )
@@ -2349,7 +2355,7 @@ function Directory:touch()
     file_Delete( mount_path, mount_point )
 
     local new_time = file_Time( mount_paths[ self ] or "", mount_point )
-    times[ self ] = new_time
+    modified_times[ self ] = new_time
     return new_time
 end
 
