@@ -947,6 +947,22 @@ dofile( "std/time.lua" )
 
 local time = std.time
 
+if coroutine.wait == nil then
+
+    local coroutine_yield = coroutine.yield
+    local time_elapsed = time.elapsed
+
+    ---@async
+    function coroutine.wait( seconds )
+        local end_time = time_elapsed() + seconds
+        while true do
+            if end_time < time_elapsed() then return end
+            coroutine_yield()
+        end
+    end
+
+end
+
 dofile( "std/version.lua" )
 dofile( "std/bigint.lua" )
 dofile( "std/color.lua" )
@@ -1663,16 +1679,16 @@ do
 
     local bytepack_writeUInt32 = std.pack.bytes.writeUInt32
 
-    logger:info( "dreamwork.engine / Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
+    logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
 
     ---@param game_info dreamwork.engine.GameInfo
     engine.hookCatch( "engine.Game.mounted", function( game_info )
-        logger:debug( "dreamwork.engine / Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
+        logger:debug( "Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param game_info dreamwork.engine.GameInfo
     engine.hookCatch( "engine.Game.unmounted", function( game_info )
-        logger:debug( "dreamwork.engine / Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
+        logger:debug( "Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
@@ -1680,26 +1696,26 @@ do
         local folder = string_format( "gma_%x%x%x%x", bytepack_writeUInt32( addon_info.index ) )
         addon_info.folder = folder
 
-        logger:debug( "dreamwork.engine / Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
+        logger:debug( "Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
     end, 1 )
 
     ---@param addon_info dreamwork.engine.AddonInfo
     engine.hookCatch( "engine.Addon.unmounted", function( addon_info )
-        logger:debug( "dreamwork.engine / Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
+        logger:debug( "Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
     end, 1 )
 
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )
 
     local function perform_synchronization()
-        logger:debug( "dreamwork.engine / Game content change triggered, synchronization..." )
+        logger:debug( "Game content change triggered, synchronization..." )
         time.tick( "ms", false )
 
         local game_changes, addon_changes = engine.SyncContent()
 
         if game_changes == 0 and addon_changes == 0 then
-            logger:debug( "dreamwork.engine / No changes found, skipped." )
+            logger:debug( "No changes found, skipped." )
         else
-            logger:debug( "dreamwork.engine / Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
+            logger:debug( "Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
         end
     end
 
@@ -1973,22 +1989,6 @@ end
 
 dofile( "std/server.lua" )
 dofile( "std/level.lua" )
-
-if coroutine.wait == nil then
-
-    local server_getUptime = std.server.getUptime
-    local coroutine_yield = coroutine.yield
-
-    ---@async
-    function coroutine.wait( seconds )
-        local endtime = server_getUptime() + seconds
-        while true do
-            if endtime < server_getUptime() then return end
-            coroutine_yield()
-        end
-    end
-
-end
 
 if CLIENT or SERVER then
     dofile( "std/physics.lua" )
