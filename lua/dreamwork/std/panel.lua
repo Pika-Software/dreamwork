@@ -55,7 +55,7 @@ do
 
 end
 
-if std.CLIENT then
+if std.LUA_CLIENT then
 
     local GetHUDPanel = _G.GetHUDPanel
 
@@ -65,7 +65,7 @@ if std.CLIENT then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     local GetOverlayPanel = _G.GetOverlayPanel
 

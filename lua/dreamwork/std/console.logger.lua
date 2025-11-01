@@ -8,11 +8,11 @@ local realm_color = color_scheme.realm
 
 local realm_text
 
-if std.MENU then
+if std.LUA_MENU then
     realm_text = "[Main Menu] "
-elseif std.CLIENT then
+elseif std.LUA_CLIENT then
     realm_text = "[ Client ]  "
-elseif std.SERVER then
+elseif std.LUA_SERVER then
     realm_text = "[ Server ]  "
 else
     realm_text = "[ Unknown ] "

@@ -48,7 +48,7 @@ do
 end
 
 
-if std.CLIENT then
+if std.LUA_CLIENT then
     level.getSunInfo = level.getSunInfo or glua_util.GetSunInfo
     level.redownloadLightmaps = level.redownloadLightmaps or _G.render.RedownloadAllLightmaps
 end
@@ -91,7 +91,7 @@ if std.SHARED then
 
 end
 
-if std.SERVER then
+if std.LUA_SERVER then
 
     level.changeLightStyle = level.changeLightStyle or glua_engine.LightStyle
     level.getCounter = level.getCounter or glua_game.GetGlobalCounter
@@ -190,7 +190,7 @@ if std.SERVER then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     --- [SHARED AND MENU]
     ---
@@ -198,9 +198,7 @@ if std.MENU then
     local save = {}
     level.save = save
 
-    if std.MENU then
-        save.getFileDetails = _G.GetSaveFileDetails
-    end
+    save.getFileDetails = _G.GetSaveFileDetails
 
     -- TODO: https://wiki.facepunch.com/gmod/engine.WriteSave
 

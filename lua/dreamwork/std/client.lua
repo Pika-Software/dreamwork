@@ -31,7 +31,7 @@ if _G.render ~= nil then
 
 end
 
-if std.CLIENT then
+if std.LUA_CLIENT then
 
     do
 
@@ -123,7 +123,7 @@ if std.CLIENT then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
     client.isConnected = _G.IsInGame
     client.isConnecting = _G.IsInLoading
 else
@@ -154,7 +154,7 @@ do
     local console_Command = console.Command
     local console_Variable = console.Variable
 
-    if std.CLIENT then
+    if std.LUA_CLIENT then
 
         --- [CLIENT AND MENU]
         ---
@@ -212,7 +212,7 @@ do
         return true, "/screenshots/" .. fileName .. ".jpg"
     end
 
-    if std.CLIENT then
+    if std.LUA_CLIENT then
         client.connect = client.connect or _G.permissions.AskToConnect
     else
         client.connect = client.connect or _G.JoinServer or _G.permissions.Connect

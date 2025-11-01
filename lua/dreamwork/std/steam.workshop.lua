@@ -175,7 +175,7 @@ local ERemoteStoragePublishedFileVisibility = {
 
 local default_timeout = std.http.Timeout
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
 
     --- [CLIENT AND MENU]
     ---
@@ -553,7 +553,7 @@ do
 
 end
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
 
     --- [CLIENT AND MENU]
     ---
@@ -620,7 +620,7 @@ if std.CLIENT_MENU then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     --- [MENU]
     ---
@@ -694,7 +694,7 @@ end
 
 -- https://github.com/WilliamVenner/gmsv_workshop
 ---@diagnostic disable-next-line: undefined-field
-if SERVER and not ( std.isTable( _G.steamworks ) and std.isFunction( _G.steamworks.DownloadUGC ) ) then
+if std.LUA_SERVER and not ( std.isTable( _G.steamworks ) and std.isFunction( _G.steamworks.DownloadUGC ) ) then
     if std.loadbinary( "workshop" ) then
         dreamwork.Logger:info( "'gmsv_workshop' was loaded & connected as server-side Steam Workshop API." )
     else
@@ -884,7 +884,7 @@ do
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     local string_byte, string_sub = string.byte, string.sub
     local steamworks_Publish = glua_steamworks.Publish

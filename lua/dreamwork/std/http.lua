@@ -30,7 +30,7 @@ if std.loadbinary( "reqwest" ) then
     end
 
     client_name = "reqwest"
-elseif std.SHARED and std.loadbinary( "chttp" ) then
+elseif std.LUA_CLIENT_SERVER and std.loadbinary( "chttp" ) then
     ---@diagnostic disable-next-line: undefined-field
     http_client = _G.CHTTP
     client_name = "chttp"
@@ -144,8 +144,8 @@ do
     local cvar_options = {
         name = "dreamwork.http.timeout",
         description = "The default timeout for http requests.",
-        replicated = not std.MENU,
-        archive = std.SERVER_MENU,
+        replicated = not std.LUA_MENU,
+        archive = std.LUA_MENU_SERVER,
         type = "float",
         default = 10,
         min = 0,
@@ -448,7 +448,7 @@ function http.head( url, headers, timeout )
     } )
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     local json_deserialize = std.encoding.json.deserialize
     local glua_GetAPIManifest = _G.GetAPIManifest

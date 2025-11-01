@@ -6,9 +6,11 @@ local dreamwork = _G.dreamwork
 ---@class dreamwork.std
 local std = dreamwork.std
 
-if std.console ~= nil then
+if std.console then
     return
 end
+
+local LUA_SERVER = std.LUA_SERVER
 
 local engine = dreamwork.engine
 local engine_consoleCommandRun = engine.consoleCommandRun
@@ -19,10 +21,10 @@ local engine_consoleCommandRun = engine.consoleCommandRun
 ---
 ---@class dreamwork.std.console
 ---@field visible boolean `true` if the console is visible, `false` otherwise.
-local console = std.console or { visible = std.SERVER }
+local console = std.console or { visible = LUA_SERVER }
 std.console = console
 
-if std.MENU then
+if std.LUA_MENU then
 
     --- [MENU]
     ---
@@ -50,7 +52,7 @@ if std.MENU then
 
 end
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
 
     local gui_IsConsoleVisible = _G.gui.IsConsoleVisible or function() return false end
 
@@ -310,7 +312,7 @@ do
         end
     end
 
-    if std.CLIENT_MENU then
+    if std.LUA_CLIENT_MENU then
 
         local translateAlias = _G.input ~= nil and _G.input.TranslateAlias
 
@@ -1241,7 +1243,7 @@ do
         ---@param name string The name of the console variable.
         ---@param value dreamwork.std.console.Variable.value The value to set.
         function VariableClass.set( name, value )
-            if bit_band( getFlags( name ), 8192 ) ~= 0 and not SERVER then
+            if bit_band( getFlags( name ), 8192 ) ~= 0 and not LUA_SERVER then
                 error( "replicated convar is cannot be changed by client.", 2 )
             end
 

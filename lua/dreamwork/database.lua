@@ -101,7 +101,7 @@ do
 end
 
 --- repositories
-if std.SERVER then
+if std.LUA_SERVER then
 
     ---@class dreamwork.repositories
     local repositories = {}
@@ -392,7 +392,7 @@ do
                 sqlite_rawQuery( "drop table if exists 'dreamwork.repository'" )
                 sqlite_rawQuery( "drop table if exists 'dreamwork.packages'" )
 
-                if std.SERVER then
+                if std.LUA_SERVER then
                     sqlite_rawQuery( "create table 'dreamwork.repositories' ( id integer primary key autoincrement, url text unique not null )" )
                     sqlite_rawQuery( [[
                         create table 'dreamwork.packages' (

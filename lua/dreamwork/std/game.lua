@@ -73,7 +73,7 @@ do
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     local SetMounted = glua_game.SetMounted
     local tostring = std.tostring
@@ -90,7 +90,7 @@ if std.MENU then
 
 end
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
     do
 
         --- [CLIENT AND MENU]
@@ -107,7 +107,7 @@ if std.CLIENT_MENU then
             isPlaying = glua_engine.IsPlayingDemo
         }
 
-        if std.MENU then
+        if std.LUA_MENU then
             demo.getFileDetails = _G.GetDemoFileDetails
         end
 
@@ -184,7 +184,7 @@ if std.CLIENT_MENU then
 
 end
 
-if std.CLIENT then
+if std.LUA_CLIENT then
 
     game.getTimeoutInfo = _G.GetTimeoutInfo
 

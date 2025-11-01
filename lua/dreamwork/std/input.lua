@@ -20,7 +20,7 @@ local Command_run = std.console.Command.run
 local input = std.input or {}
 std.input = input
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
 
     -- TODO: use ANALOG somewhere
 
@@ -297,7 +297,7 @@ if std.CLIENT_MENU then
         binding.key = binding.key or glua_input.LookupBinding
         binding.get = binding.get or glua_input.LookupKeyBinding
 
-        if std.MENU then
+        if std.LUA_MENU then
 
             local table_concat = std.table.concat
             local key_getName = input.key.getName
@@ -333,7 +333,7 @@ if std.CLIENT_MENU then
 
 end
 
-if std.CLIENT then
+if std.LUA_CLIENT then
 
     --- [CLIENT]
     ---
@@ -377,7 +377,7 @@ if std.CLIENT then
 
 end
 
-if std.CLIENT_SERVER then
+if std.LUA_CLIENT_SERVER then
 
     --- [CLIENT AND SERVER]
     ---
@@ -389,7 +389,7 @@ if std.CLIENT_SERVER then
     local kinect = input.kinect or {}
     input.kinect = kinect
 
-    if std.CLIENT then
+    if std.LUA_CLIENT then
         local available
         if std.loadbinary( "rekinect" ) then
             dreamwork.Logger:info( "'rekinect' was loaded & connected as Kinect API." )
@@ -425,7 +425,7 @@ if std.CLIENT_SERVER then
                 SENSORBONE.HAND_TIP_RIGHT = 25
                 SENSORBONE.THUMB_RIGHT = 26
 
-                if SERVER then
+                if std.LUA_SERVER then
                     util.AddNetworkString("gmcl_rekinect_extended_bones")
                 end
 
@@ -434,7 +434,7 @@ if std.CLIENT_SERVER then
 
                 net.Receive("gmcl_rekinect_extended_bones", function(len, ply)
                     if len == 0 then return end -- Checking if server supports extended bones
-                    local id = CLIENT and net.ReadUInt(32) or ply:UserID()
+                    local id = std.LUA_CLIENT and net.ReadUInt(32) or ply:UserID()
                     local cmdNumber = net.ReadUInt(32)
                     local clear = net.ReadBool()
 
@@ -451,7 +451,7 @@ if std.CLIENT_SERVER then
                         playerExtendedBones[SENSORBONE.HAND_TIP_RIGHT] = net.ReadVector()
                         playerExtendedBones[SENSORBONE.THUMB_RIGHT] = net.ReadVector()
 
-                        if SERVER then
+                        if std.LUA_SERVER then
                             net.Start("gmcl_rekinect_extended_bones", true)
                             net.WriteUInt(id, 32)
                             net.WriteUInt(cmdNumber, 32)
@@ -472,7 +472,7 @@ if std.CLIENT_SERVER then
                             cmdNumber = cmdNumber
                         }
 
-                        if SERVER then
+                        if std.LUA_SERVER then
                             net.Start("gmcl_rekinect_extended_bones")
                             net.WriteUInt(id, 32)
                             net.WriteUInt(cmdNumber, 32)
@@ -506,7 +506,7 @@ if std.CLIENT_SERVER then
                     end
                 end
 
-                if CLIENT then
+                if std.LUA_CLIENT then
                     chat.AddText(Color(0, 255, 0), "gmcl_rekinect: Server supports Xbox One Kinect extra bones.")
                     local GetSkeleton = motionsensor.GetSkeleton
 
@@ -557,7 +557,7 @@ if std.CLIENT_SERVER then
                 end
             else
                 -- Pollyfill motionsensor.GetSkeleton
-                if CLIENT then
+                if std.LUA_CLIENT then
                     chat.AddText(Color(255, 0, 0), "gmcl_rekinect: Server does not support Xbox One Kinect extra bones.")
 
                     if not motionsensor.GetSkeleton then
@@ -598,9 +598,9 @@ if std.CLIENT_SERVER then
             end
         end
 
-        local serverSupportsExtendedBones = SERVER or util.NetworkStringToID("gmcl_rekinect_extended_bones") ~= 0
+        local serverSupportsExtendedBones = std.LUA_SERVER or util.NetworkStringToID("gmcl_rekinect_extended_bones") ~= 0
 
-        if CLIENT and not game.IsDedicated() and not serverSupportsExtendedBones then
+        if std.LUA_CLIENT and not game.IsDedicated() and not serverSupportsExtendedBones then
             hook.Add("Tick", "gmcl_rekinect_extended_bones", function()
                 if util.NetworkStringToID("gmcl_rekinect_extended_bones") ~= 0 then
                     init(true)

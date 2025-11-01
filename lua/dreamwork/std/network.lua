@@ -55,7 +55,7 @@ local NetworkClass = std.class.create( Network )
 std.Network = NetworkClass
 
 
--- if SERVER then
+-- if std.LUA_SERVER then
 
 --     local msg = std.Message( "test" )
 

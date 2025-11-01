@@ -7,9 +7,7 @@ local std = dreamwork.std
 
 local math = std.math
 local debug = std.debug
-local string = std.string
 
-local MENU = std.MENU
 local raw_pairs = std.raw.pairs
 local debug_fempty = debug.fempty
 local setmetatable = std.setmetatable
@@ -151,7 +149,7 @@ do
 
 end
 
-if MENU then
+if std.LUA_MENU then
 
     do
 
@@ -1068,7 +1066,7 @@ end
 
 local glua_util = _G.util
 
-if std.SHARED and engine.networkRegister == nil then
+if std.LUA_CLIENT_SERVER and engine.networkRegister == nil then
 
     local add_fn = glua_util ~= nil and glua_util.AddNetworkString or debug_fempty
     local get_id_fn = glua_util ~= nil and glua_util.NetworkStringToID or debug_fempty

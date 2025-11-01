@@ -17,7 +17,7 @@ local player = {
 
 -- TODO: bots, alive, dead, all iterator/s
 
-if std.SERVER then
+if std.LUA_SERVER then
     -- local PLAYER_IsListenServerHost = PLAYER.IsListenServerHost
     -- local player_CreateNextBot = glua_player.CreateNextBot
 
@@ -38,7 +38,7 @@ if std.SERVER then
     --         return NULL
     --     end
     -- end
-elseif std.CLIENT then
+elseif std.LUA_CLIENT then
     -- local LocalPlayer = _G.LocalPlayer
 
     -- function PLAYER.new( value )

@@ -23,8 +23,14 @@ end
 ---
 ---@class dreamwork.std
 ---@field LUA_VERSION string The version of the Lua interpreter.
----@field GAME_VERSION integer The version of the game. (Garry's Mod)
----@field SYSTEM_ENDIANNESS `true` if the operating system is big endianness, `false` if not.
+---@field LUA_MENU boolean `true` if code is running on the menu, `false` otherwise.
+---@field LUA_CLIENT boolean `true` if code is running on the client, `false` otherwise.
+---@field LUA_CLIENT_MENU boolean `true` if code is running on the client or menu, `false` otherwise.
+---@field LUA_CLIENT_SERVER boolean `true` if code is running on the client or server, `false` otherwise.
+---@field LUA_SERVER boolean `true` if code is running on the server, `false` otherwise.
+---@field GAME_VERSION integer Contains the version number of the game. For example: `201211` = `01.01.2012`
+---@field GAME_BRANCH string The branch the game is running on. This will be `unknown` on main branch.
+---@field SYSTEM_ENDIANNESS boolean `true` if the operating system is big endianness, `false` if little endianness.
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
 ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
@@ -48,6 +54,25 @@ std.LUA_VERSION = _G._VERSION or "unknown"
 
 ---@diagnostic disable-next-line: assign-type-mismatch
 std.GAME_VERSION = _G.VERSION or 0
+std.GAME_BRANCH = _G.BRANCH or "unknown"
+
+local LUA_MENU = _G.MENU_DLL == true
+std.LUA_MENU = LUA_MENU
+
+local LUA_CLIENT = _G.CLIENT == true and not LUA_MENU
+std.LUA_CLIENT = LUA_CLIENT
+
+local LUA_SERVER = _G.SERVER == true and not LUA_MENU
+std.LUA_SERVER = LUA_SERVER
+
+local LUA_CLIENT_MENU = LUA_CLIENT or LUA_MENU
+std.LUA_CLIENT_MENU = LUA_CLIENT_MENU
+
+local LUA_MENU_SERVER = LUA_SERVER or LUA_MENU
+std.LUA_MENU_SERVER = LUA_MENU_SERVER
+
+local LUA_CLIENT_SERVER = LUA_CLIENT or LUA_SERVER
+std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 
 ---@diagnostic disable-next-line: undefined-field
 local dofile = _G.include or _G.dofile
@@ -77,7 +102,6 @@ dreamwork.VERSION = version
 dreamwork.PREFIX = "dreamwork@" .. version
 
 dofile( "detour.lua" )
-dofile( "std/constants.lua" )
 
 --- [SHARED AND MENU]
 ---
@@ -139,10 +163,8 @@ std.setfenv = _G.setfenv -- removed in Lua 5.2
 std.xpcall = _G.xpcall
 std.pcall = _G.pcall
 
-local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
-
 -- client-side files
-if SERVER then
+if LUA_SERVER then
 
     ---@diagnostic disable-next-line: undefined-field
     local AddCSLuaFile = _G.AddCSLuaFile
@@ -231,7 +253,7 @@ if transducers == nil then
 
 end
 
-if CLIENT or SERVER then
+if LUA_CLIENT_SERVER then
 
     ---@diagnostic disable-next-line: undefined-field
     local glua_util = _G.util
@@ -1016,11 +1038,11 @@ do
     color_scheme.dreamwork_server = Color( 5, 170, 250 )
 
     -- Dynamic
-    if CLIENT then
+    if LUA_CLIENT then
         color_scheme.realm = color_scheme.dreamwork_client
         color_scheme.message = color_scheme.client_message
         color_scheme.error = color_scheme.client_error
-    elseif MENU then
+    elseif LUA_MENU then
         color_scheme.realm = color_scheme.dreamwork_menu
         color_scheme.message = color_scheme.menu_message
         color_scheme.error = color_scheme.menu_error
@@ -1422,7 +1444,7 @@ dofile( "std/console.logger.lua")
 
 local console_Variable = std.console.Variable
 
-if SERVER then
+if LUA_SERVER then
 
     -- https://github.com/Facepunch/garrysmod-requests/issues/2793
     local sv_defaultdeployspeed = console_Variable.get( "sv_defaultdeployspeed", "number" )
@@ -1521,7 +1543,7 @@ if std_metatable == nil then
         end
     end
 
-    if CLIENT then
+    if LUA_CLIENT then
 
         local time_elapsed = time.elapsed
 
@@ -1590,7 +1612,7 @@ do
 
     local name
 
-    local cvar = std.console.Variable.get( SERVER and "hostname" or "name", "string" )
+    local cvar = std.console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
     if cvar == nil then
         name = "stranger"
     else
@@ -1923,7 +1945,7 @@ dofile( "std/steam.workshop.lua" )
 
 dofile( "std/addon.lua" )
 
-if ( CLIENT or MENU ) then
+if LUA_CLIENT_MENU then
     dofile( "std/window.lua" )
     dofile( "std/menu.lua" )
     dofile( "std/client.lua" )
@@ -1962,7 +1984,7 @@ if glua_system ~= nil then
 
     end
 
-    if ( CLIENT or MENU ) then
+    if LUA_CLIENT_MENU then
 
         local system_HasFocus = glua_system.HasFocus
         if system_HasFocus ~= nil then
@@ -1990,7 +2012,7 @@ end
 dofile( "std/server.lua" )
 dofile( "std/level.lua" )
 
-if CLIENT or SERVER then
+if LUA_CLIENT_SERVER then
     dofile( "std/physics.lua" )
     dofile( "std/entity.lua" )
     dofile( "std/player.lua" )
@@ -2005,7 +2027,7 @@ if std.LUA_VERSION ~= "Lua 5.1" then
     logger:warn( "Lua version changed, possible unpredictable behavior. (" .. std.LUA_VERSION .. ")" )
 end
 
-if CLIENT or SERVER then
+if LUA_CLIENT_SERVER then
     dofile( "transport.lua" )
 end
 
@@ -2025,7 +2047,7 @@ do
 
 end
 
-if CLIENT or SERVER then
+if LUA_CLIENT_SERVER then
     logger:info( "Preparing the transport to begin connection..." )
     dreamwork.transport.startup()
 end

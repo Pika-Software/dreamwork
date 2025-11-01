@@ -57,7 +57,7 @@ if server.getGamemodeName == nil then
         end
     end
 
-    if std.SHARED and server.getGamemode == nil and server.setGamemode == nil then
+    if std.LUA_CLIENT_SERVER and server.getGamemode == nil and server.setGamemode == nil then
 
         ---@type dreamwork.std.Gamemode | nil
         local gamemode_value = nil
@@ -157,7 +157,7 @@ end
 
 server.getUptime = server.getUptime or _G.UnPredictedCurTime
 
-if std.CLIENT and server.Tick == nil then
+if std.LUA_CLIENT and server.Tick == nil then
 
     --- [CLIENT]
     ---
@@ -169,7 +169,7 @@ if std.CLIENT and server.Tick == nil then
 
 end
 
-if std.CLIENT_MENU then
+if std.LUA_CLIENT_MENU then
 
     server.getFrameTime = glua_engine.ServerFrameTime or function() return 0, 0 end
 
@@ -182,7 +182,7 @@ if std.CLIENT_MENU then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     --- [MENU]
     ---
@@ -240,7 +240,7 @@ if server.getName == nil then
         return dreamwork_server_hostname.value
     end
 
-    if std.SERVER then
+    if std.LUA_SERVER then
 
         local hostname = console_Variable.get( "hostname", "string" )
 
@@ -273,7 +273,7 @@ if server.getName == nil then
 
 end
 
-if std.SHARED then
+if std.LUA_CLIENT_SERVER then
 
     server.getTimeScale = glua_game.GetTimeScale or function() return 1 end
 
@@ -308,7 +308,7 @@ if std.SHARED then
 
 end
 
-if std.SERVER then
+if std.LUA_SERVER then
 
     game.setTimeScale = glua_game.SetTimeScale or std.debug.fempty
     game.close = glua_engine.CloseServer
@@ -514,7 +514,7 @@ if std.SERVER then
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     local futures_Future = std.futures.Future
     local glua_serverlist = _G.serverlist

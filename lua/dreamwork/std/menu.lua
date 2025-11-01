@@ -55,7 +55,7 @@ else
 
 end
 
-if std.MENU then
+if std.LUA_MENU then
 
     menu.getWorkshopStatus = _G.GetAddonStatus
 
@@ -294,7 +294,7 @@ do
         return console_Variable.getBoolean( "mat_vsync" )
     end
 
-    if std.MENU then
+    if std.LUA_MENU then
 
         --- [MENU]
         ---

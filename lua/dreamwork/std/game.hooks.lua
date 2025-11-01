@@ -15,7 +15,7 @@ do
         ---
         --- A hook that is called every tick.
         local Tick = Hook( "game.Tick" )
-        engine_hookCatch( "Tick", Tick, std.CLIENT_MENU and 2 or 1 )
+        engine_hookCatch( "Tick", Tick, std.LUA_CLIENT_MENU and 2 or 1 )
         game.Tick = Tick
 
     end

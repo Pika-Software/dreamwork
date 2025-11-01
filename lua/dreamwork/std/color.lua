@@ -924,7 +924,7 @@ function ColorClass.fromCMYK( cyan, magenta, yellow, black )
     return from_rgba( 0, 0, 0, 255 ):fromCMYK( cyan, magenta, yellow, black )
 end
 
-if std.CLIENT then
+if std.LUA_CLIENT then
 
     local render_ReadPixel
 

@@ -3,15 +3,17 @@ local dreamwork = _G.dreamwork
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local LUA_SERVER = std.LUA_SERVER
+
 local console_Command = std.console.Command
 
 local receiver_prefix
 
-if std.CLIENT then
+if std.LUA_CLIENT then
     receiver_prefix = "client"
-elseif std.SERVER then
+elseif LUA_SERVER then
     receiver_prefix = "server"
-elseif std.MENU then
+elseif std.LUA_MENU then
     receiver_prefix = "menu"
 else
     receiver_prefix = "unknown"
@@ -50,7 +52,7 @@ dreamwork.engine.consoleCommandCatch( function( sender, name, args )
     local message = messages[ name ]
     if message ~= nil then
 
-        if not SERVER then
+        if not LUA_SERVER then
             sender = nil
         end
 
@@ -81,7 +83,7 @@ function Message:send( data, pl, realm )
 
     local hex_data = std.encoding.base64.encode( data )
 
-    if SERVER then
+    if LUA_SERVER then
         pl:ConCommand( "dreamwork.inet." .. (realm or "client") .. "." .. self.name .. " " .. hex_data )
         return
     end

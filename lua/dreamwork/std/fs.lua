@@ -9,7 +9,7 @@ local dreamwork_logger = dreamwork.Logger
 local engine_hookCatch = engine.hookCatch
 local engine_hookCall = engine.hookCall
 
-local CLIENT, SERVER, MENU = std.CLIENT, std.SERVER, std.MENU
+local LUA_CLIENT, LUA_SERVER, LUA_MENU = std.LUA_CLIENT, std.LUA_SERVER, std.LUA_MENU
 local setmetatable = std.setmetatable
 local tostring = std.tostring
 
@@ -109,7 +109,7 @@ local mount_infos = {
     },
     [ "MOD" ] = {
         writable = false,
-        deletable = MENU,
+        deletable = LUA_MENU,
         writable_extensions = {}
     }
 }
@@ -122,7 +122,7 @@ do
     local is_edge = std.JIT_VERSION_INT ~= 20004
     local is_x86 = std.x86
 
-    local head = "lua/bin/gm" .. ( ( CLIENT and not MENU ) and "cl" or "sv" ) .. "_"
+    local head = "lua/bin/gm" .. ( LUA_CLIENT and "cl" or "sv" ) .. "_"
     local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( std.WINDOWS and 4 or 0 ) + ( std.LINUX and 2 or 0 ) + ( is_x86 and 1 or 0 ) + 1 ]
 
     --- [SHARED AND MENU]
@@ -170,7 +170,7 @@ do
 
     local sv_allowcslua
 
-    if SERVER then
+    if LUA_SERVER then
         sv_allowcslua = std.console.Variable.get( "sv_allowcslua", "boolean" )
     end
 
@@ -426,7 +426,7 @@ if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_writ
 
 end
 
-if async_read == nil and not MENU and file.AsyncRead ~= nil then
+if async_read == nil and not LUA_MENU and file.AsyncRead ~= nil then
 
     ---@type fun( file_path: string, game_path: string, callback: async_read_callback, sync: boolean ): integer
     local file_AsyncRead = file.AsyncRead
@@ -3157,7 +3157,7 @@ do
     local download = DirectoryClass( "download", "DOWNLOAD", "" )
     insert( workspace, download )
 
-    local lua = DirectoryClass( "lua", ( SERVER and "lsv" or ( CLIENT and "lcl" or ( MENU and "LuaMenu" or "LUA" ) ) ), "" )
+    local lua = DirectoryClass( "lua", ( LUA_SERVER and "lsv" or ( LUA_CLIENT and "lcl" or ( LUA_MENU and "LuaMenu" or "LUA" ) ) ), "" )
     insert( workspace, lua )
 
     local map = DirectoryClass( "map", "BSP", "" )

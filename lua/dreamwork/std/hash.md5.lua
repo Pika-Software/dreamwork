@@ -1,5 +1,4 @@
 -- Based on https://github.com/kikito/md5.lua
-
 local dreamwork = _G.dreamwork
 local std = dreamwork.std
 
@@ -7,18 +6,17 @@ local std = dreamwork.std
 local hash = std.hash
 
 local bit = std.bit
-local math = std.math
-local string = std.string
-
 local bit_bxor = bit.bxor
 local bit_band, bit_bor = bit.band, bit.bor
 local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
+local string = std.string
 local string_len = string.len
 local string_rep = string.rep
 local string_format = string.format
 local string_char, string_byte = string.char, string.byte
 
+local math = std.math
 local math_floor = math.floor
 
 local bytepack = std.pack.bytes
@@ -105,103 +103,103 @@ end
 ---
 --- Performs a single MD5 transformation.
 ---
+---@param in_str string
+---@param index integer
 ---@param in_a integer
 ---@param in_b integer
 ---@param in_c integer
 ---@param in_d integer
----@param in_str string
----@param index integer
 ---@return integer
 ---@return integer
 ---@return integer
 ---@return integer
-local function transform( in_a, in_b, in_c, in_d, in_str, index )
-    local x1 = bytepack_readUInt32( string_byte( in_str, index, index + 3 ) )
-    local x2 = bytepack_readUInt32( string_byte( in_str, index + 4, index + 7 ) )
-    local x3 = bytepack_readUInt32( string_byte( in_str, index + 8, index + 11 ) )
-    local x4 = bytepack_readUInt32( string_byte( in_str, index + 12, index + 15 ) )
-    local x5 = bytepack_readUInt32( string_byte( in_str, index + 16, index + 19 ) )
-    local x6 = bytepack_readUInt32( string_byte( in_str, index + 20, index + 23 ) )
-    local x7 = bytepack_readUInt32( string_byte( in_str, index + 24, index + 27 ) )
-    local x8 = bytepack_readUInt32( string_byte( in_str, index + 28, index + 31 ) )
-    local x9 = bytepack_readUInt32( string_byte( in_str, index + 32, index + 35 ) )
-    local x10 = bytepack_readUInt32( string_byte( in_str, index + 36, index + 39 ) )
-    local x11 = bytepack_readUInt32( string_byte( in_str, index + 40, index + 43 ) )
-    local x12 = bytepack_readUInt32( string_byte( in_str, index + 44, index + 47 ) )
-    local x13 = bytepack_readUInt32( string_byte( in_str, index + 48, index + 51 ) )
-    local x14 = bytepack_readUInt32( string_byte( in_str, index + 52, index + 55 ) )
-    local x15 = bytepack_readUInt32( string_byte( in_str, index + 56, index + 59 ) )
-    local x16 = bytepack_readUInt32( string_byte( in_str, index + 60, index + 63 ) )
+local function transform( in_str, index, in_a, in_b, in_c, in_d )
+    local uint32_1 = bytepack_readUInt32( string_byte( in_str, index, index + 3 ) )
+    local uint32_2 = bytepack_readUInt32( string_byte( in_str, index + 4, index + 7 ) )
+    local uint32_3 = bytepack_readUInt32( string_byte( in_str, index + 8, index + 11 ) )
+    local uint32_4 = bytepack_readUInt32( string_byte( in_str, index + 12, index + 15 ) )
+    local uint32_5 = bytepack_readUInt32( string_byte( in_str, index + 16, index + 19 ) )
+    local uint32_6 = bytepack_readUInt32( string_byte( in_str, index + 20, index + 23 ) )
+    local uint32_7 = bytepack_readUInt32( string_byte( in_str, index + 24, index + 27 ) )
+    local uint32_8 = bytepack_readUInt32( string_byte( in_str, index + 28, index + 31 ) )
+    local uint32_9 = bytepack_readUInt32( string_byte( in_str, index + 32, index + 35 ) )
+    local uint32_10 = bytepack_readUInt32( string_byte( in_str, index + 36, index + 39 ) )
+    local uint32_11 = bytepack_readUInt32( string_byte( in_str, index + 40, index + 43 ) )
+    local uint32_12 = bytepack_readUInt32( string_byte( in_str, index + 44, index + 47 ) )
+    local uint32_13 = bytepack_readUInt32( string_byte( in_str, index + 48, index + 51 ) )
+    local uint32_14 = bytepack_readUInt32( string_byte( in_str, index + 52, index + 55 ) )
+    local uint32_15 = bytepack_readUInt32( string_byte( in_str, index + 56, index + 59 ) )
+    local uint32_16 = bytepack_readUInt32( string_byte( in_str, index + 60, index + 63 ) )
 
     local out_a, out_b, out_c, out_d = in_a, in_b, in_c, in_d
 
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), x1, 7, 0xd76aa478 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), x2, 12, 0xe8c7b756 )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), x3, 17, 0x242070db )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), x4, 22, 0xc1bdceee )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), x5, 7, 0xf57c0faf )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), x6, 12, 0x4787c62a )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), x7, 17, 0xa8304613 )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), x8, 22, 0xfd469501 )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), x9, 7, 0x698098d8 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), x10, 12, 0x8b44f7af )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), x11, 17, 0xffff5bb1 )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), x12, 22, 0x895cd7be )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), x13, 7, 0x6b901122 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), x14, 12, 0xfd987193 )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), x15, 17, 0xa679438e )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), x16, 22, 0x49b40821 )
+    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_1, 7, 0xd76aa478 )
+    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_2, 12, 0xe8c7b756 )
+    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_3, 17, 0x242070db )
+    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_4, 22, 0xc1bdceee )
+    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_5, 7, 0xf57c0faf )
+    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_6, 12, 0x4787c62a )
+    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_7, 17, 0xa8304613 )
+    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_8, 22, 0xfd469501 )
+    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_9, 7, 0x698098d8 )
+    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_10, 12, 0x8b44f7af )
+    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_11, 17, 0xffff5bb1 )
+    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_12, 22, 0x895cd7be )
+    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_13, 7, 0x6b901122 )
+    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_14, 12, 0xfd987193 )
+    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_15, 17, 0xa679438e )
+    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_16, 22, 0x49b40821 )
 
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), x2, 5, 0xf61e2562 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), x7, 9, 0xc040b340 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), x12, 14, 0x265e5a51 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), x1, 20, 0xe9b6c7aa )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), x6, 5, 0xd62f105d )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), x11, 9, 0x02441453 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), x16, 14, 0xd8a1e681 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), x5, 20, 0xe7d3fbc8 )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), x10, 5, 0x21e1cde6 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), x15, 9, 0xc33707d6 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), x4, 14, 0xf4d50d87 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), x9, 20, 0x455a14ed )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), x14, 5, 0xa9e3e905 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), x3, 9, 0xfcefa3f8 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), x8, 14, 0x676f02d9 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), x13, 20, 0x8d2a4c8a )
+    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_2, 5, 0xf61e2562 )
+    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_7, 9, 0xc040b340 )
+    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_12, 14, 0x265e5a51 )
+    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_1, 20, 0xe9b6c7aa )
+    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_6, 5, 0xd62f105d )
+    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_11, 9, 0x02441453 )
+    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_16, 14, 0xd8a1e681 )
+    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_5, 20, 0xe7d3fbc8 )
+    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_10, 5, 0x21e1cde6 )
+    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_15, 9, 0xc33707d6 )
+    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_4, 14, 0xf4d50d87 )
+    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_9, 20, 0x455a14ed )
+    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_14, 5, 0xa9e3e905 )
+    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_3, 9, 0xfcefa3f8 )
+    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_8, 14, 0x676f02d9 )
+    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_13, 20, 0x8d2a4c8a )
 
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), x6, 4, 0xfffa3942 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), x9, 11, 0x8771f681 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), x12, 16, 0x6d9d6122 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), x15, 23, 0xfde5380c )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), x2, 4, 0xa4beea44 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), x5, 11, 0x4bdecfa9 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), x8, 16, 0xf6bb4b60 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), x11, 23, 0xbebfbc70 )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), x14, 4, 0x289b7ec6 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), x1, 11, 0xeaa127fa )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), x4, 16, 0xd4ef3085 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), x7, 23, 0x04881d05 )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), x10, 4, 0xd9d4d039 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), x13, 11, 0xe6db99e5 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), x16, 16, 0x1fa27cf8 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), x3, 23, 0xc4ac5665 )
+    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_6, 4, 0xfffa3942 )
+    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_9, 11, 0x8771f681 )
+    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_12, 16, 0x6d9d6122 )
+    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_15, 23, 0xfde5380c )
+    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_2, 4, 0xa4beea44 )
+    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_5, 11, 0x4bdecfa9 )
+    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_8, 16, 0xf6bb4b60 )
+    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_11, 23, 0xbebfbc70 )
+    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_14, 4, 0x289b7ec6 )
+    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_1, 11, 0xeaa127fa )
+    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_4, 16, 0xd4ef3085 )
+    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_7, 23, 0x04881d05 )
+    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_10, 4, 0xd9d4d039 )
+    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_13, 11, 0xe6db99e5 )
+    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_16, 16, 0x1fa27cf8 )
+    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_3, 23, 0xc4ac5665 )
 
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), x1, 6, 0xf4292244 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), x8, 10, 0x432aff97 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), x15, 15, 0xab9423a7 )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), x6, 21, 0xfc93a039 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), x13, 6, 0x655b59c3 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), x4, 10, 0x8f0ccc92 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), x11, 15, 0xffeff47d )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), x2, 21, 0x85845dd1 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), x9, 6, 0x6fa87e4f )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), x16, 10, 0xfe2ce6e0 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), x7, 15, 0xa3014314 )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), x14, 21, 0x4e0811a1 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), x5, 6, 0xf7537e82 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), x12, 10, 0xbd3af235 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), x3, 15, 0x2ad7d2bb )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), x10, 21, 0xeb86d391 )
+    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_1, 6, 0xf4292244 )
+    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_8, 10, 0x432aff97 )
+    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_15, 15, 0xab9423a7 )
+    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_6, 21, 0xfc93a039 )
+    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_13, 6, 0x655b59c3 )
+    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_4, 10, 0x8f0ccc92 )
+    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_11, 15, 0xffeff47d )
+    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_2, 21, 0x85845dd1 )
+    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_9, 6, 0x6fa87e4f )
+    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_16, 10, 0xfe2ce6e0 )
+    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_7, 15, 0xa3014314 )
+    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_14, 21, 0x4e0811a1 )
+    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_5, 6, 0xf7537e82 )
+    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_12, 10, 0xbd3af235 )
+    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_3, 15, 0x2ad7d2bb )
+    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_10, 21, 0xeb86d391 )
 
     return ( in_a + out_a ) % 0xFFFFFFFF,
         ( in_b + out_b ) % 0xFFFFFFFF,
@@ -228,6 +226,8 @@ function MD5:reset()
     return self
 end
 
+MD5.__init = MD5.reset
+
 local bucket64 = math.bucketize( 64 )
 
 --- [SHARED AND MENU]
@@ -241,27 +241,26 @@ local bucket64 = math.bucketize( 64 )
 ---@param str string The string to update the MD5 object with.
 ---@return dreamwork.std.hash.MD5 obj The updated MD5 object.
 function MD5:update( str )
-    local str_length = string_len( str )
-
-    local message_length = self.message_length + str_length
+    local message_length = self.message_length + string_len( str )
     self.message_length = message_length
 
     if message_length < 64 then
         self.message = self.message .. str
-    else
-        local message, position, blocks_size = self.message .. str, self.position, bucket64( message_length )
-
-        local a, b, c, d = self.a, self.b, self.c, self.d
-
-        for index = position + 1, blocks_size, 64 do
-            a, b, c, d = transform( a, b, c, d, message, index )
-        end
-
-        self.a, self.b, self.c, self.d = a, b, c, d
-
-        self.position = position + blocks_size
-        self.message = message
+        return self
     end
+
+    local message, position, blocks_size = self.message .. str, self.position, bucket64( message_length )
+
+    local a, b, c, d = self.a, self.b, self.c, self.d
+
+    for index = position + 1, blocks_size, 64 do
+        a, b, c, d = transform( message, index, a, b, c, d )
+    end
+
+    self.a, self.b, self.c, self.d = a, b, c, d
+
+    self.position = position + blocks_size
+    self.message = message
 
     return self
 end
@@ -294,7 +293,7 @@ function MD5:digest( as_hex )
     local a, b, c, d = self.a, self.b, self.c, self.d
 
     for index = position + 1, message_length + 1 + padding + 8, 64 do
-        a, b, c, d = transform( a, b, c, d, block, index )
+        a, b, c, d = transform( block, index, a, b, c, d )
     end
 
     local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeUInt32( a )
@@ -345,7 +344,7 @@ if engine_MD5 == nil then
         local a, b, c, d = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
 
         for index = 1, message_length + 1 + padding + 8, 64 do
-            a, b, c, d = transform( a, b, c, d, block, index )
+            a, b, c, d = transform( block, index, a, b, c, d )
         end
 
         local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeUInt32( a )
@@ -389,5 +388,3 @@ else
     end
 
 end
-
-MD5.__init = MD5.reset
