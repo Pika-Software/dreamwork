@@ -4,6 +4,60 @@ local isString = std.isString
 local setmetatable = std.setmetatable
 local physenv, util = _G.physenv, _G.util
 
+-- TODO: rewrite this crap
+
+---
+--- https://wiki.facepunch.com/gmod/Enums/MAT
+---
+--- https://developer.valvesoftware.com/wiki/Material_Types
+---
+---@type table<string, integer>
+local material_ids = {
+    ANTLION = 65,
+    A = 65,
+    BLOODYFLESH = 66,
+    B = 66,
+    CONCRETE = 67,
+    C = 67,
+    DIRT = 68,
+    D = 68,
+    EGGSHELL = 69,
+    E = 69,
+    FLESH = 70,
+    F = 70,
+    GRATE = 71,
+    G = 71,
+    ALIENFLESH = 72,
+    H = 72,
+    CLIP = 73,
+    I = 73,
+    SNOW = 74,
+    J = 74,
+    PLASTIC = 76,
+    L = 76,
+    METAL = 77,
+    M = 77,
+    SAND = 78,
+    N = 78,
+    FOLIAGE = 79,
+    O = 79,
+    COMPUTER = 80,
+    P = 80,
+    SLOSH = 83,
+    S = 83,
+    TILE = 84,
+    T = 84,
+    GRASS = 85,
+    VENT = 86,
+    V = 86,
+    WOOD = 87,
+    W = 87,
+    DEFAULT = 88,
+    GLASS = 89,
+    Y = 89,
+    WARPSHIELD = 90
+}
+
 ---@class dreamwork.std.physics
 local physics = {
     getSimulationDuration = physenv.GetLastSimulationTime
@@ -33,34 +87,35 @@ do
     local surface = {
         getID = util.GetSurfaceIndex,
         getData = util.GetSurfaceData,
-        getName = util.GetSurfacePropName
+        getName = util.GetSurfacePropName,
+        Materials = material_ids
     }
+
 
     local physenv_AddSurfaceData = physenv.AddSurfaceData
     local table_concat = std.table.concat
     local tostring = std.tostring
 
-    local MAT = std.MAT
     local mat2name = {
-        [ MAT.A ] = "A",
-        [ MAT.B ] = "B",
-        [ MAT.C ] = "C",
-        [ MAT.D ] = "D",
-        [ MAT.E ] = "E",
-        [ MAT.F ] = "F",
-        [ MAT.G ] = "G",
-        [ MAT.H ] = "H",
-        [ MAT.I ] = "I",
-        [ MAT.L ] = "L",
-        [ MAT.M ] = "M",
-        [ MAT.N ] = "N",
-        [ MAT.O ] = "O",
-        [ MAT.P ] = "P",
-        [ MAT.S ] = "S",
-        [ MAT.T ] = "T",
-        [ MAT.V ] = "V",
-        [ MAT.W ] = "W",
-        [ MAT.Y ] = "Y"
+        [ material_ids.A ] = "A",
+        [ material_ids.B ] = "B",
+        [ material_ids.C ] = "C",
+        [ material_ids.D ] = "D",
+        [ material_ids.E ] = "E",
+        [ material_ids.F ] = "F",
+        [ material_ids.G ] = "G",
+        [ material_ids.H ] = "H",
+        [ material_ids.I ] = "I",
+        [ material_ids.L ] = "L",
+        [ material_ids.M ] = "M",
+        [ material_ids.N ] = "N",
+        [ material_ids.O ] = "O",
+        [ material_ids.P ] = "P",
+        [ material_ids.S ] = "S",
+        [ material_ids.T ] = "T",
+        [ material_ids.V ] = "V",
+        [ material_ids.W ] = "W",
+        [ material_ids.Y ] = "Y"
     }
 
     -- https://wiki.facepunch.com/gmod/Structures/SurfacePropertyData

@@ -583,9 +583,19 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Reverses the given table.
+--- Reverses all indexes in the given table.
 ---
---- The original table is modified.
+--- The original table will be **modified**.
+---
+--- Example of a reversed table:
+---
+---|   Old   |   New   |
+---|---------|---------|
+---| `[ 1 ]` | `[ 5 ]` |
+---| `[ 2 ]` | `[ 4 ]` |
+---| `[ 3 ]` | `[ 3 ]` |
+---| `[ 4 ]` | `[ 2 ]` |
+---| `[ 5 ]` | `[ 1 ]` |
 ---
 ---@param tbl table The table to reverse.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
@@ -608,9 +618,19 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Creates a reversed version of the given table.
+--- Creates a reversed by indexes copy of the given table.
 ---
---- The original table is not modified.
+--- The original table remains **unchanged**.
+---
+--- Example of a reversed table:
+---
+---|   Old   |   New   |
+---|---------|---------|
+---| `[ 1 ]` | `[ 5 ]` |
+---| `[ 2 ]` | `[ 4 ]` |
+---| `[ 3 ]` | `[ 3 ]` |
+---| `[ 4 ]` | `[ 2 ]` |
+---| `[ 5 ]` | `[ 1 ]` |
 ---
 ---@param tbl table The table to reverse.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.

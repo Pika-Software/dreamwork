@@ -253,29 +253,6 @@ if transducers == nil then
 
 end
 
-if LUA_CLIENT_SERVER then
-
-    ---@diagnostic disable-next-line: undefined-field
-    local glua_util = _G.util
-    if glua_util ~= nil then
-
-        local fn = glua_util.GetActivityIDByName
-        if fn ~= nil then
-
-            setmetatable( std.ACT, {
-                __index = function( tbl, key )
-                    local value = fn( "ACT_" .. key )
-                    tbl[ key ] = value
-                    return value
-                end
-            } )
-
-        end
-
-    end
-
-end
-
 --- [SHARED AND MENU]
 ---
 --- Returns the length of the given value.
