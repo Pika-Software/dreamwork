@@ -130,6 +130,7 @@ local EResultMessages = {
 ---
 --- Steam [EWorkshopFileType](https://partner.steamgames.com/doc/api/ISteamRemoteStorage#EWorkshopFileType)'s.
 ---
+---@type table<integer, string>
 local EWorkshopFileType = {
     [ 0 ] = "item",
     [ 1 ] = "microtransaction",
@@ -166,6 +167,7 @@ end
 ---
 --- Steam [ERemoteStoragePublishedFileVisibility](https://partner.steamgames.com/doc/api/ISteamRemoteStorage#ERemoteStoragePublishedFileVisibility) int32 to string.
 ---
+---@type table<integer, string>
 local ERemoteStoragePublishedFileVisibility = {
     [ 0 ] = "public",
     [ 1 ] = "friends_only",
@@ -704,10 +706,32 @@ end
 
 do
 
-    -- TODO: fs
     local fs = std.fs
     local fs_write = fs.write
-    local fs_exists = fs.exists
+    local fs_isFile = fs.isFile
+
+    local futures_run = std.futures.run
+
+    ---@param f dreamwork.std.futures.Future
+    ---@param wsid_str string
+    ---@param file_path string?
+    ---@param file_class File?
+    ---@async
+    local function perform_response( f, wsid_str, file_path, file_class )
+        if file_path ~= nil and fs_isFile( "/garrysmod/" .. file_path ) then
+            f:setResult( "/workspace/" .. file_path )
+            return
+        end
+
+        if file_class == nil then
+            f:setError( "failed to download addon '" .. wsid_str .. "', unknown error." )
+            return
+        end
+
+        local new_path = "/garrysmod/data/dreamwork/cache/workshop/" .. wsid_str .. ".gma"
+        fs_write( new_path, file_class:Read( file_class:Size() ) )
+        f:setResult( new_path )
+    end
 
     fs.makeDirectory( "/garrysmod/data/dreamwork/cache/workshop", true )
 
@@ -730,19 +754,7 @@ do
         end
 
         fn( wsid_str, function( file_path, file_class )
-            if file_path == nil or not fs_exists( "/" .. file_path ) then
-                if file_class == nil then
-                    f:setError( "failed to download addon '" .. wsid_str .. "', unknown error." )
-                else
-                    -- TODO: recheck me
-                    ---@cast file_class File
-                    local new_path = "/data/dreamwork/cache/workshop/" .. wsid_str .. ".gma"
-                    fs_write( new_path, file_class:Read( file_class:Size() ) )
-                    f:setResult( new_path )
-                end
-            else
-                f:setResult( "/workspace/" .. file_path )
-            end
+            futures_run( perform_response, nil, f, wsid_str, file_path, file_class )
         end )
 
         setTimeout( function()
@@ -902,7 +914,7 @@ if std.LUA_MENU then
     ---@param timeout number | nil | false The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string workshop_id The workshop ID of the published addon.
     ---@async
-    function steam.publishItem( filePath, imagePath, title, description, tags, changeLog, timeout )
+    function workshop.publishItem( filePath, imagePath, title, description, tags, changeLog, timeout )
         -- TODO: make table structure instead arguments
         local f = futures_Future()
 
@@ -945,7 +957,7 @@ if std.LUA_MENU then
     ---@param timeout number | nil | false The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return boolean success `true` if the update was successful, `false` otherwise.
     ---@async
-    function steam.updateItem( filePath, imagePath, title, description, tags, wsid, changeLog, timeout )
+    function workshop.updateItem( filePath, imagePath, title, description, tags, wsid, changeLog, timeout )
         -- TODO: make table structure instead arguments
         local f = futures_Future()
 

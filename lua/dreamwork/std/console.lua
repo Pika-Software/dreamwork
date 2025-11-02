@@ -1096,7 +1096,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return string value The value of the `console.Variable` object.
-    function VariableClass.convar_getString( name )
+    function VariableClass.getString( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return ""
@@ -1126,7 +1126,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number value The value of the `console.Variable` object.
-    function VariableClass.convar_getFloat( name )
+    function VariableClass.getFloat( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0.0
@@ -1135,7 +1135,7 @@ do
         end
     end
 
-    VariableClass.getNumber = VariableClass.convar_getFloat
+    VariableClass.getNumber = VariableClass.getFloat
 
     --- [SHARED AND MENU]
     ---
@@ -1152,7 +1152,7 @@ do
         end
     end
 
-    VariableClass.convar_getBool = VariableClass.getBoolean
+    VariableClass.getBool = VariableClass.getBoolean
 
     --- [SHARED AND MENU]
     ---
@@ -1206,7 +1206,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return string default The default value of the `console.Variable` object.
-    function VariableClass.convar_getDefault( name )
+    function VariableClass.getDefault( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return ""
@@ -1291,7 +1291,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number minimum The minimum value of the `console.Variable` object.
-    function VariableClass.convar_getMin( name )
+    function VariableClass.getMin( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0
@@ -1306,7 +1306,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return number maximum The maximum value of the `console.Variable` object.
-    function VariableClass.convar_getMax( name )
+    function VariableClass.getMax( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0

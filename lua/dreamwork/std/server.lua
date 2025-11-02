@@ -155,7 +155,8 @@ if server.getGamemodeName == nil then
 
 end
 
-server.getUptime = server.getUptime or _G.UnPredictedCurTime
+server.getUptime = _G.UnPredictedCurTime
+-- server.getPredictedUptime = _G.CurTime
 
 if std.LUA_CLIENT and server.Tick == nil then
 

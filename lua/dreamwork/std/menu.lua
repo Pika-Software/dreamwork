@@ -294,6 +294,24 @@ do
         return console_Variable.getBoolean( "mat_vsync" )
     end
 
+    --- [CLIENT AND MENU]
+    ---
+    --- Checks if close captions are enabled.
+    ---
+    ---@return boolean is_enabled `true` if close captions are enabled, `false` otherwise.
+    function options.getCloseCaptions()
+        return console_Variable.getBoolean( "closecaption" )
+    end
+
+    --- [CLIENT AND MENU]
+    ---
+    --- Enables or disables close captions.
+    ---
+    ---@param state boolean `true` to enable close captions, `false` to disable them.
+    function options.setCloseCaptions( state )
+        console_Variable.set( "closecaption", state )
+    end
+
     if std.LUA_MENU then
 
         --- [MENU]

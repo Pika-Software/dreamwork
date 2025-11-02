@@ -1,3 +1,9 @@
+---@class dreamwork.std
+local std = _G.dreamwork.std
+
+---@class dreamwork.std.chat
+local chat = {}
+std.chat = chat
 
 --[[
 
@@ -33,3 +39,16 @@
         https://wiki.facepunch.com/gmod/GM:OnChatTab
 
 --]]
+
+-- _G.util.FilterText
+
+-- addText = "AddText",
+-- close = "Close",
+-- open = "Open"
+
+-- --- Sends a message to the player chat.
+-- ---@param text string The message's content.
+-- ---@param teamChat boolean? Whether the message should be sent as team chat.
+-- function chat.say( text, teamChat )
+--     command_run( teamChat and "say_team" or "say", text )
+-- end

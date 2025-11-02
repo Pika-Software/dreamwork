@@ -2044,6 +2044,7 @@ end
 -- TODO: put https://wiki.facepunch.com/gmod/Global.ClientsideScene somewhere
 -- TODO: put https://wiki.facepunch.com/gmod/util.ScreenShake somewhere
 -- TODO: put https://wiki.facepunch.com/gmod/Global.AddonMaterial somewhere
+-- TODO: put _G.util.ScreenShake somewhere or remove
 
 -- TODO: Write "VideoRecorder" class ( https://wiki.facepunch.com/gmod/video.Record )
 
