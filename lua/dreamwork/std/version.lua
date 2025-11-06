@@ -1,495 +1,519 @@
--- Semver lua parser. Based on https://github.com/kikito/semver.lua
--- https://github.com/Pika-Software/gpm_legacy/blob/main/lua/dreamwork/sh_semver.lua
-
---[[
-
-	Version Structure:
-		[ 0 ] - full string
-		[ 1 ] - major
-		[ 2 ] - minor
-		[ 3 ] - patch
-		[ 4 ] - pre_release
-		[ 5 ] - build
-
---]]
-
-local _G = _G
-
 ---@class dreamwork.std
 local std = _G.dreamwork.std
 
-local table_sort = std.table.sort
-local tostring, tonumber, raw_get = std.tostring, std.tonumber, std.raw.get
+local raw = std.raw
+local raw_tonumber = raw.tonumber
 
-local bit_band, bit_bor, bit_lshift, bit_rshift
-do
-	local bit = std.bit
-	bit_band, bit_bor, bit_lshift, bit_rshift = bit.band, bit.bor, bit.lshift, bit.rshift
-end
+local debug = std.debug
+local gc_setTableRules = debug.gc.setTableRules
 
-local isString, isNumber = std.isString, std.isNumber
-local math_isuint, math_max = std.math.isuint, std.math.max
+local bit = std.bit
+local bit_band, bit_bor, bit_lshift, bit_rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 
 local string = std.string
-local string_match, string_gsub, string_find, string_sub = string.match, string.gsub, string.find, string.sub
+local string_byte = string.byte
+local string_format = string.format
 
--- TODO: update and replace trash keys
+local math = std.math
+local math_min = math.min
+local math_max = math.max
 
-local smallerPreRelease
+---@type table<integer, table<string, dreamwork.std.Version>>
+local registry = {}
+
+std.setmetatable( registry, {
+	__index = function( self, uint32 )
+		local map = {}
+		gc_setTableRules( map, false, true )
+		self[ uint32 ] = map
+		return map
+	end
+} )
+
+---@type table<dreamwork.std.Version, integer>
+local majors = {}
+gc_setTableRules( majors, true, false )
+
+---@type table<dreamwork.std.Version, integer>
+local minors = {}
+gc_setTableRules( minors, true, false )
+
+---@type table<dreamwork.std.Version, integer>
+local patches = {}
+gc_setTableRules( patches, true, false )
+
+---@type table<dreamwork.std.Version, string>
+local pre_releases = {}
+gc_setTableRules( pre_releases, true, false )
+
+---@type table<dreamwork.std.Version, string>
+local builds = {}
+gc_setTableRules( builds, true, false )
+
+---@type table<dreamwork.std.Version, string>
+local pre_release_with_builds = {}
+gc_setTableRules( pre_release_with_builds, true, false )
+
+local operators = {}
+
+---@param x integer
+---@param y integer
+---@param z integer
+local function xyz_uint32( x, y, z )
+	return bit_bor( bit_lshift( z, 21 ), bit_lshift( y, 10 ), x ) % 0x100000000
+end
+
+---@param pre_release? string
+---@param build? string
+---@return string
+local function concat_pre_release_and_build( pre_release, build )
+	if pre_release == nil then
+		if build == nil then
+			return ""
+		else
+			return "+" .. build
+		end
+	elseif build == nil then
+		return "-" .. pre_release
+	else
+		return "-" .. pre_release .. "+" .. build
+	end
+end
+
+---@class dreamwork.std.Version : dreamwork.std.Object
+---@field __class dreamwork.std.VersionClass
+---@field major integer The major version number. (0-1023)
+---@field minor integer The minor version number. (0-2047)
+---@field patch integer The patch version number. (0-2047)
+local Version = std.class.base( "Version", true )
+
+---@class dreamwork.std.VersionClass : dreamwork.std.Version
+---@field __base dreamwork.std.Version
+---@overload fun( major: integer, minor: integer, patch: integer, pre_release: string?, build: string? ) : dreamwork.std.Version
+local VersionClass = std.class.create( Version )
+std.Version = VersionClass
+
+---@param major integer | nil
+---@param minor integer | nil
+---@param patch integer | nil
+---@param pre_release string | nil
+---@param build string | nil
+---@return dreamwork.std.Version | nil
+---@protected
+function VersionClass:__new( major, minor, patch, pre_release, build )
+	if major == nil then
+		major = 0
+	elseif major > 0x3ff then
+		error( "major version is too large (max 1023)", 3 )
+	end
+
+	if minor == nil then
+		minor = 1
+	elseif minor > 0x7ff then
+		error( "minor version is too large (max 2047)", 3 )
+	end
+
+	if patch == nil then
+		patch = 0
+	elseif patch > 0x7ff then
+		error( "patch version is too large (max 2047)", 3 )
+	end
+
+	return registry[ xyz_uint32( major, minor, patch ) ][ concat_pre_release_and_build( pre_release, build ) ]
+end
+
+---@param major integer | nil
+---@param minor integer | nil
+---@param patch integer | nil
+---@param pre_release string | nil
+---@param build string | nil
+---@protected
+function Version:__init( major, minor, patch, pre_release, build )
+	if major == nil then
+		major = 0
+	end
+
+	if minor == nil then
+		minor = 1
+	end
+
+	if patch == nil then
+		patch = 0
+	end
+
+	majors[ self ] = major
+	minors[ self ] = minor
+	patches[ self ] = patch
+
+	builds[ self ] = build
+	pre_releases[ self ] = pre_release
+
+	local pre_release_and_build = concat_pre_release_and_build( pre_release, build )
+	pre_release_with_builds[ self ] = pre_release_and_build
+
+	registry[ xyz_uint32( major, minor, patch ) ][ pre_release_and_build ] = self
+end
+
+---@return string
+---@protected
+function Version:__tostring()
+	return string_format( "%d.%d.%d%s", majors[ self ], minors[ self ], patches[ self ], pre_release_with_builds[ self ] )
+end
+
+---@return integer
+---@protected
+function Version:__tonumber()
+	return xyz_uint32( majors[ self ], minors[ self ], patches[ self ] )
+end
+
 do
 
-	local function compare( a, b )
-		return a == b and 0 or a < b and -1 or 1
-	end
+	local raw_index = raw.index
 
-	local function compareIDs( a, b )
-		if a == b then
-			return 0
-		elseif not a then
-			return -1
-		elseif not b then
-			return 1
-		end
-
-		local a_num, b_num = tonumber( a, 10 ), tonumber( b, 10 )
-		if a_num and b_num then
-			return compare( a_num, b_num )
-		elseif a_num then
-			return -1
-		elseif b_num then
-			return 1
+	---@param key string
+	---@return any
+	---@protected
+	function Version:__index( key )
+		if key == "major" then
+			return majors[ self ]
+		elseif key == "minor" then
+			return minors[ self ]
+		elseif key == "patch" then
+			return patches[ self ]
+		elseif key == "pre_release" then
+			return pre_releases[ self ]
+		elseif key == "build" then
+			return builds[ self ]
 		else
-			return compare( a, b )
+			return raw_index( Version, key )
 		end
 	end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Adds a version to the current version.
+---
+---@param major integer | nil The major version.
+---@param minor integer | nil The minor version.
+---@param patch integer | nil The patch version.
+---@return dreamwork.std.Version version_obj The new version.
+function Version:add( major, minor, patch )
+	return VersionClass(
+		math_min( majors[ self ] + ( major or 0 ), 0x3ff ),
+		math_min( minors[ self ] + ( minor or 0 ), 0x7ff ),
+		math_min( patches[ self ] + ( patch or 0 ), 0x7ff )
+	)
+end
+
+--- [SHARED AND MENU]
+---
+--- Subtracts a version from the current version.
+---
+---@param major integer | nil The major version.
+---@param minor integer | nil The minor version.
+---@param patch integer | nil The patch version.
+---@return dreamwork.std.Version version_obj The new version.
+function Version:subtract( major, minor, patch )
+	return VersionClass(
+		math_max( majors[ self ] - ( major or 0 ), 0 ),
+		math_max( minors[ self ] - ( minor or 0 ), 0 ),
+		math_max( patches[ self ] - ( patch or 0 ), 0 )
+	)
+end
+
+local fromString
+do
+
+	local string_match = string.match
+
+	--- [SHARED AND MENU]
+	---
+	--- Gets a version object from a version string.
+	---
+	---@param version_str string The version string in the format `major.minor.patch[-pre_release][+build]`.
+	---@return dreamwork.std.Version version_obj The version object.
+	function fromString( version_str )
+		local major_str, minor_str, patch_str, extra_str = string_match( version_str, "^(%d+)%.?(%d*)%.?(%d*)(.-)$" )
+		local pre_release_str, build_str
+
+		if extra_str ~= nil then
+			pre_release_str, build_str = string_match( extra_str, "^%-([^+]+)%+(.+)$" )
+			if pre_release_str == nil or build_str == nil then
+				local uint8_1 = string_byte( extra_str, 1, 1 )
+				if uint8_1 == 0x2D --[[ - ]] then
+					pre_release_str = string_match( extra_str, "^-(%w[%.%w-]*)$" )
+				elseif uint8_1 == 0x2B --[[ + ]] then
+					build_str = string_match( extra_str, "^%+(%w[%.%w-]*)$" )
+				end
+			end
+		end
+
+		return VersionClass(
+			raw_tonumber( major_str, 10 ) or 0,
+			raw_tonumber( minor_str, 10 ) or 0,
+			raw_tonumber( patch_str, 10 ) or 0,
+			pre_release_str,
+			build_str
+		)
+	end
+
+	VersionClass.fromString = fromString
+
+end
+
+do
 
 	local string_byteSplit = string.byteSplit
 
-	function smallerPreRelease( first, second )
-		if not first or first == second then
+	local function compare_values( value_1, value_2 )
+		if value_1 == value_2 then
+			return 0
+		elseif value_1 < value_2 then
+			return -1
+		else
+			return 1
+		end
+	end
+
+	local function compare_segments( segment_1, segment_2 )
+		if segment_1 == segment_2 then
+			return 0
+		elseif segment_1 == nil then
+			return -1
+		elseif segment_2 == nil then
+			return 1
+		end
+
+		local value_1 = raw_tonumber( segment_1, 16 )
+		local value_2 = raw_tonumber( segment_2, 16 )
+
+		if value_1 == nil then
+			if value_2 == nil then
+				return compare_values( segment_1, segment_2 )
+			else
+				return 1
+			end
+		elseif value_2 == nil then
+			return -1
+		else
+			return compare_values( value_1, value_2 )
+		end
+	end
+
+	local function pre_release_lt( pre_release_1, pre_release_2 )
+		if pre_release_1 == nil or pre_release_1 == pre_release_2 then
 			return false
-		elseif not second then
+		elseif pre_release_2 == nil then
 			return true
 		end
 
-		local fisrt, fcount = string_byteSplit( first, 0x2E --[[ . ]] )
+		local segments_1, segment_count_1 = string_byteSplit( pre_release_1, 0x2E --[[ . ]] )
+		local segments_2, segment_count_2 = string_byteSplit( pre_release_2, 0x2E --[[ . ]] )
 
-		local scount
-		second, scount = string_byteSplit( second, 0x2E --[[ . ]] )
-
-		local comparison
-		for index = 1, fcount do
-			comparison = compareIDs( fisrt[ index ], second[ index ] )
+		for index = 1, segment_count_1, 1 do
+			local comparison = compare_segments( segments_1[ index ], segments_2[ index ] )
 			if comparison ~= 0 then
 				return comparison == -1
 			end
 		end
 
-		return fcount < scount
+		return segment_count_1 < segment_count_2
 	end
 
-end
-
----@param str? string
----@return string? pre_release
-local function parse_pre_release( str, error_level )
-	if str == nil or str == "" then return end
-
-	local pre_release = string_match( str, "^-(%w[%.%w-]*)$" )
-	if not pre_release or string_match( pre_release, "%.%." ) then
-		if error_level == nil then error_level = 1 end
-		error_level = error_level + 1
-
-		error( "the pre-release '" .. str .. "' is not valid", error_level )
-	end
-
-	return pre_release
-end
-
----@param str? string
----@return string? build
-local function parse_build( str, error_level )
-	if str == nil or str == "" then return end
-
-	local build = string_match( str, "^%+(%w[%.%w-]*)$" )
-	if not build or string_match( build, "%.%." ) then
-		if error_level == nil then error_level = 1 end
-		error_level = error_level + 1
-
-		error( "the build '" .. str .. "' is not valid", error_level )
-	end
-
-	return build
-end
-
-local parse_pre_release_and_build
-do
-
-	local string_byte = string.byte
-
-	---@param str? string
-	---@return string? pre_release
-	---@return string? build
-	function parse_pre_release_and_build( str, error_level )
-		if error_level == nil then error_level = 1 end
-		if str == nil or str == "" then return end
-		error_level = error_level + 1
-
-		local pre_release, build = string_match( str, "^(%-[^+]+)(%+.+)$" )
-		if pre_release == nil or build == nil then
-			local byte = string_byte( str, 1 )
-			if byte == 0x2D --[[ - ]] then
-				pre_release = parse_pre_release( str, error_level )
-			elseif byte == 0x2B --[[ + ]] then
-				build = parse_build( str, error_level )
-			else
-				error( "the parameter '" .. str .. "' must begin with + or - to denote a pre-release or a build", error_level )
-			end
-		end
-
-		return pre_release, build
-	end
-
-end
-
----@param major integer
----@param minor integer
----@param patch integer
----@param pre_release string?
----@param build string?
----@return string
-local function numbersToString( major, minor, patch, pre_release, build )
-	if pre_release and build then
-		return major .. "." .. minor .. "." .. patch .. "-" .. pre_release .. "+" .. build
-	elseif pre_release then
-		return major .. "." .. minor .. "." .. patch .. "-" .. pre_release
-	elseif build then
-		return major .. "." .. minor .. "." .. patch .. "+" .. build
-	else
-		return major .. "." .. minor .. "." .. patch
-	end
-end
-
---- [SHARED AND MENU]
----
----
----@param major integer | string The major version number.
----@param minor? integer The minor version number.
----@param patch? integer The patch version number.
----@param pre_release? string | integer The pre-release version number.
----@param build? string The build version number.
----@return integer major The major version.
----@return integer minor The minor version.
----@return integer patch The patch version.
----@return string pre_release The pre-release version.
----@return string build The build version.
-local function parse( major, minor, patch, pre_release, build, error_level )
-	if error_level == nil then error_level = 1 end
-	error_level = error_level + 1
-
-	if major == nil then
-		error( "at least one parameter is needed", error_level )
-	end
-
-	if isNumber( major ) then
-		---@cast major number
-
-		if not math_isuint( major ) then
-			error( "major version must be unsigned integer", error_level )
-		end
-
-		---@cast major integer
-
-		if minor == nil then
-			minor = 0
-		elseif not ( isNumber( minor ) and math_isuint( minor ) ) then
-			error( "minor version must be unsigned integer number", error_level )
-			error( "minor version must be a number", error_level )
-		end
-
-		---@cast minor integer
-
-		if patch == nil then
-			patch = 0
-		elseif not ( isNumber( patch ) and math_isuint( patch ) ) then
-			error( "patch version must be unsigned integer number", error_level )
-		end
-
-		---@cast patch integer
-
-		if isString( build ) then
-			---@cast build string
-
-			if isString( pre_release ) then
-				---@cast pre_release string
-				pre_release = parse_pre_release( pre_release, error_level )
-			end
-
-			build = parse_build( build )
-		elseif isNumber( pre_release ) then
-			---@cast pre_release number
-
-			pre_release, build = parse_pre_release_and_build( tostring( pre_release ), error_level )
-			---@cast pre_release string?
-			---@cast build string?
-		end
-	else
-		local extra
-		major, minor, patch, extra = string_match( tostring( major ), "^(%d+)%.?(%d*)%.?(%d*)(.-)$" )
-
-		if major == nil then
-			error( "the major version is missing", 2 )
-		end
-
-		major = tonumber( major, 10 )
-		---@cast major integer
-
-		if minor == nil or minor == "" then
-			minor = 0
-		else
-			minor = tonumber( minor, 10 )
-		end
-
-		---@cast minor integer
-
-		if patch == nil or patch == "" then
-			patch = 0
-		else
-			patch = tonumber( patch, 10 )
-		end
-
-		---@cast patch integer
-
-		pre_release, build = parse_pre_release_and_build( extra, error_level )
-		---@cast pre_release string?
-	end
-
-	if major > 0x3ff or minor > 0x7ff or patch > 0x7ff then
-		error( "version is too large (max 1023.2047.2047)", 2 )
-	elseif major < 0 or minor < 0 or patch < 0 then
-		error( "version is too small (min 0.0.0)", 2 )
-	end
-
-	return major, minor, patch, pre_release or "", build or ""
-end
-
-local VersionClass
-
---- [SHARED AND MENU]
----
---- The Version object.
----@alias Version dreamwork.std.Version
----@class dreamwork.std.Version : dreamwork.std.Object
----@field __class dreamwork.std.VersionClass
-local Version = std.class.base( "Version" )
-
---- [SHARED AND MENU]
----
---- Returns the next major version.
----@return dreamwork.std.Version object The next major version.
-local function nextMajor( self )
-	return VersionClass( self[ 1 ] + 1, 0, 0 )
-end
-
-Version.nextMajor = nextMajor
-
---- [SHARED AND MENU]
----
---- Returns the next minor version.
----@return dreamwork.std.Version object The next minor version.
-local function nextMinor( self )
-	return VersionClass( self[ 1 ], self[ 2 ] + 1, 0 )
-end
-
-Version.nextMinor = nextMinor
-
---- [SHARED AND MENU]
----
---- Returns the next patch version.
----@return dreamwork.std.Version object The next patch version.
-local function nextPatch( self )
-	return VersionClass( self[ 1 ], self[ 2 ], self[ 3 ] + 1 )
-end
-
-Version.nextPatch = nextPatch
-
----@protected
-function Version:__tonumber()
-	local major = tonumber( self[ 1 ], 10 )
-	if major > 0x3ff then
-		error( "major version is too large (max 1023)", 2 )
-	end
-
-	local minor = tonumber( self[ 2 ], 10 )
-	if minor > 0x7ff then
-		error( "minor version is too large (max 2047)", 2 )
-	end
-
-	local patch = tonumber( self[ 3 ], 10 )
-	if patch > 0x7ff then
-		error( "patch version is too large (max 2047)", 2 )
-	end
-
-	return bit_bor( bit_lshift( patch, 21 ), bit_lshift( minor, 10 ), major )
-end
-
-do
-
-	local key2index = {
-		name = 0,
-		major = 1,
-		minor = 2,
-		patch = 3,
-		prerelease = 4,
-		build = 5
-	}
-
+	---@param version_1 dreamwork.std.Version
+	---@param version_2 dreamwork.std.Version
+	---@return boolean
 	---@protected
-	function Version:__index( key )
-		local index = key2index[ key ]
-		if index == nil then
-			return raw_get( Version, key )
+	local function lt( version_1, version_2 )
+		local major_1 = majors[ version_1 ]
+		local major_2 = majors[ version_2 ]
+
+		if major_1 ~= major_2 then
+			return major_1 < major_2
+		end
+
+		local minor_1 = minors[ version_1 ]
+		local minor_2 = minors[ version_2 ]
+
+		if minor_1 ~= minor_2 then
+			return minor_1 < minor_2
+		end
+
+		local patch_1 = patches[ version_1 ]
+		local patch_2 = patches[ version_2 ]
+
+		if patch_1 ~= patch_2 then
+			return patch_1 < patch_2
+		end
+
+		return pre_release_lt( pre_releases[ version_1 ], pre_releases[ version_2 ] )
+	end
+
+	Version.__lt = lt
+
+	--[[
+
+		Primitive operators ( =, <, >, <=, >= )
+			more info: https://docs.npmjs.com/cli/v6/using-npm/semver#ranges
+
+	--]]
+
+	---@param version_1 dreamwork.std.Version
+	---@param version_2 dreamwork.std.Version
+	---@param x_range integer
+	---@return boolean
+	operators[ "=" ] = function( version_1, version_2, x_range )
+		if x_range == 0 then
+			return version_1 == version_2
+		elseif lt( version_1, version_2 ) then
+			return false
+		elseif x_range == 1 then
+			return lt( version_1, version_2:add( 0, 1, 0 ) )
+		elseif x_range == 2 then
+			return lt( version_1, version_2:add( 1, 0, 0 ) )
 		else
-			return raw_get( self, index )
+			return true
 		end
 	end
 
-	Version.__newindex = std.debug.fempty
-
-end
-
----@protected
-function Version:__tostring()
-	return self[ 0 ]
-end
-
----@protected
-function Version:__eq( other )
-	return self[ 0 ] == other[ 0 ]
-end
-
----@protected
-function Version:__lt( other )
-	if self[ 1 ] ~= other[ 1 ] then
-		return self[ 1 ] < other[ 1 ]
-	elseif self[ 2 ] ~= other[ 2 ] then
-		return self[ 2 ] < other[ 2 ]
-	elseif self[ 3 ] ~= other[ 3 ] then
-		return self[ 3 ] < other[ 3 ]
-	else
-		return smallerPreRelease( self[ 4 ], other[ 4 ] )
+	---@param version_obj dreamwork.std.Version
+	---@return boolean
+	---@protected
+	function Version:__le( version_obj )
+		return self == version_obj or lt( self, version_obj )
 	end
-end
 
----@protected
-function Version:__le( other )
-	return self == other or self < other
-end
+	operators[ "<" ] = lt
 
----@protected
-function Version:__pow( other )
-	if self[ 1 ] == 0 then
-		return self == other
-	else
-		return self[ 1 ] == other[ 1 ] and self[ 2 ] <= other[ 2 ]
+	---@param version_1 dreamwork.std.Version
+	---@param version_2 dreamwork.std.Version
+	---@param x_range integer
+	---@return boolean
+	operators[ "<=" ] = function( version_1, version_2, x_range )
+		if x_range == 0 then
+			return version_1 == version_2 or lt( version_1, version_2 )
+		end
+
+		---@type dreamwork.std.Version
+		local version_2_up
+
+		if x_range == 1 then
+			version_2_up = version_2:add( 0, 1, 0 )
+		elseif x_range == 2 then
+			version_2_up = version_2:add( 1, 0, 0 )
+		else
+			version_2_up = version_2
+		end
+
+		return lt( version_1, version_2_up )
 	end
-end
 
-do
+	-- Tilde Ranges ~1.2.3 ~1.2 ~1
+	-- Allows patch-level changes if a minor version is specified on the comparator. Allows minor-level changes if not.
+	-- https://docs.npmjs.com/cli/v6/using-npm/semver#tilde-ranges-123-12-1
+	operators[ "~" ] = function( version_1, version_2, x_range )
+		if lt( version_1, version_2 ) then
+			return false
+		elseif x_range == 2 then
+			return version_1 < version_2:add( 1, 0, 0 )
+		else
+			return version_1 < version_2:add( 0, 1, 0 )
+		end
+	end
 
-	local string_byteCount, string_trim = string.byteCount, string.trim
+	---@param version_1 dreamwork.std.Version
+	---@param version_2 dreamwork.std.Version
+	---@param x_range integer
+	---@return boolean
+	operators[ ">" ] = function( version_1, version_2, x_range )
+		if x_range == 0 then
+			return not lt( version_1, version_2 )
+		end
 
-	local operators = {
-		-- primitive operators
-		-- https://docs.npmjs.com/cli/v6/using-npm/semver#ranges
-		["<"] = function( self, sv ) return self < sv end,
-		[">"] = function( self, sv, xrange )
-			if xrange > 0 then
-				if xrange == 1 then
-					sv = nextMinor( sv )
-				elseif xrange == 2 then
-					sv = nextMajor( sv )
-				end
+		---@type dreamwork.std.Version
+		local version_2_up
 
-				return self >= sv
-			else
-				return self > sv
-			end
-		end,
-		["<="] = function( self, sv, xrange )
-			if xrange > 0 then
-				if xrange == 1 then
-					sv = nextMinor( sv )
-				elseif xrange == 2 then
-					sv = nextMajor( sv )
-				end
+		if x_range == 1 then
+			version_2_up = version_2:add( 0, 1, 0 )
+		elseif x_range == 2 then
+			version_2_up = version_2:add( 1, 0, 0 )
+		else
+			version_2_up = version_2
+		end
 
-				return self < sv
-			else
-				return self <= sv
-			end
-		end,
-		[">="] = function( self, sv ) return self >= sv end,
-		["="] = function( self, sv, xrange )
-			if xrange > 0 then
-				if self < sv then
-					return false
-				elseif xrange == 1 then
-					sv = nextMinor( sv )
-				elseif xrange == 2 then
-					sv = nextMajor( sv )
-				end
+		return version_1 == version_2_up or not lt( version_1, version_2_up )
+	end
 
-				return self < sv
-			else
-				return self == sv
-			end
-		end,
+	operators[ ">=" ] = function( version_1, version_2 )
+		return version_1 == version_2 or not lt( version_1, version_2 )
+	end
 
-		-- Caret Ranges ^1.2.3 ^0.2.5 ^0.0.4
-		-- Allows changes that do not modify the left-most non-zero digit in the [major, minor, patch] tuple.
-		-- In other words, this allows patch and minor updates for versions 1.0.0 and above, patch updates for
-		-- versions 0.X >=0.1.0, and no updates for versions 0.0.X.
-		-- https://docs.npmjs.com/cli/v6/using-npm/semver#caret-ranges-123-025-004
-		["^"] = function( self, sv, xrange )
-			if sv[ 1 ] == 0 and xrange < 2 then
-				if sv[ 2 ] == 0 and xrange < 1 then
-					return self[ 1 ] == 0 and self[ 2 ] == 0 and self >= sv and self < nextPatch( sv )
-				else
-					return self[ 1 ] == 0 and self >= sv and self < nextMinor( sv )
-				end
-			else
-				return self[ 1 ] == sv[ 1 ] and self >= sv and self < nextMajor( sv )
-			end
-		end,
+	-- Caret Ranges ^1.2.3 ^0.2.5 ^0.0.4
+	-- Allows changes that do not modify the left-most non-zero digit in the [major, minor, patch] tuple.
+	-- In other words, this allows patch and minor updates for versions 1.0.0 and above, patch updates for
+	-- versions 0.X >=0.1.0, and no updates for versions 0.0.X.
+	-- https://docs.npmjs.com/cli/v6/using-npm/semver#caret-ranges-123-025-004
+	---@param version_1 dreamwork.std.Version
+	---@param version_2 dreamwork.std.Version
+	---@param x_range integer
+	---@return boolean
+	local function caret_ranges( version_1, version_2, x_range )
+		if version_1 ~= version_2 and lt( version_1, version_2 ) then
+			return false
+		end
 
-		-- Tilde Ranges ~1.2.3 ~1.2 ~1
-		-- Allows patch-level changes if a minor version is specified on the comparator. Allows minor-level changes if not.
-		-- https://docs.npmjs.com/cli/v6/using-npm/semver#tilde-ranges-123-12-1
-		["~"] = function( self, sv, xrange )
-			if self < sv then
+		local major_2 = majors[ version_2 ]
+
+		if major_2 == 0 and ( x_range == 0 or x_range == 1 ) then
+			if majors[ version_1 ] ~= 0 then
 				return false
-			elseif xrange == 2 then
-				return self < nextMajor( sv )
-			else
-				return self < nextMinor( sv )
 			end
+
+			if minors[ version_2 ] == 0 and x_range == 0 then
+				return minors[ version_1 ] == 0 and lt( version_1, version_2:add( 0, 0, 1 ) )
+			end
+
+			return lt( version_1, version_2:add( 0, 1, 0 ) )
 		end
-	}
 
-	-- TODO: implement separated __mod aka :select or :match ...
+		return majors[ version_1 ] == major_2 and lt( version_1, version_2:add( 1, 0, 0 ) )
+	end
 
+	operators[ "^" ] = caret_ranges
+
+	---@param version_obj dreamwork.std.Version
+	---@return boolean
 	---@protected
-	function Version:__mod( str )
-		-- spaces clean up
-		str = string_trim( string_gsub( str, "%s+", " " ), "%s", 0 )
+	function Version:__pow( version_obj )
+		return caret_ranges( self, version_obj, 0 )
+	end
+
+end
+
+do
+
+	local string_sub, string_gsub = string.sub, string.gsub
+	local string_byteCount = string.byteCount
+	local string_trim = string.trim
+	local string_find = string.find
+
+	-- TODO: rewrite match function ( replace patterns with byte analysis )
+
+	---@param version_obj dreamwork.std.Version
+	---@param semver_selector string
+	---@return boolean
+	local function match( version_obj, semver_selector )
+		-- normalize
+		semver_selector = string_trim( string_gsub( semver_selector, "%s+", " " ), "%s" )
 
 		-- version range := comparator sets
-		if string_find( str, "||", 1, true ) then
+		if string_find( semver_selector, "||", 1, true ) then
 			local pointer = 1
 			while true do
-				local position = string_find( str, "||", pointer, true )
-				if self % string_sub( str, pointer, position and ( position - 1 ) ) then
+				local position = string_find( semver_selector, "||", pointer, true )
+				if version_obj % string_sub( semver_selector, pointer, position and ( position - 1 ) ) then
 					return true
 				elseif position == nil then
 					return false
@@ -500,175 +524,105 @@ do
 		end
 
 		-- comparator set := comparators
-		if string_find( str, " ", 1, true ) then
-			local pos, part
+		if string_find( semver_selector, " ", 1, true ) then
 			local start = 1
+			local position
+			local part
+
 			while true do
-				pos = string_find( str, " ", start, true )
-				part = string_sub( str, start, pos and ( pos - 1 ) )
+				position = string_find( semver_selector, " ", start, true )
+				part = string_sub( semver_selector, start, position and ( position - 1 ) )
 
 				-- Hyphen Ranges: X.Y.Z - A.B.C
 				-- https://docs.npmjs.com/cli/v6/using-npm/semver#hyphen-ranges-xyz---abc
-				if pos ~= nil and string_sub( str, pos, pos + 2 ) == " - " then
-					if not ( self % ( ">=" .. part ) ) then
+				if position ~= nil and string_sub( semver_selector, position, position + 2 ) == " - " then
+					if not ( version_obj % ( ">=" .. part ) ) then
 						return false
 					end
 
-					start = pos + 3
-					pos = string_find( str, " ", start, true )
-					part = string_sub( str, start, pos and ( pos - 1 ) )
+					start = position + 3
+					position = string_find( semver_selector, " ", start, true )
+					part = string_sub( semver_selector, start, position and ( position - 1 ) )
 
-					if not ( self % ( "<=" .. part ) ) then
+					if not ( version_obj % ( "<=" .. part ) ) then
 						return false
 					end
-				elseif not ( self % part ) then
+				elseif not ( version_obj % part ) then
 					return false
 				end
 
-				if pos == nil then
+				if position == nil then
 					return true
 				end
 
-				start = pos + 1
+				start = position + 1
 			end
 
 			return true
 		end
 
 		-- comparators := operator + version
-		str = string_gsub( string_gsub( str, "^=", "" ), "^v", "" )
+		semver_selector = string_gsub( string_gsub( semver_selector, "^=", "" ), "^v", "" )
 
 		-- X-Ranges *
 		-- Any of X, x, or * may be used to 'stand in' for one of the numeric values in the [major, minor, patch] tuple.
 		-- https://docs.npmjs.com/cli/v6/using-npm/semver#x-ranges-12x-1x-12-
 		-- TODO: replace with byte analysis
-		if str == "" or str == "*" then
-			return self % ">=0.0.0"
+		if semver_selector == "" or semver_selector == "*" then
+			return version_obj % ">=0.0.0"
 		end
 
-		local pos = string_find( str, "%d" )
-		if pos == nil then
-			error( "Version range must starts with number: " .. str, 2 )
+		local position = string_find( semver_selector, "%d" )
+		if position == nil then
+			error( "Version range must starts with number: " .. semver_selector, 2 )
 		end
 
-		---@cast pos integer
+		---@cast position integer
 
 		-- X-Ranges 1.2.x 1.X 1.2.*
 		-- Any of X, x, or * may be used to 'stand in' for one of the numeric values in the [major, minor, patch] tuple.
 		-- https://docs.npmjs.com/cli/v6/using-npm/semver#x-ranges-12x-1x-12-
 		local operator
-		if pos == 1 then
+
+		if position == 1 then
 			operator = "="
 		else
-			operator = string_sub( str, 1, pos - 1 )
+			operator = string_sub( semver_selector, 1, position - 1 )
 		end
 
-		local name = string_gsub( string_sub( str, pos ), "%.[xX*]", "" )
+		local name = string_gsub( string_sub( semver_selector, position ), "%.[xX*]", "" )
 
-		local xrange = math_max( 2 - string_byteCount( name, 0x2E --[[ . ]] ), 0 )
-		for _ = 1, xrange do
+		local x_range = math_max( 2 - string_byteCount( name, 0x2E --[[ . ]] ), 0 )
+
+		for _ = 1, x_range do
 			name = name .. ".0"
 		end
 
-		local fn = operators[ operator ]
-		if fn == nil then
+		local operator_fn = operators[ operator ]
+		if operator_fn == nil then
 			error( "Invaild operator: '" .. operator .. "'", 2 )
-		else
-			return fn( self, VersionClass( name ), xrange )
-		end
-	end
-
-end
-
-do
-
-	local debug_getmetatable = std.debug.getmetatable
-	local setmetatable = std.setmetatable
-
-	---@type table<string, dreamwork.std.Version>
-	local versions = {}
-
-	std.debug.gc.setTableRules( versions, false, true )
-
-	---@protected
-	function Version:__new( major, minor, patch, pre_release, build )
-		if debug_getmetatable( major ) == Version then return major end
-
-		major, minor, patch, pre_release, build = parse( major, minor, patch, pre_release, build )
-
-		local name = numbersToString( major, minor, patch, pre_release, build )
-		---@cast name string
-
-		local object = versions[ name ]
-		if object == nil then
-			---@diagnostic disable-next-line: missing-fields
-			object = {
-				[ 0 ] = name,
-				[ 1 ] = major,
-				[ 2 ] = minor,
-				[ 3 ] = patch,
-				[ 4 ] = pre_release,
-				[ 5 ] = build
-			}
-
-			setmetatable( object, Version )
-			versions[ name ] = object
 		end
 
-		return object
+		---@cast operator_fn fun( version_1: dreamwork.std.Version, version_2: dreamwork.std.Version, x_range: integer ): boolean
+
+		return operator_fn( version_obj, fromString( name ), x_range )
 	end
 
-end
+	Version.match = match
+	Version.__mod = match
 
---- [SHARED AND MENU]
----
---- Version class.
----
----@class dreamwork.std.VersionClass : dreamwork.std.Version
----@field __base dreamwork.std.Version
----@overload fun( major: string | number | Version, minor: number?, patch: number?, pre_release: string?, build: string? ) : dreamwork.std.Version
-VersionClass = std.class.create( Version )
-std.Version = VersionClass
+	local len = std.len
 
---- [SHARED AND MENU]
----
---- Converts `major`, `minor`, `patch`, `pre_release`, and `build` to a string.
----@param major number The major version.
----@param minor? number The minor version.
----@param patch? number The patch version.
----@param pre_release? string The pre-release version.
----@param build? string The build version.
----@return string version The version string.
-function VersionClass.asString( major, minor, patch, pre_release, build )
-	return numbersToString( parse( major, minor, patch, pre_release, build ) )
-end
-
---- [SHARED AND MENU]
----
---- Creates a Version object from an unsigned long.
----@param uint integer The unsigned long.
----@return dreamwork.std.Version object The Version object.
-function VersionClass.fromULong( uint )
-	return VersionClass( bit_band( uint, 0x3ff ), bit_band( bit_rshift( uint, 10 ), 0x7ff ), bit_band( bit_rshift( uint, 21 ), 0x7ff ) )
-end
-
-do
-
-	local function sort_fn( a, b ) return a > b end
-
-	--- [SHARED AND MENU]
-	---
-	--- Selects the first version in `tbl` that matches `target`.
-	---@param target string The version selector.
-	---@param tbl table<string | dreamwork.std.Version> The table to search.
-	---@return dreamwork.std.Version? version The first version that matches `target`.
-	---@return integer index The index of the version in `tbl`.
-	function VersionClass.select( target, tbl )
-		table_sort( tbl, sort_fn )
-
-		for index = 1, #tbl, 1 do
-			local version = VersionClass( tbl[ index ] )
-			if version % target then return version, index end
+	---@param semver_selector string
+	---@param versions dreamwork.std.Version[]
+	---@return dreamwork.std.Version? matched_version
+	---@return integer version_position
+	function VersionClass.select( versions, semver_selector )
+		for index = 1, len( versions ), 1 do
+			local version = versions[ index ]
+			if match( version, semver_selector ) then
+				return version, index
+			end
 		end
 
 		return nil, -1
