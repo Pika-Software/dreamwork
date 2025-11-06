@@ -1235,17 +1235,24 @@ function string.interpolate( str, variables, start_position, end_position, str_l
 
     repeat
 
-        if string_byte( str, start_position, start_position ) == 0x7B --[[ { ]] then
+        local uint8_1 = string_byte( str, start_position, start_position )
+
+        if uint8_1 == 0x7B --[[ { ]] then
             local index_start = start_position + 1
 
             if index_start >= end_position then
                 break
             end
 
-            for i = index_start, math_min( index_start + 9, end_position ), 1 do
-                if string_byte( str, i, i ) == 0x7D --[[ } ]] then
-                    local index_end = i - 1
-                    start_position = i + 1
+            local index = index_start
+
+            repeat
+
+                local uint8_2 = string_byte( str, index, index )
+
+                if uint8_2 == 0x7D --[[ } ]] then
+                    local index_end = index - 1
+                    start_position = index + 1
 
                     if index_start > index_end then
                         break
@@ -1265,12 +1272,19 @@ function string.interpolate( str, variables, start_position, end_position, str_l
                     end
 
                     break
+                elseif uint8_2 == 0x5C --[[ \ ]] then
+                    index = index + 2
+                else
+                    index = index + 1
                 end
-            end
+
+            until index_start >= end_position
 
             if start_position <= index_start then
                 start_position = index_start
             end
+        elseif uint8_1 == 0x5C --[[ \ ]] then
+            start_position = start_position + 2
         else
             start_position = start_position + 1
         end

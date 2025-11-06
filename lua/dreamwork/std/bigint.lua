@@ -775,7 +775,7 @@ do
         ---@param base? integer
         ---@return dreamwork.std.BigInt
         ---@protected
-        function BigInt:__new( value, base )
+        function BigIntClass:__new( value, base )
             return tobigint( value, base )
         end
 

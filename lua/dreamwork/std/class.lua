@@ -17,7 +17,7 @@ local class = {}
 std.class = class
 
 ---@alias dreamwork.std.Class.__inherited fun( parent: dreamwork.std.Class, child: dreamwork.std.Class )
----@alias dreamwork.std.Object.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
+---@alias dreamwork.std.Class.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
 ---@alias dreamwork.std.Object.__init fun( obj: dreamwork.std.Object, ...: any? )
 
 ---@class dreamwork.std.Object
@@ -25,7 +25,7 @@ std.class = class
 ---@field private __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
 ---@field __class dreamwork.std.Class The class of the object. **READ ONLY**
 ---@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**
----@field protected __new? dreamwork.std.Object.__new A function that will be called when a new class is created and allows you to replace the result.
+---@field protected __new? dreamwork.std.Class.__new A function that will be called when a new class is created and allows you to replace the result.
 ---@field protected __serialize? fun( obj: dreamwork.std.Object, writer: dreamwork.std.pack.Writer, data: any? )
 ---@field protected __deserialize? fun( obj: dreamwork.std.Object, reader: dreamwork.std.pack.Reader, data: any? )
 ---@field protected __tohash? fun( obj: dreamwork.std.Object ): string
@@ -175,24 +175,25 @@ do
     ---@return dreamwork.std.Object object The new object.
     function class__call( self, ... )
         ---@type dreamwork.std.Object | nil
-        local base = raw_get( self, "__base" )
-        if base == nil then
-            error( "Class variable `__base` is missing, class creation failed.", 2 )
-        end
-
-        ---@type dreamwork.std.Object | nil
         local obj
 
-        ---@type dreamwork.std.Object.__new | nil
-        local new_fn = raw_get( base, "__new" )
+        ---@type dreamwork.std.Class.__new | nil
+        local new_fn = raw_get( self, "__new" )
         if new_fn ~= nil then
             obj = new_fn( self, ... )
         end
 
         if obj == nil then
-            obj = class_init( base, class_new( base ), ... )
+            ---@type dreamwork.std.Object | nil
+            local base = raw_get( self, "__base" )
+            if base == nil then
+                std.errorf( 2, false, "Class '%s' variable `__base` is missing, class creation failed.", self )
+            else
+                obj = class_init( base, class_new( base ), ... )
+            end
         end
 
+        ---@diagnostic disable-next-line: return-type-mismatch
         return obj
     end
 
@@ -213,25 +214,31 @@ local raw_set = std.raw.set
 ---@param base dreamwork.std.Object The base object, aka metatable.
 ---@return dreamwork.std.Class | unknown cls The class.
 function class.create( base )
-    local cls = {
-        __base = base
-    }
+    local cls = {}
 
     local parent_base = raw_get( base, "__parent" )
     if parent_base ~= nil then
         ---@cast parent_base dreamwork.std.Object
-        cls.__parent = parent_base.__class
 
         ---@type dreamwork.std.Class | nil
-        local parent = raw_get( parent_base, "__class" )
-        if parent == nil then
+        local parent_class = raw_get( parent_base, "__class" )
+
+        if parent_class == nil then
             error( "Parent class has no `__class` variable.", 2 )
         else
-            ---@type dreamwork.std.Class.__inherited | nil
-            local inherited_fn = raw_get( parent, "__inherited" )
-            if inherited_fn ~= nil then
-                inherited_fn( parent, cls )
+
+            for key, value in pairs( parent_class ) do
+                cls[ key ] = value
             end
+
+            cls.__parent = parent_class
+
+            ---@type dreamwork.std.Class.__inherited | nil
+            local inherited_fn = raw_get( parent_class, "__inherited" )
+            if inherited_fn ~= nil then
+                inherited_fn( parent_class, cls )
+            end
+
         end
     end
 
@@ -242,8 +249,8 @@ function class.create( base )
         __type = raw_get( base, "__type" ) .. "Class"
     } )
 
-    ---@cast cls dreamwork.std.Object
-
     raw_set( base, "__class", cls )
+    raw_set( cls, "__base", base )
+
     return cls
 end

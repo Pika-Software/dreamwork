@@ -1898,7 +1898,7 @@ end
 do
 
     ---@protected
-    function VMatrix:__new( r1c1, r1c2, r1c3, r1c4, r2c1, r2c2, r2c3, r2c4, r3c1, r3c2, r3c3, r3c4, r4c1, r4c2, r4c3, r4c4 )
+    function VMatrixClass:__new( r1c1, r1c2, r1c3, r1c4, r2c1, r2c2, r2c3, r2c4, r3c1, r3c2, r3c3, r3c4, r4c1, r4c2, r4c3, r4c4 )
         return setmetatable( {
             r1c1 or 0, r1c2 or 0, r1c3 or 0, r1c4 or 0,
             r2c1 or 0, r2c2 or 0, r2c3 or 0, r2c4 or 0,

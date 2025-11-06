@@ -1631,6 +1631,7 @@ do
         "Ancient Tech ♪",
         "Here For You ♪",
         "Good Enough ♪",
+        "Manifest It ♪",
         "MAKE A MOVE ♪",
         "v" .. version,
         "Hello World!",
@@ -1645,7 +1646,8 @@ do
         "I see you.",
         "Light Up ♪",
         "Majesty ♪",
-        "Eat Me ♪"
+        "Eat Me ♪",
+        "FLY ♪"
     }
 
     local count = #splashes + 1
@@ -1673,6 +1675,7 @@ end
 dofile( "std/sqlite.lua" )
 dofile( "database.lua" )
 dofile( "std/fs.lua" )
+dofile( "std/i18n.lua" )
 
 do
 

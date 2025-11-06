@@ -265,13 +265,6 @@ do
 
     end
 
-    ---@param name string
-    ---@return dreamwork.std.console.Command
-    ---@protected
-    function Command:__new( name )
-        return commands[ name ]
-    end
-
     ---@return string
     ---@protected
     function Command:__tostring()
@@ -287,6 +280,13 @@ do
     ---@overload fun( options: dreamwork.std.console.Command.Options ): dreamwork.std.console.Command
     local CommandClass = std.class.create( Command )
     console.Command = CommandClass
+
+    ---@param name string
+    ---@return dreamwork.std.console.Command
+    ---@protected
+    function CommandClass:__new( name )
+        return commands[ name ]
+    end
 
     --- [SHARED AND MENU]
     ---
@@ -1039,13 +1039,6 @@ do
         end
     end
 
-    ---@param str_name string
-    ---@return dreamwork.std.console.Variable?
-    ---@protected
-    function Variable:__new( str_name )
-        return variables[ str_name ]
-    end
-
     ---@return string
     ---@protected
     function Variable:__tostring()
@@ -1061,6 +1054,13 @@ do
     ---@overload fun( options: dreamwork.std.console.Variable.Options ): dreamwork.std.console.Variable
     local VariableClass = console.Variable or dreamwork.std.class.create( Variable )
     console.Variable = VariableClass
+
+    ---@param str_name string
+    ---@return dreamwork.std.console.Variable?
+    ---@protected
+    function VariableClass:__new( str_name )
+        return variables[ str_name ]
+    end
 
     local engine_consoleVariableExists = engine.consoleVariableExists
     VariableClass.exists = engine_consoleVariableExists

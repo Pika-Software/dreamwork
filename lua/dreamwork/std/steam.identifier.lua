@@ -133,7 +133,7 @@ function Identifier:__sub( int32 )
 end
 
 ---@protected
-function Identifier:__new( universe, type, id, instance )
+function IdentifierClass:__new( universe, type, id, instance )
     return setmetatable( {
         universe = universe or "Public",
         type = type or "Individual",

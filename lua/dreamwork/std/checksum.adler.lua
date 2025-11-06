@@ -15,8 +15,8 @@ local string_byte = string.byte
 ---@param str string The string used to calculate the Adler-32 checksum.
 ---@return integer checksum The Adler-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
 function checksum.adler32( str )
-    local length = string_len( str )
-    local index = length % 16
+    local str_length = string_len( str )
+    local index = str_length % 16
     local a, b = 1, 0
 
     if index ~= 0 then
@@ -84,7 +84,7 @@ function checksum.adler32( str )
 
     index = index + 1
 
-    while ( index <= length - 15 ) do
+    while ( index <= str_length - 15 ) do
         local x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16 = string_byte( str, index, index + 15 )
         b = ( b + 16 * a + 16 * x1 + 15 * x2 + 14 * x3 + 13 * x4 + 12 * x5 + 11 * x6 + 10 * x7 + 9 * x8 + 8 * x9 + 7 * x10 + 6 * x11 + 5 * x12 + 4 * x13 + 3 * x14 + 2 * x15 + x16 ) % 65521
         a = ( a + x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11 + x12 + x13 + x14 + x15 + x16 ) % 65521

@@ -68,7 +68,7 @@ ColorClass.fromRGBA = from_rgba
 ---@param b integer? The 8-bit blue channel.
 ---@param a integer? The 8-bit alpha channel.
 ---@return dreamwork.std.Color color The color object.
-function Color:__new( r, g, b, a )
+function ColorClass:__new( r, g, b, a )
     return from_rgba( r, g, b, a )
 end
 
