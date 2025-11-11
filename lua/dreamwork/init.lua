@@ -30,16 +30,16 @@ end
 ---@field LUA_SERVER boolean `true` if code is running on the server, `false` otherwise.
 ---@field GAME_VERSION integer Contains the version number of the game. For example: `201211` = `01.01.2012`
 ---@field GAME_BRANCH string The branch the game is running on. This will be `unknown` on main branch.
+---@field SYSTEM_OSX boolean `true` if the game is running on OSX.
+---@field SYSTEM_LINUX boolean `true` if the game is running on Linux.
+---@field SYSTEM_WINDOWS boolean `true` if the game is running on Windows.
+---@field SYSTEM_x64 boolean `true` if the game is running on 64-bit architecture.
+---@field SYSTEM_x32 boolean `true` if the game is running on 32-bit architecture.
+---@field SYSTEM_x86 boolean `true` if the game is running on 32-bit architecture.
 ---@field SYSTEM_ENDIANNESS boolean `true` if the operating system is big endianness, `false` if little endianness.
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
 ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
----@field OSX boolean `true` if the game is running on OSX.
----@field LINUX boolean `true` if the game is running on Linux.
----@field WINDOWS boolean `true` if the game is running on Windows.
----@field x64 boolean `true` if the game is running on 64-bit architecture.
----@field x32 boolean `true` if the game is running on 32-bit architecture.
----@field x86 boolean `true` if the game is running on 32-bit architecture.
 ---@field DEVELOPER integer A cached value of `developer` console variable.
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
@@ -155,7 +155,9 @@ local tostring = _G.tostring
 std.tostring = tostring
 
 std.getmetatable = _G.getmetatable
-std.setmetatable = _G.setmetatable
+
+local setmetatable = _G.setmetatable
+std.setmetatable = setmetatable
 
 std.getfenv = _G.getfenv -- removed in Lua 5.2
 std.setfenv = _G.setfenv -- removed in Lua 5.2
@@ -210,16 +212,6 @@ local debug_fempty = debug.fempty
 local debug_getinfo = debug.getinfo
 local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
-
-local setmetatable = std.setmetatable
-
-std.OSX = std.JIT_OS == "OSX"
-std.LINUX = std.JIT_OS == "Linux"
-std.WINDOWS = std.JIT_OS == "Windows"
-
-std.x64 = string.match( std.JIT_ARCH, "64" ) ~= nil
-std.x32 = not std.x64
-std.x86 = std.x32
 
 ---@class dreamwork.transducers
 local transducers = dreamwork.transducers
@@ -836,7 +828,23 @@ function raw.index( tbl, key )
     return raw_get( tbl, key )
 end
 
-std.SYSTEM_ENDIANNESS = std.SYSTEM_ENDIANNESS or string.byte( string.dump( std.debug.fempty ), 7 ) == 0x00
+do
+
+    ---@type dreamwork.std.jit
+    local jit = dofile( "std/jit.lua" )
+    local jit_os = jit.os
+
+    std.SYSTEM_OSX = jit_os == "OSX"
+    std.SYSTEM_LINUX = jit_os == "Linux"
+    std.SYSTEM_WINDOWS = jit_os == "Windows"
+
+    std.SYSTEM_x64 = string.match( jit.arch, "64" ) ~= nil
+    std.SYSTEM_x32 = not std.SYSTEM_x64
+    std.SYSTEM_x86 = std.SYSTEM_x32
+
+end
+
+std.SYSTEM_ENDIANNESS = string.byte( string.dump( std.debug.fempty ), 7 ) == 0x00
 
 --- [SHARED AND MENU]
 ---
@@ -1657,7 +1665,7 @@ do
     local splash = splashes[ math.random( 1, count ) ]
 
     local logo
-    if std.WINDOWS then
+    if std.SYSTEM_WINDOWS then
         logo = "\n       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ \n  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   \n     *   .         '          /           *                   ⠀⠀⠀⠀⣠⣴⣾⣯⠴⠚⠉⠉⠀⠀⠀⠀⣤⠏⣿      \n            *      * %s⠀⠀⣠⣴⡿⠿⢛⠁⠁⣸⠀⠀⠀⠀⠀⣤⣾⠵⠚⠁      \n '                +   +                    _|_     '    *  ⠀⣠⣴⠿⠋⠁⠀⠀⠀⠀⠘⣿⠀⣀⡠⠞⠛⠁⠂⠁⠀⠀      \n       .                             .      |         ⠀⠀⣀⣴⠟⠋⠁⠀⠀⠀⠀⠐⠠⡤⣾⣙⣶⡶⠃⠀⠀⠀⠀⠀⠀⠀       \n⠉                ____    o  +   .    +                ⣤⢾⣋⠉        __ ⡴⢿⢛⠃              \n⠄       o       / __ \\_____ __  __ _ _ __ _____     ⣴⡼⢏⠑__  _____/ /__ ⢿               \n⠂⠂      .      / / / /⠁⠁⠁//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/                 \n⠁   +       ⣀⣴/ /_/ / /⠞⠁/ __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    \n         ⣠⢴⣿⠟/_____/_/  ⠞\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   \n⠀⠀⠀⠀⠀⢀⡴⢏⡵⠛⠀⠀⠀⠀⠀⠀⠀⣀⣴⠞⠛                                                                  \n⠀⠀⠀⣀⣼⠛⣲⡏⠁⠀⠀⠀⠀⠀⢀⣠⡾⠋⠉⠁⠁⠁        .-.    o  +   .    |                                     \n⠀⠀⡴⠟⠀⢰⡯⠄⠀⠀⠀⠀⣠⢴⠟⠉ ⠁              ) )             --o--                                  \n⠀⡾⠁⠁⠀⠘⠧⠤⢤⣤⠶⠏⠙⠁    *     *       '-´   ⠁   ⠁    ⠁  |                                    \n⠘⣇⠂⢀⣀⣀⠤⠞⠋                                                                              \n⠀⠈⠉⠉⠉     .      +                      *   '      '        +                          \n╭────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       \n┊  GitHub: https://github.com/Pika-Software                                            \n┊  Discord: https://discord.gg/Gzak99XGvv                                              \n┊  Website: https://p1ka.eu                                                            \n┊  Developers: Pika Software                                                           \n┊  License: MIT                                                                        \n╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       \n"
     else
         -- logo = "\n                            ,                          ,                 /<^^/^^>      \n          *                             *                            <^^/^^/^^^/^^>    \n         /          +  %s  <^^^/^^^>      <^^^>  \n        /                  *          o         ,             </^^^/>      ,     <^^>  \n       *       .                                           <^/^^^>  ' ,___/_\\__<^>     \n                                           _|_         <^^/^^>         \\ / _ \\ /       \n              o       *              .      |        <^^/^>        -=   > (_) <   =-   \n    +            ____                              <^^/>          _    /_\\___/_\\       \n                / __ \\____ __  __ _ _ __ _____   <^^/>____  _____/ /__`   \\ /   ` .    \n  +      +     / / / / __//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/  /  `  \\        \n              / /_/ / /  / __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    \n         <^> /_____/_/ <>\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   \n       <^/>         <^^>                                                               \n    </  />      <^^^>     *       .-.          *   '      '        +                   \n  <^/>  <>    <^^^>                ) )               |                                 \n <^>   <^^^^^^^^>    *     '      '-´              --o--                               \n <^>       <^^/>                 *                   |                                 \n   <^^^^^^>       +           *           *   '      '        +                        \n ___________________________________________                                           \n/  GitHub: https://github.com/Pika-Software                                            \n   Discord: https://discord.gg/Gzak99XGvv                                              \n   Website: https://p1ka.eu                                                            \n   Developers: Pika Software                                                           \n   License: MIT                                                                        \n\\___________________________________________                                           \n"
@@ -1938,7 +1946,20 @@ local glua_system = _G.system
 
 if glua_system ~= nil then
 
-    std_metatable.__indexes.SYSTEM_COUNTRY = glua_system.GetCountry or function() return "gb" end
+    do
+
+        local system_GetCountry = glua_system.GetCountry
+        if system_GetCountry == nil then
+            std.SYSTEM_COUNTRY = "gb"
+        else
+            function std_metatable.__indexes.SYSTEM_COUNTRY()
+                local iso_3166_1_alpha_2 = string.lower( system_GetCountry() )
+                std.SYSTEM_COUNTRY = iso_3166_1_alpha_2
+                return iso_3166_1_alpha_2
+            end
+        end
+
+    end
 
     if glua_system.BatteryPower ~= nil then
 

@@ -119,11 +119,12 @@ do
     local require = _G.require or debug_fempty
     local pcall = std.pcall or debug_fempty
 
-    local is_edge = std.JIT_VERSION_INT ~= 20004
-    local is_x86 = std.x86
+    local is_edge = std.jit.version_num ~= 20004
+    local SYSTEM_WINDOWS = std.SYSTEM_WINDOWS
+    local SYSTEM_x86 = std.SYSTEM_x86
 
     local head = "lua/bin/gm" .. ( LUA_CLIENT and "cl" or "sv" ) .. "_"
-    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( std.WINDOWS and 4 or 0 ) + ( std.LINUX and 2 or 0 ) + ( is_x86 and 1 or 0 ) + 1 ]
+    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( SYSTEM_WINDOWS and 4 or 0 ) + ( std.SYSTEM_LINUX and 2 or 0 ) + ( SYSTEM_x86 and 1 or 0 ) + 1 ]
 
     --- [SHARED AND MENU]
     ---
@@ -149,7 +150,7 @@ do
             return true, "/garrysmod/" .. so_path
         end
 
-        if is_edge and is_x86 and tail == "_linux" then
+        if is_edge and SYSTEM_x86 and tail == "_linux" then
             file_path = head .. name .. "_linux32"
 
             dll_path = file_path .. ".dll"
@@ -163,7 +164,7 @@ do
             end
         end
 
-        return false, "/garrysmod/" .. file_path .. ( std.WINDOWS and ".dll" or ".so" )
+        return false, "/garrysmod/" .. file_path .. ( SYSTEM_WINDOWS and ".dll" or ".so" )
     end
 
     std.lookupbinary = lookupbinary

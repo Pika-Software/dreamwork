@@ -49,7 +49,7 @@ end
 
 local equals
 
-if std.WINDOWS or std.OSX then
+if std.SYSTEM_WINDOWS or std.SYSTEM_OSX then
 
     local string_lower = string.lower
 

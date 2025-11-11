@@ -2,14 +2,11 @@ local _G = _G
 local glua_jit = _G.jit
 
 ---@class dreamwork.std
----@field JIT_OS "Windows" | "Linux" | "OSX" | "BSD" | "POSIX" | "Other"
----@field JIT_ARCH "x86" | "x64" | "arm" | "arm64" | "arm64be" | "ppc" | "ppc64" | "ppc64le" | "mips" | "mipsel" | "mips64" | "mips64el" | string
----@field JIT_VERSION string The full name of the JIT compiler version.
----@field JIT_VERSION_INT integer The version of the JIT compiler.
 local std = _G.dreamwork.std
 
----@class dreamwork.std.debug
-local debug = std.debug
+local debug_getfmain = std.debug.getfmain
+local debug_fempty = std.debug.fempty
+local raw_type = std.raw.type
 
 -- TODO: docs
 
@@ -19,30 +16,33 @@ local debug = std.debug
 ---
 --- It"s a wrapper for the native jit library from LuaJIT.
 ---
----@class dreamwork.std.debug.jit
-local jit = debug.jit or {}
-debug.jit = jit
+---@class dreamwork.std.jit
+---@field os "Windows" | "Linux" | "OSX" | "BSD" | "POSIX" | "Other"
+---@field arch "x86" | "x64" | "arm" | "arm64" | "arm64be" | "ppc" | "ppc64" | "ppc64le" | "mips" | "mipsel" | "mips64" | "mips64el" | string
+---@field version string The full name of the JIT compiler version.
+---@field version_num integer The version of the JIT compiler.
+local jit = std.jit or {}
+std.jit = jit
 
-std.JIT_OS = glua_jit.os or "unknown"
-std.JIT_ARCH = glua_jit.arch or "unknown"
-std.JIT_VERSION = glua_jit.version or "unknown"
-std.JIT_VERSION_INT = glua_jit.version_num or 0
+jit.os = glua_jit.os or "unknown"
+jit.arch = glua_jit.arch or "unknown"
+jit.version = glua_jit.version or "unknown"
 
-jit.on = glua_jit.on or debug.fempty
-jit.off = glua_jit.off or debug.fempty
+---@type integer
+jit.version_num = glua_jit.version_num or 0
+
+jit.on = glua_jit.on or debug_fempty
+jit.off = glua_jit.off or debug_fempty
 jit.status = glua_jit.status or function() return false end
 
-jit.attach = glua_jit.attach or debug.fempty
-jit.flush = glua_jit.flush or debug.fempty
+jit.attach = glua_jit.attach or debug_fempty
+jit.flush = glua_jit.flush or debug_fempty
 
 if glua_jit.opt == nil then
-    jit.options = debug.fempty
+    jit.options = debug_fempty
 else
-    jit.options = glua_jit.opt.start or debug.fempty
+    jit.options = glua_jit.opt.start or debug_fempty
 end
-
-local debug_getfmain = debug.getfmain
-local raw_type = std.raw.type
 
 ---@diagnostic disable-next-line: undefined-field
 local util = glua_jit.util or {}
@@ -145,12 +145,10 @@ else
     ---@param fn function The function to check.
     ---@return boolean is_ffi `true` if the function is a FFI function, `false` otherwise.
     function jit.isFFI( fn )
-        if fn == nil then
-            return false
-        else
-            local info = util_funcinfo( fn )
-            return info ~= nil and info.ffid ~= nil
-        end
+        local info = util_funcinfo( fn )
+        return info ~= nil and info.ffid ~= nil
     end
 
 end
+
+return jit
