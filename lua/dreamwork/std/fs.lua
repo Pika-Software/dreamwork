@@ -38,8 +38,8 @@ local FILE_Read, FILE_Write = FILE.Read, FILE.Write
 local FILE_Close = FILE.Close
 local FILE_Size = FILE.Size
 
-local debug = std.debug
-local gc_setTableRules = debug.gc.setTableRules
+local gc_setTableRules = std.gc.setTableRules
+local debug_fempty = std.debug.fempty
 
 local table = std.table
 local table_concat = table.concat
@@ -116,8 +116,8 @@ local mount_infos = {
 
 do
 
-    local require = _G.require or debug.fempty
-    local pcall = std.pcall or debug.fempty
+    local require = _G.require or debug_fempty
+    local pcall = std.pcall or debug_fempty
 
     local is_edge = std.JIT_VERSION_INT ~= 20004
     local is_x86 = std.x86
@@ -1182,10 +1182,10 @@ if std.loadbinary( "efsw" ) then
     local efsw = _G.efsw
 
     ---@type fun( file_path: string, game_path: string ): integer
-    local efsw_watch = efsw ~= nil and efsw.Watch or debug.fempty
+    local efsw_watch = efsw ~= nil and efsw.Watch or debug_fempty
 
     ---@type fun( watch_id: integer )
-    local efsw_unwatch = efsw ~= nil and efsw.Unwatch or debug.fempty
+    local efsw_unwatch = efsw ~= nil and efsw.Unwatch or debug_fempty
 
     --- [SHARED AND MENU]
     ---

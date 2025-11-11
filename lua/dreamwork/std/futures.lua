@@ -3,7 +3,7 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local gc_setTableRules = std.debug.gc.setTableRules
+local gc_setTableRules = std.gc.setTableRules
 local pcall, xpcall = std.pcall, std.xpcall
 local isFunction = std.isFunction
 local tostring = std.tostring

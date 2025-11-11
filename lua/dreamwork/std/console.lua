@@ -168,6 +168,7 @@ for i = 1, existing_flag_count, 1 do
 end
 
 local bit_band = std.bit.band
+local gc_setTableRules = std.gc.setTableRules
 
 local string = std.string
 local string_sub = string.sub
@@ -175,7 +176,6 @@ local string_format = string.format
 
 local debug = std.debug
 local debug_fempty = debug.fempty
-local gc_setTableRules = debug.gc.setTableRules
 
 local futures_Future = std.futures.Future
 local setmetatable = std.setmetatable

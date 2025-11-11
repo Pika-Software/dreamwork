@@ -4,8 +4,8 @@ local dreamwork = _G.dreamwork
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local gc_setTableRules = std.gc.setTableRules
 local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
-local gc_setTableRules = std.debug.gc.setTableRules
 
 ---@type table<dreamwork.std.Client, Player>
 local entities = {}

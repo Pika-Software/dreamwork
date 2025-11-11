@@ -473,12 +473,12 @@ do
 
     ---@type table<dreamwork.std.Symbol, string>
     local names = {}
-    debug.gc.setTableRules( names, true, false )
+    std.gc.setTableRules( names, true, false )
 
     ---@type table<string, dreamwork.std.Symbol>
     local symbols = {}
 
-    debug.gc.setTableRules( symbols, false, true )
+    std.gc.setTableRules( symbols, false, true )
 
     local proxy_template = debug_newproxy( true )
 

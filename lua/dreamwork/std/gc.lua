@@ -1,5 +1,4 @@
 local _G = _G
-local std = _G.dreamwork.std
 local collectgarbage = _G.collectgarbage
 
 if collectgarbage == nil then
@@ -12,8 +11,8 @@ if collectgarbage == nil then
     end
 end
 
----@class dreamwork.std.debug
-local debug = std.debug
+---@class dreamwork.std
+local std = _G.dreamwork.std
 
 --- [SHARED AND MENU]
 ---
@@ -21,10 +20,9 @@ local debug = std.debug
 ---
 --- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
 ---
----@class dreamwork.std.debug.gc
-local gc = debug.gc or {}
-debug.gc = gc
-
+---@class dreamwork.std.gc
+local gc = std.gc or {}
+std.gc = gc
 
 --- [SHARED AND MENU]
 ---

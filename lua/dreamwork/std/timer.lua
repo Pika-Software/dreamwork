@@ -15,7 +15,7 @@ local string = std.string
 local math = std.math
 local math_max = math.max
 
-local gc_setTableRules = std.debug.gc.setTableRules
+local gc_setTableRules = std.gc.setTableRules
 local time_elapsed = std.time.elapsed
 local table_eject = std.table.eject
 

@@ -47,7 +47,7 @@ std.class = class
 ---@type table<dreamwork.std.Object, userdata>
 local templates = {}
 
-debug.gc.setTableRules( templates, true, false )
+std.gc.setTableRules( templates, true, false )
 
 do
 

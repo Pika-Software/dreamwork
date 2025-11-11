@@ -330,7 +330,7 @@ if engine.consoleVariableGet == nil or engine.consoleVariableCreate == nil or en
     ---@type table<string, ConVar>
     local cache = {}
 
-    debug.gc.setTableRules( cache, false, true )
+    std.gc.setTableRules( cache, false, true )
 
     --- [SHARED AND MENU]
     ---

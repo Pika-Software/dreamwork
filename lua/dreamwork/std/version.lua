@@ -4,11 +4,10 @@ local std = _G.dreamwork.std
 local raw = std.raw
 local raw_tonumber = raw.tonumber
 
-local debug = std.debug
-local gc_setTableRules = debug.gc.setTableRules
+local gc_setTableRules = std.gc.setTableRules
 
 local bit = std.bit
-local bit_band, bit_bor, bit_lshift, bit_rshift = bit.band, bit.bor, bit.lshift, bit.rshift
+local bit_bor, bit_lshift = bit.bor, bit.lshift
 
 local string = std.string
 local string_byte = string.byte

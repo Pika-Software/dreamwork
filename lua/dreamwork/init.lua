@@ -203,8 +203,7 @@ if LUA_SERVER then
 end
 
 dofile( "std/debug.lua" )
-dofile( "std/debug.gc.lua" )
-dofile( "std/debug.jit.lua" )
+dofile( "std/gc.lua" )
 
 local debug = std.debug
 local debug_fempty = debug.fempty
@@ -861,6 +860,8 @@ end
 -- TODO: remove me later or rewrite
 do
 
+    local gc = std.gc
+
     local iter = 1000
     local warmup = math.min( iter / 100, 100 )
 
@@ -869,7 +870,7 @@ do
             fn()
         end
 
-        debug.gc.stop()
+        gc.stop()
 
         local st = os_clock()
         for _ = 1, iter do
@@ -877,7 +878,7 @@ do
         end
 
         st = os_clock() - st
-        debug.gc.restart()
+        gc.restart()
 
         print( string_format( "%d iterations of %s, took %f sec.", iter, name, st ) )
 
@@ -2036,7 +2037,7 @@ end
 
 do
     local start_time = os_clock()
-    debug.gc.collect()
+    std.gc.collect()
     logger:info( "Clean-up time: %.2f ms.", ( os_clock() - start_time ) * 1000 )
 end
 
