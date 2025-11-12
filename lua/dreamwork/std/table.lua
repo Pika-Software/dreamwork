@@ -23,20 +23,21 @@ std.table = table
 
 do
 
-    local jit_isFFI = std.debug.jit.isFFI
+    local debug_iscf = std.debug.iscf
     local glua_table = _G.table
 
     -- Lua 5.1
-    table.concat = table.concat or glua_table.concat
-    table.insert = table.insert or glua_table.insert
-    table.remove = table.remove or glua_table.remove
-    table.sort = table.sort or glua_table.sort
+    table.concat = glua_table.concat
+    table.insert = glua_table.insert
+    table.remove = glua_table.remove
+    table.sort = glua_table.sort
 
-    table.maxn = table.maxn or glua_table.maxn -- removed in Lua 5.2
+    table.maxn = glua_table.maxn -- removed in Lua 5.2
 
     -- Lua 5.2
-    if jit_isFFI( glua_table.pack ) then
-        table.pack = table.pack or glua_table.pack
+    local table_pack = glua_table.pack
+    if table_pack ~= nil and debug_iscf( table_pack ) then
+        table.pack = table_pack
     end
 
     if table.pack == nil then
@@ -46,11 +47,12 @@ do
         end
     end
 
-    table.unpack = table.unpack or glua_table.unpack or _G.unpack
+    table.unpack = glua_table.unpack or _G.unpack
 
     -- Lua 5.3
-    if jit_isFFI( glua_table.move ) then
-        table.move = table.move or glua_table.move
+    local table_move = glua_table.move
+    if table_move ~= nil and debug_iscf( table_move ) then
+        table.move = table_move
     end
 
     if table.move == nil then
@@ -719,3 +721,53 @@ function table.extract( tbl, start_position, end_position, step_size, tbl_length
 
     return extracted, extracted_length
 end
+
+--- [SHARED AND MENU]
+---
+--- Applies a function to each value of the table.
+---
+--- The original table remains **unchanged**.
+---
+--- The returned table is a shallow copy of the original table.
+---
+---@param tbl table The table.
+---@param fn function The function to apply.
+---@return table mapped The mapped table.
+function table.imap( tbl, fn )
+    local mapped = {}
+
+    for i = 1, len( tbl ), 1 do
+        mapped[ i ] = fn( tbl[ i ] )
+    end
+
+    return mapped
+end
+
+do
+
+    local pairs = std.pairs
+
+    --- [SHARED AND MENU]
+    ---
+    --- Applies a function to each value of the table.
+    ---
+    --- The original table remains **unchanged**.
+    ---
+    --- The returned table is a shallow copy of the original table.
+    ---
+    ---@param tbl table The table.
+    ---@param fn function The function to apply.
+    ---@return table mapped The mapped table.
+    function table.map( tbl, fn )
+        local mapped = {}
+
+        for key, value in pairs( tbl ) do
+            mapped[ key ] = fn( key, value )
+        end
+
+        return mapped
+    end
+
+end
+
+return table
