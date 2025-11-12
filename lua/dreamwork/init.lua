@@ -1218,6 +1218,8 @@ do
         local string_sub = string.sub
         local string_len = string.len
 
+        -- TODO: rewrite function below with goto
+
         --- [SHARED AND MENU]
         ---
         --- Prints a formatted string to the console with colors!
@@ -1610,6 +1612,7 @@ do
     end
 
     local splashes = {
+        "We'll Sandblast these walls and paint them again!",
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
         "I'm not here to tell you how great I am!",
         "Woah-oh-oh, tell me where you wanna go ♪",
@@ -1662,17 +1665,71 @@ do
     local count = #splashes + 1
     splashes[ count ] = "Wow, here more " .. ( count - 1 ) .. " splashes!"
 
-    local splash = splashes[ math.random( 1, count ) ]
+    local scheme
 
-    local logo
     if std.SYSTEM_WINDOWS then
-        logo = "\n       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ \n  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   \n     *   .         '          /           *                   ⠀⠀⠀⠀⣠⣴⣾⣯⠴⠚⠉⠉⠀⠀⠀⠀⣤⠏⣿      \n            *      * %s⠀⠀⣠⣴⡿⠿⢛⠁⠁⣸⠀⠀⠀⠀⠀⣤⣾⠵⠚⠁      \n '                +   +                    _|_     '    *  ⠀⣠⣴⠿⠋⠁⠀⠀⠀⠀⠘⣿⠀⣀⡠⠞⠛⠁⠂⠁⠀⠀      \n       .                             .      |         ⠀⠀⣀⣴⠟⠋⠁⠀⠀⠀⠀⠐⠠⡤⣾⣙⣶⡶⠃⠀⠀⠀⠀⠀⠀⠀       \n⠉                ____    o  +   .    +                ⣤⢾⣋⠉        __ ⡴⢿⢛⠃              \n⠄       o       / __ \\_____ __  __ _ _ __ _____     ⣴⡼⢏⠑__  _____/ /__ ⢿               \n⠂⠂      .      / / / /⠁⠁⠁//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/                 \n⠁   +       ⣀⣴/ /_/ / /⠞⠁/ __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    \n         ⣠⢴⣿⠟/_____/_/  ⠞\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   \n⠀⠀⠀⠀⠀⢀⡴⢏⡵⠛⠀⠀⠀⠀⠀⠀⠀⣀⣴⠞⠛                                                                  \n⠀⠀⠀⣀⣼⠛⣲⡏⠁⠀⠀⠀⠀⠀⢀⣠⡾⠋⠉⠁⠁⠁        .-.    o  +   .    |                                     \n⠀⠀⡴⠟⠀⢰⡯⠄⠀⠀⠀⠀⣠⢴⠟⠉ ⠁              ) )             --o--                                  \n⠀⡾⠁⠁⠀⠘⠧⠤⢤⣤⠶⠏⠙⠁    *     *       '-´   ⠁   ⠁    ⠁  |                                    \n⠘⣇⠂⢀⣀⣀⠤⠞⠋                                                                              \n⠀⠈⠉⠉⠉     .      +                      *   '      '        +                          \n╭────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       \n┊  GitHub: https://github.com/Pika-Software                                            \n┊  Discord: https://discord.gg/Gzak99XGvv                                              \n┊  Website: https://p1ka.eu                                                            \n┊  Developers: Pika Software                                                           \n┊  License: MIT                                                                        \n╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       \n"
+        scheme = {
+            "       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ ",
+            "  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   ",
+            "     *   .         '          /           *                   ⠀⠀⠀⠀⣠⣴⣾⣯⠴⠚⠉⠉⠀⠀⠀⠀⣤⠏⣿      ",
+            "   *    * %s                                                 ⠀⣠⣴⡿⠿⢛⠁⠁⣸⠀⠀⠀⠀⠀⣤⣾⠵⠚⠁      ",
+            "'                +   +                    _|_     '    *  ⠀⣠⣴⠿⠋⠁⠀⠀⠀⠀⠘⣿⠀⣀⡠⠞⠛⠁⠂⠁⠀⠀      ",
+            "       .                             .      |         ⠀⠀⣀⣴⠟⠋⠁⠀⠀⠀⠀⠐⠠⡤⣾⣙⣶⡶⠃⠀⠀⠀⠀⠀⠀⠀       ",
+            "⠉                ____    o  +   .    +                ⣤⢾⣋⠉        __ ⡴⢿⢛⠃              ",
+            "⠄       o       / __ \\_____ __  __ _ _ __ _____     ⣴⡼⢏⠑__  _____/ /__ ⢿               ",
+            "⠂⠂      .      / / / /⠁⠁⠁//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/                 ",
+            "⠁   +       ⣀⣴/ /_/ / /⠞⠁/ __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    ",
+            "         ⣠⢴⣿⠟/_____/_/  ⠞\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   ",
+            "⠀⠀⠀⠀⠀⢀⡴⢏⡵⠛⠀⠀⠀⠀⠀⠀⠀⣀⣴⠞⠛                                                                  ",
+            "⠀⠀⠀⣀⣼⠛⣲⡏⠁⠀⠀⠀⠀⠀⢀⣠⡾⠋⠉⠁⠁⠁        .-.    o  +   .    |                                     ",
+            "⠀⠀⡴⠟⠀⢰⡯⠄⠀⠀⠀⠀⣠⢴⠟⠉ ⠁              ) )             --o--                                  ",
+            "⠀⡾⠁⠁⠀⠘⠧⠤⢤⣤⠶⠏⠙⠁    *     *       '-´   ⠁   ⠁    ⠁  |                                    ",
+            "⠘⣇⠂⢀⣀⣀⠤⠞⠋                                                                              ",
+            "⠀⠈⠉⠉⠉     .      +                      *   '      '        +                          ",
+            "╭────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       ",
+            "┊  GitHub: https://github.com/Pika-Software                                            ",
+            "┊  Discord: https://discord.gg/Gzak99XGvv                                              ",
+            "┊  Website: https://p1ka.eu                                                            ",
+            "┊  Developers: Pika Software                                                           ",
+            "┊  License: MIT                                                                        ",
+            "╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       "
+        }
     else
-        -- logo = "\n                            ,                          ,                 /<^^/^^>      \n          *                             *                            <^^/^^/^^^/^^>    \n         /          +  %s  <^^^/^^^>      <^^^>  \n        /                  *          o         ,             </^^^/>      ,     <^^>  \n       *       .                                           <^/^^^>  ' ,___/_\\__<^>     \n                                           _|_         <^^/^^>         \\ / _ \\ /       \n              o       *              .      |        <^^/^>        -=   > (_) <   =-   \n    +            ____                              <^^/>          _    /_\\___/_\\       \n                / __ \\____ __  __ _ _ __ _____   <^^/>____  _____/ /__`   \\ /   ` .    \n  +      +     / / / / __//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/  /  `  \\        \n              / /_/ / /  / __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    \n         <^> /_____/_/ <>\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   \n       <^/>         <^^>                                                               \n    </  />      <^^^>     *       .-.          *   '      '        +                   \n  <^/>  <>    <^^^>                ) )               |                                 \n <^>   <^^^^^^^^>    *     '      '-´              --o--                               \n <^>       <^^/>                 *                   |                                 \n   <^^^^^^>       +           *           *   '      '        +                        \n ___________________________________________                                           \n/  GitHub: https://github.com/Pika-Software                                            \n   Discord: https://discord.gg/Gzak99XGvv                                              \n   Website: https://p1ka.eu                                                            \n   Developers: Pika Software                                                           \n   License: MIT                                                                        \n\\___________________________________________                                           \n"
-        logo = "\n               / *    .      +                                                    \n          .   /                        /  '           '     .                     \n   .         *   .         '          /           *                               \n                                     *      *                         .      +    \n     '                +   +                    _|_     '    *                     \n       .                             .          |                 +      |        \n          o      '            +        .              .     '          --o--      \n            * .                                                    '     |        \n     '          .         '    '                                 /               o\n  '                    .             DreamWork                  /                 \n     .          '   +    .                           +      .  *                  \n           .                          +                   .            +        . \n     o                %s.                   \n                                               .           *         *            \n           .         .      +                      *   '      '        +          \n                       o  +   .    +      .     .                o                \n     .-.                         '                    .                           \n      ) ) .          o                        |             o             '   .   \n     '-´                               '    --o--                                 \n               .                              |                      +        .   \n\n  GitHub: https://github.com/Pika-Software\n  Discord: https://discord.gg/Gzak99XGvv\n  Website: https://p1ka.eu\n  Developers: Pika Software\n  License: MIT\n"
+        scheme = {
+            "               /          .      +           /                                    ",
+            "          .   *                             /  '           '     .                ",
+            "   .             .             '           /           *                `         ",
+            "                     +                    *        *                         .    ",
+            "     '              /                                 _|_     '    *              ",
+            "           ,       +            .            .         |              +     |     ",
+            "            '       \\            \\                       .     '          --o--   ",
+            "  `      * .         +            \\          ,                         '    |     ",
+            "             ____                  \\        __        __            __            ",
+            "    .       / __ \\ ____ __   __ __  __ ____\\  \\      /  /___  _____/ /__ ` .     .",
+            "   /   .   / / / / __// _ \\ /  _` || '_ ` _ \\  \\ __ /  / _  \\/ ___/ //_/  `     / ",
+            "  /   /   / /_/ / /  /  __//  (_) || | | | | \\  V  V  / (_) / /  / ,<\\         /  ",
+            " *   *   /_____/_/   \\ ___|\\ __/__||_| |_| |_|\\ _/\\_/ \\ ___/_/  /_/|_|        /   ",
+            "  ,                 .      +              \\                 '                *    ",
+            "       +         \\  %s                                                  `          ",
+            "  .               \\              *           \\               *              ,     ",
+            "     .-.    `      *                          *        |         '                ",
+            "      ) )               *     '                      --o--         ,   +          ",
+            "     '-´                           *                   |                          ",
+            "         '        +           *           *   '               +                   ",
+            "|>|================================================= ` .                          ",
+            "|=| -  GitHub:   https://github.com/Pika-Software  /  `                           ",
+            "|<| - Discord:   https://discord.gg/Gzak99XGvv    /                               ",
+            "|=| - Website:   https://p1ka.eu                 /                                ",
+            "|<| - DevTeam:   Pika Software                  /                                 ",
+            "|=| - License:   MIT                           /                                  ",
+            "|>|___________________________________________/                                   "
+        }
     end
 
-    std.printfc( logo, string.pad( splash, 40, " ", nil, std.encoding.utf8.len( splash ) ) )
+    local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
+    local splash = splashes[ math.random( 1, count ) ]
+
+    std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.encoding.utf8.len( splash ) ) )
 
 end
 
