@@ -119,9 +119,9 @@ do
     local require = _G.require or debug_fempty
     local pcall = std.pcall or debug_fempty
 
-    local is_edge = std.jit.version_num ~= 20004
     local SYSTEM_WINDOWS = std.SYSTEM_WINDOWS
     local SYSTEM_x86 = std.SYSTEM_x86
+    local jit_edge = std.jit.edge
 
     local head = "lua/bin/gm" .. ( LUA_CLIENT and "cl" or "sv" ) .. "_"
     local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( SYSTEM_WINDOWS and 4 or 0 ) + ( std.SYSTEM_LINUX and 2 or 0 ) + ( SYSTEM_x86 and 1 or 0 ) + 1 ]
@@ -150,7 +150,7 @@ do
             return true, "/garrysmod/" .. so_path
         end
 
-        if is_edge and SYSTEM_x86 and tail == "_linux" then
+        if jit_edge and SYSTEM_x86 and tail == "_linux" then
             file_path = head .. name .. "_linux32"
 
             dll_path = file_path .. ".dll"

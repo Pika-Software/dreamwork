@@ -20,7 +20,9 @@ local raw_type = std.raw.type
 ---@field os "Windows" | "Linux" | "OSX" | "BSD" | "POSIX" | "Other"
 ---@field arch "x86" | "x64" | "arm" | "arm64" | "arm64be" | "ppc" | "ppc64" | "ppc64le" | "mips" | "mipsel" | "mips64" | "mips64el" | string
 ---@field version string The full name of the JIT compiler version.
----@field version_num integer The version of the JIT compiler.
+---@field version_number integer The version of the JIT compiler.
+---@field version_byte integer The version byte of the JIT compiler.
+---@field edge boolean `true` if the JIT compiler is an edge version, `false` otherwise.
 local jit = std.jit or {}
 std.jit = jit
 
@@ -28,8 +30,24 @@ jit.os = glua_jit.os or "unknown"
 jit.arch = glua_jit.arch or "unknown"
 jit.version = glua_jit.version or "unknown"
 
----@type integer
-jit.version_num = glua_jit.version_num or 0
+do
+
+    ---@type integer
+    local jit_version = glua_jit.version_num or 0
+    jit.version_number = jit_version
+
+    jit.edge = false
+
+    if jit_version == 0 then
+        jit.version_byte = 0
+    elseif jit_version >= 20100 then
+        jit.version_byte = 2
+        jit.edge = true
+    else
+        jit.version_byte = 1
+    end
+
+end
 
 jit.on = glua_jit.on or debug_fempty
 jit.off = glua_jit.off or debug_fempty

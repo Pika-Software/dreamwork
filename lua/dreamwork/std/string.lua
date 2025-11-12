@@ -925,19 +925,17 @@ end
 
 do
 
-    local jit_version = ( {
-        [ "200" ] = 0x01,
-        [ "201" ] = 0x02
-    } )[ string_sub( tostring( std.jit.version_num ), 1, 3 ) ]
-
     --- [SHARED AND MENU]
     ---
     --- Checks if a string is bytecode.
     ---
+    --- The string should be a LuaJIT bytecode chunk.
+    ---
     ---@param str string The string to check.
+    ---@param jit_version `0x01` | `0x02` | integer The JIT version to check for. (Basically `jit.version_byte`)
     ---@param start_position? integer The start position of the string.
     ---@return boolean result `true` if the string is bytecode, otherwise `false`.
-    function string.isBytecode( str, start_position )
+    function string.isBytecode( str, jit_version, start_position )
         if start_position == nil then
             start_position = 1
         end

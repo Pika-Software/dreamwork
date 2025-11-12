@@ -301,7 +301,7 @@ do
     --- * string `gamemode_name` - Gamemode folder name
     --- * number `gamemode_wsid` - Gamemode Steam Workshop ID
     --- * boolean `is_anonymous` - Is the server signed into an anonymous account?
-    --- * string `version` - Version number, same format as jit.version_num
+    --- * string `version` - Version number, same format as jit.version_number
     --- * string `country` - Two digit country code, `us` if nil
     --- * string `gamemode_category` - Category of the gamemode, ex. `pvp`, `pve`, `rp` or `roleplay`
     ---
