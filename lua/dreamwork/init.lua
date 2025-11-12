@@ -33,9 +33,9 @@ end
 ---@field SYSTEM_OSX boolean `true` if the game is running on OSX.
 ---@field SYSTEM_LINUX boolean `true` if the game is running on Linux.
 ---@field SYSTEM_WINDOWS boolean `true` if the game is running on Windows.
----@field SYSTEM_x64 boolean `true` if the game is running on 64-bit architecture.
----@field SYSTEM_x32 boolean `true` if the game is running on 32-bit architecture.
----@field SYSTEM_x86 boolean `true` if the game is running on 32-bit architecture.
+---@field SYSTEM_X64 boolean `true` if the game is running on 64-bit architecture.
+---@field SYSTEM_X32 boolean `true` if the game is running on 32-bit architecture.
+---@field SYSTEM_X86 boolean `true` if the game is running on 32-bit architecture.
 ---@field SYSTEM_ENDIANNESS boolean `true` if the operating system is big endianness, `false` if little endianness.
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
@@ -838,9 +838,9 @@ do
     std.SYSTEM_LINUX = jit_os == "Linux"
     std.SYSTEM_WINDOWS = jit_os == "Windows"
 
-    std.SYSTEM_x64 = string.match( jit.arch, "64" ) ~= nil
-    std.SYSTEM_x32 = not std.SYSTEM_x64
-    std.SYSTEM_x86 = std.SYSTEM_x32
+    std.SYSTEM_X64 = string.match( jit.arch, "64" ) ~= nil
+    std.SYSTEM_X32 = not std.SYSTEM_X64
+    std.SYSTEM_X86 = std.SYSTEM_X32
 
 end
 

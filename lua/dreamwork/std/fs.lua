@@ -120,11 +120,11 @@ do
     local pcall = std.pcall or debug_fempty
 
     local SYSTEM_WINDOWS = std.SYSTEM_WINDOWS
-    local SYSTEM_x86 = std.SYSTEM_x86
+    local SYSTEM_X86 = std.SYSTEM_X86
     local jit_edge = std.jit.edge
 
     local head = "lua/bin/gm" .. ( LUA_CLIENT and "cl" or "sv" ) .. "_"
-    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( SYSTEM_WINDOWS and 4 or 0 ) + ( std.SYSTEM_LINUX and 2 or 0 ) + ( SYSTEM_x86 and 1 or 0 ) + 1 ]
+    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( SYSTEM_WINDOWS and 4 or 0 ) + ( std.SYSTEM_LINUX and 2 or 0 ) + ( SYSTEM_X86 and 1 or 0 ) + 1 ]
 
     --- [SHARED AND MENU]
     ---
@@ -150,7 +150,7 @@ do
             return true, "/garrysmod/" .. so_path
         end
 
-        if jit_edge and SYSTEM_x86 and tail == "_linux" then
+        if jit_edge and SYSTEM_X86 and tail == "_linux" then
             file_path = head .. name .. "_linux32"
 
             dll_path = file_path .. ".dll"

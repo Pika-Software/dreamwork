@@ -730,9 +730,9 @@ end
 ---
 --- The returned table is a shallow copy of the original table.
 ---
----@param tbl table The table.
----@param fn function The function to apply.
----@return table mapped The mapped table.
+---@param tbl table The sequential table.
+---@param fn fun( key: any, value: any ): any The function to apply.
+---@return table mapped The new mapped sequential table.
 function table.imap( tbl, fn )
     local mapped = {}
 
@@ -755,9 +755,9 @@ do
     ---
     --- The returned table is a shallow copy of the original table.
     ---
-    ---@param tbl table The table.
-    ---@param fn function The function to apply.
-    ---@return table mapped The mapped table.
+    ---@param tbl table The key/value table.
+    ---@param fn fun( key: any, value: any ): any The function to apply.
+    ---@return table mapped The new mapped key/value table.
     function table.map( tbl, fn )
         local mapped = {}
 
