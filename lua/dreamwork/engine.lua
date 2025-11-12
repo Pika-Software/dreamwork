@@ -537,7 +537,7 @@ do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
                 -- by Retr0 ( 989 characters per message )
                 local segment_length = math_min( 989, str_length )
-                MsgC( color, utf8_sub( str, index, index + segment_length ) )
+                MsgC( color, utf8_sub( str, index, index + segment_length - 1 ) )
                 str_length = str_length - segment_length
                 index = index + segment_length
             end
