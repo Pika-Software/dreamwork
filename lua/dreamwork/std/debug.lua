@@ -355,6 +355,7 @@ function debug.getfmain( stack_level )
         return info.func
     end
 
+    stack_level = stack_level + 1
     goto getfmain_loop
 end
 
