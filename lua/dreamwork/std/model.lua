@@ -6,9 +6,9 @@ local std = _G.dreamwork.std
 
 local Model = std.class.base( "Model" )
 
-function Model:__init( )
+-- function Model:__init( )
 
-end
+-- end
 
 local ModelClass = std.class.create( Model )
 std.Model = ModelClass

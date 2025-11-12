@@ -6,12 +6,15 @@ local dreamwork = _G.dreamwork
 local std = dreamwork.std
 
 local math = std.math
+
 local debug = std.debug
+local debug_fempty = debug.fempty
+
+local table = std.table
+local table_insert = table.insert
 
 local raw_pairs = std.raw.pairs
-local debug_fempty = debug.fempty
 local setmetatable = std.setmetatable
-local table_insert = std.table.insert
 local detour_attach = dreamwork.detour.attach
 
 local transducers = dreamwork.transducers
@@ -1174,7 +1177,7 @@ end
 
 if engine.loadMaterial == nil then
 
-    ---@alias dreamwork.engine.ImageParameters
+    ---@alias dreamwork.engine.ImageParameters integer
     ---| `1` Makes the created material a `VertexLitGeneric`, so it can be applied to models. Default shader is `UnlitGeneric`.
     ---| `2` Sets the `$nocull` to `1` in the created material.
     ---| `4` Sets the `$alphatest` to `1` in the created material instead of `$vertexalpha` being set to `1`.
@@ -1182,32 +1185,84 @@ if engine.loadMaterial == nil then
     ---| `16` Makes the image able to tile when used with non standard UV maps. Sets the `CLAMPS` and `CLAMPT` flags if unset.
     ---| `32` If set does nothing, if unset - enables **Point Sampling (Texture Filtering)** on the material as well as adds the **No Level Of Detail** flag to it.
     ---| `64` If set, the material will be given `$ignorez` flag, which is necessary for some rendering operations, such as render targets and 3d2d rendering.
-    ---| `128` Unused.
-    ---| integer
+
+    local bitpack = std.pack.bits
+    local bitpack_toString = bitpack.toString
+    local bitpack_writeUInt = bitpack.writeUInt
 
     local material_fn = _G.Material
     local upvalues = debug.getupvalues( material_fn )
 
-    if upvalues.C_Material == nil then
+    ---@type fun( string, string? ): IMaterial, number
+    local c_material_fn = upvalues.C_Material
 
-        local bitpack = std.pack.bits
-        local bitpack_toString = bitpack.toString
-        local bitpack_writeUInt = bitpack.writeUInt
+    if c_material_fn == nil then
+
+        local table_concat = table.concat
+        local bit_band = std.bit.band
+
+        local bit2params = {
+            { 1, "vertexlitgeneric" },
+            { 2, "nocull" },
+            { 4, "alphatest" },
+            { 8, "mips" },
+            { 16, "noclamp" },
+            { 32, "smooth" },
+            { 64, "ignorez" }
+        }
+
+        local bit2param_count = #bit2params
 
         --- [SHARED AND MENU]
         ---
         --- Loads a material from the file.
         ---
-        ---@param file_path string The path to the file to read.
-        ---@param parameters dreamwork.engine.ImageParameters The parameters.
-        ---@return IMaterial material The material.
+        ---@param file_path string The path to the file.
+        ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
+        ---@return IMaterial material The loaded material.
         ---@return number time_taken The time taken to load the material.
         function engine.loadMaterial( file_path, parameters )
-            return material_fn( file_path, bitpack_toString( bitpack_writeUInt( parameters, 8 ), 8, false ) )
+            if parameters == nil then
+                return material_fn( file_path )
+            end
+
+            local params, param_count = {}, 0
+
+            for i = 1, bit2param_count, 1 do
+                local data = bit2params[ i ]
+                if bit_band( parameters, data[ 2 ] ) ~= 0 then
+                    param_count = param_count + 1
+                    params[ param_count ] = data[ 1 ]
+                end
+            end
+
+            if param_count == 0 then
+                return material_fn( file_path )
+            elseif param_count == 1 then
+                return material_fn( file_path, params[ 1 ] )
+            else
+                return material_fn( file_path, table_concat( params, " ", 1, param_count ) )
+            end
         end
 
     else
-        engine.loadMaterial = upvalues.C_Material
+
+        --- [SHARED AND MENU]
+        ---
+        --- Loads a material from the file.
+        ---
+        ---@param file_path string The path to the file.
+        ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
+        ---@return IMaterial material The loaded material.
+        ---@return number time_taken The time taken to load the material.
+        function engine.loadMaterial( file_path, parameters )
+            if parameters == nil then
+                return c_material_fn( file_path )
+            else
+                return c_material_fn( file_path, bitpack_toString( bitpack_writeUInt( parameters, 8 ), 8, false ) )
+            end
+        end
+
     end
 
 end

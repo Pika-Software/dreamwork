@@ -453,7 +453,7 @@ do
     ---@param file_path string The file path.
     ---@param stack_level? number The stack level to get the directory from.
     ---@return string abs_path The resolved file path.
-    function path.resolve( file_path, stack_level )
+    local function resolve( file_path, stack_level )
         if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
             return normalize( file_path, false )
         end
@@ -467,97 +467,96 @@ do
         return normalize( ( getDirectory( get( stack_level ), true ) or "/" ) .. file_path, false )
     end
 
-end
+    path.resolve = resolve
 
-do
+    do
 
-    local string_byteTrim = string.byteTrim
+        local math_min = std.math.min
 
-    --- [SHARED AND MENU]
-    ---
-    --- Join the file paths into a single file path and normalize it.
-    ---
-    ---@param ... string The file paths.
-    ---@return string file_path The joined file path.
-    function path.join( ... )
-        local arg_count = select( "#", ... )
-        local args = { ... }
-
-        for index = 1, arg_count, 1 do
-            local value = args[ index ]
-            if value and value ~= "" then
-                args[ index ] = value
+        --- [SHARED AND MENU]
+        ---
+        --- Returns the relative path from from to to based on the current working directory.
+        ---
+        --- If from and to each resolve to the same path (after calling path.resolve() on each), returns "."
+        ---
+        ---@param from string The path to get the relative path from.
+        ---@param to string The path to get the relative path to.
+        ---@param stack_level? integer The stack level to get the directory from.
+        ---@return string relative_path The relative path.
+        function path.relative( from, to, stack_level )
+            if stack_level == nil then
+                stack_level = 2
             else
-                args[ index ] = ""
+                stack_level = stack_level + 1
+            end
+
+            local from_path, to_path = resolve( from, stack_level ), resolve( to, stack_level )
+
+            if equals( from_path, to_path ) then
+                return "."
+            end
+
+            local from_parts, from_part_count = string_byteSplit( from_path, 0x2F --[[ / ]] )
+            local to_parts, to_part_count = string_byteSplit( to_path, 0x2F --[[ / ]] )
+            local equal_count = 0
+
+            for index = 1, math_min( from_part_count, to_part_count ), 1 do
+                if equals( from_parts[ index ], to_parts[ index ] ) then
+                    equal_count = equal_count + 1
+                else
+                    break
+                end
+            end
+
+            local result_parts, result_part_count = {}, 0
+            for _ = equal_count + 1, from_part_count, 1 do
+                result_part_count = result_part_count + 1
+                result_parts[ result_part_count ] = ".."
+            end
+
+            for index = equal_count + 1, to_part_count, 1 do
+                result_part_count = result_part_count + 1
+                result_parts[ result_part_count ] = to_parts[ index ]
+            end
+
+            if result_part_count == 0 then
+                return "."
+            else
+                return table_concat( result_parts, "/", 1, result_part_count )
             end
         end
 
-        for index = 1, arg_count, 1 do
-            local value = args[ index ]
-            if index > 1 then
-                -- TODO: recheck direction
-                value = string_byteTrim( value, 0x2F, false )
-            end
-
-            if index < arg_count then
-                -- TODO: recheck direction
-                value = string_byteTrim( value, 0x2F, true )
-            end
-
-            args[ index ] = value
-        end
-
-        return normalize( table_concat( args, "/", 1, arg_count ) )
     end
 
 end
 
 do
 
-    local math_min = std.math.min
+    local string_byteTrim = string.byteTrim
+    local len = std.len
 
     --- [SHARED AND MENU]
     ---
-    --- Get the relative path from one file path to another.
+    --- Join the file paths into a single file path and normalize it.
     ---
-    ---@param from string The from file path.
-    ---@param to string The to file path.
-    ---@return string relative_path The relative path.
-    function path.relative( from, to )
-        local from_path, to_path = normalize( from ), normalize( to )
-
-        if equals( from_path, to_path ) then
-            return "."
+    ---@param segments string[] The file paths to join.
+    ---@param segment_count? integer The number of file paths to join.
+    ---@return string file_path The joined file path.
+    function path.join( segments, segment_count )
+        if segment_count == nil then
+            segment_count = len( segments )
         end
 
-        local from_parts, from_part_count = string_byteSplit( from_path, 0x2F --[[ / ]] )
-        local to_parts, to_part_count = string_byteSplit( to_path, 0x2F --[[ / ]] )
-        local equal_count = 0
-
-        for index = 1, math_min( from_part_count, to_part_count ), 1 do
-            if equals( from_parts[ index ], to_parts[ index ] ) then
-                equal_count = equal_count + 1
+        for index = 1, segment_count, 1 do
+            local segment = string_byteTrim( segments[ index ], 0x2F --[[ / ]] )
+            if string_byte( segment, 1, 1 ) == nil then
+                segments[ index ] = "."
             else
-                break
+                segments[ index ] = segment
             end
         end
 
-        local result_parts, result_part_count = {}, 0
-        for _ = equal_count + 1, from_part_count, 1 do
-            result_part_count = result_part_count + 1
-            result_parts[ result_part_count ] = ".."
-        end
-
-        for index = equal_count + 1, to_part_count, 1 do
-            result_part_count = result_part_count + 1
-            result_parts[ result_part_count ] = to_parts[ index ]
-        end
-
-        if result_part_count == 0 then
-            return "."
-        else
-            return table_concat( result_parts, "/", 1, result_part_count )
-        end
+        return normalize( table_concat( segments, "/", 1, segment_count ) )
     end
 
 end
