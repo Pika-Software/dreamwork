@@ -88,7 +88,7 @@ path.equals = equals
 ---@param file_path string The file path.
 ---@param keep_extension? boolean `true` to keep the extension, `false` otherwise
 ---@return string file_name The name of the file.
-function path.getName( file_path, keep_extension )
+function path.getFile( file_path, keep_extension )
     if keep_extension then
         for index = string_len( file_path ), 1, -1 do
             if string_byte( file_path, index ) == 0x2F --[[ / ]] then
@@ -332,74 +332,6 @@ function path.parse( file_path )
     return { root = is_abs and "/" or "", dir = directory, base = base, ext = ext, name = name, abs = is_abs }
 end
 
--- TODO: this function is broken in async, fenv features required for stable working, debug stuff must be removed
-local getCurrentDirectory
-do
-
-    local debug = std.debug
-    local debug_getfmain = debug.getfmain
-    local debug_getfpath = debug.getfpath
-
-    --- [SHARED AND MENU]
-    ---
-    --- Get the current file path.
-    ---
-    ---@param stack_level? integer The stack stack_level to get the file path from.
-    ---@return string file_path
-    function path.getCurrentFile( stack_level )
-        local fn = debug_getfmain( ( stack_level or 1 ) + 1 )
-        if fn == nil then
-            return "/unknown.lua"
-        end
-
-        local fenv = getfenv( fn )
-        if fenv ~= nil then
-            local file_path = fenv.__filename
-            if file_path ~= nil then
-                return file_path
-            end
-        end
-
-        return debug_getfpath( fn ) or "/unknown.lua"
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Get the current directory path.
-    ---
-    ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
-    ---@param stack_level? integer The stack stack_level to get the file path from.
-    ---@return string directory_path
-    function getCurrentDirectory( keep_trailing_slash, stack_level )
-        local fn = debug_getfmain( ( stack_level or 1 ) + 1 )
-        if fn == nil then
-            return "/"
-        end
-
-        local fenv = getfenv( fn )
-        if fenv ~= nil then
-            local directory_path = fenv.__dirname
-            if directory_path ~= nil then
-                if keep_trailing_slash then
-                    return directory_path .. "/"
-                else
-                    return directory_path
-                end
-            end
-        end
-
-        local file_path = debug_getfpath( fn )
-        if file_path == nil then
-            return "/"
-        else
-            return getDirectory( file_path, keep_trailing_slash ) or "/"
-        end
-    end
-
-    path.getCurrentDirectory = getCurrentDirectory
-
-end
-
 --- [SHARED AND MENU]
 ---
 --- Normalizes a file path by removing all "." and ".." parts.
@@ -471,18 +403,70 @@ end
 
 path.normalize = normalize
 
---- [SHARED AND MENU]
----
---- Resolve a file path.
----
----@param file_path string The file path.
----@return string abs_path The resolved file path.
-function path.resolve( file_path )
-    if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
-        return normalize( file_path, false )
-    else
-        return normalize( getCurrentDirectory( true, 2 ) .. file_path, false )
+do
+
+    local isFunction = std.isFunction
+    local getfenv = std.getfenv
+
+    local debug = std.debug
+    local debug_getfmain = debug.getfmain
+    local debug_getfpath = debug.getfpath
+
+    local function get( f )
+        local fn
+        if not isFunction( f ) then
+            if f == nil then
+                f = 2
+            else
+                f = f + 1
+            end
+
+            ---@type table | nil
+            local env = getfenv( f )
+            if env ~= nil then
+                ---@type dreamwork.std.fs.File | nil
+                local file_path = env.__file
+                if file_path ~= nil then
+                    return file_path.path
+                end
+            end
+
+            fn = debug_getfmain( f )
+        end
+
+        if fn ~= nil then
+            local file_path = debug_getfpath( fn )
+            if file_path ~= nil then
+                return file_path
+            end
+        end
+
+        return "/workspace/lua/unknown.lua"
     end
+
+    path.get = get
+
+    --- [SHARED AND MENU]
+    ---
+    --- Resolves a file path to an absolute file path.
+    ---
+    ---@param file_path string The file path.
+    ---@param stack_level? number The stack level to get the directory from.
+    ---@return string abs_path The resolved file path.
+    function path.resolve( file_path, stack_level )
+        if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
+            return normalize( file_path, false )
+        end
+
+        if stack_level == nil then
+            stack_level = 2
+        else
+            stack_level = stack_level + 1
+        end
+
+        return normalize( ( getDirectory( get( stack_level ), true ) or "/" ) .. file_path, false )
+    end
+
 end
 
 do
