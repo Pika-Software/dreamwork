@@ -730,44 +730,46 @@ end
 ---
 --- The returned table is a shallow copy of the original table.
 ---
----@param tbl table The sequential table.
----@param fn fun( key: any, value: any ): any The function to apply.
----@return table mapped The new mapped sequential table.
-function table.imap( tbl, fn )
-    local mapped = {}
+---@generic V: any
+---@param tbl table<integer, V> The sequential table.
+---@param fn fun( index: integer, value: V ): V The function to apply.
+---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
+---@return table<integer, V> mapped The new mapped sequential table.
+---@return integer mapped_length The length of the new mapped sequential table.
+function table.map( tbl, fn, tbl_length )
+    local mapped, mapped_length = {}, 0
 
-    for i = 1, len( tbl ), 1 do
-        mapped[ i ] = fn( tbl[ i ] )
+    if tbl_length == nil then
+        tbl_length = len( tbl )
     end
 
-    return mapped
+    for index = 1, tbl_length, 1 do
+        local new_value = fn( index, tbl[ index ] )
+        if new_value ~= nil then
+            mapped_length = mapped_length + 1
+            mapped[ index ] = new_value
+        end
+    end
+
+    return mapped, mapped_length
 end
 
-do
-
-    local pairs = std.pairs
-
-    --- [SHARED AND MENU]
-    ---
-    --- Applies a function to each value of the table.
-    ---
-    --- The original table remains **unchanged**.
-    ---
-    --- The returned table is a shallow copy of the original table.
-    ---
-    ---@param tbl table The key/value table.
-    ---@param fn fun( key: any, value: any ): any The function to apply.
-    ---@return table mapped The new mapped key/value table.
-    function table.map( tbl, fn )
-        local mapped = {}
-
-        for key, value in pairs( tbl ) do
-            mapped[ key ] = fn( key, value )
-        end
-
-        return mapped
+--- [SHARED AND MENU]
+---
+--- Executes a provided function once for each table value.
+---
+---@generic V: any
+---@param tbl table<integer, V> The sequential table.
+---@param fn fun( index: integer, value: V ) The function to execute.
+---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
+function table.foreach( tbl, fn, tbl_length )
+    if tbl_length == nil then
+        tbl_length = len( tbl )
     end
 
+    for index = 1, tbl_length, 1 do
+        fn( index, tbl[ index ] )
+    end
 end
 
 return table
