@@ -36,7 +36,6 @@ end
 ---@field SYSTEM_X64 boolean `true` if the game is running on 64-bit architecture.
 ---@field SYSTEM_X32 boolean `true` if the game is running on 32-bit architecture.
 ---@field SYSTEM_X86 boolean `true` if the game is running on 32-bit architecture.
----@field SYSTEM_ENDIANNESS boolean `true` if the operating system is big endianness, `false` if little endianness.
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
 ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
@@ -843,8 +842,6 @@ do
     std.SYSTEM_X86 = std.SYSTEM_X32
 
 end
-
-std.SYSTEM_ENDIANNESS = string.byte( string.dump( std.debug.fempty ), 7 ) == 0x00
 
 --- [SHARED AND MENU]
 ---
@@ -1738,10 +1735,11 @@ if math.randomseed == 0 then
     logger:info( "Random seed was re-synchronized with milliseconds since the Unix epoch." )
 end
 
-dofile( "std/sqlite.lua" )
-dofile( "database.lua" )
 dofile( "std/fs.lua" )
-dofile( "std/i18n.lua" )
+dofile( "std/sqlite.lua" )
+
+dofile( "database.lua" )
+dofile( "factory.lua" )
 
 do
 
@@ -1796,6 +1794,7 @@ do
 
 end
 
+dofile( "std/i18n.lua" )
 dofile( "std/game.hooks.lua" )
 dofile( "std/audio_stream.lua" )
 

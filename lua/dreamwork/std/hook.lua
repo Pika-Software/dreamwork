@@ -21,7 +21,7 @@ local table = std.table
 ---
 --- Hook object.
 ---
----@class dreamwork.std.Hook : dreamwork.std.Object
+---@class dreamwork.std.Hook : dreamwork.Object
 ---@field __class dreamwork.std.HookClass
 ---@field name string The name of the hook. **READ-ONLY**
 ---@field is_running boolean Whether the hook is running. **READ-ONLY**

@@ -375,7 +375,7 @@ do
             local source = info.source
             if source ~= nil then
                 local rel_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-                return "/workspace/" .. ( string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path )
+                return "/workspace/lua/" .. ( string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path )
             end
         end
 

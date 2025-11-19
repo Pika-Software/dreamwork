@@ -732,7 +732,7 @@ end
 ---
 ---@generic V: any
 ---@param tbl table<integer, V> The sequential table.
----@param fn fun( index: integer, value: V ): V The function to apply.
+---@param fn fun( index: integer, value: V ): V | nil The function to apply.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
 ---@return table<integer, V> mapped The new mapped sequential table.
 ---@return integer mapped_length The length of the new mapped sequential table.
@@ -752,6 +752,34 @@ function table.map( tbl, fn, tbl_length )
     end
 
     return mapped, mapped_length
+end
+
+do
+
+    local pairs = std.pairs
+
+    --- [SHARED AND MENU]
+    ---
+    --- Applies a function to each key/value pair of the table.
+    ---
+    --- The original table remains **unchanged**.
+    ---
+    --- The returned table is a shallow copy of the original table.
+    ---
+    ---@generic K: any, V: any
+    ---@param tbl table<K, V> The key/value table.
+    ---@param fn fun( key: K, value: V ): V | nil The function to apply.
+    ---@return table<K, V> transformed The new transformed key/value table.
+    function table.transform( tbl, fn )
+        local transformed = {}
+
+        for key, value in pairs( tbl ) do
+            transformed[ key ] = fn( key, value ) or value
+        end
+
+        return transformed
+    end
+
 end
 
 --- [SHARED AND MENU]

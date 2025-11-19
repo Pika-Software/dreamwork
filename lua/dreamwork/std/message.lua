@@ -28,7 +28,7 @@ local sender2receivers = {
 local messages = {}
 
 
----@class dreamwork.std.Message : dreamwork.std.Object
+---@class dreamwork.std.Message : dreamwork.Object
 ---@field __class dreamwork.std.MessageClass
 local Message = std.class.base( "Message" )
 

@@ -34,7 +34,7 @@ local timer_Adjust = timer.Adjust
 ---
 --- The timer object.
 ---
----@class dreamwork.std.Timer : dreamwork.std.Object
+---@class dreamwork.std.Timer : dreamwork.Object
 ---@field __class dreamwork.std.TimerClass
 ---@field name string The internal name of the timer. **Read-only.**
 ---@field state dreamwork.std.Timer.state The current state of the timer. **Read-only.**

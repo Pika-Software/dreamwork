@@ -7,7 +7,7 @@ local hash = std.hash
 ---
 --- SHA256 object.
 ---
----@class dreamwork.std.hash.SHA256 : dreamwork.std.Object
+---@class dreamwork.std.hash.SHA256 : dreamwork.Object
 ---@field __class dreamwork.std.hash.SHA256Class
 local SHA256 = std.class.base( "SHA256" )
 

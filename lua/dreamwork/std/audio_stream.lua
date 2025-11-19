@@ -6,7 +6,7 @@ local std = _G.dreamwork.std
 ---
 --- The audio stream object.
 ---
----@class dreamwork.std.AudioStream : dreamwork.std.Object
+---@class dreamwork.std.AudioStream : dreamwork.Object
 ---@field __class dreamwork.std.AudioStreamClass
 local AudioStream = std.class.base( "AudioStream" )
 

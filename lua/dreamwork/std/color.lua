@@ -14,7 +14,7 @@ local DIV255_CONST = 1 / 255
 ---
 --- The color object.
 ---
----@class dreamwork.std.Color : dreamwork.std.Object
+---@class dreamwork.std.Color : dreamwork.Object
 ---@field __class dreamwork.std.ColorClass
 ---@field r integer A red channel of the color. [0, 255].
 ---@field g integer A green channel of the color. [0, 255].
@@ -623,6 +623,8 @@ do
         else
             index = 1
         end
+
+        -- TODO: recheck this with specification
 
         if hex_length == 1 then
             local uint8_1 = string_byte( hex, index, index )

@@ -92,7 +92,7 @@ local int2type = std.table.flipped( type2int )
 ---
 --- The Steam ID object.
 ---
----@class dreamwork.std.steam.Identifier : dreamwork.std.Object
+---@class dreamwork.std.steam.Identifier : dreamwork.Object
 ---@field __class dreamwork.std.steam.IdentifierClass
 ---@field universe dreamwork.std.steam.Identifier.universe Indicates the Steam environment (e.g., public, beta).
 ---@field type dreamwork.std.steam.Identifier.type Specifies the entity type (e.g., individual user, group, game server).

@@ -3,7 +3,7 @@
 ### 1. Define base class (basically a metatable for our cars)
 
 ```lua
----@class dreamwork.std.Car : dreamwork.std.Object           <-- do not forget to inherit from dreamwork.std.Object
+---@class dreamwork.std.Car : dreamwork.Object           <-- do not forget to inherit from dreamwork.Object
 ---@field __class dreamwork.std.CarClass
 local Car = std.class.base("Car")
 
@@ -56,7 +56,7 @@ std.Truck = TruckClass
 ## Class Template
 ```lua
 
----@class dreamwork.std.Template : dreamwork.std.Object
+---@class dreamwork.std.Template : dreamwork.Object
 ---@field __class dreamwork.std.TemplateClass
 local Template = std.class.base( "Template" )
 

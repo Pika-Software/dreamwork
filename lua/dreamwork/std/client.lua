@@ -15,7 +15,7 @@ gc_setTableRules( entities, true, true )
 local names = {}
 gc_setTableRules( names, true, false )
 
----@class dreamwork.std.Client : dreamwork.std.Object
+---@class dreamwork.std.Client : dreamwork.Object
 local Client = std.class.base( "Client", true )
 
 ---@class dreamwork.std.ClientClass : dreamwork.std.Client

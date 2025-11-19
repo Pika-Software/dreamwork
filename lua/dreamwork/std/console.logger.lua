@@ -23,7 +23,7 @@ end
 --- The logger object.
 ---
 ---@alias Logger dreamwork.std.console.Logger
----@class dreamwork.std.console.Logger : dreamwork.std.Object
+---@class dreamwork.std.console.Logger : dreamwork.Object
 ---@field __class dreamwork.std.console.LoggerClass
 ---@field title string The logger title.
 ---@field title_color dreamwork.std.Color The logger title color.

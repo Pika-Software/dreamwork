@@ -70,7 +70,7 @@ local table_concat = std.table.concat
 ---
 --- A 2D vector object.
 ---
----@class dreamwork.std.Vector2 : dreamwork.std.Object
+---@class dreamwork.std.Vector2 : dreamwork.Object
 ---@field __class dreamwork.std.Vector2Class
 ---@operator add( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
 ---@operator sub( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
@@ -99,7 +99,7 @@ std.Vector2 = Vector2Class
 --- A 3D vector object.
 ---
 ---@alias Vector3 dreamwork.std.Vector3
----@class dreamwork.std.Vector3 : dreamwork.std.Object
+---@class dreamwork.std.Vector3 : dreamwork.Object
 ---@field __class dreamwork.std.Vector3Class
 ---@operator add( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
 ---@operator sub( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
@@ -126,7 +126,7 @@ std.Vector3 = Vector3Class
 ---
 --- A 3D angle object.
 ---
----@class dreamwork.std.Angle3 : dreamwork.std.Object
+---@class dreamwork.std.Angle3 : dreamwork.Object
 ---@field __class dreamwork.std.Angle3Class
 ---@operator add( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
 ---@operator sub( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
@@ -155,7 +155,7 @@ std.Angle = Angle3Class
 ---
 --- A 4x4 matrix object.
 ---
----@class dreamwork.std.VMatrix : dreamwork.std.Object
+---@class dreamwork.std.VMatrix : dreamwork.Object
 ---@field __class dreamwork.std.VMatrixClass
 local VMatrix = class.base( "VMatrix" )
 

@@ -13,7 +13,7 @@ local glua_vgui = _G.vgui
 
 ]]
 
----@class dreamwork.std.Panel : dreamwork.std.Object
+---@class dreamwork.std.Panel : dreamwork.Object
 ---@field __class dreamwork.std.PanelClass
 local Panel = std.class.base( "Panel" )
 

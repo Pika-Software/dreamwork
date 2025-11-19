@@ -11,7 +11,7 @@ do
     ---
     --- A stack is a last-in-first-out (LIFO) data structure object.
     ---
-    ---@class dreamwork.std.Stack : dreamwork.std.Object
+    ---@class dreamwork.std.Stack : dreamwork.Object
     ---@field __class dreamwork.std.StackClass
     ---@field size integer The size of the stack. **Read-only**
     local Stack = class.base( "Stack" )
@@ -33,7 +33,7 @@ do
     end
 
     ---@param reader dreamwork.std.pack.Reader
-    ---@param fallback dreamwork.std.Object | nil
+    ---@param fallback dreamwork.Object | nil
     ---@protected
     function Stack:__deserialize( reader, fallback )
         local size = reader:readInt32() or 0
@@ -135,7 +135,7 @@ do
     ---
     --- A queue is a first-in-first-out (FIFO) data structure object.
     ---
-    ---@class dreamwork.std.Queue : dreamwork.std.Object
+    ---@class dreamwork.std.Queue : dreamwork.Object
     ---@field __class dreamwork.std.QueueClass
     ---@field front integer The front of the queue. **Read-only**
     ---@field back integer The back of the queue. **Read-only**
@@ -159,7 +159,7 @@ do
     end
 
     ---@param reader dreamwork.std.pack.Reader
-    ---@param fallback dreamwork.std.Object | nil
+    ---@param fallback dreamwork.Object | nil
     ---@protected
     function Queue:__deserialize( reader, fallback )
         local front, back = reader:readInt32() or 0, reader:readInt32() or 0
@@ -300,7 +300,7 @@ do
     ---
     --- A node.
     ---
-    ---@class dreamwork.std.Node : dreamwork.std.Object
+    ---@class dreamwork.std.Node : dreamwork.Object
     ---@field __class dreamwork.std.NodeClass
     ---@field value any The value of the node.
     ---@field parent dreamwork.std.Node The parent node of the node.
@@ -338,7 +338,7 @@ do
     end
 
     ---@param reader dreamwork.std.pack.Reader
-    ---@param fallback dreamwork.std.Object | nil
+    ---@param fallback dreamwork.Object | nil
     ---@protected
     function Node:__deserialize( reader, fallback )
         self.depth = reader:readInt32() or 0

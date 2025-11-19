@@ -631,7 +631,7 @@ end
 local fs = std.fs or {}
 std.fs = fs
 
----@class dreamwork.std.fs.File : dreamwork.std.Object
+---@class dreamwork.std.fs.File : dreamwork.Object
 ---@field __class dreamwork.std.fs.FileClass
 ---@field name string The name of the file. **READ-ONLY**
 ---@field size integer The size of the file in bytes. **READ-ONLY**
@@ -640,7 +640,7 @@ std.fs = fs
 ---@field parent dreamwork.std.fs.Directory | nil The parent directory. **READ-ONLY**
 local File = class.base( "File", true )
 
----@class dreamwork.std.fs.Directory : dreamwork.std.Object
+---@class dreamwork.std.fs.Directory : dreamwork.Object
 ---@field __class dreamwork.std.fs.DirectoryClass
 ---@field name string The name of the directory. **READ-ONLY**
 ---@field size integer The size of the directory in bytes. **READ-ONLY**
@@ -3724,4 +3724,52 @@ do
         end
     end )
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the location of the specified file or directory in gmod filesystem.
+---
+---@param fs_object dreamwork.std.fs.Object The file or directory.
+---@return string mount_point The mount point of the file or directory.
+---@return string mount_path The mount path of the file or directory.
+function fs.whereis( fs_object )
+    local mount_point = mount_points[ fs_object ]
+    if mount_point == nil then
+        return "GAME", ""
+    end
+
+    local mount_path = mount_paths[ fs_object ]
+    if string_byte( mount_path, 1, 1 ) == nil then
+        return mount_point, mount_path
+    end
+
+    -- local addons = engine.AddonList
+
+    -- for i = 1, engine.AddonCount, 1 do
+    --     local title = addons[ i ].title
+    --     if file_Exists( mount_path, title ) then
+    --         return title, mount_path
+    --     end
+    -- end
+
+    -- local games = engine.GameList
+
+    -- for i = 1, engine.GameCount, 1 do
+    --     local folder = games[ i ].folder
+    --     if file_Exists( mount_path, folder ) then
+    --         return folder, mount_path
+    --     end
+    -- end
+
+    local _, addon_directories = file_Find( "addons/*", "MOD" )
+
+    for i = 1, #addon_directories, 1 do
+        local file_path = "addons/" .. addon_directories[ i ] .. "/" .. mount_path
+        if file_Exists( file_path, "MOD" ) then
+            return "MOD", file_path
+        end
+    end
+
+    return mount_point, mount_path
 end

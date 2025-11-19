@@ -7,13 +7,19 @@ local std = dreamwork.std
 local class = std.class
 local Version = std.Version
 
----@class dreamwork.Package: dreamwork.std.Object
+---@class dreamwork.Package: dreamwork.Object
 ---@field __class dreamwork.PackageClass
 ---@field name string
----@field prefix string
 ---@field version Version
+---@field prefix string
 ---@field commands table
-local Package = class.base( "Package" )
+local Package = class.base( "Package", true )
+
+---@class dreamwork.PackageClass: dreamwork.Package
+---@field __base dreamwork.Package
+---@overload fun( name: string, version: string | Version ): Package
+local PackageClass = class.create( Package )
+dreamwork.Package = PackageClass
 
 local cache = {}
 
@@ -48,12 +54,6 @@ end
 function PackageClass:__new( name, version )
     return cache[ name .. "@" .. version ]
 end
-
----@class dreamwork.PackageClass: dreamwork.Package
----@field __base dreamwork.Package
----@overload fun( name: string, version: string | Version ): Package
-local PackageClass = class.create( Package )
-dreamwork.Package = PackageClass
 
 local debug_getmetatable = std.debug.getmetatable
 local debug_getfmain = std.debug.getfmain

@@ -79,7 +79,7 @@ local function concat_pre_release_and_build( pre_release, build )
 	end
 end
 
----@class dreamwork.std.Version : dreamwork.std.Object
+---@class dreamwork.std.Version : dreamwork.Object
 ---@field __class dreamwork.std.VersionClass
 ---@field major integer The major version number. (0-1023)
 ---@field minor integer The minor version number. (0-2047)
@@ -566,7 +566,6 @@ do
 		-- X-Ranges *
 		-- Any of X, x, or * may be used to 'stand in' for one of the numeric values in the [major, minor, patch] tuple.
 		-- https://docs.npmjs.com/cli/v6/using-npm/semver#x-ranges-12x-1x-12-
-		-- TODO: replace with byte analysis
 		if semver_selector == "" or semver_selector == "*" then
 			return version_obj % ">=0.0.0"
 		end

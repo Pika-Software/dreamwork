@@ -5,7 +5,7 @@ local std = dreamwork.std
 
 local engine = dreamwork.engine
 
----@class dreamwork.std.Addon: dreamwork.std.Object
+---@class dreamwork.std.Addon: dreamwork.Object
 ---@field __class dreamwork.std.AddonClass
 local Addon = std.class.base( "Addon" )
 

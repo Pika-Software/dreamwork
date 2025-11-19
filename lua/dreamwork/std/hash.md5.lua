@@ -27,7 +27,7 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---
 --- MD5 object.
 ---
----@class dreamwork.std.hash.MD5 : dreamwork.std.Object
+---@class dreamwork.std.hash.MD5 : dreamwork.Object
 ---@field __class dreamwork.std.hash.MD5Class
 local MD5 = std.class.base( "MD5" )
 

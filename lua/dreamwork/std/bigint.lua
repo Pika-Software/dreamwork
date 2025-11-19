@@ -26,7 +26,7 @@ local math_floor, math_clamp = math.floor, math.clamp
 ---
 --- The big integer object.
 ---
----@class dreamwork.std.BigInt : dreamwork.std.Object
+---@class dreamwork.std.BigInt : dreamwork.Object
 ---@field __class dreamwork.std.BigIntClass
 ---@operator add(any): dreamwork.std.BigInt
 ---@operator sub(any): dreamwork.std.BigInt

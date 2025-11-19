@@ -322,7 +322,7 @@ end
 
 do
 
-    ---@class dreamwork.std.console.Command : dreamwork.std.Object
+    ---@class dreamwork.std.console.Command : dreamwork.Object
     local command = {}
 
     --- **READ-ONLY**

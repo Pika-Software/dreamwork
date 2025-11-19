@@ -28,7 +28,7 @@ local select = std.select
 ---
 ---@class dreamwork.std.encoding.utf8
 ---@field charpattern string This is NOT a function, it's a pattern (a string, not a function) which matches exactly one UTF-8 byte sequence, assuming that the subject is a valid UTF-8 string.
----@field MAX integer The maximum number of characters that can be stored in a UTF-8 string.
+---@field limit integer The maximum number of characters that can be stored in a UTF-8 string.
 local utf8 = encoding.utf8 or {}
 encoding.utf8 = utf8
 
@@ -36,7 +36,7 @@ encoding.utf8 = utf8
 ---@alias dreamwork.std.encoding.utf8.Sequence dreamwork.std.encoding.utf8.Codepoint[]
 
 utf8.charpattern = "[%z\x01-\x7F\xC2-\xF4][\x80-\xBF]*"
-utf8.MAX = 0x7FFFFFFF
+utf8.limit = 0x7FFFFFFF
 
 ---@param i integer
 ---@return boolean
@@ -572,10 +572,9 @@ do
 
 	---@param utf8_string string
 	---@param index integer
-	---@param strict boolean
 	---@return integer | nil
 	---@return dreamwork.std.encoding.utf8.Codepoint | nil
-	local function utf8_iterator( utf8_string, index, strict )
+	local function utf8_iterator( utf8_string, index )
 		---@type integer
 		local str_length = string_len( utf8_string )
 
@@ -583,19 +582,33 @@ do
 			return nil, nil
 		end
 
-		local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, strict, 2 )
-		if strict then
-			if utf8_codepoint == nil or utf8_codepoint > 0x10FFFF then
-				std.errorf( 2, false, "invalid UTF-8 code point '0x%08X' at position %d", utf8_codepoint, index )
-			elseif utf8_sequence_length == nil then
-				std.errorf( 2, false, "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index )
-			end
-
-			return index + utf8_sequence_length, utf8_codepoint
-		end
-
+		local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, false, 2 )
 		return index + ( utf8_sequence_length or 1 ), utf8_codepoint or 0xFFFD
 	end
+
+	---@param utf8_string string
+	---@param index integer
+	---@return integer | nil
+	---@return dreamwork.std.encoding.utf8.Codepoint | nil
+	local function utf8_strict_iterator( utf8_string, index )
+		---@type integer
+		local str_length = string_len( utf8_string )
+
+		if index > str_length then
+			return nil, nil
+		end
+
+		local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, true, 2 )
+
+		if utf8_codepoint == nil or utf8_codepoint > 0x10FFFF then
+			std.errorf( 2, false, "invalid UTF-8 code point '0x%08X' at position %d", utf8_codepoint, index )
+		elseif utf8_sequence_length == nil then
+			std.errorf( 2, false, "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index )
+		end
+
+		return index + utf8_sequence_length, utf8_codepoint
+	end
+
 
 	--- [SHARED AND MENU]
 	---
@@ -603,9 +616,9 @@ do
 	---
 	---@param utf8_string string The UTF-8 string to iterate over.
 	---@param lax? boolean Whether to lax the UTF-8 validity check.
-	---@return ( fun( utf8_string: string, index: integer, lax: boolean? ): integer | nil, dreamwork.std.encoding.utf8.Codepoint | nil ), string, integer, boolean
+	---@return ( fun( utf8_string: string, index: integer ): integer | nil, dreamwork.std.encoding.utf8.Codepoint | nil ), string, integer
 	function utf8.codes( utf8_string, lax )
-		return utf8_iterator, utf8_string, 1, lax ~= true
+		return lax ~= true and utf8_strict_iterator or utf8_iterator, utf8_string, 1
 	end
 
 end

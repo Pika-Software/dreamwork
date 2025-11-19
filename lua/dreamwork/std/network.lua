@@ -7,7 +7,7 @@ local std = _G.dreamwork.std
 ---
 ---
 ---
----@class dreamwork.std.Network : dreamwork.std.Object
+---@class dreamwork.std.Network : dreamwork.Object
 ---@field __class dreamwork.std.NetworkClass
 local Network = std.class.base( "Network" )
 

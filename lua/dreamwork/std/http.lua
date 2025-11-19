@@ -176,7 +176,7 @@ do
 
     -- TODO: make cookies
 
-    ---@class dreamwork.std.Cookies : dreamwork.std.Object
+    ---@class dreamwork.std.Cookies : dreamwork.Object
     ---@field __class dreamwork.std.CookiesClass
     local Cookies = std.class.base( "http.Cookies" )
 

@@ -216,7 +216,7 @@ do
     ---
     --- The console command object.
     ---
-    ---@class dreamwork.std.console.Command : dreamwork.std.Object
+    ---@class dreamwork.std.console.Command : dreamwork.Object
     ---@field __class dreamwork.std.console.Command
     local Command = std.class.base( "console.Command", true )
 
@@ -275,7 +275,7 @@ do
     ---
     --- The console command class.
     ---
-    ---@class dreamwork.std.console.CommandClass : dreamwork.std.Class
+    ---@class dreamwork.std.console.CommandClass : dreamwork.Class
     ---@field __base dreamwork.std.console.Command
     ---@overload fun( options: dreamwork.std.console.Command.Options ): dreamwork.std.console.Command
     local CommandClass = std.class.create( Command )
@@ -895,7 +895,7 @@ do
     ---
     --- The console variable object.
     ---
-    ---@class dreamwork.std.console.Variable : dreamwork.std.Object
+    ---@class dreamwork.std.console.Variable : dreamwork.Object
     ---@field __class dreamwork.std.console.Variable
     local Variable = std.class.base( "console.Variable", true )
 

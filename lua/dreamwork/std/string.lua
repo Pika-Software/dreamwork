@@ -830,6 +830,11 @@ do
         end
 
         local start_position, end_position = string_find( str, searchable, 1, true )
+
+        if start_position == nil or end_position == nil then
+            return str
+        end
+
         if replaceable == nil then
             ::replace_loop1::
 

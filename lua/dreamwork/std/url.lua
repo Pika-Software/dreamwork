@@ -1659,7 +1659,7 @@ end
 ---
 --- The URL search parameters object.
 ---
----@class dreamwork.std.URL.SearchParams : dreamwork.std.Object
+---@class dreamwork.std.URL.SearchParams : dreamwork.Object
 ---@field __class dreamwork.std.URL.SearchParamsClass
 local SearchParams = std.class.base( "URLSearchParams" )
 
@@ -1921,7 +1921,7 @@ end
 --- [SHARED AND MENU]
 ---
 --- The URL object.
----@class dreamwork.std.URL : dreamwork.std.Object, dreamwork.std.URL.State
+---@class dreamwork.std.URL : dreamwork.Object, dreamwork.std.URL.State
 ---@field __class dreamwork.std.URLClass
 ---@field state dreamwork.std.URL.State internal state of URL
 ---@field href string full url
