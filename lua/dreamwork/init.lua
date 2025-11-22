@@ -2072,8 +2072,11 @@ dofile( "std/level.lua" )
 
 if LUA_CLIENT_SERVER then
     dofile( "std/physics.lua" )
+    dofile( "std/model.lua" )
+
     dofile( "std/entity.lua" )
     dofile( "std/player.lua" )
+
     -- dofile( "std/network.lua" )
 end
 
