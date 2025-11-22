@@ -30,7 +30,7 @@ local math_relative = math.relative
 ---@param separator? integer The separator of the key path, default is `0x2E`.
 ---@param str_length? integer The length of the key path, default is `string.len( str )`.
 ---@return any value The value of the key path.
-function table.get( tbl, str, separator, str_length )
+function table.get( tbl, str, separator, start_position, end_position, str_length )
     if separator == nil then
         separator = 0x2E --[[ "." ]]
     end
@@ -39,31 +39,46 @@ function table.get( tbl, str, separator, str_length )
         str_length = string_len( str )
     end
 
-    local split_position = 0
-    local position = 1
-
-    while true do
-        local uint8 = string_byte( str, position, position )
-        if uint8 == separator then
-            if split_position ~= position then
-                tbl = tbl[ string_sub( str, split_position + 1, position - 1 ) ]
-                if tbl == nil then
-                    return nil
-                end
-            end
-
-            split_position = position
-        end
-
-        if position == str_length then
-            break
-        else
-            position = position + 1
-        end
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
     end
 
-    if split_position ~= position then
-        tbl = tbl[ string_sub( str, split_position + 1, position ) ]
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    if start_position > end_position then
+        return nil
+    end
+
+    local split_position = start_position - 1
+
+    ::table_lookup_loop::
+
+    if string_byte( str, start_position, start_position ) == separator then
+        if split_position ~= start_position then
+            tbl = tbl[ string_sub( str, split_position + 1, start_position - 1 ) ]
+            if tbl == nil then return nil end
+        end
+
+        split_position = start_position
+    end
+
+    if start_position ~= end_position then
+        start_position = start_position + 1
+        goto table_lookup_loop
+    end
+
+    if split_position ~= start_position then
+        tbl = tbl[ string_sub( str, split_position + 1, start_position ) ]
     end
 
     return tbl
