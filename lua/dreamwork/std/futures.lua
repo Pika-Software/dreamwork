@@ -51,7 +51,7 @@ local listeners = futures.listeners
 if listeners == nil then
     listeners = {}
     futures.listeners = listeners
-    gc_setTableRules( listeners, true, true )
+    gc_setTableRules( listeners, true, false )
 end
 
 ---@private
@@ -60,7 +60,7 @@ local coroutine_listeners = futures.coroutine_listeners
 if coroutine_listeners == nil then
     coroutine_listeners = {}
     futures.coroutine_listeners = coroutine_listeners
-    gc_setTableRules( coroutine_listeners, true, true )
+    gc_setTableRules( coroutine_listeners, true, false )
 end
 
 --- Abstract type that is used to type hint async functions.

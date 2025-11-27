@@ -2007,7 +2007,7 @@ do
     --- * -4 means Failed to get item data from the response
     --- * -5 means Workshop item ID in the response is invalid
     --- * -6 means Workshop item ID in response is mismatching the requested file ID
-    ---@type number
+    ---@type integer
     item_info.error = nil
 
     --- Number of "up" votes for this item.
