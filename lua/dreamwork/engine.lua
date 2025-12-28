@@ -2,6 +2,7 @@ local _G = _G
 
 ---@class dreamwork
 local dreamwork = _G.dreamwork
+if dreamwork.engine ~= nil then return end
 
 local std = dreamwork.std
 
@@ -38,7 +39,7 @@ end
 ---@field AddonList dreamwork.engine.AddonInfo[] The list of currently mounted addons.
 ---@field AddonCount integer The length of the `AddonList` array (`#AddonList`).
 ---@field AddonHash table<string, dreamwork.engine.AddonInfo> The hash of currently mounted addons.
-local engine = dreamwork.engine or {}
+local engine = {}
 dreamwork.engine = engine
 
 if engine.hookCatch == nil then
@@ -124,22 +125,23 @@ do
     end
 
     if hook.Call == nil then
+
+        ---@param event_name string
+        ---@param tbl table
+        ---@param ... any
+        ---@return any ...
         ---@diagnostic disable-next-line: duplicate-set-field
         function hook.Call( event_name, tbl, ... )
             return engine_hookCall( event_name, ... )
-            -- local a, b, c, d, e, f = engine_hookCall( event_name, ... )
-            -- if a ~= nil then
-            --     return a, b, c, d, e, f
-            -- end
-
-            -- local fn = tbl[ event_name ]
-            -- if fn ~= nil then
-            --     return fn( ... )
-            -- end
-
-            -- return nil
         end
+
     else
+
+        ---@param event_name string
+        ---@param tbl table
+        ---@param ... any
+        ---@return any ...
+        ---@diagnostic disable-next-line: duplicate-set-field
         hook.Call = detour_attach( hook.Call, function( fn, event_name, tbl, ... )
             local a, b, c, d, e, f = engine_hookCall( event_name, ... )
             if a == nil then
@@ -148,6 +150,7 @@ do
                 return a, b, c, d, e, f
             end
         end )
+
     end
 
 end
@@ -157,7 +160,7 @@ if std.LUA_MENU then
     do
 
         local function listAddonPresets()
-            engine_hookCall( "engine.Addon.presetsLoaded", _G.LoadAddonPresets() )
+            engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
         end
 
         if _G.ListAddonPresets == nil then
@@ -180,7 +183,7 @@ if std.LUA_MENU then
         ---@param player_steamid64 string
         ---@param gamemode_name string
         local function gameDetails( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
-            engine_hookCall( "server.Details", {
+            engine_hookCall( "ServerDetailsReceived", {
                 server_name = server_name,
                 loading_url = loading_url,
                 map_name = map_name,
@@ -203,53 +206,9 @@ if std.LUA_MENU then
 
 end
 
-local create_catch_fn
 do
 
-    local math_clamp = math.clamp
-
-    ---@param lst table
-    function create_catch_fn( lst )
-        ---@param fn dreamwork.std.Hook | function
-        ---@param priority integer | nil
-        return function( fn, priority )
-            if priority == nil then
-                table_insert( lst, #lst + 1, fn )
-            else
-                table_insert( lst, math_clamp( priority, 1, #lst + 1 ), fn )
-            end
-        end
-    end
-
-end
-
-if engine.consoleCommandCatch == nil then
-
-    local lst = {}
-
     ---@alias dreamwork.engine.consoleCommandCatch_fn fun( ply: Player, cmd: string, args: string[], argument_string: string ): boolean?
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `consoleCommandCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.consoleCommandCatch_fn, priority?: integer )
-    engine.consoleCommandCatch = create_catch_fn( lst )
-
-    ---@param ply Player
-    ---@param cmd string
-    ---@param args string[]
-    ---@param argument_string string
-    local function run_callbacks( ply, cmd, args, argument_string )
-        for i = 1, #lst, 1 do
-            local result = lst[ i ]( ply, cmd, args, argument_string )
-            if result ~= nil then
-                return result ~= false
-            end
-        end
-
-        return nil
-    end
 
     local concommand = _G.concommand
     if concommand == nil then
@@ -258,50 +217,42 @@ if engine.consoleCommandCatch == nil then
     end
 
     if concommand.Run == nil then
+
+        ---@param ply Player
+        ---@param cmd string
+        ---@param args string[]
+        ---@param argument_string string
         ---@diagnostic disable-next-line: duplicate-set-field
         function concommand.Run( ply, cmd, args, argument_string )
-            local exists = run_callbacks( ply, cmd, args, argument_string ) == true
-
-            if not exists then
-                dreamwork.Logger:error( "Catched attempt to run unknown console command: '%s'", cmd )
+            local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
+            if not success_execution then
+                dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", ply )
             end
 
-            return exists
+            return success_execution
         end
+
     else
+
+        ---@param ply Player
+        ---@param cmd string
+        ---@param args string[]
+        ---@param argument_string string
+        ---@diagnostic disable-next-line: duplicate-set-field
         concommand.Run = detour_attach( concommand.Run, function( fn, ply, cmd, args, argument_string )
-            local result = run_callbacks( ply, cmd, args, argument_string )
-            if result == nil then
-                return fn( ply, cmd, args, argument_string )
-            else
-                return result
+            local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
+            if success_execution then
+                return success_execution
             end
+
+            return fn( ply, cmd, args, argument_string )
         end )
+
     end
 
 end
 
-if engine.consoleCommandAutoCompleteCatch == nil then
-
-    local lst = {}
-
-    ---@alias dreamwork.engine.consoleCommandAutoCompleteCatch_fn fun( cmd: string, argument_string: string, args: string[] ): string[]?
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `consoleCommandAutoCompleteCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.consoleCommandAutoCompleteCatch_fn, priority?: integer )
-    engine.consoleCommandAutoCompleteCatch = create_catch_fn( lst )
-
-    local function run_callbacks( cmd, argument_string, args )
-        for i = 1, #lst, 1 do
-            local result = lst[ i ]( cmd, argument_string, args )
-            if result ~= nil then
-                return result
-            end
-        end
-    end
+do
 
     local concommand = _G.concommand
     if concommand == nil then
@@ -310,21 +261,38 @@ if engine.consoleCommandAutoCompleteCatch == nil then
     end
 
     if concommand.AutoComplete == nil then
-        concommand.AutoComplete = run_callbacks
+
+        ---@param cmd string
+        ---@param argument_string string
+        ---@param args string[]
+        ---@return string[] | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        concommand.AutoComplete = function( cmd, argument_string, args )
+            return engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
+        end
+
     else
+
+        ---@param cmd string
+        ---@param argument_string string
+        ---@param args string[]
+        ---@return string[] | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
         concommand.AutoComplete = detour_attach( concommand.AutoComplete, function( fn, cmd, argument_string, args )
-            local result = run_callbacks( cmd, argument_string, args )
-            if result == nil then
+            ---@type string[] | nil
+            local suggestions = engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
+            if suggestions == nil then
                 return fn( cmd, argument_string, args )
             else
-                return result
+                return suggestions
             end
         end )
+
     end
 
 end
 
-if engine.consoleVariableGet == nil or engine.consoleVariableCreate == nil or engine.consoleVariableExists == nil then
+do
 
     local GetConVar_Internal = _G.GetConVar_Internal or debug_fempty
     local ConVarExists = _G.ConVarExists or debug_fempty
@@ -387,6 +355,7 @@ end
 
 if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil then
 
+    ---@type table<string, boolean>
     local commands = {}
 
     if _G.AddConsoleCommand == nil then
@@ -428,25 +397,7 @@ if engine.consoleCommandRun == nil then
 
 end
 
-if engine.consoleVariableCatch == nil then
-
-    local lst = {}
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `consoleVariableCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | fun( str_name: string, str_old: string, str_new: string ), priority?: integer ): dreamwork.std.Hook
-    engine.consoleVariableCatch = create_catch_fn( lst )
-
-    ---@param str_name string
-    ---@param str_old string
-    ---@param str_new string
-    local function run_callbacks( str_name, str_old, str_new )
-        for i = 1, #lst, 1 do
-            lst[ i ]( str_name, str_old, str_new )
-        end
-    end
+do
 
     local cvars = _G.cvars
     if cvars == nil then
@@ -455,34 +406,52 @@ if engine.consoleVariableCatch == nil then
     end
 
     if cvars.OnConVarChanged == nil then
-        cvars.OnConVarChanged = run_callbacks
+
+        ---@param name string
+        ---@param old_value string
+        ---@param new_value string
+        ---@diagnostic disable-next-line: duplicate-set-field
+        cvars.OnConVarChanged = function( name, old_value, new_value )
+            engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
+        end
+
     else
-        cvars.OnConVarChanged = detour_attach( cvars.OnConVarChanged, function( fn, str_name, str_old, str_new )
-            run_callbacks( str_name, str_old, str_new )
-            return fn( str_name, str_old, str_new )
+
+        ---@param name string
+        ---@param old_value string
+        ---@param new_value string
+        ---@diagnostic disable-next-line: duplicate-set-field
+        cvars.OnConVarChanged = detour_attach( cvars.OnConVarChanged, function( fn, name, old_value, new_value )
+            engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
+            return fn( name, old_value, new_value )
         end )
+
     end
 
-    gameevent_Listen( "server_cvar" )
+end
+
+do
 
     local engine_consoleVariableGet = engine.consoleVariableGet
     local values = {}
 
-    engine.hookCatch( "server_cvar", function( data )
-        local str_name, str_new = data.cvarname, data.cvarvalue
+    gameevent_Listen( "server_cvar" )
 
-        local str_old = values[ str_name ]
-        if str_old == nil then
-            local convar = engine_consoleVariableGet( str_name )
+    engine.hookCatch( "server_cvar", function( data )
+        local name, new_value = data.cvarname, data.cvarvalue
+        local old_value = values[ name ]
+
+        if old_value == nil then
+            local convar = engine_consoleVariableGet( name )
             if convar == nil then return end
 
-            str_old = convar:GetDefault()
-            values[ str_name ] = str_old
+            old_value = convar:GetDefault()
+            values[ name ] = old_value
         else
-            values[ str_name ] = str_new
+            values[ name ] = new_value
         end
 
-        run_callbacks( str_name, str_old, str_new )
+        engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
     end, 1 )
 
 end
@@ -550,30 +519,7 @@ do
 
 end
 
-if engine.entityCreationCatch == nil then
-
-    local lst = {}
-
-    ---@alias dreamwork.engine.entityCreationCatch_fn fun( name: string ): table | nil
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `entityCreationCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.entityCreationCatch_fn, priority?: integer ): dreamwork.std.Hook
-    engine.entityCreationCatch = create_catch_fn( lst )
-
-    ---@param name string
-    local function run_callbacks( name )
-        for i = 1, #lst, 1 do
-            local tbl = lst[ i ]( name )
-            if tbl ~= nil then
-                return tbl
-            end
-
-            return nil
-        end
-    end
+do
 
     local scripted_ents = _G.scripted_ents
     if scripted_ents == nil then
@@ -582,54 +528,53 @@ if engine.entityCreationCatch == nil then
     end
 
     if scripted_ents.Get == nil then
-        scripted_ents.Get = run_callbacks
+
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        scripted_ents.Get = function( name, output )
+            return engine_hookCall( "EntityCreate", name, output )
+        end
+
     else
-        scripted_ents.Get = detour_attach( scripted_ents.Get, function( fn, name )
-            local tbl = run_callbacks( name )
+
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        scripted_ents.Get = detour_attach( scripted_ents.Get, function( fn, name, output )
+            ---@type table | nil
+            local tbl = engine_hookCall( "EntityCreate", name, output )
             if tbl == nil then
-                return fn( name )
+                return fn( name, output )
             else
                 return tbl
             end
         end )
+
     end
 
     if scripted_ents.OnLoaded == nil then
+
         ---@diagnostic disable-next-line: duplicate-set-field
-        function scripted_ents.OnLoaded( name )
-            engine_hookCall( "engine.Entity.loaded", name )
+        function scripted_ents.OnLoaded()
+            engine_hookCall( "EntitiesLoaded" )
         end
+
     else
-        scripted_ents.OnLoaded = detour_attach( scripted_ents.OnLoaded, function( fn, name )
-            engine_hookCall( "engine.Entity.loaded", name )
-            return fn( name )
+
+        ---@diagnostic disable-next-line: duplicate-set-field
+        scripted_ents.OnLoaded = detour_attach( scripted_ents.OnLoaded, function( fn )
+            engine_hookCall( "EntitiesLoaded" )
+            return fn()
         end )
+
     end
 
 end
 
-if engine.weaponCreationCatch == nil then
-
-    local lst = {}
-
-    ---@alias dreamwork.engine.weaponCreationCatch_fn fun( name: string ): table | nil
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `weaponCreationCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.weaponCreationCatch_fn, priority?: integer ): dreamwork.std.Hook
-    engine.weaponCreationCatch = create_catch_fn( lst )
-
-    ---@param name string
-    local function run_callbacks( name )
-        for i = 1, #lst, 1 do
-            local tbl = lst[ i ]( name )
-            if tbl ~= nil then
-                return tbl
-            end
-        end
-    end
+do
 
     local weapons = _G.weapons
     if weapons == nil then
@@ -639,14 +584,25 @@ if engine.weaponCreationCatch == nil then
 
     if weapons.Get == nil then
 
-        weapons.Get = run_callbacks
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        weapons.Get = function( name, output )
+            return engine_hookCall( "WeaponCreate", name, output )
+        end
 
     else
 
-        weapons.Get = detour_attach( weapons.Get, function( fn, name )
-            local tbl = run_callbacks( name )
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        weapons.Get = detour_attach( weapons.Get, function( fn, name, output )
+            ---@type table | nil
+            local tbl = engine_hookCall( "WeaponCreate", name, output )
             if tbl == nil then
-                return fn( name )
+                return fn( name, output )
             else
                 return tbl
             end
@@ -656,46 +612,24 @@ if engine.weaponCreationCatch == nil then
 
     if weapons.OnLoaded == nil then
 
-        ---@param name string
         ---@diagnostic disable-next-line: duplicate-set-field
-        function weapons.OnLoaded( name )
-            engine_hookCall( "engine.Weapon.loaded", name )
+        function weapons.OnLoaded()
+            engine_hookCall( "WeaponsLoaded" )
         end
 
     else
 
-        ---@param name string
-        weapons.OnLoaded = detour_attach( weapons.OnLoaded, function( fn, name )
-            engine_hookCall( "engine.Weapon.loaded", name )
-            return fn( name )
+        ---@diagnostic disable-next-line: duplicate-set-field
+        weapons.OnLoaded = detour_attach( weapons.OnLoaded, function( fn )
+            engine_hookCall( "WeaponsLoaded" )
+            return fn()
         end )
 
     end
 
 end
 
-if engine.effectCreationCatch == nil then
-
-    local lst = {}
-
-    ---@alias dreamwork.engine.effectCreationCatch_fn fun( name: string ): table | nil
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `effectCreationCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.effectCreationCatch_fn, priority?: integer ): dreamwork.std.Hook
-    engine.effectCreationCatch = create_catch_fn( lst )
-
-    ---@param name string
-    local function run_callbacks( name )
-        for i = 1, #lst, 1 do
-            local tbl = lst[ i ]( name )
-            if tbl ~= nil then
-                return tbl
-            end
-        end
-    end
+do
 
     local effects = _G.effects
     if effects == nil then
@@ -704,32 +638,36 @@ if engine.effectCreationCatch == nil then
     end
 
     if effects.Create == nil then
-        effects.Create = run_callbacks
+
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        effects.Create = function( name, output )
+            return engine_hookCall( "EffectCreate", name, output )
+        end
+
     else
-        effects.Create = detour_attach( effects.Create, function( fn, name )
-            local tbl = run_callbacks( name )
+
+        ---@param name string
+        ---@param output table | nil
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
+        effects.Create = detour_attach( effects.Create, function( fn, name, output )
+            ---@type table | nil
+            local tbl = engine_hookCall( "EffectCreate", name, output )
             if tbl == nil then
-                return fn( name )
+                return fn( name, output )
             else
                 return tbl
             end
         end )
+
     end
 
 end
 
-if engine.gamemodeCreationCatch == nil then
-
-    local lst = {}
-
-    ---@alias dreamwork.engine.gamemodeCreationCatch_fn fun( name: string ): table | nil
-
-    --- [SHARED AND MENU]
-    ---
-    --- Adds a callback to the `gamemodeCreationCatch` event.
-    ---
-    ---@overload fun( fn: dreamwork.std.Hook | dreamwork.engine.gamemodeCreationCatch_fn, priority?: integer ): dreamwork.std.Hook
-    engine.gamemodeCreationCatch = create_catch_fn( lst )
+do
 
     local gamemode = _G.gamemode
     if gamemode == nil then
@@ -739,19 +677,20 @@ if engine.gamemodeCreationCatch == nil then
 
     if gamemode.Get == nil then
 
+        ---@type table<string, table>
         local gamemodes = {}
 
         ---@param name string
+        ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
         function gamemode.Get( name )
-            for i = 1, #lst, 1 do
-                local tbl = lst[ i ]( name )
-                if tbl ~= nil then
-                    return tbl
-                end
+            ---@type table | nil
+            local tbl = engine_hookCall( "GamemodeSelected", name )
+            if tbl == nil then
+                return gamemodes[ name ]
+            else
+                return tbl
             end
-
-            return gamemodes[ name ]
         end
 
         if gamemode.Register == nil then
@@ -771,18 +710,18 @@ if engine.gamemodeCreationCatch == nil then
 
         end
 
-
     else
 
+        ---@param name string
+        ---@return table | nil
+        ---@diagnostic disable-next-line: duplicate-set-field
         gamemode.Get = detour_attach( gamemode.Get, function( fn, name )
-            for i = 1, #lst, 1 do
-                local tbl = lst[ i ]( name )
-                if tbl ~= nil then
-                    return tbl
-                end
+            local tbl = engine_hookCall( "GamemodeSelected", name )
+            if tbl == nil then
+                return fn( name )
+            else
+                return tbl
             end
-
-            return fn( name )
         end )
 
         gamemode.Register = gamemode.Register or debug_fempty
@@ -792,6 +731,8 @@ if engine.gamemodeCreationCatch == nil then
 end
 
 do
+
+    local string_format = string.format
 
     local getGames, getAddons
 
@@ -875,7 +816,7 @@ do
 
             if game_info.mounted then
                 if actual_game_hash[ app_id ] == nil then
-                    engine_hookCall( "engine.Game.mounted", game_info )
+                    engine_hookCall( "GameMounted", game_info, true )
                     game_changes = game_changes + 1
                 end
 
@@ -888,7 +829,7 @@ do
             local depot = game_info.depot
 
             if actual_game_hash[ depot ] ~= nil and game_hash[ depot ] == nil then
-                engine_hookCall( "engine.Game.unmounted", game_info )
+                engine_hookCall( "GameMounted", game_info, false )
                 game_changes = game_changes + 1
             end
 
@@ -923,7 +864,8 @@ do
                 local addon_title = addon_info.title
 
                 if actual_addon_hash[ addon_title ] == nil then
-                    engine_hookCall( "engine.Addon.mounted", addon_info )
+                    addon_info.folder = string_format( "gma_%.4x", addon_info.index )
+                    engine_hookCall( "AddonMounted", addon_info, true )
                     addon_changes = addon_changes + 1
                 end
 
@@ -936,7 +878,7 @@ do
             local addon_title = addon_info.title
 
             if actual_addon_hash[ addon_title ] ~= nil and addon_hash[ addon_title ] == nil then
-                engine_hookCall( "engine.Addon.unmounted", addon_info )
+                engine_hookCall( "AddonMounted", addon_info, false )
                 addon_changes = addon_changes + 1
             end
 
@@ -973,11 +915,11 @@ end
 
 if entity_meta.__gc == nil then
     function entity_meta.__gc( entity_userdata )
-        engine_hookCall( "engine.Entity.__gc", entity_userdata )
+        engine_hookCall( "EntityGarbageCollected", entity_userdata )
     end
 else
     entity_meta.__gc = detour_attach( entity_meta.__gc, function( fn, entity_userdata )
-        engine_hookCall( "engine.Entity.__gc", entity_userdata )
+        engine_hookCall( "EntityGarbageCollected", entity_userdata )
         fn( entity_userdata )
     end )
 end
@@ -990,11 +932,11 @@ end
 
 if player_meta.__gc == nil then
     function player_meta.__gc( player_userdata )
-        engine_hookCall( "engine.Entity.__gc", player_userdata )
+        engine_hookCall( "EntityGarbageCollected", player_userdata )
     end
 else
     player_meta.__gc = detour_attach( player_meta.__gc, function( fn, player_userdata )
-        engine_hookCall( "engine.Entity.__gc", player_userdata )
+        engine_hookCall( "EntityGarbageCollected", player_userdata )
         fn( player_userdata )
     end )
 end
@@ -1007,11 +949,11 @@ end
 
 if weapon_meta.__gc == nil then
     function weapon_meta.__gc( weapon_userdata )
-        engine_hookCall( "engine.Entity.__gc", weapon_userdata )
+        engine_hookCall( "EntityGarbageCollected", weapon_userdata )
     end
 else
     weapon_meta.__gc = detour_attach( weapon_meta.__gc, function( fn, weapon_userdata )
-        engine_hookCall( "engine.Entity.__gc", weapon_userdata )
+        engine_hookCall( "EntityGarbageCollected", weapon_userdata )
         fn( weapon_userdata )
     end )
 end
@@ -1024,11 +966,11 @@ end
 
 if vehicle_meta.__gc == nil then
     function vehicle_meta.__gc( vehicle_userdata )
-        engine_hookCall( "engine.Entity.__gc", vehicle_userdata )
+        engine_hookCall( "EntityGarbageCollected", vehicle_userdata )
     end
 else
     vehicle_meta.__gc = detour_attach( vehicle_meta.__gc, function( fn, vehicle_userdata )
-        engine_hookCall( "engine.Entity.__gc", vehicle_userdata )
+        engine_hookCall( "EntityGarbageCollected", vehicle_userdata )
         fn( vehicle_userdata )
     end )
 end
@@ -1041,11 +983,11 @@ end
 
 if npc_meta.__gc == nil then
     function npc_meta.__gc( npc_userdata )
-        engine_hookCall( "engine.Entity.__gc", npc_userdata )
+        engine_hookCall( "EntityGarbageCollected", npc_userdata )
     end
 else
     npc_meta.__gc = detour_attach( npc_meta.__gc, function( fn, npc_userdata )
-        engine_hookCall( "engine.Entity.__gc", npc_userdata )
+        engine_hookCall( "EntityGarbageCollected", npc_userdata )
         fn( npc_userdata )
     end )
 end
@@ -1058,11 +1000,11 @@ end
 
 if nextbot_meta.__gc == nil then
     function nextbot_meta.__gc( nextbot_userdata )
-        engine_hookCall( "engine.Entity.__gc", nextbot_userdata )
+        engine_hookCall( "EntityGarbageCollected", nextbot_userdata )
     end
 else
     nextbot_meta.__gc = detour_attach( nextbot_meta.__gc, function( fn, nextbot_userdata )
-        engine_hookCall( "engine.Entity.__gc", nextbot_userdata )
+        engine_hookCall( "EntityGarbageCollected", nextbot_userdata )
         fn( nextbot_userdata )
     end )
 end

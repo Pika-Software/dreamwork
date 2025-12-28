@@ -129,7 +129,7 @@ if server.getGamemodeName == nil then
             end
         end
 
-        engine.gamemodeCreationCatch( function( name )
+        engine.hookCatch( "GamemodeSelected", function( name )
             if gamemode_value == nil then
                 return nil
             else

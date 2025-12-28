@@ -1708,6 +1708,8 @@ function SearchParams:__tostring()
 	return string.format( "URLSearchParams: %p [%s]", self, serializeQuery( self ) )
 end
 
+-- SearchParams.__tostring = serializeQuery
+
 --- [SHARED AND MENU]
 ---
 --- Appends name and value to the end
@@ -2178,6 +2180,7 @@ function URL:__newindex( key, value )
 	end
 end
 
+---@return string
 ---@protected
 function URL:__tostring()
 	return string.format( "URL: %p [%s]", self, self.href )

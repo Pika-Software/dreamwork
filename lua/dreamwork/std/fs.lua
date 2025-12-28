@@ -2078,7 +2078,7 @@ end
 ---@protected
 ---@return string
 function File:__tostring()
-    return string.format( "File: %p [%s][%s][%d bytes]", self, self.path, time.toDuration( time_now() - self.time ), self.size )
+    return string.format( "File: %p [%s]", self, self.path )
 end
 
 --- [SHARED AND MENU]
@@ -2584,7 +2584,7 @@ end
 ---@protected
 ---@return string
 function Directory:__tostring()
-    return string.format( "Directory: %p [%s][%s][%d bytes][%d files][%d directories]", self, self.path, time.toDuration( time_now() - self.time ), self.size, self:count() )
+    return string.format( "Directory: %p [%s]", self, self.path )
 end
 
 --- [SHARED AND MENU]
@@ -3181,15 +3181,14 @@ end
 local root = DirectoryClass( "", "BASE_PATH", "" )
 
 ---@param game_info dreamwork.engine.GameInfo
-engine_hookCatch( "engine.Game.mounted", function( game_info )
+---@param is_mounted boolean
+engine_hookCatch( "GameMounted", function( game_info, is_mounted )
     local game_folder = game_info.folder
     eject( root, game_folder )
-    insert( root, DirectoryClass( game_folder, game_folder, "" ) )
-end, 2 )
 
----@param game_info dreamwork.engine.GameInfo
-engine_hookCatch( "engine.Game.unmounted", function( game_info )
-    eject( root, game_info.folder )
+    if is_mounted then
+        insert( root, DirectoryClass( game_folder, game_folder, "" ) )
+    end
 end, 2 )
 
 do
@@ -3211,15 +3210,14 @@ do
     insert( workspace, addons )
 
     ---@param addon_info dreamwork.engine.AddonInfo
-    engine_hookCatch( "engine.Addon.mounted", function( addon_info )
+    ---@param is_mounted boolean
+    engine_hookCatch( "AddonMounted", function( addon_info, is_mounted )
         local addon_folder = addon_info.folder
         eject( addons, addon_folder )
-        insert( addons, DirectoryClass( addon_folder, addon_info.title, "" ) )
-    end, 2 )
 
-    ---@param addon_info dreamwork.engine.AddonInfo
-    engine_hookCatch( "engine.Addon.unmounted", function( addon_info )
-        eject( addons, addon_info.folder )
+        if is_mounted then
+            insert( addons, DirectoryClass( addon_folder, addon_info.title, "" ) )
+        end
     end, 2 )
 
     local download = DirectoryClass( "download", "DOWNLOAD", "" )

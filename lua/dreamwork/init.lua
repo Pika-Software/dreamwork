@@ -1610,6 +1610,7 @@ do
 
     local splashes = {
         "We'll Sandblast these walls and paint them again!",
+        "nf2ca53pnz2caytfebzw6idfmfzxsidun4qho2lo * 0.5",
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
         "I'm not here to tell you how great I am!",
         "Woah-oh-oh, tell me where you wanna go ♪",
@@ -1741,34 +1742,21 @@ dofile( "std/sqlite.lua" )
 dofile( "database.lua" )
 dofile( "factory.lua" )
 
+logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
+
+---@param game_info dreamwork.engine.GameInfo
+---@param is_mounted boolean
+engine.hookCatch( "GameMounted", function( game_info, is_mounted )
+    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
+---@param addon_info dreamwork.engine.AddonInfo
+---@param is_mounted boolean
+engine.hookCatch( "AddonMounted", function( addon_info, is_mounted )
+    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
 do
-
-    local bytepack_writeUInt32 = std.pack.bytes.writeUInt32
-
-    logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
-
-    ---@param game_info dreamwork.engine.GameInfo
-    engine.hookCatch( "engine.Game.mounted", function( game_info )
-        logger:debug( "Game '%s' (AppID: %d) was mounted.", game_info.folder, game_info.depot )
-    end, 1 )
-
-    ---@param game_info dreamwork.engine.GameInfo
-    engine.hookCatch( "engine.Game.unmounted", function( game_info )
-        logger:debug( "Game '%s' (AppID: %d) was unmounted.", game_info.folder, game_info.depot )
-    end, 1 )
-
-    ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "engine.Addon.mounted", function( addon_info )
-        local folder = string_format( "gma_%x%x%x%x", bytepack_writeUInt32( addon_info.index ) )
-        addon_info.folder = folder
-
-        logger:debug( "Addon '%s' (WorkshopID: %d, folder: %s) was mounted.", addon_info.title, addon_info.wsid, folder )
-    end, 1 )
-
-    ---@param addon_info dreamwork.engine.AddonInfo
-    engine.hookCatch( "engine.Addon.unmounted", function( addon_info )
-        logger:debug( "Addon '%s' (WorkshopID: %d, folder: %s) was unmounted.", addon_info.title, addon_info.wsid, addon_info.folder )
-    end, 1 )
 
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )
 

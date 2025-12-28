@@ -94,6 +94,7 @@ do
         [ 2 ] = "running"
     }
 
+    ---@return string
     ---@protected
     function Timer:__tostring()
         return string.format( "Timer: %p [%s][%s]", self, self.name, status2string[ self.state ] or "unknown" )

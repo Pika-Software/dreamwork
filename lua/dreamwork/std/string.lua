@@ -641,6 +641,10 @@ function string.byteTrim( str, trailing_byte, direction, start_position, end_pos
         end_position = math_min( end_position, str_length )
     end
 
+    if trailing_byte == nil then
+        trailing_byte = 0x20 --[[ Space ]]
+    end
+
     if direction ~= true then
         while string_byte( str, start_position, start_position ) == trailing_byte do
             if start_position == end_position then

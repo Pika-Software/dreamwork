@@ -1,4 +1,4 @@
---- Python-like futures, made by Retro
+--- Python-like futures, made by Retr0
 
 ---@class dreamwork.std
 local std = dreamwork.std

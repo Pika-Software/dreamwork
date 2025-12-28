@@ -182,6 +182,7 @@ do
         return string_format( "[%s:%d:%d]", type2letter[ self.type ] or "I", universe2int[ self.universe ] or 0, self.id )
     end
 
+    ---@return string
     ---@protected
     function Identifier:__tostring()
         return string_format( "Steam Identifier: %p %s", self, self:toSteam3() )

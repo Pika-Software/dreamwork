@@ -308,8 +308,8 @@ do
     ---@field width number The width of the node in the tree.
     local Node = class.base( "Node" )
 
-    ---@protected
     ---@return string
+    ---@protected
     function Node:__tostring()
         return string_format( "Node: %p [%s][%d]", self, self.value, self.depth )
     end
@@ -471,10 +471,6 @@ do
 
     ---@alias Symbol dreamwork.std.Symbol
 
-    ---@type table<dreamwork.std.Symbol, string>
-    local names = {}
-    std.gc.setTableRules( names, true, false )
-
     ---@type table<string, dreamwork.std.Symbol>
     local symbols = {}
 
@@ -485,10 +481,14 @@ do
     local Symbol = debug_getmetatable( proxy_template )
     Symbol.__type = "Symbol"
 
+    ---@type table<dreamwork.std.Symbol, string>
+    local types = {}
+    std.gc.setTableRules( types, true, false )
+
     ---@return string
-    ---@private
+    ---@protected
     function Symbol:__tostring()
-        return names[ self ]
+        return types[ self ]
     end
 
     --- [SHARED AND MENU]
@@ -501,7 +501,7 @@ do
         local symbol = symbols[ name ]
         if symbol == nil then
             symbol = debug_newproxy( proxy_template )
-            names[ symbol ] = string_format( "%s Symbol: %p", name, symbol )
+            types[ symbol ] = string_format( "%s Symbol: %p", name, symbol )
             symbols[ name ] = symbol
         end
 

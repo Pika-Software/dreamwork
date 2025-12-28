@@ -43,6 +43,7 @@ local Hook = std.class.base( "Hook" )
 local HookClass = std.class.create( Hook )
 std.Hook = HookClass
 
+---@return string
 ---@protected
 function Hook:__tostring()
     return std.string.format( "Hook: %p [%s][%s]", self, self.name, self.is_running and "running" or "stopped" )

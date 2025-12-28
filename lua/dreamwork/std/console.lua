@@ -495,7 +495,7 @@ do
 
     local string_byte = string.byte
 
-    engine.consoleCommandCatch( function( ply, name, args, argument_string )
+    engine.hookCatch( "ConsoleCommandExecuted", function( ply, name, args, argument_string )
         local command = commands[ name ]
         if command == nil then
             return nil
@@ -580,7 +580,7 @@ do
         auto_complete[ self ] = fn
     end
 
-    engine.consoleCommandAutoCompleteCatch( function( name, argument_string, args )
+    engine.hookCatch( "ConsoleCommandAutocomplete", function( name, argument_string, args )
         local command = commands[ name ]
         if command == nil then
             return
@@ -1454,7 +1454,7 @@ do
         return future:await()
     end
 
-    engine.consoleVariableCatch( function( str_name, str_old, str_new )
+    engine.hookCatch( "ConsoleVariableChanged", function( str_name, str_old, str_new )
         local variable = variables[ str_name ]
         if variable == nil then
             return
