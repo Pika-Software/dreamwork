@@ -1,12 +1,17 @@
 ---@class dreamwork.std
 local std = _G.dreamwork.std
 
-local debug = std.debug
 local string = std.string
+local string_format = string.format
 
+local debug = std.debug
 local debug_newproxy = debug.newproxy
+local debug_getmetavalue = debug.getmetavalue
+
+local raw = std.raw
+local raw_get, raw_set = raw.get, raw.set
+
 local setmetatable = std.setmetatable
-local raw_get = std.raw.get
 
 --- [SHARED AND MENU]
 ---
@@ -33,7 +38,9 @@ std.class = class
 ---@field protected __tonumber? fun( obj: dreamwork.Object ): number
 ---@field protected __toboolean? fun( obj: dreamwork.Object ): boolean
 ---@field protected __tocolor? fun( obj: dreamwork.Object ): dreamwork.std.Color
+---@field protected __tostring? fun( obj: dreamwork.Object ): string
 
+---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.Object
 
 ---@class dreamwork.Class : dreamwork.Object
@@ -42,6 +49,7 @@ std.class = class
 ---@field __private boolean If the class is private. **READ ONLY**
 ---@field private __inherited? dreamwork.Class.__inherited The function that will be called when the class is inherited.
 
+---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Class dreamwork.Class
 
 ---@type table<dreamwork.Object, userdata>
@@ -49,18 +57,17 @@ local templates = {}
 
 std.gc.setTableRules( templates, true, false )
 
+---@param obj dreamwork.Object The object to convert to a string.
+---@return string str The string representation of the object.
+local function __tostring( obj )
+    return string_format( "%s: %p", debug_getmetavalue( obj, "__type" ) or "unknown", obj )
+end
+
 do
 
-    local debug_getmetavalue = debug.getmetavalue
     local debug_getmetatable = debug.getmetatable
     local string_byte = string.byte
-    local raw_pairs = std.raw.pairs
-
-    ---@param obj dreamwork.Object The object to convert to a string.
-    ---@return string str The string representation of the object.
-    local function base__tostring( obj )
-        return string.format( "%s: %p", debug_getmetavalue( obj, "__type" ) or "unknown", obj )
-    end
+    local raw_pairs = raw.pairs
 
     ---@type table<string, boolean>
     local meta_blacklist = {
@@ -92,13 +99,13 @@ do
 
             templates[ base ] = template
 
-            base.__type = name
-            base.__private = true
-            base.__tostring = base__tostring
+            raw_set( base, "__type", name )
+            raw_set( base, "__private", true )
+            raw_set( base, "__tostring", __tostring )
         else
             base = {
                 __type = name,
-                __tostring = base__tostring
+                __tostring = __tostring
             }
         end
 
@@ -199,14 +206,6 @@ do
 
 end
 
----@param cls dreamwork.Class The class.
----@return string str The string representation of the class.
-local function class__tostring( cls )
-    return string.format( "%sClass: %p", raw_get( raw_get( cls, "__base" ), "__type" ), cls )
-end
-
-local raw_set = std.raw.set
-
 --- [SHARED AND MENU]
 ---
 --- Creates a new class from the given base.
@@ -216,41 +215,42 @@ local raw_set = std.raw.set
 function class.create( base )
     local cls = {}
 
+    ---@type dreamwork.Class | nil
+    local parent_class
+
     local parent_base = raw_get( base, "__parent" )
     if parent_base ~= nil then
         ---@cast parent_base dreamwork.Object
-
-        ---@type dreamwork.Class | nil
-        local parent_class = raw_get( parent_base, "__class" )
+        parent_class = raw_get( parent_base, "__class" )
 
         if parent_class == nil then
             error( "Parent class has no `__class` variable.", 2 )
-        else
+        end
 
-            for key, value in pairs( parent_class ) do
-                cls[ key ] = value
-            end
-
-            cls.__parent = parent_class
-
-            ---@type dreamwork.Class.__inherited | nil
-            local inherited_fn = raw_get( parent_class, "__inherited" )
-            if inherited_fn ~= nil then
-                inherited_fn( parent_class, cls )
-            end
-
+        for key, value in pairs( parent_class ) do
+            cls[ key ] = value
         end
     end
+
+    raw_set( base, "__class", cls )
 
     setmetatable( cls, {
         __index = base,
         __call = class__call,
-        __tostring = class__tostring,
+        __tostring = __tostring,
         __type = raw_get( base, "__type" ) .. "Class"
     } )
 
-    raw_set( base, "__class", cls )
+    raw_set( cls, "__parent", parent_class )
     raw_set( cls, "__base", base )
+
+    if parent_class ~= nil then
+        ---@type dreamwork.Class.__inherited | nil
+        local inherited_fn = raw_get( parent_class, "__inherited" )
+        if inherited_fn ~= nil then
+            inherited_fn( parent_class, cls )
+        end
+    end
 
     return cls
 end
