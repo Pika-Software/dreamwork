@@ -1285,16 +1285,16 @@ if std.loadbinary( "efsw" ) then
 
         if action == 2 then
             watchdog_info.modified_time = time_now()
-            engine_hookCall( "fs.watchdog.Deleted", watchdog_info )
+            engine_hookCall( "FileSystemDeleted", watchdog_info )
             return
         end
 
         watchdog_info.modified_time = file_Time( mount_path, mount_point )
 
         if action == 1 then
-            engine_hookCall( "fs.watchdog.Created", watchdog_info )
+            engine_hookCall( "FileSystemCreated", watchdog_info )
         elseif action == 3 then
-            engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+            engine_hookCall( "FileSystemModified", watchdog_info )
         end
     end )
 
@@ -1323,7 +1323,7 @@ else
     local content_maps = {}
     gc_setTableRules( content_maps, true, false )
 
-    engine_hookCatch( "fs.watchdog.Created", function( watchdog_info )
+    engine_hookCatch( "FileSystemCreated", function( watchdog_info )
         local parent_directory = watchdog_info.parent
 
         local content_list = content_lists[ parent_directory ]
@@ -1345,7 +1345,7 @@ else
         end
     end )
 
-    engine_hookCatch( "fs.watchdog.Deleted", function( watchdog_info )
+    engine_hookCatch( "FileSystemDeleted", function( watchdog_info )
         local parent_directory = watchdog_info.parent
 
         local content_map = content_maps[ parent_directory ]
@@ -1497,37 +1497,31 @@ else
         return parent_directory ~= nil and watch_map[ parent_directory ] ~= nil
     end
 
-    do
+    ---@param dead_fs_object dreamwork.std.fs.Object
+    engine_hookCatch( "FileSystemGarbageCollected", function( dead_fs_object )
+        for i = watch_list_size, 1, -1 do
+            local fs_object = watch_list[ i ]
+            if fs_object == dead_fs_object then
+                table_remove( watch_list, i )
+                watch_list_size = watch_list_size - 1
+            elseif is_directory_object[ fs_object ] then
+                ---@cast fs_object dreamwork.std.fs.Directory
 
-        ---@param dead_fs_object dreamwork.std.fs.Object
-        local function on_gc( dead_fs_object )
-            for i = watch_list_size, 1, -1 do
-                local fs_object = watch_list[ i ]
-                if fs_object == dead_fs_object then
-                    table_remove( watch_list, i )
-                    watch_list_size = watch_list_size - 1
-                elseif is_directory_object[ fs_object ] then
-                    ---@cast fs_object dreamwork.std.fs.Directory
+                local content_list = content_lists[ fs_object ]
+                local content_length = content_counts[ fs_object ]
 
-                    local content_list = content_lists[ fs_object ]
-                    if content_list ~= nil then
-                        local content_length = content_counts[ fs_object ] or 0
-                        for j = content_length, 1, -1 do
-                            if content_list[ j ] == fs_object then
-                                table_remove( content_list, j )
-                                content_counts[ fs_object ] = content_length - 1
-                                break
-                            end
+                if content_list ~= nil and content_length ~= nil then
+                    for j = content_length, 1, -1 do
+                        if content_list[ j ] == fs_object then
+                            table_remove( content_list, j )
+                            content_counts[ fs_object ] = content_length - 1
+                            break
                         end
                     end
                 end
             end
         end
-
-        engine_hookCatch( "fs.Directory.__gc", on_gc, 1 )
-        engine_hookCatch( "fs.File.__gc", on_gc, 1 )
-
-    end
+    end, 1 )
 
     local coroutine = std.coroutine
     local coroutine_yield = coroutine.yield
@@ -1554,7 +1548,7 @@ else
                 modified_time = file_Time( mount_path, mount_point )
             }
 
-            engine_hookCall( "fs.watchdog.Created", watchdog_info )
+            engine_hookCall( "FileSystemCreated", watchdog_info )
         end
     end
 
@@ -1579,16 +1573,16 @@ else
         }
 
         if fs_map[ name ] == nil then
-            engine_hookCall( "fs.watchdog.Deleted", watchdog_info )
+            engine_hookCall( "FileSystemDeleted", watchdog_info )
             return
         end
 
         local modified_time = file_Time( mount_path, mount_point )
         if modified_time == 0 then
-            engine_hookCall( "fs.watchdog.Deleted", watchdog_info )
+            engine_hookCall( "FileSystemDeleted", watchdog_info )
         elseif modified_times[ fs_object ] ~= modified_time then
             watchdog_info.modified_time = modified_time
-            engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+            engine_hookCall( "FileSystemModified", watchdog_info )
         end
     end
 
@@ -1610,7 +1604,7 @@ else
                 modified_time = 0
             }
 
-            engine_hookCall( "fs.watchdog.Deleted", watchdog_info )
+            engine_hookCall( "FileSystemDeleted", watchdog_info )
             return
         end
 
@@ -1627,7 +1621,7 @@ else
                 modified_time = object_modified_time
             }
 
-            engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+            engine_hookCall( "FileSystemModified", watchdog_info )
         end
 
         if is_directory then
@@ -1677,6 +1671,7 @@ else
         end
     end
 
+    ---@type integer
     local pointer = 1
 
     ---@async
@@ -1695,17 +1690,15 @@ else
     end )
 
     engine_hookCatch( "Tick", function()
-        if watch_list_size ~= 0 then
-            coroutine_resume( watchdog_thread )
-        end
+        if watch_list_size == 0 then return end
+        coroutine_resume( watchdog_thread )
     end, 1 )
 
     dreamwork_logger:info( "'dreamwork' was connected as file system watcher." )
 
 end
 
-engine_hookCatch( "fs.Directory.__gc", watchdog.unwatch )
-engine_hookCatch( "fs.File.__gc", watchdog.unwatch )
+engine_hookCatch( "FileSystemGarbageCollected", watchdog.unwatch )
 
 ---@param file_object dreamwork.std.fs.File
 ---@param stack_level integer
@@ -1756,7 +1749,7 @@ local function delete_file( file_object, stack_level )
         modified_time = modified_time
     }
 
-    engine_hookCall( "fs.watchdog.Deleted", file_watchdog_info )
+    engine_hookCall( "FileSystemDeleted", file_watchdog_info )
 
     ---@type dreamwork.std.fs.watchdog.ObjectInfo
     local directory_watchdog_info = {
@@ -1769,7 +1762,7 @@ local function delete_file( file_object, stack_level )
         modified_time = modified_time
     }
 
-    engine_hookCall( "fs.watchdog.Modified", directory_watchdog_info )
+    engine_hookCall( "FileSystemModified", directory_watchdog_info )
 end
 
 ---@param directory_object dreamwork.std.fs.Directory
@@ -1850,7 +1843,7 @@ local function delete_directory( directory_object, recursive, stack_level )
         modified_time = time_now()
     }
 
-    engine_hookCall( "fs.watchdog.Deleted", watchdog_info )
+    engine_hookCall( "FileSystemDeleted", watchdog_info )
 end
 
 -- TODO: rework delete/create/modify events for watchdog to work properly with manual deletion
@@ -1914,7 +1907,7 @@ local function make_directory( parent_directory, directory_name, forced, stack_l
         modified_time = file_Time( mount_path, mount_point )
     }
 
-    engine_hookCall( "fs.watchdog.Created", watchdog_info )
+    engine_hookCall( "FileSystemCreated", watchdog_info )
 
     return directory_object
 end
@@ -1984,7 +1977,7 @@ local function make_file( parent_directory, file_name, forced, stack_level, data
         modified_time = file_Time( mount_path, mount_point )
     }
 
-    engine_hookCall( "fs.watchdog.Created", file_watchdog_info )
+    engine_hookCall( "FileSystemCreated", file_watchdog_info )
 
     local directory_mount_path, directory_mount_point = mount_paths[ parent_directory ], mount_points[ parent_directory ]
 
@@ -1999,7 +1992,7 @@ local function make_file( parent_directory, file_name, forced, stack_level, data
         modified_time = file_Time( directory_mount_path, directory_mount_point )
     }
 
-    engine_hookCall( "fs.watchdog.Modified", directory_watchdog_info )
+    engine_hookCall( "FileSystemModified", directory_watchdog_info )
 
     return file_object
 end
@@ -2042,7 +2035,7 @@ end
 
 ---@protected
 function File:__gc()
-    engine_hookCall( "fs.File.__gc", self )
+    engine_hookCall( "FileSystemGarbageCollected", self, false )
 end
 
 ---@protected
@@ -2054,6 +2047,8 @@ function File:__init( name, mount_point, mount_path )
     mount_paths[ self ] = mount_path
     mount_points[ self ] = mount_point
     is_directory_object[ self ] = false
+
+    -- TODO: internal where is perform
 end
 
 ---@protected
@@ -2144,7 +2139,7 @@ function File:touch()
         modified_time = modified_time
     }
 
-    engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+    engine_hookCall( "FileSystemModified", watchdog_info )
 
     return modified_time
 end
@@ -2236,7 +2231,7 @@ function File:write( data )
         modified_time = modified_time
     }
 
-    engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+    engine_hookCall( "FileSystemModified", watchdog_info )
 
     return respond
 end
@@ -2304,7 +2299,7 @@ function File:append( data )
         modified_time = modified_time
     }
 
-    engine_hookCall( "fs.watchdog.Modified", watchdog_info )
+    engine_hookCall( "FileSystemModified", watchdog_info )
 
     return respond
 end
@@ -2539,7 +2534,7 @@ end
 
 ---@protected
 function Directory:__gc()
-    engine_hookCall( "fs.Directory.__gc", self )
+    engine_hookCall( "FileSystemGarbageCollected", self, true )
 end
 
 ---@param name string
@@ -2552,6 +2547,8 @@ function Directory:__init( name, mount_point, mount_path )
     mount_paths[ self ] = mount_path
     mount_points[ self ] = mount_point
     update_path( self, nil )
+
+    -- TODO: internal where is perform
 end
 
 ---@protected
@@ -3672,7 +3669,7 @@ do
     watchdog.Created = Created
 
     ---@param watchdog_info dreamwork.std.fs.watchdog.ObjectInfo
-    engine_hookCatch( "fs.watchdog.Created", function( watchdog_info )
+    engine_hookCatch( "FileSystemCreated", function( watchdog_info )
         local fs_object = watchdog_info.object
         modified_times[ fs_object ] = watchdog_info.modified_time
 
@@ -3691,7 +3688,7 @@ do
     watchdog.Deleted = Deleted
 
     ---@param watchdog_info dreamwork.std.fs.watchdog.ObjectInfo
-    engine_hookCatch( "fs.watchdog.Deleted", function( watchdog_info )
+    engine_hookCatch( "FileSystemDeleted", function( watchdog_info )
         local fs_object = watchdog_info.object
         local was_watched = watchdog.unwatch( fs_object )
 
@@ -3711,7 +3708,7 @@ do
     watchdog.Modified = Modified
 
     ---@param watchdog_info dreamwork.std.fs.watchdog.ObjectInfo
-    engine_hookCatch( "fs.watchdog.Modified", function( watchdog_info )
+    engine_hookCatch( "FileSystemModified", function( watchdog_info )
         local fs_object = watchdog_info.object
         modified_times[ fs_object ] = watchdog_info.modified_time
 
