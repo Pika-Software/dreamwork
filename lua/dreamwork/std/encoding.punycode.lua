@@ -35,6 +35,8 @@ local utf8_pack = utf8.pack
 local punycode = encoding.punycode or {}
 encoding.punycode = punycode
 
+-- TODO: rewrite with by byte analysis
+
 --- [SHARED AND MENU]
 ---
 --- Encodes a UTF-8 string into Punycode.

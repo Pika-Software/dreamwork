@@ -9,6 +9,7 @@ local debug_newproxy = debug.newproxy
 local debug_getmetavalue = debug.getmetavalue
 
 local raw = std.raw
+local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
 
 local setmetatable = std.setmetatable
@@ -67,7 +68,6 @@ do
 
     local debug_getmetatable = debug.getmetatable
     local string_byte = string.byte
-    local raw_pairs = raw.pairs
 
     ---@type table<string, boolean>
     local meta_blacklist = {
@@ -223,12 +223,10 @@ function class.create( base )
         ---@cast parent_base dreamwork.Object
         parent_class = raw_get( parent_base, "__class" )
 
-        if parent_class == nil then
-            error( "Parent class has no `__class` variable.", 2 )
-        end
-
-        for key, value in pairs( parent_class ) do
-            cls[ key ] = value
+        if parent_class ~= nil then
+            for key, value in raw_pairs( parent_class ) do
+                cls[ key ] = value
+            end
         end
     end
 
