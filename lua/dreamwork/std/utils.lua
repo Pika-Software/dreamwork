@@ -373,7 +373,7 @@ do
         local copy_tbl = {}
         for key, value in pairs( tbl ) do
             if isTable( value ) then
-                copy_tbl[ key ] = copy_fn( tbl )
+                copy_tbl[ key ] = copy_fn( value )
             else
                 copy_tbl[ key ] = value
             end
