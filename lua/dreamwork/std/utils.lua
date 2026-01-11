@@ -1,5 +1,7 @@
 local std = _G.dreamwork.std
 
+local isTable = std.isTable
+
 ---@class dreamwork.std.string
 local string = std.string
 local string_sub, string_len = string.sub, string.len
@@ -84,77 +86,71 @@ function table.get( tbl, str, separator, start_position, end_position, str_lengt
     return tbl
 end
 
-do
+--- [SHARED AND MENU]
+---
+--- Sets the value of the given key path.
+---
+--- Tables are created if they do not exist.
+---
+--- Example:
+---
+--- ```lua
+---     local t = {}
+---     table.set( t, "a.b.c.d.e", "e value!" )
+---     print( t.a.b.c.d.e ) -- e value!
+--- ```
+---
+---@param tbl table The table to set the value in.
+---@param str string The key path.
+---@param value any The value to set.
+---@param separator? integer The separator of the key path, default is `0x2E`.
+---@param str_length? integer The length of the key path, default is `string.len( str )`.
+function table.set( tbl, str, value, separator, str_length )
+    if separator == nil then
+        separator = 0x2E --[[ "." ]]
+    end
 
-    local isTable = std.isTable
+    if str_length == nil then
+        str_length = string_len( str )
+    end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Sets the value of the given key path.
-    ---
-    --- Tables are created if they do not exist.
-    ---
-    --- Example:
-    ---
-    --- ```lua
-    ---     local t = {}
-    ---     table.set( t, "a.b.c.d.e", "e value!" )
-    ---     print( t.a.b.c.d.e ) -- e value!
-    --- ```
-    ---
-    ---@param tbl table The table to set the value in.
-    ---@param str string The key path.
-    ---@param value any The value to set.
-    ---@param separator? integer The separator of the key path, default is `0x2E`.
-    ---@param str_length? integer The length of the key path, default is `string.len( str )`.
-    function table.set( tbl, str, value, separator, str_length )
-        if separator == nil then
-            separator = 0x2E --[[ "." ]]
-        end
+    local split_position = 0
+    local position = 1
 
-        if str_length == nil then
-            str_length = string_len( str )
-        end
+    while true do
+        local uint8 = string_byte( str, position, position )
+        if uint8 == separator then
+            if split_position ~= position then
+                local key = string_sub( str, split_position + 1, position - 1 )
 
-        local split_position = 0
-        local position = 1
-
-        while true do
-            local uint8 = string_byte( str, position, position )
-            if uint8 == separator then
-                if split_position ~= position then
-                    local key = string_sub( str, split_position + 1, position - 1 )
-
-                    if position == str_length then
-                        tbl[ key ] = value
-                        return
-                    end
-
-                    local tbl_value = tbl[ key ]
-                    if tbl_value ~= nil and isTable( tbl_value ) then
-                        tbl = tbl_value
-                    else
-                        local new_tbl = {}
-                        tbl[ key ] = new_tbl
-                        tbl = new_tbl
-                    end
+                if position == str_length then
+                    tbl[ key ] = value
+                    return
                 end
 
-                split_position = position
+                local tbl_value = tbl[ key ]
+                if tbl_value ~= nil and isTable( tbl_value ) then
+                    tbl = tbl_value
+                else
+                    local new_tbl = {}
+                    tbl[ key ] = new_tbl
+                    tbl = new_tbl
+                end
             end
 
-            if position == str_length then
-                break
-            else
-                position = position + 1
-            end
+            split_position = position
         end
 
-        if split_position ~= position then
-            tbl[ string_sub( str, split_position + 1, position ) ] = value
+        if position == str_length then
+            break
+        else
+            position = position + 1
         end
     end
 
+    if split_position ~= position then
+        tbl[ string_sub( str, split_position + 1, position ) ] = value
+    end
 end
 
 local bytepack = std.pack.bytes
@@ -351,5 +347,41 @@ do
             return table_concat( segments, "", 1, segment_count )
         end
     end
+
+end
+
+do
+
+    local debug_getmetavalue = std.debug.getmetavalue
+
+    --- [SHARED AND MENU]
+    ---
+    --- Creates a shallow copy of the given table.
+    ---
+    --- The original table is not modified.
+    ---
+    --- The returned table is a shallow copy of the original table.
+    ---
+    ---@param tbl table The table to copy.
+    ---@return table copy The copied table.
+    local function copy_fn( tbl )
+        local fn = debug_getmetavalue( tbl, "__copy" )
+        if fn ~= nil then
+            return fn( tbl )
+        end
+
+        local copy_tbl = {}
+        for key, value in pairs( tbl ) do
+            if isTable( value ) then
+                copy_tbl[ key ] = copy_fn( tbl )
+            else
+                copy_tbl[ key ] = value
+            end
+        end
+
+        return copy_tbl
+    end
+
+    table.copy = copy_fn
 
 end
