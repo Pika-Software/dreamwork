@@ -711,6 +711,7 @@ do
     local fs_isFile = fs.isFile
 
     local futures_run = std.futures.run
+    local uuid_v7 = std.uuid.v7
 
     ---@param f dreamwork.std.futures.Future
     ---@param wsid_str string
@@ -728,7 +729,7 @@ do
             return
         end
 
-        local new_path = "/garrysmod/data/dreamwork/cache/workshop/" .. wsid_str .. ".gma"
+        local new_path = "/garrysmod/data/dreamwork/cache/workshop/" .. uuid_v7() .. ".gma"
         fs_write( new_path, file_class:Read( file_class:Size() ) )
         f:setResult( new_path )
     end

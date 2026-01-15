@@ -1565,6 +1565,8 @@ end
 do
 
     local setTimeout = std.setTimeout
+
+    ---@class dreamwork.std.futures
     local futures = std.futures
 
     --- [SHARED AND MENU]
@@ -1589,6 +1591,8 @@ do
 
         return futures.pending()
     end
+
+    futures.sleep = std.sleep
 
 end
 

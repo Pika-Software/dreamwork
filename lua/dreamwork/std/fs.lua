@@ -2206,7 +2206,7 @@ function File:write( data )
     end
 
     if respond.status ~= 0 then
-        error( make_async_message( respond.status, self, false ), 2 )
+        error( make_async_message( respond.status, self, true ), 2 )
     end
 
     local modified_time = file_Time( mount_path, mount_point )
@@ -2274,7 +2274,7 @@ function File:append( data )
     end
 
     if respond.status ~= 0 then
-        error( make_async_message( respond.status, self, false ), 2 )
+        error( make_async_message( respond.status, self, true ), 2 )
     end
 
     local modified_time = file_Time( mount_path, mount_point )

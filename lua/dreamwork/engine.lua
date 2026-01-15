@@ -485,9 +485,17 @@ do
     local MsgC = _G.MsgC
 
     if MsgC == nil then
+
+        --- [SHARED AND MENU]
+        ---
+        --- Prints the given arguments to the console.
+        ---
+        ---@param str string The string to print.
+        ---@param color dreamwork.std.Color The color to print the string with.
         function engine.consoleMessageColored( str, color )
             return engine.consoleMessage( str )
         end
+
     else
 
         local white_color = std.Color.scheme.message
@@ -1133,6 +1141,8 @@ if engine.loadMaterial == nil then
     local bitpack_writeUInt = bitpack.writeUInt
 
     local material_fn = _G.Material
+
+    ---@diagnostic disable-next-line: param-type-mismatch
     local upvalues = debug.getupvalues( material_fn )
 
     ---@type fun( string, string? ): IMaterial, number
