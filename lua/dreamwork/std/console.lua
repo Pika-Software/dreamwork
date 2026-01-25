@@ -1009,21 +1009,27 @@ do
 
                 flags[ self ] = int32_flags
 
-                local int32_min = options.min or 0
+                local int32_min, int32_max
 
-                if cvar_type == "integer" then
-                    int32_min = math_floor( int32_min )
+                if cvar_type ~= "string" then
+                    int32_min = options.min
+
+                    if int32_min ~= nil and cvar_type == "integer" then
+                        int32_min = math_floor( int32_min )
+                    elseif cvar_type == "boolean" then
+                        int32_min = 0
+                    end
+
+                    int32_max = options.max
+
+                    if int32_max ~= nil and cvar_type == "integer" then
+                        int32_max = math_floor( int32_max )
+                    elseif cvar_type == "boolean" then
+                        int32_max = 1
+                    end
+
+                    mins[ self ], maxs[ self ] = int32_min, int32_max
                 end
-
-                mins[ self ] = int32_min
-
-                local int32_max = options.max or 0
-
-                if cvar_type == "integer" then
-                    int32_max = math_floor( int32_max )
-                end
-
-                maxs[ self ] = int32_max
 
                 cvar = engine_consoleVariableCreate( str_name, str_default, int32_flags, str_description, int32_min, int32_max )
             end
