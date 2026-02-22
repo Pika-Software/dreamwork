@@ -57,11 +57,11 @@ function transport.startup()
     if fn == nil then
         local default_name = selected_transport.default
         if name == default_name then
-            dreamwork.Logger:error( "Transport '" .. name .. "' does not exist." )
+            dreamwork.Logger:error( "The '" .. name .. "' transport does not exist." )
             return
         end
 
-        dreamwork.Logger:warn( "Could not find transport named '" .. name .. "', falling back to '" .. default_name .. "'." )
+        dreamwork.Logger:warn( "Could not find transport with name '" .. name .. "', falling back to '" .. default_name .. "'." )
         selected_transport:revert()
         transport.startup()
         return
@@ -69,16 +69,16 @@ function transport.startup()
 
     local success, err_msg = std.pcall( fn )
     if success then
-        dreamwork.Logger:info( "Transport '" .. name .. "' started, ready to send files to the client." )
+        dreamwork.Logger:info( "The '" .. name .. "' transport started, ready to send files to the client." )
         return
     end
 
     if name == selected_transport.default then
-        dreamwork.Logger:error( "Transport '" .. name .. "' failed to start." )
+        dreamwork.Logger:error( "The '" .. name .. "' transport failed to start." )
         return
     end
 
-    dreamwork.Logger:warn( "Transport '" .. name .. "' failed to start: " .. err_msg )
+    dreamwork.Logger:warn( "The '" .. name .. "' transport failed to start: " .. err_msg )
     selected_transport:revert()
     transport.startup()
 end

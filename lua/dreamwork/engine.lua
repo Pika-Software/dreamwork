@@ -20,11 +20,10 @@ local detour_attach = dreamwork.detour.attach
 
 local transducers = dreamwork.transducers
 
-local gameevent_Listen
-if _G.gameevent == nil then
-    gameevent_Listen = debug_fempty
-else
-    gameevent_Listen = _G.gameevent.Listen or debug_fempty
+local gameevent_Listen = debug_fempty
+
+if _G.gameevent ~= nil then
+    gameevent_Listen = _G.gameevent.Listen or gameevent_Listen
 end
 
 --- [SHARED AND MENU]
@@ -794,13 +793,7 @@ do
     engine.GameList, engine.GameCount, engine.GameHash = actual_game_list, actual_game_count, actual_game_hash
     engine.AddonList, engine.AddonCount, engine.AddonHash = actual_addon_list, actual_addon_count, actual_addon_hash
 
-    --- [SHARED AND MENU]
-    ---
-    --- Updates the game and addon lists and returns actual.
-    ---
-    ---@return integer game_changes The number of game content changes.
-    ---@return integer addon_changes The number of addon content changes.
-    function engine.SyncContent()
+    engine.hookCatch( "GameContentUpdate", function()
         ---@type dreamwork.engine.GameInfo[], dreamwork.engine.AddonInfo[]
         local game_list, addon_list = getGames() or {}, getAddons() or {}
         local game_count, addon_count = #game_list, #addon_list
@@ -911,7 +904,7 @@ do
         end
 
         return game_changes, addon_changes
-    end
+    end, 1 )
 
 end
 
@@ -1019,11 +1012,17 @@ end
 
 local glua_util = _G.util
 
-if std.LUA_CLIENT_SERVER and engine.networkRegister == nil then
+if std.LUA_CLIENT_SERVER then
 
-    local add_fn = glua_util ~= nil and glua_util.AddNetworkString or debug_fempty
-    local get_id_fn = glua_util ~= nil and glua_util.NetworkStringToID or debug_fempty
-    local get_name_fn = glua_util ~= nil and glua_util.NetworkIDToString or debug_fempty
+    local add_fn = debug_fempty
+    local get_id_fn = debug_fempty
+    local get_name_fn = debug_fempty
+
+    if glua_util ~= nil then
+        add_fn = glua_util.AddNetworkString or add_fn
+        get_id_fn = glua_util.NetworkStringToID or get_id_fn
+        get_name_fn = glua_util.NetworkIDToString or get_name_fn
+    end
 
     ---@type table<string, integer>
     local id2name = {}

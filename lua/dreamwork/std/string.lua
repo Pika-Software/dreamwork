@@ -1309,3 +1309,27 @@ function string.interpolate( str, variables, start_position, end_position, str_l
         return table_concat( segments, "", 1, segment_count )
     end
 end
+
+do
+
+    ---@type table<integer, boolean>
+    local space_characters = {
+        [ 0x20 ] = true, -- space
+        [ 0x09 ] = true, -- horizontal tab
+        [ 0x0A ] = true, -- line feed ( new line )
+        [ 0x0B ] = true, -- vertical tab
+        [ 0x0C ] = true, -- form feed
+        [ 0x0D ] = true -- carriage return
+    }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the byte is a space character.
+    ---
+    ---@param uint_8 integer The byte to check.
+    ---@return boolean is_space `true` if the byte is a space character, `false` otherwise.
+    function string.isSpace( uint_8 )
+        return space_characters[ uint_8 ] == true
+    end
+
+end

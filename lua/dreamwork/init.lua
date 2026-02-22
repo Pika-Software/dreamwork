@@ -1054,6 +1054,7 @@ dofile( "std/encoding.unicode.lua" )
 dofile( "std/encoding.punycode.lua" )
 
 dofile( "std/encoding.json.lua" )
+-- dofile( "std/encoding.xml.lua" )
 dofile( "std/encoding.vdf.lua" )
 
 dofile( "engine.lua" )
@@ -1599,13 +1600,12 @@ end
 -- Welcome message
 do
 
-    local name
+    local name = "stranger"
 
     local cvar = std.console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
-    if cvar == nil then
-        name = "stranger"
-    else
+    if cvar ~= nil then
         ---@type string
+        ---@diagnostic disable-next-line: assign-type-mismatch
         name = cvar.value
         if string.isEmpty( name ) or name == "unnamed" then
             name = "stranger"
@@ -1613,21 +1613,23 @@ do
     end
 
     local splashes = {
-        "We'll Sandblast these walls and paint them again!",
+        "We'll Sandblast these walls and paint them again ♪",
         "nf2ca53pnz2caytfebzw6idfmfzxsidun4qho2lo * 0.5",
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
-        "I'm not here to tell you how great I am!",
         "Woah-oh-oh, tell me where you wanna go ♪",
         "We will have a great Future together.",
-        "I'm here to show you how great I am!",
-        "Millions of pieces without a tether",
-        "Why are we always looking for more?",
+        "Millions of pieces without a tether ♪",
+        "It always seems time is on the side ♪",
+        "Why are we always looking for more ♪",
         "Never forget to finish your Task's!",
+        "I don't care who I'm meant to be ♪",
+        "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
-        "Take it in and breathe the light",
+        "I'm tired of these darker days ♪",
         "Don't worry, " .. name .. " :>",
         "Big Brother is watching you",
-        "As we build it once again",
+        "As we build it once agai1n ♪",
+        "I'm calling out for help ♪",
         "I'll make you a promise.",
         "Flying over rooftops...",
         "Hello, " .. name .. "!",
@@ -1636,6 +1638,7 @@ do
         "Pew-pew-pew-pew-pew! ♪",
         "Play SOMA sometime;",
         "Where's fireworks!?",
+        "Let the sun arise ♪",
         "Looking For More ♪",
         "I'm watching you.",
         "Faster than ever.",
@@ -1665,11 +1668,11 @@ do
     }
 
     local count = #splashes + 1
-    splashes[ count ] = "Wow, here more " .. ( count - 1 ) .. " splashes!"
+    splashes[ count ] = "Wow, there are over " .. ( count - 1 ) .. " splashes here!"
 
     local scheme
 
-    if std.SYSTEM_WINDOWS then
+    if std.SYSTEM_WINDOWS and false --[[ ha-ha microslop ]] then
         scheme = {
             "       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ ",
             "  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   ",
@@ -1737,7 +1740,6 @@ end
 
 if math.randomseed == 0 then
     math.randomseed = time.now( "ms", false )
-    logger:info( "Random seed was re-synchronized with milliseconds since the Unix epoch." )
 end
 
 dofile( "std/fs.lua" )
@@ -1768,7 +1770,7 @@ do
         logger:debug( "Game content change triggered, synchronization..." )
         time.tick( "ms", false )
 
-        local game_changes, addon_changes = engine.SyncContent()
+        local game_changes, addon_changes = engine.hookCall( "GameContentUpdate" )
 
         if game_changes == 0 and addon_changes == 0 then
             logger:debug( "No changes found, skipped." )
@@ -1912,7 +1914,7 @@ do
     --- | `junction(3, 1, 2)`  | `(X, Y, Z)`     | `Z, X, Y`    |
     ---
     ---@param ... integer The indices of arguments to return.
-    ---@return fun( ... ): ... fjn
+    ---@return function fjn The created junction function.
     function std.junction( ... )
         local out_arg_count = select( '#', ... )
         local out_args = { ... }
@@ -1922,6 +1924,7 @@ do
         for i = 1, out_arg_count, 1 do
             local value = out_args[ i ]
             local valid, err_msg = arg( value, i, "number" )
+
             if valid then
                 out_args[ i ] = math_floor( value )
                 in_arg_count = math_max( in_arg_count, value )
