@@ -5,11 +5,15 @@ local dreamwork = _G.dreamwork
 if dreamwork.engine ~= nil then return end
 
 local std = dreamwork.std
+local LUA_SERVER = std.LUA_SERVER
 
 local math = std.math
 
 local debug = std.debug
 local debug_fempty = debug.fempty
+
+local string = std.string
+local string_format = string.format
 
 local table = std.table
 local table_insert = table.insert
@@ -739,8 +743,6 @@ end
 
 do
 
-    local string_format = string.format
-
     local getGames, getAddons
 
     local glua_engine = _G.engine
@@ -1014,61 +1016,97 @@ local glua_util = _G.util
 
 if std.LUA_CLIENT_SERVER then
 
-    local add_fn = debug_fempty
-    local get_id_fn = debug_fempty
-    local get_name_fn = debug_fempty
+    ---@type fun( network_name: string ): integer | nil
+    local network_register = debug_fempty
+
+    ---@type fun( network_id: integer ): string | nil
+    local network_get_name = debug_fempty
+
+    ---@type fun( network_name: string ): integer | nil
+    local network_get_id = debug_fempty
 
     if glua_util ~= nil then
-        add_fn = glua_util.AddNetworkString or add_fn
-        get_id_fn = glua_util.NetworkStringToID or get_id_fn
-        get_name_fn = glua_util.NetworkIDToString or get_name_fn
+        network_register = glua_util.AddNetworkString or network_register
+        network_get_name = glua_util.NetworkIDToString or network_get_name
+        network_get_id = glua_util.NetworkStringToID or network_get_id
     end
 
+    ---
+    --- The size of the network header in bits.
+    ---
+    --- unsigned short ( 2 byte / 16 bit / 0-65535, 0 is reserved )
+    ---
+    --- wiki says that we have only 4095 slots...
+    --- i don't care, i will use absolute header limit
+    --- because f*ck you garry
+    ---
+    ---@type integer
+    local header_size = 16
+
     ---@type table<string, integer>
-    local id2name = {}
+    local network_ids = {}
 
     ---@type table<integer, string>
-    local name2id = {}
+    local network_names = {}
 
-    setmetatable( id2name, {
-        __index = function( _, name )
-            local id = get_id_fn( name ) or 0
+    ---@type integer
+    local network_limit = ( 2 ^ header_size ) - 1
 
-            if id ~= 0 then
-                id2name[ name ] = id
-                name2id[ id ] = name
+    setmetatable( network_ids, {
+        __index = function( self, network_name )
+            local network_id = network_get_id( network_name )
+
+            if network_id == nil or network_id <= 0 or network_id > network_limit then
+                return nil
             end
 
-            return id
+            network_names[ network_id ] = network_name
+            self[ network_name ] = network_id
+            return network_id
         end
     } )
 
-    setmetatable( name2id, {
-        __index = function( _, id )
-            local name = get_name_fn( id )
-
-            if name ~= nil then
-                id2name[ name ] = id
-                name2id[ id ] = name
+    setmetatable( network_names, {
+        __index = function( self, network_id )
+            if network_id <= 0 or network_id > network_limit then
+                return nil
             end
 
-            return name
+            local network_name = network_get_name( network_id )
+
+            if network_name ~= nil then
+                network_ids[ network_name ] = network_id
+                self[ network_id ] = network_name
+            end
+
+            return network_name
         end
     } )
 
     --- [SHARED AND MENU]
     ---
-    --- Get all the registered networks.
+    --- Get the names of all registered networks.
     ---
-    ---@return string[] networks The registered networks.
+    ---@return string[] networks The names of the registered networks.
+    ---@return integer network_count The number of registered networks.
     function engine.getNetworks()
-        local lst = {}
+        local networks, network_count = {}, 0
 
-        for name in raw_pairs( id2name ) do
-            lst[ #lst + 1 ] = name
+        for network_id = 1, network_limit, 1 do
+            local network_name = network_get_name( network_id )
+            if network_name == nil then
+                break
+            end
+
+            network_ids[ network_name ] = network_id
+            network_names[ network_id ] = network_name
+
+            network_count = network_count + 1
+            networks[ network_count ] = network_name
         end
 
-        return lst
+        return networks,
+            network_count
     end
 
     --- [SHARED AND MENU]
@@ -1076,43 +1114,96 @@ if std.LUA_CLIENT_SERVER then
     --- Checks if the network exists.
     ---
     ---@return boolean exists `true` if the network exists, `false` otherwise.
-    function engine.networkMessageExists( name )
-        return id2name[ name ] ~= 0
+    function engine.networkMessageExists( network_name )
+        return network_ids[ network_name ] ~= nil
     end
 
     --- [SHARED AND MENU]
     ---
     --- Get the ID of the network from its name.
     ---
-    ---@param name string The name of the network.
-    ---@return integer | nil id The ID of the network, or `nil` if the network does not exist.
-    function engine.networkGetID( name )
-        local id = id2name[ name ]
-        if id ~= 0 then
-            return id
-        end
+    ---@param network_name string The name of the network.
+    ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
+    function engine.networkGetID( network_name )
+        return network_ids[ network_name ]
     end
 
     --- [SHARED AND MENU]
     ---
     --- Get the name of the network from its ID.
     ---
-    ---@param id integer The ID of the network message.
-    ---@return string | nil name The name of the network message, or `nil` if the network message does not exist.
-    function engine.networkGetName( id )
-        return name2id[ id ]
+    ---@param network_id integer The ID of the network message.
+    ---@return string | nil network_name The name of the network message, or `nil` if the network message does not exist.
+    function engine.networkGetName( network_id )
+        return network_names[ network_id ]
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Registers a network.
+    --- Register a new network message or returns the ID of an existing one.
     ---
-    function engine.networkRegister( name )
-        if id2name[ name ] == 0 then
-            local id = add_fn( name ) or 0
-            name2id[ id ] = name
-            id2name[ name ] = id
+    ---@param network_name string The name of the network message.
+    ---@return integer network_id The ID of the network message.
+    function engine.networkRegister( network_name )
+        local network_id = network_ids[ network_name ]
+        if network_id == nil then
+            if not LUA_SERVER then
+                error( "Networks can only be registered on the server.", 2 )
+            end
+
+            ---@type integer
+            ---@diagnostic disable-next-line: assign-type-mismatch
+            network_id = network_register( network_name )
+
+            if network_id == nil then
+                error( string_format( "Failed to register network '%s', unknown error.", network_name ), 2 )
+            end
+
+            network_names[ network_id ] = network_name
+            network_ids[ network_name ] = network_id
         end
+
+        return network_id
+    end
+
+    local glua_net = _G.net
+    if glua_net ~= nil then
+
+        local string_lower = string.lower
+
+        ---@type fun(): integer
+        local read_network_id = glua_net.ReadHeader
+
+        if read_network_id == nil then
+            function read_network_id()
+                return -1
+            end
+        end
+
+        ---@type table<string, fun( message_length: integer, sender: Player | nil )>
+        local receivers = glua_net.Receivers or {}
+        glua_net.Receivers = receivers
+
+        ---@param message_length integer
+        ---@param sender Player
+        ---@diagnostic disable-next-line: duplicate-set-field
+        function glua_net.Incoming( message_length, sender )
+            local network_id = read_network_id()
+            message_length = message_length - header_size
+
+            if engine_hookCall( "IncomingNetworkMessage", network_id, message_length, sender ) then
+                return
+            end
+
+            local message_name = network_names[ network_id ]
+            if message_name == nil then return end
+
+            local fn = receivers[ string_lower( message_name ) ]
+            if fn == nil then return end
+
+            fn( message_length, sender )
+        end
+
     end
 
 end
