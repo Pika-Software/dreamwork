@@ -1348,17 +1348,7 @@ do
 end
 
 dofile( "std/game.lua" )
-
---- [SHARED AND MENU]
----
---- The checksum calculation libraries.
----
----@class dreamwork.std.checksum
-std.checksum = std.checksum or {}
-
-dofile( "std/checksum.crc.lua" )
-dofile( "std/checksum.adler.lua" )
-dofile( "std/checksum.fletcher.lua" )
+dofile( "std/checksum.lua" )
 
 --- [SHARED AND MENU]
 ---
