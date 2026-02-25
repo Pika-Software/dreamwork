@@ -848,6 +848,9 @@ do
     --- | `{hours}`               | Hour in 24-hour format [00–23]                         | `23`                       |
     --- | `{minutes}`             | Minute [00–59]                                         | `48`                       |
     --- | `{seconds}`             | Second [00–60] (leap second included)                  | `10`                       |
+    --- | `{milliseconds}`        | Millisecond [000–999]                                  | `010`                      |
+    --- | `{microseconds}`        | Microsecond [000–999]                                  | `010`                      |
+    --- | `{nanoseconds}`         | Nanosecond [000–999]                                   | `010`                      |
     --- | `{hours12}`             | Hour in 12-hour format [01–12]                         | `11`                       |
     --- | `{period}`              | AM or PM                                               | `pm`                       |
     --- | `{date}`                | Localized date (same as `{month}/{day}/{year}`)  | `09/16/98`                 |

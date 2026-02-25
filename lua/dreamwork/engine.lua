@@ -42,8 +42,20 @@ end
 ---@field AddonList dreamwork.engine.AddonInfo[] The list of currently mounted addons.
 ---@field AddonCount integer The length of the `AddonList` array (`#AddonList`).
 ---@field AddonHash table<string, dreamwork.engine.AddonInfo> The hash of currently mounted addons.
+---@field NetworkHeaderSize integer The size of the network header in bits.
 local engine = {}
 dreamwork.engine = engine
+
+--- [SHARED]
+---
+--- unsigned short ( 2 byte / 16 bit / 0-65535, 0 is reserved )
+---
+--- wiki says that we have only 4095 slots...
+--- i don't care, i will use absolute header limit
+--- because f*ck you garry
+---
+---@type integer
+engine.NetworkHeaderSize = 16
 
 if engine.hookCatch == nil then
 
@@ -1031,17 +1043,7 @@ if std.LUA_CLIENT_SERVER then
         network_get_id = glua_util.NetworkStringToID or network_get_id
     end
 
-    ---
-    --- The size of the network header in bits.
-    ---
-    --- unsigned short ( 2 byte / 16 bit / 0-65535, 0 is reserved )
-    ---
-    --- wiki says that we have only 4095 slots...
-    --- i don't care, i will use absolute header limit
-    --- because f*ck you garry
-    ---
-    ---@type integer
-    local header_size = 16
+    local header_size = engine.NetworkHeaderSize
 
     ---@type table<string, integer>
     local network_ids = {}
@@ -1083,7 +1085,7 @@ if std.LUA_CLIENT_SERVER then
         end
     } )
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
     ---
     --- Get the names of all registered networks.
     ---
@@ -1109,7 +1111,7 @@ if std.LUA_CLIENT_SERVER then
             network_count
     end
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
     ---
     --- Checks if the network exists.
     ---
@@ -1118,7 +1120,7 @@ if std.LUA_CLIENT_SERVER then
         return network_ids[ network_name ] ~= nil
     end
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
     ---
     --- Get the ID of the network from its name.
     ---
@@ -1128,7 +1130,7 @@ if std.LUA_CLIENT_SERVER then
         return network_ids[ network_name ]
     end
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
     ---
     --- Get the name of the network from its ID.
     ---
@@ -1138,7 +1140,7 @@ if std.LUA_CLIENT_SERVER then
         return network_names[ network_id ]
     end
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
     ---
     --- Register a new network message or returns the ID of an existing one.
     ---
@@ -1169,16 +1171,9 @@ if std.LUA_CLIENT_SERVER then
     local glua_net = _G.net
     if glua_net ~= nil then
 
+        local net_ReadUInt = glua_net.ReadUInt
+        local net_ReadBool = glua_net.ReadBool
         local string_lower = string.lower
-
-        ---@type fun(): integer
-        local read_network_id = glua_net.ReadHeader
-
-        if read_network_id == nil then
-            function read_network_id()
-                return -1
-            end
-        end
 
         ---@type table<string, fun( message_length: integer, sender: Player | nil )>
         local receivers = glua_net.Receivers or {}
@@ -1188,10 +1183,12 @@ if std.LUA_CLIENT_SERVER then
         ---@param sender Player
         ---@diagnostic disable-next-line: duplicate-set-field
         function glua_net.Incoming( message_length, sender )
-            local network_id = read_network_id()
-            message_length = message_length - header_size
+            local network_id = net_ReadUInt( header_size )
+            local unreliable = net_ReadBool()
 
-            if engine_hookCall( "IncomingNetworkMessage", network_id, message_length, sender ) then
+            message_length = message_length - ( header_size + 1 )
+
+            if engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, message_length, sender ) == false then
                 return
             end
 
@@ -1202,6 +1199,17 @@ if std.LUA_CLIENT_SERVER then
             if fn == nil then return end
 
             fn( message_length, sender )
+        end
+
+        local net_WriteBool = glua_net.WriteBool
+        local net_Start = glua_net.Start
+
+        ---@param message_name string
+        ---@param unreliable? boolean
+        ---@diagnostic disable-next-line: duplicate-set-field
+        function glua_net.Start( message_name, unreliable )
+            net_Start( message_name, unreliable )
+            net_WriteBool( unreliable == true )
         end
 
     end

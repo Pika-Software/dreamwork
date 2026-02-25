@@ -19,7 +19,7 @@ local string_find = string.find
 local string_gsub, string_sub = string.gsub, string.sub
 local string_byte, string_char = string.byte, string.char
 
-local crypto_adler32 = std.checksum.adler32
+local Adler32_digest = std.checksum.Adler32.digest
 local raw_pairs = std.raw.pairs
 local math_max = std.math.max
 
@@ -325,7 +325,7 @@ function deflate.createDictionary( str )
     local hash_tables = {}
 
     local dictionary = {
-        ["adler32"] = crypto_adler32( str ),
+        ["adler32"] = Adler32_digest( str ),
         ["string_table"] = string_table,
         ["hash_tables"] = hash_tables,
         ["strlen"] = strlen
@@ -1862,7 +1862,7 @@ function zlib.compress( str, configs, dictionary )
     flushWriter( _FLUSH_MODE_BYTE_BOUNDARY )
 
     -- Most significant byte first
-    local adler32 = crypto_adler32( str )
+    local adler32 = Adler32_digest( str )
     local byte3 = adler32 % 0x100
 
     adler32 = ( adler32 - byte3 ) / 0x100
@@ -2545,7 +2545,7 @@ function zlib.decompress( str, dictionary )
 
     local adler32_expected = adler_byte0 * 0x1000000 + adler_byte1 * 0x10000 + adler_byte2 * 0x100 + adler_byte3
 
-    local adler32_actual = crypto_adler32( result )
+    local adler32_actual = Adler32_digest( result )
     if not isEqualAdler32( adler32_expected, adler32_actual ) then
         return nil, -15 -- adler32 checksum does not match
     end
