@@ -218,7 +218,7 @@ if transducers == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- The magical table that transform glua objects into dreamwork objects.
+    --- Transduces the specified value type to another using the registered transducers.
     ---
     ---@class dreamwork.transducers : table
     transducers = {}
@@ -2141,13 +2141,21 @@ end
     local ... = dofile( "./path.to.lua", ... )
 
 
-                            gmod <--------\
+                            gmod <-------\
+
                             /\          ||
                             ||          ||
+
     [ LAYER 1 ] - dreamwork.std -> dreamwork.engine
+
         /\
+        ||
+
     [ LAYER 2 ] - package with __package object
+
         /\
+        ||
+
     [ LAYER 3 ] - file/module with __dir and __file objects
 
     {

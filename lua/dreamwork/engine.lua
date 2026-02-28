@@ -6,6 +6,7 @@ if dreamwork.engine ~= nil then return end
 
 local std = dreamwork.std
 local LUA_SERVER = std.LUA_SERVER
+local transducers = dreamwork.transducers
 
 local math = std.math
 
@@ -21,8 +22,6 @@ local table_insert = table.insert
 local raw_pairs = std.raw.pairs
 local setmetatable = std.setmetatable
 local detour_attach = dreamwork.detour.attach
-
-local transducers = dreamwork.transducers
 
 local gameevent_Listen = debug_fempty
 
@@ -54,19 +53,23 @@ dreamwork.engine = engine
 --- i don't care, i will use absolute header limit
 --- because f*ck you garry
 ---
+--- it have additional bit for unreliable flag so it will be 17 bits in total
+---
 ---@type integer
-engine.NetworkHeaderSize = 16
+engine.NetworkHeaderSize = 16 + 1
 
 if engine.hookCatch == nil then
 
     ---@type table<string, fun( ... ): ...>
     local custom_handlers = {
         AcceptInput = function( self, entity, input, activator, caller, value )
-            entity, activator, caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
+            local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
 
             for i = 1, #self, 1 do
-                local allow = self[ i ]( entity, input, activator, caller, value )
-                if allow ~= nil then return not allow end
+                local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
+                if allow ~= nil then
+                    return not allow
+                end
             end
         end
     }
@@ -1043,7 +1046,9 @@ if std.LUA_CLIENT_SERVER then
         network_get_id = glua_util.NetworkStringToID or network_get_id
     end
 
-    local header_size = engine.NetworkHeaderSize
+    local full_header_size = engine.NetworkHeaderSize
+
+    local header_size = full_header_size - 1 -- take unreliable flag
 
     ---@type table<string, integer>
     local network_ids = {}
@@ -1171,9 +1176,13 @@ if std.LUA_CLIENT_SERVER then
     local glua_net = _G.net
     if glua_net ~= nil then
 
+        local net_WriteBool = glua_net.WriteBool
         local net_ReadUInt = glua_net.ReadUInt
         local net_ReadBool = glua_net.ReadBool
+        local net_Start = glua_net.Start
+
         local string_lower = string.lower
+        local math_ceil = math.ceil
 
         ---@type table<string, fun( message_length: integer, sender: Player | nil )>
         local receivers = glua_net.Receivers or {}
@@ -1186,10 +1195,13 @@ if std.LUA_CLIENT_SERVER then
             local network_id = net_ReadUInt( header_size )
             local unreliable = net_ReadBool()
 
-            message_length = message_length - ( header_size + 1 )
+            message_length = message_length - full_header_size
 
-            if engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, message_length, sender ) == false then
-                return
+            local is_captured, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, message_length, sender )
+            if is_captured == true then return end
+
+            if block_size ~= nil then
+                message_length = message_length - block_size
             end
 
             local message_name = network_names[ network_id ]
@@ -1200,9 +1212,6 @@ if std.LUA_CLIENT_SERVER then
 
             fn( message_length, sender )
         end
-
-        local net_WriteBool = glua_net.WriteBool
-        local net_Start = glua_net.Start
 
         ---@param message_name string
         ---@param unreliable? boolean

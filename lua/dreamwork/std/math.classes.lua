@@ -38,7 +38,10 @@
 ]]
 
 local _G = _G
+
+---@type dreamwork
 local dreamwork = _G.dreamwork
+local transducers = dreamwork.transducers
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -183,7 +186,7 @@ do
         local Vector = _G.Vector
         if Vector ~= nil then
 
-            dreamwork.transducers[ Vector3 ] = function( vec3 )
+            transducers[ Vector3 ] = function( vec3 )
                 return Vector( vec3[ 1 ], vec3[ 2 ], vec3[ 3 ] )
             end
 
@@ -199,7 +202,7 @@ do
             ---@cast VECTOR Vector
             local Unpack = VECTOR.Unpack
 
-            dreamwork.transducers[ VECTOR ] = function( vector )
+            transducers[ VECTOR ] = function( vector )
                 return setmetatable( { Unpack( vector ) }, Vector3 )
             end
 
@@ -214,7 +217,7 @@ do
         local Angle = _G.Angle
         if Angle ~= nil then
 
-            dreamwork.transducers[ Angle3 ] = function( angle3 )
+            transducers[ Angle3 ] = function( angle3 )
                 return Angle( angle3[ 1 ], angle3[ 2 ], angle3[ 3 ] )
             end
 
@@ -230,7 +233,7 @@ do
             ---@cast ANGLE Angle
             local Unpack = ANGLE.Unpack
 
-            dreamwork.transducers[ ANGLE ] = function( angle )
+            transducers[ ANGLE ] = function( angle )
                 return setmetatable( { Unpack( angle ) }, Angle3 )
             end
 
@@ -245,7 +248,7 @@ do
         local Matrix = _G.Matrix
         if Matrix ~= nil then
 
-            dreamwork.transducers[ VMatrix ] = function( matrix )
+            transducers[ VMatrix ] = function( matrix )
                 return Matrix( {
                     { matrix[ 1 ], matrix[ 2 ], matrix[ 3 ], matrix[ 4 ] },
                     { matrix[ 5 ], matrix[ 6 ], matrix[ 7 ], matrix[ 8 ] },
@@ -266,7 +269,7 @@ do
             ---@cast VMATRIX VMatrix
             local Unpack = VMATRIX.Unpack
 
-            dreamwork.transducers[ VMATRIX ] = function( matrix )
+            transducers[ VMATRIX ] = function( matrix )
                 return VMatrixClass( Unpack( matrix ) )
             end
 

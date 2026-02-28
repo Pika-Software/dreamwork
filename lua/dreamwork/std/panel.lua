@@ -1,7 +1,11 @@
 local _G = _G
 
+---@type dreamwork
+local dreamwork = _G.dreamwork
+local transducers = dreamwork.transducers
+
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local glua_vgui = _G.vgui
 
@@ -32,8 +36,6 @@ end
 ---@overload fun(): Panel
 local PanelClass = std.class.create( Panel )
 std.Panel = PanelClass
-
-local transducers = dreamwork.transducers
 
 do
 

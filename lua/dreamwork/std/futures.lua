@@ -14,7 +14,7 @@ local Queue = std.Queue
 
 --- [SHARED AND MENU]
 ---
---- The futures library.
+--- This library provides tools for asynchronous programming, such as Futures, Tasks, Channels, and async iterators.
 ---
 ---@class dreamwork.std.futures
 local futures = std.futures or {}
@@ -63,6 +63,8 @@ if coroutine_listeners == nil then
     gc_setTableRules( coroutine_listeners, true, false )
 end
 
+--- [SHARED AND MENU]
+---
 --- Abstract type that is used to type hint async functions.
 ---
 ---@see dreamwork.std.futures.apairs for example
