@@ -12,6 +12,8 @@ local coroutine = std.coroutine
 local string = std.string
 local Queue = std.Queue
 
+local class = std.class
+
 --- [SHARED AND MENU]
 ---
 --- This library provides tools for asynchronous programming, such as Futures, Tasks, Channels, and async iterators.
@@ -499,7 +501,7 @@ do
     ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
     ---@field protected result_value any The result value of the future.
     ---@field protected error_value any The error value of the future.
-    local Future = futures.Future and futures.Future.__base or std.class.base( "Future" )
+    local Future = futures.Future and futures.Future.__base or class.base( "Future" )
 
     ---@alias Future dreamwork.std.futures.Future
 
@@ -734,8 +736,9 @@ do
     ---@class dreamwork.std.futures.FutureClass : dreamwork.std.futures.Future
     ---@field __base dreamwork.std.futures.Future
     ---@overload fun(): dreamwork.std.futures.Future
-    local FutureClass = std.class.create( Future )
+    local FutureClass = class.create( Future )
     futures.Future = FutureClass
+    std.Future = FutureClass
 
 end
 
@@ -743,28 +746,14 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Task is a Future wrapper around futures.run(...) to retrieve result of async function
-    --- when task is created, it will immediately run given function.
+    --- Async task object.
     ---
-    --- ## Example
-    --- ```lua
-    --- local function request( url )
-    ---     -- asynchronous work....
-    ---     return body
-    --- end
-    ---
-    --- local task = futures.Task( request, "https://example.com" )
-    --- task:addCallback( function( task )
-    ---     local body = task:result()
-    ---     print( body ) -- <!DOCTYPE html>...
-    --- end )
-    --- ```
     ---@class dreamwork.std.futures.Task : dreamwork.std.futures.Future
     ---@field __class dreamwork.std.futures.TaskClass
     ---@field __parent dreamwork.std.futures.Future
     ---@field private setResult fun( self, result )
     ---@field private setError fun( self, error )
-    local Task = futures.Task and futures.Task.__base or std.class.base( "Task", false, futures.Future )
+    local Task = futures.Task and futures.Task.__base or class.base( "Task", false, futures.Future )
 
     ---@diagnostic disable-next-line: duplicate-doc-alias
     ---@alias Task dreamwork.std.futures.Task
@@ -786,12 +775,27 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Task class.
+    --- Task is a Future wrapper around futures.run(...) to retrieve result of async function
+    --- when task is created, it will immediately run given function.
+    ---
+    --- ## Example
+    --- ```lua
+    --- local function request( url )
+    ---     -- asynchronous work....
+    ---     return body
+    --- end
+    ---
+    --- local task = futures.Task( request, "https://example.com" )
+    --- task:addCallback( function( task )
+    ---     local body = task:result()
+    ---     print( body ) -- <!DOCTYPE html>...
+    --- end )
+    --- ```
     ---
     ---@class dreamwork.std.futures.TaskClass : dreamwork.std.futures.Task
     ---@field __base dreamwork.std.futures.Task
     ---@overload fun( fn: ( async fun(...): any ), ...: any ): dreamwork.std.futures.Task
-    local TaskClass = std.class.create( Task )
+    local TaskClass = class.create( Task )
     futures.Task = TaskClass
     std.Task = TaskClass
 
@@ -811,17 +815,7 @@ do
     ---@field private getters dreamwork.std.Queue Queue of getters.
     ---@field private setters dreamwork.std.Queue Queue of setters.
     ---@field private closed boolean `true` if the channel is closed, `false` otherwise.
-    local Channel = futures.Channel and futures.Channel.__base or std.class.base( "Channel" )
-
-    --[[
-
-        [ 0 ] = max size
-        [ 1 ] = queue
-        [ 2 ] = getters
-        [ 3 ] = setters
-        [ 4 ] = closed
-
-    ]]
+    local Channel = futures.Channel and futures.Channel.__base or class.base( "Channel" )
 
     ---@protected
     ---@param max_size number? Maximum size of the channel.
@@ -976,7 +970,9 @@ do
     ---@class dreamwork.std.futures.ChannelClass : dreamwork.std.futures.Channel
     ---@field __base dreamwork.std.futures.Channel
     ---@overload fun( maxsize: number? ): dreamwork.std.futures.Channel
-    futures.Channel = std.class.create( Channel )
+    local ChannelClass = class.create( Channel )
+    futures.Channel = ChannelClass
+    std.Channel = ChannelClass
 
 end
 

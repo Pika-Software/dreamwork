@@ -1182,7 +1182,6 @@ if std.LUA_CLIENT_SERVER then
         local net_Start = glua_net.Start
 
         local string_lower = string.lower
-        local math_ceil = math.ceil
 
         ---@type table<string, fun( message_length: integer, sender: Player | nil )>
         local receivers = glua_net.Receivers or {}
@@ -1204,20 +1203,20 @@ if std.LUA_CLIENT_SERVER then
                 message_length = message_length - block_size
             end
 
-            local message_name = network_names[ network_id ]
-            if message_name == nil then return end
+            local network_name = network_names[ network_id ]
+            if network_name == nil then return end
 
-            local fn = receivers[ string_lower( message_name ) ]
+            local fn = receivers[ string_lower( network_name ) ]
             if fn == nil then return end
 
             fn( message_length, sender )
         end
 
-        ---@param message_name string
+        ---@param network_name string
         ---@param unreliable? boolean
         ---@diagnostic disable-next-line: duplicate-set-field
-        function glua_net.Start( message_name, unreliable )
-            net_Start( message_name, unreliable )
+        function glua_net.Start( network_name, unreliable )
+            net_Start( network_name, unreliable )
             net_WriteBool( unreliable == true )
         end
 
