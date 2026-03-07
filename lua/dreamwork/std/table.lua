@@ -800,4 +800,26 @@ function table.foreach( tbl, fn, tbl_length )
     end
 end
 
+do
+
+    local table_remove = table.remove
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removing from table by value.
+    ---
+    ---@param tbl table The table to remove from.
+    ---@param value any The value that will be removed.
+    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@return integer | nil index The index of the value.
+    function table.removeByValue( tbl, value, tbl_length )
+        for index = ( tbl_length or len( tbl ) ), 1, -1 do
+            if tbl[ index ] == value then
+                table_remove( tbl, index )
+                return index
+            end
+        end
+    end
+end
+
 return table
