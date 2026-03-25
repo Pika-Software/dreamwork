@@ -305,12 +305,15 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Removes a range of values from the given table.
+--- Ejects selected range of values from the given table.
 ---
----@param tbl table The table to remove from.
+---@generic V: any
+---@param tbl table<integer, V> The table to remove values from.
 ---@param start_position? integer The start position.
 ---@param end_position? integer The end position.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@return table<integer, V> values The removed values.
+---@return integer values_length The count of removed values.
 function table.eject( tbl, start_position, end_position, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -318,17 +321,25 @@ function table.eject( tbl, start_position, end_position, tbl_length )
 
     if start_position == nil then
         start_position = 1
-    else
+    elseif start_position < 0 then
         start_position = math_relative( start_position, tbl_length )
+    else
+        start_position = math_min( start_position, tbl_length )
     end
 
     if end_position == nil then
         end_position = tbl_length
-    else
+    elseif end_position < 0 then
         end_position = math_relative( end_position, tbl_length )
+    else
+        end_position = math_min( end_position, tbl_length )
     end
 
+    local values, values_length = {}, 0
+
     for index = start_position, end_position, 1 do
+        values_length = values_length + 1
+        values[ values_length ] = tbl[ index ]
         tbl[ index ] = nil
     end
 
@@ -337,6 +348,8 @@ function table.eject( tbl, start_position, end_position, tbl_length )
     for index = end_position + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
+
+    return values, values_length
 end
 
 --- [SHARED AND MENU]
@@ -868,6 +881,47 @@ do
                 return index
             end
         end
+    end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Removes a range of values from the given table.
+---
+---@param tbl table The table to remove from.
+---@param start_position? integer The start position.
+---@param end_position? integer The end position.
+---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+function table.removeByRange( tbl, start_position, end_position, tbl_length )
+    if tbl_length == nil then
+        tbl_length = len( tbl )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, tbl_length )
+    else
+        start_position = math_min( start_position, tbl_length )
+    end
+
+    if end_position == nil then
+        end_position = tbl_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, tbl_length )
+    else
+        end_position = math_min( end_position, tbl_length )
+    end
+
+    for index = start_position, end_position, 1 do
+        tbl[ index ] = nil
+    end
+
+    local distance = ( end_position - start_position ) + 1
+
+    for index = end_position + 1, tbl_length, 1 do
+        tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 end
 

@@ -17,7 +17,7 @@ local math_max = math.max
 
 local gc_setTableRules = std.gc.setTableRules
 local time_elapsed = std.time.elapsed
-local table_eject = std.table.eject
+local table_removeByRange = std.table.removeByRange
 
 local timer_RepsLeft = timer.RepsLeft
 local timer_UnPause = timer.UnPause
@@ -324,9 +324,9 @@ do
                     if not success then
                         -- TODO: replace with cool new errors that we make later
                         print( "[dreamwork] timer callback error: " .. err_msg )
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     elseif lst[ i + 1 ] then
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     end
                 else
                     break
@@ -467,7 +467,7 @@ do
                         queue[ #queue + 1 ] = { false, identifier }
                     end
                 else
-                    table_eject( lst, i, i + 2 )
+                    table_removeByRange( lst, i, i + 2 )
                 end
 
                 break

@@ -61,7 +61,7 @@ end
 do
 
     local debug_fempty = debug.fempty
-    local table_eject = table.eject
+    local table_removeByRange = table.removeByRange
 
     --- [SHARED AND MENU]
     ---
@@ -84,7 +84,7 @@ do
                         queue[ #queue + 1 ] = { false, identifier }
                     end
                 else
-                    table_eject( self, i, i + 2 )
+                    table_removeByRange( self, i, i + 2 )
                 end
 
                 return true

@@ -179,7 +179,7 @@ local debug_fempty = debug.fempty
 
 local futures_Future = std.futures.Future
 local setmetatable = std.setmetatable
-local table_eject = std.table.eject
+local table_removeByRange = std.table.removeByRange
 local pcall = std.pcall
 
 local raw = std.raw
@@ -461,7 +461,7 @@ do
                         queue[ #queue + 1 ] = { false, identifier }
                     end
                 else
-                    table_eject( lst, i, i + 2 )
+                    table_removeByRange( lst, i, i + 2 )
                 end
 
                 break
@@ -515,9 +515,9 @@ do
                     if not success then
                         -- TODO: replace with cool new errors that i make later
                         std.printf( "[DreamWork] console command callback error: %s", err_msg )
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     elseif lst[ i + 1 ] then
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     end
                 else
                     break
@@ -1426,7 +1426,7 @@ do
                         queue[ #queue + 1 ] = { false, identifier }
                     end
                 else
-                    table_eject( lst, i, i + 2 )
+                    table_removeByRange( lst, i, i + 2 )
                 end
 
                 break
@@ -1488,9 +1488,9 @@ do
                     if not success then
                         -- TODO: add error display here
                         std.printf( "[DreamWork] console variable callback error: %s", err_msg )
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     elseif lst[ i + 1 ] then
-                        table_eject( lst, i - 1, i + 1 )
+                        table_removeByRange( lst, i - 1, i + 1 )
                     end
                 else
                     break
