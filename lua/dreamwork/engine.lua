@@ -23,6 +23,7 @@ local raw_pairs = std.raw.pairs
 local setmetatable = std.setmetatable
 local detour_attach = dreamwork.detour.attach
 
+---@overload fun( event_name: string )
 local gameevent_Listen = debug_fempty
 
 if _G.gameevent ~= nil then
@@ -1122,7 +1123,7 @@ if std.LUA_CLIENT_SERVER then
     --- Checks if the network exists.
     ---
     ---@return boolean exists `true` if the network exists, `false` otherwise.
-    function engine.networkMessageExists( network_name )
+    function engine.networkExists( network_name )
         return network_ids[ network_name ] ~= nil
     end
 
@@ -1180,45 +1181,77 @@ if std.LUA_CLIENT_SERVER then
         local net_WriteBool = glua_net.WriteBool
         local net_ReadUInt = glua_net.ReadUInt
         local net_ReadBool = glua_net.ReadBool
-        local net_Start = glua_net.Start
 
         local string_lower = string.lower
 
-        ---@type table<string, fun( message_length: integer, sender: Player | nil )>
+        ---@type table<string, fun( remaining_bits: integer, sender: Player | nil )>
         local receivers = glua_net.Receivers or {}
         glua_net.Receivers = receivers
 
-        ---@param message_length integer
+        ---@param remaining_bits integer
         ---@param sender Player
         ---@diagnostic disable-next-line: duplicate-set-field
-        function glua_net.Incoming( message_length, sender )
+        function glua_net.Incoming( remaining_bits, sender )
             local network_id = net_ReadUInt( header_size )
             local unreliable = net_ReadBool()
 
-            message_length = message_length - full_header_size
+            remaining_bits = remaining_bits - full_header_size
 
-            local is_captured, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, message_length, sender )
-            if is_captured == true then return end
+            local complete, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, remaining_bits, sender )
+            if complete == true then return end
 
             if block_size ~= nil then
-                message_length = message_length - block_size
+                remaining_bits = remaining_bits - block_size
             end
 
             local network_name = network_names[ network_id ]
-            if network_name == nil then return end
+            if network_name == nil then
+                if LUA_SERVER then
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message.\n[Network ID: %d]", sender:Nick(), network_id )
+                    sender:Kick( string_format( "Server received an invalid network message.\n[Network ID: %d]", network_id ) )
+                else
+                    dreamwork.Logger:warn( "Client received an invalid network message.\n[Network ID: %d]", network_id )
+                end
+
+                return
+            end
 
             local fn = receivers[ string_lower( network_name ) ]
-            if fn == nil then return end
+            if fn == nil then
+                if LUA_SERVER then
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message.\n[Network Name: %s]", sender:Nick(), network_name )
+                    sender:Kick( string_format( "Server received an unexpected network message.\n[Network Name: %s]", network_name ) )
+                else
+                    dreamwork.Logger:warn( "Client received an unexpected network message.\n[Network Name: %s]", network_name )
+                end
 
-            fn( message_length, sender )
+                return
+            end
+
+            fn( remaining_bits, sender )
         end
 
-        ---@param network_name string
-        ---@param unreliable? boolean
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function glua_net.Start( network_name, unreliable )
-            net_Start( network_name, unreliable )
-            net_WriteBool( unreliable == true )
+
+        if glua_net.Start ~= nil then
+
+            ---@param network_name string
+            ---@param unreliable? boolean
+            ---@diagnostic disable-next-line: duplicate-set-field
+            glua_net.Start = detour_attach( glua_net.Start, function( fn, network_name, unreliable )
+                if network_ids[ network_name ] == nil then
+                    if LUA_SERVER then
+                        error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
+                    end
+
+                    dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network.\n[Network Name: %s]", network_name )
+                    engine.consoleCommandRun( "disconnect" )
+                    return
+                end
+
+                fn( network_name, unreliable )
+                net_WriteBool( unreliable == true )
+            end )
+
         end
 
     end

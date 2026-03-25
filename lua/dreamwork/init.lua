@@ -1604,6 +1604,9 @@ do
 
     local splashes = {
         "We'll Sandblast these walls and paint them again ♪",
+        ";fix these broken wings, then show me how to fly ♪",
+        "And I feel like I could spread my wings and fly ♪",
+        "They'll wait for me to fall under the pressure ♪",
         "nf2ca53pnz2caytfebzw6idfmfzxsidun4qho2lo * 0.5",
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
         "Woah-oh-oh, tell me where you wanna go ♪",
@@ -1612,6 +1615,7 @@ do
         "It always seems time is on the side ♪",
         "Why are we always looking for more ♪",
         "Never forget to finish your Task's!",
+        "They'll wait for me to give it up ♪",
         "I don't care who I'm meant to be ♪",
         "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
@@ -1619,6 +1623,7 @@ do
         "Don't worry, " .. name .. " :>",
         "Big Brother is watching you",
         "As we build it once agai1n ♪",
+        "I'm turning the lights on ♪",
         "I'm calling out for help ♪",
         "I'll make you a promise.",
         "Flying over rooftops...",
@@ -1634,6 +1639,7 @@ do
         "Faster than ever.",
         "Love Wins Again ♪",
         "Made with love <3",
+        "I burn my sky ♪",
         "Blazing fast ☄",
         "Ancient Tech ♪",
         "Here For You ♪",
@@ -2135,8 +2141,8 @@ end
 
     concepts
 
-    local utf8 = require( "utf8" )
-    local custom_utf8 = require( "package.utf8" )
+    local utf8 = import "utf8"
+    local custom_utf8 = import "package.utf8"
 
     local ... = dofile( "./path.to.lua", ... )
 
@@ -2165,7 +2171,7 @@ end
 
     }
 
-    local cool_lib = require( "cool_lib" )
+    local cool_lib = import "cool_lib"
 
     dofile( "file.lua" ) - ./file.lua
 
@@ -2181,7 +2187,7 @@ end
 
     Addon 2:
 
-        local addon1 = require( "addon1" )
+        local addon1 = import "addon1"
 
         local lst = addon1.MY_LIST
 
