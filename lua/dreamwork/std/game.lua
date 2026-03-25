@@ -17,11 +17,42 @@ local glua_util = _G.util
 --- The game library.
 ---
 ---@class dreamwork.std.game
+---@field TickInterval number The time between ticks.
+---@field TPS number The ticks per second.
+---@field TickTime number The time of the last tick.
+---@field Tick integer The current tick id.
 local game = std.game or {}
 std.game = game
 
 game.getUptime = game.getUptime or _G.SysTime
 game.addDebugInfo = game.addDebugInfo or _G.DebugInfo
+
+if glua_engine.TickCount ~= nil then
+
+    local engine_TickCount = glua_engine.TickCount
+    local os_clock = os.clock
+
+    local tick_interval = glua_engine.TickInterval()
+    local last_tick = os_clock()
+
+    local tick_id = engine_TickCount()
+
+    engine.hookCatch( "Tick", function()
+        local tick_count = engine_TickCount()
+        if tick_count ~= tick_id then
+            tick_id = tick_count
+
+            local current_tick = os_clock()
+            tick_interval, last_tick = current_tick - last_tick, current_tick
+
+            game.TickInterval = tick_interval
+            game.TPS = 1 / tick_interval
+            game.TickTime = last_tick
+            game.Tick = tick_id
+        end
+    end, 1 )
+
+end
 
 game.getTickTime = game.getTickTime or _G.FrameTime or function() return 1 end
 game.getTickCount = game.getTickCount or glua_engine.TickCount or function() return 1 end
