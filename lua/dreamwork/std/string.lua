@@ -53,6 +53,7 @@ local string_match, string_find = string.match, string.find
 local string_sub, string_rep, string_len = string.sub, string.rep, string.len
 
 local table = std.table
+local table_unpack = table.unpack
 local table_concat = table.concat
 
 --- [SHARED AND MENU]
@@ -868,60 +869,6 @@ do
 
 end
 
-do
-
-    ---@param str string The string to unpack.
-    ---@param start_position integer The start position to unpack from.
-    ---@param end_position integer The end position to unpack to.
-    ---@return string part1 The first part of the string.
-    ---@return string | nil part2 The second part of the string.
-    local function unpack( str, start_position, end_position )
-        if start_position == end_position then
-            return string_sub( str, end_position, end_position )
-        else
-            return string_sub( str, start_position, start_position ), unpack( str, start_position + 1, end_position )
-        end
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Unpacks a string into it's characters.
-    ---
-    ---@param str string The string to unpack.
-    ---@param start_position? integer The start position to unpack from.
-    ---@param end_position? integer The end position to unpack to.
-    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
-    ---@return string ... The unpacked characters of the string.
-    function string.unpack( str, start_position, end_position, str_length )
-        if str_length == nil then
-            str_length = string_len( str )
-        end
-
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
-
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        if start_position > end_position then
-            return ""
-        else
-            return unpack( str, start_position, end_position )
-        end
-    end
-
-end
-
 --- [SHARED AND MENU]
 ---
 --- Checks if a string is a URL.
@@ -1128,8 +1075,6 @@ do
 
     end
 
-    local table_unpack = table.unpack
-
     --- [SHARED AND MENU]
     ---
     --- Generates a random string.
@@ -1332,4 +1277,120 @@ do
         return space_characters[ uint_8 ] == true
     end
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Packs a sequence of bytes into a string.
+---
+---@param bytes integer[] The sequence of bytes. (integers<0-255>)
+---@param byte_count? integer The number of bytes to pack, default is `len( bytes )`.
+---@return string str The packed bytes.
+function string.pack( bytes, byte_count )
+    if byte_count == nil then
+        byte_count = len( bytes )
+    end
+
+    if byte_count == 0 then
+        return ""
+    end
+
+    local segments, segment_count = {}, 0
+    local remaining = byte_count % 32
+
+    local split_position = byte_count - remaining
+
+    for i = 0, split_position - 1, 32 do
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_char(
+            bytes[ i + 1 ], bytes[ i + 2 ], bytes[ i + 3 ], bytes[ i + 4 ],
+            bytes[ i + 5 ], bytes[ i + 6 ], bytes[ i + 7 ], bytes[ i + 8 ],
+            bytes[ i + 9 ], bytes[ i + 10 ], bytes[ i + 11 ], bytes[ i + 12 ],
+            bytes[ i + 13 ], bytes[ i + 14 ], bytes[ i + 15 ], bytes[ i + 16 ],
+            bytes[ i + 17 ], bytes[ i + 18 ], bytes[ i + 19 ], bytes[ i + 20 ],
+            bytes[ i + 21 ], bytes[ i + 22 ], bytes[ i + 23 ], bytes[ i + 24 ],
+            bytes[ i + 25 ], bytes[ i + 26 ], bytes[ i + 27 ], bytes[ i + 28 ],
+            bytes[ i + 29 ], bytes[ i + 30 ], bytes[ i + 31 ], bytes[ i + 32 ]
+        )
+    end
+
+    if remaining ~= 0 then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_char( table_unpack( bytes, split_position + 1, byte_count ) )
+    end
+
+    return table_concat( segments, "", 1, segment_count )
+end
+
+--- [SHARED AND MENU]
+---
+--- Unpacks a string into a sequence of bytes.
+---
+---@param str string The string to unpack.
+---@param start_position? integer The start position of the string, default is `1`.
+---@param end_position? integer The end position of the string, default is `len( str )`.
+---@param str_length? integer The length of the string, default is `len( str )`.
+---@return integer[] bytes The unpacked bytes.
+---@return integer byte_count The number of bytes unpacked.
+function string.unpack( str, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if str_length == 0 then
+        return {}, 0
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    if start_position > end_position then
+        return {}, 0
+    end
+
+    local segments = {}
+
+    local total = end_position - start_position + 1
+    local remaining = total % 32
+
+    local split_position = total - remaining
+
+    for i = start_position, split_position - 1, 32 do
+        segments[ i ], segments[ i + 1 ], segments[ i + 2 ], segments[ i + 3 ],
+        segments[ i + 4 ], segments[ i + 5 ], segments[ i + 6 ], segments[ i + 7 ],
+        segments[ i + 8 ], segments[ i + 9 ], segments[ i + 10 ], segments[ i + 11 ],
+        segments[ i + 12 ], segments[ i + 13 ], segments[ i + 14 ], segments[ i + 15 ],
+        segments[ i + 16 ], segments[ i + 17 ], segments[ i + 18 ], segments[ i + 19 ],
+        segments[ i + 20 ], segments[ i + 21 ], segments[ i + 22 ], segments[ i + 23 ],
+        segments[ i + 24 ], segments[ i + 25 ], segments[ i + 26 ], segments[ i + 27 ],
+        segments[ i + 28 ], segments[ i + 29 ], segments[ i + 30 ], segments[ i + 31 ] = string_byte( str, i, i + 31 )
+    end
+
+    if remaining ~= 0 then
+        split_position = split_position + 1
+
+        segments[ split_position ], segments[ split_position + 1 ], segments[ split_position + 2 ], segments[ split_position + 3 ],
+        segments[ split_position + 4 ], segments[ split_position + 5 ], segments[ split_position + 6 ], segments[ split_position + 7 ],
+        segments[ split_position + 8 ], segments[ split_position + 9 ], segments[ split_position + 10 ], segments[ split_position + 11 ],
+        segments[ split_position + 12 ], segments[ split_position + 13 ], segments[ split_position + 14 ], segments[ split_position + 15 ],
+        segments[ split_position + 16 ], segments[ split_position + 17 ], segments[ split_position + 18 ], segments[ split_position + 19 ],
+        segments[ split_position + 20 ], segments[ split_position + 21 ], segments[ split_position + 22 ], segments[ split_position + 23 ],
+        segments[ split_position + 24 ], segments[ split_position + 25 ], segments[ split_position + 26 ], segments[ split_position + 27 ],
+        segments[ split_position + 28 ], segments[ split_position + 29 ], segments[ split_position + 30 ] = string_byte( str, split_position, split_position + 30 )
+    end
+
+    return segments, total
 end
