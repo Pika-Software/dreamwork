@@ -28,7 +28,7 @@ do
 
     -- Lua 5.1
     table.concat = glua_table.concat
-    table.insert = glua_table.insert
+    -- table.insert = glua_table.insert
     table.remove = glua_table.remove
     table.sort = glua_table.sort
 
@@ -45,6 +45,55 @@ do
         function table.pack( ... )
             return { n = select( "#", ... ), ... }
         end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Inserts a value into a table at the specified index.
+    ---
+    ---@overload fun( tbl: table, value: any ): integer
+    ---
+    ---@param tbl table The table to insert the value into.
+    ---@param index integer The index to insert the value at.
+    ---@param value any The value to insert.
+    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@return integer index The index of the inserted value.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function table.insert( tbl, index, value, tbl_length )
+        if tbl_length == nil then
+            tbl_length = len( tbl )
+        end
+
+        if value == nil then
+            value, index = index, tbl_length + 1
+            tbl[ index ] = value
+            return index
+        end
+
+        if index == nil then
+            index = tbl_length + 1
+        elseif index < 0 then
+            index = math_relative( index, tbl_length + 1 )
+        else
+            index = math_min( index, tbl_length + 1 )
+        end
+
+        if index > tbl_length then
+            tbl[ index ] = value
+            return index
+        end
+
+        if index == tbl_length then
+            tbl[ index + 1 ], tbl[ index ] = tbl[ index ], value
+            return index
+        end
+
+        for j = tbl_length, index, -1 do
+            tbl[ j + 1 ] = tbl[ j ]
+        end
+
+        tbl[ index ] = value
+        return index
     end
 
     table.unpack = glua_table.unpack or _G.unpack
