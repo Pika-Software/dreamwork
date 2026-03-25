@@ -66,7 +66,7 @@ local table_concat = table.concat
 ---@param end_position? integer The end position of the search.
 ---@param str_length? integer The length of the string.
 ---@return integer | nil index The index of the byte if found, `nil` otherwise.
-local function find_byte( str, searchable_byte, start_position, end_position, str_length )
+function string.findByte( str, searchable_byte, start_position, end_position, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end
@@ -96,8 +96,6 @@ local function find_byte( str, searchable_byte, start_position, end_position, st
     return nil
 end
 
-string.findByte = find_byte
-
 --- [SHARED AND MENU]
 ---
 --- Checks if the string is empty.
@@ -110,66 +108,33 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Cuts the string into two.
+--- Splits the string into segments of the specified size.
 ---
----@param str string The string to cut.
----@param index integer String cutting index.
+---@param str string The string to split.
+---@param size? integer The size of the segments.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return string left_part The first part of the string.
----@return string right_part The second part of the string.
-function string.cut( str, index, str_length )
+---@return string[] segments The array of segments.
+---@return integer segment_count The number of segments.
+function string.divide( str, size, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end
 
-    if index == nil then
-        index = str_length * 0.5
-    elseif index < 0 then
-        index = math_relative( index, str_length )
+    if size == nil then
+        size = 1
     else
-        index = math_min( index, str_length )
+        size = math_max( math_min( size, str_length ), 1 )
     end
 
-    return string_sub( str, 1, index - 1 ), string_sub( str, index, str_length )
-end
+    local segments, segment_count = {}, 0
+    size = size - 1
 
---- [SHARED AND MENU]
----
---- Divides the string by the pattern.
----
----@param str string The string to divide.
----@param pattern_str string The pattern to divide by.
----@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
----@param start_position? integer The start position to divide from.
----@param end_position? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return string left_part The first part of the strin.
----@return string right_part The second part of the string.
-function string.divide( str, pattern_str, with_pattern, start_position, end_position )
-    local divide_start, divide_end = string_find( str, pattern_str, start_position or 1, with_pattern ~= true )
-    if divide_start == nil then
-        return str, ""
-    else
-        return string_sub( str, 1, divide_start - 1 ), string_sub( str, divide_end + 1, end_position or string_len( str ) )
+    for index = 1, str_length, size + 1 do
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, index, math_min( index + size, str_length ) )
     end
-end
 
---- [SHARED AND MENU]
----
---- Divides the string by the byte.
----
----@param str string The string to divide.
----@param searchable_byte integer The byte to divide by.
----@param start_position? integer The start position to divide from.
----@param end_position? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return string left_part The first part of the strin.
----@return string right_part The second part of the string.
-function string.divideByte( str, searchable_byte, start_position, end_position, str_length )
-    local divide_index = find_byte( str, searchable_byte, start_position, end_position, str_length )
-    if divide_index == nil then
-        return str, ""
-    else
-        return string_sub( str, 1, divide_index - 1 ), string_sub( str, divide_index + 1, end_position or string_len( str ) )
-    end
+    return segments, segment_count
 end
 
 --- [SHARED AND MENU]
@@ -383,7 +348,7 @@ function string.split( str, pattern_str, with_pattern, start_position, end_posit
         return segments, str_length
     end
 
-     if start_position == nil then
+    if start_position == nil then
         start_position = 1
     elseif start_position < 0 then
         start_position = math_relative( start_position, str_length )
