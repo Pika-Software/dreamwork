@@ -107,11 +107,12 @@ if engine.hookCatch == nil then
             end
 
             if index == nil then
-               index = #callbacks + 1
+                ---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
+                return table_insert( callbacks, fn )
+            else
+                ---@diagnostic disable-next-line: return-type-mismatch
+                return table_insert( callbacks, index, fn )
             end
-
-            ---@diagnostic disable-next-line: return-type-mismatch
-            return table_insert( callbacks, index, fn )
         end
 
         --- [SHARED AND MENU]

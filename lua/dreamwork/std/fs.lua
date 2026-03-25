@@ -220,7 +220,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
     function timer.Create( identifier, delay, repetitions, event_fn )
         if identifier == "__ASYNCIO_THINK" then
             dreamwork_logger:debug( "Catched 'gm_asyncio' tick event %s, re-attaching to dreamwork engine...", event_fn )
-            engine_hookCatch( "Tick", event_fn, 1 )
+            engine_hookCatch( "Tick", event_fn )
         else
             timer_Create( identifier, delay, repetitions, event_fn )
         end
@@ -1161,7 +1161,7 @@ if std.loadbinary( "efsw" ) then
     function hook.Add( event_name, identifier, event_fn )
         if event_name == "Think" and identifier == "__ESFW_THINK" then
             dreamwork_logger:debug( "Catched 'gm_efsw' tick event %s, re-attaching to dreamwork engine...", event_fn )
-            engine_hookCatch( "Tick", event_fn, 1 )
+            engine_hookCatch( "Tick", event_fn )
         else
             hook_Add( event_name, identifier, event_fn )
         end
@@ -1692,7 +1692,7 @@ else
     engine_hookCatch( "Tick", function()
         if watch_list_size == 0 then return end
         coroutine_resume( watchdog_thread )
-    end, 1 )
+    end )
 
     dreamwork_logger:info( "'dreamwork' was connected as file system watcher." )
 
