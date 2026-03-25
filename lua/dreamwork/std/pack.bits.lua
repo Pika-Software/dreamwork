@@ -169,14 +169,14 @@ function bitpack.unpack( big_endian, bytes, byte_count )
 	local bit_sequence, bit_sequence_size = {}, 0
 
 	for i = big_endian and 1 or byte_count, big_endian and byte_count or 1, big_endian and 1 or -1 do
-		local byte = bytes[ i ]
+		local uint8 = bytes[ i ]
 
 		for j = 8, 1, -1 do
-			if byte == 0 then
+			if uint8 == 0 then
 				bit_sequence[ bit_sequence_size + j ] = false
 			else
-				bit_sequence[ bit_sequence_size + j ] = byte % 2 == 1
-				byte = math_floor( byte * 0.5 )
+				bit_sequence[ bit_sequence_size + j ] = ( uint8 % 2 ) == 1
+				uint8 = math_floor( uint8 * 0.5 )
 			end
 		end
 
