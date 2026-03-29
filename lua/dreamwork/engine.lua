@@ -1207,10 +1207,10 @@ if std.LUA_CLIENT_SERVER then
             local network_name = network_names[ network_id ]
             if network_name == nil then
                 if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message.\n[Network ID: %d]", sender:Nick(), network_id )
-                    sender:Kick( string_format( "Server received an invalid network message.\n[Network ID: %d]", network_id ) )
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d]", sender:Nick(), network_id )
+                    sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d]", network_id ) )
                 else
-                    dreamwork.Logger:warn( "Client received an invalid network message.\n[Network ID: %d]", network_id )
+                    dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d]", network_id )
                 end
 
                 return
@@ -1219,10 +1219,10 @@ if std.LUA_CLIENT_SERVER then
             local fn = receivers[ string_lower( network_name ) ]
             if fn == nil then
                 if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message.\n[Network Name: %s]", sender:Nick(), network_name )
-                    sender:Kick( string_format( "Server received an unexpected network message.\n[Network Name: %s]", network_name ) )
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d]", sender:Nick(), network_id )
+                    sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d]", network_id ) )
                 else
-                    dreamwork.Logger:warn( "Client received an unexpected network message.\n[Network Name: %s]", network_name )
+                    dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d]", network_id )
                 end
 
                 return
@@ -1243,7 +1243,7 @@ if std.LUA_CLIENT_SERVER then
                         error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
                     end
 
-                    dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network.\n[Network Name: %s]", network_name )
+                    dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Network ID: %d]", network_ids[ network_name ] )
                     engine.consoleCommandRun( "disconnect" )
                     return
                 end
