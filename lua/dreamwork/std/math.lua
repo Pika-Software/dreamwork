@@ -811,3 +811,23 @@ function math.relative( position, length, fallback )
         return length + position + 1
     end
 end
+
+do
+
+    local math_log10 = math.log10
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the length of the integer.
+    ---
+    ---@param x integer The integer to check.
+    ---@return integer length The length of the integer.
+    function math.len( x )
+        if x == 0 then
+            return 1
+        end
+
+        return math_floor( math_log10( math_abs( x ) ) ) + 1
+    end
+
+end
