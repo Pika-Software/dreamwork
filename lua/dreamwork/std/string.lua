@@ -1359,3 +1359,39 @@ function string.unpack( str, start_position, end_position, str_length )
 
     return segments, total
 end
+
+--- [SHARED AND MENU]
+---
+--- Formats a number with a separator (e.g. comma) for thousands.
+---
+---@param str string The string to format.
+---@param separator? string The separator to use, default is `,`.
+---@param offset? integer The offset to use, default is `3`.
+---@param str_length? integer The length of the string, default is `len( str )`.
+---@return string str The formatted string.
+function string.comma( str, separator, offset, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if str_length == 0 then
+        return str
+    end
+
+    if separator == nil then
+        separator = ","
+    end
+
+    if offset == nil then
+        offset = 3
+    else
+        offset = math.max( 0, math.floor( math.abs( offset ) ) )
+        if offset == 0 then return str end
+    end
+
+    for i = str_length - offset, 1, -offset do
+        str = string_sub( str, 1, i ) .. separator .. string_sub( str, i + 1 )
+    end
+
+    return str
+end
