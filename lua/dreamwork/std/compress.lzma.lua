@@ -15,8 +15,8 @@ local glua_util = _G.util
 local lzma = compress.lzma or { PROPS_SIZE = 5 }
 compress.lzma = lzma
 
-lzma.compress = lzma.compress or glua_util.Compress or function() return "" end
-lzma.decompress = lzma.decompress or glua_util.Decompress or lzma.compress
+lzma.compress = glua_util.Compress or function() return "" end
+lzma.decompress = glua_util.Decompress or lzma.compress
 
 --- [SHARED AND MENU]
 ---
