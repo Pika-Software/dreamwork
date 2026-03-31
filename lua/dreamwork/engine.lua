@@ -712,13 +712,8 @@ do
         ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
         function gamemode.Get( name )
-            ---@type table | nil
-            local tbl = engine_hookCall( "GamemodeSelected", name )
-            if tbl == nil then
-                return gamemodes[ name ]
-            else
-                return tbl
-            end
+            local tbl = gamemodes[ name ]
+            return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
         end
 
         if gamemode.Register == nil then
@@ -744,12 +739,8 @@ do
         ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
         gamemode.Get = detour_attach( gamemode.Get, function( fn, name )
-            local tbl = engine_hookCall( "GamemodeSelected", name )
-            if tbl == nil then
-                return fn( name )
-            else
-                return tbl
-            end
+            local tbl = fn( name )
+            return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
         end )
 
         gamemode.Register = gamemode.Register or debug_fempty
