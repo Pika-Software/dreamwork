@@ -2068,7 +2068,7 @@ if LUA_CLIENT_SERVER then
     dofile( "std/entity.lua" )
     dofile( "std/player.lua" )
 
-    -- dofile( "std/network.lua" )
+    dofile( "std/network.lua" )
 end
 
 -- TODO: NetTable class
