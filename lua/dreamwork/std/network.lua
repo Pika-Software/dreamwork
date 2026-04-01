@@ -15,8 +15,8 @@ local LUA_SERVER = std.LUA_SERVER
 
 ---@type dreamwork.std.string
 local string = std.string
+local string_len = string.len
 
-local futures_run = std.futures.run
 local os_clock = os.clock
 
 ---@type dreamwork.std.math
@@ -30,6 +30,18 @@ local crc16_digest = std.checksum.CRC16.digest
 ---@class dreamwork.std.Network.Writer
 
 --[[
+
+        Transmission Header
+
+        is complex
+        ( 1 bit )      \
+        |               \
+        true            false
+        |               |
+        total segments  segment
+        ( 24 bit )
+        |
+        segment
 
         Transmission Loop
 
@@ -45,23 +57,6 @@ await respond           |                  \|/
     | Segment info (UDP)|
     | - - < - - - < - - |   <- <- <- ( index, checksum )           [ receiver have to respond with data block checksum with specified timeout, if next data block not received, final block must be empty ( \0 ) ]
     |                   |
-
---]]
-
---[[
-
-        network message
-
-            ( 1 bit )
-        is complex message
-        |            |
-        true        false
-        |            |
-    block_count      body
-    ( 24 bit )
-        |
-        body
-
 
 --]]
 
@@ -83,6 +78,8 @@ local max_package_size = ( ( 64 * 1024 ) - 1 ) * 8 - internal_header
 ---
 --- ( 2 ^ segment_index_size - 1 ) * segment size = max transmittion size in kbytes
 ---
+--- 24 bit with 1 kb segment ~= 16gb is absolute limit ( im pretty sure nobody will need more data, its more that total game size in 8 times )
+---
 --- in bits
 ---
 ---@type integer
@@ -100,19 +97,13 @@ local max_segment_size = ( ( 1 * 1024 ) - 1 ) * 8 - internal_header - segment_in
 --- in bytes
 ---
 ---@type integer
-local header_free_space = math_floor( ( max_package_size - ( 1 --[[ is complex message (boolean) ]] ) ) / 8 )
+local size_per_segment = math_floor( max_segment_size / 8 )
 
----@param bytes integer
----@return integer block_count
-local function get_block_count( bytes )
-    if bytes > 0 then
-        return math_ceil(
-            math_ceil( bytes * 8 ) / max_segment_size
-        )
-    end
-
-    return 1
-end
+---
+--- in bytes
+---
+---@type integer
+local header_free_space = math_floor( ( max_package_size - ( segment_index_size + 1 --[[ is complex message (boolean) ]] ) ) / 8 )
 
 -- TODO: all network messages are byte strings, that will mean that it will fully builded before send and them fully received before perform readers
 
@@ -205,7 +196,7 @@ function Network:__init( name, can_receive )
     network_callbacks[ self ] = { [ 0 ] = 0 }
     network_receiving[ self ] = false
     network_sending[ self ] = false
-    network_timeout[ self ] = 3.0
+    network_timeout[ self ] = 1.0
 end
 
 do
@@ -334,6 +325,7 @@ if LUA_SERVER then
     ---@class dreamwork.std.Network.Transmission.Activity
     ---@field thread thread
     ---@field time number
+    ---@field client Player
 
     ---@type dreamwork.std.Network.Transmission.Activity[]
     local outgoing_activity = { [ 0 ] = 0 }
@@ -353,17 +345,31 @@ if LUA_SERVER then
     engine.hookCatch( "Think", function()
         local time_used = os_clock()
 
-        for i = 1, outgoing_activity[ 0 ], 1 do
+        for i = outgoing_activity[ 0 ], 1, -1 do
             local thread_data = outgoing_activity[ i ]
             if time_used > thread_data.time then
-                coroutine.resume( thread_data.thread, false )
+                local client = thread_data.client
+                if client:IsValid() then
+                    coroutine.resume( thread_data.thread, false )
+                else
+                    dreamwork.Logger:warn( "Transmission '%s' terminated, client '%s' disconnected.", thread_data.thread, client )
+                    outgoing_activity[ 0 ] = outgoing_activity[ 0 ] - 1
+                    table.remove( outgoing_activity, i )
+                end
             end
         end
     end )
 
     ---@param network dreamwork.std.Network
-    ---@param thread thread
-    local function update_outgoing( network, thread )
+    ---@param client Player
+    local function update_outgoing( network, client )
+        local network_id = network_to_index[ network ]
+
+        local thread = outgoing_transmissions[ client ][ network_id ]
+        if thread == nil then
+            error( "Failed to update outgoing transmission, thread not found", 2 )
+        end
+
         local thread_count = outgoing_activity[ 0 ]
 
         for i = thread_count, 1, -1 do
@@ -378,13 +384,16 @@ if LUA_SERVER then
 
         outgoing_activity[ thread_count ] = {
             thread = thread,
-            time = os_clock() + network.timeout
+            time = os_clock() + network.timeout,
+            client = client
         }
     end
 
     ---@param client Player
-    ---@param network_id integer
-    local function kill_outgoing( client, network_id )
+    ---@param network dreamwork.std.Network
+    local function kill_outgoing( network, client )
+        local network_id = network_to_index[ network ]
+
         local outgoing_thread = outgoing_transmissions[ client ][ network_id ]
         if outgoing_thread == nil then return end
 
@@ -405,7 +414,7 @@ if LUA_SERVER then
         if not network_sending[ network ] then return end
         network_sending[ network ] = false
 
-        kill_outgoing( client, network_to_index[ network ] )
+        kill_outgoing( network, client )
 
         net.Start( network_to_identifier[ network ], false )
         net.Send( client )
@@ -453,9 +462,9 @@ if LUA_SERVER then
 
         net.Send( client )
 
-        dreamwork.Logger:debug( "Sended segment %d/%d [%d bytes, target: %s, segment checksum: 0x%x]", index, total_segments, string.len( segment ), client, segment_checksum )
+        dreamwork.Logger:debug( "Sended segment %d/%d [%d bytes, target: %s, segment checksum: 0x%x]", index, total_segments, string_len( segment ), client, segment_checksum )
 
-        update_outgoing( network, coroutine.running() )
+        update_outgoing( network, client )
 
         local persisted = coroutine.yield()
 
@@ -470,7 +479,7 @@ if LUA_SERVER then
                 goto send_segment
             end
 
-            dreamwork.Logger:info( "delivered segment %d/%d [%d bytes]", index, total_segments, string.len( segment ) )
+            dreamwork.Logger:info( "delivered segment %d/%d [%d bytes]", index, total_segments, string_len( segment ) )
 
             if index < total_segments then
                 goto next_segment
@@ -478,7 +487,7 @@ if LUA_SERVER then
 
             abort_transmission( network, client )
 
-            dreamwork.Logger:info( "transmission finished, delivered %d bytes, checksum: 0x%x", string.len( table.concat( segments ) ), checksum:digest() )
+            dreamwork.Logger:info( "transmission finished, delivered %d bytes, checksum: 0x%x", string_len( table.concat( segments ) ), checksum:digest() )
             return
         end
 
@@ -493,33 +502,27 @@ if LUA_SERVER then
         print()
         dreamwork.Logger:info( "Started transmission for %s", client )
 
-        local length = string.len( data )
+        local length = string_len( data )
         dreamwork.Logger:debug( "total size %d bytes", length )
 
         if header_free_space < length then
             if network_sending[ network ] then
                 abort_transmission( network, client )
-            else
-                network_sending[ network ] = true
             end
 
-            local total = get_block_count( length )
-            dreamwork.Logger:debug( "total segments %d", total )
-
-            local segment_size = math.floor( length / total )
-            dreamwork.Logger:debug( "segment size %d bytes", segment_size )
-
-            local segments, segment_count = string.divide( data, segment_size )
-            dreamwork.Logger:debug( "transmitting %d segments", segment_count )
+            local segments, segment_count = string.divide( data, size_per_segment )
+            dreamwork.Logger:debug( "transmitting %d segments by %d bytes", segment_count, size_per_segment )
 
             local outgoing_thread = coroutine.create( complex_transmission )
+            outgoing_transmissions[ client ][ network_to_index[ network ] ] = outgoing_thread
 
             local success, err_msg = coroutine.resume( outgoing_thread, network, client, segments, segment_count )
-            if not success then
+            if success then
+                network_sending[ network ] = true
+            else
                 error( err_msg, 2 )
             end
 
-            outgoing_transmissions[ client ][ network_to_index[ network ] ] = outgoing_thread
             return
         end
 
@@ -683,7 +686,7 @@ if LUA_CLIENT then
                 segments[ segment_index ] = segment
                 checksum:update( segment )
 
-                dreamwork.Logger:debug( "delivered segment %d/%d [%d bytes, checksum: 0x%x]", segment_index, total_segments, string.len( segment ), segment_checksum )
+                dreamwork.Logger:debug( "delivered segment %d/%d [%d bytes, checksum: 0x%x]", segment_index, total_segments, string_len( segment ), segment_checksum )
 
                 perform_callbacks( network, segments, segment_index, total_segments )
 
@@ -694,7 +697,7 @@ if LUA_CLIENT then
                 segment_index = index
             end
 
-            segment = net.ReadData( math.ceil( message_length / 8 ) )
+            segment = net.ReadData( math_ceil( message_length / 8 ) )
             segment_checksum = crc16_digest( segment )
 
             send_checksum( network, network_name, segment_index, segment_checksum )
@@ -765,13 +768,20 @@ if LUA_CLIENT then
         end
 
         if is_complex then
-            dreamwork.Logger:debug( "Received a handshake for a new transmission, preparing to receive... [complex: yes, id: %d]", network_id )
+            if network_receiving[ network ] then
+                abort_receiving( network )
+            end
+
+            local total_segments = net.ReadUInt( segment_index_size )
+            message_length = message_length - segment_index_size
+
+            dreamwork.Logger:debug( "Received a handshake for a new transmission, preparing to receive... [complex: yes, id: %d, segments: %d]", network_id, total_segments )
 
             local incoming_thread = coroutine.create( complex_receiving )
-            local success, err_msg = coroutine.resume( incoming_thread, network, net.ReadUInt( segment_index_size ) )
+            incoming_transmissions[ network_id ] = incoming_thread
 
+            local success, err_msg = coroutine.resume( incoming_thread, network, total_segments )
             if success then
-                incoming_transmissions[ network_id ] = incoming_thread
                 network_receiving[ network ] = true
             else
                 dreamwork.Logger:error( "Failed to resume transmission: %s", err_msg )
@@ -781,7 +791,7 @@ if LUA_CLIENT then
         end
 
         dreamwork.Logger:info( "Received a handshake for a new transmission, preparing to receive... [complex: %s, id: %d]", is_complex and "yes" or "no", network_id )
-        perform_callbacks( network, { [ 0 ] = 1, net.ReadData( math.ceil( message_length / 8 ) ) }, 1, 1 )
+        perform_callbacks( network, { [ 0 ] = 1, net.ReadData( math_ceil( message_length / 8 ) ) }, 1, 1 )
 
         return true
     end, 2 )
@@ -796,7 +806,7 @@ if SERVER then
 
     concommand.Add( "testss", function( pl )
         n:transmit( function( self, writer )
-            local data = file.Read( "e9d737b6-ac8f-489b-b07f-309c617e2d5d.jpg", "GAME" )
+            local data = file.Read( "moff3.jpg", "GAME" )
             dreamwork.Logger:info( "sending: %d bytes", #data )
             writer:writeCountedString( data, 32 )
         end, pl )
@@ -814,35 +824,30 @@ else
 
     local speed_str = ""
 
+    local total_seg, cur_seg = 1, 1
     local last_segment_time = 0
 
+    timer.Create( "speeddy", 1, 0, function()
+        local history_size = time_history[ 0 ]
+
+        if history_size > 1 then
+            local average = ( time_history[ history_size - 1 ] + time_history[ history_size ] ) * 0.5
+            speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * ( total_seg - cur_seg ), ( ( 1 / average ) * size_per_segment ) / 125 )
+        end
+    end )
+
     n:attach( function( self, reader, index, total )
+        total_seg, cur_seg = total, index
+
         if index == 1 then
             start_time = os.clock()
         end
 
         local time = os.clock()
 
-        if last_segment_time ~= 0 then
-            local time_diff = time - last_segment_time
-
-            local history_size = time_history[ 0 ] + 1
-
-            time_history[ history_size ] = time_diff
-            time_history[ 0 ] = history_size
-
-            if history_size > 1 then
-                local average = 0
-
-                for i = 1, history_size, 1 do
-                    average = average + time_history[ i ]
-                end
-
-                average = average / history_size
-
-                speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs", average, average * ( total - index ) )
-            end
-        end
+        local history_size = time_history[ 0 ] + 1
+        time_history[ history_size ] = time - last_segment_time
+        time_history[ 0 ] = history_size
 
         last_segment_time = time
 
@@ -853,9 +858,12 @@ else
         if index == total then
             local data = reader:readCountedString( 32 ) or ""
             dreamwork.Logger:info( "transmission finished, received %d bytes, took %f s", #data, os.clock() - start_time )
-            file.Write( "dw_magic.png", data )
 
-            material = Material( "data/dw_magic.png" )
+            local file_name = std.uuid.v7() .. ".png"
+
+            file.Write( file_name, data )
+
+            material = Material( "data/" .. file_name )
         end
     end )
 
@@ -864,27 +872,27 @@ else
         local x = ScrW() - 512
 
         surface.SetDrawColor( 33, 33, 33, 200 )
-        surface.DrawRect( x, 0, 256, 64 )
+        surface.DrawRect( x, 0, 256, 320 )
 
-        surface.DrawRect( x + 16, 16, 256 - 32, 32 )
+        surface.DrawRect( x + 16, 16, 224, 32 )
+        surface.DrawRect( x + 16, 64, 224, 240 )
+
+        if material ~= nil then
+            surface.SetDrawColor( 255, 255, 255 )
+            surface.SetMaterial( material )
+            surface.DrawTexturedRect( x + 16, 64, 224, 240 )
+        end
 
         surface.SetDrawColor( 100, 100, 255 )
-        surface.DrawRect( x + 16, 16, ( 256 - 32 ) * fraction, 32 )
+        surface.DrawRect( x + 16, 16, 224 * fraction, 32 )
 
-        draw.DrawText( speed_str, "DermaLarge", x + 32, 32, color_white, TEXT_ALIGN_LEFT )
+        draw.DrawText( speed_str, "DermaLarge", x, 320, color_white, TEXT_ALIGN_LEFT )
 
         -- surface.SetFont( "DermaLarge" )
         -- surface.SetTextColor( 255, 255, 255, 255 )
         -- surface.SetTextPos( x + 32, 32 )
         -- surface.DrawText( speed_str )
-
-        if material ~= nil then
-            surface.SetDrawColor( 255, 255, 255 )
-            surface.SetMaterial( material )
-            surface.DrawTexturedRect( x, 64, 256, 256 )
-        end
     end )
-
 
 end
 
