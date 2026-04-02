@@ -25,17 +25,13 @@ local math_ceil, math_floor = math.ceil, math.floor
 
 local crc16_digest = std.checksum.CRC16.digest
 
----@class dreamwork.std.Network.Reader
-
----@class dreamwork.std.Network.Writer
-
 --[[
 
         Transmission Header
 
-        is complex
-        ( 1 bit )      \
-        |               \
+           is complex
+         /  ( 1 bit )  \
+        /               \
         true            false
         |               |
         total segments  segment
@@ -184,7 +180,14 @@ function Network:__init( name, can_receive )
 
     network_to_identifier[ self ] = network_name
 
-    local network_id = engine.networkRegister( network_name )
+    local network_id
+
+    if LUA_SERVER then
+        network_id = engine.networkRegister( network_name )
+    else
+        network_id = engine.networkGetID( network_name )
+    end
+
     network_to_index[ self ] = network_id
     index_to_network[ network_id ] = self
 
