@@ -849,6 +849,7 @@ do
 
         --- Game List - Sync
         actual_game_count = game_count
+        engine.GameCount = actual_game_count
 
         for i = 1, game_count, 1 do
             actual_game_list[ i ] = game_list[ i ]
@@ -898,6 +899,7 @@ do
 
         -- Addon List - Sync
         actual_addon_count = addon_count
+        engine.AddonCount = actual_addon_count
 
         for i = 1, addon_count, 1 do
             actual_addon_list[ i ] = addon_list[ i ]
@@ -1198,10 +1200,10 @@ if std.LUA_CLIENT_SERVER then
             local network_name = network_names[ network_id ]
             if network_name == nil then
                 if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d]", sender:Nick(), network_id )
-                    sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d]", network_id ) )
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
+                    sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
                 else
-                    dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d]", network_id )
+                    dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
                 end
 
                 return
@@ -1210,10 +1212,10 @@ if std.LUA_CLIENT_SERVER then
             local fn = receivers[ string_lower( network_name ) ]
             if fn == nil then
                 if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d]", sender:Nick(), network_id )
-                    sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d]", network_id ) )
+                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
+                    sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
                 else
-                    dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d]", network_id )
+                    dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
                 end
 
                 return
