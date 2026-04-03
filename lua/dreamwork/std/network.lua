@@ -188,6 +188,10 @@ function Network:__init( name, can_receive )
         network_id = engine.networkGetID( network_name )
     end
 
+    if network_id == nil then
+        error( "failed to register network, unknown error", 3 )
+    end
+
     network_to_index[ self ] = network_id
     index_to_network[ network_id ] = self
 
@@ -801,103 +805,98 @@ if LUA_CLIENT then
 
 end
 
--- if std.DEVELOPER == 0 then return end
+local n = NetworkClass( "test", LUA_CLIENT )
 
--- local n = NetworkClass( "test", LUA_CLIENT )
+if SERVER then
 
--- if SERVER then
+    concommand.Add( "testss", function( pl )
+        if std.DEVELOPER == 0 then return end
 
---     concommand.Add( "testss", function( pl )
---         n:transmit( function( self, writer )
---             local data = file.Read( "moff3.jpg", "GAME" )
---             dreamwork.Logger:info( "sending: %d bytes", #data )
---             writer:writeCountedString( data, 32 )
---         end, pl )
---     end )
+        n:transmit( function( self, writer )
+            local data = file.Read( "moff3.jpg", "GAME" )
+            dreamwork.Logger:info( "sending: %d bytes", #data )
+            writer:writeCountedString( data, 32 )
+        end, pl )
+    end )
 
--- else
+else
 
---     local start_time
+    local start_time
 
---     local fraction = 0
+    local fraction = 0
 
---     local material
+    local material
 
---     local time_history = { [ 0 ] = 0 }
+    local time_history = { [ 0 ] = 0 }
 
---     local speed_str = ""
+    local speed_str = ""
 
---     local total_seg, cur_seg = 1, 1
---     local last_segment_time = 0
+    local total_seg, cur_seg = 1, 1
+    local last_segment_time = 0
 
---     timer.Create( "speeddy", 1, 0, function()
---         local history_size = time_history[ 0 ]
+    timer.Create( "speeddy", 1, 0, function()
+        local history_size = time_history[ 0 ]
 
---         if history_size > 1 then
---             local average = ( time_history[ history_size - 1 ] + time_history[ history_size ] ) * 0.5
---             speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * ( total_seg - cur_seg ), ( ( 1 / average ) * size_per_segment ) / 125 )
---         end
---     end )
+        if history_size > 1 then
+            local average = ( time_history[ history_size - 1 ] + time_history[ history_size ] ) * 0.5
+            speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * ( total_seg - cur_seg ), ( ( 1 / average ) * size_per_segment ) / 125 )
+        end
+    end )
 
---     n:attach( function( self, reader, index, total )
---         total_seg, cur_seg = total, index
+    n:attach( function( self, reader, index, total )
+        total_seg, cur_seg = total, index
 
---         if index == 1 then
---             start_time = os.clock()
---         end
+        if index == 1 then
+            start_time = os.clock()
+        end
 
---         local time = os.clock()
+        local time = os.clock()
 
---         local history_size = time_history[ 0 ] + 1
---         time_history[ history_size ] = time - last_segment_time
---         time_history[ 0 ] = history_size
+        local history_size = time_history[ 0 ] + 1
+        time_history[ history_size ] = time - last_segment_time
+        time_history[ 0 ] = history_size
 
---         last_segment_time = time
+        last_segment_time = time
 
---         fraction = math.clamp( index / total, 0, 1 )
+        fraction = math.clamp( index / total, 0, 1 )
 
---         -- dreamwork.Logger:debug( "received segment %d/%d, took %f s", index, total, std.time.tick() )
+        -- dreamwork.Logger:debug( "received segment %d/%d, took %f s", index, total, std.time.tick() )
 
---         if index == total then
---             local data = reader:readCountedString( 32 ) or ""
---             dreamwork.Logger:info( "transmission finished, received %d bytes, took %f s", #data, os.clock() - start_time )
+        if index == total then
+            local data = reader:readCountedString( 32 ) or ""
+            dreamwork.Logger:info( "transmission finished, received %d bytes, took %f s", #data, os.clock() - start_time )
 
---             local file_name = std.uuid.v7() .. ".png"
+            local file_name = std.uuid.v7() .. ".png"
 
---             file.Write( file_name, data )
+            file.Write( file_name, data )
 
---             material = Material( "data/" .. file_name )
---         end
---     end )
+            material = Material( "data/" .. file_name )
+        end
+    end )
 
---     hook.Add( "HUDPaint", "YEEE", function()
---         if fraction == 0 then return end
---         local x = ScrW() - 512
+    hook.Add( "HUDPaint", "YEEE", function()
+        if fraction == 0 then return end
+        local x = ScrW() - 512
 
---         surface.SetDrawColor( 33, 33, 33, 200 )
---         surface.DrawRect( x, 0, 256, 320 )
+        surface.SetDrawColor( 33, 33, 33, 200 )
+        surface.DrawRect( x, 0, 256, 320 )
 
---         surface.DrawRect( x + 16, 16, 224, 32 )
---         surface.DrawRect( x + 16, 64, 224, 240 )
+        surface.DrawRect( x + 16, 16, 224, 32 )
+        surface.DrawRect( x + 16, 64, 224, 240 )
 
---         if material ~= nil then
---             surface.SetDrawColor( 255, 255, 255 )
---             surface.SetMaterial( material )
---             surface.DrawTexturedRect( x + 16, 64, 224, 240 )
---         end
+        if material ~= nil then
+            surface.SetDrawColor( 255, 255, 255 )
+            surface.SetMaterial( material )
+            surface.DrawTexturedRect( x + 16, 64, 224, 240 )
+        end
 
---         surface.SetDrawColor( 100, 100, 255 )
---         surface.DrawRect( x + 16, 16, 224 * fraction, 32 )
+        surface.SetDrawColor( 100, 100, 255 )
+        surface.DrawRect( x + 16, 16, 224 * fraction, 32 )
 
---         draw.DrawText( speed_str, "DermaLarge", x, 320, color_white, TEXT_ALIGN_LEFT )
+        draw.DrawText( speed_str, "DermaLarge", x, 320, color_white, TEXT_ALIGN_LEFT )
+    end )
 
---         -- surface.SetFont( "DermaLarge" )
---         -- surface.SetTextColor( 255, 255, 255, 255 )
---         -- surface.SetTextPos( x + 32, 32 )
---         -- surface.DrawText( speed_str )
---     end )
-
--- end
+end
 
 -- engine.hookCatch( "IncomingNetworkMessage", function( network_id, unreliable, message_length )
 --     dreamwork.Logger:debug( "Received message, id: %d, unreliable: %s, message_length: %d", network_id, unreliable and "true" or "false", message_length )
