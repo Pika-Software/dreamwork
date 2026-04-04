@@ -236,9 +236,10 @@ end
 ---
 ---@param str string The string to check.
 ---@param str_start string The start string.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return boolean is_starts `true` if the string starts with the start string, otherwise `false`.
-function string.startsWith( str, str_start )
-    return str == str_start or string_sub( str, 1, string_len( str_start ) ) == str_start
+function string.hasPrefix( str, str_start, str_length )
+    return str == str_start or string_sub( str, 1, str_length or string_len( str ) ) == str_start
 end
 
 --- [SHARED AND MENU]
@@ -246,11 +247,25 @@ end
 --- Checks if the string ends with the end string.
 ---
 ---@param str string The string to check.
----@param str_end string The end string.
+---@param suffix string The end string.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return boolean is_ends `true` if the string ends with the end string, otherwise `false`.
-function string.endsWith( str, str_end )
-    return string_byte( str_end, 1, 1 ) == nil or str == str_end or
-        string_sub( str, -string_len( str_end ) ) == str_end
+function string.hasSuffix( str, suffix, str_length )
+    -- suffix is empty
+    if string_byte( suffix, 1, 1 ) == nil then
+        return true
+    end
+
+    -- suffix is the same as the string
+    if str == suffix then
+        return true
+    end
+
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    return string_sub( str, -str_length, str_length ) == suffix
 end
 
 --- [SHARED AND MENU]
