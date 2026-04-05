@@ -41,6 +41,9 @@ do
     end
 
     if table.pack == nil then
+        ---@generic V
+        ---@param ... V
+        ---@return V[]
         ---@diagnostic disable-next-line: duplicate-set-field
         function table.pack( ... )
             return { n = select( "#", ... ), ... }
@@ -51,11 +54,13 @@ do
     ---
     --- Inserts a value into a table at the specified index.
     ---
-    ---@overload fun( tbl: table, value: any ): integer
+    ---@generic V
     ---
-    ---@param tbl table The table to insert the value into.
+    ---@overload fun( tbl: V[], value: V ): integer
+    ---
+    ---@param tbl V[] The table to insert the value into.
     ---@param index integer The index to insert the value at.
-    ---@param value any The value to insert.
+    ---@param value V The value to insert.
     ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
     ---@return integer index The index of the inserted value.
     ---@diagnostic disable-next-line: duplicate-set-field
@@ -110,13 +115,14 @@ do
         ---
         --- Moves elements from one table to another.
         ---
-        ---@param source table The source table.
+        ---@generic V
+        ---@param source V[] The source table.
         ---@param start_position? integer The start position of the source table, defaults to 1.
         ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
         ---@param offset? integer The start position of the destination table, defaults to 1.
-        ---@param destination? table The destination table.
+        ---@param destination? V[] The destination table, defaults to the source table.
         ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
-        ---@return table destination The destination table.
+        ---@return V[] destination Selected destination table.
         ---@diagnostic disable-next-line: duplicate-set-field
         function table.move( source, start_position, end_position, offset, destination, source_length )
             if destination == nil then
@@ -162,14 +168,15 @@ end
 ---
 --- Returns a slice of the given table.
 ---
----@param tbl table The table to slice.
+---@generic V
+---@param tbl V[] The table to slice.
 ---@param start_position? integer The start position of the slice.
 ---@param end_position? integer The end position of the slice.
----@param step? integer The step.
+---@param step? integer The step of the slice.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return table slice The sliced table.
+---@return V[] slice The slice of the table.
 ---@return integer length The length of the sliced table.
-function table.sub( tbl, start_position, end_position, step, tbl_length )
+function table.slice( tbl, start_position, end_position, step, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
     end
@@ -200,6 +207,8 @@ function table.sub( tbl, start_position, end_position, step, tbl_length )
     return slice, slice_size
 end
 
+table.sub = table.slice
+
 --- [SHARED AND MENU]
 ---
 --- Truncates the given table.
@@ -208,7 +217,8 @@ end
 ---
 --- The truncated table is a shallow copy of the original table.
 ---
----@param tbl table The table to truncate.
+---@generic V
+---@param tbl V[] The table to truncate.
 ---@param new_length? integer The length of the truncated table.
 ---@param tbl_length? integer The length of the original table. Optionally, it should be used to speed up calculations.
 function table.truncate( tbl, new_length, tbl_length )
@@ -225,30 +235,32 @@ end
 ---
 --- The returned table is a shallow copy of the original table.
 ---
----@param tbl table The table to truncate.
+---@generic V
+---@param tbl V[] The table to truncate.
 ---@param tbl_length? integer The length of the truncated table. Optionally, it should be used to speed up calculations.
----@return table result The truncated table.
+---@return V[] truncated The truncated table.
 function table.truncated( tbl, tbl_length )
-    local copy = {}
+    local truncated = {}
 
     for index = 1, tbl_length or len( tbl ), 1 do
-        copy[ index ] = tbl[ index ]
+        truncated[ index ] = tbl[ index ]
     end
 
-    return copy
+    return truncated
 end
 
 --- [SHARED AND MENU]
 ---
 --- Injects values from one table to another.
 ---
----@param destination table The destination table.
----@param source table The source table.
+---@generic V
+---@param destination V[] The destination table.
+---@param source V[] The source table.
 ---@param offset? integer The position to inject.
 ---@param start_position? integer The start position.
 ---@param end_position? integer The end position.
 ---@param destination_length? integer The length of the destination table. Optionally, it should be used to speed up calculations.
----@param source_length? integer The length of the source table.
+---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
 function table.inject( destination, source, offset, start_position, end_position, destination_length, source_length )
     if destination_length == nil then
         destination_length = len( destination )
@@ -307,12 +319,12 @@ end
 ---
 --- Ejects selected range of values from the given table.
 ---
----@generic V: any
----@param tbl table<integer, V> The table to remove values from.
+---@generic V
+---@param tbl V[] The table to remove values from.
 ---@param start_position? integer The start position.
 ---@param end_position? integer The end position.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return table<integer, V> values The removed values.
+---@return V[] values The removed values.
 ---@return integer values_length The count of removed values.
 function table.eject( tbl, start_position, end_position, tbl_length )
     if tbl_length == nil then
@@ -354,12 +366,24 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns true if the given table is empty.
+---
+---@generic K, V
+---@param tbl table<K, V> The table to check.
+---@return boolean result `true` if the table is empty, `false` otherwise.
+function table.isEmpty( tbl )
+    return next( tbl ) == nil
+end
+
+--- [SHARED AND MENU]
+---
 --- Returns the index of the value in the given table.
 ---
 --- Returns `nil` if the value is not found in the table.
 ---
----@param tbl table The table to search.
----@param searchable any The value to search for.
+---@generic V
+---@param tbl V[] The table to search.
+---@param searchable V The value to search for.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The index of the value.
 function table.getIndex( tbl, searchable, tbl_length )
@@ -374,23 +398,14 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns true if the given table is empty.
----
----@param tbl table The table to check.
----@return boolean result `true` if the table is empty, `false` otherwise.
-function table.isEmpty( tbl )
-    return next( tbl ) == nil
-end
-
---- [SHARED AND MENU]
----
 --- Returns the key of the value in the given table.
 ---
 --- Returns `nil` if the value is not found in the table.
 ---
----@param tbl table The table to search.
----@param searchable any The value to search for.
----@return any | nil key The key of the value.
+---@generic K, V
+---@param tbl table<K, V> The table to search.
+---@param searchable V The value to search for.
+---@return K | nil key The key of the value.
 function table.getKey( tbl, searchable )
     local key, value = next( tbl, nil )
 
@@ -409,8 +424,9 @@ end
 ---
 --- Returns list (table) of keys and length of this list.
 ---
----@param tbl table The table.
----@return any[] key_lst The list of keys.
+---@generic K, V
+---@param tbl table<K, V> The table.
+---@return K[] key_lst The list of keys.
 ---@return integer key_count The length of the list.
 function table.keys( tbl )
     local key = next( tbl, nil )
@@ -429,8 +445,9 @@ end
 ---
 --- Returns list (table) of values and length of this list.
 ---
----@param tbl table The table.
----@return any[] value_lst The list of values.
+---@generic K, V
+---@param tbl table<K, V> The table.
+---@return V[] value_lst The list of values.
 ---@return integer value_count The length of the list.
 function table.values( tbl )
     local key, value = next( tbl, nil )
@@ -449,7 +466,8 @@ end
 ---
 --- Returns the count of keys in the given table.
 ---
----@param tbl table The table.
+---@generic K, V
+---@param tbl table<K, V> The table.
 ---@return integer key_count The count of keys.
 function table.count( tbl )
     local key, key_count = next( tbl, nil ), 0
@@ -472,7 +490,8 @@ end
 ---
 --- `{ key = value } -> { value = key }`
 ---
----@param tbl table The table to flip.
+---@generic K, V
+---@param tbl table<K, V> The table to flip.
 function table.flip( tbl )
     local key, value = next( tbl, nil )
     while key ~= nil do
@@ -491,8 +510,9 @@ end
 ---
 --- `{ key = value } -> { value = key }`
 ---
----@param tbl table The table to flip.
----@return table result The flipped table.
+---@generic K, V
+---@param tbl table<K, V> The table to flip.
+---@return table<V, K> result The flipped table.
 function table.flipped( tbl )
     local key, value = next( tbl, nil )
     local result = {}
@@ -505,12 +525,17 @@ function table.flipped( tbl )
     return result
 end
 
+---@class dreamwork.std.table.Pair<K,V>
+---@field [1] K The key of the pair.
+---@field [2] V The value of the pair.
+
 --- [SHARED AND MENU]
 ---
 --- Returns the list (table) of key/value pairs and length of this list.
 ---
----@param tbl table The table.
----@return table result The list of key/value pairs ( sequential table ).
+---@generic K, V
+---@param tbl table<K, V> The table.
+---@return dreamwork.std.table.Pair<K, V>[] result The list of key/value pairs ( sequential table ).
 ---@return integer result_length The length of the list.
 function table.pairs( tbl )
     local result, result_length = {}, 0
@@ -551,7 +576,8 @@ end
 ---
 --- Empties the indexes of the given table.
 ---
----@param tbl table The table to empty.
+---@generic V
+---@param tbl V[] The table to empty.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 function table.clearIndexes( tbl, tbl_length )
     for index = 1, tbl_length or len( tbl ), 1 do
@@ -563,7 +589,8 @@ end
 ---
 --- Empties the keys of the given table.
 ---
----@param tbl table The table to empty.
+---@generic K, V
+---@param tbl table<K, V> The table to empty.
 function table.clearKeys( tbl )
     local key = next( tbl, nil )
     while key ~= nil do
@@ -576,7 +603,8 @@ end
 ---
 --- Shuffles the given table.
 ---
----@param tbl table The table.
+---@generic V
+---@param tbl V[] The table.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 function table.shuffle( tbl, tbl_length )
     if tbl_length == nil then
@@ -595,9 +623,10 @@ end
 ---
 --- Returns a random index and its value from the given sequential table.
 ---
----@param tbl table The sequential table.
+---@generic V
+---@param tbl V[] The sequential table.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return any value The random value.
+---@return V value The random value.
 ---@return integer | nil index The index of the value.
 function table.randomVI( tbl, tbl_length )
     if tbl_length == nil then
@@ -618,9 +647,10 @@ end
 ---
 --- Returns a random key and its value from the given table.
 ---
----@param tbl table The key-value table.
----@return any value The random value.
----@return any key The key of the value.
+---@generic K, V
+---@param tbl table<K, V> The key-value table.
+---@return V value The random value.
+---@return K key The key of the value.
 function table.randomVK( tbl )
     local key, key_count = next( tbl, nil ), 0
     while key ~= nil do
@@ -661,9 +691,10 @@ end
 ---| `[ 4 ]` | `[ 2 ]` |
 ---| `[ 5 ]` | `[ 1 ]` |
 ---
----@param tbl table The table to reverse.
+---@generic V
+---@param tbl V[] The sequential table.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return table tbl The reversed table.
+---@return V[] tbl The reversed sequential table.
 ---@return integer length The length of the reversed table.
 function table.reverse( tbl, tbl_length )
     if tbl_length == nil then
@@ -696,9 +727,10 @@ end
 ---| `[ 4 ]` | `[ 2 ]` |
 ---| `[ 5 ]` | `[ 1 ]` |
 ---
----@param tbl table The table to reverse.
+---@generic V
+---@param tbl V[] The table to reverse.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return table tbl The reversed table.
+---@return V[] reversed The reversed table.
 ---@return integer length The length of the reversed table.
 function table.reversed( tbl, tbl_length )
     if tbl_length == nil then
@@ -722,9 +754,10 @@ do
     ---
     --- Creates a new table, filled with the given value and size.
     ---
-    ---@param value any The value to fill the table with.
+    ---@generic V
+    ---@param value V The value to fill the table with.
     ---@param ... integer The sizes of the table.
-    ---@return table tbl The created table.
+    ---@return V[] tbl The created table.
     local function create( value, size, ... )
         if size == nil then
             return value
@@ -746,12 +779,13 @@ end
 ---
 --- Extracts selected range of values from the table.
 ---
----@param tbl table The table.
+---@generic V
+---@param tbl V[] The table to extract values from.
 ---@param start_position? integer The start position.
 ---@param end_position? integer The end position.
 ---@param step_size? integer The step size.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
----@return table values The extracted values.
+---@return V[] values The extracted values.
 ---@return integer length The length of the extracted values.
 function table.extract( tbl, start_position, end_position, step_size, tbl_length )
     if tbl_length == nil then
@@ -792,11 +826,11 @@ end
 ---
 --- The returned table is a shallow copy of the original table.
 ---
----@generic V: any
----@param tbl table<integer, V> The sequential table.
+---@generic V
+---@param tbl V[] The table to map.
 ---@param fn fun( index: integer, value: V ): V | nil The function to apply.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
----@return table<integer, V> mapped The new mapped sequential table.
+---@return V[] mapped The new mapped sequential table.
 ---@return integer mapped_length The length of the new mapped sequential table.
 function table.map( tbl, fn, tbl_length )
     local mapped, mapped_length = {}, 0
@@ -828,7 +862,7 @@ do
     ---
     --- The returned table is a shallow copy of the original table.
     ---
-    ---@generic K: any, V: any
+    ---@generic K, V
     ---@param tbl table<K, V> The key/value table.
     ---@param fn fun( key: K, value: V ): V | nil The function to apply.
     ---@return table<K, V> transformed The new transformed key/value table.
@@ -848,8 +882,8 @@ end
 ---
 --- Executes a provided function once for each table value.
 ---
----@generic V: any
----@param tbl table<integer, V> The sequential table.
+---@generic V
+---@param tbl V[] The table to execute the function on.
 ---@param fn fun( index: integer, value: V ) The function to execute.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
 function table.foreach( tbl, fn, tbl_length )
@@ -868,10 +902,11 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Removing from table by value.
+    --- Removes a value from the given table by its value.
     ---
-    ---@param tbl table The table to remove from.
-    ---@param value any The value that will be removed.
+    ---@generic V
+    ---@param tbl V[] The table to remove from.
+    ---@param value V The value that will be removed.
     ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
     ---@return integer | nil index The index of the value.
     function table.removeByValue( tbl, value, tbl_length )
@@ -889,7 +924,8 @@ end
 ---
 --- Removes a range of values from the given table.
 ---
----@param tbl table The table to remove from.
+---@generic V
+---@param tbl V[] The table to remove from.
 ---@param start_position? integer The start position.
 ---@param end_position? integer The end position.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
