@@ -317,19 +317,23 @@ end
 ---@return debuginfo[] stack The debug info stack.
 ---@return integer stack_size The size of the stack.
 function debug.getstack( stack_level, what )
-    local stack, length = {}, 0
+    if what == nil then
+        what = "Snluf"
+    end
+
+    local stack, stack_length = {}, 0
 
     for location = 1 + ( stack_level or 1 ), 16, 1 do
-        local info = debug_getinfo( location, what or "Snluf" )
+        local info = debug_getinfo( location, what )
         if info then
-            length = length + 1
-            stack[ length ] = info
+            stack_length = stack_length + 1
+            stack[ stack_length ] = info
         else
             break
         end
     end
 
-    return stack, length
+    return stack, stack_length
 end
 
 --- [SHARED AND MENU]

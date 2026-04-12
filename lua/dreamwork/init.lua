@@ -931,6 +931,83 @@ do
         end
     end
 
+    local len = std.len
+
+    ---@class dreamwork.OverloadInput
+    ---@field match string[] | string
+    ---@field fn function
+
+    ---@generic F: function
+    ---@param fallback_fn F
+    ---@param inputs dreamwork.OverloadInput[]
+    ---@param ... any
+    ---@return F
+    local function overload_fn( fallback_fn, inputs, ... )
+        ---@type integer
+        local arg_count = select( "#", ... )
+
+        ---@type string[]
+        local arg_types = {}
+
+        for i = 1, arg_count, 1 do
+            arg_types[ i ] = type( select( i, ... ) )
+        end
+
+        for i = 1, inputs[ 0 ], 1 do
+            local input = inputs[ i ]
+            local match = input.match
+
+            if arg_count == match[ 0 ] then
+                for j = 1, arg_count, 1 do
+                    if match[ j ] == arg_types[ j ] then
+                        if j == arg_count then
+                            return input.fn( ... )
+                        end
+                    else
+                        break
+                    end
+                end
+            end
+        end
+
+        return fallback_fn( ... )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Overloads the given function with the given inputs.
+    ---
+    ---@generic F: function
+    ---@param fn F
+    ---@param inputs dreamwork.OverloadInput[]
+    ---@return F fn_over The overloaded function.
+    function std.overload( fn, inputs )
+        local input_count = len( inputs )
+        inputs[ 0 ] = input_count
+
+        for i = 1, input_count, 1 do
+            local input = inputs[ i ]
+
+            if not std.isFunction( input.fn ) then
+                error( "overload: input " .. i .. " is not a function", 2 )
+            end
+
+            local input_match = input.match
+            if input_match == nil then
+                error( "overload: input " .. i .. " has no match", 2 )
+            elseif std.isString( input_match ) then
+                ---@cast input_match string
+                input.match = { [ 0 ] = 1, input_match }
+            else
+                input_match[ 0 ] = len( input_match )
+            end
+        end
+
+        return function( ... )
+            return overload_fn( fn, inputs, ... )
+        end
+    end
+
 end
 
 --- [SHARED AND MENU]
