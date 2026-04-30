@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@class dreamwork.std.http
 local http = std.http
@@ -73,8 +73,8 @@ local function request( method, pathname, headers, body, do_cache )
         headers.Accept = "application/vnd.github+json"
     end
 
-    if headers["X-GitHub-Api-Version"] == nil then
-        headers["X-GitHub-Api-Version"] = "2022-11-28"
+    if headers[ "X-GitHub-Api-Version" ] == nil then
+        headers[ "X-GitHub-Api-Version" ] = "2022-11-28"
     end
 
     local href = "https://api.github.com" .. pathname
@@ -111,8 +111,8 @@ local function request( method, pathname, headers, body, do_cache )
         cache = do_cache ~= false
     } )
 
-    if ( result.status == 429 or result.status == 403 ) and headers["x-ratelimit-remaining"] == "0" then
-        local ratelimit_reset = raw_tonumber( headers["x-ratelimit-reset"], 10 )
+    if (result.status == 429 or result.status == 403) and headers[ "x-ratelimit-remaining" ] == "0" then
+        local ratelimit_reset = raw_tonumber( headers[ "x-ratelimit-reset" ], 10 )
         if ratelimit_reset == nil then
             error( "Github API rate limit exceeded (" .. tostring( result.status ) .. ") (" .. href .. ")" )
         else
@@ -138,7 +138,7 @@ github.request = request
 ---@async
 local function apiRequest( method, pathname, headers, body, do_cache )
     local result = request( method, pathname, headers, body, do_cache )
-    if not ( result.status >= 200 and result.status < 300 ) then
+    if not (result.status >= 200 and result.status < 300) then
         error( "failed to fetch data from Github API (" .. tostring( result.status ) .. ") (" .. tostring( pathname ) .. ")" )
     end
 

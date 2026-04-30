@@ -1,7 +1,7 @@
 local _G = _G
 
 ---@class dreamwork
-local dreamwork = _G.dreamwork
+local dreamwork = dreamwork
 if dreamwork.engine ~= nil then return end
 
 local std = dreamwork.std
@@ -24,10 +24,12 @@ local setmetatable = std.setmetatable
 local detour_attach = dreamwork.detour.attach
 
 ---@overload fun( event_name: string )
-local gameevent_Listen = debug_fempty
+local gameevent_Listen
 
-if _G.gameevent ~= nil then
-    gameevent_Listen = _G.gameevent.Listen or gameevent_Listen
+if gameevent ~= nil and gameevent.Listen ~= nil then
+    gameevent_Listen = gameevent.Listen
+else
+    gameevent_Listen = debug_fempty
 end
 
 --- [SHARED AND MENU]
@@ -126,7 +128,7 @@ if engine.hookCatch == nil then
         function engine.hookCall( event_name, ... )
             local callbacks = engine_hooks[ event_name ]
             if callbacks ~= nil then
-                return ( custom_handlers[ event_name ] or default_handler )( callbacks, ... )
+                return (custom_handlers[ event_name ] or default_handler)( callbacks, ... )
             end
         end
 
@@ -1052,7 +1054,7 @@ if std.LUA_CLIENT_SERVER then
     local network_names = {}
 
     ---@type integer
-    local network_limit = ( 2 ^ header_size ) - 1
+    local network_limit = (2 ^ header_size) - 1
 
     setmetatable( network_ids, {
         __index = function( self, network_name )
@@ -1224,7 +1226,6 @@ if std.LUA_CLIENT_SERVER then
             fn( remaining_bits, sender )
         end
 
-
         if glua_net.Start ~= nil then
 
             ---@param network_name string
@@ -1287,10 +1288,10 @@ if engine.loadMaterial == nil then
         local bit_band = std.bit.band
 
         local bit2params = {
-            { 1, "vertexlitgeneric" },
-            { 2, "nocull" },
-            { 4, "alphatest" },
-            { 8, "mips" },
+            { 1,  "vertexlitgeneric" },
+            { 2,  "nocull" },
+            { 4,  "alphatest" },
+            { 8,  "mips" },
             { 16, "noclamp" },
             { 32, "smooth" },
             { 64, "ignorez" }

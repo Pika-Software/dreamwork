@@ -1,5 +1,5 @@
 -- based on https://github.com/philanc/plc/blob/master/plc/chacha20.lua
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local bit = std.bit
 local bit_bxor = bit.bxor
@@ -28,21 +28,21 @@ local pack_writeUInt32 = pack.writeUInt32
 ---@param z integer
 ---@param w integer
 local function quarter_round( state, x, y, z, w )
-	local a, b, c, d = state[ x ], state[ y ], state[ z ], state[ w ]
+    local a, b, c, d = state[ x ], state[ y ], state[ z ], state[ w ]
 
     a = bit_band( a + b, 0xffffffff )
 
     local t = bit_bxor( d, a )
     d = bit_band( bit_bor( bit_lshift( t, 16 ), bit_rshift( t, 16 ) ), 0xffffffff )
-	c = bit_band( c + d, 0xffffffff )
+    c = bit_band( c + d, 0xffffffff )
 
     t = bit_bxor( b, c )
     b = bit_band( bit_bor( bit_lshift( t, 12 ), bit_rshift( t, 20 ) ), 0xffffffff )
-	a = bit_band( a + b, 0xffffffff )
+    a = bit_band( a + b, 0xffffffff )
 
     t = bit_bxor( d, a )
     d = bit_band( bit_bor( bit_lshift( t, 8 ), bit_rshift( t, 24 ) ), 0xffffffff )
-	c = bit_band( c + d, 0xffffffff )
+    c = bit_band( c + d, 0xffffffff )
 
     t = bit_bxor( b, c )
     b = bit_band( bit_bor( bit_lshift( t, 7 ), bit_rshift( t, 25 ) ), 0xffffffff )
@@ -170,7 +170,7 @@ local function chacha20( plain_text, key, nonce_str, counter )
         blocks[ block_count ] = pack_writeUInt32( bit_bxor( pack_readUInt32( plain_text, false, pointer + 60 ), bit_band( n3 + state[ 16 ], 0xffffffff ) ), false )
 
         counter = counter + 1
-        futures_yield( math_max( ( pointer * progress_multiplier ) - 0.01, 0.01 ), nil )
+        futures_yield( math_max( (pointer * progress_multiplier) - 0.01, 0.01 ), nil )
     end
 
     if length_remainder == 0 then
@@ -337,17 +337,17 @@ function crypto.xchacha20( plain_text, key, nonce, counter )
     }
 
     for _ = 1, 10, 1 do
-		quarter_round( state, 1, 5, 9, 13 )
-		quarter_round( state, 2, 6, 10, 14 )
-		quarter_round( state, 3, 7, 11, 15 )
-		quarter_round( state, 4, 8, 12, 16 )
-		quarter_round( state, 1, 6, 11, 16 )
-		quarter_round( state, 2, 7, 12, 13 )
-		quarter_round( state, 3, 8, 9, 14 )
-		quarter_round( state, 4, 5, 10, 15 )
-	end
+        quarter_round( state, 1, 5, 9, 13 )
+        quarter_round( state, 2, 6, 10, 14 )
+        quarter_round( state, 3, 7, 11, 15 )
+        quarter_round( state, 4, 8, 12, 16 )
+        quarter_round( state, 1, 6, 11, 16 )
+        quarter_round( state, 2, 7, 12, 13 )
+        quarter_round( state, 3, 8, 9, 14 )
+        quarter_round( state, 4, 5, 10, 15 )
+    end
 
-	chacha20(
+    chacha20(
         plain_text,
         table_concat( {
             pack_writeUInt32( state[ 1 ], false ),

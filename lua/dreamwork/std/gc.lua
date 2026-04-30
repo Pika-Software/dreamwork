@@ -1,5 +1,4 @@
-local _G = _G
-local collectgarbage = _G.collectgarbage
+local collectgarbage = collectgarbage
 
 if collectgarbage == nil then
     function collectgarbage( action )
@@ -12,7 +11,7 @@ if collectgarbage == nil then
 end
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 --- [SHARED AND MENU]
 ---

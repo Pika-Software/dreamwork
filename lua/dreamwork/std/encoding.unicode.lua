@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 

@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 local len = std.len
 
 --- [SHARED AND MENU]
@@ -125,9 +125,9 @@ if math.frexp == nil then
 
             local exponent = math_floor( math_log( math_abs( x ) ) / math_ln2 )
             if exponent > 0.0 then
-                x = x * ( 2.0 ^ -exponent )
+                x = x * (2.0 ^ -exponent)
             else
-                x = x / ( 2.0 ^ exponent )
+                x = x / (2.0 ^ exponent)
             end
 
             if math_abs( x ) >= 1.0 then
@@ -195,7 +195,7 @@ end
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_byte `true` if the number is an integer, otherwise `false`.
 function math.isbyte( x, signed )
-    if ( x % 1 ) ~= 0 then
+    if (x % 1) ~= 0 then
         return false
     elseif signed then
         return x >= -128 and x <= 127
@@ -212,7 +212,7 @@ end
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_short `true` if the number is an integer, otherwise `false`.
 function math.isshort( x, signed )
-    if ( x % 1 ) ~= 0 then
+    if (x % 1) ~= 0 then
         return false
     elseif signed then
         return x >= -32768 and x <= 32767
@@ -229,7 +229,7 @@ end
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_long `true` if the number is an integer, otherwise `false`.
 function math.islong( x, signed )
-    if ( x % 1 ) ~= 0 then
+    if (x % 1) ~= 0 then
         return false
     elseif signed then
         return x >= -2147483648 and x <= 2147483647
@@ -245,7 +245,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_uint `true` if the number is an integer, otherwise `false`.
 function math.isuint( x )
-    return x >= 0 and ( x % 1 ) == 0
+    return x >= 0 and (x % 1) == 0
 end
 
 --- [SHARED AND MENU]
@@ -254,8 +254,8 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_int `true` if the number is an integer, otherwise `false`.
- function math.isint( x )
-    return ( x % 1 ) == 0
+function math.isint( x )
+    return (x % 1) == 0
 end
 
 --- [SHARED AND MENU]
@@ -265,7 +265,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_float `true` if the number is a float, otherwise `false`.
 function math.isfloat( x )
-    return ( x % 1 ) ~= 0 and x >= 1.175494351E-38 and x <= 3.402823466E+38
+    return (x % 1) ~= 0 and x >= 1.175494351E-38 and x <= 3.402823466E+38
 end
 
 --- [SHARED AND MENU]
@@ -275,7 +275,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_double `true` if the number is a double, otherwise `false`.
 function math.isdouble( x )
-    return ( x % 1 ) ~= 0 and ( x < 1.175494351E-38 or x > 3.402823466E+38 )
+    return (x % 1) ~= 0 and (x < 1.175494351E-38 or x > 3.402823466E+38)
 end
 
 --- [SHARED AND MENU]
@@ -316,7 +316,7 @@ end
 ---@param b number The second number to check.
 ---@return boolean is_divideable `true` if the first number is divisible by the second number, otherwise `false`.
 function math.isdivideable( a, b )
-    return ( a % b ) == 0
+    return (a % b) == 0
 end
 
 --- [SHARED AND MENU]
@@ -326,7 +326,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_even `true` if the number is even, otherwise `false`.
 function math.iseven( x )
-    return x == 0 or ( x % 2 ) == 0
+    return x == 0 or (x % 2) == 0
 end
 
 --- [SHARED AND MENU]
@@ -336,7 +336,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_odd `true` if the number is odd, otherwise `false`.
 function math.isodd( x )
-    return x ~= 0 and ( x % 2 ) ~= 0
+    return x ~= 0 and (x % 2) ~= 0
 end
 
 --- [SHARED AND MENU]
@@ -346,7 +346,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_positive `true` if the number is positive, otherwise `false`.
 function math.ispositive( x )
-    return ( 1 / x ) > 0
+    return (1 / x) > 0
 end
 
 --- [SHARED AND MENU]
@@ -356,7 +356,7 @@ end
 ---@param x number The number to check.
 ---@return boolean is_negative `true` if the number is negative, otherwise `false`.
 function math.isnegative( x )
-    return ( 1 / x ) < 0
+    return (1 / x) < 0
 end
 
 --- [SHARED AND MENU]
@@ -371,7 +371,7 @@ function math.round( number, decimals )
         return math_floor( number + 0.5 )
     else
         local multiplier = 10 ^ decimals
-        return math_floor( ( number * multiplier ) + 0.5 ) / multiplier
+        return math_floor( (number * multiplier) + 0.5 ) / multiplier
     end
 end
 
@@ -383,7 +383,7 @@ end
 ---@param step number The step size to round to.
 ---@return number snapped The rounded number.
 function math.snap( number, step )
-    return math_floor( ( number / step ) + 0.5 ) * step
+    return math_floor( (number / step) + 0.5 ) * step
 end
 
 do
@@ -395,7 +395,7 @@ do
     ---@param number number The number to truncate.
     ---@return integer trunced The integer part of the number.
     local function math_trunc( number )
-        return ( number < 0 and math_ceil or math_floor )( number )
+        return (number < 0 and math_ceil or math_floor)( number )
     end
 
     math.trunc = math_trunc
@@ -445,7 +445,7 @@ do
     ---@param b number The maximum value.
     ---@return number float The random floating point number.
     function math.randomf( a, b )
-        return a + ( b - a ) * math_random()
+        return a + (b - a) * math_random()
     end
 
 end
@@ -461,8 +461,8 @@ do
     ---@return number value The square root of the sum of squares of its arguments.
     function math.hypot( numbers, number_count )
         local number = 0
-        for index = 1, ( number_count or len( numbers ) ), 1 do
-            number = number + ( numbers[ index ] ^ 2 )
+        for index = 1, (number_count or len( numbers )), 1 do
+            number = number + (numbers[ index ] ^ 2)
         end
 
         return math_sqrt( number )
@@ -494,7 +494,7 @@ end
 ---@param b number The base of the root.
 ---@return number root The root of the number.
 function math.root( a, b )
-    return a ^ ( 1 / b )
+    return a ^ (1 / b)
 end
 
 --- [SHARED AND MENU]
@@ -508,7 +508,7 @@ end
 function math.approach( current, target, change )
     local diff = target - current
     if diff < 0 then
-        return -( current + math_min( -diff, change ) )
+        return -(current + math_min( -diff, change ))
     else
         return current + math_min( diff, change )
     end
@@ -535,7 +535,7 @@ end
 ---@param to number The end number.
 ---@return number lerped The interpolated value.
 function math.lerp( fraction, from, to )
-    return from + ( to - from ) * fraction
+    return from + (to - from) * fraction
 end
 
 --- [SHARED AND MENU]
@@ -547,7 +547,7 @@ end
 ---@param to number The end number.
 ---@return number lerped The fraction of the way between the start and end numbers.
 function math.ilerp( result, from, to )
-    return ( result - from ) / ( to - from )
+    return (result - from) / (to - from)
 end
 
 --- [SHARED AND MENU]
@@ -559,7 +559,7 @@ end
 ---@param alpha number The amount of smoothing.
 ---@return number value The interpolated value.
 function math.smooth( previous, next, alpha )
-    return alpha * next + ( 1 - alpha ) * previous
+    return alpha * next + (1 - alpha) * previous
 end
 
 --- [SHARED AND MENU]
@@ -572,8 +572,8 @@ end
 ---@param outMin number The minimum value of the output range.
 ---@param outMax number The maximum value of the output range.
 ---@return number value The remapped value.
-function math.remap( number, inMin, inMax, outMin, outMax  )
-    return outMin + ( outMax - outMin ) * ( number - inMin ) / ( inMax - inMin )
+function math.remap( number, inMin, inMax, outMin, outMax )
+    return outMin + (outMax - outMin) * (number - inMin) / (inMax - inMin)
 end
 
 --- [SHARED AND MENU]
@@ -615,7 +615,7 @@ end
 ---@param angle number The angle to normalise.
 ---@return number normalised The normalised angle.
 local function angleNormalize( angle )
-    return ( ( angle + 180 ) % 360 ) - 180
+    return ((angle + 180) % 360) - 180
 end
 
 math.angleNormalize = angleNormalize
@@ -646,7 +646,7 @@ end
 ---@param y2 number The y coordinate of the second point.
 ---@return number magnitude The magnitude between the two points.
 local function magnitude( x1, y1, x2, y2 )
-    return math_sqrt( ( ( x2 - x1 ) ^ 2 ) + ( ( y2 - y1 ) ^ 2 ) )
+    return math_sqrt( ((x2 - x1) ^ 2) + ((y2 - y1) ^ 2) )
 end
 
 math.magnitude = magnitude
@@ -667,7 +667,7 @@ function math.direction( x1, y1, x2, y2 )
         return 0, 0
     end
 
-    return ( x2 - x1 ) / diff, ( y2 - y1 ) / diff
+    return (x2 - x1) / diff, (y2 - y1) / diff
 end
 
 --- [SHARED AND MENU]
@@ -697,7 +697,7 @@ end
 ---@param tolerance number? The maximum difference between the two numbers to consider them equal, default is `1e-8`.
 ---@return boolean is_nearly_equal `true` if the numbers are near, otherwise `false`.
 function math.isNear( a, b, tolerance )
-    return math_abs( a - b ) <= ( tolerance or 1e-8 )
+    return math_abs( a - b ) <= (tolerance or 1e-8)
 end
 
 --- [SHARED AND MENU]
@@ -710,7 +710,7 @@ end
 ---@return T number The number with the sign of y.
 function math.copySign( x, y )
     -- return ( ( x > 0 and y > 0 ) or ( x < 0 and y < 0 ) ) and x or -x -- x2 faster but miss -0 cases
-    return ( ( 1 / x ) > 0 ) == ( ( 1 / y ) > 0 ) and x or -x
+    return ((1 / x) > 0) == ((1 / y) > 0) and x or -x
 end
 
 --- [SHARED AND MENU]
@@ -722,7 +722,7 @@ end
 ---@param bit_count integer The bit count of the unsigned integer.
 ---@return T unsigned The unsigned integer.
 function math.toUInt( x, bit_count )
-    return x % ( 2 ^ bit_count )
+    return x % (2 ^ bit_count)
 end
 
 --- [SHARED AND MENU]
@@ -737,7 +737,7 @@ function math.toInt( x, bit_count )
     local uint_limit = 2 ^ bit_count
     x = x % uint_limit
 
-    if x < ( 2 ^ ( bit_count - 1 ) ) then
+    if x < (2 ^ (bit_count - 1)) then
         return x
     else
         return x - uint_limit
@@ -779,7 +779,7 @@ end
 ---@param number number The number to convert.
 ---@return number float The float32 number.
 function math.toFloat32( number )
-    return math_floor( ( number * 1e+06 ) + 0.5 ) * 1e-06
+    return math_floor( (number * 1e+06) + 0.5 ) * 1e-06
 end
 
 --- [SHARED AND MENU]
@@ -805,7 +805,7 @@ end
 ---@param fallback? integer The fallback position.
 ---@return integer relative The relative position.
 function math.relative( position, length, fallback )
-    if ( 0 - position ) > length then
+    if (0 - position) > length then
         return fallback or 1
     else
         return length + position + 1

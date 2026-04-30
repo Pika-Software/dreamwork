@@ -10,7 +10,7 @@
 
 --]]
 
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 
@@ -69,9 +69,9 @@ do
             if decode_map[ uint8 ] == nil then
                 decode_map[ uint8 ] = i
             elseif uint8 > 32 and uint8 < 127 then
-                error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. ( i + 1 ) .. "]", 2 )
+                error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. (i + 1) .. "]", 2 )
             else
-                error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. ( i + 1 ) .. "]", 2 )
+                error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. (i + 1) .. "]", 2 )
             end
         end
 
@@ -253,7 +253,7 @@ function base64.encode( raw_str, options )
     local pad = options.pad
 
     local str_length = string_len( raw_str )
-	local remainder = str_length % 3
+    local remainder = str_length % 3
 
     local blocks, block_count = {}, 0
 
@@ -264,9 +264,9 @@ function base64.encode( raw_str, options )
     end
 
     for i = 1, str_length - remainder, 3 do
-		block_count = block_count + 1
-		blocks[ block_count ] = block_encode( encode_map, do_cache, cache_map, string_byte( raw_str, i, i + 2 ) )
-	end
+        block_count = block_count + 1
+        blocks[ block_count ] = block_encode( encode_map, do_cache, cache_map, string_byte( raw_str, i, i + 2 ) )
+    end
 
     if remainder == 2 then
         local str_block = block_encode( encode_map, do_cache, cache_map, string_byte( raw_str, str_length - 1, str_length ) )
@@ -277,7 +277,7 @@ function base64.encode( raw_str, options )
 
         block_count = block_count + 1
         blocks[ block_count ] = str_block
-	elseif remainder == 1 then
+    elseif remainder == 1 then
         local str_block = block_encode( encode_map, do_cache, cache_map, string_byte( raw_str, str_length ) )
 
         if pad ~= nil then
@@ -285,8 +285,8 @@ function base64.encode( raw_str, options )
         end
 
         block_count = block_count + 1
-		blocks[ block_count ] = str_block
-	end
+        blocks[ block_count ] = str_block
+    end
 
     local str_base64 = table_concat( blocks, "", 1, block_count )
 
@@ -341,25 +341,25 @@ local function block_decode( decode_map, do_cache, cache_map, uint8_1, uint8_2, 
 
         return str_block
     elseif uint8_3 == nil then
-        local bit_sum = ( decode_map[ uint8_1 ] * 0x40000 ) +
-            ( decode_map[ uint8_2 ] * 0x1000 )
+        local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
+            (decode_map[ uint8_2 ] * 0x1000)
 
         return string_char(
             bit_extract( bit_sum, 16, 8 )
         )
     elseif uint8_4 == nil then
-        local bit_sum = ( decode_map[ uint8_1 ] * 0x40000 ) +
-            ( decode_map[ uint8_2 ] * 0x1000 ) +
-            ( decode_map[ uint8_3 ] * 0x40 )
+        local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
+            (decode_map[ uint8_2 ] * 0x1000) +
+            (decode_map[ uint8_3 ] * 0x40)
 
         return string_char(
             bit_extract( bit_sum, 16, 8 ),
             bit_extract( bit_sum, 8, 8 )
         )
     else
-        local bit_sum = ( decode_map[ uint8_1 ] * 0x40000 ) +
-            ( decode_map[ uint8_2 ] * 0x1000 ) +
-            ( decode_map[ uint8_3 ] * 0x40 ) +
+        local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
+            (decode_map[ uint8_2 ] * 0x1000) +
+            (decode_map[ uint8_3 ] * 0x40) +
             decode_map[ uint8_4 ]
 
         return string_char(
@@ -509,15 +509,15 @@ do
             local end_position = start_position + 3
             local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( base64_str, start_position, end_position )
 
-            if not ( alphabet[ uint8_1 ] and alphabet[ uint8_2 ] ) then
+            if not (alphabet[ uint8_1 ] and alphabet[ uint8_2 ]) then
                 return false, "string contains invalid characters"
             end
 
             if end_position == base_str_length then
-                if not ( ( alphabet[ uint8_3 ] or uint8_3 == pad_byte ) and ( alphabet[ uint8_4 ] or uint8_4 == pad_byte ) ) then
+                if not ((alphabet[ uint8_3 ] or uint8_3 == pad_byte) and (alphabet[ uint8_4 ] or uint8_4 == pad_byte)) then
                     return false, "string contains invalid characters"
                 end
-            elseif not ( alphabet[ uint8_3 ] and alphabet[ uint8_4 ] ) then
+            elseif not (alphabet[ uint8_3 ] and alphabet[ uint8_4 ]) then
                 return false, "string contains invalid characters"
             end
         end

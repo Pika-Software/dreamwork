@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@class dreamwork.std.chat
 local chat = {}

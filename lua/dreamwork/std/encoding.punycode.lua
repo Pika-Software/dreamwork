@@ -4,7 +4,7 @@
 
 --]]
 
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 
@@ -96,11 +96,11 @@ local function pack( codepoints, codepoint_count, ignore_prefix, lax )
         -- Increase `delta` enough to advance the decoder's <n,i> state to
         -- <m,0>, but guard against overflow.
         local handled_plus_one = handled + 1
-        if ( upper_cp - lower_cp ) > math_floor( ( 0x7FFFFFFF - delta ) / handled_plus_one ) then
+        if (upper_cp - lower_cp) > math_floor( (0x7FFFFFFF - delta) / handled_plus_one ) then
             return nil, "overflow exception occurred"
         end
 
-        delta = delta + ( upper_cp - lower_cp ) * handled_plus_one
+        delta = delta + (upper_cp - lower_cp) * handled_plus_one
         lower_cp = upper_cp
 
         for i = 1, codepoint_count, 1 do
@@ -121,7 +121,7 @@ local function pack( codepoints, codepoint_count, ignore_prefix, lax )
 
                     if k <= bias then
                         t = 0x1
-                    elseif k >= ( bias + 0x1A ) then
+                    elseif k >= (bias + 0x1A) then
                         t = 0x1A
                     else
                         t = k - bias
@@ -174,7 +174,7 @@ local function pack( codepoints, codepoint_count, ignore_prefix, lax )
                     k = k + 0x24
                 end
 
-                bias = k + math_floor( 0x24 * delta / ( delta + 0x26 ) )
+                bias = k + math_floor( 0x24 * delta / (delta + 0x26) )
                 handled = handled + 1
                 delta = 0
             end
@@ -276,7 +276,7 @@ do
                     digit = 0x24
                 end
 
-                if digit >= 0x24 or digit > math_floor( ( 0x7FFFFFFF - delta_init ) / w ) then
+                if digit >= 0x24 or digit > math_floor( (0x7FFFFFFF - delta_init) / w ) then
                     return nil, nil, "overflow exception occurred"
                 end
 
@@ -284,7 +284,7 @@ do
 
                 local t
                 if k > bias then
-                    if k < ( bias + 0x1A ) then
+                    if k < (bias + 0x1A) then
                         t = k - bias
                     else
                         t = 0x1A
@@ -326,13 +326,13 @@ do
                 k = k + 0x24
             end
 
-            bias = k + math_floor( 0x24 * delta / ( delta + 0x26 ) )
+            bias = k + math_floor( 0x24 * delta / (delta + 0x26) )
 
             -- `delta_init` was supposed to wrap around from `out` to `0`,
             -- incrementing `unicode_init` each time, so we'll fix that now:
             local i_div_out = math_floor( delta_init / out )
 
-            if i_div_out > ( 0x7FFFFFFF - unicode_init ) then
+            if i_div_out > (0x7FFFFFFF - unicode_init) then
                 return nil, nil, "overflow exception occurred"
             end
 

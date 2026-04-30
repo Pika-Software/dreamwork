@@ -1,7 +1,7 @@
 local _G = _G
 
 ---@class dreamwork
-local dreamwork = _G.dreamwork
+local dreamwork = dreamwork
 
 local std = dreamwork.std
 local class = std.class

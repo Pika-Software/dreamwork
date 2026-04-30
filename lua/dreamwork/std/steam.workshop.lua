@@ -1,6 +1,4 @@
-local _G = _G
-local dreamwork = _G.dreamwork
-local glua_steamworks = _G.steamworks
+local glua_steamworks = steamworks
 
 local std = dreamwork.std
 
@@ -152,9 +150,9 @@ local EWorkshopFileType = {
 
 do
 
-    local meta =  {
+    local meta = {
         __index = function( _, code )
-            return "unknown code (" .. ( code or "nil" ) .. ")"
+            return "unknown code (" .. (code or "nil") .. ")"
         end
     }
 
@@ -696,7 +694,7 @@ end
 
 -- https://github.com/WilliamVenner/gmsv_workshop
 ---@diagnostic disable-next-line: undefined-field
-if std.LUA_SERVER and not ( std.isTable( _G.steamworks ) and std.isFunction( _G.steamworks.DownloadUGC ) ) then
+if std.LUA_SERVER and not (std.isTable( steamworks ) and std.isFunction( steamworks.DownloadUGC )) then
     if std.loadbinary( "workshop" ) then
         dreamwork.Logger:info( "'gmsv_workshop' was loaded & connected as server-side Steam Workshop API." )
     else
@@ -800,7 +798,7 @@ do
     function workshop.search( params, timeout )
         local f = futures_Future()
 
-        glua_steamworks.GetList( type2type[ params.type or "latest" ], params.tags, math_max( 0, params.offset or 0 ), math_clamp( params.count or 50, 1, 50 ), math_clamp( params.days or 365, 1, 365 ), params.owned and "1" or ( params.steamid64 or "0" ), function( data )
+        glua_steamworks.GetList( type2type[ params.type or "latest" ], params.tags, math_max( 0, params.offset or 0 ), math_clamp( params.count or 50, 1, 50 ), math_clamp( params.days or 365, 1, 365 ), params.owned and "1" or (params.steamid64 or "0"), function( data )
             f:setResult( data )
         end )
 

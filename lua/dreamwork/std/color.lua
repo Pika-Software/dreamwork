@@ -1,7 +1,7 @@
 local _G = _G
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local math, string, bit = std.math, std.string, std.bit
 local isNumber, setmetatable = std.isNumber, std.setmetatable
@@ -180,13 +180,13 @@ end
 ---@param other dreamwork.std.Color
 ---@protected
 function Color:__lt( other )
-    return ( self.r + self.g + self.b + self.a ) < ( other.r + other.g + other.b + other.a )
+    return (self.r + self.g + self.b + self.a) < (other.r + other.g + other.b + other.a)
 end
 
 ---@param other dreamwork.std.Color
 ---@protected
 function Color:__le( other )
-    return ( self.r + self.g + self.b + self.a ) <= ( other.r + other.g + other.b + other.a )
+    return (self.r + self.g + self.b + self.a) <= (other.r + other.g + other.b + other.a)
 end
 
 ---@param value dreamwork.std.Color
@@ -313,24 +313,24 @@ function Color:toHSL()
     local red, green, blue = self.r * DIV255_CONST, self.g * DIV255_CONST, self.b * DIV255_CONST
     local min_value, max_value = math_min( red, green, blue ), math_max( red, green, blue )
 
-    local lightness = ( max_value + min_value ) * 0.5
+    local lightness = (max_value + min_value) * 0.5
 
     local delta = max_value - min_value
     if delta ~= 0 then
         local saturation
         if lightness > 0.5 then
-            saturation = delta / ( 2.0 - ( max_value - min_value ) )
+            saturation = delta / (2.0 - (max_value - min_value))
         else
-            saturation = delta / ( max_value + min_value )
+            saturation = delta / (max_value + min_value)
         end
 
         local hue
         if max_value == red then
-            hue = ( ( green - blue ) / delta ) % 6
+            hue = ((green - blue) / delta) % 6
         elseif max_value == green then
-            hue = ( ( blue - red ) / delta ) + 2
+            hue = ((blue - red) / delta) + 2
         else
-            hue = ( ( red - green ) / delta ) + 4
+            hue = ((red - green) / delta) + 4
         end
 
         hue = hue * 60
@@ -364,11 +364,11 @@ function Color:toHSV()
     if delta == 0 then
         hue = 0
     elseif max_value == red then
-        hue = ( ( green - blue ) / delta ) % 6
+        hue = ((green - blue) / delta) % 6
     elseif max_value == green then
-        hue = ( ( blue - red ) / delta ) + 2
+        hue = ((blue - red) / delta) + 2
     else
-        hue = ( ( red - green ) / delta ) + 4
+        hue = ((red - green) / delta) + 4
     end
 
     hue = hue * 60
@@ -385,7 +385,7 @@ end
 ---@return number blackness The blackness as fraction [0, 1].
 function Color:toHWB()
     local hue, saturation, brightness = self:toHSL()
-    return hue, ( 1 - saturation ) * brightness, 1 - brightness
+    return hue, (1 - saturation) * brightness, 1 - brightness
 end
 
 --- [SHARED AND MENU]
@@ -398,7 +398,7 @@ end
 ---@return number black The black as fraction [0, 1].
 function Color:toCMYK()
     local m = math_max( self.r, self.g, self.b )
-    return ( m - self.r ) / m, ( m - self.g ) / m, ( m - self.b ) / m, math_min( self.r, self.g, self.b ) * DIV255_CONST
+    return (m - self.r) / m, (m - self.g) / m, (m - self.b) / m, math_min( self.r, self.g, self.b ) * DIV255_CONST
 end
 
 do
@@ -457,11 +457,11 @@ function Color:getHue()
 
     local hue
     if max_value == red then
-        hue = ( ( green - blue ) / delta ) % 6
+        hue = ((green - blue) / delta) % 6
     elseif max_value == green then
-        hue = ( ( blue - red ) / delta ) + 2
+        hue = ((blue - red) / delta) + 2
     else
-        hue = ( ( red - green ) / delta ) + 4
+        hue = ((red - green) / delta) + 4
     end
 
     hue = hue * 60
@@ -488,7 +488,7 @@ end
 function Color:getSaturation()
     local red, green, blue = self.r * DIV255_CONST, self.g * DIV255_CONST, self.b * DIV255_CONST
     local max_value = math_max( red, green, blue )
-    return max_value == 0 and 0 or ( max_value - math_min( red, green, blue ) ) / max_value
+    return max_value == 0 and 0 or (max_value - math_min( red, green, blue )) / max_value
 end
 
 --- [SHARED AND MENU]
@@ -529,7 +529,7 @@ end
 ---@return number lightness The lightness as fraction [0, 1].
 function Color:getLightness()
     local red, green, blue = self.r * DIV255_CONST, self.g * DIV255_CONST, self.b * DIV255_CONST
-    return ( math_max( red, green, blue ) + math_min( red, green, blue ) ) * 0.5
+    return (math_max( red, green, blue ) + math_min( red, green, blue )) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -550,7 +550,7 @@ end
 ---@return number whiteness The whiteness as fraction [0, 1].
 function Color:getWhiteness()
     local _, saturation, brightness = self:toHSL()
-    return ( 1 - saturation ) * brightness
+    return (1 - saturation) * brightness
 end
 
 --- [SHARED AND MENU]
@@ -783,9 +783,9 @@ end
 function Color:fromHSL( hue, saturation, lightness )
     hue = hue % 360
 
-    local c = ( 1 - math_abs( 2 * lightness - 1 ) ) * saturation
-    local x = c * ( 1 - math_abs( ( hue / 60 ) % 2 - 1 ) )
-    local m = lightness - ( c * 0.5 )
+    local c = (1 - math_abs( 2 * lightness - 1 )) * saturation
+    local x = c * (1 - math_abs( (hue / 60) % 2 - 1 ))
+    local m = lightness - (c * 0.5)
 
     local r, g, b
     if hue < 60 then
@@ -802,9 +802,9 @@ function Color:fromHSL( hue, saturation, lightness )
         r, g, b = c, 0, x
     end
 
-    self.r = math_floor( ( r + m ) * 255 )
-    self.g = math_floor( ( g + m ) * 255 )
-    self.b = math_floor( ( b + m ) * 255 )
+    self.r = math_floor( (r + m) * 255 )
+    self.g = math_floor( (g + m) * 255 )
+    self.b = math_floor( (b + m) * 255 )
     return self
 end
 
@@ -832,7 +832,7 @@ function Color:fromHSV( hue, saturation, brightness )
     hue = hue % 360
 
     local c = brightness * saturation
-    local x = c * ( 1 - math_abs( ( hue / 60 ) % 2 - 1 ) )
+    local x = c * (1 - math_abs( (hue / 60) % 2 - 1 ))
     local m = brightness - c
 
     local r, g, b
@@ -850,9 +850,9 @@ function Color:fromHSV( hue, saturation, brightness )
         r, g, b = c, 0, x
     end
 
-    self.r = math_floor( ( r + m ) * 255 )
-    self.g = math_floor( ( g + m ) * 255 )
-    self.b = math_floor( ( b + m ) * 255 )
+    self.r = math_floor( (r + m) * 255 )
+    self.g = math_floor( (g + m) * 255 )
+    self.b = math_floor( (b + m) * 255 )
     return self
 end
 
@@ -878,7 +878,7 @@ end
 ---@return dreamwork.std.Color color The color object.
 function Color:fromHWB( hue, saturation, brightness )
     brightness = 1 - brightness
-    return self:fromHSV( hue, ( brightness > 0 ) and ( 1 - ( saturation / brightness ) ) or 0, brightness )
+    return self:fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness )
 end
 
 --- [SHARED AND MENU]
@@ -907,9 +907,9 @@ function Color:fromCMYK( cyan, magenta, yellow, black )
 
     local mk = 1 - black
 
-    self.r = math_floor( ( ( 1 - cyan ) * mk ) * 255 )
-    self.g = math_floor( ( ( 1 - magenta ) * mk ) * 255 )
-    self.b = math_floor( ( ( 1 - yellow ) * mk ) * 255 )
+    self.r = math_floor( ((1 - cyan) * mk) * 255 )
+    self.g = math_floor( ((1 - magenta) * mk) * 255 )
+    self.b = math_floor( ((1 - yellow) * mk) * 255 )
     return self
 end
 

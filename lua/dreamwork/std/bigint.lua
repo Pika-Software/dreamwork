@@ -7,7 +7,7 @@
 local _G = _G
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local math = std.math
 local table = std.table
@@ -75,34 +75,79 @@ local function copy( object )
     if length < 5 then
         return setmetatable( {
             [ 0 ] = object[ 0 ],
-            object[ 1 ], object[ 2 ], object[ 3 ], object[ 4 ]
+            object[ 1 ],
+            object[ 2 ],
+            object[ 3 ],
+            object[ 4 ]
         }, BigInt )
     elseif length < 9 then
         return setmetatable( {
             [ 0 ] = object[ 0 ],
-            object[ 1 ], object[ 2 ], object[ 3 ], object[ 4 ],
-            object[ 5 ], object[ 6 ], object[ 7 ], object[ 8 ]
+            object[ 1 ],
+            object[ 2 ],
+            object[ 3 ],
+            object[ 4 ],
+            object[ 5 ],
+            object[ 6 ],
+            object[ 7 ],
+            object[ 8 ]
         }, BigInt )
     elseif length < 17 then
         return setmetatable( {
             [ 0 ] = object[ 0 ],
-            object[ 1 ], object[ 2 ], object[ 3 ], object[ 4 ],
-            object[ 5 ], object[ 6 ], object[ 7 ], object[ 8 ],
-            object[ 9 ], object[ 10 ], object[ 11 ], object[ 12 ],
-            object[ 13 ], object[ 14 ], object[ 15 ], object[ 16 ]
+            object[ 1 ],
+            object[ 2 ],
+            object[ 3 ],
+            object[ 4 ],
+            object[ 5 ],
+            object[ 6 ],
+            object[ 7 ],
+            object[ 8 ],
+            object[ 9 ],
+            object[ 10 ],
+            object[ 11 ],
+            object[ 12 ],
+            object[ 13 ],
+            object[ 14 ],
+            object[ 15 ],
+            object[ 16 ]
         }, BigInt )
 
     elseif length < 33 then
         return setmetatable( {
             [ 0 ] = object[ 0 ],
-            object[ 1 ], object[ 2 ], object[ 3 ], object[ 4 ],
-            object[ 5 ], object[ 6 ], object[ 7 ], object[ 8 ],
-            object[ 9 ], object[ 10 ], object[ 11 ], object[ 12 ],
-            object[ 13 ], object[ 14 ], object[ 15 ], object[ 16 ],
-            object[ 17 ], object[ 18 ], object[ 19 ], object[ 20 ],
-            object[ 21 ], object[ 22 ], object[ 23 ], object[ 24 ],
-            object[ 25 ], object[ 26 ], object[ 27 ], object[ 28 ],
-            object[ 29 ], object[ 30 ], object[ 31 ], object[ 32 ]
+            object[ 1 ],
+            object[ 2 ],
+            object[ 3 ],
+            object[ 4 ],
+            object[ 5 ],
+            object[ 6 ],
+            object[ 7 ],
+            object[ 8 ],
+            object[ 9 ],
+            object[ 10 ],
+            object[ 11 ],
+            object[ 12 ],
+            object[ 13 ],
+            object[ 14 ],
+            object[ 15 ],
+            object[ 16 ],
+            object[ 17 ],
+            object[ 18 ],
+            object[ 19 ],
+            object[ 20 ],
+            object[ 21 ],
+            object[ 22 ],
+            object[ 23 ],
+            object[ 24 ],
+            object[ 25 ],
+            object[ 26 ],
+            object[ 27 ],
+            object[ 28 ],
+            object[ 29 ],
+            object[ 30 ],
+            object[ 31 ],
+            object[ 32 ]
         }, BigInt )
     elseif length > 8192 then
         local object_copy = { [ 0 ] = object[ 0 ] }
@@ -349,7 +394,7 @@ do
                 for i = 1, byte_count, 1 do
                     local byte_value = object[ i ]
 
-                    local from = ( i - 1 ) * 8 + 1
+                    local from = (i - 1) * 8 + 1
                     for j = from, from + 7, 1 do
                         if byte_value == 0 then
                             -- if i == byte_count then
@@ -427,7 +472,7 @@ do
                     -- multiply by 256
                     j, carry = 1, 0
                     while result[ j ] ~= nil or carry ~= 0 do
-                        local product = ( result[ j ] or 0 ) * 256 + carry
+                        local product = (result[ j ] or 0) * 256 + carry
                         result[ j ] = product % base
                         j, carry = j + 1, math_floor( product / base )
                     end
@@ -435,7 +480,7 @@ do
                     -- add byte
                     j, carry = 1, object[ i ]
                     while carry ~= 0 do
-                        local sum = ( result[ j ] or 0 ) + carry
+                        local sum = (result[ j ] or 0) + carry
                         result[ j ] = sum % base
                         j, carry = j + 1, math_floor( sum / base )
                     end
@@ -549,7 +594,7 @@ do
             ---@param start_position? integer The start position in the binary data string.
             ---@return dreamwork.std.BigInt object The big integer object.
             local function fromBinary( object, str, byte_count, big_endian, start_position, signed )
-                return fromBytes( object, { string_byte( str, start_position, ( start_position + byte_count ) - 1 ) }, byte_count, signed == true, big_endian == true )
+                return fromBytes( object, { string_byte( str, start_position, (start_position + byte_count) - 1 ) }, byte_count, signed == true, big_endian == true )
             end
 
             --- [SHARED AND MENU]
@@ -667,10 +712,10 @@ do
             digits_start = digits_start + 1
 
             local prefix = string_byte( str, digits_start )
-            if ( base == nil or base == 16 ) and prefix == 0x78 then      -- "x"
+            if (base == nil or base == 16) and prefix == 0x78 then   -- "x"
                 base = 16
                 digits_start = digits_start + 1
-            elseif ( base == nil or base == 2 ) and prefix == 0x62 then   -- "b"
+            elseif (base == nil or base == 2) and prefix == 0x62 then   -- "b"
                 base = 2
                 digits_start = digits_start + 1
             end
@@ -710,7 +755,7 @@ do
             -- multiply by base
             j, carry = 1, 0
             while object[ j ] ~= nil or carry ~= 0 do
-                local product = ( object[ j ] or 0 ) * base + carry
+                local product = (object[ j ] or 0) * base + carry
                 object[ j ] = product % 256
                 carry = math_floor( product * 0.00390625 )
                 j = j + 1
@@ -719,7 +764,7 @@ do
             -- add digit
             j, carry = 1, tonumber( string_sub( str, i, i ), base ) or 0
             while carry ~= 0 do
-                local sum = ( object[ j ] or 0 ) + carry
+                local sum = (object[ j ] or 0) + carry
                 object[ j ] = sum % 256
                 carry = math_floor( sum * 0.00390625 )
                 j = j + 1
@@ -808,7 +853,7 @@ do
 
         local result = 0
         for i = #object, 1, -1 do
-            result = ( result * 256 ) + object[ i ]
+            result = (result * 256) + object[ i ]
         end
 
         return result * object[ 0 ]
@@ -944,14 +989,14 @@ do
             return object
         end
 
-        local shift_size, unshift_size = 2 ^ shift_bits, 2 ^ ( 8 - shift_bits )
+        local shift_size, unshift_size = 2 ^ shift_bits, 2 ^ (8 - shift_bits)
 
         for i = byte_count, shift_bytes + 1, -1 do
             local overflow = math_floor( object[ i ] / unshift_size )
-            object[ i ] = ( object[ i ] * shift_size ) % 256
+            object[ i ] = (object[ i ] * shift_size) % 256
 
             if overflow ~= 0 then
-                object[ i + 1 ] = ( object[ i + 1 ] or 0 ) + overflow
+                object[ i + 1 ] = (object[ i + 1 ] or 0) + overflow
             end
         end
 
@@ -1008,7 +1053,7 @@ do
             return object
         end
 
-        local shift_size, unshift_size = 2 ^ shift_bits, 2 ^ ( 8 - shift_bits )
+        local shift_size, unshift_size = 2 ^ shift_bits, 2 ^ (8 - shift_bits)
 
         for i = 1, byte_count, 1 do
             local overflow = object[ i ] % shift_size
@@ -1081,7 +1126,7 @@ do
             local byte_value2 = other[ i ] or 0
 
             for _ = 1, 8, 1 do
-                if ( byte_value1 % 2 ) >= 1 or ( byte_value2 % 2 ) >= 1 then
+                if (byte_value1 % 2) >= 1 or (byte_value2 % 2) >= 1 then
                     result = result + bit_number
                 end
 
@@ -1151,7 +1196,7 @@ do
             local byte_value1_copy = byte_value1
 
             for _ = 1, 8, 1 do
-                if ( byte_value1 % 2 ) >= 1 and ( byte_value2 % 2 ) >= 1 then
+                if (byte_value1 % 2) >= 1 and (byte_value2 % 2) >= 1 then
                     result = result + bit_number
                 end
 
@@ -1223,7 +1268,7 @@ do
             local result = 0
 
             for _ = 1, 8, 1 do
-                if ( ( byte_value1 % 2 ) >= 1 ) ~= ( ( byte_value2 % 2 ) >= 1 ) then
+                if ((byte_value1 % 2) >= 1) ~= ((byte_value2 % 2) >= 1) then
                     result = result + bit_number
                 end
 
@@ -1284,7 +1329,7 @@ do
 
             local byte_value = object[ i ]
             for _ = 1, 8, 1 do
-                if ( byte_value % 2 ) < 1 then
+                if (byte_value % 2) < 1 then
                     result = result + bit_number
                 end
 
@@ -1338,7 +1383,7 @@ function BigInt:getBit( index )
     if byte_value == nil or byte_value == 0 then
         return false
     else
-        return math_floor( byte_value / ( 2 ^ ( index % 8 ) ) ) % 2 == 1
+        return math_floor( byte_value / (2 ^ (index % 8)) ) % 2 == 1
     end
 end
 
@@ -1371,10 +1416,10 @@ function BigInt:setBits( ... )
             byte_count = byte_number
         end
 
-        local bit_number = 2 ^ ( selected_bit % 8 )
+        local bit_number = 2 ^ (selected_bit % 8)
         local byte_value = self[ byte_number ]
 
-        if ( byte_value / bit_number ) % 2 < 1 then
+        if (byte_value / bit_number) % 2 < 1 then
             self[ byte_number ] = byte_value + bit_number
         end
     end
@@ -1411,8 +1456,8 @@ function BigInt:unsetBits( ... )
 
         local byte_value = self[ byte_number ]
         if byte_value ~= nil then
-            local bit_number = 2 ^ ( selected_bit % 8 )
-            if ( byte_value / bit_number ) % 2 >= 1 then
+            local bit_number = 2 ^ (selected_bit % 8)
+            if (byte_value / bit_number) % 2 >= 1 then
                 self[ byte_number ] = byte_value - bit_number
                 changed = true
             end
@@ -1441,7 +1486,7 @@ local function add( object, other )
     end
 
     -- determine sign, operation, and order of operands
-    local subtract, swap_order, change_sign = false, false,false
+    local subtract, swap_order, change_sign = false, false, false
 
     if object[ 0 ] == other[ 0 ] then
         if #object < #other then
@@ -1475,9 +1520,9 @@ local function add( object, other )
         local total
 
         if subtract then
-            total = ( object1[ i ] or 0 ) - ( object2[ i ] or 0 ) + carry
+            total = (object1[ i ] or 0) - (object2[ i ] or 0) + carry
         else
-            total = ( object1[ i ] or 0 ) + ( object2[ i ] or 0 ) + carry
+            total = (object1[ i ] or 0) + (object2[ i ] or 0) + carry
         end
 
         if not subtract and total >= 256 then
@@ -1607,7 +1652,7 @@ local function mul( object, other )
             local j = 1
             while j <= object1_size do
                 local ri = i + j - 1
-                local product = object1[ j ] * object2[ i ] + carry + ( result[ ri ] or 0 )
+                local product = object1[ j ] * object2[ i ] + carry + (result[ ri ] or 0)
 
                 -- add product to result
                 result[ ri ] = product % 256
@@ -1618,7 +1663,7 @@ local function mul( object, other )
             -- finish adding carry
             while carry ~= 0 do
                 local ri = i + j - 1
-                local sum = ( result[ ri ] or 0 ) + carry
+                local sum = (result[ ri ] or 0) + carry
 
                 result[ ri ] = sum % 256
                 carry = math_floor( sum * 0.00390625 )
@@ -1733,7 +1778,7 @@ do
 
                     while i <= size or carry ~= 0 do
                         local j = di + i - 1
-                        local diff = ( object_copy[ j ] or 0 ) - ( other_copy[ i ] or 0 ) + carry
+                        local diff = (object_copy[ j ] or 0) - (other_copy[ i ] or 0) + carry
                         if diff < 0 then
                             carry = -1
                             diff = diff + 256
@@ -1835,7 +1880,7 @@ do
         if self[ 0 ] == 0 then return nil end
 
         local byte_count = #self
-        local byte_number = ( byte_count - 1 ) * 8
+        local byte_number = (byte_count - 1) * 8
 
         local byte = self[ byte_count ]
 
@@ -1912,7 +1957,7 @@ do
         if power ~= nil then
             -- assumes other isn't so big that precision becomes an issue
             local object_copy = copy( object )
-            bit_lshift( object_copy, ( toInteger( object_copy ) - 1 ) * power )
+            bit_lshift( object_copy, (toInteger( object_copy ) - 1) * power )
             object_copy.sign = sign
             return object_copy
         end
@@ -1959,7 +2004,7 @@ function BigInt:toSigned( byte_amt )
         error( "Two's complement overflow.", 2 )
     end
 
-    if self[ 0 ] == 1 and ( self[ size ] or 0 ) > 0x7f then
+    if self[ 0 ] == 1 and (self[ size ] or 0) > 0x7f then
         bnot( self, size )
         add( self, one )
         self[ 0 ] = -1

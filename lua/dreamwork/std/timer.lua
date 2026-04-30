@@ -4,7 +4,7 @@ if timer == nil then
 end
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 if std.Timer ~= nil then
     return
@@ -186,7 +186,7 @@ do
             return names[ self ] or "unknown"
         elseif key == "state" then
             local name = names[ self ]
-            if name ~= nil and timer_Exists( name ) and ( timer_TimeLeft( name ) or 0 ) < 0 then
+            if name ~= nil and timer_Exists( name ) and (timer_TimeLeft( name ) or 0) < 0 then
                 return 1
             else
                 return states[ self ] or 0
@@ -255,7 +255,7 @@ do
             end
         elseif key == "time_elapsed" then
             local interval = self.interval
-            return ( self.repetition_index * interval ) - ( self.time_left - interval )
+            return (self.repetition_index * interval) - (self.time_left - interval)
         elseif string_sub( key, 1, 2 ) == "__" then
             error( "unknown key '" .. key .. "'", 2 )
         else

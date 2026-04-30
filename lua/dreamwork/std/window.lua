@@ -1,8 +1,6 @@
-local _G = _G
-local dreamwork = _G.dreamwork
-
 ---@class dreamwork.std
 local std = dreamwork.std
+local _G = _G
 
 --- [CLIENT AND MENU]
 ---

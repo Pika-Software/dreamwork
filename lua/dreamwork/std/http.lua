@@ -16,13 +16,13 @@ if std.loadbinary( "reqwest" ) then
     local reqwest = _G.reqwest
 
     local user_agent = "DreamWork/" .. dreamwork.VERSION .. " - Garry's Mod/" .. _G.VERSIONSTR
-    local default_headers = { ["User-Agent"] = user_agent }
+    local default_headers = { [ "User-Agent" ] = user_agent }
 
     function http_client( parameters )
         if parameters.headers == nil then
             parameters.headers = default_headers
-        elseif parameters.headers["User-Agent"] == nil then
-            parameters.headers["User-Agent"] = user_agent
+        elseif parameters.headers[ "User-Agent" ] == nil then
+            parameters.headers[ "User-Agent" ] = user_agent
         end
 
         reqwest( parameters )
@@ -131,9 +131,11 @@ if http.StatusCodes == nil then
         [ 505 ] = "HTTP Version Not Supported - Unsupported HTTP version"
     }
 
-    std.setmetatable( http.StatusCodes, { __index = function( _, code )
-        return "Unknown status code (" .. code .. ")"
-    end } )
+    std.setmetatable( http.StatusCodes, {
+        __index = function( _, code )
+            return "Unknown status code (" .. code .. ")"
+        end
+    } )
 
 end
 

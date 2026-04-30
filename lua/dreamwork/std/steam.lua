@@ -2,7 +2,7 @@ local _G = _G
 local glua_system = _G.system
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 --- [SHARED AND MENU]
 ---

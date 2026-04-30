@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@class dreamwork.std.hash
 local hash = std.hash
@@ -42,7 +42,7 @@ function hash.fnv1( str )
     local hash_int = 0x811c9dc5
 
     for index = 1, string_len( str ), 1 do
-        hash_int = hash_int + bit_lshift( hash_int, 1 ) + bit_lshift( hash_int, 4 ) + bit_lshift( hash_int, 7 ) + bit_lshift( hash_int, 8 ) +bit_lshift( hash_int, 24 )
+        hash_int = hash_int + bit_lshift( hash_int, 1 ) + bit_lshift( hash_int, 4 ) + bit_lshift( hash_int, 7 ) + bit_lshift( hash_int, 8 ) + bit_lshift( hash_int, 24 )
         hash_int = bit_bxor( hash_int, string_byte( str, index, index ) )
     end
 

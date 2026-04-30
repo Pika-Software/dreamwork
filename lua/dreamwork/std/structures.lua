@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local class = std.class
 local table_remove = std.table.remove
@@ -208,7 +208,7 @@ do
     ---@param from_tail? boolean If `true`, returns the value at the back of the queue.
     ---@return any value The value at the front of the queue.
     function Queue:peek( from_tail )
-        return self[ from_tail and self.front or ( self.back + 1 ) ]
+        return self[ from_tail and self.front or (self.back + 1) ]
     end
 
     --- [SHARED AND MENU]

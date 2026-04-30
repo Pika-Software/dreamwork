@@ -1,7 +1,7 @@
 local _G = _G
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local len = std.len
 local next = std.next
@@ -222,7 +222,7 @@ table.sub = table.slice
 ---@param new_length? integer The length of the truncated table.
 ---@param tbl_length? integer The length of the original table. Optionally, it should be used to speed up calculations.
 function table.truncate( tbl, new_length, tbl_length )
-    for index = ( new_length or 0 ) + 1, tbl_length or len( tbl ), 1 do
+    for index = (new_length or 0) + 1, tbl_length or len( tbl ), 1 do
         tbl[ index ] = nil
     end
 end
@@ -277,7 +277,7 @@ function table.inject( destination, source, offset, start_position, end_position
 
         offset = destination_length + 1
     elseif offset < 0 then
-        if ( 0 - offset ) > destination_length then
+        if (0 - offset) > destination_length then
             offset = 1
         else
             offset = destination_length + offset + 2
@@ -355,7 +355,7 @@ function table.eject( tbl, start_position, end_position, tbl_length )
         tbl[ index ] = nil
     end
 
-    local distance = ( end_position - start_position ) + 1
+    local distance = (end_position - start_position) + 1
 
     for index = end_position + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
@@ -703,7 +703,7 @@ function table.reverse( tbl, tbl_length )
 
     tbl_length = tbl_length + 1
 
-    for i = 1, math_floor( ( tbl_length - 1 ) * 0.5 ), 1 do
+    for i = 1, math_floor( (tbl_length - 1) * 0.5 ), 1 do
         local j = tbl_length - i
         tbl[ i ], tbl[ j ] = tbl[ j ], tbl[ i ]
     end
@@ -910,7 +910,7 @@ do
     ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
     ---@return integer | nil index The index of the value.
     function table.removeByValue( tbl, value, tbl_length )
-        for index = ( tbl_length or len( tbl ) ), 1, -1 do
+        for index = (tbl_length or len( tbl )), 1, -1 do
             if tbl[ index ] == value then
                 table_remove( tbl, index )
                 return index
@@ -954,7 +954,7 @@ function table.removeByRange( tbl, start_position, end_position, tbl_length )
         tbl[ index ] = nil
     end
 
-    local distance = ( end_position - start_position ) + 1
+    local distance = (end_position - start_position) + 1
 
     for index = end_position + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil

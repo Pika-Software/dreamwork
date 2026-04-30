@@ -1,5 +1,5 @@
 ---@class dreamwork
-local dreamwork = _G.dreamwork
+local dreamwork = dreamwork
 local std = dreamwork.std
 
 -- TODO: add docs and think about async support/compatibility

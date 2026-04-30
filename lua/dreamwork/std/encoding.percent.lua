@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 
@@ -160,7 +160,7 @@ do
                     end
 
                     position = math_min( position + 3, percent_str_length )
-                elseif ( ignore_spaces and uint8_0 == 0x2B --[[ "+" ]] ) or whitelist[ uint8_0 ] ~= nil then
+                elseif (ignore_spaces and uint8_0 == 0x2B --[[ "+" ]]) or whitelist[ uint8_0 ] ~= nil then
                     position = position + 1
                 else
                     return false, "string contains invalid characters"

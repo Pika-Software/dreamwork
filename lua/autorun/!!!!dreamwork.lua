@@ -1,3 +1,2 @@
-if _G.dreamwork == nil then
-    include( "dreamwork/init.lua" )
-end
+assert( not dreamwork, "'dreamwork' is already loaded!" )
+include( "dreamwork/init.lua" )

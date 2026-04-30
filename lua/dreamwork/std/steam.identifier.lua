@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local string = std.string
 local bit = std.bit
@@ -155,7 +155,7 @@ do
     function Identifier:toSteam2( ignore_universe )
         local id = self.id
         local y = id % 2
-        return string_format( "STEAM_%d:%d:%d", ignore_universe and 0 or ( universe2int[ self.universe ] or 1 ), y, ( id - y ) * 0.5 )
+        return string_format( "STEAM_%d:%d:%d", ignore_universe and 0 or (universe2int[ self.universe ] or 1), y, (id - y) * 0.5 )
     end
 
     ---@type table<dreamwork.std.steam.Identifier.type, string>
@@ -215,7 +215,7 @@ do
         local segments, segment_count = {}, 0
 
         while high ~= 0 or low ~= 0 do
-            local temp = ( ( high % 10 ) * 0x100000000 ) + low
+            local temp = ((high % 10) * 0x100000000) + low
 
             low = math_floor( temp / 10 )
             high = math_floor( high / 10 )
@@ -251,7 +251,7 @@ do
             if path == nil then
                 return nil
             else
-                return ( http and "http" or "https" ) .. "://steamcommunity.com/" .. path .. "/" .. to64( self )
+                return (http and "http" or "https") .. "://steamcommunity.com/" .. path .. "/" .. to64( self )
             end
         end
 
@@ -314,8 +314,8 @@ do
         local high, low = 0, 0
 
         for i = 1, string_len( uint64_str ), 1 do
-            local temp = ( low * 10 ) + byte2int[ string_byte( uint64_str, i, i ) ]
-            high = ( high * 10 ) + math_floor( temp / 0x100000000 )
+            local temp = (low * 10) + byte2int[ string_byte( uint64_str, i, i ) ]
+            high = (high * 10) + math_floor( temp / 0x100000000 )
             low = temp % 0x100000000
         end
 
@@ -341,7 +341,7 @@ do
     ---@return boolean is_valid `true` if the string is a valid Steam2 identifier, `false` otherwise
     function IdentifierClass.isValidSteam2( steam2_str )
         local x, y, z = string_match( steam2_str, "^STEAM_(%d+):(%d+):(%d+)$" )
-        if not ( x and y and z ) then
+        if not (x and y and z) then
             return false
         end
 
@@ -350,7 +350,7 @@ do
             return false
         end
 
-        if not ( y == "0" or y == "1" ) then -- 0 or 1 ( 1 bit )
+        if not (y == "0" or y == "1") then   -- 0 or 1 ( 1 bit )
             return false
         end
 
@@ -370,7 +370,7 @@ do
     ---@return boolean is_valid `true` if the string is a valid Steam3 identifier, `false` otherwise
     function IdentifierClass.isValidSteam3( steam3_str )
         local letter, universe_str, id_str = string_match( steam3_str, "^%[(%a):(%d+):(%d+)%]$" )
-        if not ( letter and universe_str and id_str ) or letter2int[ letter ] == nil then
+        if not (letter and universe_str and id_str) or letter2int[ letter ] == nil then
             return false
         end
 
@@ -409,7 +409,7 @@ do
             universe = int2universe[ universe ] or "Invalid",
             type = "Individual",
             instance = 1,
-            id = ( tonumber( z, 10 ) * 2 ) + ( y == "1" and 1 or 0 )
+            id = (tonumber( z, 10 ) * 2) + (y == "1" and 1 or 0)
         }, Identifier )
     end
 

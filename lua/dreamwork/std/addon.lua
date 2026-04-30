@@ -1,5 +1,3 @@
-local dreamwork = _G.dreamwork
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -14,7 +12,7 @@ local Addon = std.class.base( "Addon" )
 ---@class dreamwork.std.AddonClass: dreamwork.std.Addon
 ---@field __base dreamwork.std.Addon
 ---@overload fun(): dreamwork.std.Addon
-local AddonClass = std.class.create(Addon)
+local AddonClass = std.class.create( Addon )
 std.Addon = AddonClass
 
 ---@protected
@@ -23,7 +21,6 @@ function Addon:__init()
     self.title = ""
     self.file = nil
 end
-
 
 local function find_workshop_item( wsid )
 

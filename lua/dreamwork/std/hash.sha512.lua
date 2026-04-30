@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@class dreamwork.std.hash
 local hash = std.hash

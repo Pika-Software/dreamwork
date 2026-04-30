@@ -68,7 +68,7 @@ space_inside_function_param_list_parentheses = true
 space_inside_square_brackets = true
 
 # like t[#t+1] = 1
-space_around_table_append_operator = false
+space_around_table_append_operator = true
 
 ignore_spaces_inside_function_call = false
 
@@ -152,7 +152,7 @@ line_space_after_function_statement = fixed(2)
 
 line_space_after_expression_statement = keep
 
-line_space_after_comment = fixed(1)
+line_space_after_comment = keep
 
 line_space_around_block = max(2)
 

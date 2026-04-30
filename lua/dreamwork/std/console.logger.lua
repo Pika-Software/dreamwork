@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@class dreamwork.std.console
 local console = std.console
@@ -148,11 +148,11 @@ do
             object.title = title
         end
 
-        if ( string_len( str ) + title_length ) > 950 then
+        if (string_len( str ) + title_length) > 950 then
             str = string_sub( str, 1, 950 - title_length ) .. "..."
         end
 
-        console_write( secondary_text_color, time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), realm_color, realm_text, color, level, secondary_text_color, " --> ", object.title_color, title, secondary_text_color, " : ", object.text_color, str .. "\n")
+        console_write( secondary_text_color, time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), realm_color, realm_text, color, level, secondary_text_color, " --> ", object.title_color, title, secondary_text_color, " : ", object.text_color, str .. "\n" )
     end
 
     Logger.log = write_log

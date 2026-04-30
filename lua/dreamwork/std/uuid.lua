@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local string = std.string
 local string_format = string.format

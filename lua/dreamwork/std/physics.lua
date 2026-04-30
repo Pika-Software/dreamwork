@@ -1,5 +1,5 @@
 local _G = _G
-local std = _G.dreamwork.std
+local std = dreamwork.std
 local isString = std.isString
 local setmetatable = std.setmetatable
 local physenv, util = _G.physenv, _G.util

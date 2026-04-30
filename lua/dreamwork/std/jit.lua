@@ -2,7 +2,7 @@ local _G = _G
 local glua_jit = _G.jit
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local debug_getfmain = std.debug.getfmain
 local debug_fempty = std.debug.fempty

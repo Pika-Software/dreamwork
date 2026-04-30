@@ -1,9 +1,9 @@
-
 ---@type dreamwork
 local dreamwork = _G.dreamwork
 
 ---@type dreamwork.engine
 local engine = dreamwork.engine
+local engine_hookCall = engine.hookCall
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -60,7 +60,7 @@ await respond           |                  \|/
 --- in bits
 ---
 ---@type integer
-local internal_header = 8 + -- unknown magical byte
+local internal_header = 8 +            -- unknown magical byte
     dreamwork.engine.NetworkHeaderSize -- header ( network id ) + unreliable
 
 ---
@@ -69,7 +69,7 @@ local internal_header = 8 + -- unknown magical byte
 --- in bits
 ---
 ---@type integer
-local max_package_size = ( ( 64 * 1024 ) - 1 ) * 8 - internal_header
+local max_package_size = ((64 * 1024) - 1) * 8 - internal_header
 
 ---
 --- ( 2 ^ segment_index_size - 1 ) * segment size = max transmittion size in kbytes
@@ -87,7 +87,7 @@ local segment_index_size = 24
 --- in bits
 ---
 ---@type integer
-local max_segment_size = ( ( 1 * 1024 ) - 1 ) * 8 - internal_header - segment_index_size
+local max_segment_size = ((1 * 1024) - 1) * 8 - internal_header - segment_index_size
 
 ---
 --- in bytes
@@ -99,10 +99,9 @@ local size_per_segment = math_floor( max_segment_size / 8 )
 --- in bytes
 ---
 ---@type integer
-local header_free_space = math_floor( ( max_package_size - ( segment_index_size + 1 --[[ is complex message (boolean) ]] ) ) / 8 )
+local header_free_space = math_floor( (max_package_size - (segment_index_size + 1 --[[ is complex message (boolean) ]])) / 8 )
 
 -- TODO: all network messages are byte strings, that will mean that it will fully builded before send and them fully received before perform readers
-
 ---@class dreamwork.std.Network : dreamwork.Object
 ---@field __class dreamwork.std.NetworkClass
 ---@field id integer
@@ -119,27 +118,6 @@ local Network = std.class.base( "Network", true )
 local NetworkClass = std.class.create( Network )
 std.Network = NetworkClass
 
-
----@type table<string, dreamwork.std.Network>
-local name_to_network = {}
-gc.setTableRules( name_to_network, false, true )
-
----@param name string
----@return dreamwork.std.Network | nil object
----@protected
-function NetworkClass:__new( name )
-    return name_to_network[ name ]
-end
-
----@class dreamwork.std.Network.Callback
----@field name string
----@field fn fun( network: dreamwork.std.Network, reader: dreamwork.std.pack.Reader, index: integer, total: integer )
----@field once boolean
-
----@type table<dreamwork.std.Network, string>
-local network_to_name = {}
-gc.setTableRules( network_to_name, true, false )
-
 ---@type table<dreamwork.std.Network, string>
 local network_to_identifier = {}
 gc.setTableRules( network_to_identifier, true, false )
@@ -153,110 +131,22 @@ local index_to_network = {}
 gc.setTableRules( index_to_network, false, true )
 
 ---@type table<dreamwork.std.Network, boolean>
-local network_receiver = {}
-gc.setTableRules( network_receiver, true, false )
+local receive_allowed = {}
+gc.setTableRules( receive_allowed, true, false )
 
+---@class dreamwork.std.Network.Callback
+---@field name string
+---@field fn fun( network: dreamwork.std.Network, reader: dreamwork.std.pack.Reader, index: integer, total: integer )
+---@field once boolean
 ---@type table<dreamwork.std.Network, dreamwork.std.Network.Callback[]>
-local network_callbacks = {}
-gc.setTableRules( network_callbacks, true, false )
-
----@type table<dreamwork.std.Network, number>
-local network_timeout = {}
-gc.setTableRules( network_timeout, true, false )
-
----@type table<dreamwork.std.Network, boolean>
-local network_receiving = {}
-gc.setTableRules( network_receiving, true, false )
-
----@type table<dreamwork.std.Network, boolean>
-local network_sending = {}
-gc.setTableRules( network_sending, true, false )
-
-
----@param name string
----@protected
-function Network:__init( name, can_receive )
-    local network_name = "\255\128\64\0" .. name
-
-    network_to_identifier[ self ] = network_name
-
-    local network_id
-
-    if LUA_SERVER then
-        network_id = engine.networkRegister( network_name )
-    else
-        network_id = engine.networkGetID( network_name )
-    end
-
-    if network_id == nil then
-        error( "failed to register network, unknown error", 3 )
-    end
-
-    network_to_index[ self ] = network_id
-    index_to_network[ network_id ] = self
-
-    network_to_name[ self ] = name
-    name_to_network[ name ] = self
-
-    network_receiver[ self ] = can_receive == true
-
-    network_callbacks[ self ] = { [ 0 ] = 0 }
-    network_receiving[ self ] = false
-    network_sending[ self ] = false
-    network_timeout[ self ] = 1.0
-end
-
-do
-
-    local raw_index = raw.index
-
-    ---@typa table<string, table<dreamwork.std.Network, any>>
-    local key_to_table = {
-        [ "name" ] = network_to_name,
-        [ "timeout" ] = network_timeout,
-        [ "receiver" ] = network_receiver,
-        [ "receiving" ] = network_receiving,
-        [ "sending" ] = network_sending,
-        [ "id" ] = network_to_index
-    }
-
-    ---@param key string
-    ---@protected
-    function Network:__index( key )
-        local tbl = key_to_table[ key ]
-        if tbl ~= nil then
-            return tbl[ self ]
-        end
-
-        return raw_index( Network, key )
-    end
-
-end
-
----@param key string
----@param value any
----@protected
-function Network:__newindex( key, value )
-    if key == "timeout" then
-        network_timeout[ self ] = math.max( raw.tonumber( value or 1.0, 10 ) or 1.0, 0.1 )
-    elseif key == "receiver" then
-        network_receiver[ self ] = value == true
-    end
-
-    error( "attempt to modify read-only object", 2 )
-end
-
----@return string
----@protected
-function Network:__tostring()
-    return string.format( "Network: %p [%d][%s]", self, network_to_index[ self ], network_to_name[ self ] )
-end
+local receive_callbacks = {}
+gc.setTableRules( receive_callbacks, true, false )
 
 ---@param fn fun( network: dreamwork.std.Network, reader: dreamwork.std.pack.Reader, index: integer, total: integer )
 ---@param identifier? string
 ---@param once? boolean
 function Network:attach( fn, identifier, once )
-    local callbacks = network_callbacks[ self ]
+    local callbacks = receive_callbacks[ self ]
     local callback_count = callbacks[ 0 ]
 
     if identifier == nil then
@@ -285,7 +175,7 @@ end
 
 ---@param identifier? string
 function Network:detach( identifier )
-    local callbacks = network_callbacks[ self ]
+    local callbacks = receive_callbacks[ self ]
     local callback_count = callbacks[ 0 ]
 
     if identifier == nil then
@@ -302,19 +192,12 @@ function Network:detach( identifier )
     end
 end
 
----@class dreamwork.std.Network.Transmission.Initial
----@field segments_total integer
-
----@class dreamwork.std.Network.Transmission.Final
----@field segments_received integer
----@field checksum integer
-
 ---@param network dreamwork.std.Network
 ---@param segments string[]
 ---@param index integer
 ---@param total integer
 local function perform_callbacks( network, segments, index, total )
-    local callbacks = network_callbacks[ network ]
+    local callbacks = receive_callbacks[ network ]
 
     local reader = std.pack.Reader()
     reader:open( table.concat( segments, "", 1, index ) )
@@ -327,14 +210,123 @@ local function perform_callbacks( network, segments, index, total )
     reader:close()
 end
 
+---@type table<dreamwork.std.Network, number>
+local timeouts = {}
+gc.setTableRules( timeouts, true, false )
+
+-- ---@type table<dreamwork.std.Network, boolean>
+-- local network_receiving = {}
+-- gc.setTableRules( network_receiving, true, false )
+-- ---@type table<dreamwork.std.Network, boolean>
+-- local network_sending = {}
+-- gc.setTableRules( network_sending, true, false )
+do
+
+    ---@type table<string, dreamwork.std.Network>
+    local networks = {}
+    gc.setTableRules( networks, false, true )
+
+    ---@type table<dreamwork.std.Network, string>
+    local names = {}
+    gc.setTableRules( names, true, false )
+
+
+    ---@param name string
+    ---@return dreamwork.std.Network | nil object
+    ---@protected
+    function NetworkClass:__new( name )
+        return networks[ name ]
+    end
+
+    ---@return string
+    ---@protected
+    function Network:__tostring()
+        return string.format( "Network: %p [%d][%s]", self, self.id, self.name )
+    end
+
+    ---@param name string
+    ---@protected
+    function Network:__init( name, can_receive )
+        -- here we add some signature to network name to be sure that it will be unique enough
+        local network_name = "\255\128\64\0" .. name
+
+        network_to_identifier[ self ] = network_name
+
+        local network_id
+
+        if LUA_SERVER then
+            network_id = engine.networkRegister( network_name )
+        else
+            network_id = engine.networkGetID( network_name )
+        end
+
+        if network_id == nil then
+            error( "failed to register network, unknown error", 3 )
+        end
+
+        network_to_index[ self ] = network_id
+        index_to_network[ network_id ] = self
+
+        names[ self ] = name
+        networks[ name ] = self
+
+        receive_allowed[ self ] = can_receive == true
+
+        receive_callbacks[ self ] = { [ 0 ] = 0 }
+        -- network_receiving[ self ] = false
+        -- network_sending[ self ] = false
+        timeouts[ self ] = 1.0
+    end
+
+    do
+
+        local raw_index = raw.index
+
+        ---@typa table<string, table<dreamwork.std.Network, any>>
+        local key_to_table = {
+            [ "name" ] = names,
+            [ "timeout" ] = timeouts,
+            [ "receiver" ] = receive_allowed,
+            -- [ "receiving" ] = network_receiving,
+            -- [ "sending" ] = network_sending,
+            [ "id" ] = network_to_index
+        }
+
+        ---@param key string
+        ---@protected
+        function Network:__index( key )
+            local tbl = key_to_table[ key ]
+            if tbl ~= nil then
+                return tbl[ self ]
+            end
+
+            return raw_index( Network, key )
+        end
+
+    end
+
+    ---@param key string
+    ---@param value any
+    ---@protected
+    function Network:__newindex( key, value )
+        if key == "timeout" then
+            timeouts[ self ] = math.max( raw.tonumber( value or 1.0, 10 ) or 1.0, 0.1 )
+        elseif key == "receiver" then
+            receive_allowed[ self ] = value == true
+        end
+
+        error( "attempt to modify read-only object", 2 )
+    end
+
+end
+
 if LUA_SERVER then
 
-    ---@class dreamwork.std.Network.Transmission.Activity
-    ---@field thread thread
+    ---@class dreamwork.std.Network.Thread
+    ---@field owner Player | nil
+    ---@field value thread
     ---@field time number
-    ---@field client Player
-
-    ---@type dreamwork.std.Network.Transmission.Activity[]
+    ---@type dreamwork.std.Network.Thread[]
     local outgoing_activity = { [ 0 ] = 0 }
 
     ---@type table<Player, table<integer, thread>>
@@ -381,7 +373,7 @@ if LUA_SERVER then
 
         for i = thread_count, 1, -1 do
             if outgoing_activity[ i ].thread == thread then
-                outgoing_activity[ i ].time = os_clock() + network.timeout
+                outgoing_activity[ i ].time = os_clock() + (engine_hookCall( "NetworkTimeout", network ) or network.timeout)
                 return
             end
         end
@@ -419,6 +411,7 @@ if LUA_SERVER then
 
     local function abort_transmission( network, client )
         if not network_sending[ network ] then return end
+
         network_sending[ network ] = false
 
         kill_outgoing( network, client )
@@ -582,14 +575,13 @@ end
 ---@field segments string[]>
 ---@field checksum dreamwork.std.checksum.CRC16
 ---@field total integer
-
 if LUA_CLIENT then
 
     ---@type table<integer, thread>
     local incoming_transmissions = {}
     gc.setTableRules( incoming_transmissions, false, true )
 
-    ---@type dreamwork.std.Network.Transmission.Activity[]
+    ---@type dreamwork.std.Network.Thread[]
     local incoming_activity = { [ 0 ] = 0 }
 
     engine.hookCatch( "Think", function()
@@ -598,18 +590,18 @@ if LUA_CLIENT then
         for i = 1, incoming_activity[ 0 ], 1 do
             local thread_data = incoming_activity[ i ]
             if time_used > thread_data.time then
-                coroutine.resume( thread_data.thread, false )
+                coroutine.resume( thread_data.value, false )
             end
         end
     end )
 
     ---@param network dreamwork.std.Network
-    ---@param thread thread
-    local function update_incoming( network, thread )
+    ---@param value thread
+    local function update_incoming( network, value )
         local thread_count = incoming_activity[ 0 ]
 
         for i = thread_count, 1, -1 do
-            if incoming_activity[ i ].thread == thread then
+            if incoming_activity[ i ].value == value then
                 incoming_activity[ i ].time = os_clock() + network.timeout
                 return
             end
@@ -619,7 +611,7 @@ if LUA_CLIENT then
         incoming_activity[ 0 ] = thread_count
 
         incoming_activity[ thread_count ] = {
-            thread = thread,
+            value = value,
             time = os_clock() + network.timeout
         }
     end
@@ -634,7 +626,7 @@ if LUA_CLIENT then
         local thread_count = incoming_activity[ 0 ]
 
         for i = thread_count, 1, -1 do
-            if incoming_activity[ i ].thread == incoming_thread then
+            if incoming_activity[ i ].value == incoming_thread then
                 incoming_activity[ 0 ] = thread_count - 1
                 table.remove( incoming_activity, i )
                 break
@@ -659,6 +651,7 @@ if LUA_CLIENT then
 
     local function abort_receiving( network )
         if not network_receiving[ network ] then return end
+
         network_receiving[ network ] = false
 
         kill_incoming( network_to_index[ network ] )
@@ -723,7 +716,7 @@ if LUA_CLIENT then
         local network = index_to_network[ network_id ]
         if network == nil then return false end
 
-        if not network_receiver[ network ] then
+        if not receive_allowed[ network ] then
             dreamwork.Logger:warn( "Server attempted to send a message to a network that is not receiving, disconnecting... [id: %d]", network_id )
             return false
         end
@@ -838,8 +831,8 @@ else
         local history_size = time_history[ 0 ]
 
         if history_size > 1 then
-            local average = ( time_history[ history_size - 1 ] + time_history[ history_size ] ) * 0.5
-            speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * ( total_seg - cur_seg ), ( ( 1 / average ) * size_per_segment ) / 125 )
+            local average = (time_history[ history_size - 1 ] + time_history[ history_size ]) * 0.5
+            speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * (total_seg - cur_seg), ((1 / average) * size_per_segment) / 125 )
         end
     end )
 
@@ -861,7 +854,6 @@ else
         fraction = math.clamp( index / total, 0, 1 )
 
         -- dreamwork.Logger:debug( "received segment %d/%d, took %f s", index, total, std.time.tick() )
-
         if index == total then
             local data = reader:readCountedString( 32 ) or ""
             dreamwork.Logger:info( "transmission finished, received %d bytes, took %f s", #data, os.clock() - start_time )
@@ -876,6 +868,7 @@ else
 
     hook.Add( "HUDPaint", "YEEE", function()
         if fraction == 0 then return end
+
         local x = ScrW() - 512
 
         surface.SetDrawColor( 33, 33, 33, 200 )

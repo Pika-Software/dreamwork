@@ -1,5 +1,5 @@
 ---@class dreamwork.std.math
-local math = _G.dreamwork.std.math
+local math = dreamwork.std.math
 
 -- Source code of functions
 -- https://github.com/Facepunch/garrysmod/pull/1755
@@ -14,8 +14,8 @@ local math_sqrt = math.sqrt
 local c1 = 1.70158
 local c3 = c1 + 1
 local c2 = c1 * 1.525
-local c4 = ( 2 * math_pi ) / 3
-local c5 = ( 2 * math_pi ) / 4.5
+local c4 = (2 * math_pi) / 3
+local c5 = (2 * math_pi) / 4.5
 local n1 = 7.5625
 local d1 = 2.75
 
@@ -34,7 +34,7 @@ math.ease = ease
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.sineIn( fraction )
-	return 1 - math_cos( ( fraction * math_pi ) * 0.5 )
+    return 1 - math_cos( (fraction * math_pi) * 0.5 )
 end
 
 --- [SHARED AND MENU]
@@ -44,7 +44,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.sineOut( fraction )
-	return math_sin( ( fraction * math_pi ) * 0.5 )
+    return math_sin( (fraction * math_pi) * 0.5 )
 end
 
 --- [SHARED AND MENU]
@@ -54,7 +54,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.sineInOut( fraction )
-	return -( math_cos( math_pi * fraction ) - 1 ) * 0.5
+    return -(math_cos( math_pi * fraction ) - 1) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -64,7 +64,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quadIn( fraction )
-	return fraction ^ 2
+    return fraction ^ 2
 end
 
 --- [SHARED AND MENU]
@@ -74,7 +74,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quadOut( fraction )
-	return 1 - ( 1 - fraction ) * ( 1 - fraction )
+    return 1 - (1 - fraction) * (1 - fraction)
 end
 
 --- [SHARED AND MENU]
@@ -84,8 +84,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quadInOut( fraction )
-	return fraction < 0.5 and 2 * fraction ^ 2
-        or 1 - ( ( -2 * fraction + 2 ) ^ 2 ) * 0.5
+    return fraction < 0.5 and 2 * fraction ^ 2
+        or 1 - ((-2 * fraction + 2) ^ 2) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -95,7 +95,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.cubicIn( fraction )
-	return fraction ^ 3
+    return fraction ^ 3
 end
 
 --- [SHARED AND MENU]
@@ -105,7 +105,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.cubicOut( fraction )
-	return 1 - ( ( 1 - fraction ) ^ 3 )
+    return 1 - ((1 - fraction) ^ 3)
 end
 
 --- [SHARED AND MENU]
@@ -115,8 +115,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.cubicInOut( fraction )
-	return fraction < 0.5 and 4 * fraction ^ 3
-        or 1 - ( ( -2 * fraction + 2 ) ^ 3 ) * 0.5
+    return fraction < 0.5 and 4 * fraction ^ 3
+        or 1 - ((-2 * fraction + 2) ^ 3) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -126,7 +126,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quartIn( fraction )
-	return fraction ^ 4
+    return fraction ^ 4
 end
 
 --- [SHARED AND MENU]
@@ -136,7 +136,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quartOut( fraction )
-	return 1 - ( ( 1 - fraction ) ^ 4 )
+    return 1 - ((1 - fraction) ^ 4)
 end
 
 --- [SHARED AND MENU]
@@ -146,8 +146,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quartInOut( fraction )
-	return fraction < 0.5 and 8 * fraction ^ 4
-        or 1 - ( ( -2 * fraction + 2 ) ^ 4 ) * 0.5
+    return fraction < 0.5 and 8 * fraction ^ 4
+        or 1 - ((-2 * fraction + 2) ^ 4) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -157,7 +157,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quintIn( fraction )
-	return fraction ^ 5
+    return fraction ^ 5
 end
 
 --- [SHARED AND MENU]
@@ -167,7 +167,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quintOut( fraction )
-	return 1 - ( ( 1 - fraction ) ^ 5 )
+    return 1 - ((1 - fraction) ^ 5)
 end
 
 --- [SHARED AND MENU]
@@ -177,8 +177,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.quintInOut( fraction )
-	return fraction < 0.5 and 16 * fraction ^ 5
-        or 1 - ( ( -2 * fraction + 2 ) ^ 5 ) * 0.5
+    return fraction < 0.5 and 16 * fraction ^ 5
+        or 1 - ((-2 * fraction + 2) ^ 5) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -188,7 +188,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.expoIn( fraction )
-	return fraction == 0 and 0 or ( 2 ^ ( 10 * fraction - 10 ) )
+    return fraction == 0 and 0 or (2 ^ (10 * fraction - 10))
 end
 
 --- [SHARED AND MENU]
@@ -198,7 +198,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.expoOut( fraction )
-	return fraction == 1 and 1 or 1 - ( 2 ^ ( -10 * fraction ) )
+    return fraction == 1 and 1 or 1 - (2 ^ (-10 * fraction))
 end
 
 --- [SHARED AND MENU]
@@ -210,7 +210,7 @@ end
 function ease.expoInOut( fraction )
     return fraction == 0 and 0
         or fraction == 1 and 1
-        or fraction < 0.5 and ( 2 ^ ( 20 * fraction - 10 ) ) * 0.5 or ( 2 - ( 2 ^ ( -20 * fraction + 10 ) ) ) * 0.5
+        or fraction < 0.5 and (2 ^ (20 * fraction - 10)) * 0.5 or (2 - (2 ^ (-20 * fraction + 10))) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -220,7 +220,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.circIn( fraction )
-	return 1 - math_sqrt( 1 - ( fraction ^ 2 ) )
+    return 1 - math_sqrt( 1 - (fraction ^ 2) )
 end
 
 --- [SHARED AND MENU]
@@ -230,7 +230,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.circOut( fraction )
-	return math_sqrt( 1 - ( ( fraction - 1 ) ^ 2 ) )
+    return math_sqrt( 1 - ((fraction - 1) ^ 2) )
 end
 
 --- [SHARED AND MENU]
@@ -240,8 +240,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.circInOut( fraction )
-	return fraction < 0.5 and ( 1 - math_sqrt( 1 - ( ( 2 * fraction ) ^ 2 ) ) ) * 0.5
-        or ( math_sqrt( 1 - ( ( -2 * fraction + 2 ) ^ 2 ) ) + 1 ) * 0.5
+    return fraction < 0.5 and (1 - math_sqrt( 1 - ((2 * fraction) ^ 2) )) * 0.5
+        or (math_sqrt( 1 - ((-2 * fraction + 2) ^ 2) ) + 1) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -251,7 +251,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.backIn( fraction )
-	return c3 * fraction ^ 3 - c1 * fraction ^ 2
+    return c3 * fraction ^ 3 - c1 * fraction ^ 2
 end
 
 --- [SHARED AND MENU]
@@ -261,7 +261,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.backOut( fraction )
-	return 1 + c3 * ( ( fraction - 1 ) ^ 3 ) + c1 * ( ( fraction - 1 ) ^ 2 )
+    return 1 + c3 * ((fraction - 1) ^ 3) + c1 * ((fraction - 1) ^ 2)
 end
 
 --- [SHARED AND MENU]
@@ -271,8 +271,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.backInOut( fraction )
-	return fraction < 0.5 and ( ( ( 2 * fraction ) ^ 2 ) * ( ( c2 + 1 ) * 2 * fraction - c2 ) ) * 0.5
-        or ( ( ( 2 * fraction - 2 ) ^ 2 ) * ( ( c2 + 1 ) * ( fraction * 2 - 2 ) + c2 ) + 2 ) * 0.5
+    return fraction < 0.5 and (((2 * fraction) ^ 2) * ((c2 + 1) * 2 * fraction - c2)) * 0.5
+        or (((2 * fraction - 2) ^ 2) * ((c2 + 1) * (fraction * 2 - 2) + c2) + 2) * 0.5
 end
 
 --- [SHARED AND MENU]
@@ -282,9 +282,9 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.elasticIn( fraction )
-	return fraction == 0 and 0
+    return fraction == 0 and 0
         or fraction == 1 and 1
-        or -( 2 ^ ( 10 * fraction - 10 ) ) * math_sin( ( fraction * 10 - 10.75 ) * c4 )
+        or -(2 ^ (10 * fraction - 10)) * math_sin( (fraction * 10 - 10.75) * c4 )
 end
 
 --- [SHARED AND MENU]
@@ -294,8 +294,8 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.elasticOut( fraction )
-	return fraction == 0 and 0 or fraction == 1 and 1
-        or ( 2 ^ ( -10 * fraction ) ) * math_sin( ( fraction * 10 - 0.75 ) * c4 ) + 1
+    return fraction == 0 and 0 or fraction == 1 and 1
+        or (2 ^ (-10 * fraction)) * math_sin( (fraction * 10 - 0.75) * c4 ) + 1
 end
 
 --- [SHARED AND MENU]
@@ -305,9 +305,9 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.elasticInOut( fraction )
-	return fraction == 0 and 0 or fraction == 1 and 1
-		or fraction < 0.5 and -( ( 2 ^ ( 20 * fraction - 10 ) ) * math_sin( ( 20 * fraction - 11.125 ) * c5 ) ) * 0.5
-		or ( ( 2 ^ ( -20 * fraction + 10 ) ) * math_sin( ( 20 * fraction - 11.125 ) * c5 ) ) * 0.5 + 1
+    return fraction == 0 and 0 or fraction == 1 and 1
+        or fraction < 0.5 and -((2 ^ (20 * fraction - 10)) * math_sin( (20 * fraction - 11.125) * c5 )) * 0.5
+        or ((2 ^ (-20 * fraction + 10)) * math_sin( (20 * fraction - 11.125) * c5 )) * 0.5 + 1
 end
 
 --- [SHARED AND MENU]
@@ -317,16 +317,16 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 local function ease_bounceOut( fraction )
-    if ( fraction < 1 / d1 ) then
+    if (fraction < 1 / d1) then
         return n1 * fraction ^ 2
-    elseif ( fraction < 2 / d1 ) then
-        fraction = fraction - ( 1.5 / d1 )
+    elseif (fraction < 2 / d1) then
+        fraction = fraction - (1.5 / d1)
         return n1 * fraction ^ 2 + 0.75
-    elseif ( fraction < 2.5 / d1 ) then
-        fraction = fraction - ( 2.25 / d1 )
+    elseif (fraction < 2.5 / d1) then
+        fraction = fraction - (2.25 / d1)
         return n1 * fraction ^ 2 + 0.9375
     else
-        fraction = fraction - ( 2.625 / d1 )
+        fraction = fraction - (2.625 / d1)
         return n1 * fraction ^ 2 + 0.984375
     end
 end
@@ -338,7 +338,7 @@ end
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.bounceIn( fraction )
-	return 1 - ease_bounceOut( 1 - fraction )
+    return 1 - ease_bounceOut( 1 - fraction )
 end
 
 ease.bounceOut = ease_bounceOut
@@ -350,6 +350,6 @@ ease.bounceOut = ease_bounceOut
 ---@param fraction number Fraction of the progress to ease, from 0 to 1.
 ---@return number eased The eased number.
 function ease.bounceInOut( fraction )
-	return fraction < 0.5 and ( 1 - ease_bounceOut( 1 - 2 * fraction ) ) * 0.5
-        or ( 1 + ease_bounceOut( 2 * fraction - 1 ) ) * 0.5
+    return fraction < 0.5 and (1 - ease_bounceOut( 1 - 2 * fraction )) * 0.5
+        or (1 + ease_bounceOut( 2 * fraction - 1 )) * 0.5
 end

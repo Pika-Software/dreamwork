@@ -1,18 +1,14 @@
-local version = "0.1.0"
-
----@class _G
-local _G = _G
+if dreamwork == nil then
+    ---@class dreamwork
+    dreamwork = {}
+end
 
 ---@class dreamwork
 ---@field VERSION string Package manager version in semver format.
 ---@field PREFIX string Package manager unique prefix.
 ---@field StartTime number Time point when package manager was started in seconds.
-local dreamwork = _G.dreamwork
-if dreamwork == nil then
-    ---@class dreamwork
-    dreamwork = {}
-    _G.dreamwork = dreamwork
-end
+local dreamwork = dreamwork
+local _G = _G
 
 -- TODO: globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier
 -- TODO: add https://eprosync.github.io/interstellar-docs/ support
@@ -97,8 +93,8 @@ end
 
 dreamwork.StartTime = os_clock()
 
-dreamwork.VERSION = version
-dreamwork.PREFIX = "dreamwork@" .. version
+dreamwork.VERSION = "0.1.0"
+dreamwork.PREFIX = "dreamwork@" .. dreamwork.VERSION
 
 dofile( "detour.lua" )
 
@@ -279,7 +275,7 @@ do
     ---@param key any
     ---@return any, any
     function std.next( tbl, key )
-        return ( debug_getmetavalue( tbl, "__pairs" ) or raw_next )( tbl, key )
+        return (debug_getmetavalue( tbl, "__pairs" ) or raw_next)( tbl, key )
     end
 
 end
@@ -704,7 +700,7 @@ do
         ---@return boolean is_callable Returns `true` if the value is can be called (like a function), otherwise `false`.
         function std.iscallable( value )
             local metatable = debug_getmetatable( value )
-            return metatable ~= nil and ( metatable == FUNCTION or debug_getmetatable( metatable.__call ) == FUNCTION )
+            return metatable ~= nil and (metatable == FUNCTION or debug_getmetatable( metatable.__call ) == FUNCTION)
         end
 
     end
@@ -749,8 +745,8 @@ do
     ---@private
     function NUMBER.__len( value )
         if math_isfinite( value ) then
-            if ( value % 1 ) == 0 then
-                return math_ceil( math_log( value + 1 ) / math_ln2 ) + ( value < 0 and 1 or 0 )
+            if (value % 1) == 0 then
+                return math_ceil( math_log( value + 1 ) / math_ln2 ) + (value < 0 and 1 or 0)
             elseif value >= 1.175494351E-38 and value <= 3.402823466E+38 then
                 return 32
             else
@@ -816,7 +812,6 @@ local string_byte = string.byte
 function raw.index( tbl, key )
     if isString( key ) then
         ---@cast key string
-
         local uint8_1, uint8_2 = string_byte( key, 1, 2 )
         if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
             return nil
@@ -897,7 +892,6 @@ local table_concat = std.table.concat
 dofile( "std/class.lua" )
 
 do
-
 
     local raw_type = raw.type
 
@@ -1039,6 +1033,7 @@ if coroutine.wait == nil then
         local end_time = time_elapsed() + seconds
         while true do
             if end_time < time_elapsed() then return end
+
             coroutine_yield()
         end
     end
@@ -1180,7 +1175,7 @@ do
                 title = string_match( level_info.source, "^@?addons/([^/]+)" )
             end
 
-            local stack, size = { "\n[" .. ( title or "LUA ERROR" ) .. "] " .. message }, 1
+            local stack, size = { "\n[" .. (title or "LUA ERROR") .. "] " .. message }, 1
 
             while true do
                 local info = debug_getinfo( size + stack_level, "Sln" )
@@ -1189,7 +1184,7 @@ do
                 end
 
                 size = size + 1
-                stack[ size ] = table_concat( { string_rep( " ", size ), ( size - 1 ), ". ", info.name or "unknown", " - ", info.short_src or "unknown", ":", info.currentline or -1 } )
+                stack[ size ] = table_concat( { string_rep( " ", size ), (size - 1), ". ", info.name or "unknown", " - ", info.short_src or "unknown", ":", info.currentline or -1 } )
             end
 
             size = size + 1
@@ -1212,7 +1207,7 @@ do
     ---@param fmt string The error message to throw.
     ---@param ... any The error message arguments to format/interpolate.
     function std.errorf( stack_level, dont_break, fmt, ... )
-        return std_error( string_format( fmt, ... ), ( stack_level or 1 ) + 1, dont_break )
+        return std_error( string_format( fmt, ... ), (stack_level or 1) + 1, dont_break )
     end
 
 end
@@ -1294,7 +1289,6 @@ do
         local string_len = string.len
 
         -- TODO: rewrite function below with goto
-
         --- [SHARED AND MENU]
         ---
         --- Prints a formatted string to the console with colors!
@@ -1327,7 +1321,7 @@ do
 
                 local uint8_1 = string_byte( fmt, index, index )
                 if uint8_1 == 0x25 --[[ % ]] then
-                    if ( index - break_point ) ~= 0 then
+                    if (index - break_point) ~= 0 then
                         buffer_length = buffer_length + 1
                         buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
                     end
@@ -1380,7 +1374,7 @@ do
                     end
 
                     if end_index ~= nil then
-                        if ( index - break_point ) ~= 0 then
+                        if (index - break_point) ~= 0 then
                             buffer_length = buffer_length + 1
                             buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
                         end
@@ -1392,7 +1386,7 @@ do
 
                         index = index + 1
 
-                        if ( end_index - index ) == 0 then
+                        if (end_index - index) == 0 then
                             color = realm_color
                         else
                             local color_str = string_sub( fmt, index, end_index - 1 )
@@ -1493,7 +1487,7 @@ if dreamwork.TickTimer1 == nil then
 end
 
 dofile( "std/console.lua" )
-dofile( "std/console.logger.lua")
+dofile( "std/console.logger.lua" )
 
 local console_Variable = std.console.Variable
 
@@ -1522,7 +1516,6 @@ local logger = std.console.Logger( {
 dreamwork.Logger = logger
 
 -- dofile( "std/message.lua" )
-
 local std_metatable = getmetatable( std )
 
 if std_metatable == nil then
@@ -1652,7 +1645,6 @@ do
         end
 
         ---@cast co thread
-
         setTimeout( function()
             futures.wakeup( co )
         end, seconds )
@@ -1723,7 +1715,7 @@ do
         "Good Enough ♪",
         "Manifest It ♪",
         "MAKE A MOVE ♪",
-        "v" .. version,
+        "v" .. dreamwork.VERSION,
         "Hello World!",
         "all_the_same",
         "Star Glide ♪",
@@ -1741,7 +1733,7 @@ do
     }
 
     local count = #splashes + 1
-    splashes[ count ] = "Wow, there are over " .. ( count - 1 ) .. " splashes here!"
+    splashes[ count ] = "Wow, there are over " .. (count - 1) .. " splashes here!"
 
     local scheme
 
@@ -2048,7 +2040,6 @@ end
     net.MessageReader       net.MessageWriter
 
 ]]
-
 dofile( "std/http.lua" )
 dofile( "std/http.github.lua" )
 
@@ -2149,7 +2140,6 @@ if LUA_CLIENT_SERVER then
 end
 
 -- TODO: NetTable class
-
 dofile( "std/input.lua" )
 
 if std.LUA_VERSION ~= "Lua 5.1" then
@@ -2160,7 +2150,7 @@ if LUA_CLIENT_SERVER then
     dofile( "transport.lua" )
 end
 
-logger:info( "Start-up time: %.2f ms.", ( os_clock() - dreamwork.StartTime ) * 1000 )
+logger:info( "Start-up time: %.2f ms.", (os_clock() - dreamwork.StartTime) * 1000 )
 
 do
 
@@ -2172,7 +2162,7 @@ do
     db.prepare()
     db.migrate( "initial file table" )
 
-    logger:info( "Migration completed, time spent: %.2f ms.", ( os_clock() - start_time ) * 1000 )
+    logger:info( "Migration completed, time spent: %.2f ms.", (os_clock() - start_time) * 1000 )
 
 end
 
@@ -2181,12 +2171,10 @@ if LUA_CLIENT_SERVER then
     dreamwork.transport.startup()
 end
 
-
-
 do
     local start_time = os_clock()
     std.gc.collect()
-    logger:info( "Clean-up time: %.2f ms.", ( os_clock() - start_time ) * 1000 )
+    logger:info( "Clean-up time: %.2f ms.", (os_clock() - start_time) * 1000 )
 end
 
 -- TODO: package manager start-up ( aka package loading )
@@ -2211,7 +2199,6 @@ end
 
 
 -- TODO: plugins support
-
 --[[
 
     -- TODO

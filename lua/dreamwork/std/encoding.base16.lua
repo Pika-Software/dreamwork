@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 
@@ -151,7 +151,7 @@ function base16.validate( base16_str, start_position, end_position )
         end_position = math_min( end_position, str_length )
     end
 
-    if ( end_position - ( start_position - 1 ) ) % 2 ~= 0 then
+    if (end_position - (start_position - 1)) % 2 ~= 0 then
         return false, "string length must be even"
     end
 

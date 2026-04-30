@@ -1,4 +1,4 @@
-local std = _G.dreamwork.std
+local std = dreamwork.std
 local string = std.string
 
 ---@class dreamwork.std.crypto

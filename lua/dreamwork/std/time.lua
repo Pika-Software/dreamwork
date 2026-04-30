@@ -4,7 +4,7 @@ local _G = _G
 ---@field TZ integer Time zone offset in hours. WARNING: Changing this GLOBAL will affect the operation of all `time` library functions.
 ---@field DST_TZ integer The DST timezone offset. **READ ONLY**
 ---@field DST boolean `true` if the current date is in DST, `false` if not. **READ ONLY**
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local os = _G.os
 local os_time = os.time
@@ -36,11 +36,11 @@ std.time = time
 do
 
     local timezone = raw_tonumber( os_date( "%H", 0 ) ) - raw_tonumber( os_date( "!%H", 0 ) )
-    if ( os_date( "%d", 0 ) - os_date( "!%d", 0 ) ) == 30 then
+    if (os_date( "%d", 0 ) - os_date( "!%d", 0 )) == 30 then
         timezone = timezone - 24
     end
 
-    std.DST = ( ( raw_tonumber( os_date( "%z" ) ) * 0.01 ) - timezone ) ~= 0
+    std.DST = ((raw_tonumber( os_date( "%z" ) ) * 0.01) - timezone) ~= 0
     std.TZ = timezone
 
 end
@@ -97,37 +97,37 @@ do
 
         transformation_map = {
             -- ns -> other
-            [ 0x7375736E ] = ts_m1e_3,                                           -- ns to us
-            [ 0x736D736E ] = ts_m1e_6,                                           -- ns to ms
-            [ 0x73736E ]   = function( ts ) return ts * 1e-9 end,                -- ns to s
-            [ 0x6D736E ]   = function( ts ) return ( ts * 1e-9 ) / 60 end,       -- ns to m
-            [ 0x68736E ]   = function( ts ) return ( ts * 1e-9 ) / 3600 end,     -- ns to h
-            [ 0x64736E ]   = function( ts ) return ( ts * 1e-9 ) / 86400 end,    -- ns to d
-            [ 0x77736E ]   = function( ts ) return ( ts * 1e-9 ) / 604800 end,   -- ns to w
-            [ 0x6F6D736E ] = function( ts ) return ( ts * 1e-9 ) / 2592000 end,  -- ns to mo
-            [ 0x79736E ]   = function( ts ) return ( ts * 1e-9 ) / 31536000 end, -- ns to y
+            [ 0x7375736E ] = ts_m1e_3,                                         -- ns to us
+            [ 0x736D736E ] = ts_m1e_6,                                         -- ns to ms
+            [ 0x73736E ]   = function( ts ) return ts * 1e-9 end,              -- ns to s
+            [ 0x6D736E ]   = function( ts ) return (ts * 1e-9) / 60 end,       -- ns to m
+            [ 0x68736E ]   = function( ts ) return (ts * 1e-9) / 3600 end,     -- ns to h
+            [ 0x64736E ]   = function( ts ) return (ts * 1e-9) / 86400 end,    -- ns to d
+            [ 0x77736E ]   = function( ts ) return (ts * 1e-9) / 604800 end,   -- ns to w
+            [ 0x6F6D736E ] = function( ts ) return (ts * 1e-9) / 2592000 end,  -- ns to mo
+            [ 0x79736E ]   = function( ts ) return (ts * 1e-9) / 31536000 end, -- ns to y
 
             -- us -> other
-            [ 0x736E7375 ] = ts_m1e3,                                            -- us to ns
-            [ 0x736D7375 ] = ts_m1e_3,                                           -- us to ms
-            [ 0x737375 ]   = ts_m1e_6,                                           -- us to s
-            [ 0x6D7375 ]   = function( ts ) return ( ts * 1e-6 ) / 60 end,       -- us to m
-            [ 0x687375 ]   = function( ts ) return ( ts * 1e-6 ) / 3600 end,     -- us to h
-            [ 0x647375 ]   = function( ts ) return ( ts * 1e-6 ) / 86400 end,    -- us to d
-            [ 0x777375 ]   = function( ts ) return ( ts * 1e-6 ) / 604800 end,   -- us to w
-            [ 0x6F6D7375 ] = function( ts ) return ( ts * 1e-6 ) / 2592000 end,  -- us to mo
-            [ 0x797375 ]   = function( ts ) return ( ts * 1e-6 ) / 31536000 end, -- us to y
+            [ 0x736E7375 ] = ts_m1e3,                                          -- us to ns
+            [ 0x736D7375 ] = ts_m1e_3,                                         -- us to ms
+            [ 0x737375 ]   = ts_m1e_6,                                         -- us to s
+            [ 0x6D7375 ]   = function( ts ) return (ts * 1e-6) / 60 end,       -- us to m
+            [ 0x687375 ]   = function( ts ) return (ts * 1e-6) / 3600 end,     -- us to h
+            [ 0x647375 ]   = function( ts ) return (ts * 1e-6) / 86400 end,    -- us to d
+            [ 0x777375 ]   = function( ts ) return (ts * 1e-6) / 604800 end,   -- us to w
+            [ 0x6F6D7375 ] = function( ts ) return (ts * 1e-6) / 2592000 end,  -- us to mo
+            [ 0x797375 ]   = function( ts ) return (ts * 1e-6) / 31536000 end, -- us to y
 
             -- ms -> other
-            [ 0x736E736D ] = ts_m1e6,                                            -- ms to ns
-            [ 0x7375736D ] = ts_m1e3,                                            -- ms to us
-            [ 0x73736D ]   = ts_m1e_3,                                           -- ms to s
-            [ 0x6D736D ]   = function( ts ) return ( ts * 1e-3 ) / 60 end,       -- ms to m
-            [ 0x68736D ]   = function( ts ) return ( ts * 1e-3 ) / 3600 end,     -- ms to h
-            [ 0x64736D ]   = function( ts ) return ( ts * 1e-3 ) / 86400 end,    -- ms to d
-            [ 0x77736D ]   = function( ts ) return ( ts * 1e-3 ) / 604800 end,   -- ms to w
-            [ 0x6F6D736D ] = function( ts ) return ( ts * 1e-3 ) / 2592000 end,  -- ms to mo
-            [ 0x79736D ]   = function( ts ) return ( ts * 1e-3 ) / 31536000 end, -- ms to y
+            [ 0x736E736D ] = ts_m1e6,                                          -- ms to ns
+            [ 0x7375736D ] = ts_m1e3,                                          -- ms to us
+            [ 0x73736D ]   = ts_m1e_3,                                         -- ms to s
+            [ 0x6D736D ]   = function( ts ) return (ts * 1e-3) / 60 end,       -- ms to m
+            [ 0x68736D ]   = function( ts ) return (ts * 1e-3) / 3600 end,     -- ms to h
+            [ 0x64736D ]   = function( ts ) return (ts * 1e-3) / 86400 end,    -- ms to d
+            [ 0x77736D ]   = function( ts ) return (ts * 1e-3) / 604800 end,   -- ms to w
+            [ 0x6F6D736D ] = function( ts ) return (ts * 1e-3) / 2592000 end,  -- ms to mo
+            [ 0x79736D ]   = function( ts ) return (ts * 1e-3) / 31536000 end, -- ms to y
 
             -- s -> other
             [ 0x736E0073 ] = function( ts ) return ts * 1e9 end,      -- s to ns
@@ -141,70 +141,70 @@ do
             [ 0x790073 ]   = function( ts ) return ts / 31536000 end, -- s to y
 
             -- m -> other
-            [ 0x736E006D ] = function( ts ) return ( ts * 60 ) * 1e9 end, -- m to ns
-            [ 0x7375006D ] = function( ts ) return ( ts * 60 ) * 1e6 end, -- m to us
-            [ 0x736D006D ] = function( ts ) return ( ts * 60 ) * 1e3 end, -- m to ms
-            [ 0x73006D ]   = function( ts ) return ( ts * 60 ) end,       -- m to s
-            [ 0x68006D ]   = ts_d60,                                      -- m to h
-            [ 0x64006D ]   = function( ts ) return ts / 1440 end,         -- m to d
-            [ 0x77006D ]   = function( ts ) return ts / 10080 end,        -- m to w
-            [ 0x6F6D006D ] = function( ts ) return ts / 43200 end,        -- m to mo
-            [ 0x79006D ]   = function( ts ) return ts / 525600 end,       -- m to y
+            [ 0x736E006D ] = function( ts ) return (ts * 60) * 1e9 end, -- m to ns
+            [ 0x7375006D ] = function( ts ) return (ts * 60) * 1e6 end, -- m to us
+            [ 0x736D006D ] = function( ts ) return (ts * 60) * 1e3 end, -- m to ms
+            [ 0x73006D ]   = function( ts ) return (ts * 60) end,       -- m to s
+            [ 0x68006D ]   = ts_d60,                                    -- m to h
+            [ 0x64006D ]   = function( ts ) return ts / 1440 end,       -- m to d
+            [ 0x77006D ]   = function( ts ) return ts / 10080 end,      -- m to w
+            [ 0x6F6D006D ] = function( ts ) return ts / 43200 end,      -- m to mo
+            [ 0x79006D ]   = function( ts ) return ts / 525600 end,     -- m to y
 
             -- h -> other
-            [ 0x736E0068 ] = function( ts ) return ( ts * 3600 ) * 1e9 end,  -- h to ns
-            [ 0x73750068 ] = function( ts ) return ( ts * 3600 ) * 1e6 end,  -- h to us
-            [ 0x736D0068 ] = function( ts ) return ( ts * 3600 ) * 1e3 end,  -- h to ms
-            [ 0x730068 ]   = function( ts ) return ( ts * 3600 ) end,        -- h to s
-            [ 0x6D0068 ]   = function( ts ) return ( ts * 60 ) end,          -- h to m
-            [ 0x640068 ]   = function( ts ) return ts / 24 end,              -- h to d
-            [ 0x770068 ]   = function( ts ) return ts / 168 end,             -- h to w
-            [ 0x6F6D0068 ] = function( ts ) return ts / 720 end,             -- h to mo
-            [ 0x790068 ]   = function( ts ) return ts / 8760 end,            -- h to y
+            [ 0x736E0068 ] = function( ts ) return (ts * 3600) * 1e9 end, -- h to ns
+            [ 0x73750068 ] = function( ts ) return (ts * 3600) * 1e6 end, -- h to us
+            [ 0x736D0068 ] = function( ts ) return (ts * 3600) * 1e3 end, -- h to ms
+            [ 0x730068 ]   = function( ts ) return (ts * 3600) end,       -- h to s
+            [ 0x6D0068 ]   = function( ts ) return (ts * 60) end,         -- h to m
+            [ 0x640068 ]   = function( ts ) return ts / 24 end,           -- h to d
+            [ 0x770068 ]   = function( ts ) return ts / 168 end,          -- h to w
+            [ 0x6F6D0068 ] = function( ts ) return ts / 720 end,          -- h to mo
+            [ 0x790068 ]   = function( ts ) return ts / 8760 end,         -- h to y
 
             -- d -> other
-            [ 0x736E0064 ] = function( ts ) return ( ts * 86400 ) * 1e9 end, -- d to ns
-            [ 0x73750064 ] = function( ts ) return ( ts * 86400 ) * 1e6 end, -- d to us
-            [ 0x736D0064 ] = function( ts ) return ( ts * 86400 ) * 1e3 end, -- d to ms
-            [ 0x730064 ]   = function( ts ) return ( ts * 86400 ) end,       -- d to s
-            [ 0x6D0064 ]   = function( ts ) return ts * 1440 end,            -- d to m
-            [ 0x680064 ]   = function( ts ) return ts * 24 end,              -- d to h
-            [ 0x770064 ]   = function( ts ) return ts / 7 end,               -- d to w
-            [ 0x6F6D0064 ] = function( ts ) return ts / 30 end,              -- d to mo
-            [ 0x790064 ]   = function( ts ) return ts / 365 end,             -- d to y
+            [ 0x736E0064 ] = function( ts ) return (ts * 86400) * 1e9 end, -- d to ns
+            [ 0x73750064 ] = function( ts ) return (ts * 86400) * 1e6 end, -- d to us
+            [ 0x736D0064 ] = function( ts ) return (ts * 86400) * 1e3 end, -- d to ms
+            [ 0x730064 ]   = function( ts ) return (ts * 86400) end,       -- d to s
+            [ 0x6D0064 ]   = function( ts ) return ts * 1440 end,          -- d to m
+            [ 0x680064 ]   = function( ts ) return ts * 24 end,            -- d to h
+            [ 0x770064 ]   = function( ts ) return ts / 7 end,             -- d to w
+            [ 0x6F6D0064 ] = function( ts ) return ts / 30 end,            -- d to mo
+            [ 0x790064 ]   = function( ts ) return ts / 365 end,           -- d to y
 
             -- w -> other
-            [ 0x736E0077 ] = function( ts ) return ( ts * 604800 ) * 1e9 end, -- w to ns
-            [ 0x73750077 ] = function( ts ) return ( ts * 604800 ) * 1e6 end, -- w to us
-            [ 0x736D0077 ] = function( ts ) return ( ts * 604800 ) * 1e3 end, -- w to ms
-            [ 0x730077 ]   = function( ts ) return ( ts * 604800 ) end,      -- w to s
-            [ 0x6D0077 ]   = function( ts ) return ts * 10080 end,           -- w to m
-            [ 0x680077 ]   = function( ts ) return ts * 168 end,             -- w to h
-            [ 0x640077 ]   = function( ts ) return ts * 7 end,               -- w to d
-            [ 0x6F6D0077 ] = function( ts ) return ts / 4.285714286 end,     -- w to mo
-            [ 0x790077 ]   = function( ts ) return ts / 52.142857143 end,    -- w to y
+            [ 0x736E0077 ] = function( ts ) return (ts * 604800) * 1e9 end, -- w to ns
+            [ 0x73750077 ] = function( ts ) return (ts * 604800) * 1e6 end, -- w to us
+            [ 0x736D0077 ] = function( ts ) return (ts * 604800) * 1e3 end, -- w to ms
+            [ 0x730077 ]   = function( ts ) return (ts * 604800) end,       -- w to s
+            [ 0x6D0077 ]   = function( ts ) return ts * 10080 end,          -- w to m
+            [ 0x680077 ]   = function( ts ) return ts * 168 end,            -- w to h
+            [ 0x640077 ]   = function( ts ) return ts * 7 end,              -- w to d
+            [ 0x6F6D0077 ] = function( ts ) return ts / 4.285714286 end,    -- w to mo
+            [ 0x790077 ]   = function( ts ) return ts / 52.142857143 end,   -- w to y
 
             -- mo -> other
-            [ 0x736E6F6D ] = function( ts ) return ( ts * 2592000 ) * 1e9 end, -- mo to ns
-            [ 0x73756F6D ] = function( ts ) return ( ts * 2592000 ) * 1e6 end, -- mo to us
-            [ 0x736D6F6D ] = function( ts ) return ( ts * 2592000 ) * 1e3 end, -- mo to ms
-            [ 0x736F6D ]   = function( ts ) return ( ts * 2592000 ) end,       -- mo to s
-            [ 0x6D6F6D ]   = function( ts ) return ts * 43200 end,             -- mo to m
-            [ 0x686F6D ]   = function( ts ) return ts * 720 end,               -- mo to h
-            [ 0x646F6D ]   = function( ts ) return ts * 30 end,                -- mo to d
-            [ 0x776F6D ]   = function( ts ) return ts * 4.285714286 end,       -- mo to w
-            [ 0x796F6D ]   = function( ts ) return ts / 12 end,                -- mo to y
+            [ 0x736E6F6D ] = function( ts ) return (ts * 2592000) * 1e9 end, -- mo to ns
+            [ 0x73756F6D ] = function( ts ) return (ts * 2592000) * 1e6 end, -- mo to us
+            [ 0x736D6F6D ] = function( ts ) return (ts * 2592000) * 1e3 end, -- mo to ms
+            [ 0x736F6D ]   = function( ts ) return (ts * 2592000) end,       -- mo to s
+            [ 0x6D6F6D ]   = function( ts ) return ts * 43200 end,           -- mo to m
+            [ 0x686F6D ]   = function( ts ) return ts * 720 end,             -- mo to h
+            [ 0x646F6D ]   = function( ts ) return ts * 30 end,              -- mo to d
+            [ 0x776F6D ]   = function( ts ) return ts * 4.285714286 end,     -- mo to w
+            [ 0x796F6D ]   = function( ts ) return ts / 12 end,              -- mo to y
 
             -- y -> other
-            [ 0x736E0079 ] = function( ts ) return ( ts * 31536000 ) * 1e9 end, -- y to ns
-            [ 0x73750079 ] = function( ts ) return ( ts * 31536000 ) * 1e6 end, -- y to us
-            [ 0x736D0079 ] = function( ts ) return ( ts * 31536000 ) * 1e3 end, -- y to ms
-            [ 0x730079 ]   = function( ts ) return ( ts * 31536000 ) end,       -- y to s
-            [ 0x6D0079 ]   = function( ts ) return ts * 525600 end,             -- y to m
-            [ 0x680079 ]   = function( ts ) return ts * 8760 end,               -- y to h
-            [ 0x640079 ]   = function( ts ) return ts * 365 end,                -- y to d
-            [ 0x770079 ]   = function( ts ) return ts * 52.142857143 end,       -- y to w
-            [ 0x6F6D0079 ] = function( ts ) return ts * 12 end                  -- y to mo
+            [ 0x736E0079 ] = function( ts ) return (ts * 31536000) * 1e9 end, -- y to ns
+            [ 0x73750079 ] = function( ts ) return (ts * 31536000) * 1e6 end, -- y to us
+            [ 0x736D0079 ] = function( ts ) return (ts * 31536000) * 1e3 end, -- y to ms
+            [ 0x730079 ]   = function( ts ) return (ts * 31536000) end,       -- y to s
+            [ 0x6D0079 ]   = function( ts ) return ts * 525600 end,           -- y to m
+            [ 0x680079 ]   = function( ts ) return ts * 8760 end,             -- y to h
+            [ 0x640079 ]   = function( ts ) return ts * 365 end,              -- y to d
+            [ 0x770079 ]   = function( ts ) return ts * 52.142857143 end,     -- y to w
+            [ 0x6F6D0079 ] = function( ts ) return ts * 12 end                -- y to mo
         }
 
     end
@@ -231,7 +231,7 @@ do
             unit_uint8_1, unit_uint8_2 = string_byte( unit, 1, 2 )
 
             if unit_uint8_1 == nil then
-                error( "unit cannot be empty string", ( error_level or 1 ) + 1 )
+                error( "unit cannot be empty string", (error_level or 1) + 1 )
             end
 
             if unit_uint8_2 == nil then
@@ -248,7 +248,7 @@ do
             target_uint8_1, target_uint8_2 = string_byte( target, 1, 2 )
 
             if target_uint8_1 == nil then
-                error( "target cannot be empty string", ( error_level or 1 ) + 1 )
+                error( "target cannot be empty string", (error_level or 1) + 1 )
             end
 
             if target_uint8_2 == nil then
@@ -266,7 +266,7 @@ do
             ) ]
 
             if transform_fn == nil then
-                error( "unknown transformation from '" .. unit .. "' to '" .. target .. "'", ( error_level or 1 ) + 1 )
+                error( "unknown transformation from '" .. unit .. "' to '" .. target .. "'", (error_level or 1) + 1 )
             end
 
             timestamp = transform_fn( timestamp )
@@ -365,23 +365,23 @@ end
 ---
 ---@param unit? dreamwork.std.time.Unit The unit to return the current time in, `s` by default.
 ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
----@return integer timestamp The current timestamp in the specified unit.
+---@return integer | number timestamp The current timestamp in the specified unit.
 local function now( unit, as_float )
     local timestamp = os_time()
 
     local current_timezone = std.TZ
     if current_timezone ~= basic_timezone then
-        timestamp = timestamp + ( current_timezone - basic_timezone ) * 3600
+        timestamp = timestamp + (current_timezone - basic_timezone) * 3600
     end
 
     if unit == nil or unit == "s" then
         if as_float then
-            timestamp = timestamp + ( os_clock() % 1 )
+            timestamp = timestamp + (os_clock() % 1)
         end
 
         return timestamp
     elseif unit == "ms" or unit == "us" or unit == "ns" then
-        timestamp = timestamp + ( seconds_elapsed() % 1 )
+        timestamp = timestamp + (seconds_elapsed() % 1)
     end
 
     return transform( timestamp, nil, unit, as_float, 2 )
@@ -402,7 +402,7 @@ do
             year = now() / 31536000
         end
 
-        return year % 4 == 0 and ( year % 100 ~= 0 or year % 400 == 0 )
+        return year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
     end
 
     -- based on https://github.com/Nak2/NikNaks/blob/c0686a65a3bd4b30e0c683b07a9822a11fd54d83/lua/niknaks/modules/sh_datetime.lua#L23-L25
@@ -425,7 +425,7 @@ do
                 month = math_floor( now() / 86400 )
             end
 
-            month = ( month - 1 ) % 12 + 1
+            month = (month - 1) % 12 + 1
 
             if year == nil then
                 year = 1970 + math_floor( now() / 31536000 )
@@ -466,7 +466,7 @@ do
             elseif unit_str == "ns" then
                 nanoseconds = nanoseconds + integer
             else
-                seconds = seconds + transform( integer, unit_str, "s", as_float, ( error_level or 1 ) + 1 )
+                seconds = seconds + transform( integer, unit_str, "s", as_float, (error_level or 1) + 1 )
             end
         end
 
@@ -598,7 +598,7 @@ do
     ---@return integer microseconds
     ---@return integer nanoseconds
     local function split( timestamp, unit, error_level )
-        error_level = ( error_level or 1 ) + 1
+        error_level = (error_level or 1) + 1
 
         local seconds = transform( timestamp, unit, "s", false, error_level )
         timestamp = timestamp - transform( seconds, "s", unit, true, error_level )
@@ -655,7 +655,7 @@ do
             tbl.is_dst = tbl.isdst
             tbl.isdst = nil
 
-            tbl.week_day = ( tbl.wday + 5 ) % 7 + 1
+            tbl.week_day = (tbl.wday + 5) % 7 + 1
             tbl.wday = nil
 
             tbl.year_day = tbl.yday
@@ -680,7 +680,7 @@ do
             tbl.hours12 = tonumber( values[ 1 ], 10 ) or 0
             tbl.period = values[ 2 ] or "AM"
 
-            tbl.year_week = ( tonumber( values[ 3 ], 10 ) or 0 ) + 1
+            tbl.year_week = (tonumber( values[ 3 ], 10 ) or 0) + 1
 
             return tbl
         end
@@ -690,11 +690,11 @@ do
 
     local duration_units = {
         { 31536000, "y" },
-        { 2592000, "mo" },
-        { 604800, "w" },
-        { 86400, "d" },
-        { 3600, "h" },
-        { 60, "m" }
+        { 2592000,  "mo" },
+        { 604800,   "w" },
+        { 86400,    "d" },
+        { 3600,     "h" },
+        { 60,       "m" }
     }
 
     --- [SHARED AND MENU]
@@ -731,7 +731,7 @@ do
                 local value = lst[ 1 ]
                 if seconds >= value then
                     local count = math_floor( seconds / value )
-                    seconds = seconds - ( count * value )
+                    seconds = seconds - (count * value)
 
                     segment_count = segment_count + 1
                     segments[ segment_count ] = string_format( "%d%s", count, lst[ 2 ] )

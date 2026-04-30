@@ -1,6 +1,6 @@
 --- Based on https://github.com/nmap/nmap/blob/master/nselib/base32.lua
 
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.encoding
 local encoding = std.encoding
 

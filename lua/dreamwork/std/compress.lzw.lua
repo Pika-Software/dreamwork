@@ -5,7 +5,7 @@
     Edit by Unknown Developer
 ]]
 
-local std = _G.dreamwork.std
+local std = dreamwork.std
 local string = std.string
 
 local string_char, string_byte = string.char, string.byte

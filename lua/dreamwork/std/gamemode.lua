@@ -1,7 +1,7 @@
 local _G = _G
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 ---@alias Gamemode dreamwork.std.Gamemode
 ---@class dreamwork.std.Gamemode : dreamwork.Object

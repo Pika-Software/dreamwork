@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local debug = std.debug
 local table = std.table
@@ -201,7 +201,7 @@ do
         local index = callback_count
         for i = 3, callback_count, 3 do
             if self[ i ] > hook_type then
-                index = ( i - 3 )
+                index = i - 3
                 break
             end
         end
@@ -228,6 +228,7 @@ do
     ---@return boolean stopped Returns `true` if the hook was stopped, `false` if it was already stopped.
     local function hook_stop( self )
         if not self.is_running then return false end
+
         self.is_running = false
 
         local queue = self.queues
@@ -268,7 +269,7 @@ do
             if not self.is_running then break end
 
             local hook_type = self[ index ]
-            if hook_type == -2 then -- pre hook
+            if hook_type == -2 then    -- pre hook
                 self[ index - 1 ]( ... )
             elseif hook_type == 1 then -- post hook return
                 local value = self[ index - 1 ]( result, ... )
@@ -297,7 +298,7 @@ do
             if not self.is_running then break end
 
             local hook_type = self[ index ]
-            if hook_type == -2 then -- pre hook
+            if hook_type == -2 then    -- pre hook
                 self[ index - 1 ]( ... )
             elseif hook_type == 1 then -- post hook return
                 local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
@@ -326,7 +327,7 @@ do
             if not self.is_running then break end
 
             local hook_type = self[ index ]
-            if hook_type == -2 then -- pre hook
+            if hook_type == -2 then    -- pre hook
                 self[ index - 1 ]( ... )
             elseif hook_type == 1 then -- post hook return
                 local value = self[ index - 1 ]( result, ... )
@@ -362,7 +363,7 @@ do
             if not self.is_running then break end
 
             local hook_type = self[ index ]
-            if hook_type == -2 then -- pre hook
+            if hook_type == -2 then    -- pre hook
                 self[ index - 1 ]( ... )
             elseif hook_type == 1 then -- post hook return
                 local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
@@ -399,6 +400,7 @@ do
     ---@return any ... The return values from the hook.
     function Hook:call( ... )
         if self.is_running then return end
+
         self.is_running = true
 
         local mixer_fn = self.mixer_fn
@@ -448,7 +450,7 @@ do
         self:attach( function( ... )
             self:detach( identifier )
             return fn( ... )
-        end,  identifier, hook_type )
+        end, identifier, hook_type )
     end
 
 end

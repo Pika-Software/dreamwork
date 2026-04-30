@@ -1,5 +1,5 @@
 local _G = _G
-local std = _G.dreamwork.std
+local std = dreamwork.std
 ---@class dreamwork.std.compress
 local compress = std.compress
 

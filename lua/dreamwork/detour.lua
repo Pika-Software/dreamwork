@@ -1,6 +1,5 @@
 ---@class dreamwork
-local dreamwork = _G.dreamwork
-
+local dreamwork = dreamwork
 if dreamwork.detour ~= nil then return end
 
 -- https://github.com/unknown-gd/safety-lite/blob/main/src/detour.lua

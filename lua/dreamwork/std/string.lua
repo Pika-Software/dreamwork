@@ -1,4 +1,4 @@
-local dreamwork = _G.dreamwork
+local dreamwork = dreamwork
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -186,7 +186,7 @@ function string.insert( str, index, value, str_length )
 
     if index == 0 then
         return value .. str
-    elseif index == ( str_length + 1 ) then
+    elseif index == (str_length + 1) then
         return str .. value
     end
 
@@ -328,7 +328,7 @@ function string.pad( str, desired_length, char, direction, str_length )
     if direction == nil then
         missing_length = missing_length * 0.5
         local missing_length_floored = math_floor( missing_length )
-        return string_rep( char, missing_length_floored ) .. str .. string_rep( char, missing_length_floored + ( ( missing_length % 1 == 0 ) and 0 or 1 ) )
+        return string_rep( char, missing_length_floored ) .. str .. string_rep( char, missing_length_floored + ((missing_length % 1 == 0) and 0 or 1) )
     elseif direction then
         return str .. string_rep( char, missing_length )
     else
@@ -1244,7 +1244,7 @@ do
         [ 0x0A ] = true, -- line feed ( new line )
         [ 0x0B ] = true, -- vertical tab
         [ 0x0C ] = true, -- form feed
-        [ 0x0D ] = true -- carriage return
+        [ 0x0D ] = true  -- carriage return
     }
 
     --- [SHARED AND MENU]

@@ -2,7 +2,7 @@
 local _G = _G
 
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 local math = std.math
 
 --- [SHARED AND MENU]
@@ -50,7 +50,7 @@ if bit.tohex == nil then
     ---@return string str The hexadecimal representation.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.tohex( x, length )
-        return string_format( "%0" .. ( length or 8 ) .. "x", x )
+        return string_format( "%0" .. (length or 8) .. "x", x )
     end
 
 end
@@ -101,9 +101,9 @@ if bit.arshift == nil then
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.arshift( x, disp )
         if x < 0x80000000 then
-            return bit_tobit( math_floor( x / ( 2 ^ disp ) ) )
+            return bit_tobit( math_floor( x / (2 ^ disp) ) )
         else
-            return bit_tobit( -math_floor( x / ( 2 ^ disp ) ) )
+            return bit_tobit( -math_floor( x / (2 ^ disp) ) )
         end
     end
 
@@ -138,7 +138,7 @@ if bit.lshift == nil then
         if disp > 31 then
             return 0
         else
-            return bit_tobit( x * ( 2 ^ disp ) )
+            return bit_tobit( x * (2 ^ disp) )
         end
     end
 
@@ -171,7 +171,7 @@ if bit.rshift == nil then
         if disp > 31 then
             return 0
         else
-            return bit_tobit( math_floor( x / ( 2 ^ disp ) ) )
+            return bit_tobit( math_floor( x / (2 ^ disp) ) )
         end
     end
 
@@ -187,7 +187,7 @@ if bit.bswap == nil then
     ---@return integer result The byte-swapped value.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bswap( x )
-        return bit_tobit( ( ( x % 0x100 ) * 0x1000000 ) + ( ( math_floor( x / 0x100 ) % 0x100 ) * 0x10000 ) + ( ( math_floor( x / 0x10000 ) % 0x100 ) * 0x100 ) + ( math_floor( x / 0x1000000 ) % 0x100 ) )
+        return bit_tobit( ((x % 0x100) * 0x1000000) + ((math_floor( x / 0x100 ) % 0x100) * 0x10000) + ((math_floor( x / 0x10000 ) % 0x100) * 0x100) + (math_floor( x / 0x1000000 ) % 0x100) )
     end
 
 end
@@ -268,7 +268,7 @@ if bit.band == nil then
             for j = 1, 32, 1 do
                 if value % 2 == 0 and bits[ j ] == nil then
                     bits[ j ] = true
-                    result = result - 2 ^ ( j - 1 )
+                    result = result - 2 ^ (j - 1)
                 end
 
                 value = math_floor( value * 0.5 )
@@ -317,7 +317,7 @@ if bit.bor == nil then
             for j = 1, 32, 1 do
                 if value % 2 ~= 0 and bits[ j ] == nil then
                     bits[ j ] = true
-                    result = result + 2 ^ ( j - 1 )
+                    result = result + 2 ^ (j - 1)
                 end
 
                 value = math_floor( value * 0.5 )
@@ -376,7 +376,7 @@ if bit.bxor == nil then
         local output = 0
         for i = 1, 32, 1 do
             if bits[ i ] == true then
-                output = output + 2 ^ ( i - 1 )
+                output = output + 2 ^ (i - 1)
             end
         end
 
@@ -512,7 +512,7 @@ if bit.extract == nil then
     ---@param width integer? The number of bits to extract.
     ---@return integer result The extracted value.
     function bit.extract( x, field, width )
-        return bit_band( bit_rshift( x, field ), 2 ^ ( width or 1 ) - 1 )
+        return bit_band( bit_rshift( x, field ), 2 ^ (width or 1) - 1 )
     end
 
 end
@@ -533,7 +533,7 @@ if bit.replace == nil then
     ---@param width integer? The number of bits to extract, default is 1.
     ---@return integer result The modified value.
     function bit.replace( x, extract, field, width )
-        local mask = 2 ^ ( width or 1 ) - 1
+        local mask = 2 ^ (width or 1) - 1
         return bit_band( x, bit_bnot( bit_lshift( mask, field ) ) ) + bit_lshift( bit_band( extract, mask ), field )
     end
 
@@ -585,7 +585,7 @@ function bit.reverse( x, bits )
 
     for i = 0, bits - 1, 1 do
         if bit_band( x, bit_lshift( 1, i ) ) ~= 0 then
-            result = bit_bor( result, bit_lshift( 1, bits - ( i + 1 ) ) )
+            result = bit_bor( result, bit_lshift( 1, bits - (i + 1) ) )
         end
     end
 

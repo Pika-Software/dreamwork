@@ -1,5 +1,5 @@
 -- local _G = _G
--- local std = _G.dreamwork.std
+-- local std = dreamwork.std
 
 -- -- TODO: https://wiki.facepunch.com/gmod/team
 -- ---@class dreamwork.std.player.team

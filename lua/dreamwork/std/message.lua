@@ -27,6 +27,7 @@ local sender2receivers = {
 
 local messages = {}
 
+-- TODO: all network messages are byte strings, that will mean that it will fully builded before send and them fully received before perform readers
 
 ---@class dreamwork.std.Message : dreamwork.Object
 ---@field __class dreamwork.std.MessageClass

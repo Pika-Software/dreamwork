@@ -1,5 +1,5 @@
 ---@class dreamwork.std
-local std = _G.dreamwork.std
+local std = dreamwork.std
 
 local string = std.string
 local string_format = string.format
@@ -124,7 +124,7 @@ do
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
                 local uint8_1, uint8_2 = string_byte( key, 1, 2 )
-                if ( uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] ) and not ( key == "__index" and value == parent_base ) and not meta_blacklist[ key ] then
+                if (uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]]) and not (key == "__index" and value == parent_base) and not meta_blacklist[ key ] then
                     base[ key ] = value
                 end
             end
