@@ -64,7 +64,7 @@ local table_concat = table.concat
 ---@param searchable_byte integer The byte to search for.
 ---@param start_position? integer The start position of the search.
 ---@param end_position? integer The end position of the search.
----@param str_length? integer The length of the string.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The index of the byte if found, `nil` otherwise.
 function string.findByte( str, searchable_byte, start_position, end_position, str_length )
     if str_length == nil then
@@ -1230,9 +1230,92 @@ function string.interpolate( str, variables, start_position, end_position, str_l
 
     if segment_count == 0 then
         return ""
-    else
-        return table_concat( segments, "", 1, segment_count )
     end
+
+    return table_concat( segments, "", 1, segment_count )
+end
+
+--- [SHARED AND MENU]
+---
+--- Replaces a byte in the string with the given variables.
+---
+--- Works the same way as [string.interpolate](#string.interpolate)
+--- but uses byte count as index instead of direct key names.
+---
+---@param str string The string to interpolate.
+---@param interpolate_byte integer The byte to interpolate.
+---@param variables string[] The variables to interpolate into the string.
+---@param variable_count? integer The size of the map. Optionally, it should be used to speed up calculations.
+---@param start_position? integer The start position to interpolate from.
+---@param end_position? integer The end position to interpolate to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+function string.byteInterpolate( str, interpolate_byte, variables, variable_count, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if str_length == 0 then
+        return str
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    if start_position > end_position then
+        return str
+    end
+
+    if variable_count == nil then
+        variable_count = len( variables )
+    end
+
+    if variable_count == 0 then
+        return str
+    end
+
+    local segments, segment_count = {}, 0
+    local break_point = start_position - 1
+    local index = 0
+
+    ::byte_interpolate_loop::
+
+    if string_byte( str, start_position, start_position ) == interpolate_byte then
+        if break_point ~= start_position then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( str, break_point + 1, start_position - 1 )
+        end
+
+        index = index + 1
+        segment_count = segment_count + 1
+        segments[ segment_count ] = variables[ index ]
+
+        break_point = start_position
+    end
+
+    if start_position ~= end_position and index ~= variable_count then
+        start_position = start_position + 1
+        goto byte_interpolate_loop
+    end
+
+    if break_point ~= end_position then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, break_point + 1, end_position )
+    end
+
+    return table_concat( segments, "", 1, segment_count )
 end
 
 do
