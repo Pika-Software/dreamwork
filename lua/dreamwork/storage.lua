@@ -36,7 +36,7 @@ local raw_tonumber = std.raw.tonumber
 ---@return string
 function storage.read( key )
     ---@type string
-    return sqlite_queryValue( "select value from 'dreamwork.store' where key=?", key )
+    return sqlite_queryValue( "SELECT VALUE FROM 'dreamwork.store' WHERE key=?", key )
 end
 
 --- [SHARED AND MENU]
@@ -46,7 +46,7 @@ end
 ---@param key string
 ---@param value string
 function storage.write( key, value )
-    sqlite_query( "insert or replace into 'dreamwork.store' values (?, ?)", key, value )
+    sqlite_query( "INSERT OR REPLACE INTO 'dreamwork.store' VALUES (?, ?)", key, value )
 end
 
 do
@@ -77,7 +77,7 @@ do
     ---@param url string
     ---@return table?
     function http.read( url )
-        return sqlite_queryOne( "select etag, content from 'dreamwork.storage.http' where url=? limit 1", url )
+        return sqlite_queryOne( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
     end
 
     --- [SHARED AND MENU]
@@ -107,7 +107,7 @@ do
             error( "null bytes are not allowed", 2 )
         end
 
-        sqlite_query( "insert or replace into 'dreamwork.storage.http' (url, etag, timestamp, content) values (?, ?, ?, ?)", url, etag, time_now( "ms", false ), content )
+        sqlite_query( "INSERT OR REPLACE INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?)", url, etag, time_now( "ms", false ), content )
     end
 
 end
