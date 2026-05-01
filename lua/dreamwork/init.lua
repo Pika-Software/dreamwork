@@ -93,8 +93,8 @@ end
 
 dreamwork.StartTime = os_clock()
 
-dreamwork.VERSION = "0.1.0"
-dreamwork.PREFIX = "dreamwork@" .. dreamwork.VERSION
+dreamwork.Version = "0.1.0"
+dreamwork.Prefix = "dreamwork@" .. dreamwork.Version
 
 dofile( "detour.lua" )
 
@@ -104,6 +104,8 @@ dofile( "detour.lua" )
 ---@class dreamwork.std.raw
 local raw = std.raw or {}
 std.raw = raw
+
+raw.assert = _G.assert
 
 raw.tonumber = _G.tonumber
 raw.error = error
@@ -137,8 +139,6 @@ do
     dummy_table = nil
 
 end
-
-std.assert = _G.assert
 
 local print = _G.print
 std.print = print
@@ -694,11 +694,11 @@ do
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value is callable.
+        --- Checks if the value is callable, basically it's a function or a table with a callable `__call` metamethod.
         ---
         ---@param value any The value to check.
         ---@return boolean is_callable Returns `true` if the value is can be called (like a function), otherwise `false`.
-        function std.iscallable( value )
+        function std.isCallable( value )
             local metatable = debug_getmetatable( value )
             return metatable ~= nil and (metatable == FUNCTION or debug_getmetatable( metatable.__call ) == FUNCTION)
         end
@@ -1210,6 +1210,19 @@ do
         return std_error( string_format( fmt, ... ), (stack_level or 1) + 1, dont_break )
     end
 
+    --- [SHARED AND MENU]
+    ---
+    --- Throws an error if the given expression is false.
+    ---
+    ---@param expression boolean The expression to check.
+    ---@param fmt string The error message to throw.
+    ---@param ... any The error message arguments to format/interpolate.
+    function std.assert( expression, fmt, ... )
+        if expression then return end
+
+        std.errorf( 3, false, fmt, ... )
+    end
+
 end
 
 do
@@ -1463,25 +1476,25 @@ dofile( "std/hook.lua" )
 dofile( "std/url.lua" )
 
 if dreamwork.TickTimer0_05 == nil then
-    local timer = std.Timer( 0.05, 0, dreamwork.PREFIX .. "::TickTimer0_05" )
+    local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )
     dreamwork.TickTimer0_05 = timer
     timer:start()
 end
 
 if dreamwork.TickTimer0_1 == nil then
-    local timer = std.Timer( 0.1, 0, dreamwork.PREFIX .. "::TickTimer0_1" )
+    local timer = std.Timer( 0.1, 0, dreamwork.Prefix .. "::TickTimer0_1" )
     dreamwork.TickTimer0_1 = timer
     timer:start()
 end
 
 if dreamwork.TickTimer0_25 == nil then
-    local timer = std.Timer( 0.25, 0, dreamwork.PREFIX .. "::TickTimer0_25" )
+    local timer = std.Timer( 0.25, 0, dreamwork.Prefix .. "::TickTimer0_25" )
     dreamwork.TickTimer0_25 = timer
     timer:start()
 end
 
 if dreamwork.TickTimer1 == nil then
-    local timer = std.Timer( 1, 0, dreamwork.PREFIX .. "::TickTimer1" )
+    local timer = std.Timer( 1, 0, dreamwork.Prefix .. "::TickTimer1" )
     dreamwork.TickTimer1 = timer
     timer:start()
 end
@@ -1509,7 +1522,7 @@ end
 
 local logger = std.console.Logger( {
     color = color_scheme.dreamwork_main,
-    title = dreamwork.PREFIX,
+    title = dreamwork.Prefix,
     interpolation = false
 } )
 
@@ -1715,7 +1728,7 @@ do
         "Good Enough ♪",
         "Manifest It ♪",
         "MAKE A MOVE ♪",
-        "v" .. dreamwork.VERSION,
+        "v" .. dreamwork.Version,
         "Hello World!",
         "all_the_same",
         "Star Glide ♪",
@@ -1810,7 +1823,7 @@ end
 dofile( "std/fs.lua" )
 dofile( "std/sqlite.lua" )
 
-dofile( "database.lua" )
+dofile( "storage.lua" )
 dofile( "factory.lua" )
 
 logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
@@ -1829,7 +1842,7 @@ end, 1 )
 
 do
 
-    local changes_timeout = std.Timer( 0.5, 1, dreamwork.PREFIX .. "::ContentWatcher" )
+    local changes_timeout = std.Timer( 0.5, 1, dreamwork.Prefix .. "::ContentWatcher" )
 
     local function perform_synchronization()
         logger:debug( "Game content change triggered, synchronization..." )
@@ -2152,19 +2165,7 @@ end
 
 logger:info( "Start-up time: %.2f ms.", (os_clock() - dreamwork.StartTime) * 1000 )
 
-do
-
-    logger:info( "Preparing the database to begin migration..." )
-    local start_time = os_clock()
-
-    local db = dreamwork.db
-    db.optimize()
-    db.prepare()
-    db.migrate( "initial file table" )
-
-    logger:info( "Migration completed, time spent: %.2f ms.", (os_clock() - start_time) * 1000 )
-
-end
+dreamwork.storage.init()
 
 if LUA_CLIENT_SERVER then
     logger:info( "Preparing the transport to begin connection..." )

@@ -15,7 +15,7 @@ if std.loadbinary( "reqwest" ) then
     ---@diagnostic disable-next-line: undefined-field
     local reqwest = _G.reqwest
 
-    local user_agent = "DreamWork/" .. dreamwork.VERSION .. " - Garry's Mod/" .. _G.VERSIONSTR
+    local user_agent = "DreamWork/" .. dreamwork.Version .. " - Garry's Mod/" .. _G.VERSIONSTR
     local default_headers = { [ "User-Agent" ] = user_agent }
 
     function http_client( parameters )
@@ -167,7 +167,7 @@ do
 
 end
 
-local http_cache_get, http_cache_set = dreamwork.http_cache.get, dreamwork.http_cache.set
+local http_storage = dreamwork.storage.http
 
 local json_serialize = std.encoding.json.serialize
 local string_gmatch = std.string.gmatch
@@ -242,7 +242,7 @@ local function request( options )
                 ---@cast old_value string
                 parameters[ key ] = { old_value, value }
             else
-                old_value[ #old_value + 1 ] = value
+                old_value[ #old_value+1 ] = value
             end
         end
 
@@ -298,7 +298,7 @@ local function request( options )
         local identifier = json_serialize( { url, method, options.parameters, options.headers }, false )
 
         local data = session_cache[ identifier ]
-        if data ~= nil and ( time_elapsed() - data.start ) < data.age then
+        if data ~= nil and (time_elapsed() - data.start) < data.age then
             return data.future:await()
         end
 
@@ -324,17 +324,17 @@ local function request( options )
 
         ---@diagnostic disable-next-line: inject-field
         function options.success( status, body, headers )
-            local cache_control = headers["cache-control"]
+            local cache_control = headers[ "cache-control" ]
             if cache_control ~= nil then
                 local cache_options = {}
                 for key, value in string_gmatch( cache_control, "([%w_-]+)=?([%w_-]*)" ) do
                     cache_options[ key ] = raw_tonumber( value, 10 ) or true
                 end
 
-                if cache_options["no-cache"] or cache_options["no-store"] then
+                if cache_options[ "no-cache" ] or cache_options[ "no-store" ] then
                     session_cache[ identifier ] = nil
-                elseif cache_options["s-maxage"] or cache_options["max-age"] then
-                    data.age = cache_options["s-maxage"] or cache_options["max-age"]
+                elseif cache_options[ "s-maxage" ] or cache_options[ "max-age" ] then
+                    data.age = cache_options[ "s-maxage" ] or cache_options[ "max-age" ]
                 end
             end
 
@@ -355,7 +355,7 @@ local function request( options )
     if options.etag then
         options.etag = nil
 
-        local data = http_cache_get( url )
+        local data = http_storage.read( url )
         if data ~= nil then
             local headers = options.headers
             if headers == nil then
@@ -376,7 +376,7 @@ local function request( options )
             if status == 304 then
                 status, body = 200, data and data.content or ""
             elseif status == 200 and headers.etag then
-                http_cache_set( url, headers.etag, body )
+                http_storage.write( url, headers.etag, body )
             end
 
             success( status, body, headers )
