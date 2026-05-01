@@ -10,13 +10,17 @@ local isBoolean = std.isBoolean
 local isNumber = std.isNumber
 local isString = std.isString
 
-local getfenv = std.getfenv
+local raw_next = std.raw.next
+
+local tostring = std.tostring
+local pcall = std.pcall
 local type = std.type
 
 local string = std.string
-local string_gsub = string.gsub
 local string_match = string.match
+local string_lower = string.lower
 local string_replace = string.replace
+local string_byteInterpolate = string.byteInterpolate
 
 --- [SHARED AND MENU]
 ---
@@ -67,7 +71,7 @@ local function escape( str, no_quotes )
 
     str = string_match(
         string_replace( str, "'", "''", false ),
-        "^[^\0]+", 1
+        "^[^%z]+", 1
     ) or str
 
     if no_quotes then
@@ -86,22 +90,9 @@ sqlite.escape = escape
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
 local function query_raw( str )
-    local fenv = getfenv( 2 )
-    if fenv == nil then
-        dreamwork_Logger:debug( "Executing SQL query: " .. str )
-    else
+    dreamwork_Logger:debug( "Executing SQL query: " .. str )
 
-        local logger = fenv.Logger
-        if type( logger ) == "Logger" then
-            ---@cast logger Logger
-            logger:debug( "Executing SQL query: " .. str )
-        else
-            dreamwork_Logger:debug( "Executing SQL query: " .. str )
-        end
-
-    end
-
-    ---@type dreamwork.std.sqlite.QueryRow | false | nil
+    ---@type dreamwork.std.sqlite.QueryRow[] | false | nil
     local result = sql_Query( str )
     if result == false then
         error( glua_sql.m_strError, 2 )
@@ -140,28 +131,28 @@ end
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
 local function query( str, ... )
-    local args, counter = { ... }, 0
+    ---@type string[]
+    local variables = {}
 
-    str = string_gsub( str, "?", function()
-        counter = counter + 1
-
-        local value = args[ counter ]
-
-        if isString( value ) then
+    for index = 1, select( "#", ... ), 1 do
+        local value = select( index, ... )
+        if value == nil then
+            variables[ index ] = "NULL"
+        elseif isString( value ) then
             ---@cast value string
-            return escape( value )
+            variables[ index ] = escape( value )
         elseif isBoolean( value ) then
             ---@cast value boolean
-            return value and "1" or "0"
+            variables[ index ] = value and "1" or "0"
         elseif isNumber( value ) then
             ---@cast value number
-            return tostring( value )
+            variables[ index ] = tostring( value )
+        else
+            std.errorf( 2, false, "bad argument #%s to \'%s\' ('%s' expected, got '%s')", index, "sqlite.query", "boolean | integer | number | string | nil", type( value ) )
         end
+    end
 
-        return "NULL"
-    end )
-
-    local result = query_raw( str )
+    local result = query_raw( string_byteInterpolate( str, 0x3F --[[ ? ]], variables ) )
     if result == nil then
         return nil
     end
@@ -170,7 +161,7 @@ local function query( str, ... )
         local row = result[ j ]
         for key, value in pairs( row ) do
             ---@cast value string
-            if isString( value ) and string.lower( value ) == "null" then
+            if isString( value ) and string_lower( value ) == "null" then
                 row[ key ] = nil
             end
         end
@@ -213,52 +204,40 @@ end
 
 sqlite.queryOne = query_one
 
-do
-
-    local next = std.next
-
-    --- [SHARED AND MENU]
-    ---
-    --- Executes a SQL query and returns the first value of the first row.
-    ---
-    ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
-    ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
-    ---@return dreamwork.std.sqlite.QueryValue | nil value The first value of the first row of the result.
-    function sqlite.queryValue( str, ... )
-        local result = query_one( str, ... )
-        if result ~= nil then
-            return next( result )
-        end
-
-        return nil
+--- [SHARED AND MENU]
+---
+--- Executes a SQL query and returns the first value of the first row.
+---
+---@param str dreamwork.std.sqlite.Query The SQL query to execute.
+---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
+---@return dreamwork.std.sqlite.QueryValue | nil value The first value of the first row of the result.
+function sqlite.queryValue( str, ... )
+    local result = query_one( str, ... )
+    if result ~= nil then
+        return raw_next( result )
     end
 
+    return nil
 end
 
-do
+---@alias dreamwork.std.sqlite.QueryFn fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): dreamwork.std.sqlite.QueryRow[] | nil
 
-    local pcall = std.pcall
+--- [SHARED AND MENU]
+---
+--- Executes a transaction of SQL queries in one block.
+---
+---@generic V
+---@param fn fun( query_fn: dreamwork.std.sqlite.QueryFn ): V The function to execute all SQL queries in one transaction.
+---@return V value The result of function execution.
+function sqlite.transaction( fn )
+    query_raw( "begin" )
 
-    ---@alias dreamwork.std.sqlite.QueryFn fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): dreamwork.std.sqlite.QueryRow[] | nil
-
-    --- [SHARED AND MENU]
-    ---
-    --- Executes a transaction of SQL queries in one block.
-    ---
-    ---@generic V
-    ---@param fn fun( query_fn: dreamwork.std.sqlite.QueryFn ): V The function to execute all SQL queries in one transaction.
-    ---@return V value The result of function execution.
-    function sqlite.transaction( fn )
-        query_raw( "begin" )
-
-        local ok, result = pcall( fn, query )
-        if ok then
-            query_raw( "commit" )
-            return result
-        end
-
-        query_raw( "rollback" )
-        return error( result, 2 )
+    local ok, result = pcall( fn, query )
+    if ok then
+        query_raw( "commit" )
+        return result
     end
 
+    query_raw( "rollback" )
+    return error( result, 2 )
 end
