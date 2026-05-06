@@ -232,40 +232,30 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the string starts with the start string.
+--- Checks if the string starts with the prefix.
 ---
 ---@param str string The string to check.
----@param str_start string The start string.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return boolean is_starts `true` if the string starts with the start string, otherwise `false`.
-function string.hasPrefix( str, str_start, str_length )
-    return str == str_start or string_sub( str, 1, str_length or string_len( str_start ) ) == str_start
+---@param prefix string The prefix to check for.
+---@param prefix_length? integer The length of the prefix to check for. Optionally, it should be used to speed up calculations.
+---@param start_position? integer The position to start checking from. Optionally, it should be used to speed up calculations.
+---@return boolean has_prefix `true` if the string starts with the prefix, `false` otherwise.
+function string.hasPrefix( str, prefix, prefix_length, start_position )
+    return str == prefix or string_sub( str, (start_position or 1), prefix_length or string_len( prefix ) ) == prefix
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the string ends with the end string.
+--- Checks if the string ends with the suffix.
 ---
 ---@param str string The string to check.
----@param suffix string The end string.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
----@return boolean is_ends `true` if the string ends with the end string, otherwise `false`.
-function string.hasSuffix( str, suffix, str_length )
-    -- suffix is empty
-    if string_byte( suffix, 1, 1 ) == nil then
-        return true
-    end
-
-    -- suffix is the same as the string
-    if str == suffix then
-        return true
-    end
-
-    if str_length == nil then
-        str_length = string_len( str )
-    end
-
-    return string_sub( str, -str_length, str_length ) == suffix
+---@param suffix string The suffix to check for.
+---@param str_length? integer The length of the string to check for. Optionally, it should be used to speed up calculations.
+---@param suffix_length? integer The length of the suffix to check for. Optionally, it should be used to speed up calculations.
+---@return boolean has_suffix `true` if the string ends with the suffix, `false` otherwise.
+function string.hasSuffix( str, suffix, str_length, suffix_length )
+    return string_byte( suffix, 1, 1 ) == nil or -- suffix is empty
+        str == suffix or                         -- suffix is the same as the string
+        string_sub( str, -((suffix_length or string_len( suffix ))), (str_length or string_len( str )) ) == suffix
 end
 
 --- [SHARED AND MENU]
