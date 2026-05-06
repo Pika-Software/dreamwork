@@ -239,8 +239,10 @@ end
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return boolean is_starts `true` if the string starts with the start string, otherwise `false`.
 function string.hasPrefix( str, str_start, str_length )
-    return str == str_start or string_sub( str, 1, str_length or string_len( str ) ) == str_start
+    return str == str_start or string_sub( str, 1, str_length or string_len( str_start ) ) == str_start
 end
+
+print( string.hasPrefix( "info_player_start", "info_player_" ) )
 
 --- [SHARED AND MENU]
 ---
