@@ -242,8 +242,6 @@ function string.hasPrefix( str, str_start, str_length )
     return str == str_start or string_sub( str, 1, str_length or string_len( str_start ) ) == str_start
 end
 
-print( string.hasPrefix( "info_player_start", "info_player_" ) )
-
 --- [SHARED AND MENU]
 ---
 --- Checks if the string ends with the end string.
