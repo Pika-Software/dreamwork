@@ -17,7 +17,7 @@ local raw_type = std.raw.type
 --- It"s a wrapper for the native jit library from LuaJIT.
 ---
 ---@class dreamwork.std.jit
----@field os "Windows" | "Linux" | "OSX" | "BSD" | "POSIX" | "Other"
+---@field os "Windows" | "Linux" | "OSX" | "BSD" | "POSIX" | "Other" | string
 ---@field arch "x86" | "x64" | "arm" | "arm64" | "arm64be" | "ppc" | "ppc64" | "ppc64le" | "mips" | "mipsel" | "mips64" | "mips64el" | string
 ---@field version string The full name of the JIT compiler version.
 ---@field version_number integer The version of the JIT compiler.
@@ -53,6 +53,7 @@ jit.on = glua_jit.on or debug_fempty
 jit.off = glua_jit.off or debug_fempty
 jit.status = glua_jit.status or function() return false end
 
+---@diagnostic disable-next-line: deprecated
 jit.attach = glua_jit.attach or debug_fempty
 jit.flush = glua_jit.flush or debug_fempty
 

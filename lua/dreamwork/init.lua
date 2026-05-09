@@ -847,6 +847,7 @@ do
     local math_ceil, math_log, math_isfinite = math.ceil, math.log, math.isfinite
     local math_ln2 = math.ln2
 
+    ---@param value number
     ---@private
     function std.Number.__len( value )
         if math_isfinite( value ) then
