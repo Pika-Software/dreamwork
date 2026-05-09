@@ -149,13 +149,88 @@ std.select = select
 local tostring = _G.tostring
 std.tostring = tostring
 
+---@generic K, V
+---@alias dreamwork.KeyValueTable table<K, V>
+
+---@generic K, V
+---@class dreamwork.Metatable<K, V>
+---@field __type? string
+---@field __typeid? integer
+---@field __mode? "v" | "k" | "kv"
+---@field __metatable? any
+---@field __tostring? fun(self: table<K, V>): string
+---@field __gc? fun(self: table<K,V>)
+---@field __add? fun(self: table<K,V>, other: any): any
+---@field __sub? fun(self: table<K,V>, other: any): any
+---@field __mul? fun(self: table<K,V>, other: any): any
+---@field __div? fun(self: table<K,V>, other: any): any
+---@field __mod? fun(self: table<K,V>, other: any): any
+---@field __pow? fun(self: table<K,V>, other: any): any
+---@field __unm? fun(self: table<K,V>): any
+---@field __idiv? fun(self: table<K,V>, other: any): any
+---@field __band? fun(self: table<K,V>, other: any): any
+---@field __bor? fun(self: table<K,V>, other: any): any
+---@field __bxor? fun(self: table<K,V>, other: any): any
+---@field __bnot? fun(self: table<K,V>): any
+---@field __shl? fun(self: table<K,V>, other: any): any
+---@field __shr? fun(self: table<K,V>, other: any): any
+---@field __concat? fun(self: table<K,V>, other: any): any
+---@field __len? fun(self: table<K,V>): integer
+---@field __eq? fun(self: table<K,V>, other: any): boolean
+---@field __lt? fun(self: table<K,V>, other: any): boolean
+---@field __le? fun(self: table<K,V>, other: any): boolean
+---@field __index? table<any, any>|fun(self: table<K,V>, key: K): any
+---@field __newindex? table<any, any>|fun(self: table<K,V>, key: K, value: V)
+---@field __call? fun(self: table<K,V>, ...): any
+---@field __pairs? fun(self: table<K,V>): fun(tbl: table<K,V>, key: K?): K?, V?
+---@field __close? fun(self: table<K,V>, errobj: any): any
+---@field __serialize? fun(self: table<K,V>, writer: dreamwork.std.pack.Writer, data: any?)
+---@field __deserialize? fun(self: table<K,V>, reader: dreamwork.std.pack.Reader, data: any?)
+---@field __tohash? fun(self: table<K,V>): string
+---@field __tostring? fun(self: table<K,V>): string
+---@field __tonumber? fun(self: table<K,V>): number
+---@field __toboolean? fun(self: table<K,V>): boolean
+---@field __tocolor? fun(self: table<K,V>): dreamwork.std.Color
+---@field __tostring? fun( self: table<K,V>): string
+
+--- [SHARED AND MENU]
+---
+--- If object does not have a metatable, returns `nil`.
+---
+--- Otherwise, if the object's metatable has a `__metatable` field, returns the associated value.
+---
+--- Otherwise, returns the metatable of the given object.
+---
+--- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-getmetatable)
+---
+---@type fun(object: any): dreamwork.Metatable | nil
 std.getmetatable = _G.getmetatable
 
+--- [SHARED AND MENU]
+---
+--- Sets the metatable for the given table.
+---
+--- If `metatable` is `nil`, removes the metatable of the given table.
+---
+--- If the original metatable has a `__metatable` field, raises an error.
+---
+--- This function returns `table`.
+---
+--- To change the metatable of other types from Lua code, you must use the debug library ([§6.10](http://www.lua.org/manual/5.4/manual.html#6.10)).
+---
+---[View documents](http://www.lua.org/manual/5.4/manual.html#pdf-setmetatable)
+---
+---@generic K, V
+---@type fun(tbl: dreamwork.KeyValueTable<K,V>, metatable: dreamwork.Metatable<K,V>): dreamwork.KeyValueTable<K,V>
 local setmetatable = _G.setmetatable
 std.setmetatable = setmetatable
 
-std.getfenv = _G.getfenv -- removed in Lua 5.2
-std.setfenv = _G.setfenv -- removed in Lua 5.2
+
+--- removed in Lua 5.2
+std.getfenv = _G.getfenv
+
+--- removed in Lua 5.2
+std.setfenv = _G.setfenv
 
 std.xpcall = _G.xpcall
 std.pcall = _G.pcall
@@ -201,6 +276,9 @@ end
 
 dofile( "std/debug.lua" )
 dofile( "std/gc.lua" )
+
+---@class dreamwork.std.gc
+local gc = std.gc
 
 local debug = std.debug
 local debug_fempty = debug.fempty
@@ -431,9 +509,10 @@ end
 --- [SHARED AND MENU]
 ---
 --- Checks if the value is valid.
----@param value any The value to check.
----@return boolean is_valid Returns `true` if the value is valid, otherwise `false`.
-function std.isvalid( value )
+---
+---@param value any
+---@return boolean is_valid
+function std.isValid( value )
     local fn = debug_getmetavalue( value, "__isvalid" )
     if fn == nil then
         return false
@@ -502,17 +581,16 @@ if isTable == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Checks if the value type is a `table`.
+    --- Checks whether the value type is a `table`.
     ---
-    ---@param value any The value to check.
-    ---@return boolean is_table Returns `true` if the value is a table, otherwise `false`.
+    ---@param value any
+    ---@return boolean is_table
     function isTable( value )
         return raw_type( value ) == "table"
     end
 
 end
 
-local isString, STRING, NUMBER
 do
 
     local debug_registermetatable = debug.registermetatable
@@ -521,150 +599,163 @@ do
     -- nil ( 0 )
     do
 
-        local NIL = debug_getmetatable( nil )
-        if NIL == nil then
-            NIL = {}
-            debug_setmetatable( nil, NIL )
+        ---@class dreamwork.NilMetatable : dreamwork.Metatable
+        local Nil = debug_getmetatable( nil )
+
+        if Nil == nil then
+            Nil = {}
+            debug_setmetatable( nil, Nil )
         end
 
-        debug_registermetatable( "nil", NIL )
+        debug_registermetatable( "nil", Nil )
 
-        NIL.__type = "nil"
-        NIL.__typeid = 0
+        Nil.__type = "nil"
+        Nil.__typeid = 0
 
         ---@private
-        function NIL.__toboolean()
+        function Nil.__toboolean()
             return false
         end
 
         ---@private
-        function NIL.__tonumber()
+        function Nil.__tonumber()
             return 0
         end
 
-        NIL.__len = NIL.__tonumber
+        Nil.__len = Nil.__tonumber
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is `nil`.
+        --- Checks whether the value type is `nil`.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_nil Returns `true` if the value is `nil`, otherwise `false`.
+        ---@param value any
+        ---@return boolean is_nil
         function std.isNil( value )
             return value == nil
         end
+
+        std.Nil = Nil
 
     end
 
     -- boolean ( 1 )
     do
 
-        local BOOLEAN = debug_getmetatable( false )
-        if BOOLEAN == nil then
-            BOOLEAN = {}
-            debug_setmetatable( false, BOOLEAN )
+        ---@class dreamwork.BooleanMetatable : dreamwork.Metatable
+        local Boolean = debug_getmetatable( false )
+
+        if Boolean == nil then
+            Boolean = {}
+            debug_setmetatable( false, Boolean )
         end
 
-        debug_registermetatable( "boolean", BOOLEAN )
+        debug_registermetatable( "boolean", Boolean )
 
-        BOOLEAN.__type = "boolean"
-        BOOLEAN.__typeid = 1
+        Boolean.__type = "boolean"
+        Boolean.__typeid = 1
 
         ---@private
-        function BOOLEAN.__toboolean( value )
+        function Boolean.__toboolean( value )
             return value
         end
 
         ---@private
-        function BOOLEAN.__tonumber( value )
+        function Boolean.__tonumber( value )
             return value == true and 1 or 0
         end
 
         ---@private
-        function BOOLEAN.__len()
+        function Boolean.__len()
             return 1
         end
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is a `boolean`.
+        --- Checks whether the value type is `boolean`.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_bool Returns `true` if the value is a boolean, otherwise `false`.
+        ---@param value any
+        ---@return boolean is_bool
         function std.isBoolean( value )
             return value == true or value == false
         end
+
+        std.Boolean = Boolean
 
     end
 
     -- number ( 3 )
     do
 
-        NUMBER = debug_getmetatable( 0 )
-        if NUMBER == nil then
-            NUMBER = {}
-            debug_setmetatable( 0, NUMBER )
+        ---@class dreamwork.NumberMetatable : dreamwork.Metatable
+        local Number = debug_getmetatable( 0 )
+
+        if Number == nil then
+            Number = {}
+            debug_setmetatable( 0, Number )
         end
 
-        debug_registermetatable( "number", NUMBER )
+        debug_registermetatable( "number", Number )
 
-        NUMBER.__type = "number"
-        NUMBER.__typeid = 3
+        Number.__type = "number"
+        Number.__typeid = 3
 
         ---@private
-        function NUMBER.__toboolean( value )
+        function Number.__toboolean( value )
             return value ~= 0
         end
 
         ---@private
-        function NUMBER.__tonumber( value )
+        function Number.__tonumber( value )
             return value
         end
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is a `number`.
+        --- Checks whether the value type is a `number`.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_number Returns `true` if the value is a number, otherwise `false`.
+        ---@param value any
+        ---@return boolean is_number
         function std.isNumber( value )
-            return debug_getmetatable( value ) == NUMBER
+            return debug_getmetatable( value ) == Number
         end
+
+        std.Number = Number
 
     end
 
     -- string ( 4 )
     do
 
-        STRING = debug_getmetatable( "" )
-        if STRING == nil then
-            STRING = {}
-            debug_setmetatable( "", STRING )
+        local String = debug_getmetatable( "" )
+
+        if String == nil then
+            String = {}
+            debug_setmetatable( "", String )
         end
 
-        debug_registermetatable( "string", STRING )
+        debug_registermetatable( "string", String )
 
-        STRING.__type = "string"
-        STRING.__typeid = 4
+        String.__type = "string"
+        String.__typeid = 4
 
         ---@private
-        function STRING.__toboolean( value )
+        function String.__toboolean( value )
             return value ~= "" and value ~= "0" and value ~= "false"
         end
 
-        STRING.__tonumber = raw.tonumber
+        String.__tonumber = raw.tonumber
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is a `string`.
+        --- Checks whether the value type is a `string`.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_string Returns `true` if the value is a string, otherwise `false`.
-        function isString( value )
-            return debug_getmetatable( value ) == STRING
+        ---@param value any
+        ---@return boolean is_string
+        function std.isString( value )
+            return debug_getmetatable( value ) == String
         end
 
-        std.isString = isString
+        std.String = String
 
     end
 
@@ -674,34 +765,41 @@ do
     -- function ( 6 )
     do
 
-        local FUNCTION = debug_getmetatable( debug_fempty )
-        if FUNCTION == nil then
-            FUNCTION = {}
-            debug_setmetatable( debug_fempty, FUNCTION )
+        ---@class dreamwork.FunctionMetatable : dreamwork.Metatable
+        local Function = debug_getmetatable( debug_fempty )
+
+        if Function == nil then
+            Function = {}
+            debug_setmetatable( debug_fempty, Function )
         end
 
-        debug_registermetatable( "function", FUNCTION )
+        debug_registermetatable( "function", Function )
+
+        Function.__type = "function"
+        Function.__typeid = 6
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is a `function`.
+        --- Checks whether the value type is a `function`.
         ---
         ---@param value any
-        ---@return boolean isFunction returns true if the value is a function, otherwise false
+        ---@return boolean is_function
         function std.isFunction( value )
-            return debug_getmetatable( value ) == FUNCTION
+            return debug_getmetatable( value ) == Function
         end
 
         --- [SHARED AND MENU]
         ---
         --- Checks if the value is callable, basically it's a function or a table with a callable `__call` metamethod.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_callable Returns `true` if the value is can be called (like a function), otherwise `false`.
+        ---@param value any
+        ---@return boolean is_callable
         function std.isCallable( value )
             local metatable = debug_getmetatable( value )
-            return metatable ~= nil and (metatable == FUNCTION or debug_getmetatable( metatable.__call ) == FUNCTION)
+            return metatable ~= nil and (metatable == Function or debug_getmetatable( metatable.__call ) == Function)
         end
+
+        std.Function = Function
 
     end
 
@@ -710,23 +808,30 @@ do
 
         local object = coroutine.create( debug_fempty )
 
-        local THREAD = debug_getmetatable( object )
-        if THREAD == nil then
-            THREAD = {}
-            debug_setmetatable( object, THREAD )
+        ---@class dreamwork.std.ThreadMetatable : dreamwork.Metatable
+        local Thread = debug_getmetatable( object )
+
+        if Thread == nil then
+            Thread = {}
+            debug_setmetatable( object, Thread )
         end
 
-        debug_registermetatable( "thread", THREAD )
+        debug_registermetatable( "thread", Thread )
+
+        Thread.__type = "thread"
+        Thread.__typeid = 8
 
         --- [SHARED AND MENU]
         ---
-        --- Checks if the value type is a `thread`.
+        --- Checks whether the value type is a `thread`.
         ---
-        ---@param value any The value to check.
-        ---@return boolean is_thread Returns `true` if the value is a thread, otherwise `false`.
+        ---@param value any
+        ---@return boolean is_thread
         function std.isThread( value )
-            return debug_getmetatable( value ) == THREAD
+            return debug_getmetatable( value ) == Thread
         end
+
+        std.Thread = Thread
 
     end
 
@@ -743,7 +848,7 @@ do
     local math_ln2 = math.ln2
 
     ---@private
-    function NUMBER.__len( value )
+    function std.Number.__len( value )
         if math_isfinite( value ) then
             if (value % 1) == 0 then
                 return math_ceil( math_log( value + 1 ) / math_ln2 ) + (value < 0 and 1 or 0)
@@ -797,10 +902,12 @@ dofile( "std/path.lua" )
 dofile( "std/bit.lua" )
 
 local string = std.string
-STRING.__len = string.len
+std.String.__len = string.len
 
 local string_format = string.format
 local string_byte = string.byte
+
+local isString = std.isString
 
 --- [SHARED AND MENU]
 ---
@@ -821,6 +928,10 @@ function raw.index( tbl, key )
 
     return raw_get( tbl, key )
 end
+
+-- we need more sugar!!1
+raw.getmetatable = debug.getmetatable
+raw.setmetatable = debug.setmetatable
 
 do
 
@@ -857,34 +968,37 @@ function std.tohash( e )
     end
 end
 
--- TODO: remove me later or rewrite
-do
-
-    local gc = std.gc
-
-    local iter = 1000
-    local warmup = math.min( iter / 100, 100 )
-
-    function dreamwork.bench( name, fn )
-        for _ = 1, warmup do
-            fn()
-        end
-
-        gc.stop()
-
-        local st = os_clock()
-        for _ = 1, iter do
-            fn()
-        end
-
-        st = os_clock() - st
-        gc.restart()
-
-        print( string_format( "%d iterations of %s, took %f sec.", iter, name, st ) )
-
-        return st
+--- [SHARED AND MENU]
+---
+--- Runs a benchmark on the given function, measuring the time it takes to execute a specified number of iterations.
+---
+---@param name string The name of the benchmark.
+---@param fn function The function to benchmark.
+---@param iterations? integer The number of iterations to run.
+function dreamwork.bench( name, fn, iterations )
+    if iterations == nil then
+        iterations = 1000
     end
 
+    local warmup = math.min( iterations / 100, 100 )
+
+    for _ = 1, warmup do
+        fn()
+    end
+
+    gc.stop()
+
+    local st = os_clock()
+    for _ = 1, iterations do
+        fn()
+    end
+
+    st = os_clock() - st
+    gc.restart()
+
+    std.printf( "%d iterations of %s, took %f sec.", iterations, name, st )
+
+    return st
 end
 
 local table_concat = std.table.concat
@@ -914,8 +1028,8 @@ do
     ---@param value any The argument value.
     ---@param arg_num any The argument number/key.
     ---@param expected_type "string" | "number" | "boolean" | "table" | "function" | "thread" | "any" | string The expected type name.
-    ---@return boolean ok Returns `true` if the argument is of the expected type, `false` otherwise.
-    ---@return string? msg The error message.
+    ---@return boolean ok `true` if the argument is of the expected type; otherwise, `false`.
+    ---@return string? msg The error message if the argument type does not match the expected type, otherwise `nil`.
     function std.arg( value, arg_num, expected_type )
         local got = type( value )
         if got == expected_type or expected_type == "any" then
@@ -927,44 +1041,92 @@ do
 
     local len = std.len
 
-    ---@class dreamwork.OverloadInput
-    ---@field match string[] | string
-    ---@field fn function
+    do
 
-    ---@generic F: function
-    ---@param fallback_fn F
-    ---@param inputs dreamwork.OverloadInput[]
-    ---@param ... any
-    ---@return F
-    local function overload_fn( fallback_fn, inputs, ... )
-        ---@type integer
-        local arg_count = select( "#", ... )
+        ---@generic F: function
+        ---@class dreamwork.OverloadInput<F>
+        ---@field match string[] | string
+        ---@field fn F
 
-        ---@type string[]
-        local arg_types = {}
+        ---@generic F: function
+        ---@param inputs dreamwork.OverloadInput[]
+        ---@param ... any
+        ---@return function | nil
+        local function input_select( inputs, ... )
+            ---@type integer
+            local arg_count = select( "#", ... )
 
-        for i = 1, arg_count, 1 do
-            arg_types[ i ] = type( select( i, ... ) )
-        end
+            ---@type string[]
+            local arg_types = {}
 
-        for i = 1, inputs[ 0 ], 1 do
-            local input = inputs[ i ]
-            local match = input.match
+            for i = 1, arg_count, 1 do
+                arg_types[ i ] = type( select( i, ... ) )
+            end
 
-            if arg_count == match[ 0 ] then
-                for j = 1, arg_count, 1 do
-                    if match[ j ] == arg_types[ j ] then
-                        if j == arg_count then
-                            return input.fn( ... )
+            for i = 1, inputs[ 0 ], 1 do
+                local input = inputs[ i ]
+                local match = input.match
+
+                if arg_count == match[ 0 ] then
+                    for j = 1, arg_count, 1 do
+                        if match[ j ] ~= arg_types[ j ] then
+                            break
                         end
-                    else
-                        break
+
+                        if j == arg_count then
+                            return input.fn
+                        end
                     end
                 end
             end
+
+            return nil
         end
 
-        return fallback_fn( ... )
+        --- [SHARED AND MENU]
+        ---
+        --- Overloads the given function with the given inputs.
+        ---
+        ---@generic F: function
+        ---@param inputs dreamwork.OverloadInput<F>[]
+        ---@param fallback_fn? F
+        ---@return F fn_over
+        function std.dispatch( inputs, fallback_fn )
+            local input_count = len( inputs )
+            inputs[ 0 ] = input_count
+
+            for i = 1, input_count, 1 do
+                local input = inputs[ i ]
+
+                if not std.isFunction( input.fn ) then
+                    error( "overload: input " .. i .. " is not a function", 2 )
+                end
+
+                local input_match = input.match
+                if input_match == nil then
+                    error( "overload: input " .. i .. " has no match", 2 )
+                elseif std.isString( input_match ) then
+                    ---@cast input_match string
+                    input.match = { [ 0 ] = 1, input_match }
+                else
+                    input_match[ 0 ] = len( input_match )
+                end
+            end
+
+            return function( ... )
+                local fn = input_select( inputs, ... )
+                if fn == nil then
+                    if fallback_fn == nil then
+                        error( "dispatch: no input matches and no fallback function", 2 )
+                    end
+
+                    return fallback_fn( ... )
+                end
+
+                return fn( ... )
+            end
+        end
+
     end
 
     --- [SHARED AND MENU]
@@ -972,33 +1134,65 @@ do
     --- Overloads the given function with the given inputs.
     ---
     ---@generic F: function
-    ---@param fn F
-    ---@param inputs dreamwork.OverloadInput[]
-    ---@return F fn_over The overloaded function.
-    function std.overload( fn, inputs )
-        local input_count = len( inputs )
-        inputs[ 0 ] = input_count
+    ---@param main_fn function
+    ---@param match string[] | string
+    ---@param overload_fn function
+    ---@return function
+    function std.overload( main_fn, match, overload_fn )
+        ---@type integer
+        local required_args = 0
 
-        for i = 1, input_count, 1 do
-            local input = inputs[ i ]
+        if isString( match ) then
+            ---@cast match string
+            required_args = 1
+        else
 
-            if not std.isFunction( input.fn ) then
-                error( "overload: input " .. i .. " is not a function", 2 )
+            ---@cast match string[]
+
+            required_args = len( match )
+
+            if required_args == 1 then
+                match = match[ 1 ]
             end
 
-            local input_match = input.match
-            if input_match == nil then
-                error( "overload: input " .. i .. " has no match", 2 )
-            elseif std.isString( input_match ) then
-                ---@cast input_match string
-                input.match = { [ 0 ] = 1, input_match }
-            else
-                input_match[ 0 ] = len( input_match )
+        end
+
+        if required_args == 0 then
+            return main_fn
+        elseif required_args == 1 then
+            ---@cast match string
+
+            return function( ... )
+                ---@type integer
+                local arg_count = select( "#", ... )
+                if arg_count ~= 1 then
+                    return main_fn( ... )
+                end
+
+                if match == type( select( 1, ... ) ) then
+                    return overload_fn( ... )
+                else
+                    return main_fn( ... )
+                end
             end
         end
 
         return function( ... )
-            return overload_fn( fn, inputs, ... )
+            ---@type integer
+            local arg_count = select( "#", ... )
+            if arg_count == required_args then
+                for i = 1, arg_count, 1 do
+                    if match[ i ] == type( select( i, ... ) ) then
+                        if i == arg_count then
+                            return overload_fn( ... )
+                        end
+                    else
+                        break
+                    end
+                end
+            end
+
+            return main_fn( ... )
         end
     end
 
@@ -1132,6 +1326,8 @@ dofile( "std/encoding.vdf.lua" )
 dofile( "engine.lua" )
 
 local engine = dreamwork.engine
+local engine_hookCall = engine.hookCall
+local engine_hookCatch = engine.hookCatch
 
 do
 
@@ -1621,7 +1817,7 @@ if std_metatable == nil then
 
         local last_pre_render = 0
 
-        engine.hookCatch( "PreRender", function()
+        engine_hookCatch( "PreRender", function()
             local elapsed_time = time_elapsed()
 
             if last_pre_render ~= 0 then
@@ -1830,13 +2026,13 @@ logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engin
 
 ---@param game_info dreamwork.engine.GameInfo
 ---@param is_mounted boolean
-engine.hookCatch( "GameMounted", function( game_info, is_mounted )
+engine_hookCatch( "GameMounted", function( game_info, is_mounted )
     logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
 end, 1 )
 
 ---@param addon_info dreamwork.engine.AddonInfo
 ---@param is_mounted boolean
-engine.hookCatch( "AddonMounted", function( addon_info, is_mounted )
+engine_hookCatch( "AddonMounted", function( addon_info, is_mounted )
     logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
 end, 1 )
 
@@ -1860,7 +2056,7 @@ do
     changes_timeout:attach( perform_synchronization )
     perform_synchronization()
 
-    engine.hookCatch( "GameContentChanged", function()
+    engine_hookCatch( "GameContentChanged", function()
         changes_timeout:start()
     end, 1 )
 

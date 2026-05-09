@@ -16,7 +16,7 @@ local setmetatable = std.setmetatable
 
 --- [SHARED AND MENU]
 ---
---- The class (OOP) library.
+--- A library for creating classes, implementing inheritance, and working with the object model in Lua.
 ---
 ---@class dreamwork.std.class
 local class = {}
@@ -26,20 +26,12 @@ std.class = class
 ---@alias dreamwork.Class.__new fun( cls: dreamwork.Class, ...: any? ): dreamwork.Object
 ---@alias dreamwork.Object.__init fun( obj: dreamwork.Object, ...: any? )
 
----@class dreamwork.Object
+---@class dreamwork.Object : dreamwork.Metatable
 ---@field private __type string The name of object type. **READ ONLY**
----@field private __init? dreamwork.Object.__init A function that will be called when creating a new object and should be used as the constructor.
----@field __class dreamwork.Class The class of the object. **READ ONLY**
+---@field __class? dreamwork.Class  The class of the object. **READ ONLY**
 ---@field __parent? dreamwork.Object The parent of the object. **READ ONLY**
+---@field private __init? dreamwork.Object.__init A function that will be called when creating a new object and should be used as the constructor.
 ---@field protected __new? dreamwork.Class.__new A function that will be called when a new class is created and allows you to replace the result.
----@field protected __serialize? fun( obj: dreamwork.Object, writer: dreamwork.std.pack.Writer, data: any? )
----@field protected __deserialize? fun( obj: dreamwork.Object, reader: dreamwork.std.pack.Reader, data: any? )
----@field protected __tohash? fun( obj: dreamwork.Object ): string
----@field protected __tostring? fun( obj: dreamwork.Object ): string
----@field protected __tonumber? fun( obj: dreamwork.Object ): number
----@field protected __toboolean? fun( obj: dreamwork.Object ): boolean
----@field protected __tocolor? fun( obj: dreamwork.Object ): dreamwork.std.Color
----@field protected __tostring? fun( obj: dreamwork.Object ): string
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.Object
@@ -110,6 +102,7 @@ do
         end
 
         base.__index = base
+        ---@cast base dreamwork.Object
 
         if parent ~= nil then
             local parent_base = raw_get( parent, "__base" )

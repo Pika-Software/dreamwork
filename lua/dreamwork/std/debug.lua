@@ -50,7 +50,22 @@ do
     debug.getlocal = glua_debug.getlocal
     debug.setlocal = glua_debug.setlocal
 
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the metatable of the given value.
+    ---
+    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.getmetatable)
+    ---
+    ---@type fun( object: any ): dreamwork.Metatable | nil
     debug.getmetatable = glua_debug.getmetatable or std.getmetatable
+
+    --- [SHARED AND MENU]
+    ---
+    --- Sets the metatable for the given value to the given table (which can be `nil`).
+    ---
+    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.setmetatable)
+    ---
+    ---@type fun( object: any, metatable: dreamwork.Metatable | nil )
     debug.setmetatable = glua_debug.setmetatable
 
     debug.getupvalue = glua_debug.getupvalue -- fucked up in menu
@@ -63,8 +78,8 @@ do
     debug.sethook = glua_debug.sethook
 
     -- Lua 5.2/jit
-    debug.upvalueid = glua_debug.upvalueid -- fucked up in menu
-    debug.upvaluejoin = glua_debug.upvaluejoin -- fucked up in menu
+    debug.upvalueid = glua_debug.upvalueid       -- fucked up in menu
+    debug.upvaluejoin = glua_debug.upvaluejoin   -- fucked up in menu
 
     debug.getuservalue = glua_debug.getuservalue -- fucked up in menu
     debug.setuservalue = glua_debug.setuservalue -- fucked up in menu
@@ -72,7 +87,7 @@ do
 end
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
-    error( "execution environment is broken or sandboxed - it's over." )
+    error( "execution environment is broken or sandboxed - it's over ;c" )
 end
 
 --- [SHARED AND MENU]
@@ -98,6 +113,7 @@ if debug.newproxy == nil then
         local fake_userdata = {}
 
         if add_metatable then
+            ---@type dreamwork.Metatable | nil
             local metatable
 
             if add_metatable == true then
@@ -166,6 +182,7 @@ do
         while true do
             local name, value = debug.getupvalue( fn, i )
             if not name then break end
+
             values[ name ] = value
             i = i + 1
         end
@@ -208,7 +225,7 @@ function debug.iscf( location )
     end
 
     local what = dbg_info.what
-    return not ( what == "Lua" or what == "lua" )
+    return not (what == "Lua" or what == "lua")
 end
 
 local registry = debug.getregistry()
@@ -239,7 +256,7 @@ do
         --- Returns the metatable of the given name or `nil` if not found.
         ---
         ---@param name string The name of the metatable.
-        ---@return table | nil meta The metatable.
+        ---@return dreamwork.Metatable | nil meta The metatable.
         function debug.findmetatable( name )
             local cached = registry[ name ]
             if cached ~= nil then
@@ -257,7 +274,6 @@ do
 
     end
 
-
 end
 
 do
@@ -269,7 +285,7 @@ do
     --- Registers the metatable of the given name and table.
     ---
     ---@param name string The name of the metatable.
-    ---@param tbl table The metatable to register.
+    ---@param tbl dreamwork.Metatable The metatable to register.
     ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
@@ -286,6 +302,21 @@ do
 
 end
 
+--- [SHARED AND MENU]
+---
+---
+---@param name string The name of the metatable.
+---@return dreamwork.Metatable metatable The metatable.
+function debug.initmetatable( name )
+    local metatable = debug.findmetatable( name )
+    if metatable == nil then
+        metatable = {}
+        debug.registermetatable( name, metatable, true )
+    end
+
+    return metatable
+end
+
 -- gmod developer/s sanity check
 if debug_getmetatable( fempty ) == nil then
     debug.setmetatable( fempty, {} )
@@ -298,7 +329,7 @@ if debug_getmetatable( fempty ) == nil then
     --- Returns the metatable of the given value or `nil` if not found.
     ---
     ---@param value any The value.
-    ---@return table | nil meta The metatable.
+    ---@return dreamwork.Metatable | nil meta The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
         return debug_getmetatable( value ) or registry[ raw_type( value ) ]
@@ -323,7 +354,7 @@ function debug.getstack( stack_level, what )
 
     local stack, stack_length = {}, 0
 
-    for location = 1 + ( stack_level or 1 ), 16, 1 do
+    for location = 1 + (stack_level or 1), 16, 1 do
         local info = debug_getinfo( location, what )
         if info then
             stack_length = stack_length + 1
@@ -379,7 +410,7 @@ do
             local source = info.source
             if source ~= nil then
                 local rel_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-                return "/workspace/lua/" .. ( string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path )
+                return "/workspace/lua/" .. (string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path)
             end
         end
 

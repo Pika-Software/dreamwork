@@ -19,18 +19,37 @@ local string_format = string.format
 local table = std.table
 local table_insert = table.insert
 
-local raw_pairs = std.raw.pairs
+local raw = std.raw
+local raw_pairs = raw.pairs
+
 local setmetatable = std.setmetatable
-local detour_attach = dreamwork.detour.attach
 
----@overload fun( event_name: string )
-local gameevent_Listen
+local detour = dreamwork.detour
+local detour_fast = detour.fast
+local detour_attach = detour.attach
 
-if gameevent ~= nil and gameevent.Listen ~= nil then
-    gameevent_Listen = gameevent.Listen
-else
-    gameevent_Listen = debug_fempty
-end
+---@class Entity : dreamwork.Object
+local ENTITY = debug.initmetatable( "Entity" )
+
+---@class Player
+local PLAYER = debug.initmetatable( "Player" )
+PLAYER.__parent = ENTITY
+
+---@class Weapon
+local WEAPON = debug.initmetatable( "Weapon" )
+WEAPON.__parent = ENTITY
+
+---@class Vehicle
+local VEHICLE = debug.initmetatable( "Vehicle" )
+VEHICLE.__parent = ENTITY
+
+---@class NPC
+local NPC = debug.initmetatable( "NPC" )
+NPC.__parent = ENTITY
+
+---@class NextBot
+local NEXTBOT = debug.initmetatable( "NextBot" )
+NEXTBOT.__parent = ENTITY
 
 --- [SHARED AND MENU]
 ---
@@ -82,6 +101,99 @@ if engine.hookCatch == nil then
 
     do
 
+        ---@see https://wiki.facepunch.com/gmod/gameevent
+        ---@type table<string, boolean>
+        local source_events = {
+            achievement_earned = true,
+            achievement_event = true,
+            break_breakable = true,
+            break_prop = true,
+            client_beginconnect = true,
+            client_connected = true,
+            client_disconnect = true,
+            entity_killed = true,
+            flare_ignite_npc = true,
+            freezecam_started = true,
+            game_newmap = true,
+            hide_freezepanel = true,
+            hltv_cameraman = true,
+            hltv_changed_mode = true,
+            hltv_changed_target = true,
+            hltv_chase = true,
+            hltv_fixed = true,
+            hltv_message = true,
+            hltv_rank_camera = true,
+            hltv_rank_entity = true,
+            hltv_status = true,
+            hltv_title = true,
+            host_quit = true,
+            OnRequestFullUpdate = true,
+            player_activate = true,
+            player_changename = true,
+            player_connect = true,
+            player_connect_client = true,
+            player_disconnect = true,
+            player_hurt = true,
+            player_info = true,
+            player_say = true,
+            player_spawn = true,
+            ragdoll_dissolved = true,
+            server_addban = true,
+            server_cvar = true,
+            server_removeban = true,
+            server_spawn = true,
+            show_freezepanel = true,
+            user_data_downloaded = true,
+        }
+
+        ---@type table<string, boolean>
+        local listen_events = {}
+
+        do
+
+            ---@overload fun( event_name: string )
+            local listen_event
+            if gameevent ~= nil and gameevent.Listen ~= nil then
+                listen_event = gameevent.Listen
+            else
+                listen_event = debug_fempty
+            end
+
+            ---@type dreamwork.Metatable<string, boolean>
+            local events_metatable = {}
+
+            function events_metatable:__newindex( key )
+                listen_event( key )
+            end
+
+            std.setmetatable( listen_events, events_metatable )
+
+        end
+
+        local hook_listen_events
+        do
+
+            local select = std.select
+
+            --- [SHARED AND MENU]
+            ---
+            --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
+            ---
+            --- Note: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
+            ---
+            --- Note: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
+            ---
+            ---@param ... string The names of the events to listen for.
+            function hook_listen_events( ... )
+                for i = 1, select( "#", ... ), 1 do
+                    listen_events[ select( i, ... ) ] = true
+                end
+            end
+
+            engine.hookListenEvents = hook_listen_events
+
+        end
+
         ---@param self table<integer, dreamwork.std.Hook | fun( ... ): ...>
         ---@param ... any
         ---@return any, any, any, any, any, any
@@ -103,6 +215,10 @@ if engine.hookCatch == nil then
         ---@param index? integer The index to insert the callback at.
         ---@return integer position The position of the inserted callback.
         function engine.hookCatch( event_name, fn, index )
+            if source_events[ event_name ] ~= nil and listen_events[ event_name ] == nil then
+                hook_listen_events( event_name )
+            end
+
             local callbacks = engine_hooks[ event_name ]
             if callbacks == nil then
                 callbacks = {}
@@ -136,7 +252,133 @@ if engine.hookCatch == nil then
 
 end
 
+local engine_hookCatch = engine.hookCatch
 local engine_hookCall = engine.hookCall
+
+do
+
+    local entity_metatables = {
+        ENTITY,
+        PLAYER,
+        WEAPON,
+        VEHICLE,
+        NPC,
+        NEXTBOT,
+    }
+
+    for i = 1, #entity_metatables, 1 do
+        local metatable = entity_metatables[ i ]
+        metatable.__gc = detour_fast( function( entity_userdata )
+            engine_hookCall( "EntityGarbageCollected", entity_userdata )
+        end, metatable.__gc )
+    end
+
+end
+
+do
+
+    ---@class dreamwork.std.gc
+    local gc = std.gc
+
+    local raw_set = raw.set
+
+    ---@alias dreamwork.std.gc.Type "Entity" | "EntityID" | "Player" | "UserID" | "AccountID"
+
+    ---@alias dreamwork.std.gc.Instruction fun( object: any ): any
+
+    ---@type table<string, table>
+    local track_list = {}
+
+    ---@type table<table, dreamwork.std.gc.Instruction>
+    local track_instructions = {}
+
+    std.setmetatable( track_list, {
+        ---@param self table<string, table>
+        ---@param type_name dreamwork.std.gc.Type
+        __index = function( self, type_name )
+            local tables = {
+                [ 0 ] = 0,
+            }
+
+            gc.setTableRules( tables, false, true )
+
+            self[ type_name ] = tables
+            return tables
+        end
+    } )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Sets up garbage collection for the given table by type.
+    ---
+    ---@param tbl table
+    ---@param type_name dreamwork.std.gc.Type
+    ---@param instruction dreamwork.std.gc.Instruction | nil
+    function gc.setup( tbl, type_name, instruction )
+        local tables = track_list[ type_name ]
+        local record_count = tables[ 0 ] + 1
+
+        tables[ record_count ] = tbl
+        tables[ 0 ] = record_count
+
+        track_instructions[ tbl ] = instruction
+    end
+
+    ---@param record_type dreamwork.std.gc.Type
+    ---@param object any
+    local function object_destroyed( record_type, object )
+        local tables = track_list[ record_type ]
+        local record_count = tables[ 0 ]
+
+        for i = record_count, 1, -1 do
+            local tbl = tables[ i ]
+            if tbl ~= nil then
+                local key
+
+                local fn = track_instructions[ tbl ]
+                if fn == nil then
+                    table.remove( tables, i )
+                    record_count = record_count - 1
+                else
+                    key = fn( object )
+                end
+
+                raw_set( tbl, key or object, nil )
+            end
+        end
+
+        tables[ 0 ] = record_count
+    end
+
+    do
+
+        local Entity_EntIndex = ENTITY.EntIndex
+
+        engine_hookCatch( "EntityRemoved", function( entity )
+            object_destroyed( "Entity", entity )
+            object_destroyed( "EntityID", Entity_EntIndex( entity ) )
+        end )
+
+    end
+
+    do
+
+        local Player_AccountID = PLAYER.AccountID
+        local Player_UserID = PLAYER.UserID
+        local Player_IsBot = PLAYER.IsBot
+
+        engine_hookCatch( "PlayerDisconnected", function( pl )
+            object_destroyed( "Player", pl )
+            object_destroyed( "UserID", Player_UserID( pl ) )
+
+            if not Player_IsBot( pl ) then
+                object_destroyed( "AccountID", Player_AccountID( pl ) )
+            end
+        end )
+
+    end
+
+end
 
 do
 
@@ -320,10 +562,39 @@ do
     local ConVarExists = _G.ConVarExists or debug_fempty
     local CreateConVar = _G.CreateConVar or debug_fempty
 
-    ---@type table<string, ConVar>
-    local cache = {}
+    ---@type dreamwork.KeyValueTable<string, ConVar>
+    local console_variables = {}
 
-    std.gc.setTableRules( cache, false, true )
+    ---@type dreamwork.Metatable<string, ConVar>
+    local metatable = {
+        __mode = "v"
+    }
+
+    ---@type table<string, boolean>
+    local blacklist = {}
+
+    function metatable:__index( name )
+        if blacklist[ name ] then
+            return nil
+        end
+
+        local console_variable = GetConVar_Internal( name )
+        if console_variable == nil then
+            if ConVarExists( name ) then
+                blacklist[ name ] = true
+            end
+
+            return nil
+        end
+
+        console_variables[ name ] = console_variable
+
+        return console_variable
+    end
+
+    std.setmetatable( console_variables, metatable )
+
+    engine.ConsoleVariables = console_variables
 
     --- [SHARED AND MENU]
     ---
@@ -332,13 +603,7 @@ do
     ---@param name string The name of the console variable.
     ---@return ConVar? cvar The console variable object.
     function engine.consoleVariableGet( name )
-        local value = cache[ name ]
-        if value == nil then
-            value = GetConVar_Internal( name )
-            cache[ name ] = value
-        end
-
-        return value
+        return console_variables[ name ]
     end
 
     --- [SHARED AND MENU]
@@ -353,14 +618,14 @@ do
     ---@param max? number The maximum value of the console variable.
     ---@return ConVar? cvar The console variable object.
     function engine.consoleVariableCreate( name, default, flags, description, min, max )
-        local value = cache[ name ]
-        if value == nil then
+        local variable = console_variables[ name ]
+        if variable == nil then
             ---@diagnostic disable-next-line: param-type-mismatch
-            value = CreateConVar( name, default, flags, description, min, max )
-            cache[ name ] = value
+            variable = CreateConVar( name, default, flags, description, min, max )
+            console_variables[ name ] = variable
         end
 
-        return value
+        return variable
     end
 
     --- [SHARED AND MENU]
@@ -370,7 +635,7 @@ do
     ---@param name string The name of the console variable.
     ---@return boolean exists `true` if the console variable exists, `false` otherwise.
     function engine.consoleVariableExists( name )
-        return cache[ name ] ~= nil or ConVarExists( name )
+        return console_variables[ name ] ~= nil or ConVarExists( name )
     end
 
 end
@@ -457,9 +722,7 @@ do
     local engine_consoleVariableGet = engine.consoleVariableGet
     local values = {}
 
-    gameevent_Listen( "server_cvar" )
-
-    engine.hookCatch( "server_cvar", function( data )
+    engine_hookCatch( "server_cvar", function( data )
         local name, new_value = data.cvarname, data.cvarvalue
         local old_value = values[ name ]
 
@@ -805,7 +1068,7 @@ do
     engine.GameList, engine.GameCount, engine.GameHash = actual_game_list, actual_game_count, actual_game_hash
     engine.AddonList, engine.AddonCount, engine.AddonHash = actual_addon_list, actual_addon_count, actual_addon_hash
 
-    engine.hookCatch( "GameContentUpdate", function()
+    engine_hookCatch( "GameContentUpdate", function()
         ---@type dreamwork.engine.GameInfo[], dreamwork.engine.AddonInfo[]
         local game_list, addon_list = getGames() or {}, getAddons() or {}
         local game_count, addon_count = #game_list, #addon_list
@@ -920,108 +1183,6 @@ do
         return game_changes, addon_changes
     end, 1 )
 
-end
-
-local entity_meta = debug.findmetatable( "Entity" )
-if entity_meta == nil then
-    entity_meta = {}
-    debug.registermetatable( "Entity", entity_meta, true )
-end
-
-if entity_meta.__gc == nil then
-    function entity_meta.__gc( entity_userdata )
-        engine_hookCall( "EntityGarbageCollected", entity_userdata )
-    end
-else
-    entity_meta.__gc = detour_attach( entity_meta.__gc, function( fn, entity_userdata )
-        engine_hookCall( "EntityGarbageCollected", entity_userdata )
-        fn( entity_userdata )
-    end )
-end
-
-local player_meta = debug.findmetatable( "Player" )
-if player_meta == nil then
-    player_meta = {}
-    debug.registermetatable( "Player", player_meta, true )
-end
-
-if player_meta.__gc == nil then
-    function player_meta.__gc( player_userdata )
-        engine_hookCall( "EntityGarbageCollected", player_userdata )
-    end
-else
-    player_meta.__gc = detour_attach( player_meta.__gc, function( fn, player_userdata )
-        engine_hookCall( "EntityGarbageCollected", player_userdata )
-        fn( player_userdata )
-    end )
-end
-
-local weapon_meta = debug.findmetatable( "Weapon" )
-if weapon_meta == nil then
-    weapon_meta = {}
-    debug.registermetatable( "Weapon", weapon_meta, true )
-end
-
-if weapon_meta.__gc == nil then
-    function weapon_meta.__gc( weapon_userdata )
-        engine_hookCall( "EntityGarbageCollected", weapon_userdata )
-    end
-else
-    weapon_meta.__gc = detour_attach( weapon_meta.__gc, function( fn, weapon_userdata )
-        engine_hookCall( "EntityGarbageCollected", weapon_userdata )
-        fn( weapon_userdata )
-    end )
-end
-
-local vehicle_meta = debug.findmetatable( "Vehicle" )
-if vehicle_meta == nil then
-    vehicle_meta = {}
-    debug.registermetatable( "Vehicle", vehicle_meta, true )
-end
-
-if vehicle_meta.__gc == nil then
-    function vehicle_meta.__gc( vehicle_userdata )
-        engine_hookCall( "EntityGarbageCollected", vehicle_userdata )
-    end
-else
-    vehicle_meta.__gc = detour_attach( vehicle_meta.__gc, function( fn, vehicle_userdata )
-        engine_hookCall( "EntityGarbageCollected", vehicle_userdata )
-        fn( vehicle_userdata )
-    end )
-end
-
-local npc_meta = debug.findmetatable( "NPC" )
-if npc_meta == nil then
-    npc_meta = {}
-    debug.registermetatable( "NPC", npc_meta, true )
-end
-
-if npc_meta.__gc == nil then
-    function npc_meta.__gc( npc_userdata )
-        engine_hookCall( "EntityGarbageCollected", npc_userdata )
-    end
-else
-    npc_meta.__gc = detour_attach( npc_meta.__gc, function( fn, npc_userdata )
-        engine_hookCall( "EntityGarbageCollected", npc_userdata )
-        fn( npc_userdata )
-    end )
-end
-
-local nextbot_meta = debug.findmetatable( "NextBot" )
-if nextbot_meta == nil then
-    nextbot_meta = {}
-    debug.registermetatable( "NextBot", nextbot_meta, true )
-end
-
-if nextbot_meta.__gc == nil then
-    function nextbot_meta.__gc( nextbot_userdata )
-        engine_hookCall( "EntityGarbageCollected", nextbot_userdata )
-    end
-else
-    nextbot_meta.__gc = detour_attach( nextbot_meta.__gc, function( fn, nextbot_userdata )
-        engine_hookCall( "EntityGarbageCollected", nextbot_userdata )
-        fn( nextbot_userdata )
-    end )
 end
 
 local glua_util = _G.util
@@ -1260,7 +1421,6 @@ if glua_util ~= nil then
 end
 
 if engine.loadMaterial == nil then
-
     ---@alias dreamwork.engine.ImageParameters integer
     ---| `1` Makes the created material a `VertexLitGeneric`, so it can be applied to models. Default shader is `UnlitGeneric`.
     ---| `2` Sets the `$nocull` to `1` in the created material.
@@ -1283,7 +1443,6 @@ if engine.loadMaterial == nil then
     local c_material_fn = upvalues.C_Material
 
     if c_material_fn == nil then
-
         local table_concat = table.concat
         local bit_band = std.bit.band
 
@@ -1330,9 +1489,7 @@ if engine.loadMaterial == nil then
                 return material_fn( file_path, table_concat( params, " ", 1, param_count ) )
             end
         end
-
     else
-
         --- [SHARED AND MENU]
         ---
         --- Loads a material from the file.
@@ -1348,9 +1505,7 @@ if engine.loadMaterial == nil then
                 return c_material_fn( file_path, bitpack_toString( bitpack_writeUInt( parameters, 8 ), 8, false ) )
             end
         end
-
     end
-
 end
 
 -- TODO: matproxy
