@@ -1889,6 +1889,7 @@ do
         "nf2ca53pnz2caytfebzw6idfmfzxsidun4qho2lo * 0.5",
         "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
         "Woah-oh-oh, tell me where you wanna go ♪",
+        "Let's write our names here in the sky ♪",
         "We will have a great Future together.",
         "Millions of pieces without a tether ♪",
         "It always seems time is on the side ♪",

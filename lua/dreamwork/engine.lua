@@ -562,6 +562,10 @@ do
     local ConVarExists = _G.ConVarExists or debug_fempty
     local CreateConVar = _G.CreateConVar or debug_fempty
 
+    --- [SHARED AND MENU]
+    ---
+    --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
+    ---
     ---@type dreamwork.KeyValueTable<string, ConVar>
     local console_variables = {}
 

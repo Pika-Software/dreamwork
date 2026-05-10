@@ -476,6 +476,33 @@ do
 
 end
 
+---@param ... string
+---@return table<string, dreamwork.std.sqlite.QueryRow> | nil
+local function pragma_read( ... )
+    local keys = { ... }
+    local key_count = select( "#", ... )
+
+    local query_segments = {}
+
+    for i = 1, key_count, 1 do
+        query_segments[ i ] = "pragma " .. keys[ i ]
+    end
+
+    local pragma_values = sqlite_rawQuery( table.concat( query_segments, ";", 1, key_count ) )
+    if pragma_values == nil then
+        return nil
+    end
+
+    local results = {}
+
+    for i = 1, key_count, 1 do
+        local key = keys[ i ]
+        results[ key ] = pragma_values[ i ][ key ]
+    end
+
+    return results
+end
+
 --- [SHARED AND MENU]
 ---
 --- Initializes the database.
@@ -484,22 +511,21 @@ function storage.init()
     dreamwork.Logger:info( "Preparing the database to begin migration..." )
     time_tick()
 
-    local pragma_values = sqlite_rawQuery( "pragma foreign_keys; pragma journal_mode; pragma synchronous; pragma wal_autocheckpoint" )
-
+    local pragma_values = pragma_read( "foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint" )
     if pragma_values ~= nil then
-        if pragma_values[ 1 ][ "foreign_keys" ] == "0" then
+        if (raw_tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma foreign_keys = 1" )
         end
 
-        if pragma_values[ 2 ][ "journal_mode" ] == "delete" then
+        if pragma_values.journal_mode == "delete" then
             sqlite_rawQuery( "pragma journal_mode = wal" )
         end
 
-        if pragma_values[ 3 ][ "synchronous" ] == "0" then
+        if (raw_tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma synchronous = normal" )
         end
 
-        if pragma_values[ 4 ][ "wal_autocheckpoint" ] == "1000" then
+        if (raw_tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
             sqlite_rawQuery( "pragma wal_autocheckpoint = 100" )
         end
     end

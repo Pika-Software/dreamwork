@@ -95,7 +95,7 @@ function Logger:__init( options )
 
         local interpolation = options.interpolation
         if interpolation == nil then
-            self.interpolation = true
+            self.interpolation = false
         else
             self.interpolation = interpolation == true
         end
