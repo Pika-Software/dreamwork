@@ -126,35 +126,35 @@ do
 end
 
 local existing_flags = {
-    { "unregistered", 1 },
-    { "development_only", 2 },
-    { "game_dll", 4 },
-    { "client_dll", 8 },
-    { "hidden", 16 },
-    { "protected", 32 },
-    { "sponly", 64 },
-    { "archive", 128 },
-    { "notify", 256 },
-    { "userinfo", 512 },
-    { "cheat", 16384 },
-    { "printable_only", 1024 },
-    { "unlogged", 2048 },
-    { "never_as_string", 4096 },
-    { "replicated", 8192 },
-    { "demo", 65536 },
-    { "dont_record", 131072 },
-    { "reload_materials", 1048576 },
-    { "reload_textures", 2097152 },
-    { "not_connected", 4194304 },
-    { "material_system_thread", 8388608 },
-    { "archive_xbox", 16777216 },
+    { "unregistered",            1 },
+    { "development_only",        2 },
+    { "game_dll",                4 },
+    { "client_dll",              8 },
+    { "hidden",                  16 },
+    { "protected",               32 },
+    { "sponly",                  64 },
+    { "archive",                 128 },
+    { "notify",                  256 },
+    { "userinfo",                512 },
+    { "cheat",                   16384 },
+    { "printable_only",          1024 },
+    { "unlogged",                2048 },
+    { "never_as_string",         4096 },
+    { "replicated",              8192 },
+    { "demo",                    65536 },
+    { "dont_record",             131072 },
+    { "reload_materials",        1048576 },
+    { "reload_textures",         2097152 },
+    { "not_connected",           4194304 },
+    { "material_system_thread",  8388608 },
+    { "archive_xbox",            16777216 },
     { "accessible_from_threads", 33554432 },
-    { "server_can_execute", 268435456 },
-    { "server_cannot_query", 536870912 },
-    { "clientcmd_can_execute", 1073741824 },
-    { "material_thread_mask", 11534336 },
-    { "lua_client", 262144 },
-    { "lua_server", 524288 }
+    { "server_can_execute",      268435456 },
+    { "server_cannot_query",     536870912 },
+    { "clientcmd_can_execute",   1073741824 },
+    { "material_thread_mask",    11534336 },
+    { "lua_client",              262144 },
+    { "lua_server",              524288 }
 }
 
 local existing_flag_count = #existing_flags
@@ -216,7 +216,7 @@ do
     ---
     --- The console command object.
     ---
-    ---@class dreamwork.std.console.Command : dreamwork.Object
+    ---@class dreamwork.std.console.Command : dreamwork.std.Object
     ---@field __class dreamwork.std.console.Command
     local Command = std.class.base( "console.Command", true )
 
@@ -275,7 +275,7 @@ do
     ---
     --- The console command class.
     ---
-    ---@class dreamwork.std.console.CommandClass : dreamwork.Class
+    ---@class dreamwork.std.console.CommandClass : dreamwork.std.Class
     ---@field __base dreamwork.std.console.Command
     ---@overload fun( options: dreamwork.std.console.Command.Options ): dreamwork.std.console.Command
     local CommandClass = std.class.create( Command )
@@ -679,7 +679,7 @@ do
         local raw_get = raw.get
 
         setmetatable( variable2convar, {
-            __index = function( _,  self )
+            __index = function( _, self )
                 local name = raw_get( names, self )
                 if name ~= nil then
                     local cvar = engine_consoleVariableGet( name )
@@ -895,7 +895,7 @@ do
     ---
     --- The console variable object.
     ---
-    ---@class dreamwork.std.console.Variable : dreamwork.Object
+    ---@class dreamwork.std.console.Variable : dreamwork.std.Object
     ---@field __class dreamwork.std.console.Variable
     local Variable = std.class.base( "console.Variable", true )
 
@@ -1088,7 +1088,7 @@ do
             return VariableClass( {
                 name = str_name,
                 type = cvar_type,
-                default = ( cvar_type == "boolean" or number_types[ cvar_type ] ) and 0 or "",
+                default = (cvar_type == "boolean" or number_types[ cvar_type ]) and 0 or "",
             } )
         end
 
@@ -1433,7 +1433,6 @@ do
             end
         end
     end
-
 
     --- [SHARED AND MENU]
     ---

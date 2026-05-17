@@ -73,7 +73,7 @@ local table_concat = std.table.concat
 ---
 --- A 2D vector object.
 ---
----@class dreamwork.std.Vector2 : dreamwork.Object
+---@class dreamwork.std.Vector2 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector2Class
 ---@operator add( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
 ---@operator sub( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
@@ -102,7 +102,7 @@ std.Vector2 = Vector2Class
 --- A 3D vector object.
 ---
 ---@alias Vector3 dreamwork.std.Vector3
----@class dreamwork.std.Vector3 : dreamwork.Object
+---@class dreamwork.std.Vector3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector3Class
 ---@operator add( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
 ---@operator sub( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
@@ -129,7 +129,7 @@ std.Vector3 = Vector3Class
 ---
 --- A 3D angle object.
 ---
----@class dreamwork.std.Angle3 : dreamwork.Object
+---@class dreamwork.std.Angle3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Angle3Class
 ---@operator add( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
 ---@operator sub( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
@@ -158,7 +158,7 @@ std.Angle = Angle3Class
 ---
 --- A 4x4 matrix object.
 ---
----@class dreamwork.std.VMatrix : dreamwork.Object
+---@class dreamwork.std.VMatrix : dreamwork.std.Object
 ---@field __class dreamwork.std.VMatrixClass
 local VMatrix = class.base( "VMatrix" )
 
@@ -250,9 +250,9 @@ do
 
             transducers[ VMatrix ] = function( matrix )
                 return Matrix( {
-                    { matrix[ 1 ], matrix[ 2 ], matrix[ 3 ], matrix[ 4 ] },
-                    { matrix[ 5 ], matrix[ 6 ], matrix[ 7 ], matrix[ 8 ] },
-                    { matrix[ 9 ], matrix[ 10 ], matrix[ 11 ], matrix[ 12 ] },
+                    { matrix[ 1 ],  matrix[ 2 ],  matrix[ 3 ],  matrix[ 4 ] },
+                    { matrix[ 5 ],  matrix[ 6 ],  matrix[ 7 ],  matrix[ 8 ] },
+                    { matrix[ 9 ],  matrix[ 10 ], matrix[ 11 ], matrix[ 12 ] },
                     { matrix[ 13 ], matrix[ 14 ], matrix[ 15 ], matrix[ 16 ] }
                 } )
             end
@@ -601,7 +601,7 @@ do
     ---@param vector dreamwork.std.Vector2 The other vector.
     ---@return number distance The distance between the two vectors.
     function Vector2:getDistance( vector )
-        return ( math_sqrt( ( vector[ 1 ] - self[ 1 ] ) ^ 2 ) + ( vector[ 2 ] - self[ 2 ] ) ^ 2 )
+        return (math_sqrt( (vector[ 1 ] - self[ 1 ]) ^ 2 ) + (vector[ 2 ] - self[ 2 ]) ^ 2)
     end
 
     do
@@ -613,7 +613,7 @@ do
         ---@param self dreamwork.std.Vector2 The vector to calculate the length of.
         ---@return number length The squared length of the vector.
         local function Vector2_getLengthSqr( self )
-            return ( self[ 1 ] ^ 2 ) + ( self[ 2 ] ^ 2 )
+            return (self[ 1 ] ^ 2) + (self[ 2 ] ^ 2)
         end
 
         Vector2.getLengthSqr = Vector2_getLengthSqr
@@ -685,7 +685,7 @@ do
     ---@param vector dreamwork.std.Vector2 The other vector.
     ---@return number dot_product The dot product of two vectors.
     function Vector2:dot( vector )
-        return ( self[ 1 ] * vector[ 1 ] ) + ( self[ 2 ] * vector[ 2 ] )
+        return (self[ 1 ] * vector[ 1 ]) + (self[ 2 ] * vector[ 2 ])
     end
 
     --- [SHARED AND MENU]
@@ -695,7 +695,7 @@ do
     ---@param vector dreamwork.std.Vector2 The other vector.
     ---@return number cross_product The cross product of two vectors.
     function Vector2:cross( vector )
-        return ( self[ 1 ] * vector[ 2 ] ) - ( self[ 2 ] * vector[ 1 ] )
+        return (self[ 1 ] * vector[ 2 ]) - (self[ 2 ] * vector[ 1 ])
     end
 
     --- [SHARED AND MENU]
@@ -1068,7 +1068,7 @@ do
     ---@param vector dreamwork.std.Vector3 The other vector.
     ---@return number distance The distance between the two vectors.
     function Vector3:getDistance( vector )
-        return math_sqrt( ( vector[ 1 ] - self[ 1 ] ) ^ 2 + ( vector[ 2 ] - self[ 2 ] ) ^ 2 + ( vector[ 3 ] - self[ 3 ] ) ^ 2 )
+        return math_sqrt( (vector[ 1 ] - self[ 1 ]) ^ 2 + (vector[ 2 ] - self[ 2 ]) ^ 2 + (vector[ 3 ] - self[ 3 ]) ^ 2 )
     end
 
     do
@@ -1080,7 +1080,7 @@ do
         ---@param self dreamwork.std.Vector3 The vector.
         ---@return number length The squared length of the vector.
         local function Vector3_getLengthSqr( self )
-            return ( self[ 1 ] ^ 2 ) + ( self[ 2 ] ^ 2 ) + ( self[ 3 ] ^ 2 )
+            return (self[ 1 ] ^ 2) + (self[ 2 ] ^ 2) + (self[ 3 ] ^ 2)
         end
 
         Vector3.getLengthSqr = Vector3_getLengthSqr
@@ -1105,7 +1105,7 @@ do
         ---@param vector dreamwork.std.Vector3 The other vector.
         ---@return number dot_product The dot product of two vectors.
         local function Vector3_dot( self, vector )
-            return ( self[ 1 ] * vector[ 1 ] ) + ( self[ 2 ] * vector[ 2 ] ) + ( self[ 3 ] * vector[ 3 ] )
+            return (self[ 1 ] * vector[ 1 ]) + (self[ 2 ] * vector[ 2 ]) + (self[ 3 ] * vector[ 3 ])
         end
 
         Vector3.dot = Vector3_dot
@@ -1185,7 +1185,7 @@ do
             return setmetatable( {
                 math_deg( math_asin( -forward[ 3 ] ) ),
                 math_deg( math_atan2( y1, x1 ) ),
-                math_deg( math_atan2( right[ 3 ], ( x1 * right[ 2 ] ) - ( y1 * right[ 1 ] ) ) )
+                math_deg( math_atan2( right[ 3 ], (x1 * right[ 2 ]) - (y1 * right[ 1 ]) ) )
             }, Angle3 )
         end
 
@@ -1198,7 +1198,7 @@ do
         ---@param vector dreamwork.std.Vector3 The other vector.
         ---@return number degrees The angle between two vectors.
         function Vector3:getAngle( vector )
-            return math_deg( math_acos( Vector3_dot( self, vector ) / ( Vector3_getLength( self ) * Vector3_getLength( vector ) ) ) )
+            return math_deg( math_acos( Vector3_dot( self, vector ) / (Vector3_getLength( self ) * Vector3_getLength( vector )) ) )
         end
 
         --- [SHARED AND MENU]
@@ -1240,8 +1240,8 @@ do
     ---@return boolean is_zero `true` if the vector is zero, `false` otherwise.
     function Vector3:isZero()
         return self[ 1 ] == 0 and
-               self[ 2 ] == 0 and
-               self[ 3 ] == 0
+            self[ 2 ] == 0 and
+            self[ 3 ] == 0
     end
 
     --- [SHARED AND MENU]
@@ -1279,8 +1279,8 @@ do
     ---@return boolean is_near `true` if the vectors are equal, otherwise `false`.
     function Vector3:isNear( vector, tolerance )
         return math_abs( self[ 1 ] - vector[ 1 ] ) <= tolerance and
-               math_abs( self[ 2 ] - vector[ 2 ] ) <= tolerance and
-               math_abs( self[ 3 ] - vector[ 3 ] ) <= tolerance
+            math_abs( self[ 2 ] - vector[ 2 ] ) <= tolerance and
+            math_abs( self[ 3 ] - vector[ 3 ] ) <= tolerance
     end
 
     do
@@ -1299,9 +1299,9 @@ do
             local psin_rsin, psin_rcos = psin * rsin, psin * rcos
             local x, y, z = self[ 1 ], self[ 2 ], self[ 3 ]
 
-            self[ 1 ] = x * ( ycos * pcos ) + y * ( ycos * psin_rsin - ysin * rcos ) + z * ( ycos * psin_rcos + ysin * rsin )
-            self[ 2 ] = x * ( ysin * pcos ) + y * ( ysin * psin_rsin + ycos * rcos ) + z * ( ysin * psin_rcos - ycos * rsin )
-            self[ 3 ] = x * ( -psin ) + y * ( pcos * rsin ) + z * ( pcos * rcos )
+            self[ 1 ] = x * (ycos * pcos) + y * (ycos * psin_rsin - ysin * rcos) + z * (ycos * psin_rcos + ysin * rsin)
+            self[ 2 ] = x * (ysin * pcos) + y * (ysin * psin_rsin + ycos * rcos) + z * (ysin * psin_rcos - ycos * rsin)
+            self[ 3 ] = x * (-psin) + y * (pcos * rsin) + z * (pcos * rcos)
 
             return self
         end
@@ -1408,17 +1408,17 @@ do
     ---@protected
     ---@param writer dreamwork.std.pack.Writer
     function Angle3:__serialize( writer )
-        writer:writeUInt8( math_floor( ( self[ 1 ] + 90 ) / 180 * 255 + 0.5 ) )
+        writer:writeUInt8( math_floor( (self[ 1 ] + 90) / 180 * 255 + 0.5 ) )
         writer:writeUInt8( math_floor( self[ 2 ] / 360 * 255 + 0.5 ) )
-        writer:writeUInt8( math_floor( ( self[ 3 ] + 180 ) / 360 * 255 + 0.5 ) )
+        writer:writeUInt8( math_floor( (self[ 3 ] + 180) / 360 * 255 + 0.5 ) )
     end
 
     ---@protected
     ---@param reader dreamwork.std.pack.Reader
     function Angle3:__deserialize( reader )
-        self[ 1 ] = ( reader:readUInt8() / 255 * 180 ) - 90
+        self[ 1 ] = (reader:readUInt8() / 255 * 180) - 90
         self[ 2 ] = reader:readUInt8() / 255 * 360
-        self[ 3 ] = ( reader:readUInt8() / 255 * 360 ) - 180
+        self[ 3 ] = (reader:readUInt8() / 255 * 360) - 180
     end
 
     ---@protected
@@ -1731,8 +1731,8 @@ do
     ---@return boolean is_near `true` if the angle is within the given tolerance of the given angle.
     function Angle3:isNear( angle, tolerance )
         return math_abs( self[ 1 ] - angle[ 1 ] ) <= tolerance and
-               math_abs( self[ 2 ] - angle[ 2 ] ) <= tolerance and
-               math_abs( self[ 3 ] - angle[ 3 ] ) <= tolerance
+            math_abs( self[ 2 ] - angle[ 2 ] ) <= tolerance and
+            math_abs( self[ 3 ] - angle[ 3 ] ) <= tolerance
     end
 
     --- [SHARED AND MENU]
@@ -1763,8 +1763,6 @@ do
     ---@param axis dreamwork.std.Vector3 The axis to rotate around as a normalized unit vector. When argument is not a unit vector, you will experience numerical offset errors in the rotated angle.
     ---@param rotation number The degrees to rotate around the specified axis.
     function Angle3:rotate( axis, rotation )
-
-
 
         return self
     end
@@ -1801,7 +1799,6 @@ end
 ---@return dreamwork.std.Angle3 ang3 The new angle.
 function Vector3Class.translateToLocal( position, angle, world_position, world_angle )
     -- TODO: implement this function
-
 
 end
 
@@ -1917,18 +1914,18 @@ do
 
     ---@return dreamwork.std.VMatrix
     function VMatrix:identity()
-        self[  1 ], self[  2 ], self[  3 ], self[  4 ] = 1, 0, 0, 0
-        self[  5 ], self[  6 ], self[  7 ], self[  8 ] = 0, 1, 0, 0
-        self[  9 ], self[ 10 ], self[ 11 ], self[ 12 ] = 0, 0, 1, 0
+        self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ] = 1, 0, 0, 0
+        self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ] = 0, 1, 0, 0
+        self[ 9 ], self[ 10 ], self[ 11 ], self[ 12 ] = 0, 0, 1, 0
         self[ 13 ], self[ 14 ], self[ 15 ], self[ 16 ] = 0, 0, 0, 1
         return self
     end
 
     function VMatrix:isIdentity()
         return
-            self[  1 ] == 1 and self[  2 ] == 0 and self[  3 ] == 0 and self[  4 ] == 0 and
-            self[  5 ] == 0 and self[  6 ] == 1 and self[  7 ] == 0 and self[  8 ] == 0 and
-            self[  9 ] == 0 and self[ 10 ] == 0 and self[ 11 ] == 1 and self[ 12 ] == 0 and
+            self[ 1 ] == 1 and self[ 2 ] == 0 and self[ 3 ] == 0 and self[ 4 ] == 0 and
+            self[ 5 ] == 0 and self[ 6 ] == 1 and self[ 7 ] == 0 and self[ 8 ] == 0 and
+            self[ 9 ] == 0 and self[ 10 ] == 0 and self[ 11 ] == 1 and self[ 12 ] == 0 and
             self[ 13 ] == 0 and self[ 14 ] == 0 and self[ 15 ] == 0 and self[ 16 ] == 1
     end
 
@@ -2021,7 +2018,7 @@ do
     ---@param column integer
     ---@return number
     function VMatrix:getField( row, column )
-        return self[ ( math.clamp( row, 1, 4 ) - 1 ) * 4 + math.clamp( column, 1, 4 ) ]
+        return self[ (math.clamp( row, 1, 4 ) - 1) * 4 + math.clamp( column, 1, 4 ) ]
     end
 
     ---@param row integer
@@ -2029,7 +2026,7 @@ do
     ---@param value number
     ---@return dreamwork.std.VMatrix
     function VMatrix:setField( row, column, value )
-        self[ ( math.clamp( row, 1, 4 ) - 1 ) * 4 + math.clamp( column, 1, 4 ) ] = value
+        self[ (math.clamp( row, 1, 4 ) - 1) * 4 + math.clamp( column, 1, 4 ) ] = value
         return self
     end
 
@@ -2069,8 +2066,8 @@ do
             end
 
             -- Swap rows
-            rowMap[iLargest], rowMap[iRow] = rowMap[iRow], rowMap[iLargest]
-            local pRow = mat[rowMap[iRow]]
+            rowMap[ iLargest ], rowMap[ iRow ] = rowMap[ iRow ], rowMap[ iLargest ]
+            local pRow = mat[ rowMap[ iRow ] ]
 
             -- Normalize row
             local mul = 1.0 / pRow[ iRow ]
@@ -2083,17 +2080,16 @@ do
             -- Eliminate column
             for i = 1, 4 do
                 if i ~= iRow then
-                    local pScaleRow = mat[rowMap[i]]
-                    local mul = -pScaleRow[iRow]
+                    local pScaleRow = mat[ rowMap[ i ] ]
+                    local mul = -pScaleRow[ iRow ]
                     for j = 1, 8 do
-                        pScaleRow[j] = pScaleRow[j] + pRow[j] * mul
+                        pScaleRow[ j ] = pScaleRow[ j ] + pRow[ j ] * mul
                     end
 
-                    pScaleRow[iRow] = 0.0
+                    pScaleRow[ iRow ] = 0.0
                 end
             end
         end
-
 
         -- Extract inverse matrix
         local dst = {}

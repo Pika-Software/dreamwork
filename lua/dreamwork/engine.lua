@@ -25,10 +25,8 @@ local raw_pairs = raw.pairs
 local setmetatable = std.setmetatable
 
 local detour = dreamwork.detour
-local detour_fast = detour.fast
-local detour_attach = detour.attach
 
----@class Entity : dreamwork.Object
+---@class Entity : dreamwork.std.Object
 local ENTITY = debug.initmetatable( "Entity" )
 
 ---@class Player
@@ -66,6 +64,13 @@ NEXTBOT.__parent = ENTITY
 ---@field NetworkHeaderSize integer The size of the network header in bits.
 local engine = {}
 dreamwork.engine = engine
+
+-- ---@field ClientLimit integer The maximum number of clients that can connect to the server.
+-- if std.LUA_CLIENT_SERVER then
+--     engine.ClientLimit = game.MaxPlayers()
+-- else
+--     engine.ClientLimit = 0
+-- end
 
 --- [SHARED]
 ---
@@ -257,6 +262,43 @@ local engine_hookCall = engine.hookCall
 
 do
 
+    ---@type table[]
+    local queue = {}
+
+    ---@type integer
+    local queue_size = 0
+
+    --- [SHARED AND MENU]
+    ---
+    --- Calls a function on the next tick.
+    ---
+    ---@param fn function
+    ---@param ... any
+    function engine.waitNextTick( fn, ... )
+        queue_size = queue_size + 1
+        queue[ queue_size ] = { fn, ... }
+    end
+
+    engine_hookCatch( "Tick", function()
+        if queue_size == 0 then
+            return nil
+        end
+
+        for i = 1, queue_size, 1 do
+            local data = queue[ i ]
+            data[ 1 ]( data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ], data[ 6 ] )
+        end
+
+        queue_size = 0
+        queue = {}
+
+        return nil
+    end )
+
+end
+
+do
+
     local entity_metatables = {
         ENTITY,
         PLAYER,
@@ -268,7 +310,7 @@ do
 
     for i = 1, #entity_metatables, 1 do
         local metatable = entity_metatables[ i ]
-        metatable.__gc = detour_fast( function( entity_userdata )
+        metatable.__gc = detour.before( function( entity_userdata )
             engine_hookCall( "EntityGarbageCollected", entity_userdata )
         end, metatable.__gc )
     end
@@ -388,85 +430,46 @@ do
         hook = {}; _G.hook = hook
     end
 
-    if hook.Call == nil then
+    local fn = hook.Call
 
-        ---@param event_name string
-        ---@param tbl table
-        ---@param ... any
-        ---@return any ...
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function hook.Call( event_name, tbl, ... )
-            return engine_hookCall( event_name, ... )
+    ---@param event_name string
+    ---@param tbl table
+    ---@param ... any
+    ---@return any, any, any, any, any, any
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function hook.Call( event_name, tbl, ... )
+        local a, b, c, d, e, f = engine_hookCall( event_name, ... )
+        if a == nil then
+            return fn( event_name, tbl, ... )
+        else
+            return a, b, c, d, e, f
         end
-
-    else
-
-        ---@param event_name string
-        ---@param tbl table
-        ---@param ... any
-        ---@return any ...
-        ---@diagnostic disable-next-line: duplicate-set-field
-        hook.Call = detour_attach( hook.Call, function( fn, event_name, tbl, ... )
-            local a, b, c, d, e, f = engine_hookCall( event_name, ... )
-            if a == nil then
-                return fn( event_name, tbl, ... )
-            else
-                return a, b, c, d, e, f
-            end
-        end )
-
     end
 
 end
 
 if std.LUA_MENU then
 
-    do
+    _G.ListAddonPresets = detour.before( function()
+        engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
+    end, _G.ListAddonPresets )
 
-        local function listAddonPresets()
-            engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
-        end
-
-        if _G.ListAddonPresets == nil then
-            _G.ListAddonPresets = listAddonPresets
-        else
-            _G.ListAddonPresets = detour_attach( _G.ListAddonPresets, function( fn )
-                listAddonPresets()
-                return fn()
-            end )
-        end
-
-    end
-
-    do
-
-        ---@param server_name string
-        ---@param loading_url string
-        ---@param map_name string
-        ---@param max_players integer
-        ---@param player_steamid64 string
-        ---@param gamemode_name string
-        local function gameDetails( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
-            engine_hookCall( "ServerDetailsReceived", {
-                server_name = server_name,
-                loading_url = loading_url,
-                map_name = map_name,
-                max_players = max_players,
-                player_steamid64 = player_steamid64,
-                gamemode_name = gamemode_name
-            } )
-        end
-
-        if _G.GameDetails == nil then
-            _G.GameDetails = gameDetails
-        else
-            _G.GameDetails = detour_attach( _G.GameDetails, function( fn, ... )
-                gameDetails( ... )
-                return fn( ... )
-            end )
-        end
-
-    end
+    ---@param server_name string
+    ---@param loading_url string
+    ---@param map_name string
+    ---@param max_players integer
+    ---@param player_steamid64 string
+    ---@param gamemode_name string
+    _G.GameDetails = detour.before( function( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
+        engine_hookCall( "ServerDetailsReceived", {
+            server_name = server_name,
+            loading_url = loading_url,
+            map_name = map_name,
+            max_players = max_players,
+            player_steamid64 = player_steamid64,
+            gamemode_name = gamemode_name
+        } )
+    end, _G.GameDetails )
 
 end
 
@@ -480,79 +483,32 @@ do
         concommand = {}; _G.concommand = concommand
     end
 
-    if concommand.Run == nil then
+    local fallback_exists = concommand.Run ~= nil
 
-        ---@param ply Player
-        ---@param cmd string
-        ---@param args string[]
-        ---@param argument_string string
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function concommand.Run( ply, cmd, args, argument_string )
-            local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
-            if not success_execution then
-                dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", ply )
+    ---@param ply Player
+    ---@param cmd string
+    ---@param args string[]
+    ---@param argument_string string
+    concommand.Run = detour.simple( function( ply, cmd, args, argument_string )
+        local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
+        if not success_execution then
+            if fallback_exists then
+                return nil
             end
 
-            return success_execution
+            dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", ply )
         end
 
-    else
+        return success_execution
+    end, concommand.Run )
 
-        ---@param ply Player
-        ---@param cmd string
-        ---@param args string[]
-        ---@param argument_string string
-        ---@diagnostic disable-next-line: duplicate-set-field
-        concommand.Run = detour_attach( concommand.Run, function( fn, ply, cmd, args, argument_string )
-            local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
-            if success_execution then
-                return success_execution
-            end
-
-            return fn( ply, cmd, args, argument_string )
-        end )
-
-    end
-
-end
-
-do
-
-    local concommand = _G.concommand
-    if concommand == nil then
-        ---@diagnostic disable-next-line: inject-field
-        concommand = {}; _G.concommand = concommand
-    end
-
-    if concommand.AutoComplete == nil then
-
-        ---@param cmd string
-        ---@param argument_string string
-        ---@param args string[]
-        ---@return string[] | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        concommand.AutoComplete = function( cmd, argument_string, args )
-            return engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
-        end
-
-    else
-
-        ---@param cmd string
-        ---@param argument_string string
-        ---@param args string[]
-        ---@return string[] | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        concommand.AutoComplete = detour_attach( concommand.AutoComplete, function( fn, cmd, argument_string, args )
-            ---@type string[] | nil
-            local suggestions = engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
-            if suggestions == nil then
-                return fn( cmd, argument_string, args )
-            else
-                return suggestions
-            end
-        end )
-
-    end
+    ---@param cmd string
+    ---@param argument_string string
+    ---@param args string[]
+    ---@return string[] | nil
+    concommand.AutoComplete = detour.simple( function( cmd, argument_string, args )
+        return engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
+    end, concommand.AutoComplete )
 
 end
 
@@ -647,20 +603,7 @@ end
 if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil then
 
     ---@type table<string, boolean>
-    local commands = {}
-
-    if _G.AddConsoleCommand == nil then
-        _G.AddConsoleCommand = debug_fempty
-    else
-        _G.AddConsoleCommand = detour_attach( _G.AddConsoleCommand, function( fn, name, description, flags )
-            if commands[ name ] == nil then
-                commands[ name ] = true
-                fn( name, description, flags )
-            end
-        end )
-    end
-
-    engine.consoleCommandRegister = _G.AddConsoleCommand
+    local exists_commands = {}
 
     --- [SHARED AND MENU]
     ---
@@ -669,7 +612,25 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
     ---@param name string The name of the console command.
     ---@return boolean exists `true` if the console command exists, `false` otherwise.
     function engine.consoleCommandExists( name )
-        return commands[ name ] ~= nil
+        return exists_commands[ name ] ~= nil
+    end
+
+    local AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
+
+    --- [SHARED AND MENU]
+    ---
+    --- Tells the engine to register a console command.
+    ---
+    --- If the command was ran, the engine calls [_G.concommand.Run](https://wiki.facepunch.com/gmod/concommand.Run).
+    ---
+    ---@param name string The name of the console command.
+    ---@param description string The description of the console command.
+    ---@param flags FCVAR The bit flags of the console command.
+    function engine.consoleCommandRegister( name, description, flags )
+        if exists_commands[ name ] == nil then
+            exists_commands[ name ] = true
+            AddConsoleCommand( name, description, flags )
+        end
     end
 
 end
@@ -696,34 +657,18 @@ do
         cvars = {}; _G.cvars = cvars
     end
 
-    if cvars.OnConVarChanged == nil then
-
-        ---@param name string
-        ---@param old_value string
-        ---@param new_value string
-        ---@diagnostic disable-next-line: duplicate-set-field
-        cvars.OnConVarChanged = function( name, old_value, new_value )
-            engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
-        end
-
-    else
-
-        ---@param name string
-        ---@param old_value string
-        ---@param new_value string
-        ---@diagnostic disable-next-line: duplicate-set-field
-        cvars.OnConVarChanged = detour_attach( cvars.OnConVarChanged, function( fn, name, old_value, new_value )
-            engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
-            return fn( name, old_value, new_value )
-        end )
-
-    end
+    ---@param name string
+    ---@param old_value string
+    ---@param new_value string
+    cvars.OnConVarChanged = detour.before( function( name, old_value, new_value )
+        engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
+    end, cvars.OnConVarChanged )
 
 end
 
 do
 
-    local engine_consoleVariableGet = engine.consoleVariableGet
+    ---@type table<string, string>
     local values = {}
 
     engine_hookCatch( "server_cvar", function( data )
@@ -731,11 +676,12 @@ do
         local old_value = values[ name ]
 
         if old_value == nil then
-            local convar = engine_consoleVariableGet( name )
-            if convar == nil then return end
+            local variable = engine.consoleVariableGet( name )
+            if variable ~= nil then
+                old_value = variable:GetDefault()
+            end
 
-            old_value = convar:GetDefault()
-            values[ name ] = old_value
+            values[ name ] = old_value or ""
         else
             values[ name ] = new_value
         end
@@ -824,50 +770,16 @@ do
         scripted_ents = {}; _G.scripted_ents = scripted_ents
     end
 
-    if scripted_ents.Get == nil then
+    ---@param name string
+    ---@param output table | nil
+    ---@return table | nil
+    scripted_ents.Get = detour.simple( function( name, output )
+        return engine_hookCall( "EntityCreate", name, output )
+    end, scripted_ents.Get )
 
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        scripted_ents.Get = function( name, output )
-            return engine_hookCall( "EntityCreate", name, output )
-        end
-
-    else
-
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        scripted_ents.Get = detour_attach( scripted_ents.Get, function( fn, name, output )
-            ---@type table | nil
-            local tbl = engine_hookCall( "EntityCreate", name, output )
-            if tbl == nil then
-                return fn( name, output )
-            else
-                return tbl
-            end
-        end )
-
-    end
-
-    if scripted_ents.OnLoaded == nil then
-
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function scripted_ents.OnLoaded()
-            engine_hookCall( "EntitiesLoaded" )
-        end
-
-    else
-
-        ---@diagnostic disable-next-line: duplicate-set-field
-        scripted_ents.OnLoaded = detour_attach( scripted_ents.OnLoaded, function( fn )
-            engine_hookCall( "EntitiesLoaded" )
-            return fn()
-        end )
-
-    end
+    scripted_ents.OnLoaded = detour.before( function()
+        engine_hookCall( "EntitiesLoaded" )
+    end, scripted_ents.OnLoaded )
 
 end
 
@@ -879,50 +791,16 @@ do
         weapons = {}; _G.weapons = weapons
     end
 
-    if weapons.Get == nil then
+    ---@param name string
+    ---@param output table | nil
+    ---@return table | nil
+    weapons.Get = detour.simple( function( name, output )
+        return engine_hookCall( "WeaponCreate", name, output )
+    end, weapons.Get )
 
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        weapons.Get = function( name, output )
-            return engine_hookCall( "WeaponCreate", name, output )
-        end
-
-    else
-
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        weapons.Get = detour_attach( weapons.Get, function( fn, name, output )
-            ---@type table | nil
-            local tbl = engine_hookCall( "WeaponCreate", name, output )
-            if tbl == nil then
-                return fn( name, output )
-            else
-                return tbl
-            end
-        end )
-
-    end
-
-    if weapons.OnLoaded == nil then
-
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function weapons.OnLoaded()
-            engine_hookCall( "WeaponsLoaded" )
-        end
-
-    else
-
-        ---@diagnostic disable-next-line: duplicate-set-field
-        weapons.OnLoaded = detour_attach( weapons.OnLoaded, function( fn )
-            engine_hookCall( "WeaponsLoaded" )
-            return fn()
-        end )
-
-    end
+    weapons.OnLoaded = detour.before( function()
+        engine_hookCall( "WeaponsLoaded" )
+    end, weapons.OnLoaded )
 
 end
 
@@ -934,33 +812,63 @@ do
         effects = {}; _G.effects = effects
     end
 
-    if effects.Create == nil then
+    ---@param name string
+    ---@param output table | nil
+    ---@return table | nil
+    effects.Create = detour.simple( function( name, output )
+        return engine_hookCall( "EffectCreate", name, output )
+    end, effects.Create )
 
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        effects.Create = function( name, output )
-            return engine_hookCall( "EffectCreate", name, output )
+end
+
+-- TODO: effects | particles?
+
+do
+
+    ---@type table<integer, Entity>
+    local entity_list = {}
+
+    ---@type integer
+    local entity_count = 0
+
+    ---@type table<Entity, integer>
+    local entity_map = {}
+
+    _G.InvalidateInternalEntityCache = detour.before( function( is_player )
+        local new_entities = ents.GetAll()
+        local new_count = #new_entities
+
+        ---@type table<Entity, integer>
+        local new_map = {}
+
+        local has_changes = false
+
+        for i = 1, new_count, 1 do
+            local entity = new_entities[ i ]
+            new_map[ entity ] = i
+
+            if entity_map[ entity ] == nil then
+                engine_hookCall( "dreamwork.engine.EntityCreated", entity, is_player )
+                has_changes = true
+            end
         end
 
-    else
-
-        ---@param name string
-        ---@param output table | nil
-        ---@return table | nil
-        ---@diagnostic disable-next-line: duplicate-set-field
-        effects.Create = detour_attach( effects.Create, function( fn, name, output )
-            ---@type table | nil
-            local tbl = engine_hookCall( "EffectCreate", name, output )
-            if tbl == nil then
-                return fn( name, output )
-            else
-                return tbl
+        for i = 1, entity_count, 1 do
+            local entity = entity_list[ i ]
+            if new_map[ entity ] == nil then
+                engine_hookCall( "dreamwork.engine.EntityRemoved", entity, is_player )
+                has_changes = true
             end
-        end )
+        end
 
-    end
+        if has_changes then
+            engine_hookCall( "dreamwork.engine.EntityCountChanged", entity_list, entity_count, new_entities, new_count )
+        end
+
+        entity_list = new_entities
+        entity_count = new_count
+        entity_map = new_map
+    end, _G.InvalidateInternalEntityCache )
 
 end
 
@@ -1007,7 +915,7 @@ do
         ---@param name string
         ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
-        gamemode.Get = detour_attach( gamemode.Get, function( fn, name )
+        gamemode.Get = detour.attach( gamemode.Get, function( fn, name )
             local tbl = fn( name )
             return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
         end )
@@ -1396,7 +1304,7 @@ if std.LUA_CLIENT_SERVER then
             ---@param network_name string
             ---@param unreliable? boolean
             ---@diagnostic disable-next-line: duplicate-set-field
-            glua_net.Start = detour_attach( glua_net.Start, function( fn, network_name, unreliable )
+            glua_net.Start = detour.attach( glua_net.Start, function( fn, network_name, unreliable )
                 if network_ids[ network_name ] == nil then
                     if LUA_SERVER then
                         error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
@@ -1425,6 +1333,7 @@ if glua_util ~= nil then
 end
 
 if engine.loadMaterial == nil then
+
     ---@alias dreamwork.engine.ImageParameters integer
     ---| `1` Makes the created material a `VertexLitGeneric`, so it can be applied to models. Default shader is `UnlitGeneric`.
     ---| `2` Sets the `$nocull` to `1` in the created material.
@@ -1447,6 +1356,7 @@ if engine.loadMaterial == nil then
     local c_material_fn = upvalues.C_Material
 
     if c_material_fn == nil then
+
         local table_concat = table.concat
         local bit_band = std.bit.band
 
@@ -1493,7 +1403,9 @@ if engine.loadMaterial == nil then
                 return material_fn( file_path, table_concat( params, " ", 1, param_count ) )
             end
         end
+
     else
+
         --- [SHARED AND MENU]
         ---
         --- Loads a material from the file.
@@ -1509,8 +1421,25 @@ if engine.loadMaterial == nil then
                 return c_material_fn( file_path, bitpack_toString( bitpack_writeUInt( parameters, 8 ), 8, false ) )
             end
         end
+
     end
+
 end
 
--- TODO: matproxy
--- TODO: effects | particles?
+if std.LUA_CLIENT then
+
+    local matproxy = _G.matproxy
+    if matproxy == nil then
+        ---@diagnostic disable-next-line: inject-field
+        matproxy = {}; _G.matproxy = matproxy
+    end
+
+    local proxy_list = matproxy.ProxyList or {}
+    matproxy.ProxyList = proxy_list
+
+    local active_list = matproxy.ActiveList or {}
+    matproxy.ActiveList = active_list
+
+    -- TODO: matproxy
+
+end

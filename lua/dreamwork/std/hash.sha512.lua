@@ -3,7 +3,7 @@ local std = dreamwork.std
 ---@class dreamwork.std.hash
 local hash = std.hash
 
----@class dreamwork.std.hash.SHA512 : dreamwork.Object
+---@class dreamwork.std.hash.SHA512 : dreamwork.std.Object
 ---@field __class dreamwork.std.hash.SHA512Class
 local SHA512 = std.class.base( "SHA512" )
 

@@ -26,7 +26,7 @@ local math_floor, math_clamp = math.floor, math.clamp
 ---
 --- The big integer object.
 ---
----@class dreamwork.std.BigInt : dreamwork.Object
+---@class dreamwork.std.BigInt : dreamwork.std.Object
 ---@field __class dreamwork.std.BigIntClass
 ---@operator add(any): dreamwork.std.BigInt
 ---@operator sub(any): dreamwork.std.BigInt
@@ -712,10 +712,10 @@ do
             digits_start = digits_start + 1
 
             local prefix = string_byte( str, digits_start )
-            if (base == nil or base == 16) and prefix == 0x78 then   -- "x"
+            if (base == nil or base == 16) and prefix == 0x78 then -- "x"
                 base = 16
                 digits_start = digits_start + 1
-            elseif (base == nil or base == 2) and prefix == 0x62 then   -- "b"
+            elseif (base == nil or base == 2) and prefix == 0x62 then -- "b"
                 base = 2
                 digits_start = digits_start + 1
             end

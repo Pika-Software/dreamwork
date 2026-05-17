@@ -22,35 +22,35 @@ local setmetatable = std.setmetatable
 local class = {}
 std.class = class
 
----@alias dreamwork.Class.__inherited fun( parent: dreamwork.Class, child: dreamwork.Class )
----@alias dreamwork.Class.__new fun( cls: dreamwork.Class, ...: any? ): dreamwork.Object
----@alias dreamwork.Object.__init fun( obj: dreamwork.Object, ...: any? )
+---@alias dreamwork.std.Class.__inherited fun( parent: dreamwork.std.Class, child: dreamwork.std.Class )
+---@alias dreamwork.std.Class.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
+---@alias dreamwork.std.Object.__init fun( obj: dreamwork.std.Object, ...: any? )
 
----@class dreamwork.Object : dreamwork.Metatable
+---@class dreamwork.std.Object : dreamwork.Metatable
 ---@field private __type string The name of object type. **READ ONLY**
----@field __class? dreamwork.Class  The class of the object. **READ ONLY**
----@field __parent? dreamwork.Object The parent of the object. **READ ONLY**
----@field private __init? dreamwork.Object.__init A function that will be called when creating a new object and should be used as the constructor.
----@field protected __new? dreamwork.Class.__new A function that will be called when a new class is created and allows you to replace the result.
+---@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
+---@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**
+---@field private __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
+---@field protected __new? dreamwork.std.Class.__new A function that will be called when a new class is created and allows you to replace the result.
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
----@alias Object dreamwork.Object
+---@alias Object dreamwork.std.Object
 
----@class dreamwork.Class : dreamwork.Object
----@field __base dreamwork.Object The base of the class. **READ ONLY**
----@field __parent? dreamwork.Class The parent of the class. **READ ONLY**
+---@class dreamwork.std.Class : dreamwork.std.Object
+---@field __base dreamwork.std.Object The base of the class. **READ ONLY**
+---@field __parent? dreamwork.std.Class The parent of the class. **READ ONLY**
 ---@field __private boolean If the class is private. **READ ONLY**
----@field private __inherited? dreamwork.Class.__inherited The function that will be called when the class is inherited.
+---@field private __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
----@alias Class dreamwork.Class
+---@alias Class dreamwork.std.Class
 
----@type table<dreamwork.Object, userdata>
+---@type table<dreamwork.std.Object, userdata>
 local templates = {}
 
 std.gc.setTableRules( templates, true, false )
 
----@param obj dreamwork.Object The object to convert to a string.
+---@param obj dreamwork.std.Object The object to convert to a string.
 ---@return string str The string representation of the object.
 local function __tostring( obj )
     return string_format( "%s: %p", debug_getmetavalue( obj, "__type" ) or "unknown", obj )
@@ -76,8 +76,8 @@ do
     ---
     ---@param name string The name of the class.
     ---@param private? boolean If the class is private.
-    ---@param parent? dreamwork.Class | unknown The parent of the class.
-    ---@return dreamwork.Object base The base of the class.
+    ---@param parent? dreamwork.std.Class | unknown The parent of the class.
+    ---@return dreamwork.std.Object base The base of the class.
     function class.base( name, private, parent )
         local base
 
@@ -102,7 +102,7 @@ do
         end
 
         base.__index = base
-        ---@cast base dreamwork.Object
+        ---@cast base dreamwork.std.Object
 
         if parent ~= nil then
             local parent_base = raw_get( parent, "__base" )
@@ -110,7 +110,7 @@ do
                 error( "Parent class has no `__base` variable.", 2 )
             end
 
-            ---@cast parent_base dreamwork.Object
+            ---@cast parent_base dreamwork.std.Object
             base.__parent = parent_base
             setmetatable( base, { __index = parent_base } )
 
@@ -137,10 +137,10 @@ do
     ---
     --- Calls the base initialization function, <b>if it exists</b>, and returns the given object.
     ---
-    ---@param base dreamwork.Object The base object, aka metatable.
-    ---@param obj dreamwork.Object The object to initialize.
+    ---@param base dreamwork.std.Object The base object, aka metatable.
+    ---@param obj dreamwork.std.Object The object to initialize.
     ---@param ... any? Arguments to pass to the constructor.
-    ---@return dreamwork.Object object The initialized object.
+    ---@return dreamwork.std.Object object The initialized object.
     local function class_init( base, obj, ... )
         local init_fn = raw_get( base, "__init" )
         if init_fn ~= nil then
@@ -156,8 +156,8 @@ do
     ---
     --- Creates a new class object.
     ---
-    ---@param base dreamwork.Object The base object, aka metatable.
-    ---@return dreamwork.Object object The new object.
+    ---@param base dreamwork.std.Object The base object, aka metatable.
+    ---@return dreamwork.std.Object object The new object.
     local function class_new( base )
         if raw_get( base, "__private" ) then
             ---@diagnostic disable-next-line: return-type-mismatch
@@ -171,20 +171,20 @@ do
 
     class.new = class_new
 
-    ---@param self dreamwork.Class The class.
-    ---@return dreamwork.Object object The new object.
+    ---@param self dreamwork.std.Class The class.
+    ---@return dreamwork.std.Object object The new object.
     function class__call( self, ... )
-        ---@type dreamwork.Object | nil
+        ---@type dreamwork.std.Object | nil
         local obj
 
-        ---@type dreamwork.Class.__new | nil
+        ---@type dreamwork.std.Class.__new | nil
         local new_fn = raw_get( self, "__new" )
         if new_fn ~= nil then
             obj = new_fn( self, ... )
         end
 
         if obj == nil then
-            ---@type dreamwork.Object | nil
+            ---@type dreamwork.std.Object | nil
             local base = raw_get( self, "__base" )
             if base == nil then
                 std.errorf( 2, false, "Class '%s' variable `__base` is missing, class creation failed.", self )
@@ -203,17 +203,17 @@ end
 ---
 --- Creates a new class from the given base.
 ---
----@param base dreamwork.Object The base object, aka metatable.
----@return dreamwork.Class | unknown cls The class.
+---@param base dreamwork.std.Object The base object, aka metatable.
+---@return dreamwork.std.Class | unknown cls The class.
 function class.create( base )
     local cls = {}
 
-    ---@type dreamwork.Class | nil
+    ---@type dreamwork.std.Class | nil
     local parent_class
 
     local parent_base = raw_get( base, "__parent" )
     if parent_base ~= nil then
-        ---@cast parent_base dreamwork.Object
+        ---@cast parent_base dreamwork.std.Object
         parent_class = raw_get( parent_base, "__class" )
 
         if parent_class ~= nil then
@@ -236,7 +236,7 @@ function class.create( base )
     raw_set( cls, "__base", base )
 
     if parent_class ~= nil then
-        ---@type dreamwork.Class.__inherited | nil
+        ---@type dreamwork.std.Class.__inherited | nil
         local inherited_fn = raw_get( parent_class, "__inherited" )
         if inherited_fn ~= nil then
             inherited_fn( parent_class, cls )

@@ -7,7 +7,7 @@ local std = dreamwork.std
 local class = std.class
 local Version = std.Version
 
----@class dreamwork.Package: dreamwork.Object
+---@class dreamwork.Package: dreamwork.std.Object
 ---@field __class dreamwork.PackageClass
 ---@field name string
 ---@field version Version

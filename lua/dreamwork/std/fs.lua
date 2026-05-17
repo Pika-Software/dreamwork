@@ -123,8 +123,8 @@ do
     local SYSTEM_X86 = std.SYSTEM_X86
     local jit_edge = std.jit.edge
 
-    local head = "lua/bin/gm" .. ( LUA_CLIENT and "cl" or "sv" ) .. "_"
-    local tail = "_" .. ( { "osx64", "osx", "linux64", "linux", "win64", "win32" } )[ ( SYSTEM_WINDOWS and 4 or 0 ) + ( std.SYSTEM_LINUX and 2 or 0 ) + ( SYSTEM_X86 and 1 or 0 ) + 1 ]
+    local head = "lua/bin/gm" .. (LUA_CLIENT and "cl" or "sv") .. "_"
+    local tail = "_" .. ({ "osx64", "osx", "linux64", "linux", "win64", "win32" })[ (SYSTEM_WINDOWS and 4 or 0) + (std.SYSTEM_LINUX and 2 or 0) + (SYSTEM_X86 and 1 or 0) + 1 ]
 
     --- [SHARED AND MENU]
     ---
@@ -164,7 +164,7 @@ do
             end
         end
 
-        return false, "/garrysmod/" .. file_path .. ( SYSTEM_WINDOWS and ".dll" or ".so" )
+        return false, "/garrysmod/" .. file_path .. (SYSTEM_WINDOWS and ".dll" or ".so")
     end
 
     std.lookupbinary = lookupbinary
@@ -347,7 +347,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
 
 end
 
-if ( async_write == nil or async_append == nil ) and std.loadbinary( "async_write" ) and file.AsyncWrite ~= nil and file.AsyncAppend ~= nil then
+if (async_write == nil or async_append == nil) and std.loadbinary( "async_write" ) and file.AsyncWrite ~= nil and file.AsyncAppend ~= nil then
 
     ---@alias async_write_write_callback fun( file_path: string, status: integer )
 
@@ -631,7 +631,7 @@ end
 local fs = std.fs or {}
 std.fs = fs
 
----@class dreamwork.std.fs.File : dreamwork.Object
+---@class dreamwork.std.fs.File : dreamwork.std.Object
 ---@field __class dreamwork.std.fs.FileClass
 ---@field name string The name of the file. **READ-ONLY**
 ---@field size integer The size of the file in bytes. **READ-ONLY**
@@ -640,7 +640,7 @@ std.fs = fs
 ---@field parent dreamwork.std.fs.Directory | nil The parent directory. **READ-ONLY**
 local File = class.base( "File", true )
 
----@class dreamwork.std.fs.Directory : dreamwork.Object
+---@class dreamwork.std.fs.Directory : dreamwork.std.Object
 ---@field __class dreamwork.std.fs.DirectoryClass
 ---@field name string The name of the directory. **READ-ONLY**
 ---@field size integer The size of the directory in bytes. **READ-ONLY**
@@ -1108,7 +1108,7 @@ local function directory_lookup( directory_object, path_to, start_position )
         local name = segments[ 1 ]
 
         local uint8_1, uint8_2 = string_byte( name, 1, 2 )
-        if string_byte( name, 1, 1 ) == nil or ( uint8_1 == 0x2E --[[ . ]] and uint8_2 == nil ) then
+        if string_byte( name, 1, 1 ) == nil or (uint8_1 == 0x2E --[[ . ]] and uint8_2 == nil) then
             return directory_object, true
         end
 
@@ -1414,7 +1414,7 @@ else
 
             ---@type dreamwork.std.fs.Object[]
             local fs_files, fs_file_count,
-                fs_dirs, fs_dir_count = fs_object:select()
+            fs_dirs, fs_dir_count = fs_object:select()
 
             for i = 1, fs_file_count, 1 do
                 local file_object = fs_files[ i ]
@@ -1691,6 +1691,7 @@ else
 
     engine_hookCatch( "Tick", function()
         if watch_list_size == 0 then return end
+
         coroutine_resume( watchdog_thread )
     end )
 
@@ -1790,14 +1791,14 @@ local function delete_directory( directory_object, recursive, stack_level )
 
     local mount_path = mount_paths[ directory_object ]
 
-    if not ( file_Exists( mount_path, mount_point ) and file_IsDir( mount_path, mount_point ) ) then
+    if not (file_Exists( mount_path, mount_point ) and file_IsDir( mount_path, mount_point )) then
         return
     end
 
     if recursive then
 
         local files, file_count,
-            directories, directory_count = directory_object:select()
+        directories, directory_count = directory_object:select()
 
         for i = 1, directory_count, 1 do
             delete_directory( directories[ i ], recursive, stack_level )
@@ -2416,7 +2417,7 @@ function File:rename( name, forced )
     ---@cast mount_point string
 
     local mount_info = mount_infos[ mount_point ]
-    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+    if mount_info == nil or not (mount_info.writable and mount_info.deletable) then
         std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
     end
 
@@ -2821,7 +2822,7 @@ end
 ---@param directory_callback nil | fun( directory_object: dreamwork.std.fs.Directory )
 function Directory:foreach( file_callback, directory_callback )
     local files, file_count,
-        directories, directory_count = self:select()
+    directories, directory_count = self:select()
 
     if file_callback == nil then
         if directory_callback == nil then
@@ -2886,7 +2887,7 @@ function Directory:touch()
     ---@cast mount_point string
 
     local mount_info = mount_infos[ mount_point ]
-    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+    if mount_info == nil or not (mount_info.writable and mount_info.deletable) then
         std.errorf( 2, false, "'%s' cannot be touched, directory is not available.", self )
     end
 
@@ -2980,7 +2981,6 @@ function Directory:copy( directory_object, name, forced )
 end
 
 do
-
 
     -- local function directory_move( mount_point, mount_path, new_mount_point, new_mount_path )
     --     if string_byte( mount_path, 1, 1 ) ~= nil then
@@ -3096,7 +3096,7 @@ function Directory:rename( name, forced )
     ---@cast mount_point string
 
     local mount_info = mount_infos[ mount_point ]
-    if mount_info == nil or not ( mount_info.writable and mount_info.deletable ) then
+    if mount_info == nil or not (mount_info.writable and mount_info.deletable) then
         std.errorf( 2, false, "'%s' cannot be renamed, parent directory is not allowing file renaming.", self )
     end
 
@@ -3131,7 +3131,7 @@ function Directory:rename( name, forced )
     end
 
     local files, file_count,
-        directories, directory_count = self:select()
+    directories, directory_count = self:select()
 
 end
 
@@ -3148,10 +3148,10 @@ function Directory:toStringTree( prefix, is_last )
         lines[ 1 ] = tostring( self )
         next_prefix = " "
     else
-        lines[ 1 ] = prefix .. ( is_last and "╚═ " or "╠═ " ) .. tostring( self )
+        lines[ 1 ] = prefix .. (is_last and "╚═ " or "╠═ ") .. tostring( self )
 
-        local spaces = ( is_last and "    " or " " )
-        next_prefix = prefix .. ( is_last and spaces or "║  " .. spaces )
+        local spaces = (is_last and "    " or " ")
+        next_prefix = prefix .. (is_last and spaces or "║  " .. spaces)
     end
 
     local children_length = descendant_counts[ self ]
@@ -3220,7 +3220,7 @@ do
     local download = DirectoryClass( "download", "DOWNLOAD", "" )
     insert( workspace, download )
 
-    local lua = DirectoryClass( "lua", ( LUA_SERVER and "lsv" or ( LUA_CLIENT and "lcl" or ( LUA_MENU and "LuaMenu" or "LUA" ) ) ), "" )
+    local lua = DirectoryClass( "lua", (LUA_SERVER and "lsv" or (LUA_CLIENT and "lcl" or (LUA_MENU and "LuaMenu" or "LUA"))), "" )
     insert( workspace, lua )
 
     local map = DirectoryClass( "map", "BSP", "" )
@@ -3615,7 +3615,7 @@ function fs.copy( source_path, target_path, forced )
             ---@cast fs_object dreamwork.std.fs.Directory
 
             if i == segment_count then
-                return source_object:copy( fs_object, nil, forced), source_is_directory
+                return source_object:copy( fs_object, nil, forced ), source_is_directory
             end
 
             local segments_remaining = segment_count - i

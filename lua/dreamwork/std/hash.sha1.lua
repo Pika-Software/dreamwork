@@ -27,7 +27,7 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---
 --- SHA1 object.
 ---
----@class dreamwork.std.hash.SHA1 : dreamwork.Object
+---@class dreamwork.std.hash.SHA1 : dreamwork.std.Object
 ---@field __class dreamwork.std.hash.SHA1Class
 local SHA1 = std.class.base( "SHA1" )
 
@@ -428,7 +428,7 @@ function SHA1:update( data )
 
     position = bit_band( bit_rshift( position, 3 ), 63 )
 
-    if ( position + data_length ) > 63 then
+    if (position + data_length) > 63 then
         local h1, h2, h3, h4, h5 = self.h1, self.h2, self.h3, self.h4, self.h5
         i = 64 - position
 
@@ -480,7 +480,7 @@ function SHA1:digest( as_hex )
     local position = self.position
     local message_length = self.message_length
     local remaining = message_length - position
-    local padding = 64 - ( remaining + 9 )
+    local padding = 64 - (remaining + 9)
 
     local bit_count = message_length * 8
 

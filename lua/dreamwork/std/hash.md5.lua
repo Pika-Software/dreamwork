@@ -27,7 +27,7 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---
 --- MD5 object.
 ---
----@class dreamwork.std.hash.MD5 : dreamwork.Object
+---@class dreamwork.std.hash.MD5 : dreamwork.std.Object
 ---@field __class dreamwork.std.hash.MD5Class
 local MD5 = std.class.base( "MD5" )
 
@@ -74,7 +74,7 @@ end
 ---@param z integer
 ---@return integer
 local function g( x, y, z )
-    return bit_bor( bit_band( x, z ), bit_band( y, -( z + 1 ) ) )
+    return bit_bor( bit_band( x, z ), bit_band( y, -(z + 1) ) )
 end
 
 ---@param x integer
@@ -82,7 +82,7 @@ end
 ---@param z integer
 ---@return integer
 local function i( x, y, z )
-    return bit_bxor( y, bit_bor( x, -( z + 1 ) ) )
+    return bit_bxor( y, bit_bor( x, -(z + 1) ) )
 end
 
 ---@param a integer
@@ -201,10 +201,10 @@ local function transform( in_str, index, in_a, in_b, in_c, in_d )
     out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_3, 15, 0x2ad7d2bb )
     out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_10, 21, 0xeb86d391 )
 
-    return ( in_a + out_a ) % 0xFFFFFFFF,
-        ( in_b + out_b ) % 0xFFFFFFFF,
-        ( in_c + out_c ) % 0xFFFFFFFF,
-        ( in_d + out_d ) % 0xFFFFFFFF
+    return (in_a + out_a) % 0xFFFFFFFF,
+        (in_b + out_b) % 0xFFFFFFFF,
+        (in_c + out_c) % 0xFFFFFFFF,
+        (in_d + out_d) % 0xFFFFFFFF
 end
 
 --- [SHARED AND MENU]
@@ -278,7 +278,7 @@ function MD5:digest( as_hex )
     local position = self.position
     local message_length = self.message_length
     local remaining = message_length - position
-    local padding = 64 - ( remaining + 9 )
+    local padding = 64 - (remaining + 9)
 
     local bit_count = message_length * 8
 
@@ -329,7 +329,7 @@ if engine_MD5 == nil then
     ---@return string str_result The MD5 string of the message.
     function MD5Class.digest( message, as_hex )
         local message_length = string_len( message )
-        local padding = 64 - ( message_length % 64 + 9 )
+        local padding = 64 - (message_length % 64 + 9)
 
         local bit_count = message_length * 8
 

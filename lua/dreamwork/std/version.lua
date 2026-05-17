@@ -79,7 +79,7 @@ local function concat_pre_release_and_build( pre_release, build )
     end
 end
 
----@class dreamwork.std.Version : dreamwork.Object
+---@class dreamwork.std.Version : dreamwork.std.Object
 ---@field __class dreamwork.std.VersionClass
 ---@field major integer The major version number. (0-1023)
 ---@field minor integer The minor version number. (0-2047)

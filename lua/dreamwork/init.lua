@@ -225,7 +225,6 @@ std.getmetatable = _G.getmetatable
 local setmetatable = _G.setmetatable
 std.setmetatable = setmetatable
 
-
 --- removed in Lua 5.2
 std.getfenv = _G.getfenv
 
@@ -574,7 +573,7 @@ do
 end
 
 ---@diagnostic disable-next-line : undefined-field
-local isTable = _G.isTable
+local isTable = _G.istable
 if isTable == nil then
 
     local raw_type = raw.type
@@ -1017,7 +1016,9 @@ do
     ---@param value any The value to get the type of.
     ---@return string type_name The type name of the given value.
     local function type( value )
-        return debug_getmetavalue( value, "__type" ) or raw_type( value )
+        return debug_getmetavalue( value, "__type" ) or
+            debug_getmetavalue( value, "MetaName" ) or
+            raw_type( value )
     end
 
     std.type = type
@@ -1417,7 +1418,7 @@ do
     function std.assert( expression, fmt, ... )
         if expression then return end
 
-        std.errorf( 3, false, fmt, ... )
+        std.errorf( 4, false, fmt, ... )
     end
 
 end

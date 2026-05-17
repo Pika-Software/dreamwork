@@ -30,7 +30,7 @@ std.futures = futures
 futures.RESULT = futures.RESULT or {
     YIELD = std.Symbol( "futures.RESULT_YIELD" ),
     ERROR = std.Symbol( "futures.RESULT_ERROR" ),
-    END =   std.Symbol( "futures.RESULT_END" )
+    END = std.Symbol( "futures.RESULT_END" )
 }
 
 ---@package
@@ -263,7 +263,6 @@ function futures.cancel( co )
     end
 end
 
-
 --- [SHARED AND MENU]
 ---
 --- Transfers data between coroutines in symmetrical way
@@ -495,7 +494,7 @@ do
     --- fut:setError( "something went wrong" )
     --- fut:cancel()
     --- ```
-    ---@class dreamwork.std.futures.Future : dreamwork.Object
+    ---@class dreamwork.std.futures.Future : dreamwork.std.Object
     ---@field __class dreamwork.std.futures.FutureClass
     ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
     ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
@@ -808,7 +807,7 @@ do
     --- A channel is a queue-type object that can be used by multiple coroutines.
     ---
     ---@alias Channel dreamwork.std.futures.Channel
-    ---@class dreamwork.std.futures.Channel : dreamwork.Object
+    ---@class dreamwork.std.futures.Channel : dreamwork.std.Object
     ---@field __class dreamwork.std.futures.ChannelClass
     ---@field max_size integer Maximum size of the channel.
     ---@field private queue dreamwork.std.Queue Queue of values.
@@ -921,7 +920,7 @@ do
     ---@param wait boolean?
     ---@return boolean success
     function Channel:put( value, wait )
-        while wait ~= false and ( self:isFull() and not self.closed ) do
+        while wait ~= false and (self:isFull() and not self.closed) do
             self.setters:push( coroutine_running() )
             futures_pending()
         end

@@ -14,7 +14,7 @@ local DIV255_CONST = 1 / 255
 ---
 --- The color object.
 ---
----@class dreamwork.std.Color : dreamwork.Object
+---@class dreamwork.std.Color : dreamwork.std.Object
 ---@field __class dreamwork.std.ColorClass
 ---@field r integer A red channel of the color. [0, 255].
 ---@field g integer A green channel of the color. [0, 255].

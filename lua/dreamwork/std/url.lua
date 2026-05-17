@@ -93,7 +93,7 @@ do
     local _idx_0 = 1
     for _key_0, _value_0 in raw_pairs( DECODE_LOOKUP_TABLE ) do
         if _idx_0 == _key_0 then
-            _tab_0[ #_tab_0+1 ] = _value_0
+            _tab_0[ #_tab_0 + 1 ] = _value_0
             _idx_0 = _idx_0 + 1
         else
             _tab_0[ _key_0 ] = _value_0
@@ -130,7 +130,7 @@ local function compilePercentEncodeSet( encodeSet, ... )
 
         for _key_0, _value_0 in raw_pairs( encodeSet ) do
             if _idx_0 == _key_0 then
-                _tab_0[ #_tab_0+1 ] = _value_0
+                _tab_0[ #_tab_0 + 1 ] = _value_0
                 _idx_0 = _idx_0 + 1
             else
                 _tab_0[ _key_0 ] = _value_0
@@ -716,7 +716,7 @@ local function parseIPv4( str, startPos, endPos )
             end
 
             startPos = pointer + 1
-            numbers[ #numbers+1 ] = num
+            numbers[ #numbers + 1 ] = num
 
             if not ch then
                 break
@@ -788,7 +788,7 @@ domainToASCII = function( domain )
                 domainPart = string_lower( domainPart )
             end
 
-            parts[ #parts+1 ] = domainPart
+            parts[ #parts + 1 ] = domainPart
             partStart = pointer + 1
             containsNonASCII = false
             doLowerCase = false
@@ -978,7 +978,7 @@ parseRelative = function( self, str, startPos, endPos, base, isSpecial )
             local _idx_0 = 1
             for _key_0, _value_0 in raw_pairs( _obj_0 ) do
                 if _idx_0 == _key_0 then
-                    _tab_0[ #_tab_0+1 ] = _value_0
+                    _tab_0[ #_tab_0 + 1 ] = _value_0
                     _idx_0 = _idx_0 + 1
                 else
                     _tab_0[ _key_0 ] = _value_0
@@ -1241,7 +1241,7 @@ function parsePathStart( self, str, startPos, endPos, isSpecial, stateOverride )
         return parsePath( self, str, startPos, endPos, isSpecial, nil, stateOverride )
     elseif stateOverride and not self.hostname then
         local path = self.path
-        path[ #path+1 ] = ""
+        path[ #path + 1 ] = ""
     end
 end
 
@@ -1660,7 +1660,7 @@ end
 ---
 --- The URL search parameters object.
 ---
----@class dreamwork.std.URL.SearchParams : dreamwork.Object
+---@class dreamwork.std.URL.SearchParams : dreamwork.std.Object
 ---@field __class dreamwork.std.URL.SearchParamsClass
 local SearchParams = std.class.base( "URLSearchParams" )
 
@@ -1717,7 +1717,7 @@ end
 ---@param name string
 ---@param value string?
 function SearchParams:append( name, value )
-    self[ #self+1 ] = { name, value }
+    self[ #self + 1 ] = { name, value }
     update( self )
 end
 
@@ -1762,7 +1762,7 @@ function SearchParams:getAll( name )
     for i = 1, #self, 1 do
         local t = self[ i ]
         if t[ 1 ] == name then
-            values[ #values+1 ] = t[ 2 ]
+            values[ #values + 1 ] = t[ 2 ]
         end
     end
 
@@ -1812,7 +1812,7 @@ function SearchParams:set( name, value )
     end
 
     -- if name is not found, append new value
-    self[ #self+1 ] = { name, value }
+    self[ #self + 1 ] = { name, value }
     update( self )
 end
 
@@ -1924,7 +1924,7 @@ end
 --- [SHARED AND MENU]
 ---
 --- The URL object.
----@class dreamwork.std.URL : dreamwork.Object, dreamwork.std.URL.State
+---@class dreamwork.std.URL : dreamwork.std.Object, dreamwork.std.URL.State
 ---@field __class dreamwork.std.URLClass
 ---@field state dreamwork.std.URL.State internal state of URL
 ---@field href string full url

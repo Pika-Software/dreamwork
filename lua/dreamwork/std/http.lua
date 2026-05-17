@@ -178,7 +178,7 @@ do
 
     -- TODO: make cookies
 
-    ---@class dreamwork.std.Cookies : dreamwork.Object
+    ---@class dreamwork.std.Cookies : dreamwork.std.Object
     ---@field __class dreamwork.std.CookiesClass
     local Cookies = std.class.base( "http.Cookies" )
 
@@ -242,7 +242,7 @@ local function request( options )
                 ---@cast old_value string
                 parameters[ key ] = { old_value, value }
             else
-                old_value[ #old_value+1 ] = value
+                old_value[ #old_value + 1 ] = value
             end
         end
 

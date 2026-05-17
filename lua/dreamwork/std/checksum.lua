@@ -33,7 +33,7 @@ std.checksum = checksum
 ---
 --- The CRC-8 checksum calculation object.
 ---
----@class dreamwork.std.checksum.CRC8 : dreamwork.Object
+---@class dreamwork.std.checksum.CRC8 : dreamwork.std.Object
 ---@field __class dreamwork.std.checksum.CRC8Class
 ---@field protected poly integer The polynomial is used to calculate checksum.
 ---@field protected init integer The initial value of checksum.
@@ -533,7 +533,6 @@ function CRC32:digest()
     return value % 0x100000000
 end
 
-
 --- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum calculation class.
@@ -670,7 +669,7 @@ end
 ---
 --- The Adler-32 checksum calculation object.
 ---
----@class dreamwork.std.checksum.Adler32 : dreamwork.Object
+---@class dreamwork.std.checksum.Adler32 : dreamwork.std.Object
 ---@field __class dreamwork.std.checksum.Adler32Class
 ---@field DigestSize integer The size of the checksum in bytes.
 ---@field BlockSize integer The block size in bytes.
@@ -777,7 +776,7 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 5 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5 = string_byte( raw_str, 1, position )
+            uint8_5 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -799,7 +798,7 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 6 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -823,7 +822,7 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 7 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -849,7 +848,7 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 8 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -877,8 +876,8 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 9 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -908,8 +907,8 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 10 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -941,8 +940,8 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 11 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10, uint8_11 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10, uint8_11 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -976,8 +975,8 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 12 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10, uint8_11, uint8_12 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10, uint8_11, uint8_12 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -1013,9 +1012,9 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 13 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10, uint8_11, uint8_12,
-                        uint8_13 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10, uint8_11, uint8_12,
+            uint8_13 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -1053,9 +1052,9 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 14 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10, uint8_11, uint8_12,
-                        uint8_13, uint8_14 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10, uint8_11, uint8_12,
+            uint8_13, uint8_14 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -1095,9 +1094,9 @@ function Adler32:update( raw_str )
             ) % 0xFFF1
         elseif position == 15 then
             local uint8_1, uint8_2, uint8_3, uint8_4,
-                uint8_5, uint8_6, uint8_7, uint8_8,
-                    uint8_9, uint8_10, uint8_11, uint8_12,
-                        uint8_13, uint8_14, uint8_15 = string_byte( raw_str, 1, position )
+            uint8_5, uint8_6, uint8_7, uint8_8,
+            uint8_9, uint8_10, uint8_11, uint8_12,
+            uint8_13, uint8_14, uint8_15 = string_byte( raw_str, 1, position )
 
             b = (
                 b +
@@ -1151,9 +1150,9 @@ function Adler32:update( raw_str )
     end
 
     local uint8_1, uint8_2, uint8_3, uint8_4,
-        uint8_5, uint8_6, uint8_7, uint8_8,
-        uint8_9, uint8_10, uint8_11, uint8_12,
-        uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( raw_str, position, position + 15 )
+    uint8_5, uint8_6, uint8_7, uint8_8,
+    uint8_9, uint8_10, uint8_11, uint8_12,
+    uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( raw_str, position, position + 15 )
 
     b = (
         b +
@@ -1207,7 +1206,7 @@ end
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
 function Adler32:digest()
-    return ( self.b * 0x10000 ) + self.a
+    return (self.b * 0x10000) + self.a
 end
 
 --- [SHARED AND MENU]
@@ -1241,7 +1240,7 @@ end
 ---
 --- The Fletcher-16 checksum calculation object.
 ---
----@class dreamwork.std.checksum.Fletcher16 : dreamwork.Object
+---@class dreamwork.std.checksum.Fletcher16 : dreamwork.std.Object
 ---@field __class dreamwork.std.checksum.Fletcher16Class
 ---@field DigestSize integer The size of the checksum in bytes.
 ---@field protected a integer The first part of the checksum.
@@ -1277,8 +1276,8 @@ function Fletcher16:update( raw_str )
     local a, b = self.a, self.b
 
     for i = 1, string_len( raw_str ), 1 do
-        a = ( a + string_byte( raw_str, i, i ) ) % 0xFF
-        b = ( b + a ) % 0xFF
+        a = (a + string_byte( raw_str, i, i )) % 0xFF
+        b = (b + a) % 0xFF
     end
 
     self.a, self.b = a, b
@@ -1291,7 +1290,7 @@ end
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^16 (0x10000).
 function Fletcher16:digest()
-    return ( self.b * 0x0100 ) + self.a
+    return (self.b * 0x0100) + self.a
 end
 
 --- [SHARED AND MENU]
@@ -1350,8 +1349,8 @@ function Fletcher32:update( raw_str )
     local a, b = self.a, self.b
 
     for i = 1, string_len( raw_str ), 1 do
-        a = ( a + string_byte( raw_str, i, i ) ) % 0xFFFF
-        b = ( b + a ) % 0xFFFF
+        a = (a + string_byte( raw_str, i, i )) % 0xFFFF
+        b = (b + a) % 0xFFFF
     end
 
     self.a, self.b = a, b
@@ -1364,7 +1363,7 @@ end
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
 function Fletcher32:digest()
-    return ( self.b * 0x10000 ) + self.a
+    return (self.b * 0x10000) + self.a
 end
 
 --- [SHARED AND MENU]

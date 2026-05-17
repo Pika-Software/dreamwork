@@ -4,7 +4,7 @@ local _G = _G
 local std = dreamwork.std
 
 ---@alias Gamemode dreamwork.std.Gamemode
----@class dreamwork.std.Gamemode : dreamwork.Object
+---@class dreamwork.std.Gamemode : dreamwork.std.Object
 ---@field __class dreamwork.std.GamemodeClass
 ---@field name string
 local Gamemode = std.class.base( "Gamemode" )

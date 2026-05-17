@@ -102,7 +102,7 @@ local size_per_segment = math_floor( max_segment_size / 8 )
 local header_free_space = math_floor( (max_package_size - (segment_index_size + 1 --[[ is complex message (boolean) ]])) / 8 )
 
 -- TODO: all network messages are byte strings, that will mean that it will fully builded before send and them fully received before perform readers
----@class dreamwork.std.Network : dreamwork.Object
+---@class dreamwork.std.Network : dreamwork.std.Object
 ---@field __class dreamwork.std.NetworkClass
 ---@field id integer
 ---@field name string

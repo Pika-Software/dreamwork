@@ -4,7 +4,7 @@ local glua_util = _G.util
 ---@class dreamwork.std
 local std = dreamwork.std
 
----@class dreamwork.std.Model : dreamwork.Object
+---@class dreamwork.std.Model : dreamwork.std.Object
 local Model = std.class.base( "Model" )
 
 -- function Model:__init( )
