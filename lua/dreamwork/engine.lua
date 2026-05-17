@@ -5,7 +5,10 @@ local dreamwork = dreamwork
 if dreamwork.engine ~= nil then return end
 
 local std = dreamwork.std
+
 local LUA_SERVER = std.LUA_SERVER
+local LUA_CLIENT_SERVER = std.LUA_CLIENT_SERVER
+
 local transducers = dreamwork.transducers
 
 local math = std.math
@@ -64,13 +67,6 @@ NEXTBOT.__parent = ENTITY
 ---@field NetworkHeaderSize integer The size of the network header in bits.
 local engine = {}
 dreamwork.engine = engine
-
--- ---@field ClientLimit integer The maximum number of clients that can connect to the server.
--- if std.LUA_CLIENT_SERVER then
---     engine.ClientLimit = game.MaxPlayers()
--- else
---     engine.ClientLimit = 0
--- end
 
 --- [SHARED]
 ---
@@ -317,7 +313,7 @@ do
 
 end
 
-do
+if LUA_CLIENT_SERVER then
 
     ---@class dreamwork.std.gc
     local gc = std.gc
@@ -1097,239 +1093,235 @@ do
 
 end
 
-local glua_util = _G.util
+do
 
-if std.LUA_CLIENT_SERVER then
+    local glua_util = _G.util or {}
 
-    ---@type fun( network_name: string ): integer | nil
-    local network_register = debug_fempty
+    if LUA_CLIENT_SERVER then
 
-    ---@type fun( network_id: integer ): string | nil
-    local network_get_name = debug_fempty
+        engine.MD5 = glua_util.MD5
+        engine.CRC32 = glua_util.CRC
+        engine.SHA1 = glua_util.SHA1
+        engine.SHA256 = glua_util.SHA256
 
-    ---@type fun( network_name: string ): integer | nil
-    local network_get_id = debug_fempty
+        ---@type fun( network_name: string ): integer | nil
+        local network_register = glua_util.AddNetworkString or debug_fempty
 
-    if glua_util ~= nil then
-        network_register = glua_util.AddNetworkString or network_register
-        network_get_name = glua_util.NetworkIDToString or network_get_name
-        network_get_id = glua_util.NetworkStringToID or network_get_id
-    end
+        ---@type fun( network_id: integer ): string | nil
+        local network_get_name = glua_util.NetworkIDToString or debug_fempty
 
-    local full_header_size = engine.NetworkHeaderSize
+        ---@type fun( network_name: string ): integer | nil
+        local network_get_id = glua_util.NetworkStringToID or debug_fempty
 
-    local header_size = full_header_size - 1 -- take unreliable flag
+        local full_header_size = engine.NetworkHeaderSize
 
-    ---@type table<string, integer>
-    local network_ids = {}
+        local header_size = full_header_size - 1 -- take unreliable flag
 
-    ---@type table<integer, string>
-    local network_names = {}
+        ---@type table<string, integer>
+        local network_ids = {}
 
-    ---@type integer
-    local network_limit = (2 ^ header_size) - 1
+        ---@type table<integer, string>
+        local network_names = {}
 
-    setmetatable( network_ids, {
-        __index = function( self, network_name )
-            local network_id = network_get_id( network_name )
+        ---@type integer
+        local network_limit = (2 ^ header_size) - 1
 
-            if network_id == nil or network_id <= 0 or network_id > network_limit then
-                return nil
+        setmetatable( network_ids, {
+            __index = function( self, network_name )
+                local network_id = network_get_id( network_name )
+
+                if network_id == nil or network_id <= 0 or network_id > network_limit then
+                    return nil
+                end
+
+                network_names[ network_id ] = network_name
+                self[ network_name ] = network_id
+                return network_id
+            end
+        } )
+
+        setmetatable( network_names, {
+            __index = function( self, network_id )
+                if network_id <= 0 or network_id > network_limit then
+                    return nil
+                end
+
+                local network_name = network_get_name( network_id )
+
+                if network_name ~= nil then
+                    network_ids[ network_name ] = network_id
+                    self[ network_id ] = network_name
+                end
+
+                return network_name
+            end
+        } )
+
+        --- [SHARED]
+        ---
+        --- Get the names of all registered networks.
+        ---
+        ---@return string[] networks The names of the registered networks.
+        ---@return integer network_count The number of registered networks.
+        function engine.getNetworks()
+            local networks, network_count = {}, 0
+
+            for network_id = 1, network_limit, 1 do
+                local network_name = network_get_name( network_id )
+                if network_name == nil then
+                    break
+                end
+
+                network_ids[ network_name ] = network_id
+                network_names[ network_id ] = network_name
+
+                network_count = network_count + 1
+                networks[ network_count ] = network_name
             end
 
-            network_names[ network_id ] = network_name
-            self[ network_name ] = network_id
+            return networks,
+                network_count
+        end
+
+        --- [SHARED]
+        ---
+        --- Checks if the network exists.
+        ---
+        ---@return boolean exists `true` if the network exists, `false` otherwise.
+        function engine.networkExists( network_name )
+            return network_ids[ network_name ] ~= nil
+        end
+
+        --- [SHARED]
+        ---
+        --- Get the ID of the network from its name.
+        ---
+        ---@param network_name string The name of the network.
+        ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
+        function engine.networkGetID( network_name )
+            return network_ids[ network_name ]
+        end
+
+        --- [SHARED]
+        ---
+        --- Get the name of the network from its ID.
+        ---
+        ---@param network_id integer The ID of the network message.
+        ---@return string | nil network_name The name of the network message, or `nil` if the network message does not exist.
+        function engine.networkGetName( network_id )
+            return network_names[ network_id ]
+        end
+
+        --- [SHARED]
+        ---
+        --- Register a new network message or returns the ID of an existing one.
+        ---
+        ---@param network_name string The name of the network message.
+        ---@return integer network_id The ID of the network message.
+        function engine.networkRegister( network_name )
+            local network_id = network_ids[ network_name ]
+            if network_id == nil then
+                if not LUA_SERVER then
+                    error( "Networks can only be registered on the server.", 2 )
+                end
+
+                ---@type integer
+                ---@diagnostic disable-next-line: assign-type-mismatch
+                network_id = network_register( network_name )
+
+                if network_id == nil then
+                    error( string_format( "Failed to register network '%s', unknown error.", network_name ), 2 )
+                end
+
+                network_names[ network_id ] = network_name
+                network_ids[ network_name ] = network_id
+            end
+
             return network_id
         end
-    } )
 
-    setmetatable( network_names, {
-        __index = function( self, network_id )
-            if network_id <= 0 or network_id > network_limit then
-                return nil
-            end
+        local glua_net = _G.net
+        if glua_net ~= nil then
 
-            local network_name = network_get_name( network_id )
+            local net_WriteBool = glua_net.WriteBool
+            local net_ReadUInt = glua_net.ReadUInt
+            local net_ReadBool = glua_net.ReadBool
 
-            if network_name ~= nil then
-                network_ids[ network_name ] = network_id
-                self[ network_id ] = network_name
-            end
+            local string_lower = string.lower
 
-            return network_name
-        end
-    } )
+            ---@type table<string, fun( remaining_bits: integer, sender: Player | nil )>
+            local receivers = glua_net.Receivers or {}
+            glua_net.Receivers = receivers
 
-    --- [SHARED]
-    ---
-    --- Get the names of all registered networks.
-    ---
-    ---@return string[] networks The names of the registered networks.
-    ---@return integer network_count The number of registered networks.
-    function engine.getNetworks()
-        local networks, network_count = {}, 0
-
-        for network_id = 1, network_limit, 1 do
-            local network_name = network_get_name( network_id )
-            if network_name == nil then
-                break
-            end
-
-            network_ids[ network_name ] = network_id
-            network_names[ network_id ] = network_name
-
-            network_count = network_count + 1
-            networks[ network_count ] = network_name
-        end
-
-        return networks,
-            network_count
-    end
-
-    --- [SHARED]
-    ---
-    --- Checks if the network exists.
-    ---
-    ---@return boolean exists `true` if the network exists, `false` otherwise.
-    function engine.networkExists( network_name )
-        return network_ids[ network_name ] ~= nil
-    end
-
-    --- [SHARED]
-    ---
-    --- Get the ID of the network from its name.
-    ---
-    ---@param network_name string The name of the network.
-    ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
-    function engine.networkGetID( network_name )
-        return network_ids[ network_name ]
-    end
-
-    --- [SHARED]
-    ---
-    --- Get the name of the network from its ID.
-    ---
-    ---@param network_id integer The ID of the network message.
-    ---@return string | nil network_name The name of the network message, or `nil` if the network message does not exist.
-    function engine.networkGetName( network_id )
-        return network_names[ network_id ]
-    end
-
-    --- [SHARED]
-    ---
-    --- Register a new network message or returns the ID of an existing one.
-    ---
-    ---@param network_name string The name of the network message.
-    ---@return integer network_id The ID of the network message.
-    function engine.networkRegister( network_name )
-        local network_id = network_ids[ network_name ]
-        if network_id == nil then
-            if not LUA_SERVER then
-                error( "Networks can only be registered on the server.", 2 )
-            end
-
-            ---@type integer
-            ---@diagnostic disable-next-line: assign-type-mismatch
-            network_id = network_register( network_name )
-
-            if network_id == nil then
-                error( string_format( "Failed to register network '%s', unknown error.", network_name ), 2 )
-            end
-
-            network_names[ network_id ] = network_name
-            network_ids[ network_name ] = network_id
-        end
-
-        return network_id
-    end
-
-    local glua_net = _G.net
-    if glua_net ~= nil then
-
-        local net_WriteBool = glua_net.WriteBool
-        local net_ReadUInt = glua_net.ReadUInt
-        local net_ReadBool = glua_net.ReadBool
-
-        local string_lower = string.lower
-
-        ---@type table<string, fun( remaining_bits: integer, sender: Player | nil )>
-        local receivers = glua_net.Receivers or {}
-        glua_net.Receivers = receivers
-
-        ---@param remaining_bits integer
-        ---@param sender Player
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function glua_net.Incoming( remaining_bits, sender )
-            local network_id = net_ReadUInt( header_size )
-            local unreliable = net_ReadBool()
-
-            remaining_bits = remaining_bits - full_header_size
-
-            local complete, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, remaining_bits, sender )
-            if complete == true then return end
-
-            if block_size ~= nil then
-                remaining_bits = remaining_bits - block_size
-            end
-
-            local network_name = network_names[ network_id ]
-            if network_name == nil then
-                if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
-                    sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
-                else
-                    dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
-                end
-
-                return
-            end
-
-            local fn = receivers[ string_lower( network_name ) ]
-            if fn == nil then
-                if LUA_SERVER then
-                    dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
-                    sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
-                else
-                    dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
-                end
-
-                return
-            end
-
-            fn( remaining_bits, sender )
-        end
-
-        if glua_net.Start ~= nil then
-
-            ---@param network_name string
-            ---@param unreliable? boolean
+            ---@param remaining_bits integer
+            ---@param sender Player
             ---@diagnostic disable-next-line: duplicate-set-field
-            glua_net.Start = detour.attach( glua_net.Start, function( fn, network_name, unreliable )
-                if network_ids[ network_name ] == nil then
+            function glua_net.Incoming( remaining_bits, sender )
+                local network_id = net_ReadUInt( header_size )
+                local unreliable = net_ReadBool()
+
+                remaining_bits = remaining_bits - full_header_size
+
+                local complete, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, remaining_bits, sender )
+                if complete == true then return end
+
+                if block_size ~= nil then
+                    remaining_bits = remaining_bits - block_size
+                end
+
+                local network_name = network_names[ network_id ]
+                if network_name == nil then
                     if LUA_SERVER then
-                        error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
+                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
+                        sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
+                    else
+                        dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
                     end
 
-                    dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Network ID: %d]", network_ids[ network_name ] )
-                    engine.consoleCommandRun( "disconnect" )
                     return
                 end
 
-                fn( network_name, unreliable )
-                net_WriteBool( unreliable == true )
-            end )
+                local fn = receivers[ string_lower( network_name ) ]
+                if fn == nil then
+                    if LUA_SERVER then
+                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
+                        sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
+                    else
+                        dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
+                    end
+
+                    return
+                end
+
+                fn( remaining_bits, sender )
+            end
+
+            if glua_net.Start ~= nil then
+
+                ---@param network_name string
+                ---@param unreliable? boolean
+                ---@diagnostic disable-next-line: duplicate-set-field
+                glua_net.Start = detour.attach( glua_net.Start, function( fn, network_name, unreliable )
+                    if network_ids[ network_name ] == nil then
+                        if LUA_SERVER then
+                            error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
+                        end
+
+                        dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Network ID: %d]", network_ids[ network_name ] )
+                        engine.consoleCommandRun( "disconnect" )
+                        return
+                    end
+
+                    fn( network_name, unreliable )
+                    net_WriteBool( unreliable == true )
+                end )
+
+            end
 
         end
 
     end
 
-end
-
-if glua_util ~= nil then
-    engine.MD5 = glua_util.MD5
-    engine.CRC32 = glua_util.CRC
-    engine.SHA1 = glua_util.SHA1
-    engine.SHA256 = glua_util.SHA256
 end
 
 if engine.loadMaterial == nil then
