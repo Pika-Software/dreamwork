@@ -1433,5 +1433,7 @@ if std.LUA_CLIENT then
     matproxy.ActiveList = active_list
 
     -- TODO: matproxy
+    --
+    -- ref: https://github.com/Facepunch/garrysmod/blob/master/garrysmod/lua/includes/modules/matproxy.lua
 
 end

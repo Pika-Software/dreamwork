@@ -15,7 +15,7 @@ gc_setTableRules( entities, true, true )
 local names = {}
 gc_setTableRules( names, true, false )
 
----@class dreamwork.std.Client : dreamwork.Object
+---@class dreamwork.std.Client : dreamwork.std.Object
 local Client = std.class.base( "Client", true )
 
 ---@class dreamwork.std.ClientClass : dreamwork.std.Client
@@ -151,7 +151,7 @@ if LUA_CLIENT_MENU then
         local screenshot_count = 0
 
         if last_one ~= nil then
-            screenshot_count = ( std.tonumber( std.string.sub( std.path.splitExtension( last_one.name, false ), #file_name + 2 ), 10 ) or 0 ) + 1
+            screenshot_count = (std.tonumber( std.string.sub( std.path.splitExtension( last_one.name, false ), #file_name + 2 ), 10 ) or 0) + 1
         end
 
         file_name = std.string.format( "%s_%04d", file_name, screenshot_count )

@@ -2261,13 +2261,6 @@ dofile( "std/steam.workshop.lua" )
 
 dofile( "std/addon.lua" )
 
-if LUA_CLIENT_MENU then
-    dofile( "std/window.lua" )
-    dofile( "std/menu.lua" )
-    dofile( "std/client.lua" )
-    dofile( "std/render.lua" )
-end
-
 ---@diagnostic disable-next-line: undefined-field
 local glua_system = _G.system
 
@@ -2338,7 +2331,14 @@ if glua_system ~= nil then
 
 end
 
+dofile( "std/client.lua" )
 dofile( "std/server.lua" )
+
+if LUA_CLIENT_MENU then
+    dofile( "std/menu.lua" )
+    dofile( "std/window.lua" )
+end
+
 dofile( "std/level.lua" )
 
 if LUA_CLIENT_SERVER then
@@ -2346,7 +2346,7 @@ if LUA_CLIENT_SERVER then
     dofile( "std/model.lua" )
 
     dofile( "std/entity.lua" )
-    dofile( "std/player.lua" )
+    -- dofile( "std/player.lua" ) -- deprecated, must be replaced in future with basic player controller
 
     dofile( "std/network.lua" )
 end
