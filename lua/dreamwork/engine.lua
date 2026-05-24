@@ -911,10 +911,11 @@ do
         ---@param name string
         ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
-        gamemode.Get = detour.attach( gamemode.Get, function( fn, name )
+        gamemode.Get = detour.attach( function( fn, name )
+            ---@diagnostic disable-next-line: need-check-nil
             local tbl = fn( name )
             return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
-        end )
+        end, gamemode.Get )
 
         gamemode.Register = gamemode.Register or debug_fempty
 
@@ -1301,7 +1302,7 @@ do
                 ---@param network_name string
                 ---@param unreliable? boolean
                 ---@diagnostic disable-next-line: duplicate-set-field
-                glua_net.Start = detour.attach( glua_net.Start, function( fn, network_name, unreliable )
+                glua_net.Start = detour.attach( function( fn, network_name, unreliable )
                     if network_ids[ network_name ] == nil then
                         if LUA_SERVER then
                             error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
@@ -1314,7 +1315,7 @@ do
 
                     fn( network_name, unreliable )
                     net_WriteBool( unreliable == true )
-                end )
+                end, glua_net.Start )
 
             end
 
