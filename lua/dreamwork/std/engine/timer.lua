@@ -585,19 +585,3 @@ function Timer:resume()
     timer_UnPause( name )
     states[ self ] = 2
 end
-
-do
-
-    local timer_Simple = timer.Simple
-
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the `fn` function after `delay` seconds.
-    ---
-    ---@param fn function The callback function.
-    ---@param delay? number The delay in seconds, default is `0`.
-    function std.setTimeout( fn, delay )
-        timer_Simple( delay or 0, fn )
-    end
-
-end

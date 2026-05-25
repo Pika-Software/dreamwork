@@ -535,6 +535,10 @@ send( "dreamwork/std/types/version.lua" )
 dofile( "dreamwork/std/time.lua" )
 send( "dreamwork/std/time.lua" )
 
+if math.randomseed == 0 then
+    math.randomseed = std.time.now( "ms", false )
+end
+
 -- coroutine library
 dofile( "dreamwork/std/coroutine.lua" )
 send( "dreamwork/std/coroutine.lua" )
@@ -559,9 +563,27 @@ send( "dreamwork/std/codec/buffer.lua" )
 dofile( "dreamwork/std/codec/unicode.lua" )
 send( "dreamwork/std/codec/unicode.lua" )
 
+do
+
+    local timer_Simple = timer.Simple
+
+    --- [SHARED AND MENU]
+    ---
+    --- Calls the `fn` function after `delay` seconds.
+    ---
+    ---@param fn function The callback function.
+    ---@param delay? number The delay in seconds, default is `0`.
+    function std.setTimeout( fn, delay )
+        return timer_Simple( delay or 0, fn )
+    end
+
+end
+
 -- futures library
 dofile( "dreamwork/std/futures.lua" )
 send( "dreamwork/std/futures.lua" )
+
+std.sleep = std.futures.sleep
 
 ---@class dreamwork.std.string
 local string = std.string

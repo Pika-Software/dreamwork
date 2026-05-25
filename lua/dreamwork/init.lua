@@ -43,17 +43,6 @@ local engine_hookCatch = engine.hookCatch
 
 dofile( "std/game.lua" )
 
---- [SHARED AND MENU]
----
---- The compression libraries.
----
----@class dreamwork.std.compress
-std.compress = std.compress or {}
-
-dofile( "std/compress.deflate.lua" )
-dofile( "std/compress.lzma.lua" )
-dofile( "std/compress.lzw.lua" )
-
 dofile( "std/timer.lua" )
 dofile( "std/hook.lua" )
 dofile( "std/url.lua" )
@@ -219,39 +208,6 @@ if std_metatable == nil then
 
 end
 
-do
-
-    local setTimeout = std.setTimeout
-
-    ---@class dreamwork.std.futures
-    local futures = std.futures
-
-    --- [SHARED AND MENU]
-    ---
-    --- Puts current thread to sleep for given amount of seconds.
-    ---
-    ---@see dreamwork.std.futures.pending
-    ---@see dreamwork.std.futures.wakeup
-    ---@async
-    ---@param seconds number
-    function std.sleep( seconds )
-        local co = futures.running()
-        if co == nil then
-            error( "`sleep` cannot be called from main thread!", 2 )
-        end
-
-        ---@cast co thread
-        setTimeout( function()
-            futures.wakeup( co )
-        end, seconds )
-
-        return futures.pending()
-    end
-
-    futures.sleep = std.sleep
-
-end
-
 -- Welcome message
 do
 
@@ -398,10 +354,6 @@ do
 
     std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.encoding.utf8.len( splash ) ) )
 
-end
-
-if math.randomseed == 0 then
-    math.randomseed = time.now( "ms", false )
 end
 
 dofile( "std/fs.lua" )

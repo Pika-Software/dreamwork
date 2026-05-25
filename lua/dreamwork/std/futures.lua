@@ -6,6 +6,7 @@ local std = dreamwork.std
 local gc_setTableRules = std.gc.setTableRules
 local pcall, xpcall = std.pcall, std.xpcall
 local isFunction = std.isFunction
+local setTimeout = std.setTimeout
 local tostring = std.tostring
 
 local coroutine = std.coroutine
@@ -1064,4 +1065,28 @@ function futures.any( futureList )
     local fut = futures_pending()
     cancelList( futureList )
     return fut:result()
+end
+
+--- [SHARED AND MENU]
+---
+--- Puts current thread to sleep for given amount of seconds.
+---
+---@see dreamwork.std.futures.pending
+---@see dreamwork.std.futures.wakeup
+---@async
+---@param seconds number
+function futures.sleep( seconds )
+    local co = coroutine_running()
+    if co == nil then
+        error( "`sleep` cannot be called from main thread!", 2 )
+    end
+
+    ---@cast co thread
+    setTimeout( function()
+        coroutine_resume( co )
+    end, seconds )
+
+    -- TODO: replace with tick based timers/events
+
+    return futures_pending()
 end
