@@ -1,3 +1,5 @@
+local glua_debug = debug
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -32,10 +34,8 @@ end
 
 do
 
-    local glua_debug = _G.debug
-
     -- LuaJIT
-    debug.newproxy = _G.newproxy
+    debug.newproxy = newproxy
 
     -- Lua 5.1
     debug.debug = glua_debug.debug
