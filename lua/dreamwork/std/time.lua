@@ -1,12 +1,11 @@
-local _G = _G
-
 ---@class dreamwork.std
 ---@field TZ integer Time zone offset in hours. WARNING: Changing this GLOBAL will affect the operation of all `time` library functions.
 ---@field DST_TZ integer The DST timezone offset. **READ ONLY**
 ---@field DST boolean `true` if the current date is in DST, `false` if not. **READ ONLY**
 local std = dreamwork.std
 
-local os = _G.os
+local os = std.os
+
 local os_time = os.time
 local os_date = os.date
 local os_clock = os.clock
@@ -16,10 +15,10 @@ local math_min = math.min
 local math_floor = math.floor
 
 local string = std.string
-local string_byte, string_char = string.byte, string.char
+
 local string_format = string.format
-local string_sub = string.sub
-local string_len = string.len
+local string_len, string_sub = string.len, string.sub
+local string_byte, string_char = string.byte, string.char
 
 local table_concat = std.table.concat
 local raw_tonumber = std.raw.tonumber
@@ -29,7 +28,7 @@ local raw_tonumber = std.raw.tonumber
 --- A library for working with time and date.
 ---
 ---@class dreamwork.std.time
-local time = std.time or {}
+local time = {}
 std.time = time
 
 -- based on https://github.com/Nak2/NikNaks/blob/c0686a65a3bd4b30e0c683b07a9822a11fd54d83/lua/niknaks/modules/sh_datetime.lua#L9-L21
@@ -294,7 +293,8 @@ function time.transform( timestamp, unit, target, as_float )
     return transform( timestamp, unit, target, as_float, 2 )
 end
 
-local seconds_elapsed = _G.SysTime or os_clock
+---@diagnostic disable-next-line: undefined-global
+local seconds_elapsed = SysTime or os_clock
 
 --- [SHARED AND MENU]
 ---
@@ -406,7 +406,7 @@ do
     end
 
     -- based on https://github.com/Nak2/NikNaks/blob/c0686a65a3bd4b30e0c683b07a9822a11fd54d83/lua/niknaks/modules/sh_datetime.lua#L23-L25
-    timer.isLeapYear = is_leap_year
+    time.isLeapYear = is_leap_year
 
     -- based on https://github.com/Nak2/NikNaks/blob/c0686a65a3bd4b30e0c683b07a9822a11fd54d83/lua/niknaks/modules/sh_datetime.lua#L41-L48
     do
@@ -455,7 +455,7 @@ do
         local seconds, milliseconds, microseconds, nanoseconds = 0, 0, 0, 0
 
         for number_str, unit_str in string_gmatch( duration_str, "(%-?%d+%.?%d*)(%l*)" ) do
-            local integer = raw_tonumber( number_str, 10 )
+            local integer = raw_tonumber( number_str, 10 ) or 0
 
             if unit_str == "s" then
                 seconds = seconds + integer
@@ -865,6 +865,8 @@ do
     ---@return string str The formatted string.
     function time.format( fmt, timestamp, unit, in_utc )
         local seconds, milliseconds, microseconds, nanoseconds = split( timestamp or now( unit, true ), unit, 2 )
+
+        -- string.interpolate( fmt, {} )
 
         ---@type string[]
         local segments = {}

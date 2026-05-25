@@ -1,8 +1,5 @@
 ---@meta
 
----@class dreamwork.std
-std = {}
-
 ---@alias bool boolean
 
 --- [SHARED AND MENU]

@@ -1,4 +1,4 @@
-local _G = _G
+local glua_table = table
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -18,13 +18,12 @@ local math_relative = math.relative
 --- The table library is a standard Lua library which provides functions to manipulate tables.
 ---
 ---@class dreamwork.std.table
-local table = std.table or {}
+local table = {}
 std.table = table
 
 do
 
     local debug_iscf = std.debug.iscf
-    local glua_table = _G.table
 
     -- Lua 5.1
     table.concat = glua_table.concat
@@ -101,7 +100,7 @@ do
         return index
     end
 
-    table.unpack = glua_table.unpack or _G.unpack
+    table.unpack = glua_table.unpack or unpack
 
     -- Lua 5.3
     local table_move = glua_table.move
@@ -368,8 +367,7 @@ end
 ---
 --- Returns true if the given table is empty.
 ---
----@generic K, V
----@param tbl table<K, V> The table to check.
+---@param tbl table The table to check.
 ---@return boolean result `true` if the table is empty, `false` otherwise.
 function table.isEmpty( tbl )
     return next( tbl ) == nil
@@ -960,5 +958,3 @@ function table.removeByRange( tbl, start_position, end_position, tbl_length )
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 end
-
-return table

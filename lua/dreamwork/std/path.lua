@@ -1,18 +1,17 @@
-local dreamwork = _G.dreamwork
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
 local string = std.string
+
+local string_len = string.len
+local string_byteSplit = string.byteSplit
+local string_sub, string_gsub = string.sub, string.gsub
+local string_char, string_byte = string.char, string.byte
+
 local table = std.table
 
-local string_char, string_byte = string.char, string.byte
-local string_sub, string_gsub = string.sub, string.gsub
-local string_byteSplit = string.byteSplit
-local string_len = string.len
-
-local table_insert, table_remove = table.insert, table.remove
 local table_concat = table.concat
+local table_insert, table_remove = table.insert, table.remove
 
 --- [SHARED AND MENU]
 ---
@@ -21,7 +20,7 @@ local table_concat = table.concat
 ---@class dreamwork.std.path
 ---@field delimiter string The path delimiter.
 ---@field sep string The path separator.
-local path = std.path or {}
+local path = {}
 std.path = path
 
 path.delimiter = ":"
@@ -34,7 +33,7 @@ path.sep = "/"
 ---@param file_path string The file path.
 ---@return boolean is_abs `true` if the file path is absolute, `false` otherwise.
 function path.isAbsolute( file_path )
-    return string_byte( file_path, 1 ) == 0x2F --[[ / ]]
+    return string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]]
 end
 
 --- [SHARED AND MENU]
@@ -44,7 +43,7 @@ end
 ---@param file_path string The file path.
 ---@return boolean is_rel `true` if the file path is relative, `false` otherwise.
 function path.isRelative( file_path )
-    return string_byte( file_path, 1 ) ~= 0x2F --[[ / ]]
+    return string_byte( file_path, 1, 1 ) ~= 0x2F --[[ / ]]
 end
 
 local equals
@@ -179,7 +178,7 @@ end
 local function split( file_path, keep_trailing_slash )
     for index = string_len( file_path ), 1, -1 do
         if string_byte( file_path, index ) == 0x2F --[[ / ]] then
-            return string_sub( file_path, 1, keep_trailing_slash and index or ( index - 1 ) ), string_sub( file_path, index + 1 )
+            return string_sub( file_path, 1, keep_trailing_slash and index or (index - 1) ), string_sub( file_path, index + 1 )
         end
     end
 
@@ -202,7 +201,7 @@ local function splitExtension( file_path, keep_dot )
         if byte == 0x2F --[[ / ]] then
             return file_path, ""
         elseif byte == 0x2E --[[ . ]] then
-            return string_sub( file_path, 1, index - 1 ), string_sub( file_path, keep_dot and index or ( index + 1 ) )
+            return string_sub( file_path, 1, index - 1 ), string_sub( file_path, keep_dot and index or (index + 1) )
         end
     end
 
@@ -349,7 +348,7 @@ local function normalize( file_path, keep_trailing_slash )
     local has_trailing_slash = string_byte( file_path, file_path_length ) == 0x2F --[[ / ]]
     local is_abs = string_byte( file_path, 1 ) == 0x2F --[[ / ]]
 
-    local segments, segment_count = string_byteSplit( file_path, 0x2F --[[ / ]], is_abs and 2 or 1, has_trailing_slash and ( file_path_length - 1 ) or file_path_length, file_path_length )
+    local segments, segment_count = string_byteSplit( file_path, 0x2F --[[ / ]], is_abs and 2 or 1, has_trailing_slash and (file_path_length - 1) or file_path_length, file_path_length )
     local skip = 0
 
     for index = segment_count, 1, -1 do
@@ -378,7 +377,7 @@ local function normalize( file_path, keep_trailing_slash )
 
     has_trailing_slash = has_trailing_slash and keep_trailing_slash == true
 
-    if segment_count == 0 or ( segment_count == 1 and string_byte( segments[ 1 ], 1, 1 ) == nil ) then
+    if segment_count == 0 or (segment_count == 1 and string_byte( segments[ 1 ], 1, 1 ) == nil) then
         if has_trailing_slash then
             return "./"
         elseif is_abs then
@@ -464,7 +463,7 @@ do
             stack_level = stack_level + 1
         end
 
-        return normalize( ( getDirectory( get( stack_level ), true ) or "/" ) .. file_path, false )
+        return normalize( (getDirectory( get( stack_level ), true ) or "/") .. file_path, false )
     end
 
     path.resolve = resolve
@@ -563,7 +562,7 @@ end
 
 do
 
-    local unsafe_bytes = dreamwork.UnsafeBytes
+    local pattern_bytes = string.PatternBytes
 
     ---@type table<integer, fun( str: string, position: integer, str_length: integer ): string, integer, boolean>
     local wildcard_handlers = {
@@ -634,7 +633,7 @@ do
 
             if string_byte( str, loop_index, loop_index ) == 0x5D --[[ ] ]] then
                 local range_end = loop_index
-                local range_length = range_end - ( range_start + 1 )
+                local range_length = range_end - (range_start + 1)
 
                 if range_length == 0 then
                     if range_end == str_length then
@@ -649,7 +648,7 @@ do
                 if range_length == 1 then
                     local uint8_1 = string_byte( str, loop_index, loop_index )
 
-                    local safe_segment = unsafe_bytes[ uint8_1 ]
+                    local safe_segment = pattern_bytes[ uint8_1 ]
                     if safe_segment == nil then
                         safe_segment = string_char( 0x5B --[[ [ ]], uint8_1, 0x5D --[[ ] ]] )
                     else
@@ -668,14 +667,14 @@ do
 
                     local uint8_2 = string_byte( str, loop_index, loop_index )
 
-                    local safe_segment_1 = unsafe_bytes[ uint8_1 ]
+                    local safe_segment_1 = pattern_bytes[ uint8_1 ]
                     if safe_segment_1 == nil then
                         safe_segment_1 = string_char( 0x5B --[[ [ ]], uint8_1 )
                     else
                         safe_segment_1 = "[" .. safe_segment_1
                     end
 
-                    local safe_segment_2 = unsafe_bytes[ uint8_2 ]
+                    local safe_segment_2 = pattern_bytes[ uint8_2 ]
                     if safe_segment_2 == nil then
                         safe_segment_2 = string_char( uint8_2, 0x5D --[[ ] ]] )
                     else
@@ -701,11 +700,11 @@ do
 
                 uint8_1 = string_byte( str, loop_index, loop_index )
 
-                if loop_index == range_start and ( uint8_1 == 0x21 --[[ ! ]] or uint8_1 == 0x5E --[[ ^ ]] ) then
+                if loop_index == range_start and (uint8_1 == 0x21 --[[ ! ]] or uint8_1 == 0x5E --[[ ^ ]]) then
                     safe_segment_1 = "^"
                 else
 
-                    safe_segment_1 = unsafe_bytes[ uint8_1 ]
+                    safe_segment_1 = pattern_bytes[ uint8_1 ]
 
                     if safe_segment_1 == nil then
                         safe_segment_1 = string_char( uint8_1 )
@@ -733,7 +732,7 @@ do
 
                     uint8_3 = string_byte( str, loop_index, loop_index )
 
-                    safe_segment_2 = unsafe_bytes[ uint8_3 ]
+                    safe_segment_2 = pattern_bytes[ uint8_3 ]
                     if safe_segment_2 == nil then
                         safe_segment_2 = string_char( uint8_3 )
                     end
@@ -749,7 +748,7 @@ do
                     goto wildcard_range_segment_loop
                 end
 
-                safe_segment_2 = unsafe_bytes[ uint8_2 ]
+                safe_segment_2 = pattern_bytes[ uint8_2 ]
                 if safe_segment_2 == nil then
                     safe_segment_2 = string_char( uint8_2 )
                 end
@@ -795,7 +794,7 @@ do
 
             local uint8_1 = string_byte( str, position, position )
 
-            local safe_segment_1 = unsafe_bytes[ uint8_1 ]
+            local safe_segment_1 = pattern_bytes[ uint8_1 ]
             if safe_segment_1 == nil then
                 safe_segment_1 = string_char( 0x5C --[[ \ ]], uint8_1 )
             end
@@ -853,7 +852,7 @@ do
             end
         end
 
-        segment = unsafe_bytes[ uint8_1 ]
+        segment = pattern_bytes[ uint8_1 ]
         if segment ~= nil then
             if break_position ~= position then
                 segment_count = segment_count + 1

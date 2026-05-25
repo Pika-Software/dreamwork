@@ -1,7 +1,3 @@
-local _G = _G
-local dreamwork = _G.dreamwork
-local glua_string = _G.string
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -14,7 +10,7 @@ local raw = std.raw
 --- however it also has several other powerful uses.
 ---
 ---@class dreamwork.std.debug
-local debug = std.debug or {}
+local debug = {}
 std.debug = debug
 
 local fempty = debug.fempty
@@ -71,8 +67,8 @@ do
     debug.getupvalue = glua_debug.getupvalue -- fucked up in menu
     debug.setupvalue = glua_debug.setupvalue -- fucked up in menu
 
-    debug.getfenv = glua_debug.getfenv or std.getfenv
-    debug.setfenv = glua_debug.setfenv or std.setfenv
+    debug.getfenv = glua_debug.getfenv or getfenv
+    debug.setfenv = glua_debug.setfenv or setfenv
 
     debug.gethook = glua_debug.gethook
     debug.sethook = glua_debug.sethook
@@ -161,45 +157,62 @@ end
 
 do
 
+    local debug_getupvalue = debug.getupvalue
+
     --- [SHARED AND MENU]
     ---
     --- Returns all upvalues of the given function.
     ---
     ---@param fn function The function to get upvalues from.
-    ---@param start_position? integer The start position of the upvalues, default is `0`.
+    ---@param position? integer The start position of the upvalues, default is `0`.
     ---@return table<string, any> values A table with the upvalues.
     ---@return integer value_count The count of upvalues.
-    function debug.getupvalues( fn, start_position )
-        if start_position == nil then
-            start_position = 0
+    function debug.getupvalues( fn, position )
+        if position == nil then
+            position = 1
         end
 
-        start_position = start_position + 1
-
+        local index = position
         local values = {}
 
-        local i = start_position
-        while true do
-            local name, value = debug.getupvalue( fn, i )
-            if not name then break end
+        ::getupvalues_loop::
 
+        local name, value = debug_getupvalue( fn, index )
+
+        if name ~= nil then
+            index = index + 1
             values[ name ] = value
-            i = i + 1
+            goto getupvalues_loop
         end
 
-        return values, i - start_position
+        return values, index - position
     end
 
 end
 
+--- [SHARED AND MENU]
+---
+--- Returns the function at the given stack level.
+---
+---@param level integer The stack level.
+---@return function | nil The function at the given level, or `nil` if the level is invalid.
+function debug.getf( level )
+    local info = debug_getinfo( level + 1, "f" )
+    if info == nil then
+        return nil
+    else
+        return info.func
+    end
+end
+
 if raw.type == nil then
 
-    local glua_type = _G.type
+    local type = type
 
-    local values, count = debug.getupvalues( glua_type )
+    local values, count = debug.getupvalues( type )
 
     if count == 0 or values.C_type == nil then
-        raw.type = glua_type
+        raw.type = type
     else
         raw.type = values.C_type
     end
@@ -241,7 +254,8 @@ end
 
 do
 
-    local FindMetaTable = _G.FindMetaTable
+    ---@diagnostic disable-next-line: undefined-global
+    local FindMetaTable = FindMetaTable
 
     if FindMetaTable == nil then
 
@@ -278,7 +292,9 @@ end
 
 do
 
-    local RegisterMetaTable = _G.RegisterMetaTable or fempty
+    ---@type fun(name: string, tbl: dreamwork.Metatable)
+    ---@diagnostic disable-next-line: undefined-global
+    local RegisterMetaTable = RegisterMetaTable or fempty
 
     --- [SHARED AND MENU]
     ---
@@ -294,10 +310,9 @@ do
 
         if do_full_register then
             RegisterMetaTable( name, tbl )
-            return tbl.MetaID or -1
-        else
-            return -1
         end
+
+        return tbl.MetaID or -1
     end
 
 end
@@ -335,7 +350,7 @@ if debug_getmetatable( fempty ) == nil then
         return debug_getmetatable( value ) or registry[ raw_type( value ) ]
     end
 
-    std.print( "at any cost, but we'll build it once again..." )
+    raw.print( "at any cost, but we'll build it once again..." )
 
 end
 
@@ -396,7 +411,7 @@ end
 
 do
 
-    local string_match = glua_string.match
+    local string_match = string.match
 
     --- [SHARED AND MENU]
     ---

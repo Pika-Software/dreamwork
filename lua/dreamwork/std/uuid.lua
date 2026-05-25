@@ -3,9 +3,11 @@ local std = dreamwork.std
 
 local string = std.string
 local string_format = string.format
+
 local math_random = std.math.random
 
-local bit_band, bit_bor = std.bit.band, std.bit.bor
+local bit = std.bit
+local bit_band, bit_bor = bit.band, bit.bor
 
 --- [SHARED AND MENU]
 ---
@@ -21,7 +23,7 @@ do
     local string_byte = string.byte
     local string_gsub = string.gsub
 
-    local base16_decode = std.encoding.base16.decode
+    local base16_decode = std.base16.decode
 
     do
 

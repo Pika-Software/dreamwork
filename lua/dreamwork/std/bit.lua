@@ -1,5 +1,5 @@
 -- Based on https://gist.github.com/x4fx77x4f/5b97e803825d3dc16f6e9c5227ec6a04
-local _G = _G
+local glua_bit = bit or {}
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -10,32 +10,27 @@ local math = std.math
 --- The bit library.
 ---
 ---@class dreamwork.std.bit
-local bit = std.bit or {}
+local bit = {
+    band = glua_bit.band,
+    bor = glua_bit.bor,
+
+    bnot = glua_bit.bnot,
+    bxor = glua_bit.bxor,
+
+    arshift = glua_bit.arshift,
+    lshift = glua_bit.lshift,
+    rshift = glua_bit.rshift,
+
+    lrotate = glua_bit.rol,
+    rrotate = glua_bit.ror,
+
+    bswap = glua_bit.bswap,
+
+    tobit = glua_bit.tobit,
+    tohex = glua_bit.tohex,
+}
+
 std.bit = bit
-
-if _G.bit ~= nil then
-
-    local glua_bit = _G.bit
-
-    bit.band = glua_bit.band
-    bit.bor = glua_bit.bor
-
-    bit.bnot = glua_bit.bnot
-    bit.bxor = glua_bit.bxor
-
-    bit.arshift = glua_bit.arshift
-    bit.lshift = glua_bit.lshift
-    bit.rshift = glua_bit.rshift
-
-    bit.lrotate = glua_bit.rol
-    bit.rrotate = glua_bit.ror
-
-    bit.bswap = glua_bit.bswap
-
-    bit.tobit = glua_bit.tobit
-    bit.tohex = glua_bit.tohex
-
-end
 
 if bit.tohex == nil then
 

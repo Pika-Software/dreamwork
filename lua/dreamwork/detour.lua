@@ -2,16 +2,16 @@
 local dreamwork = dreamwork
 if dreamwork.detour ~= nil then return end
 
--- ref: https://github.com/unknown-gd/safety-lite/blob/main/src/detour.lua
-local functions = {}
-
 --- [SHARED AND MENU]
 ---
 --- A library for intercepting engine functions and runtime patching using detour/hook.
 ---
 ---@class dreamwork.detour
-local detour = dreamwork.detour or {}
+local detour = {}
 dreamwork.detour = detour
+
+---@type table<function, function>
+local functions = {}
 
 --- [SHARED AND MENU]
 ---
@@ -183,3 +183,5 @@ function detour.shadow( fn )
         return old_fn, true
     end
 end
+
+return detour

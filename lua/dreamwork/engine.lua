@@ -4,12 +4,13 @@ local _G = _G
 local dreamwork = dreamwork
 if dreamwork.engine ~= nil then return end
 
+---@class dreamwork.std
 local std = dreamwork.std
+
+local class = std.class
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT_SERVER = std.LUA_CLIENT_SERVER
-
-local transducers = dreamwork.transducers
 
 local math = std.math
 
@@ -85,16 +86,16 @@ if engine.hookCatch == nil then
 
     ---@type table<string, fun( ... ): ...>
     local custom_handlers = {
-        AcceptInput = function( self, entity, input, activator, caller, value )
-            local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
+        -- AcceptInput = function( self, entity, input, activator, caller, value )
+        --     local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
 
-            for i = 1, #self, 1 do
-                local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
-                if allow ~= nil then
-                    return not allow
-                end
-            end
-        end
+        --     for i = 1, #self, 1 do
+        --         local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
+        --         if allow ~= nil then
+        --             return not allow
+        --         end
+        --     end
+        -- end
     }
 
     ---@type table<string, table<integer, dreamwork.std.Hook | fun( ... ): ...>>
@@ -518,7 +519,7 @@ do
     ---
     --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
     ---
-    ---@type dreamwork.KeyValueTable<string, ConVar>
+    ---@type table<string, ConVar>
     local console_variables = {}
 
     ---@type dreamwork.Metatable<string, ConVar>
@@ -664,6 +665,70 @@ end
 
 do
 
+    ---@class dreamwork.engine.ColorProxy : dreamwork.std.Object
+    local ColorProxy = class.base( "dreamwork.engine.ColorProxy", false )
+
+    ---@protected
+    function ColorProxy:__init( r, g, b, a )
+        self.r = r or 0
+        self.g = g or 0
+        self.b = b or 0
+        self.a = a or 255
+    end
+
+    ---@protected
+    ---@return string
+    function ColorProxy:__tostring()
+        return string.format( "ColorProxy(%d, %d, %d, %d)", self.r, self.g, self.b, self.a )
+    end
+
+    local color_toRGBA = std.color.toRGBA
+
+    ---@type table<dreamwork.engine.ColorProxy, dreamwork.std.Color>
+    local cache = {}
+    std.gc.setTableRules( cache, true, false )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Updates the color proxy with a new color.
+    ---
+    ---@param clr dreamwork.std.Color
+    function ColorProxy:update( clr )
+        if cache[ self ] == clr then return end
+
+        self.r, self.g, self.b, self.a = color_toRGBA( clr )
+        cache[ self ] = clr
+    end
+
+    ---@class dreamwork.engine.ColorProxyClass : dreamwork.engine.ColorProxy
+    ---@overload fun(r: number, g: number, b: number, a: number): dreamwork.engine.ColorProxy
+    std.ColorProxy = class.create( ColorProxy )
+
+end
+
+if Matrix ~= nil then
+
+    ---@class dreamwork.engine.VMatrixProxy : dreamwork.std.Object
+    local VMatrixProxy = class.base( "dreamwork.engine.VMatrixProxy", true )
+
+    function VMatrixProxy:update()
+
+    end
+
+    ---@class dreamwork.engine.VMatrixProxyClass : dreamwork.engine.VMatrixProxy
+    ---@overload fun(): dreamwork.engine.VMatrixProxy
+    local VMatrixProxyClass = class.create( VMatrixProxy )
+
+    local VMatrix = Matrix
+
+    function VMatrixProxyClass:__new()
+        return VMatrix()
+    end
+
+end
+
+do
+
     ---@type table<string, string>
     local values = {}
 
@@ -692,7 +757,7 @@ do
     local Msg = _G.Msg or std.print
     local math_min = math.min
 
-    local utf8 = std.encoding.utf8
+    local utf8 = std.utf8
     local utf8_sub, utf8_len = utf8.sub, utf8.len
 
     --- [SHARED AND MENU]
@@ -729,7 +794,7 @@ do
 
     else
 
-        local white_color = std.Color.scheme.message
+        local color_buffer = std.ColorProxy( 255, 255, 255, 255 )
 
         --- [SHARED AND MENU]
         ---
@@ -741,14 +806,16 @@ do
             local index, str_length = 1, utf8_len( str )
 
             if color == nil then
-                color = white_color
+                color = 0xFFFFFF
             end
+
+            color_buffer:update( color )
 
             while str_length ~= 0 do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
                 -- by Retr0 ( 989 characters per message )
                 local segment_length = math_min( 989, str_length )
-                MsgC( color, utf8_sub( str, index, index + segment_length - 1 ) )
+                MsgC( color_buffer, utf8_sub( str, index, index + segment_length - 1 ) )
                 str_length = str_length - segment_length
                 index = index + segment_length
             end
@@ -911,10 +978,11 @@ do
         ---@param name string
         ---@return table | nil
         ---@diagnostic disable-next-line: duplicate-set-field
-        gamemode.Get = detour.attach( gamemode.Get, function( fn, name )
+        gamemode.Get = detour.attach( function( fn, name )
+            ---@diagnostic disable-next-line: need-check-nil
             local tbl = fn( name )
             return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
-        end )
+        end, gamemode.Get )
 
         gamemode.Register = gamemode.Register or debug_fempty
 
@@ -1301,7 +1369,7 @@ do
                 ---@param network_name string
                 ---@param unreliable? boolean
                 ---@diagnostic disable-next-line: duplicate-set-field
-                glua_net.Start = detour.attach( glua_net.Start, function( fn, network_name, unreliable )
+                glua_net.Start = detour.attach( function( fn, network_name, unreliable )
                     if network_ids[ network_name ] == nil then
                         if LUA_SERVER then
                             error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
@@ -1312,9 +1380,10 @@ do
                         return
                     end
 
+                    ---@diagnostic disable-next-line: need-check-nil
                     fn( network_name, unreliable )
                     net_WriteBool( unreliable == true )
-                end )
+                end, glua_net.Start )
 
             end
 
@@ -1335,7 +1404,7 @@ if engine.loadMaterial == nil then
     ---| `32` If set does nothing, if unset - enables **Point Sampling (Texture Filtering)** on the material as well as adds the **No Level Of Detail** flag to it.
     ---| `64` If set, the material will be given `$ignorez` flag, which is necessary for some rendering operations, such as render targets and 3d2d rendering.
 
-    local bitpack = std.pack.bits
+    local bitpack = std.bitpack
     local bitpack_toString = bitpack.toString
     local bitpack_writeUInt = bitpack.writeUInt
 

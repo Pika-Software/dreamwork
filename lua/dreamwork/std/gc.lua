@@ -1,3 +1,27 @@
+---@class dreamwork.std
+local std = dreamwork.std
+
+--- [SHARED AND MENU]
+---
+--- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
+---
+--- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
+---
+---@class dreamwork.std.gc
+local gc = {}
+std.gc = gc
+
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-collectgarbage51)
+---
+---@overload fun(opt: "collect")
+---@overload fun(opt: "stop")
+---@overload fun(opt: "restart")
+---@overload fun(opt: "count"): number
+---@overload fun(opt: "step", arg: integer): true
+---@overload fun(opt: "setpause", arg: integer): integer
+---@overload fun(opt: "setstepmul", arg: integer): integer
+---@overload fun(opt: "isrunning"): boolean
 local collectgarbage = collectgarbage
 
 if collectgarbage == nil then
@@ -9,19 +33,6 @@ if collectgarbage == nil then
         end
     end
 end
-
----@class dreamwork.std
-local std = dreamwork.std
-
---- [SHARED AND MENU]
----
---- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
----
---- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
----
----@class dreamwork.std.gc
-local gc = std.gc or {}
-std.gc = gc
 
 --- [SHARED AND MENU]
 ---
@@ -105,7 +116,7 @@ function gc.setStepMultiplier( value )
     return collectgarbage( "setstepmul", value )
 end
 
-local debug_getmetatable = std.debug.getmetatable
+local debug_getmetatable = debug.getmetatable
 
 do
 

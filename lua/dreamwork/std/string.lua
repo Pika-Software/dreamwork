@@ -1,4 +1,4 @@
-local dreamwork = dreamwork
+local glua_string = _G.string
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -22,12 +22,45 @@ local raw_tonumber = std.raw.tonumber
 --- In dreamwork string library contains additional functions.
 ---
 ---@class dreamwork.std.string
-local string = std.string or {}
+---@field PatternBytes table<integer, string> A table of bytes that map to pattern sequences.
+local string = {}
 std.string = string
 
-do
+local pattern_bytes = {
+    -- ()
+    [ 0x28 ] = "%(",
+    [ 0x29 ] = "%)",
 
-    local glua_string = _G.string
+    -- []
+    [ 0x5B ] = "%[",
+    [ 0x5D ] = "%]",
+
+    -- .
+    [ 0x2E ] = "%.",
+
+    -- %
+    [ 0x25 ] = "%%",
+
+    -- +-
+    [ 0x2B ] = "%+",
+    [ 0x2D ] = "%-",
+
+    -- *
+    [ 0x2A ] = "%*",
+
+    -- ?
+    [ 0x3F ] = "%?",
+
+    -- ^
+    [ 0x5E ] = "%^",
+
+    -- $
+    [ 0x24 ] = "%$"
+}
+
+string.PatternBytes = pattern_bytes
+
+do
 
     -- Lua 5.1
     string.byte = string.byte or glua_string.byte
@@ -636,6 +669,8 @@ function string.byteTrim( str, trailing_byte, direction, start_position, end_pos
         end
     end
 
+    ---@cast start_position integer
+
     return string_sub( str, start_position, end_position ), end_position - start_position + 1
 end
 
@@ -872,114 +907,108 @@ do
 
 end
 
-do
+--- [SHARED AND MENU]
+---
+--- Escapes a string for use it as a pattern.
+---
+---@param str string The string to escape.
+---@param start_position? integer The start position to escape from.
+---@param end_position? integer The end position to escape to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return string escaped_str The escaped string.
+function string.escapePattern( str, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
 
-    local unsafe_bytes = dreamwork.UnsafeBytes
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Escapes a string for use it as a pattern.
-    ---
-    ---@param str string The string to escape.
-    ---@param start_position? integer The start position to escape from.
-    ---@param end_position? integer The end position to escape to.
-    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
-    ---@return string escaped_str The escaped string.
-    function string.escapePattern( str, start_position, end_position, str_length )
-        if str_length == nil then
-            str_length = string_len( str )
-        end
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
+    local escape_position = start_position - 1
+    local segments, segment_count = {}, 0
 
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
+    ::escape_pattern_loop::
 
-        local escape_position = start_position - 1
-        local segments, segment_count = {}, 0
+    local uint8_1 = string_byte( str, start_position, start_position )
+    local replacement
 
-        ::escape_pattern_loop::
+    if uint8_1 == 0x0 then
+        replacement = "%z"
+    else
+        replacement = pattern_bytes[ uint8_1 ]
+    end
 
-        local uint8_1 = string_byte( str, start_position, start_position )
-        local replacement
-
-        if uint8_1 == 0x0 then
-            replacement = "%z"
-        else
-            replacement = unsafe_bytes[ uint8_1 ]
-        end
-
-        if replacement ~= nil then
-            if escape_position ~= start_position then
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_sub( str, escape_position + 1, start_position - 1 ) .. replacement
-            end
-
-            escape_position = start_position
-        end
-
-        if start_position ~= end_position then
-            start_position = start_position + 1
-            goto escape_pattern_loop
-        end
-
+    if replacement ~= nil then
         if escape_position ~= start_position then
             segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, escape_position + 1, start_position )
+            segments[ segment_count ] = string_sub( str, escape_position + 1, start_position - 1 ) .. replacement
         end
 
-        if segment_count == 0 then
-            return str
-        elseif segment_count == 1 then
-            return segments[ 1 ]
-        else
-            return table_concat( segments, "", 1, segment_count )
-        end
+        escape_position = start_position
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Removes leading/trailing matches of a string.
-    ---
-    ---@param str string The string to trim.
-    ---@param pattern_str? string The pattern to match, `%s` for whitespace.
-    ---@param direction boolean | nil The trim direction, `true` for right, `false` for left, `nil` for both.
-    ---@return string trimmed_str The trimmed string.
-    function string.trim( str, pattern_str, direction )
-        if pattern_str == nil then
+    if start_position ~= end_position then
+        start_position = start_position + 1
+        goto escape_pattern_loop
+    end
+
+    if escape_position ~= start_position then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, escape_position + 1, start_position )
+    end
+
+    if segment_count == 0 then
+        return str
+    elseif segment_count == 1 then
+        return segments[ 1 ]
+    else
+        return table_concat( segments, "", 1, segment_count )
+    end
+end
+
+--- [SHARED AND MENU]
+---
+--- Removes leading/trailing matches of a string.
+---
+---@param str string The string to trim.
+---@param pattern_str? string The pattern to match, `%s` for whitespace.
+---@param direction boolean | nil The trim direction, `true` for right, `false` for left, `nil` for both.
+---@return string trimmed_str The trimmed string.
+function string.trim( str, pattern_str, direction )
+    if pattern_str == nil then
+        pattern_str = "%s"
+    else
+        local uint8_1, uint8_2, uint8_3 = string_byte( pattern_str, 1, 3 )
+
+        if uint8_1 == nil then
             pattern_str = "%s"
-        else
-            local uint8_1, uint8_2, uint8_3 = string_byte( pattern_str, 1, 3 )
-
-            if uint8_1 == nil then
-                pattern_str = "%s"
-            elseif uint8_2 == nil then
-                pattern_str = unsafe_bytes[ uint8_1 ] or pattern_str
-            elseif uint8_3 ~= nil or uint8_1 ~= 0x25 --[[ % ]] then
-                pattern_str = "[" .. pattern_str .. "]"
-            end
-        end
-
-        if direction == true then
-            return string_match( str, "^(.-)" .. pattern_str .. "*$" ) or str
-        elseif direction == false then
-            return string_match( str, "^" .. pattern_str .. "*(.+)$" ) or str
-        else
-            return string_match( str, "^" .. pattern_str .. "*(.-)" .. pattern_str .. "*$" ) or str
+        elseif uint8_2 == nil then
+            pattern_str = pattern_bytes[ uint8_1 ] or pattern_str
+        elseif uint8_3 ~= nil or uint8_1 ~= 0x25 --[[ % ]] then
+            pattern_str = "[" .. pattern_str .. "]"
         end
     end
 
+    if direction == true then
+        return string_match( str, "^(.-)" .. pattern_str .. "*$" ) or str
+    elseif direction == false then
+        return string_match( str, "^" .. pattern_str .. "*(.+)$" ) or str
+    else
+        return string_match( str, "^" .. pattern_str .. "*(.-)" .. pattern_str .. "*$" ) or str
+    end
 end
 
 do
@@ -1328,6 +1357,48 @@ do
     ---@return boolean is_space `true` if the byte is a space character, `false` otherwise.
     function string.isSpace( uint_8 )
         return space_characters[ uint_8 ] == true
+    end
+
+end
+
+do
+
+    ---@type table<integer, boolean>
+    local hex_characters = {
+        [ 0x30 ] = true,
+        [ 0x31 ] = true,
+        [ 0x32 ] = true,
+        [ 0x33 ] = true,
+        [ 0x34 ] = true,
+        [ 0x35 ] = true,
+        [ 0x36 ] = true,
+        [ 0x37 ] = true,
+        [ 0x38 ] = true,
+        [ 0x39 ] = true,
+
+        [ 0x41 ] = true,
+        [ 0x42 ] = true,
+        [ 0x43 ] = true,
+        [ 0x44 ] = true,
+        [ 0x45 ] = true,
+        [ 0x46 ] = true,
+
+        [ 0x61 ] = true,
+        [ 0x62 ] = true,
+        [ 0x63 ] = true,
+        [ 0x64 ] = true,
+        [ 0x65 ] = true,
+        [ 0x66 ] = true
+    }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if a byte is a valid hex character.
+    ---
+    ---@param uint_8 integer The byte to check. (integer<0-255>)
+    ---@return boolean is_hex Whether the byte is a valid hex character.
+    function string.isHexChar( uint_8 )
+        return hex_characters[ uint_8 ]
     end
 
 end

@@ -87,10 +87,18 @@ local coroutine_status = coroutine.status
 local coroutine_yield = coroutine.yield
 
 -- TODO: replace this crap with normal errors
-local ErrorNoHaltWithStack = _G.ErrorNoHaltWithStack
+---@diagnostic disable-next-line: undefined-global
+local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 
 local function display_error( message )
     return ErrorNoHaltWithStack( message )
+end
+
+local debug = std.debug
+
+function futures.stack( location )
+
+    -- return debug.getstack( location )
 end
 
 local async_thread_result

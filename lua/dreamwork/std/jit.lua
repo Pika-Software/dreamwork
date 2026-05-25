@@ -1,12 +1,13 @@
-local _G = _G
-local glua_jit = _G.jit
+local glua_jit = jit
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local debug_getfmain = std.debug.getfmain
-local debug_fempty = std.debug.fempty
 local raw_type = std.raw.type
+
+local debug = std.debug
+local debug_fempty = debug.fempty
+local debug_getfmain = debug.getfmain
 
 -- TODO: docs
 
@@ -23,7 +24,7 @@ local raw_type = std.raw.type
 ---@field version_number integer The version of the JIT compiler.
 ---@field version_byte integer The version byte of the JIT compiler.
 ---@field edge boolean `true` if the JIT compiler is an edge version, `false` otherwise.
-local jit = std.jit or {}
+local jit = {}
 std.jit = jit
 
 jit.os = glua_jit.os or "unknown"
@@ -53,7 +54,7 @@ jit.on = glua_jit.on or debug_fempty
 jit.off = glua_jit.off or debug_fempty
 jit.status = glua_jit.status or function() return false end
 
----@diagnostic disable-next-line: deprecated
+---@diagnostic disable-next-line: deprecated, undefined-field
 jit.attach = glua_jit.attach or debug_fempty
 jit.flush = glua_jit.flush or debug_fempty
 
@@ -169,5 +170,3 @@ else
     end
 
 end
-
-return jit
