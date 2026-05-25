@@ -1,0 +1,5 @@
+-- TODO: implement wrapper/library
+--
+-- ref: https://github.com/FredyH/GWSockets
+--
+-- ref: https://github.com/shockpast/gm_tungstenite

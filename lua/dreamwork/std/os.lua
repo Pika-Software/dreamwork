@@ -5,7 +5,7 @@ local std = dreamwork.std
 ---
 --- This library is implemented through table `os`.
 ---
---- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-os)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os)
 ---
 ---@class dreamwork.std.os
 local os = {

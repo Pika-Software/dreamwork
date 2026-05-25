@@ -1,0 +1,7 @@
+-- TODO: implement "Recorder" class
+--
+-- ref: https://wiki.facepunch.com/gmod/video.Record
+--
+-- ref: https://github.com/Facepunch/garrysmod/blob/5bf7eb1931e058976b453f04f15d73caf02174d2/garrysmod/lua/menu/video.lua#L28
+--
+-- ref: https://github.com/Facepunch/garrysmod/blob/5bf7eb1931e058976b453f04f15d73caf02174d2/garrysmod/lua/menu/demo_to_video.lua#L14-L165

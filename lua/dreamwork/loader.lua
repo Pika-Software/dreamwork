@@ -109,7 +109,7 @@ std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 ---
 --- Otherwise, returns the metatable of the given object.
 ---
---- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-getmetatable)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getmetatable)
 ---
 ---@type fun(object: any): dreamwork.Metatable | nil
 std.getmetatable = getmetatable
@@ -126,7 +126,7 @@ std.getmetatable = getmetatable
 ---
 --- To change the metatable of other types from Lua code, you must use the debug library ([§6.10](http://www.lua.org/manual/5.4/manual.html#6.10)).
 ---
----[View documents](http://www.lua.org/manual/5.4/manual.html#pdf-setmetatable)
+---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-setmetatable)
 ---
 ---@generic K, V
 ---@type fun(tbl: table<K,V>, metatable: dreamwork.Metatable<K,V>): table<K,V>
@@ -2060,3 +2060,47 @@ send( "dreamwork/std/types/angle3.lua" )
 -- valve matrix class
 dofile( "dreamwork/std/types/vmatrix.lua" )
 send( "dreamwork/std/types/vmatrix.lua" )
+
+
+
+
+--- [SHARED AND MENU]
+---
+---
+---
+---@param package_name string
+---@param package_version string
+---@return any
+function std.import( package_name, package_version )
+    -- TODO: implement
+end
+
+--- [SHARED AND MENU]
+---
+--- Opens the named file and executes its content as a Lua chunk.
+---
+--- When called without arguments, `dofile` executes the content of the standard input (`stdin`).
+---
+--- Returns all values returned by the chunk. In case of errors, `dofile` propagates the error to its caller. (That is, `dofile` does not run in protected mode.)
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-dofile)
+---
+---@param file_path string
+---@param ... any
+---@return any ...
+function std.dofile( file_path, ... )
+    -- TODO: reimplement
+end
+
+--- [SHARED AND MENU]
+---
+--- Loads the given module, returns any value returned by the searcher(`true` when `nil`). Besides that value, also returns as a second result the loader data returned by the searcher, which indicates how `require` found the module. (For instance, if the module came from a file, this loader data is the file path.)
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-require)
+---
+---@param modname string
+---@param ... any
+---@return ...
+function std.require( modname, ... )
+    -- TODO: reimplement
+end

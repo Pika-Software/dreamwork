@@ -50,7 +50,7 @@ do
     ---
     --- Returns the metatable of the given value.
     ---
-    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.getmetatable)
+    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
     ---
     ---@type fun( object: any ): dreamwork.Metatable | nil
     debug.getmetatable = glua_debug.getmetatable or std.getmetatable
@@ -59,7 +59,7 @@ do
     ---
     --- Sets the metatable for the given value to the given table (which can be `nil`).
     ---
-    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.setmetatable)
+    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
     ---
     ---@type fun( object: any, metatable: dreamwork.Metatable | nil )
     debug.setmetatable = glua_debug.setmetatable

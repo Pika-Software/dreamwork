@@ -254,3 +254,13 @@ end
 -- TODO: separate package for teams, client teams
 --
 -- ref: https://wiki.facepunch.com/gmod/team
+
+-- TODO: put somewher
+--
+-- https://wiki.facepunch.com/gmod/Global.IsFirstTimePredicted
+--
+-- &
+--
+-- https://wiki.facepunch.com/gmod/util.ScreenShake
+--
+-- or remove both because they are not really needed

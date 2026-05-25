@@ -241,3 +241,5 @@ function sqlite.transaction( fn )
     query_raw( "rollback" )
     return error( result, 2 )
 end
+
+-- TODO: re-check implementation

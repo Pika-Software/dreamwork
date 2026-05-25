@@ -613,6 +613,10 @@ if std.LUA_CLIENT_MENU then
         local wsid_str = tostring( wsid )
         local f = futures_Future()
 
+        -- TODO: re-write function with
+        -- https://wiki.facepunch.com/gmod/Global.AddonMaterial
+        -- to be sure that material readable
+
         glua_steamworks.Download( wsid_str, uncompress ~= false, function( file_path )
             if file_path == nil then
                 f:setError( "failed to download icon file for '" .. wsid_str .. "', unknown error." )
