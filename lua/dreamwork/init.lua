@@ -400,15 +400,9 @@ end
 -- TODO: NetTable class
 dofile( "std/input.lua" )
 
-if std.LUA_VERSION ~= "Lua 5.1" then
-    logger:warn( "Lua version changed, possible unpredictable behavior. (" .. std.LUA_VERSION .. ")" )
-end
-
 if LUA_CLIENT_SERVER then
     dofile( "transport.lua" )
 end
-
-logger:info( "Start-up time: %.2f ms.", (os_clock() - dreamwork.StartTime) * 1000 )
 
 dreamwork.storage.init()
 

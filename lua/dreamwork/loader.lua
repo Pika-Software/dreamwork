@@ -2188,6 +2188,10 @@ local logger = std.console.Logger( {
     interpolation = false
 } )
 
+if std.LUA_VERSION ~= "Lua 5.1" then
+    logger:warn( "Lua version changed, possible unpredictable behavior. (" .. std.LUA_VERSION .. ")" )
+end
+
 dreamwork.Logger = logger
 
 -- Welcome message
@@ -2379,6 +2383,8 @@ end
 function std.require( modname, ... )
     -- TODO: reimplement
 end
+
+logger:info( "Start-up time: %.2f ms.", (std.os.clock() - dreamwork.InitTime) * 1000 )
 
 -- Clean-up
 time.tick( "ms" )
