@@ -1,13 +1,6 @@
----@class dreamwork
-local dreamwork = dreamwork
+-- TODO: Globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier
+-- TODO: Add https://eprosync.github.io/interstellar-docs support
 
--- TODO: globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier
--- TODO: add https://eprosync.github.io/interstellar-docs/ support
-
---- [SHARED AND MENU]
----
---- dreamwork standard environment
----
 ---@class dreamwork.std
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
@@ -422,12 +415,6 @@ dreamwork.storage.init()
 if LUA_CLIENT_SERVER then
     logger:info( "Preparing the transport to begin connection..." )
     dreamwork.transport.startup()
-end
-
-do
-    local start_time = os_clock()
-    std.gc.collect()
-    logger:info( "Clean-up time: %.2f ms.", (os_clock() - start_time) * 1000 )
 end
 
 -- TODO: package manager start-up ( aka package loading )

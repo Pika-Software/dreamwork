@@ -535,8 +535,11 @@ send( "dreamwork/std/types/version.lua" )
 dofile( "dreamwork/std/time.lua" )
 send( "dreamwork/std/time.lua" )
 
+local time = std.time
+local gc = std.gc
+
 if math.randomseed == 0 then
-    math.randomseed = std.time.now( "ms", false )
+    math.randomseed = time.now( "ms", false )
 end
 
 -- coroutine library
@@ -816,9 +819,6 @@ do
 end
 
 do
-
-    local time = std.time
-    local gc = std.gc
 
     --- [SHARED AND MENU]
     ---
@@ -2379,3 +2379,9 @@ end
 function std.require( modname, ... )
     -- TODO: reimplement
 end
+
+-- Clean-up
+time.tick( "ms" )
+gc.collect()
+
+logger:info( "Clean-up time: %.2f ms.", time.tick( "ms" ) )
