@@ -24,21 +24,15 @@ end
 
 ---@diagnostic disable-next-line: undefined-field
 local dofile = _G.include or _G.dofile
-local error = _G.error
 
 ---@class dreamwork.std.gc
 local gc = std.gc
 
 local string = std.string
 
-local isString = std.isString
-
-local table_concat = std.table.concat
-
 local time = std.time
 
 local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
 local engine_hookCatch = engine.hookCatch
 
 dofile( "std/game.lua" )
@@ -71,34 +65,7 @@ if dreamwork.TickTimer1 == nil then
     timer:start()
 end
 
-dofile( "std/console.lua" )
-dofile( "std/console.logger.lua" )
-
-local console_Variable = std.console.Variable
-
-if LUA_SERVER then
-
-    -- https://github.com/Facepunch/garrysmod-requests/issues/2793
-    local sv_defaultdeployspeed = console_Variable.get( "sv_defaultdeployspeed", "number" )
-    if sv_defaultdeployspeed ~= nil and sv_defaultdeployspeed.value == 4 then
-        sv_defaultdeployspeed.value = 1
-    end
-
-    -- draw everything manually, don't use this crap
-    local mp_show_voice_icons = console_Variable.get( "mp_show_voice_icons", "boolean" )
-    if mp_show_voice_icons ~= nil and mp_show_voice_icons.value then
-        mp_show_voice_icons.value = false
-    end
-
-end
-
-local logger = std.console.Logger( {
-    color = color_scheme.dreamwork_main,
-    title = dreamwork.Prefix,
-    interpolation = false
-} )
-
-dreamwork.Logger = logger
+local logger = dreamwork.Logger
 
 -- dofile( "std/message.lua" )
 local std_metatable = getmetatable( std )
@@ -208,154 +175,6 @@ if std_metatable == nil then
 
 end
 
--- Welcome message
-do
-
-    local name = "stranger"
-
-    local cvar = std.console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
-    if cvar ~= nil then
-        ---@type string
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        name = cvar.value
-        if string.isEmpty( name ) or name == "unnamed" then
-            name = "stranger"
-        end
-    end
-
-    local splashes = {
-        "We'll Sandblast these walls and paint them again ♪",
-        ";fix these broken wings, then show me how to fly ♪",
-        "And I feel like I could spread my wings and fly ♪",
-        "They'll wait for me to fall under the pressure ♪",
-        "nf2ca53pnz2caytfebzw6idfmfzxsidun4qho2lo * 0.5",
-        "eW91dHViZS5jb20vd2F0Y2g/dj1kUXc0dzlXZ1hjUQ==",
-        "Woah-oh-oh, tell me where you wanna go ♪",
-        "Let's write our names here in the sky ♪",
-        "We will have a great Future together.",
-        "Millions of pieces without a tether ♪",
-        "It always seems time is on the side ♪",
-        "Why are we always looking for more ♪",
-        "Never forget to finish your Task's!",
-        "They'll wait for me to give it up ♪",
-        "I don't care who I'm meant to be ♪",
-        "Take it in and breathe the light ♪",
-        "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
-        "I'm tired of these darker days ♪",
-        "Don't worry, " .. name .. " :>",
-        "Big Brother is watching you",
-        "As we build it once agai1n ♪",
-        "I'm turning the lights on ♪",
-        "I'm calling out for help ♪",
-        "I'll make you a promise.",
-        "Flying over rooftops...",
-        "Hello, " .. name .. "!",
-        "Dream + Framework = <3",
-        "We need more packages!",
-        "Pew-pew-pew-pew-pew! ♪",
-        "Play SOMA sometime;",
-        "Where's fireworks!?",
-        "Let the sun arise ♪",
-        "Looking For More ♪",
-        "I'm watching you.",
-        "Faster than ever.",
-        "Love Wins Again ♪",
-        "Made with love <3",
-        "I burn my sky ♪",
-        "Blazing fast ☄",
-        "Ancient Tech ♪",
-        "Here For You ♪",
-        "Good Enough ♪",
-        "Manifest It ♪",
-        "MAKE A MOVE ♪",
-        "v" .. dreamwork.Version,
-        "Hello World!",
-        "all_the_same",
-        "Star Glide ♪",
-        "Once Again ♪",
-        "Without Us ♪",
-        "Data Loss ♪",
-        "Sandblast ♪",
-        "Now on LLS!",
-        "That's me!",
-        "I see you.",
-        "Light Up ♪",
-        "Majesty ♪",
-        "Eat Me ♪",
-        "FLY ♪"
-    }
-
-    local count = #splashes + 1
-    splashes[ count ] = "Wow, there are over " .. (count - 1) .. " splashes here!"
-
-    local scheme
-
-    if std.SYSTEM_WINDOWS and false --[[ ha-ha microslop ]] then
-        scheme = {
-            "       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ ",
-            "  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   ",
-            "     *   .         '          /           *                   ⠀⠀⠀⠀⣠⣴⣾⣯⠴⠚⠉⠉⠀⠀⠀⠀⣤⠏⣿      ",
-            "   *    * %s                                                 ⠀⣠⣴⡿⠿⢛⠁⠁⣸⠀⠀⠀⠀⠀⣤⣾⠵⠚⠁      ",
-            "'                +   +                    _|_     '    *  ⠀⣠⣴⠿⠋⠁⠀⠀⠀⠀⠘⣿⠀⣀⡠⠞⠛⠁⠂⠁⠀⠀      ",
-            "       .                             .      |         ⠀⠀⣀⣴⠟⠋⠁⠀⠀⠀⠀⠐⠠⡤⣾⣙⣶⡶⠃⠀⠀⠀⠀⠀⠀⠀       ",
-            "⠉                ____    o  +   .    +                ⣤⢾⣋⠉        __ ⡴⢿⢛⠃              ",
-            "⠄       o       / __ \\_____ __  __ _ _ __ _____     ⣴⡼⢏⠑__  _____/ /__ ⢿               ",
-            "⠂⠂      .      / / / /⠁⠁⠁//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/                 ",
-            "⠁   +       ⣀⣴/ /_/ / /⠞⠁/ __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    ",
-            "         ⣠⢴⣿⠟/_____/_/  ⠞\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   ",
-            "⠀⠀⠀⠀⠀⢀⡴⢏⡵⠛⠀⠀⠀⠀⠀⠀⠀⣀⣴⠞⠛                                                                  ",
-            "⠀⠀⠀⣀⣼⠛⣲⡏⠁⠀⠀⠀⠀⠀⢀⣠⡾⠋⠉⠁⠁⠁        .-.    o  +   .    |                                     ",
-            "⠀⠀⡴⠟⠀⢰⡯⠄⠀⠀⠀⠀⣠⢴⠟⠉ ⠁              ) )             --o--                                  ",
-            "⠀⡾⠁⠁⠀⠘⠧⠤⢤⣤⠶⠏⠙⠁    *     *       '-´   ⠁   ⠁    ⠁  |                                    ",
-            "⠘⣇⠂⢀⣀⣀⠤⠞⠋                                                                              ",
-            "⠀⠈⠉⠉⠉     .      +                      *   '      '        +                          ",
-            "╭────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       ",
-            "┊  GitHub: https://github.com/Pika-Software                                            ",
-            "┊  Discord: https://discord.gg/Gzak99XGvv                                              ",
-            "┊  Website: https://p1ka.eu                                                            ",
-            "┊  Developers: Pika Software                                                           ",
-            "┊  License: MIT                                                                        ",
-            "╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       "
-        }
-    else
-        scheme = {
-            "               /          .      +           /                                    ",
-            "          .   *                             /  '           '     .                ",
-            "   .             .             '           /           *                `         ",
-            "                     +                    *        *                         .    ",
-            "     '              /                                 _|_     '    *              ",
-            "           ,       +            .            .         |              +     |     ",
-            "            '       \\            \\                       .     '          --o--   ",
-            "  `      * .         +            \\          ,                         '    |     ",
-            "             ____                  \\        __        __            __            ",
-            "    .       / __ \\ ____ __   __ __  __ ____\\  \\      /  /___  _____/ /__ ` .     .",
-            "   /   .   / / / / __// _ \\ /  _` || '_ ` _ \\  \\ __ /  / _  \\/ ___/ //_/  `     / ",
-            "  /   /   / /_/ / /  /  __//  (_) || | | | | \\  V  V  / (_) / /  / ,<\\         /  ",
-            " *   *   /_____/_/   \\ ___|\\ __/__||_| |_| |_|\\ _/\\_/ \\ ___/_/  /_/|_|        /   ",
-            "  ,                 .      +              \\                 '                *    ",
-            "       +         \\  %s                                                  `          ",
-            "  .               \\              *           \\               *              ,     ",
-            "     .-.    `      *                          *        |         '                ",
-            "      ) )               *     '                      --o--         ,   +          ",
-            "     '-´                           *                   |                          ",
-            "         '        +           *           *   '               +                   ",
-            "|>|================================================= ` .                          ",
-            "|=| -  GitHub:   https://github.com/Pika-Software  /  `                           ",
-            "|<| - Discord:   https://discord.gg/Gzak99XGvv    /                               ",
-            "|=| - Website:   https://p1ka.eu                 /                                ",
-            "|<| - DevTeam:   Pika Software                  /                                 ",
-            "|=| - License:   MIT                           /                                  ",
-            "|>|___________________________________________/                                   "
-        }
-    end
-
-    local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
-    local splash = splashes[ math.random( 1, count ) ]
-
-    std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.encoding.utf8.len( splash ) ) )
-
-end
-
 dofile( "std/fs.lua" )
 dofile( "std/sqlite.lua" )
 
@@ -417,40 +236,9 @@ do
 
     ---@diagnostic disable-next-line: undefined-field
     local gmbc_load_bytecode = _G.gmbc_load_bytecode
-
-    ---@diagnostic disable-next-line: undefined-field
-    local CompileString = _G.CompileString
-
-    local getfenv, setfenv = std.getfenv, std.setfenv
+    local loadstring = std.loadstring
     local file_read = std.fs.read
     local pcall = std.pcall
-
-    --- [SHARED AND MENU]
-    ---
-    --- Loads a string as
-    --- a lua code chunk in the specified environment
-    --- and returns function as a compile result.
-    ---
-    ---@param lua_code string The lua code chunk.
-    ---@param chunk_name string | nil The lua code chunk name.
-    ---@param env table | nil The environment of compiled function.
-    ---@return function | nil fn The compiled function.
-    ---@return string | nil msg The error message.
-    local function loadstring( lua_code, chunk_name, env )
-        local fn = CompileString( lua_code, chunk_name or "=(loadstring)", false )
-        if fn == nil then
-            return nil, "lua code compilation failed"
-        elseif isString( fn ) then
-            ---@diagnostic disable-next-line: cast-type-mismatch
-            ---@cast fn string
-            return nil, fn
-        else
-            setfenv( fn, env or getfenv( 2 ) )
-            return fn
-        end
-    end
-
-    std.loadstring = loadstring
 
     --- [SHARED AND MENU]
     ---
@@ -500,73 +288,6 @@ do
         else
             return nil, content
         end
-    end
-
-end
-
-do
-
-    local loadstring = std.loadstring
-    local math_floor = math.floor
-    local math_max = math.max
-    local arg = std.arg
-
-    local empty_env = {}
-
-    --- [SHARED AND MENU]
-    ---
-    --- Creates a function that accepts a variable
-    --- number of arguments and returns them in
-    --- the order of the specified indices.
-    ---
-    --- | `junction(...)` call | `fjn(...)` call | result `...` |
-    --- | ---------------------|-----------------|--------------|
-    --- | `junction(1)`        | `(A, B, C)`     | `A`          |
-    --- | `junction(2)`        | `(A, B, C)`     | `B`          |
-    --- | `junction(3)`        | `(A, B, C)`     | `C`          |
-    --- | `junction(2, 1)`     | `(A, B, C)`     | `B, A`       |
-    --- | `junction(3, 1, 2)`  | `(X, Y, Z)`     | `Z, X, Y`    |
-    ---
-    ---@param ... integer The indices of arguments to return.
-    ---@return function fjn The created junction function.
-    function std.junction( ... )
-        local out_arg_count = select( '#', ... )
-        local out_args = { ... }
-
-        local in_arg_count = 0
-
-        for i = 1, out_arg_count, 1 do
-            local value = out_args[ i ]
-            local valid, err_msg = arg( value, i, "number" )
-
-            if valid then
-                out_args[ i ] = math_floor( value )
-                in_arg_count = math_max( in_arg_count, value )
-            else
-                error( err_msg, 2 )
-            end
-        end
-
-        local locals, local_count = {}, 0
-
-        for i = 1, in_arg_count, 1 do
-            local_count = local_count + 1
-            locals[ local_count ] = "a" .. i
-        end
-
-        local returns, return_count = {}, 0
-
-        for i = 1, out_arg_count, 1 do
-            return_count = return_count + 1
-            returns[ return_count ] = "a" .. out_args[ i ]
-        end
-
-        local fn, err_msg = loadstring( "local " .. table_concat( locals, ",", 1, local_count ) .. " = ...\r\nreturn " .. table_concat( returns, ",", 1, return_count ), "junction", empty_env )
-        if fn == nil then
-            error( err_msg, 2 )
-        end
-
-        return fn
     end
 
 end

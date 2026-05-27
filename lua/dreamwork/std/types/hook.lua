@@ -2,7 +2,22 @@
 local std = dreamwork.std
 
 local debug = std.debug
+local debug_fempty = debug.fempty
+local debug_getmetatable = debug.getmetatable
+
+local math = std.math
+local math_clamp = math.clamp
+local math_floor = math.floor
+
 local table = std.table
+local table_inject = table.inject
+local table_removeByRange = table.removeByRange
+
+local uuid_v7 = std.uuid.v7
+local isNumber = std.isNumber
+local futures_Future = std.futures.Future
+
+local string_meta = debug.findmetatable( "string" )
 
 ---@alias dreamwork.std.Hook.Type
 ---| `-2` # PRE_HOOK - This hook is guaranteed to be called under all circumstances, and cannot be interrupted by a return statement. You can rely on its consistent execution.
@@ -58,157 +73,139 @@ function Hook:__init( name, return_vararg )
     self.return_vararg = return_vararg == true
 end
 
-do
+--- [SHARED AND MENU]
+---
+--- Detaches a callback function from the hook.
+---
+---@param identifier string | Hook | any The unique name of the callback, Hook or object with `__isvalid` function in metatable.
+---@return boolean detached Returns `true` if the callback was detached, otherwise `false`.
+function Hook:detach( identifier )
+    if identifier == nil then return false end
 
-    local debug_fempty = debug.fempty
-    local table_removeByRange = table.removeByRange
+    for i = #self - 2, 1, -3 do
+        if self[ i ] == identifier then
+            if self.is_running then
+                self[ i + 1 ] = debug_fempty
 
-    --- [SHARED AND MENU]
-    ---
-    --- Detaches a callback function from the hook.
-    ---
-    ---@param identifier string | Hook | any The unique name of the callback, Hook or object with `__isvalid` function in metatable.
-    ---@return boolean detached Returns `true` if the callback was detached, otherwise `false`.
-    function Hook:detach( identifier )
-        if identifier == nil then return false end
-
-        for i = #self - 2, 1, -3 do
-            if self[ i ] == identifier then
-                if self.is_running then
-                    self[ i + 1 ] = debug_fempty
-
-                    local queue = self.queues
-                    if queue == nil then
-                        self.queues = { { false, identifier } }
-                    else
-                        queue[ #queue + 1 ] = { false, identifier }
-                    end
+                local queue = self.queues
+                if queue == nil then
+                    self.queues = { { false, identifier } }
                 else
-                    table_removeByRange( self, i, i + 2 )
+                    queue[ #queue + 1 ] = { false, identifier }
                 end
-
-                return true
+            else
+                table_removeByRange( self, i, i + 2 )
             end
-        end
 
-        return false
+            return true
+        end
     end
 
+    return false
 end
 
-do
-
-    local string_meta = debug.findmetatable( "string" )
-    local debug_getmetatable = debug.getmetatable
-    local math_clamp = std.math.clamp
-    local math_floor = std.math.floor
-    local table_inject = table.inject
-    local isNumber = std.isNumber
-
-    --- [SHARED AND MENU]
-    ---
-    --- Attaches a callback function to the hook.
-    ---
-    ---@param fn function | Hook | nil The callback function or the hook to attach.
-    ---@param identifier dreamwork.std.Hook.Type | any The unique identifier of the callback, object with `__isvalid` function in metatable or the type of the hook if `fn` is a Hook.
-    ---@param hook_type dreamwork.std.Hook.Type | nil The type of the hook, default is `0`, can be `nil` if `fn` is a Hook and `identifier` is the type of the hook.
-    function Hook:attach( fn, identifier, hook_type )
-        if identifier == nil then
-            identifier = "nil"
-        end
-
-        if debug_getmetatable( fn ) == Hook then
-            ---@cast fn dreamwork.std.Hook
-
-            if isNumber( identifier ) then
-                ---@cast identifier number
-                ---@diagnostic disable-next-line: cast-local-type
-                hook_type = math_floor( identifier )
-            elseif not isNumber( hook_type ) then
-                ---@diagnostic disable-next-line: cast-local-type
-                hook_type = 0
-            end
-
-            identifier = fn
-        end
-
-        local metatable = debug_getmetatable( identifier )
-        if metatable == nil then
-            error( "callback identifier has no metatable", 2 )
-            return
-        end
-
-        if metatable ~= string_meta then
-            ---@cast identifier any
-            ---@cast fn function
-
-            local isvalid = metatable.__isvalid
-            if isvalid == nil then
-                error( "callback identifier has no `__isvalid` function", 2 )
-                return
-            end
-
-            if not isvalid( identifier ) then
-                self:detach( identifier )
-                return
-            end
-
-            local real_fn = fn
-            function fn( ... )
-                if isvalid( identifier ) then
-                    return real_fn( identifier, ... )
-                end
-
-                self:detach( identifier )
-            end
-        end
-
-        if hook_type == nil then
-            ---@diagnostic disable-next-line: cast-local-type
-            hook_type = 0
-        else
-            ---@diagnostic disable-next-line: cast-local-type
-            hook_type = math_clamp( math_floor( hook_type ), -2, 2 )
-        end
-
-        for i = #self - 2, 1, -3 do
-            if self[ i ] == identifier then
-                if self[ i + 2 ] == hook_type then
-                    self[ i + 1 ] = fn
-                    return
-                end
-
-                self:detach( identifier )
-                break
-            end
-        end
-
-        if self.is_running then
-            local queue = self.queues
-            if queue == nil then
-                ---@diagnostic disable-next-line: assign-type-mismatch
-                self.queues = { { true, identifier, fn, hook_type } }
-            else
-                ---@diagnostic disable-next-line: assign-type-mismatch
-                queue[ #queue + 1 ] = { true, identifier, fn, hook_type }
-            end
-
-            return
-        end
-
-        local callback_count = #self
-
-        local index = callback_count
-        for i = 3, callback_count, 3 do
-            if self[ i ] > hook_type then
-                index = i - 3
-                break
-            end
-        end
-
-        table_inject( self, { identifier, fn, hook_type }, index + 1, 1, 3 )
+--- [SHARED AND MENU]
+---
+--- Attaches a callback function to the hook.
+---
+---@param fn function | Hook | nil The callback function or the hook to attach.
+---@param identifier dreamwork.std.Hook.Type | any The unique identifier of the callback, object with `__isvalid` function in metatable or the type of the hook if `fn` is a Hook.
+---@param hook_type dreamwork.std.Hook.Type | nil The type of the hook, default is `0`, can be `nil` if `fn` is a Hook and `identifier` is the type of the hook.
+function Hook:attach( fn, identifier, hook_type )
+    if identifier == nil then
+        identifier = "nil"
     end
 
+    if debug_getmetatable( fn ) == Hook then
+        ---@cast fn dreamwork.std.Hook
+
+        if isNumber( identifier ) then
+            ---@cast identifier number
+            ---@diagnostic disable-next-line: cast-local-type
+            hook_type = math_floor( identifier )
+        elseif not isNumber( hook_type ) then
+            ---@diagnostic disable-next-line: cast-local-type
+            hook_type = 0
+        end
+
+        identifier = fn
+    end
+
+    local metatable = debug_getmetatable( identifier )
+    if metatable == nil then
+        error( "callback identifier has no metatable", 2 )
+        return
+    end
+
+    if metatable ~= string_meta then
+        ---@cast identifier any
+        ---@cast fn function
+
+        local isvalid = metatable.__isvalid
+        if isvalid == nil then
+            error( "callback identifier has no `__isvalid` function", 2 )
+            return
+        end
+
+        if not isvalid( identifier ) then
+            self:detach( identifier )
+            return
+        end
+
+        local real_fn = fn
+        function fn( ... )
+            if isvalid( identifier ) then
+                return real_fn( identifier, ... )
+            end
+
+            self:detach( identifier )
+        end
+    end
+
+    if hook_type == nil then
+        ---@diagnostic disable-next-line: cast-local-type
+        hook_type = 0
+    else
+        ---@diagnostic disable-next-line: cast-local-type
+        hook_type = math_clamp( math_floor( hook_type ), -2, 2 )
+    end
+
+    for i = #self - 2, 1, -3 do
+        if self[ i ] == identifier then
+            if self[ i + 2 ] == hook_type then
+                self[ i + 1 ] = fn
+                return
+            end
+
+            self:detach( identifier )
+            break
+        end
+    end
+
+    if self.is_running then
+        local queue = self.queues
+        if queue == nil then
+            ---@diagnostic disable-next-line: assign-type-mismatch
+            self.queues = { { true, identifier, fn, hook_type } }
+        else
+            ---@diagnostic disable-next-line: assign-type-mismatch
+            queue[ #queue + 1 ] = { true, identifier, fn, hook_type }
+        end
+
+        return
+    end
+
+    local callback_count = #self
+
+    local index = callback_count
+    for i = 3, callback_count, 3 do
+        if self[ i ] > hook_type then
+            index = i - 3
+            break
+        end
+    end
+
+    table_inject( self, { identifier, fn, hook_type }, index + 1, 1, 3 )
 end
 
 --- [SHARED AND MENU]
@@ -435,45 +432,33 @@ function Hook:mixer( mixer_fn )
     self.mixer_fn = mixer_fn
 end
 
-do
-
-    local uuid_v7 = std.uuid.v7
-
-    --- [SHARED AND MENU]
-    ---
-    --- Attaches a callback function to the hook.
-    ---
-    ---@param fn function | dreamwork.std.Hook.Type The callback function or the type of the hook if `identifier` is a Hook.
-    ---@param hook_type? dreamwork.std.Hook.Type The type of the hook, default is `0`.
-    function Hook:once( fn, hook_type )
-        local identifier = uuid_v7()
-        self:attach( function( ... )
-            self:detach( identifier )
-            return fn( ... )
-        end, identifier, hook_type )
-    end
-
+--- [SHARED AND MENU]
+---
+--- Attaches a callback function to the hook.
+---
+---@param fn function | dreamwork.std.Hook.Type The callback function or the type of the hook if `identifier` is a Hook.
+---@param hook_type? dreamwork.std.Hook.Type The type of the hook, default is `0`.
+function Hook:once( fn, hook_type )
+    local identifier = uuid_v7()
+    self:attach( function( ... )
+        self:detach( identifier )
+        return fn( ... )
+    end, identifier, hook_type )
 end
 
-do
+--- [SHARED AND MENU]
+---
+--- Waits for the hook to finish.
+---
+---@param hook_type dreamwork.std.Hook.Type? The type of the hook, default is `0`.
+---@return any ... The return values from the hook.
+---@async
+function Hook:wait( hook_type )
+    local f = futures_Future()
 
-    local futures_Future = std.futures.Future
+    self:once( function( ... )
+        f:setResult( { ... } )
+    end, hook_type )
 
-    --- [SHARED AND MENU]
-    ---
-    --- Waits for the hook to finish.
-    ---
-    ---@param hook_type dreamwork.std.Hook.Type? The type of the hook, default is `0`.
-    ---@return any ... The return values from the hook.
-    ---@async
-    function Hook:wait( hook_type )
-        local f = futures_Future()
-
-        self:once( function( ... )
-            f:setResult( { ... } )
-        end, hook_type )
-
-        return f:await()
-    end
-
+    return f:await()
 end

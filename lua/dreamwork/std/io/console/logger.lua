@@ -1,10 +1,18 @@
 local std = dreamwork.std
 
----@class dreamwork.std.console
-local console = std.console
+local raw = std.raw
+local raw_select = raw.select
+local raw_tostring = raw.tostring
 
-local color_scheme = std.Color.scheme
+local color_scheme = std.color.Scheme
 local realm_color = color_scheme.realm
+
+local time_format = std.time.format
+
+local string = std.string
+local string_format, string_gsub = string.format, string.gsub
+
+local engine_consoleMessageColored = dreamwork.engine.consoleMessageColored
 
 local realm_text
 
@@ -17,6 +25,9 @@ elseif std.LUA_SERVER then
 else
     realm_text = "[ Unknown ] "
 end
+
+---@class dreamwork.std.console
+local console = std.console
 
 --- [SHARED AND MENU]
 ---
@@ -71,93 +82,75 @@ function Logger:__init( options )
         self.text_color = primary_text_color
         self.interpolation = true
         self.debug_fn = default_debug_fn
+        return
+    end
+
+    local title = options.title
+    if title == nil then
+        self.title = "unknown"
     else
-        local title = options.title
-        if title == nil then
-            self.title = "unknown"
-        else
-            self.title = title
-        end
+        self.title = title
+    end
 
-        local color = options.color
-        if color == nil then
-            self.title_color = color_white
-        else
-            self.title_color = color
-        end
+    local color = options.color
+    if color == nil then
+        self.title_color = 0xFFFFFF
+    else
+        self.title_color = color
+    end
 
-        local text_color = options.text_color
-        if text_color == nil then
-            self.text_color = primary_text_color
-        else
-            self.text_color = text_color
-        end
+    local text_color = options.text_color
+    if text_color == nil then
+        self.text_color = primary_text_color
+    else
+        self.text_color = text_color
+    end
 
-        local interpolation = options.interpolation
-        if interpolation == nil then
-            self.interpolation = false
-        else
-            self.interpolation = interpolation == true
-        end
+    local interpolation = options.interpolation
+    if interpolation == nil then
+        self.interpolation = false
+    else
+        self.interpolation = interpolation == true
+    end
 
-        local debug_fn = options.debug
-        if debug_fn == nil then
-            self.debug_fn = default_debug_fn
-        else
-            self.debug_fn = debug_fn
-        end
+    local debug_fn = options.debug
+    if debug_fn == nil then
+        self.debug_fn = default_debug_fn
+    else
+        self.debug_fn = debug_fn
     end
 end
 
-local write_log
-do
+--- [SHARED AND MENU]
+---
+--- Logs a message.
+---@param color dreamwork.std.Color The log level color.
+---@param level string The log level name.
+---@param fmt string The log message.
+---@param ... any The log message arguments to format/interpolate.
+local function write_log( object, color, level, fmt, ... )
+    engine_consoleMessageColored( time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), secondary_text_color )
+    engine_consoleMessageColored( realm_text, realm_color )
+    engine_consoleMessageColored( level, color )
+    engine_consoleMessageColored( " --> ", secondary_text_color )
+    engine_consoleMessageColored( object.title, object.title_color )
+    engine_consoleMessageColored( " : ", secondary_text_color )
 
-    local console_write = console.write
-    local time_format = std.time.format
-    local tostring = std.tostring
+    if object.interpolation then
+        local args = {}
 
-    local string = std.string
-    local string_len, string_sub = string.len, string.sub
-    local string_format, string_gsub = string.format, string.gsub
-
-    --- [SHARED AND MENU]
-    ---
-    --- Logs a message.
-    ---@param color Color The log level color.
-    ---@param level string The log level name.
-    ---@param str string The log message.
-    ---@param ... any The log message arguments to format/interpolate.
-    function write_log( object, color, level, str, ... )
-        if object.interpolation then
-            local args = { ... }
-            for index = 1, select( '#', ... ), 1 do
-                args[ tostring( index ) ] = tostring( args[ index ] )
-            end
-
-            str = string_gsub( str, "{([0-9]+)}", args )
-        else
-            str = string_format( str, ... )
+        for i = 1, raw_select( "#", ... ), 1 do
+            args[ raw_tostring( i ) ] = raw_tostring( raw_select( i, ... ) )
         end
 
-        local title = object.title
-
-        local title_length = string_len( title )
-        if title_length > 64 then
-            title = string_sub( title, 1, 64 )
-            title_length = 64
-            object.title = title
-        end
-
-        if (string_len( str ) + title_length) > 950 then
-            str = string_sub( str, 1, 950 - title_length ) .. "..."
-        end
-
-        console_write( secondary_text_color, time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), realm_color, realm_text, color, level, secondary_text_color, " --> ", object.title_color, title, secondary_text_color, " : ", object.text_color, str .. "\n" )
+        engine_consoleMessageColored( string_gsub( fmt, "{([0-9]+)}", args ) .. "\n", object.text_color )
+        return
     end
 
-    Logger.log = write_log
-
+    engine_consoleMessageColored( string_format( fmt, ... ) .. "\n", object.text_color )
 end
+
+Logger.log = write_log
 
 do
 
@@ -166,6 +159,7 @@ do
     --- [SHARED AND MENU]
     ---
     --- Logs an info message.
+    ---
     function Logger:info( ... )
         return write_log( self, info_color, "INFO ", ... )
     end
@@ -179,6 +173,7 @@ do
     --- [SHARED AND MENU]
     ---
     --- Logs a warning message.
+    ---
     function Logger:warn( ... )
         return write_log( self, warn_color, "WARN ", ... )
     end
@@ -192,6 +187,7 @@ do
     --- [SHARED AND MENU]
     ---
     --- Logs an error message.
+    ---
     function Logger:error( ... )
         return write_log( self, error_color, "ERROR", ... )
     end
@@ -205,6 +201,7 @@ do
     --- [SHARED AND MENU]
     ---
     --- Logs a debug message.
+    ---
     function Logger:debug( ... )
         if self.debug_fn( self ) then
             return write_log( self, debug_color, "DEBUG", ... )

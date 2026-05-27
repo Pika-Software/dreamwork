@@ -782,15 +782,7 @@ do
 
     if MsgC == nil then
 
-        --- [SHARED AND MENU]
-        ---
-        --- Prints the given arguments to the console.
-        ---
-        ---@param str string The string to print.
-        ---@param color dreamwork.std.Color The color to print the string with.
-        function engine.consoleMessageColored( str, color )
-            return engine.consoleMessage( str )
-        end
+        engine.consoleMessageColored = engine.consoleMessage
 
     else
 
