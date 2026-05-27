@@ -16,11 +16,6 @@ local dreamwork = dreamwork
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
 local std = dreamwork.std
-if std == nil then
-    ---@class dreamwork.std
-    std = {}
-    dreamwork.std = std
-end
 
 ---@diagnostic disable-next-line: undefined-field
 local dofile = _G.include or _G.dofile
