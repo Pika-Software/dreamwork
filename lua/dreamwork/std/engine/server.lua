@@ -450,6 +450,9 @@ if std.LUA_SERVER then
         console_Variable.set( "hide_server", hide )
     end
 
+    -- TODO: fns for convars: sv_visiblemaxplayers
+
+
     --- [SERVER]
     ---
     --- Allow clients to run `lua_openscript_cl` and `lua_run_cl`.
