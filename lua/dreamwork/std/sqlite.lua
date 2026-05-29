@@ -179,7 +179,7 @@ sqlite.query = query
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param row integer? The row to return.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
----@return dreamwork.std.sqlite.QueryValue[] | nil result The selected row of the result.
+---@return dreamwork.std.sqlite.QueryRow | nil result The selected row of the result.
 local function query_row( str, row, ... )
     local result = query( str, ... )
     if result == nil then
@@ -198,11 +198,11 @@ sqlite.queryRow = query_row
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryRow | nil result The first row of the result.
-local function query_one( str, ... )
+local function query_first( str, ... )
     return query_row( str, 1, ... )
 end
 
-sqlite.queryOne = query_one
+sqlite.queryFirst = query_first
 
 --- [SHARED AND MENU]
 ---
@@ -212,7 +212,7 @@ sqlite.queryOne = query_one
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryValue | nil value The first value of the first row of the result.
 function sqlite.queryValue( str, ... )
-    local result = query_one( str, ... )
+    local result = query_first( str, ... )
     if result ~= nil then
         return raw_next( result )
     end
