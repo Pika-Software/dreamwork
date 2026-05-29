@@ -20,3 +20,5 @@
     TODO: make sound class
 
 ]]
+
+-- game.precacheSound = glua_util.PrecacheSound

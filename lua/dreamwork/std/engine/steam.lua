@@ -25,6 +25,77 @@ if glua_system ~= nil then
 
 end
 
+if std.LUA_CLIENT_MENU then
+
+    do
+
+        local glua_achievements = _G.achievements
+        local achievements_Count, achievements_GetName, achievements_GetDesc, achievements_GetCount, achievements_GetGoal, achievements_IsAchieved = glua_achievements.Count, glua_achievements.GetName, glua_achievements.GetDesc, glua_achievements.GetCount, glua_achievements.GetGoal, glua_achievements.IsAchieved
+
+        -- TODO: update code/docs
+
+        --- [CLIENT AND MENU]
+        ---
+        --- Returns information about an achievement (name, description, value, etc.)
+        ---
+        ---@param id number The ID of achievement to retrieve name of. Note  IDs start from 0, not 1.
+        ---@return table | nil table Returns nil if the ID is invalid.
+        local function get( id )
+            local goal = achievements_GetGoal( id )
+            if goal == nil then return nil end
+
+            local isAchieved = achievements_IsAchieved( id )
+
+            return {
+                name = achievements_GetName( id ),
+                description = achievements_GetDesc( id ),
+                value = isAchieved and goal or achievements_GetCount( id ),
+                achieved = isAchieved,
+                goal = goal
+            }
+        end
+
+        --- [CLIENT AND MENU]
+        ---
+        --- The game achievement library.
+        ---
+        ---@class dreamwork.std.game.achievement
+        local achievement = {
+            getCount = achievements_Count,
+            get = get
+        }
+
+        --- [CLIENT AND MENU]
+        ---
+        --- Checks if an achievement with the given ID exists.
+        ---
+        ---@param id number
+        ---@return boolean exist Returns true if the achievement exists.
+        function achievement.exists( id )
+            return achievements_IsAchieved( id ) ~= nil
+        end
+
+        --- [CLIENT AND MENU]
+        ---
+        --- Returns information about all achievements.
+        ---
+        ---@return table achievement_list The list of all achievements.
+        ---@return number achievement_count The count of achievements.
+        function achievement.getAll()
+            local tbl, count = {}, achievements_Count()
+            for index = 0, count - 1 do
+                tbl[ index + 1 ] = get( index )
+            end
+
+            return tbl, count
+        end
+
+        game.achievement = achievement
+
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- Steam [EResult](https://partner.steamgames.com/doc/api/steam_api#EResult) messages.

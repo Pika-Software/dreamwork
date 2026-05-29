@@ -1686,3 +1686,14 @@ end
 function ModelClass.getGlobalActivityName( act_id )
     return activity_names[ act_id ] or "ACT_INVALID"
 end
+
+-- game.precacheModel = glua_util.PrecacheModel
+
+-- game.getModelMeshes = glua_util.GetModelMeshes
+-- game.getModelInfo = glua_util.GetModelInfo
+
+-- game.getActivityName = glua_util.GetActivityNameByID
+-- game.getActivityID = glua_util.GetActivityIDByName
+
+-- game.getAnimEventName = glua_util.GetAnimEventNameByID
+-- game.getAnimEventID = glua_util.GetAnimEventIDByName

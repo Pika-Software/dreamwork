@@ -1,13 +1,14 @@
-local engine = dreamwork.engine
-
 local glua_engine = engine or {}
 local glua_game = game or {}
-local glua_util = util or {}
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local engine = dreamwork.engine
+local engine_hookCatch = engine.hookCatch
+
 local os_clock = std.os.clock
+local Hook = std.Hook
 
 --- [SHARED AND MENU]
 ---
@@ -23,7 +24,6 @@ std.game = game
 
 game.getUptime = game.getUptime or _G.SysTime
 game.addDebugInfo = game.addDebugInfo or _G.DebugInfo
-
 
 do
 
@@ -72,26 +72,9 @@ do
     ---@return dreamwork.std.game.Item[] items The list of games.
     ---@return integer item_count The length of the items array (`#items`).
     function game.getAll()
-        local item_count = engine.game_count
-        local games = engine.games
-        local items = {}
 
-        for i = 1, item_count, 1 do
-            local data = games[ i ]
-            items[ i ] = {
-                installed = data.installed,
-                mounted = data.mounted,
-                folder = data.folder,
-                appid = data.depot,
-                owned = data.owned,
-                title = data.title
-            }
-        end
-
-        return items, item_count
+        return {}, 0
     end
-
-    local name2game = engine.name2game
 
     --- [SHARED AND MENU]
     ---
@@ -104,7 +87,8 @@ do
             folder_name = "hl2"
         end
 
-        return name2game[ folder_name ] == true
+        -- return name2game[ folder_name ] == true
+        return false
     end
 
 end
@@ -126,176 +110,43 @@ if std.LUA_MENU then
 
 end
 
-if std.LUA_CLIENT_MENU then
-    do
-
-        --- [CLIENT AND MENU]
-        ---
-        --- The game demo library.
-        ---
-        ---@class dreamwork.std.game.demo
-        local demo = {
-            getTotalPlaybackTicks = glua_engine.GetDemoPlaybackTotalTicks,
-            getPlaybackStartTick = glua_engine.GetDemoPlaybackStartTick,
-            getPlaybackSpeed = glua_engine.GetDemoPlaybackTimeScale,
-            getPlaybackTick = glua_engine.GetDemoPlaybackTick,
-            isRecording = glua_engine.IsRecordingDemo,
-            isPlaying = glua_engine.IsPlayingDemo
-        }
-
-        if std.LUA_MENU then
-            demo.getFileDetails = _G.GetDemoFileDetails
-        end
-
-        game.demo = demo
-
-    end
-
-    do
-
-        local glua_achievements = _G.achievements
-        local achievements_Count, achievements_GetName, achievements_GetDesc, achievements_GetCount, achievements_GetGoal, achievements_IsAchieved = glua_achievements.Count, glua_achievements.GetName, glua_achievements.GetDesc, glua_achievements.GetCount, glua_achievements.GetGoal, glua_achievements.IsAchieved
-
-        -- TODO: update code/docs
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Returns information about an achievement (name, description, value, etc.)
-        ---
-        ---@param id number The ID of achievement to retrieve name of. Note  IDs start from 0, not 1.
-        ---@return table | nil table Returns nil if the ID is invalid.
-        local function get( id )
-            local goal = achievements_GetGoal( id )
-            if goal == nil then return nil end
-
-            local isAchieved = achievements_IsAchieved( id )
-
-            return {
-                name = achievements_GetName( id ),
-                description = achievements_GetDesc( id ),
-                value = isAchieved and goal or achievements_GetCount( id ),
-                achieved = isAchieved,
-                goal = goal
-            }
-        end
-
-        --- [CLIENT AND MENU]
-        ---
-        --- The game achievement library.
-        ---
-        ---@class dreamwork.std.game.achievement
-        local achievement = {
-            getCount = achievements_Count,
-            get = get
-        }
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Checks if an achievement with the given ID exists.
-        ---
-        ---@param id number
-        ---@return boolean exist Returns true if the achievement exists.
-        function achievement.exists( id )
-            return achievements_IsAchieved( id ) ~= nil
-        end
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Returns information about all achievements.
-        ---
-        ---@return table achievement_list The list of all achievements.
-        ---@return number achievement_count The count of achievements.
-        function achievement.getAll()
-            local tbl, count = {}, achievements_Count()
-            for index = 0, count - 1 do
-                tbl[ index + 1 ] = get( index )
-            end
-
-            return tbl, count
-        end
-
-        game.achievement = achievement
-
-    end
-
-end
-
-if std.LUA_CLIENT then
-
-    game.getTimeoutInfo = _G.GetTimeoutInfo
-
-end
-
-if std.SHARED then
+if std.LUA_CLIENT_SERVER then
 
     game.getAbsoluteFrameTime = glua_engine.AbsoluteFrameTime
+
     -- game.isDedicatedServer = glua_game.IsDedicated
     -- game.isSinglePlayer = glua_game.SinglePlayer
-    game.getDifficulty = glua_game.GetSkillLevel
 
     -- game.getRealTime = _G.RealTime
 
-    game.getActivityName = glua_util.GetActivityNameByID
-    game.getActivityID = glua_util.GetActivityIDByName
-
-    game.getAnimEventName = glua_util.GetAnimEventNameByID
-    game.getAnimEventID = glua_util.GetAnimEventIDByName
-
-    game.getModelMeshes = glua_util.GetModelMeshes
-    game.getModelInfo = glua_util.GetModelInfo
-
     -- TODO: https://wiki.facepunch.com/gmod/Global.PrecacheSentenceFile
     -- TODO: https://wiki.facepunch.com/gmod/Global.PrecacheSentenceGroup
-
-    game.precacheModel = glua_util.PrecacheModel
-    game.precacheSound = glua_util.PrecacheSound
-
-    if std.SERVER then
-        game.precacheScene = _G.PrecacheScene
-    end
 
     -- game.getFrameNumber = _G.FrameNumber
 
 end
 
-if std.SERVER then
+if game.OnTick == nil then
 
-    game.setDifficulty = game.setDifficulty or glua_game.SetSkillLevel
+    --- [SHARED AND MENU]
+    ---
+    --- A hook that is called every tick.
+    ---
+    local OnTick = Hook( "game.OnTick" )
+    engine_hookCatch( "Tick", OnTick )
+    game.OnTick = OnTick
 
 end
 
-local dreamwork = _G.dreamwork
-local std = dreamwork.std
+if game.OnShutDown == nil then
 
-local engine_hookCatch = dreamwork.engine.hookCatch
-local Hook = std.Hook
-
-do
-
-    ---@class dreamwork.std.game
-    local game = std.game
-
-    if game.Tick == nil then
-
-        --- [SHARED AND MENU]
-        ---
-        --- A hook that is called every tick.
-        local Tick = Hook( "game.Tick" )
-        engine_hookCatch( "Tick", Tick )
-        game.Tick = Tick
-
-    end
-
-    if game.ShutDown == nil then
-
-        --- [SHARED]
-        ---
-        --- A hook that is called when the game is shutting down.
-        local ShutDown = Hook( "game.ShutDown" )
-        engine_hookCatch( "ShutDown", ShutDown, 2 )
-        game.ShutDown = ShutDown
-
-    end
+    --- [SHARED]
+    ---
+    --- A hook that is called when the game is shutting down.
+    ---
+    local OnShutDown = Hook( "game.OnShutDown" )
+    engine_hookCatch( "ShutDown", OnShutDown, 2 )
+    game.OnShutDown = OnShutDown
 
 end
 

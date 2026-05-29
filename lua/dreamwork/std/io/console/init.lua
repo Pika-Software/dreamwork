@@ -44,11 +44,11 @@ if std.LUA_MENU then
 
 end
 
-if std.LUA_CLIENT_MENU then
-    local gui_IsConsoleVisible = gui.IsConsoleVisible or function() return false end
+console.VisibilityHook = std.Hook( "console.VisibilityHook" )
 
-    local Visibility = console.Visibility or std.Hook( "console.Visibility" )
-    console.Visibility = Visibility
+if std.LUA_CLIENT_MENU then
+
+    local gui_IsConsoleVisible = gui.IsConsoleVisible or function() return false end
 
     local visible = gui_IsConsoleVisible()
     console.visible = visible
@@ -57,11 +57,10 @@ if std.LUA_CLIENT_MENU then
         if visible ~= gui_IsConsoleVisible() then
             visible = not visible
             console.visible = visible
-            Visibility:call( visible )
+            console.VisibilityHook:call( visible )
         end
     end, "std.console.visible" )
-else
-    console.Visibility = console.Visibility or std.Hook( "console.Visibility" )
+
 end
 
 do

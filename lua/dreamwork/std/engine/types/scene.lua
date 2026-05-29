@@ -2,3 +2,7 @@
 --
 --
 -- ref: https://wiki.facepunch.com/gmod/Global.ClientsideScene
+
+-- if std.SERVER then
+--     game.precacheScene = _G.PrecacheScene
+-- end

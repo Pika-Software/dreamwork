@@ -251,6 +251,10 @@ if LUA_CLIENT_MENU then
 
 end
 
+-- if std.LUA_CLIENT then
+--     game.getTimeoutInfo = _G.GetTimeoutInfo
+-- end
+
 -- TODO: separate package for teams, client teams
 --
 -- ref: https://wiki.facepunch.com/gmod/team
