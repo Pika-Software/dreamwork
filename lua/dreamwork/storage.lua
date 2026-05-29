@@ -20,7 +20,7 @@ local string_len = string.len
 local sqlite = std.sqlite
 local sqlite_transaction = sqlite.transaction
 local sqlite_query, sqlite_rawQuery = sqlite.query, sqlite.rawQuery
-local sqlite_queryOne, sqlite_queryValue = sqlite.queryOne, sqlite.queryValue
+local sqlite_queryFirst, sqlite_queryValue = sqlite.queryFirst, sqlite.queryValue
 
 local time = std.time
 local time_now = time.now
@@ -77,7 +77,7 @@ do
     ---@param url string
     ---@return table?
     function http.read( url )
-        return sqlite_queryOne( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
+        return sqlite_queryFirst( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
     end
 
     --- [SHARED AND MENU]
@@ -134,7 +134,7 @@ do
     ---@param file_path string The path to the file.
     ---@return dreamwork.storage.files.Record | nil data The file record, or `nil` if not found.
     function files.read( file_path )
-        local result = sqlite_queryOne( "SELECT * FROM 'dreamwork.storage.files' WHERE path=?", file_path )
+        local result = sqlite_queryFirst( "SELECT * FROM 'dreamwork.storage.files' WHERE path=?", file_path )
         if result ~= nil then
             return {
                 path = result.path,
@@ -182,7 +182,7 @@ end
 --     ---@param url string
 --     function repositories.addRepository( url )
 --         -- sadly gmod's sqlite does not support returning clause :(
---         return sqlite_queryOne( "insert or ignore into 'dreamwork.repositories' (url) values (?); select * from 'dreamwork.repositories' where url=?", url, url )
+--         return sqlite_queryFirst( "insert or ignore into 'dreamwork.repositories' (url) values (?); select * from 'dreamwork.repositories' where url=?", url, url )
 --     end
 
 --     local getRepositoryID
@@ -249,7 +249,7 @@ end
 --             error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
 --         end
 
---         local pkg = sqlite_queryOne( "select * from 'dreamwork.packages' where name=? and repositoryID=?", name, tostring( repository_id ) )
+--         local pkg = sqlite_queryFirst( "select * from 'dreamwork.packages' where name=? and repositoryID=?", name, tostring( repository_id ) )
 --         if pkg == nil then return end
 
 --         pkg.versions = sqlite_query( "select version, metadata from 'dreamwork.package_versions' where packageID=?", pkg.id )
