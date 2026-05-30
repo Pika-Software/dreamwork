@@ -4,7 +4,6 @@ local _G = _G
 local dreamwork = dreamwork
 if dreamwork.engine ~= nil then return end
 
----@class dreamwork.std
 local std = dreamwork.std
 
 local class = std.class
@@ -881,13 +880,17 @@ end
 do
 
     ---@type table<integer, Entity>
-    local entity_list = {}
+    local entity_list = ents.GetAll()
 
     ---@type integer
-    local entity_count = 0
+    local entity_count = #entity_list
 
     ---@type table<Entity, integer>
     local entity_map = {}
+
+    for i = 1, entity_count, 1 do
+        entity_map[ entity_list[ i ] ] = i
+    end
 
     _G.InvalidateInternalEntityCache = detour.before( function( is_player )
         local new_entities = ents.GetAll()
@@ -916,14 +919,19 @@ do
             end
         end
 
-        if has_changes then
-            engine_hookCall( "dreamwork.engine.EntityCountChanged", entity_list, entity_count, new_entities, new_count )
-        end
-
         entity_list = new_entities
         entity_count = new_count
         entity_map = new_map
+
+        if has_changes then
+            engine_hookCall( "dreamwork.engine.EntityCountChanged", entity_list, entity_count, new_entities, new_count )
+        end
     end, _G.InvalidateInternalEntityCache )
+
+    ---@return Entity[], integer
+    function engine.getEntities()
+        return entity_list, entity_count
+    end
 
 end
 
@@ -1372,7 +1380,6 @@ do
                         return
                     end
 
-                    ---@diagnostic disable-next-line: need-check-nil
                     fn( network_name, unreliable )
                     net_WriteBool( unreliable == true )
                 end, glua_net.Start )
