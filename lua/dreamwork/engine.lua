@@ -85,16 +85,16 @@ if engine.hookCatch == nil then
 
     ---@type table<string, fun( ... ): ...>
     local custom_handlers = {
-        AcceptInput = function( self, entity, input, activator, caller, value )
-            local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
+        -- AcceptInput = function( self, entity, input, activator, caller, value )
+        --     local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
 
-            for i = 1, #self, 1 do
-                local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
-                if allow ~= nil then
-                    return not allow
-                end
-            end
-        end
+        --     for i = 1, #self, 1 do
+        --         local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
+        --         if allow ~= nil then
+        --             return not allow
+        --         end
+        --     end
+        -- end
     }
 
     ---@type table<string, table<integer, dreamwork.std.Hook | fun( ... ): ...>>
@@ -518,7 +518,7 @@ do
     ---
     --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
     ---
-    ---@type dreamwork.KeyValueTable<string, ConVar>
+    ---@type table<string, ConVar>
     local console_variables = {}
 
     ---@type dreamwork.Metatable<string, ConVar>
@@ -717,15 +717,7 @@ do
 
     if MsgC == nil then
 
-        --- [SHARED AND MENU]
-        ---
-        --- Prints the given arguments to the console.
-        ---
-        ---@param str string The string to print.
-        ---@param color dreamwork.std.Color The color to print the string with.
-        function engine.consoleMessageColored( str, color )
-            return engine.consoleMessage( str )
-        end
+        engine.consoleMessageColored = engine.consoleMessage
 
     else
 
