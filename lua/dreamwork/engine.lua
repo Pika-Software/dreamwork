@@ -1274,10 +1274,10 @@ do
                 local network_name = network_names[ network_id ]
                 if network_name == nil then
                     if LUA_SERVER then
-                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
-                        sender:Kick( string_format( "Server received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
+                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
+                        sender:Kick( string_format( "Server received an invalid network message. [ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
                     else
-                        dreamwork.Logger:warn( "Client received an invalid network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
+                        dreamwork.Logger:warn( "Client received an invalid network message. [ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
                     end
 
                     return
@@ -1286,10 +1286,10 @@ do
                 local fn = receivers[ string_lower( network_name ) ]
                 if fn == nil then
                     if LUA_SERVER then
-                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [Network ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
-                        sender:Kick( string_format( "Server received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
+                        dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [ID: %d, Name: %s, %s]", sender:Nick(), network_id, network_name, unreliable and "UDP" or "TCP" )
+                        sender:Kick( string_format( "Server received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, unreliable and "UDP" or "TCP" ) )
                     else
-                        dreamwork.Logger:warn( "Client received an unexpected network message. [Network ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
+                        dreamwork.Logger:warn( "Client received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, unreliable and "UDP" or "TCP" )
                     end
 
                     return
@@ -1309,10 +1309,12 @@ do
                             error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
                         end
 
-                        dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Network ID: %d]", network_ids[ network_name ] )
+                        dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [ID: %d, Name: %s, %s]", network_ids[ network_name ], network_name, (unreliable == true) and "UDP" or "TCP" )
                         engine.consoleCommandRun( "disconnect" )
                         return
                     end
+
+                    ---@cast fn fun( network_name: string, unreliable: boolean? )
 
                     fn( network_name, unreliable )
                     net_WriteBool( unreliable == true )
