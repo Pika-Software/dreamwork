@@ -178,6 +178,41 @@ do
         return { table_unpack( tbl ) }
     end
 
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a range of elements from the given table.
+    ---
+    ---@generic V
+    ---@param tbl V[] The table to get the range from.
+    ---@param start_position? integer The start position of the range.
+    ---@param end_position? integer The end position of the range.
+    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@return V[] range_values The values of the range.
+    ---@return integer range_length The length of the range.
+    function table.range( tbl, start_position, end_position, tbl_length )
+        if tbl_length == nil then
+            tbl_length = len( tbl )
+        end
+
+        if start_position == nil then
+            start_position = 1
+        elseif start_position < 0 then
+            start_position = math_relative( start_position, tbl_length )
+        else
+            start_position = math_min( start_position, tbl_length )
+        end
+
+        if end_position == nil then
+            end_position = tbl_length
+        elseif end_position < 0 then
+            end_position = math_relative( end_position, tbl_length )
+        else
+            end_position = math_min( end_position, tbl_length )
+        end
+
+        return { table_unpack( tbl, start_position, end_position ) }, end_position - start_position + 1
+    end
+
 end
 
 --- [SHARED AND MENU]
