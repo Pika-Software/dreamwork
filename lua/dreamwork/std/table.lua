@@ -164,6 +164,26 @@ do
 
 end
 
+do
+
+    local table_unpack = table.unpack
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a shallow copy of the given table.
+    ---
+    --- NOTE: This function is much faster that any other copy function and method,
+    --- but works and efficient enough only for small tables (up to 1000 elements).
+    ---
+    ---@generic V
+    ---@param tbl V[] The table to copy.
+    ---@return V[] The copied table.
+    function table.shallowCopy( tbl )
+        return { table_unpack( tbl ) }
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- Returns a slice of the given table.
