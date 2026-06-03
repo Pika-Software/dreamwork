@@ -140,6 +140,7 @@ dofile( "dreamwork/std/raw.lua" )
 
 ---@class dreamwork.std.raw
 local raw = std.raw
+local raw_pairs = raw.pairs
 
 std.select = raw.select
 std.tostring = raw.tostring
@@ -310,38 +311,32 @@ do
 
 end
 
-do
-
-    local raw_pairs = raw.pairs
-
-    --- [SHARED AND MENU]
-    ---
-    --- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
-    ---
-    --- Otherwise, returns three values: the [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) function, the table `t`, and `nil`, so that the construction
-    --- ```lua
-    ---     for k,v in pairs(t) do body end
-    --- ```
-    --- will iterate over all key–value pairs of table `t`.
-    ---
-    --- See function [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) for the caveats of modifying the table during its traversal.
-    ---
-    ---
-    --- [View documents](command:extension.lua.doc?["en-us/54/manual.html/pdf-pairs"])
-    ---
-    ---@generic K, V
-    ---@param t table<K, V>
-    ---@return fun( table: table<K, V>, index: ( K | nil ) ): K, V
-    ---@return table<K, V>
-    function std.pairs( t )
-        local next_fn = debug_getmetavalue( t, "__pairs" )
-        if next_fn == nil then
-            return raw_pairs( t )
-        else
-            return next_fn( t, nil ), t
-        end
+--- [SHARED AND MENU]
+---
+--- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
+---
+--- Otherwise, returns three values: the [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) function, the table `t`, and `nil`, so that the construction
+--- ```lua
+---     for k,v in pairs(t) do body end
+--- ```
+--- will iterate over all key–value pairs of table `t`.
+---
+--- See function [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) for the caveats of modifying the table during its traversal.
+---
+---
+--- [View documents](command:extension.lua.doc?["en-us/54/manual.html/pdf-pairs"])
+---
+---@generic K, V
+---@param t table<K, V>
+---@return fun( table: table<K, V>, index: ( K | nil ) ): K, V
+---@return table<K, V>
+function std.pairs( t )
+    local next_fn = debug_getmetavalue( t, "__pairs" )
+    if next_fn == nil then
+        return raw_pairs( t )
+    else
+        return next_fn( t, nil ), t
     end
-
 end
 
 do
@@ -1307,7 +1302,8 @@ do
         end
 
         local copy_tbl = {}
-        for key, value in pairs( tbl ) do
+
+        for key, value in raw_pairs( tbl ) do
             if isTable( value ) then
                 copy_tbl[ key ] = copy_fn( value )
             else
@@ -1321,7 +1317,6 @@ do
     table.copy = copy_fn
 
 end
-
 
 -- path library
 dofile( "dreamwork/std/path.lua" )

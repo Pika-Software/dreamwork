@@ -13,6 +13,9 @@ local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
 
+local debug = std.debug
+local debug_iscf = debug.iscf
+
 --- [SHARED AND MENU]
 ---
 --- The table library is a standard Lua library which provides functions to manipulate tables.
@@ -21,144 +24,158 @@ local math_relative = math.relative
 local table = {}
 std.table = table
 
-do
+-- Lua 5.1
+table.concat = glua_table.concat
+-- table.insert = glua_table.insert
+table.remove = glua_table.remove
+table.sort = glua_table.sort
 
-    local debug_iscf = std.debug.iscf
+table.maxn = glua_table.maxn -- removed in Lua 5.2
 
-    -- Lua 5.1
-    table.concat = glua_table.concat
-    -- table.insert = glua_table.insert
-    table.remove = glua_table.remove
-    table.sort = glua_table.sort
+-- Lua 5.2
+local table_pack = glua_table.pack
+if table_pack ~= nil and debug_iscf( table_pack ) then
+    table.pack = table_pack
+end
 
-    table.maxn = glua_table.maxn -- removed in Lua 5.2
-
-    -- Lua 5.2
-    local table_pack = glua_table.pack
-    if table_pack ~= nil and debug_iscf( table_pack ) then
-        table.pack = table_pack
-    end
-
-    if table.pack == nil then
-        ---@generic V
-        ---@param ... V
-        ---@return V[]
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function table.pack( ... )
-            return { n = select( "#", ... ), ... }
-        end
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Inserts a value into a table at the specified index.
-    ---
+if table.pack == nil then
     ---@generic V
-    ---
-    ---@overload fun( tbl: V[], value: V ): integer
-    ---
-    ---@param tbl V[] The table to insert the value into.
-    ---@param index integer The index to insert the value at.
-    ---@param value V The value to insert.
-    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
-    ---@return integer index The index of the inserted value.
+    ---@param ... V
+    ---@return V[]
     ---@diagnostic disable-next-line: duplicate-set-field
-    function table.insert( tbl, index, value, tbl_length )
-        if tbl_length == nil then
-            tbl_length = len( tbl )
-        end
+    function table.pack( ... )
+        return { n = select( "#", ... ), ... }
+    end
+end
 
-        if value == nil then
-            value, index = index, tbl_length + 1
-            tbl[ index ] = value
-            return index
-        end
+--- [SHARED AND MENU]
+---
+--- Inserts a value into a table at the specified index.
+---
+---@generic V
+---
+---@overload fun( tbl: V[], value: V ): integer
+---
+---@param tbl V[] The table to insert the value into.
+---@param index integer The index to insert the value at.
+---@param value V The value to insert.
+---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@return integer index The index of the inserted value.
+---@diagnostic disable-next-line: duplicate-set-field
+function table.insert( tbl, index, value, tbl_length )
+    if tbl_length == nil then
+        tbl_length = len( tbl )
+    end
 
-        if index == nil then
-            index = tbl_length + 1
-        elseif index < 0 then
-            index = math_relative( index, tbl_length + 1 )
-        else
-            index = math_min( index, tbl_length + 1 )
-        end
-
-        if index > tbl_length then
-            tbl[ index ] = value
-            return index
-        end
-
-        if index == tbl_length then
-            tbl[ index + 1 ], tbl[ index ] = tbl[ index ], value
-            return index
-        end
-
-        for j = tbl_length, index, -1 do
-            tbl[ j + 1 ] = tbl[ j ]
-        end
-
+    if value == nil then
+        value, index = index, tbl_length + 1
         tbl[ index ] = value
         return index
     end
 
-    table.unpack = glua_table.unpack or unpack
-
-    -- Lua 5.3
-    local table_move = glua_table.move
-    if table_move ~= nil and debug_iscf( table_move ) then
-        table.move = table_move
+    if index == nil then
+        index = tbl_length + 1
+    elseif index < 0 then
+        index = math_relative( index, tbl_length + 1 )
+    else
+        index = math_min( index, tbl_length + 1 )
     end
 
-    if table.move == nil then
+    if index > tbl_length then
+        tbl[ index ] = value
+        return index
+    end
 
-        --- [SHARED AND MENU]
-        ---
-        --- Moves elements from one table to another.
-        ---
-        ---@generic V
-        ---@param source V[] The source table.
-        ---@param start_position? integer The start position of the source table, defaults to 1.
-        ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
-        ---@param offset? integer The start position of the destination table, defaults to 1.
-        ---@param destination? V[] The destination table, defaults to the source table.
-        ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
-        ---@return V[] destination Selected destination table.
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function table.move( source, start_position, end_position, offset, destination, source_length )
-            if destination == nil then
-                destination = source
-            end
+    if index == tbl_length then
+        tbl[ index + 1 ], tbl[ index ] = tbl[ index ], value
+        return index
+    end
 
-            if source_length == nil then
-                source_length = len( source )
-            end
+    for j = tbl_length, index, -1 do
+        tbl[ j + 1 ] = tbl[ j ]
+    end
 
-            if start_position == nil then
-                start_position = 1
-            elseif start_position < 0 then
-                start_position = math_relative( start_position, source_length )
-            else
-                start_position = math_min( start_position, source_length )
-            end
+    tbl[ index ] = value
+    return index
+end
 
-            if end_position == nil then
-                end_position = source_length
-            elseif end_position < 0 then
-                end_position = math_relative( end_position, source_length )
-            else
-                end_position = math_min( end_position, source_length )
-            end
+table.unpack = glua_table.unpack or unpack
 
-            if offset == nil then
-                offset = 1
-            end
+-- Lua 5.3
+local table_move = glua_table.move
+if table_move ~= nil and debug_iscf( table_move ) then
+    table.move = table_move
+end
 
-            for index = 0, end_position - start_position, 1 do
-                destination[ offset + index ] = source[ start_position + index ]
-            end
+if table.move == nil then
 
-            return destination
+    --- [SHARED AND MENU]
+    ---
+    --- Moves elements from one table to another.
+    ---
+    ---@generic V
+    ---@param source V[] The source table.
+    ---@param start_position? integer The start position of the source table, defaults to 1.
+    ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
+    ---@param offset? integer The start position of the destination table, defaults to 1.
+    ---@param destination? V[] The destination table, defaults to the source table.
+    ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
+    ---@return V[] destination Selected destination table.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function table.move( source, start_position, end_position, offset, destination, source_length )
+        if destination == nil then
+            destination = source
         end
 
+        if source_length == nil then
+            source_length = len( source )
+        end
+
+        if start_position == nil then
+            start_position = 1
+        elseif start_position < 0 then
+            start_position = math_relative( start_position, source_length )
+        else
+            start_position = math_min( start_position, source_length )
+        end
+
+        if end_position == nil then
+            end_position = source_length
+        elseif end_position < 0 then
+            end_position = math_relative( end_position, source_length )
+        else
+            end_position = math_min( end_position, source_length )
+        end
+
+        if offset == nil then
+            offset = 1
+        end
+
+        for index = 0, end_position - start_position, 1 do
+            destination[ offset + index ] = source[ start_position + index ]
+        end
+
+        return destination
+    end
+
+end
+
+do
+
+    local table_unpack = table.unpack
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a shallow copy of the given table.
+    ---
+    --- NOTE: This function is much faster that any other copy function and method,
+    --- but works and efficient enough only for small tables (up to 1000 elements).
+    ---
+    ---@generic V
+    ---@param tbl V[] The table to copy.
+    ---@return V[] The copied table.
+    function table.shallowCopy( tbl )
+        return { table_unpack( tbl ) }
     end
 
 end
