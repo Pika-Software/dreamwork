@@ -4,6 +4,7 @@ local _G = _G
 local dreamwork = dreamwork
 if dreamwork.engine ~= nil then return end
 
+---@class dreamwork.std
 local std = dreamwork.std
 
 local class = std.class

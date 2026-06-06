@@ -26,7 +26,7 @@ local string_byte = string.byte
 ---@field protected xor_out integer | nil The value to be XORed with output checksum.
 ---@field protected value integer The current value of the checksum.
 ---@field DigestSize integer The size of the checksum in bytes.
-local CRC8 = class.base( "checksum.CRC8", false )
+local CRC8 = class.base( "CRC8", false )
 
 CRC8.DigestSize = 1
 
@@ -210,7 +210,7 @@ end
 ---@field __class dreamwork.std.checksum.CRC16Class
 ---@field protected hash_key integer The hash key is used to generate the hash map.
 ---@field DigestSize integer The size of the checksum in bytes.
-local CRC16 = class.base( "checksum.CRC16", false, CRC8Class )
+local CRC16 = class.base( "CRC16", false, CRC8Class )
 
 CRC16.DigestSize = 2
 
@@ -404,7 +404,7 @@ end
 ---@field __parent dreamwork.std.checksum.CRC16
 ---@field __class dreamwork.std.checksum.CRC32Class
 ---@field DigestSize integer The size of the checksum in bytes.
-local CRC32 = class.base( "checksum.CRC32", false, CRC16Class )
+local CRC32 = class.base( "CRC32", false, CRC16Class )
 
 CRC32.DigestSize = 4
 

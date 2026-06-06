@@ -84,7 +84,7 @@ std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 ---@field __shl? fun(self: table<K,V>, other: any): any
 ---@field __shr? fun(self: table<K,V>, other: any): any
 ---@field __concat? fun(self: table<K,V>, other: any): any
----@field __len? fun(self: table<K,V>): integer
+---@field __len? fun(self: table<K,V>): number
 ---@field __eq? fun(self: table<K,V>, other: any): boolean
 ---@field __lt? fun(self: table<K,V>, other: any): boolean
 ---@field __le? fun(self: table<K,V>, other: any): boolean
@@ -93,13 +93,15 @@ std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 ---@field __call? fun(self: table<K,V>, ...): any
 ---@field __pairs? fun(self: table<K,V>): fun(tbl: table<K,V>, key: K?): K?, V?
 ---@field __close? fun(self: table<K,V>, errobj: any): any
+---@field __copy? fun(self: table<K,V>): table<K,V>
 ---@field __serialize? fun(self: table<K,V>, writer: dreamwork.std.buffer.Writer, data: any?)
 ---@field __deserialize? fun(self: table<K,V>, reader: dreamwork.std.buffer.Reader, data: any?)
 ---@field __tostring? fun(self: table<K,V>): string
 ---@field __tonumber? fun(self: table<K,V>): number
 ---@field __toboolean? fun(self: table<K,V>): boolean
----@field __tocolor? fun(self: table<K,V>): (red: integer, green: integer, blue: integer, alpha: (integer | nil))
----@field __tostring? fun( self: table<K,V>): string
+---@field __tocolor? fun(self: table<K,V>): dreamwork.std.Color
+---@field __tostring? fun(self: table<K,V>): string
+---@field __isvalid? fun(self: table<K,V>): boolean
 
 --- [SHARED AND MENU]
 ---
@@ -274,9 +276,9 @@ send( "dreamwork/std/jit.lua" )
 --- Returns the length of the given value.
 ---
 ---@param value any The value to get the length of.
----@return integer length The length of the given value.
+---@return number length The length of the given value.
 function std.len( value )
-    ---@type nil | fun( value: any ): integer
+    ---@type nil | fun( value: any ): number
     local fn = debug_getmetavalue( value, "__len" )
     if fn == nil then
         return #value
@@ -405,11 +407,11 @@ end
 ---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
 function std.tonumber( e, base )
     local fn = debug_getmetavalue( e, "__tonumber" )
-    if fn == nil then
-        return nil
-    else
+    if fn ~= nil then
         return fn( e, base or 10 )
     end
+
+    return nil
 end
 
 --- [SHARED AND MENU]
@@ -418,23 +420,37 @@ end
 ---
 --- Otherwise, returns `nil`.
 ---
----@param e any
----@return boolean?
+---@param e any The value to convert to a `boolean`.
+---@return boolean | nil bool The boolean value of `e`, or `nil` if `e` cannot be converted to a boolean.
 function std.toboolean( e )
-    if e == nil or e == false then
-        return false
-    end
-
     local fn = debug_getmetavalue( e, "__toboolean" )
-    if fn == nil then
-        return nil
-    else
+    if fn ~= nil then
         return fn( e )
     end
+
+    return nil
 end
 
 -- Alias for lazy developers
 std.tobool = std.toboolean
+
+--- [SHARED AND MENU]
+---
+--- If `value` has a metamethod `__tocolor`, calls it with `value` as argument and returns its result.
+---
+--- Otherwise, returns `nil`.
+---
+---@param value any The value to convert to a `color`.
+---@return dreamwork.std.Color | nil clr The color value of `value`, or `nil` if `value` cannot be converted to a color.
+function std.tocolor( value )
+    ---@type fun(value: any): dreamwork.std.Color | nil
+    local fn = debug_getmetavalue( value, "__tocolor" )
+    if fn ~= nil then
+        return fn( value )
+    end
+
+    return nil
+end
 
 --- [SHARED AND MENU]
 ---
@@ -1332,26 +1348,6 @@ local color_lib = std.color
 local color_scheme = color_lib.Scheme
 
 do
-
-    local color_fromRGBA = color_lib.fromRGBA
-
-    --- [SHARED AND MENU]
-    ---
-    --- If `value` has a metamethod `__tocolor`, calls it with `value` as argument and returns its result.
-    ---
-    --- Otherwise, returns `nil`.
-    ---
-    ---@param value any The valueect to convert to a color.
-    ---@return dreamwork.std.Color | nil clr The color value of `value`, or `nil` if `value` cannot be converted to a color.
-    function std.tocolor( value )
-        ---@type fun(value: any): (red: integer, green: integer, blue: integer, alpha: (integer | nil)) | nil
-        local fn = debug_getmetavalue( value, "__tocolor" )
-        if fn == nil then
-            return nil
-        else
-            return color_fromRGBA( fn( value ) )
-        end
-    end
 
     -- General
     color_scheme.white = color_scheme[ 255 ]
