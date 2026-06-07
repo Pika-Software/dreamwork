@@ -1,13 +1,23 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local raw = std.raw
-local raw_get, raw_set, raw_pairs, raw_tonumber = raw.get, raw.set, raw.pairs, raw.tonumber
-
-local isString, isNumber, isTable = std.isString, std.isNumber, std.isTable
 local tostring = std.tostring
 
--- TODO: glua functions below
+local isString = std.isString
+local isNumber = std.isNumber
+local isTable = std.isTable
+
+local raw = std.raw
+local raw_pairs = raw.pairs
+local raw_tonumber = raw.tonumber
+local raw_get, raw_set = raw.get, raw.set
+
+local math = std.math
+local math_floor = math.floor
+
+local table = std.table
+local table_concat = table.concat
+local table_remove = table.remove
 
 local string = std.string
 local string_format = string.format
@@ -16,26 +26,10 @@ local string_byte, string_char = string.byte, string.char
 local string_len, string_lower = string.len, string.lower
 
 local bit = std.bit
-local bit_rshift, bit_lshift, bit_band, bit_bor = bit.rshift, bit.lshift, bit.band, bit.bor
+local bit_band, bit_bor = bit.band, bit.bor
+local bit_rshift, bit_lshift = bit.rshift, bit.lshift
 
-local table_concat, table_remove = std.table.concat, std.table.remove
-local math_floor = std.math.floor
-
-local function compileCharacterTable( chars )
-    local result = {}
-    for _index_0 = 1, #chars do
-        local v = chars[ _index_0 ]
-        if isTable( v ) then
-            for i = string_byte( v[ 1 ] ), string_byte( v[ 2 ] ) do
-                result[ i ] = true
-            end
-        else
-            result[ string_byte( v ) ] = true
-        end
-    end
-
-    return result
-end
+-- TODO: glua functions below
 
 -- Use result from `compileCharacterTable` in `containsCharacter` as chars
 local function containsCharacter( str, chars, startPos, endPos )
@@ -64,22 +58,23 @@ local SPECIAL_SCHEMAS = {
     wss = 443
 }
 
-local FORBIDDEN_HOST_CODE_POINTS = compileCharacterTable( {
+local FORBIDDEN_HOST_CODE_POINTS = string.byteMap(
     "\0", "\t", "\n", "\r", " ", "#", "/", ":",
     "<", ">", "?", "@", "[", "\\", "]", "^", "|"
-} )
+)
 
-local FORBIDDEN_DOMAIN_CODE_POINTS = compileCharacterTable( {
+local FORBIDDEN_DOMAIN_CODE_POINTS = string.byteMap(
     "\0", "\t", "\n", "\r", " ", "#", "/", ":", "<", ">",
     "?", "@", "[", "\\", "]", "^", "|", { "\0", "\x1F" },
     "%", "\x7F"
-} )
+)
 
-local FILE_OTHERWISE_CODE_POINTS = compileCharacterTable( {
+local FILE_OTHERWISE_CODE_POINTS = string.byteMap(
     "/", "\\", "?", "#"
-} )
+)
 
 local DECODE_LOOKUP_TABLE = {}
+
 for i = 0x00, 0xFF do
     local hex = bit.tohex( i, 2 )
     DECODE_LOOKUP_TABLE[ hex ] = string_char( i )
@@ -750,8 +745,7 @@ local function parseIPv4( str, startPos, endPos )
     return ipv4
 end
 
-local domainToASCII
-domainToASCII = function( domain )
+local function domainToASCII( domain )
     for i = 1, #domain do
         if string_byte( domain, i ) > 0x7F then
             -- Remove special symbols that are ignored
@@ -809,6 +803,8 @@ domainToASCII = function( domain )
 
     return table_concat( parts, "." )
 end
+
+
 
 local function parseHostString( str, startPos, endPos, isSpecial )
     if string_byte( str, startPos ) == 0x5B --[[ [ ]] then

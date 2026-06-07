@@ -6,6 +6,7 @@ local string_format = string.format
 
 local debug = std.debug
 local debug_newproxy = debug.newproxy
+local debub_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
 local raw = std.raw
@@ -244,4 +245,30 @@ function class.create( base )
     end
 
     return cls
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is an instance of the given class.
+---
+---@param object dreamwork.std.Object The object to check for being an instance of the given class.
+---@param cls dreamwork.std.Class | dreamwork.std.Object The class to check against.
+---@return boolean is_instance `true` if `object` is an instance of the given class, `false` otherwise.
+function class.isInherited( object, cls )
+    local metatable = debub_getmetatable( object )
+    if metatable == nil then
+        return false
+    end
+
+    local base = raw_get( cls, "__base" )
+
+    while base ~= nil do
+        if metatable == base then
+            return true
+        end
+
+        base = debub_getmetatable( base )
+    end
+
+    return false
 end

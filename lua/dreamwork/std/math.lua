@@ -1,5 +1,8 @@
+local glua_math = math
+
 ---@class dreamwork.std
 local std = dreamwork.std
+
 local len = std.len
 
 --- [SHARED AND MENU]
@@ -18,39 +21,79 @@ local len = std.len
 ---@field sqrt2 number A variable containing the mathematical constant square root of 2. (1.4142135623731)
 ---@field sqrt1_2 number A variable containing the mathematical constant square root of 1/2. (0.70710678118655)
 ---@field randomseed number A variable containing the current random seed and can be changed to set a new seed.
-local math = std.math or {}
+local math = {
+    pi = glua_math.pi or 3.1415926535898,
+    huge = glua_math.huge or (1 / 0),
+    nan = 0 / 0,
+
+    abs = glua_math.abs,
+    exp = glua_math.exp,
+    fmod = glua_math.fmod,
+    modf = glua_math.modf,
+    sqrt = glua_math.sqrt,
+
+    sin = glua_math.sin,
+    asin = glua_math.asin,
+    sinh = glua_math.sinh,
+
+    cos = glua_math.cos,
+    acos = glua_math.acos,
+    cosh = glua_math.cosh,
+
+    tan = glua_math.tan,
+    atan2 = glua_math.atan2,
+    atan51 = glua_math.atan,
+    tanh = glua_math.tanh,
+
+    min = glua_math.min,
+    max = glua_math.max,
+
+    ceil = glua_math.ceil,
+    floor = glua_math.floor,
+
+    log = glua_math.log,
+    log10 = glua_math.log10,
+
+    deg = glua_math.deg,
+    rad = glua_math.rad,
+
+    random = glua_math.random,
+
+    frexp = glua_math.frexp,
+    ldexp = glua_math.ldexp,
+}
+
 std.math = math
 
-local glua_math = _G.math
+local math_sqrt, math_log = math.sqrt, math.log
+local math_min, math_max = math.min, math.max
+local math_floor = math.floor
+local math_abs = math.abs
 
-math.huge = math.huge or glua_math.huge
-math.tiny = math.tiny or -math.huge
-math.pi = math.pi or glua_math.pi
-math.nan = 0 / 0
+local math_huge = math.huge
+local math_pi = math.pi
 
-math.abs = math.abs or glua_math.abs
-math.exp = math.exp or glua_math.exp
-math.fmod = math.fmod or glua_math.fmod
-math.modf = math.modf or glua_math.modf
-math.sqrt = math.sqrt or glua_math.sqrt
+local math_tiny = -math_huge
+math.tiny = math_tiny
 
-math.sin = math.sin or glua_math.sin
-math.asin = math.asin or glua_math.asin
-math.sinh = math.sinh or glua_math.sinh
+-- constants
+do
 
-math.cos = math.cos or glua_math.cos
-math.acos = math.acos or glua_math.acos
-math.cosh = math.cosh or glua_math.cosh
+    local e = math.exp( 1 )
+    math.e = e
 
-math.tan = math.tan or glua_math.tan
-math.atan2 = math.atan2 or glua_math.atan2
-math.atan51 = math.atan51 or glua_math.atan
-math.tanh = math.tanh or glua_math.tanh
+    math.ln2 = math_log( 2 )
+    math.ln10 = math_log( 10.0 )
+    math.log10e = math_log( e, 10.0 )
+    math.log2e = math_log( e, 2.0 )
+    math.sqrt2 = math_sqrt( 2.0 )
+    math.sqrt1_2 = math_sqrt( 0.5 )
+
+end
 
 if math.atan == nil then
 
     local math_atan51 = math.atan51
-    local math_pi = math.pi
 
     --- [SHARED AND MENU]
     ---
@@ -72,94 +115,62 @@ if math.atan == nil then
 
 end
 
-math.min = math.min or glua_math.min
-math.max = math.max or glua_math.max
-
-math.ceil = math.ceil or glua_math.ceil
-math.floor = math.floor or glua_math.floor
-
-math.log = math.log or glua_math.log
-math.log10 = math.log10 or glua_math.log10
-
-math.deg = math.deg or glua_math.deg
-math.rad = math.rad or glua_math.rad
-
-math.random = math.random or glua_math.random
-
-local math_ceil, math_floor = math.ceil, math.floor
-local math_tiny, math_huge = math.tiny, math.huge
-local math_sqrt, math_log = math.sqrt, math.log
-local math_min, math_max = math.min, math.max
-local math_abs = math.abs
-
-math.e = math.e or math.exp( 1 )
-math.ln2 = math.ln2 or math_log( 2 )
-math.ln10 = math.ln10 or math_log( 10.0 )
-math.log10e = math.log10e or math_log( math.e, 10.0 )
-math.log2e = math.log2e or math_log( math.e, 2.0 )
-math.sqrt2 = math.sqrt2 or math_sqrt( 2.0 )
-math.sqrt1_2 = math.sqrt1_2 or math_sqrt( 0.5 )
-
-local math_ln2 = math.ln2
-
 if math.frexp == nil then
-    if glua_math.frexp == nil then
-        --- [SHARED AND MENU]
-        ---
-        --- Returns `m` and `e` such that `x = m2e`, `e` is an integer and the absolute value of `m` is in the range ((0.5, 1) (or zero when x is zero).
-        ---
-        --- Used to split the number value into a normalized fraction and an exponent.
-        --- Two values are returned: the first is a multiplier in the range
-        --- `1/2` (inclusive) to `1` (exclusive) and the second is an integer exponent.
-        ---
-        --- The result is such that `x = m*2^e`.
-        ---
-        ---@param x number The number to split.
-        ---@return number m The normalized fraction.
-        ---@return number e The exponent.
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function math.frexp( x )
-            if x == 0 then
-                return 0.0, 0.0
-            end
 
-            local exponent = math_floor( math_log( math_abs( x ) ) / math_ln2 )
-            if exponent > 0.0 then
-                x = x * (2.0 ^ -exponent)
-            else
-                x = x / (2.0 ^ exponent)
-            end
+    local math_ln2 = math.ln2
 
-            if math_abs( x ) >= 1.0 then
-                return x / 2.0, exponent + 1
-            else
-                return x, exponent
-            end
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `m` and `e` such that `x = m2e`, `e` is an integer and the absolute value of `m` is in the range ((0.5, 1) (or zero when x is zero).
+    ---
+    --- Used to split the number value into a normalized fraction and an exponent.
+    --- Two values are returned: the first is a multiplier in the range
+    --- `1/2` (inclusive) to `1` (exclusive) and the second is an integer exponent.
+    ---
+    --- The result is such that `x = m*2^e`.
+    ---
+    ---@param x number The number to split.
+    ---@return number m The normalized fraction.
+    ---@return number e The exponent.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function math.frexp( x )
+        if x == 0 then
+            return 0.0, 0.0
         end
-    else
-        math.frexp = glua_math.frexp
+
+        local exponent = math_floor( math_log( math_abs( x ) ) / math_ln2 )
+        if exponent > 0.0 then
+            x = x * (2.0 ^ -exponent)
+        else
+            x = x / (2.0 ^ exponent)
+        end
+
+        if math_abs( x ) >= 1.0 then
+            return x / 2.0, exponent + 1
+        else
+            return x, exponent
+        end
     end
+
 end
 
 if math.ldexp == nil then
-    if glua_math.ldexp == nil then
-        --- [SHARED AND MENU]
-        ---
-        --- Takes a normalised number and returns the floating point representation.
-        ---
-        --- Effectively it returns the result of `normalizedFraction * 2.0 ^ exponent`.
-        ---
-        ---@see dreamwork.std.math.frexp opposite function
-        ---@param x number The base value.
-        ---@param exponent number The exponent.
-        ---@return number float The floating point representation.
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function math.ldexp( x, exponent )
-            return x * 2.0 ^ exponent
-        end
-    else
-        math.ldexp = glua_math.ldexp
+
+    --- [SHARED AND MENU]
+    ---
+    --- Takes a normalised number and returns the floating point representation.
+    ---
+    --- Effectively it returns the result of `normalizedFraction * 2.0 ^ exponent`.
+    ---
+    ---@see dreamwork.std.math.frexp opposite function
+    ---@param x number The base value.
+    ---@param exponent number The exponent.
+    ---@return number float The floating point representation.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function math.ldexp( x, exponent )
+        return x * 2.0 ^ exponent
     end
+
 end
 
 if std.debug.getmetatable( math ) == nil then
@@ -388,6 +399,8 @@ end
 
 do
 
+    local math_ceil = math.ceil
+
     --- [SHARED AND MENU]
     ---
     --- Returns the integer part of the given number.
@@ -423,14 +436,20 @@ function math.log1p( x )
     return math_log( x + 1 )
 end
 
---- [SHARED AND MENU]
----
---- Returns the base 2 logarithm of the given number.
----
----@param x number The number to calculate the logarithm of.
----@return number log2 The base 2 logarithm of the number.
-function math.log2( x )
-    return math_log( x ) / math_ln2
+do
+
+    local math_ln2 = math.ln2
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the base 2 logarithm of the given number.
+    ---
+    ---@param x number The number to calculate the logarithm of.
+    ---@return number log2 The base 2 logarithm of the number.
+    function math.log2( x )
+        return math_log( x ) / math_ln2
+    end
+
 end
 
 do
@@ -839,7 +858,6 @@ end
 
 do
 
-    local math_pi = math.pi
     local math_cos = math.cos
     local math_sin = math.sin
 

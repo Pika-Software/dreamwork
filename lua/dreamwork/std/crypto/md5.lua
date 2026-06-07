@@ -1,11 +1,11 @@
 -- Based on https://github.com/kikito/md5.lua
 
----@class dreamwork.std
 local std = dreamwork.std
 
----@class dreamwork.std.hash
-local hash = std.hash or {}
-std.hash = hash
+---@class dreamwork.std.crypto
+local crypto = std.crypto
+
+local class = std.class
 
 local bit = std.bit
 local bit_bxor = bit.bxor
@@ -29,11 +29,11 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---
 --- MD5 object.
 ---
----@class dreamwork.std.hash.MD5 : dreamwork.std.Object
----@field __class dreamwork.std.hash.MD5Class
-local MD5 = std.class.base( "MD5" )
+---@class dreamwork.std.crypto.MD5 : dreamwork.std.Object
+---@field __class dreamwork.std.crypto.MD5Class
+local MD5 = class.base( "MD5" )
 
----@alias MD5 dreamwork.std.hash.MD5
+---@alias MD5 dreamwork.std.crypto.MD5
 
 --- [SHARED AND MENU]
 ---
@@ -52,13 +52,13 @@ local MD5 = std.class.base( "MD5" )
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
 ---
----@class dreamwork.std.hash.MD5Class : dreamwork.std.hash.MD5
----@field __base dreamwork.std.hash.MD5
+---@class dreamwork.std.crypto.MD5Class : dreamwork.std.crypto.MD5
+---@field __base dreamwork.std.crypto.MD5
 ---@field digest_size integer
 ---@field block_size integer
----@overload fun(): dreamwork.std.hash.MD5
+---@overload fun(): dreamwork.std.crypto.MD5
 local MD5Class = std.class.create( MD5 )
-hash.MD5 = MD5Class
+crypto.MD5 = MD5Class
 
 MD5Class.digest_size = 16
 MD5Class.block_size = 64
@@ -217,7 +217,7 @@ end
 ---
 --- It returns the MD5 object for method chaining.
 ---
----@return dreamwork.std.hash.MD5 obj The reset MD5 object.
+---@return dreamwork.std.crypto.MD5 obj The reset MD5 object.
 function MD5:reset()
     self.a, self.b, self.c, self.d = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
 
@@ -241,7 +241,7 @@ local bucket64 = math.bucketize( 64 )
 --- It returns the MD5 object for method chaining.
 ---
 ---@param str string The string to update the MD5 object with.
----@return dreamwork.std.hash.MD5 obj The updated MD5 object.
+---@return dreamwork.std.crypto.MD5 obj The updated MD5 object.
 function MD5:update( str )
     local message_length = self.message_length + string_len( str )
     self.message_length = message_length

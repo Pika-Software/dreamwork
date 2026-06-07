@@ -1717,7 +1717,7 @@ do
     ---
     --- The options for the pbkdf2 function.
     ---
-    ---@class dreamwork.std.crypto.pbkdf2.Options
+    ---@class dreamwork.std.pbkdf2.Options
     local options = {}
 
     --- The input password or passphrase to derive a key from.
@@ -1754,9 +1754,9 @@ do
     ---@type integer | nil
     options.length = 16
 
-    --- The hash algorithm name to use for the key derivation.
+    --- The hash algorithm class to use for the key derivation.
     ---
-    ---@type string
+    ---@type dreamwork.std.HashClass
     options.hash = nil
 
 end

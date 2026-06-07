@@ -494,7 +494,7 @@ end
 do
 
     local string_sub, string_gsub = string.sub, string.gsub
-    local string_byteCount = string.byteCount
+    local string_countByte = string.countByte
     local string_trim = string.trim
     local string_find = string.find
 
@@ -590,7 +590,7 @@ do
 
         local name = string_gsub( string_sub( semver_selector, position ), "%.[xX*]", "" )
 
-        local x_range = math_max( 2 - string_byteCount( name, 0x2E --[[ . ]] ), 0 )
+        local x_range = math_max( 2 - string_countByte( name, 0x2E --[[ . ]] ), 0 )
 
         for _ = 1, x_range do
             name = name .. ".0"

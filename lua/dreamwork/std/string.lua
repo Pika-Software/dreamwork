@@ -3,15 +3,22 @@ local glua_string = _G.string
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local len = std.len
+local isTable = std.isTable
+local tostring = std.tostring
+
+local raw = std.raw
+local raw_tonumber = raw.tonumber
+
 local math = std.math
 local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
 local math_min, math_max = math.min, math.max
 
-local len = std.len
-local tostring = std.tostring
-local raw_tonumber = std.raw.tonumber
+local table = std.table
+local table_unpack = table.unpack
+local table_concat = table.concat
 
 --- [SHARED AND MENU]
 ---
@@ -22,72 +29,94 @@ local raw_tonumber = std.raw.tonumber
 --- In dreamwork string library contains additional functions.
 ---
 ---@class dreamwork.std.string
----@field PatternBytes table<integer, string> A table of bytes that map to pattern sequences.
-local string = {}
-std.string = string
+---@field PatternBytes table<integer, string>
+local string = {
+    byte = glua_string.byte,
+    char = glua_string.char,
+    dump = glua_string.dump,
+    find = glua_string.find,
+    format = glua_string.format,
+    ---@diagnostic disable-next-line: deprecated, undefined-field
+    gmatch = glua_string.gmatch or glua_string.gfind,
+    gsub = glua_string.gsub,
+    len = glua_string.len,
+    lower = glua_string.lower,
+    match = glua_string.match,
+    rep = glua_string.rep,
+    reverse = glua_string.reverse,
+    sub = glua_string.sub,
+    upper = glua_string.upper,
 
-local pattern_bytes = {
-    -- ()
-    [ 0x28 ] = "%(",
-    [ 0x29 ] = "%)",
+    --- A table of bytes that map to pattern sequences.
+    PatternBytes = {
+        -- ()
+        [ 0x28 ] = "%(",
+        [ 0x29 ] = "%)",
 
-    -- []
-    [ 0x5B ] = "%[",
-    [ 0x5D ] = "%]",
+        -- []
+        [ 0x5B ] = "%[",
+        [ 0x5D ] = "%]",
 
-    -- .
-    [ 0x2E ] = "%.",
+        -- .
+        [ 0x2E ] = "%.",
 
-    -- %
-    [ 0x25 ] = "%%",
+        -- %
+        [ 0x25 ] = "%%",
 
-    -- +-
-    [ 0x2B ] = "%+",
-    [ 0x2D ] = "%-",
+        -- +-
+        [ 0x2B ] = "%+",
+        [ 0x2D ] = "%-",
 
-    -- *
-    [ 0x2A ] = "%*",
+        -- *
+        [ 0x2A ] = "%*",
 
-    -- ?
-    [ 0x3F ] = "%?",
+        -- ?
+        [ 0x3F ] = "%?",
 
-    -- ^
-    [ 0x5E ] = "%^",
+        -- ^
+        [ 0x5E ] = "%^",
 
-    -- $
-    [ 0x24 ] = "%$"
+        -- $
+        [ 0x24 ] = "%$"
+    }
 }
 
-string.PatternBytes = pattern_bytes
+std.string = string
 
-do
-
-    -- Lua 5.1
-    string.byte = string.byte or glua_string.byte
-    string.char = string.char or glua_string.char
-    string.dump = string.dump or glua_string.dump
-    string.find = string.find or glua_string.find
-    string.format = string.format or glua_string.format
-    ---@diagnostic disable-next-line: deprecated, undefined-field
-    string.gmatch = string.gmatch or glua_string.gmatch or glua_string.gfind
-    string.gsub = string.gsub or glua_string.gsub
-    string.len = string.len or glua_string.len
-    string.lower = string.lower or glua_string.lower
-    string.match = string.match or glua_string.match
-    string.rep = string.rep or glua_string.rep
-    string.reverse = string.reverse or glua_string.reverse
-    string.sub = string.sub or glua_string.sub
-    string.upper = string.upper or glua_string.upper
-
-end
-
-local string_char, string_byte = string.char, string.byte
-local string_match, string_find = string.match, string.find
 local string_sub, string_rep, string_len = string.sub, string.rep, string.len
+local string_match, string_find = string.match, string.find
+local string_char, string_byte = string.char, string.byte
 
-local table = std.table
-local table_unpack = table.unpack
-local table_concat = table.concat
+local pattern_bytes = string.PatternBytes
+
+---@class dreamwork.std.string.byteMapRange
+---@field [1] string The start byte of the range.
+---@field [2] string The end byte of the range.
+---@field [3] integer? The step size for the range.
+
+--- [SHARED AND MENU]
+---
+--- Creates a byte map from the given strings or byte ranges.
+---
+---@param ... string | dreamwork.std.string.byteMapRange A list of bytes or byte ranges to include in the map.
+---@return table<integer, boolean> The byte map.
+function string.byteMap( ... )
+    ---@type table<integer, boolean>
+    local byte_map = {}
+
+    for i = 1, select( "#", ... ) do
+        local value = select( i, ... )
+        if isTable( value ) then
+            for j = string_byte( value[ 1 ] ), string_byte( value[ 2 ] ), (value[ 3 ] or 1) do
+                byte_map[ j ] = true
+            end
+        else
+            byte_map[ string_byte( value, 1, 1 ) ] = true
+        end
+    end
+
+    return byte_map
+end
 
 --- [SHARED AND MENU]
 ---
@@ -473,7 +502,7 @@ end
 ---@param end_position? integer The end position to count to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer byte_count The number of occurrences.
-function string.byteCount( str, counted_byte, direction, start_position, end_position, str_length )
+function string.countByte( str, counted_byte, direction, start_position, end_position, str_length )
     if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
     end
@@ -547,7 +576,7 @@ end
 ---@param end_position? integer The end position to count to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer byte_count The number of occurrences.
-function string.byteCountConsecutive( str, counted_byte, direction, start_position, end_position, str_length )
+function string.countConsecutiveByte( str, counted_byte, direction, start_position, end_position, str_length )
     if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
     end
@@ -624,7 +653,7 @@ end
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
-function string.byteTrim( str, trailing_byte, direction, start_position, end_position, str_length )
+function string.trimByte( str, trailing_byte, direction, start_position, end_position, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end
@@ -801,23 +830,58 @@ function string.purge( str, byte, start_position, end_position, str_length )
     return table_concat( segments, "", 1, segment_count )
 end
 
---- [SHARED AND MENU]
----
---- Checks if the string is a number.
----
----@param str string The string to check.
----@param base? integer The base to check the string in.
----@param start_position? integer The start position to check from.
----@param end_position? integer The end position to check to.
----@return boolean is_number `true` if the string is a number, otherwise `false`.
-function string.isNumber( str, base, start_position, end_position )
-    if start_position == nil and end_position == nil then
-        ---@diagnostic disable-next-line: param-type-mismatch
-        return raw_tonumber( str, base ) ~= nil
-    else
-        ---@diagnostic disable-next-line: param-type-mismatch
-        return raw_tonumber( string_sub( str, start_position or 1, end_position ), base ) ~= nil
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Converts a string to a number.
+    ---
+    ---@param str string The string to convert.
+    ---@param base? integer The base to convert the string in.
+    ---@param start_position? integer The start position to convert from.
+    ---@param end_position? integer The end position to convert to.
+    ---@return number | nil num The converted number, or `nil` if the string is not a number.
+    local function toNumber( str, base, start_position, end_position )
+        if base == nil then
+            local uint8_1, uint8_2 = string_byte( str, (start_position or 1), (start_position or 1) + 1 )
+            if uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]]) then
+                base = 16
+            elseif uint8_1 == 0x30 --[[ 0 ]] and uint8_2 ~= nil then
+                base = 8
+            else
+                base = 10
+            end
+        end
+
+        if base == 16 then
+            local uint8_1, uint8_2, uint8_3 = string_byte( str, (start_position or 1), (start_position or 1) + 2 )
+            if uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]]) and uint8_3 == nil then
+                return 0
+            end
+        end
+
+        if start_position == nil and end_position == nil then
+            return raw_tonumber( str, base )
+        else
+            return raw_tonumber( string_sub( str, start_position or 1, end_position ), base )
+        end
     end
+
+    string.toNumber = toNumber
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the string is a number.
+    ---
+    ---@param str string The string to check.
+    ---@param base? integer The base to check the string in.
+    ---@param start_position? integer The start position to check from.
+    ---@param end_position? integer The end position to check to.
+    ---@return boolean is_number `true` if the string is a number, otherwise `false`.
+    function string.isNumber( str, base, start_position, end_position )
+        return toNumber( str, base, start_position, end_position ) ~= nil
+    end
+
 end
 
 do
@@ -1268,7 +1332,7 @@ end
 ---@param start_position? integer The start position to interpolate from.
 ---@param end_position? integer The end position to interpolate to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
-function string.byteInterpolate( str, interpolate_byte, variables, variable_count, start_position, end_position, str_length )
+function string.interpolateByte( str, interpolate_byte, variables, variable_count, start_position, end_position, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end

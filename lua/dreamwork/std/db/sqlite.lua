@@ -20,7 +20,7 @@ local string = std.string
 local string_match = string.match
 local string_lower = string.lower
 local string_replace = string.replace
-local string_byteInterpolate = string.byteInterpolate
+local string_interpolateByte = string.interpolateByte
 
 --- [SHARED AND MENU]
 ---
@@ -152,7 +152,7 @@ local function query( str, ... )
         end
     end
 
-    local result = query_raw( string_byteInterpolate( str, 0x3F --[[ ? ]], variables ) )
+    local result = query_raw( string_interpolateByte( str, 0x3F --[[ ? ]], variables ) )
     if result == nil then
         return nil
     end

@@ -612,3 +612,31 @@ end
 function bit.majority( a, b, c )
     return bit_bor( bit_band( a, bit_bor( b, c ) ), bit_band( b, c ) )
 end
+
+--- [SHARED AND MENU]
+---
+--- Returns the sign of an integer.
+---
+---@param x integer The integer to get the sign of.
+---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+function bit.sign( x )
+    if x > 0 then
+        return x - 0x100000000
+    else
+        return x
+    end
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the unsigned value of an integer.
+---
+---@param x integer The integer to get the unsigned value of.
+---@return integer result The unsigned value of the integer.
+function bit.unsign( x )
+    if x < 0 then
+        return x + 0x100000000
+    else
+        return x
+    end
+end

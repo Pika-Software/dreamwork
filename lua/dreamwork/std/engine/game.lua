@@ -4,11 +4,20 @@ local glua_game = game or {}
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local class = std.class
+
 local engine = dreamwork.engine
 local engine_hookCatch = engine.hookCatch
 
 local os_clock = std.os.clock
 local Hook = std.Hook
+
+local GameMounted = Hook( "GameMounted", false )
+
+---@class dreamwork.std.Game : dreamwork.std.Object
+local Game = class.base( "Game", true )
+
+local GameClass = class.base( "GameClass", false, Game )
 
 --- [SHARED AND MENU]
 ---
@@ -43,9 +52,9 @@ do
     local tick_id = engine_TickCount()
 
     engine.hookCatch( "Tick", function()
-        local tick_count = engine_TickCount()
-        if tick_count ~= tick_id then
-            tick_id = tick_count
+        local ticks_elapsed = engine_TickCount()
+        if ticks_elapsed ~= tick_id then
+            tick_id = ticks_elapsed
 
             local current_tick = os_clock()
             tick_interval, last_tick = current_tick - last_tick, current_tick
@@ -53,15 +62,15 @@ do
             game.TickInterval = tick_interval
             game.TPS = 1 / tick_interval
             game.TickTime = last_tick
-            game.Tick = tick_id
+            game.TickCount = tick_id
         end
     end, 1 )
 
 end
 
-game.getTickTime = game.getTickTime or _G.FrameTime or function() return 1 end
-game.getTickCount = game.getTickCount or glua_engine.TickCount or function() return 1 end
-game.getTickInterval = game.getTickInterval or glua_engine.TickInterval or function() return 0.1 end
+-- game.getTickTime = game.getTickTime or _G.FrameTime or function() return 1 end
+-- game.getTickCount = game.getTickCount or glua_engine.TickCount or function() return 1 end
+-- game.getTickInterval = game.getTickInterval or glua_engine.TickInterval or function() return 0.1 end
 
 do
 
@@ -125,6 +134,10 @@ if std.LUA_CLIENT_SERVER then
     -- game.getFrameNumber = _G.FrameNumber
 
 end
+
+game.OnTick:attach( function()
+
+end, "engine" )
 
 if game.OnTick == nil then
 

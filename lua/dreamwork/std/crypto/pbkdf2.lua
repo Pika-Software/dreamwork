@@ -1,57 +1,44 @@
+---@class dreamwork.std
 local std = dreamwork.std
 
----@class dreamwork.std.crypto
-local crypto = std.crypto
+local math = std.math
+local math_ceil = math.ceil
 
-local hmac = crypto.hmac
+local table = std.table
+local table_concat, table_unpack = table.concat, table.unpack
+
+local string = std.string
+local string_char, string_byte = string.char, string.byte
+
+local bit = std.bit
+local bit_bxor = bit.bxor
+
+local buffer = std.buffer
+local buffer_writeUInt32 = buffer.writeUInt32
+
+local hmac = std.crypto.hmac
 local hmac_key = hmac.key
 local hmac_padding = hmac.padding
 local hmac_compute = hmac.compute
-
-local buffer_writeUInt32 = std.buffer.writeUInt32
-local base16_encode = std.base16.encode
-
-local string = std.string
-local string_len, string_sub = string.len, string.sub
-local string_char, string_byte = string.char, string.byte
-
-local bit_bxor = std.bit.bxor
-
-local table_concat, table_unpack = std.table.concat, std.table.unpack
-local isFunction = std.isFunction
-local math_ceil = std.math.ceil
-
-local std_hash = std.hash
 
 --- [SHARED AND MENU]
 ---
 --- Derives a password using the pbkdf2 algorithm.
 ---
---- See https://en.wikipedia.org/wiki/PBKDF2 for the algorithm.
+--- See [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2) for the algorithm.
 ---
----@param options dreamwork.std.crypto.pbkdf2.Options
----@return string pbkdf2_hash The derived password as a hex string.
-function crypto.pbkdf2( options )
+---@param options dreamwork.std.pbkdf2.Options
+---@return string pbkdf2_str The derived password as a hex string.
+function std.pbkdf2( options )
     local pbkdf2_iterations = options.iterations or 4096
     local pbkdf2_length = options.length or 16
     local pbkdf2_password = options.password
     local pbkdf2_salt = options.salt
+    local pbkdf2_hash = options.hash
 
-    local hash_name = options.hash
-    if hash_name == nil then
-        error( "hash name not specified", 2 )
-    end
-
-    local hash_class = std_hash[ hash_name ]
-    if hash_class == nil or isFunction( hash_class ) then
-        std.errorf( 2, false, "hash.%sClass not found.", hash_name )
-    end
-
-    ---@cast hash_class dreamwork.std.hash.MD5Class
-
-    local digest_size = hash_class.digest_size
-    local block_size = hash_class.block_size
-    local digest_fn = hash_class.digest
+    local digest_size = pbkdf2_hash.digest_size
+    local block_size = pbkdf2_hash.block_size
+    local digest_fn = pbkdf2_hash.digest
 
     local hmac_outer, hmac_inner = hmac_padding( hmac_key( pbkdf2_password, digest_fn, block_size ), block_size )
     local block_count = math_ceil( pbkdf2_length / digest_size )
@@ -72,11 +59,5 @@ function crypto.pbkdf2( options )
         blocks[ block ] = string_char( table_unpack( t, 1, digest_size ) )
     end
 
-    local pbkdf2_hash = base16_encode( table_concat( blocks, "", 1, block_count ) )
-
-    if string_len( pbkdf2_hash ) ~= pbkdf2_length then
-        pbkdf2_hash = string_sub( pbkdf2_hash, 1, pbkdf2_length )
-    end
-
-    return pbkdf2_hash
+    return table_concat( blocks, "", 1, block_count )
 end

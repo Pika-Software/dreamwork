@@ -27,7 +27,7 @@ do
 
     do
 
-        local MD5_digest = std.hash.MD5.digest
+        local MD5_digest = std.crypto.MD5.digest
 
         --- [SHARED AND MENU]
         ---
@@ -59,7 +59,7 @@ do
 
     do
 
-        local SHA1_digest = std.hash.SHA1.digest
+        local SHA1_digest = std.crypto.SHA1.digest
 
         --- [SHARED AND MENU]
         ---

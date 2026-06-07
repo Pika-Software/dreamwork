@@ -9,7 +9,7 @@ local math_frexp, math_ldexp = math.frexp, math.ldexp
 local math_huge, math_tiny, math_nan = math.huge, math.tiny, math.nan
 
 local bit = std.bit
-
+local bit_unsign = bit.unsign
 local bit_band, bit_bor = bit.band, bit.bor
 local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
@@ -24,6 +24,19 @@ local bytepack = {}
 std.bytepack = bytepack
 
 ---@alias dreamwork.std.bytepack.Sequence integer[] The sequence of bytes (integers<0-255>).
+
+--- [SHARED AND MENU]
+---
+--- Reads unsigned 8-bit integer from a byte.
+---
+--- **NOTE: This is technical function and should be never used.**
+---
+---@param uint8 integer The byte to read.
+---@return integer value The unsigned 8-bit integer.
+---@deprecated
+function bytepack.readUInt8( uint8 )
+    return uint8
+end
 
 --- [SHARED AND MENU]
 ---
@@ -109,7 +122,15 @@ bytepack.writeUInt24 = writeUInt24
 ---@param uint8_4 integer The fourth byte.
 ---@return integer value The unsigned 4-byte integer.
 local function readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
-    return ((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+    -- return ((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+    return bit_unsign(
+        bit_band( bit_bor(
+            bit_lshift( uint8_4, 24 ),
+            bit_lshift( uint8_3, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        ) )
+    )
 end
 
 bytepack.readUInt32 = readUInt32

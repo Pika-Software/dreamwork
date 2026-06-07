@@ -100,8 +100,9 @@ std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 ---@field __tonumber? fun(self: table<K,V>): number
 ---@field __toboolean? fun(self: table<K,V>): boolean
 ---@field __tocolor? fun(self: table<K,V>): dreamwork.std.Color
----@field __tostring? fun(self: table<K,V>): string
+---@field __represent? fun(self: table<K,V>): string
 ---@field __isvalid? fun(self: table<K,V>): boolean
+---@field __hash? fun(self: table<K,V>): integer
 
 --- [SHARED AND MENU]
 ---
@@ -142,10 +143,14 @@ dofile( "dreamwork/std/raw.lua" )
 
 ---@class dreamwork.std.raw
 local raw = std.raw
+local raw_get = raw.get
 local raw_pairs = raw.pairs
 
-std.select = raw.select
-std.tostring = raw.tostring
+local raw_select = raw.select
+std.select = raw_select
+
+local raw_tostring = raw.tostring
+std.tostring = raw_tostring
 
 -- debug library
 dofile( "dreamwork/std/debug.lua" )
@@ -267,6 +272,28 @@ if std.setfenv == nil then
 
 end
 
+---@diagnostic disable-next-line: undefined-global
+local isTable = istable
+
+if isTable == nil then
+
+    local raw_type = raw.type
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks whether the value is a `table`.
+    ---
+    ---@param value any The value to check.
+    ---@return boolean is_table `true` if the value is a `table`, `false` otherwise.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function isTable( value )
+        return raw_type( value ) == "table"
+    end
+
+end
+
+std.isTable = isTable
+
 -- jit library
 dofile( "dreamwork/std/jit.lua" )
 send( "dreamwork/std/jit.lua" )
@@ -280,8 +307,116 @@ send( "dreamwork/std/jit.lua" )
 function std.len( value )
     ---@type nil | fun( value: any ): number
     local fn = debug_getmetavalue( value, "__len" )
+    if fn ~= nil then
+        return fn( value )
+    end
+
+    return #value
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns a string representation of the given value.
+---
+---@param value any The value to get the string representation of.
+---@return string str The string representation of the given value.
+function std.represent( value )
+    ---@type fun( value: any ): string
+    local fn = debug_getmetavalue( value, "__repr" )
+    if fn ~= nil then
+        return fn( value )
+    end
+
+    return raw_tostring( value )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the hash of the given value.
+---
+---@param value any The value to get the hash of.
+---@return integer | nil  hash The hash of the given value.
+function std.hash( value )
+    ---@type fun( value: any ): integer
+    local fn = debug_getmetavalue( value, "__hash" )
+    if fn ~= nil then
+        return fn( value )
+    end
+
+    return nil
+end
+
+--- [SHARED AND MENU]
+---
+--- If `e` has a metamethod `__tonumber`, calls it with `e` and `base` as arguments and returns its result.
+---
+--- When called with no `base`, `tonumber` tries to convert its argument to a number. If the argument is already a number or a string convertible to a number, then `tonumber` returns this number; otherwise, it returns `fail`.
+---
+--- The conversion of strings can result in integers or floats, according to the lexical conventions of Lua (see [§3.1](command:extension.lua.doc?["en-us/51/manual.html/3.1"])). The string may have leading and trailing spaces and a sign.
+---
+---
+--- [View documents](command:extension.lua.doc?["en-us/51/manual.html/pdf-tonumber"])
+---
+---@param e any The value to convert to a number.
+---@param base? integer The number base, default is `10`.
+---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
+function std.tonumber( e, base )
+    local fn = debug_getmetavalue( e, "__tonumber" )
+    if fn ~= nil then
+        return fn( e, base or 10 )
+    end
+
+    return nil
+end
+
+--- [SHARED AND MENU]
+---
+--- If `e` has a metamethod `__toboolean`, calls it with `e` as argument and returns its result.
+---
+--- Otherwise, returns `nil`.
+---
+---@param e any The value to convert to a `boolean`.
+---@return boolean | nil bool The boolean value of `e`, or `nil` if `e` cannot be converted to a boolean.
+function std.toboolean( e )
+    local fn = debug_getmetavalue( e, "__toboolean" )
+    if fn ~= nil then
+        return fn( e )
+    end
+
+    return nil
+end
+
+-- Alias for lazy developers
+std.tobool = std.toboolean
+
+--- [SHARED AND MENU]
+---
+--- If `value` has a metamethod `__tocolor`, calls it with `value` as argument and returns its result.
+---
+--- Otherwise, returns `nil`.
+---
+---@param value any The value to convert to a `color`.
+---@return dreamwork.std.Color | nil clr The color value of `value`, or `nil` if `value` cannot be converted to a color.
+function std.tocolor( value )
+    ---@type fun(value: any): dreamwork.std.Color | nil
+    local fn = debug_getmetavalue( value, "__tocolor" )
+    if fn ~= nil then
+        return fn( value )
+    end
+
+    return nil
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is valid.
+---
+---@param value any The value to check for validity.
+---@return boolean is_valid `true` if object is still valid and should be kept alive, `false` otherwise.
+function std.isValid( value )
+    local fn = debug_getmetavalue( value, "__isvalid" )
     if fn == nil then
-        return #value
+        return false
     else
         return fn( value )
     end
@@ -391,82 +526,6 @@ do
 
 end
 
---- [SHARED AND MENU]
----
---- If `e` has a metamethod `__tonumber`, calls it with `e` and `base` as arguments and returns its result.
----
---- When called with no `base`, `tonumber` tries to convert its argument to a number. If the argument is already a number or a string convertible to a number, then `tonumber` returns this number; otherwise, it returns `fail`.
----
---- The conversion of strings can result in integers or floats, according to the lexical conventions of Lua (see [§3.1](command:extension.lua.doc?["en-us/51/manual.html/3.1"])). The string may have leading and trailing spaces and a sign.
----
----
---- [View documents](command:extension.lua.doc?["en-us/51/manual.html/pdf-tonumber"])
----
----@param e any The value to convert to a number.
----@param base? integer The number base, default is `10`.
----@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
-function std.tonumber( e, base )
-    local fn = debug_getmetavalue( e, "__tonumber" )
-    if fn ~= nil then
-        return fn( e, base or 10 )
-    end
-
-    return nil
-end
-
---- [SHARED AND MENU]
----
---- If `e` has a metamethod `__toboolean`, calls it with `e` as argument and returns its result.
----
---- Otherwise, returns `nil`.
----
----@param e any The value to convert to a `boolean`.
----@return boolean | nil bool The boolean value of `e`, or `nil` if `e` cannot be converted to a boolean.
-function std.toboolean( e )
-    local fn = debug_getmetavalue( e, "__toboolean" )
-    if fn ~= nil then
-        return fn( e )
-    end
-
-    return nil
-end
-
--- Alias for lazy developers
-std.tobool = std.toboolean
-
---- [SHARED AND MENU]
----
---- If `value` has a metamethod `__tocolor`, calls it with `value` as argument and returns its result.
----
---- Otherwise, returns `nil`.
----
----@param value any The value to convert to a `color`.
----@return dreamwork.std.Color | nil clr The color value of `value`, or `nil` if `value` cannot be converted to a color.
-function std.tocolor( value )
-    ---@type fun(value: any): dreamwork.std.Color | nil
-    local fn = debug_getmetavalue( value, "__tocolor" )
-    if fn ~= nil then
-        return fn( value )
-    end
-
-    return nil
-end
-
---- [SHARED AND MENU]
----
---- Checks if the value is valid.
----
----@param value any
----@return boolean is_valid
-function std.isValid( value )
-    local fn = debug_getmetavalue( value, "__isvalid" )
-    if fn == nil then
-        return false
-    else
-        return fn( value )
-    end
-end
-
 -- math library
 dofile( "dreamwork/std/math.lua" )
 send( "dreamwork/std/math.lua" )
@@ -506,9 +565,163 @@ send( "dreamwork/std/table.lua" )
 dofile( "dreamwork/std/string.lua" )
 send( "dreamwork/std/string.lua" )
 
+---@class dreamwork.std.string
+local string = std.string
+
+local string_format = string.format
+local string_sub, string_len = string.sub, string.len
+local string_char, string_byte = string.char, string.byte
+
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the value of the given key path.
+    ---
+    --- If the key path does not exist, returns `nil`.
+    ---
+    --- Example:
+    ---
+    --- ```lua
+    ---     local t = { a = { b = { c = { d = { e = "e value!" } } } } }
+    ---     print( table.get( t, "a.b.c.d.e" ) ) -- e value!
+    --- ```
+    ---
+    ---@param tbl table The table to get the value from.
+    ---@param str string The key path to get.
+    ---@param separator? integer The separator of the key path, default is `0x2E`.
+    ---@param str_length? integer The length of the key path, default is `string.len( str )`.
+    ---@return any value The value of the key path.
+    function table.get( tbl, str, separator, start_position, end_position, str_length )
+        if separator == nil then
+            separator = 0x2E --[[ "." ]]
+        end
+
+        if str_length == nil then
+            str_length = string_len( str )
+        end
+
+        if start_position == nil then
+            start_position = 1
+        elseif start_position < 0 then
+            start_position = math_relative( start_position, str_length )
+        else
+            start_position = math_min( start_position, str_length )
+        end
+
+        if end_position == nil then
+            end_position = str_length
+        elseif end_position < 0 then
+            end_position = math_relative( end_position, str_length )
+        else
+            end_position = math_min( end_position, str_length )
+        end
+
+        if start_position > end_position then
+            return nil
+        end
+
+        local split_position = start_position - 1
+
+        ::table_lookup_loop::
+
+        if string_byte( str, start_position, start_position ) == separator then
+            if split_position ~= start_position then
+                tbl = tbl[ string_sub( str, split_position + 1, start_position - 1 ) ]
+                if tbl == nil then return nil end
+            end
+
+            split_position = start_position
+        end
+
+        if start_position ~= end_position then
+            start_position = start_position + 1
+            goto table_lookup_loop
+        end
+
+        if split_position ~= start_position then
+            tbl = tbl[ string_sub( str, split_position + 1, start_position ) ]
+        end
+
+        return tbl
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Sets the value of the given key path.
+    ---
+    --- Tables are created if they do not exist.
+    ---
+    --- Example:
+    ---
+    --- ```lua
+    ---     local t = {}
+    ---     table.set( t, "a.b.c.d.e", "e value!" )
+    ---     print( t.a.b.c.d.e ) -- e value!
+    --- ```
+    ---
+    ---@param tbl table The table to set the value in.
+    ---@param str string The key path.
+    ---@param value any The value to set.
+    ---@param separator? integer The separator of the key path, default is `0x2E`.
+    ---@param str_length? integer The length of the key path, default is `string.len( str )`.
+    function table.set( tbl, str, value, separator, str_length )
+        if separator == nil then
+            separator = 0x2E --[[ "." ]]
+        end
+
+        if str_length == nil then
+            str_length = string_len( str )
+        end
+
+        local split_position = 0
+        local position = 1
+
+        while true do
+            local uint8 = string_byte( str, position, position )
+            if uint8 == separator then
+                if split_position ~= position then
+                    local key = string_sub( str, split_position + 1, position - 1 )
+
+                    if position == str_length then
+                        tbl[ key ] = value
+                        return
+                    end
+
+                    local tbl_value = tbl[ key ]
+                    if tbl_value ~= nil and isTable( tbl_value ) then
+                        tbl = tbl_value
+                    else
+                        local new_tbl = {}
+                        tbl[ key ] = new_tbl
+                        tbl = new_tbl
+                    end
+                end
+
+                split_position = position
+            end
+
+            if position == str_length then
+                break
+            else
+                position = position + 1
+            end
+        end
+
+        if split_position ~= position then
+            tbl[ string_sub( str, split_position + 1, position ) ] = value
+        end
+    end
+
+end
+
 -- bit library
 dofile( "dreamwork/std/bit.lua" )
 send( "dreamwork/std/bit.lua" )
+
+-- fnv hash functions
+dofile( "dreamwork/std/fnv.lua" )
+send( "dreamwork/std/fnv.lua" )
 
 -- bytepack library
 dofile( "dreamwork/std/codec/bytepack.lua" )
@@ -525,6 +738,50 @@ send( "dreamwork/std/types/symbol.lua" )
 -- class library
 dofile( "dreamwork/std/class.lua" )
 send( "dreamwork/std/class.lua" )
+
+do
+
+    local debub_getmetatable = debug.getmetatable
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is a class.
+    ---
+    ---@param value any The value to check for being a class.
+    ---@return boolean is_class `true` if `value` is a class, `false` otherwise.
+    local function isclass( value )
+        return isTable( value ) and raw_get( value, "__base" ) ~= nil
+    end
+
+    std.isclass = isclass
+
+    local isInherited = std.class.isInherited
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param ... any The parent classes/metatables to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes, `false` otherwise.
+    function std.isInstance( object, ... )
+        local metatable = debub_getmetatable( object )
+
+        for i = 1, raw_select( "#", ... ) do
+            local parent = raw_select( i, ... )
+            if isclass( parent ) then
+                if isInherited( object, parent ) then
+                    return true
+                end
+            elseif metatable == parent then
+                return true
+            end
+        end
+
+        return false
+    end
+
+end
 
 -- queue class
 dofile( "dreamwork/std/types/queue.lua" )
@@ -598,12 +855,6 @@ dofile( "dreamwork/std/futures.lua" )
 send( "dreamwork/std/futures.lua" )
 
 std.sleep = std.futures.sleep
-
----@class dreamwork.std.string
-local string = std.string
-local string_format = string.format
-local string_sub, string_len = string.sub, string.len
-local string_char, string_byte = string.char, string.byte
 
 ---@class dreamwork.std.table
 local table = std.table
@@ -1062,26 +1313,6 @@ do
     end
 
     -- table ( 5 )
-    ---@diagnostic disable-next-line: undefined-global
-    if istable == nil then
-
-        local raw_type = raw.type
-
-        --- [SHARED AND MENU]
-        ---
-        --- Checks whether the value type is a `table`.
-        ---
-        ---@param value any
-        ---@return boolean is_table
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function std.isTable( value )
-            return raw_type( value ) == "table"
-        end
-
-    else
-        ---@diagnostic disable-next-line: undefined-global
-        std.isTable = istable
-    end
 
     -- function ( 6 )
     do
@@ -1159,180 +1390,6 @@ do
 end
 
 local isString = std.isString
-local isTable = std.isTable
-
---- [SHARED AND MENU]
----
---- Returns the value of the given key path.
----
---- If the key path does not exist, returns `nil`.
----
---- Example:
----
---- ```lua
----     local t = { a = { b = { c = { d = { e = "e value!" } } } } }
----     print( table.get( t, "a.b.c.d.e" ) ) -- e value!
---- ```
----@param tbl table The table to get the value from.
----@param str string The key path to get.
----@param separator? integer The separator of the key path, default is `0x2E`.
----@param str_length? integer The length of the key path, default is `string.len( str )`.
----@return any value The value of the key path.
-function table.get( tbl, str, separator, start_position, end_position, str_length )
-    if separator == nil then
-        separator = 0x2E --[[ "." ]]
-    end
-
-    if str_length == nil then
-        str_length = string_len( str )
-    end
-
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    if start_position > end_position then
-        return nil
-    end
-
-    local split_position = start_position - 1
-
-    ::table_lookup_loop::
-
-    if string_byte( str, start_position, start_position ) == separator then
-        if split_position ~= start_position then
-            tbl = tbl[ string_sub( str, split_position + 1, start_position - 1 ) ]
-            if tbl == nil then return nil end
-        end
-
-        split_position = start_position
-    end
-
-    if start_position ~= end_position then
-        start_position = start_position + 1
-        goto table_lookup_loop
-    end
-
-    if split_position ~= start_position then
-        tbl = tbl[ string_sub( str, split_position + 1, start_position ) ]
-    end
-
-    return tbl
-end
-
---- [SHARED AND MENU]
----
---- Sets the value of the given key path.
----
---- Tables are created if they do not exist.
----
---- Example:
----
---- ```lua
----     local t = {}
----     table.set( t, "a.b.c.d.e", "e value!" )
----     print( t.a.b.c.d.e ) -- e value!
---- ```
----
----@param tbl table The table to set the value in.
----@param str string The key path.
----@param value any The value to set.
----@param separator? integer The separator of the key path, default is `0x2E`.
----@param str_length? integer The length of the key path, default is `string.len( str )`.
-function table.set( tbl, str, value, separator, str_length )
-    if separator == nil then
-        separator = 0x2E --[[ "." ]]
-    end
-
-    if str_length == nil then
-        str_length = string_len( str )
-    end
-
-    local split_position = 0
-    local position = 1
-
-    while true do
-        local uint8 = string_byte( str, position, position )
-        if uint8 == separator then
-            if split_position ~= position then
-                local key = string_sub( str, split_position + 1, position - 1 )
-
-                if position == str_length then
-                    tbl[ key ] = value
-                    return
-                end
-
-                local tbl_value = tbl[ key ]
-                if tbl_value ~= nil and isTable( tbl_value ) then
-                    tbl = tbl_value
-                else
-                    local new_tbl = {}
-                    tbl[ key ] = new_tbl
-                    tbl = new_tbl
-                end
-            end
-
-            split_position = position
-        end
-
-        if position == str_length then
-            break
-        else
-            position = position + 1
-        end
-    end
-
-    if split_position ~= position then
-        tbl[ string_sub( str, split_position + 1, position ) ] = value
-    end
-end
-
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Creates a shallow copy of the given table.
-    ---
-    --- The original table is not modified.
-    ---
-    --- The returned table is a shallow copy of the original table.
-    ---
-    ---@param tbl table The table to copy.
-    ---@return table copy The copied table.
-    local function copy_fn( tbl )
-        local fn = debug_getmetavalue( tbl, "__copy" )
-        if fn ~= nil then
-            return fn( tbl )
-        end
-
-        local copy_tbl = {}
-
-        for key, value in raw_pairs( tbl ) do
-            if isTable( value ) then
-                copy_tbl[ key ] = copy_fn( value )
-            else
-                copy_tbl[ key ] = value
-            end
-        end
-
-        return copy_tbl
-    end
-
-    table.copy = copy_fn
-
-end
 
 -- path library
 dofile( "dreamwork/std/path.lua" )
@@ -1409,7 +1466,7 @@ end
 
 do
 
-    local raw_get = raw.get
+    local string_hasPrefix = string.hasPrefix
 
     --- [SHARED AND MENU]
     ---
@@ -1421,7 +1478,7 @@ do
     function raw.index( tbl, key )
         if isString( key ) then
             ---@cast key string
-            if string.hasPrefix( key, "__" ) then
+            if string_hasPrefix( key, "__" ) then
                 return nil
             end
         end
@@ -1483,13 +1540,13 @@ do
         ---@return function | nil
         local function input_select( inputs, ... )
             ---@type integer
-            local arg_count = select( "#", ... )
+            local arg_count = raw_select( "#", ... )
 
             ---@type string[]
             local arg_types = {}
 
             for i = 1, arg_count, 1 do
-                arg_types[ i ] = type( select( i, ... ) )
+                arg_types[ i ] = type( raw_select( i, ... ) )
             end
 
             for i = 1, inputs[ 0 ], 1 do
@@ -1593,12 +1650,12 @@ do
 
             return function( ... )
                 ---@type integer
-                local arg_count = select( "#", ... )
+                local arg_count = raw_select( "#", ... )
                 if arg_count ~= 1 then
                     return main_fn( ... )
                 end
 
-                if match == type( select( 1, ... ) ) then
+                if match == type( raw_select( 1, ... ) ) then
                     return overload_fn( ... )
                 else
                     return main_fn( ... )
@@ -1608,10 +1665,10 @@ do
 
         return function( ... )
             ---@type integer
-            local arg_count = select( "#", ... )
+            local arg_count = raw_select( "#", ... )
             if arg_count == required_args then
                 for i = 1, arg_count, 1 do
-                    if match[ i ] == type( select( i, ... ) ) then
+                    if match[ i ] == type( raw_select( i, ... ) ) then
                         if i == arg_count then
                             return overload_fn( ... )
                         end
@@ -1687,7 +1744,7 @@ do
     ---@param ... integer The indices of arguments to return.
     ---@return function fjn The created junction function.
     function std.junction( ... )
-        local out_arg_count = select( '#', ... )
+        local out_arg_count = raw_select( '#', ... )
         local out_args = { ... }
 
         local in_arg_count = 0
@@ -1728,6 +1785,14 @@ do
 
 end
 
+-- bigint class
+dofile( "dreamwork/std/types/bigint.lua" )
+send( "dreamwork/std/types/bigint.lua" )
+
+-- ip library
+dofile( "dreamwork/std/ip.lua" )
+send( "dreamwork/std/ip.lua" )
+
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 send( "dreamwork/engine.lua" )
@@ -1763,7 +1828,7 @@ do
         if message == nil then
             message = "unknown"
         else
-            message = tostring( message )
+            message = raw_tostring( message )
         end
 
         if stack_level == nil then
@@ -1839,16 +1904,16 @@ do
     ---@param ... any The arguments to print.
     ---@diagnostic disable-next-line: duplicate-set-field
     function std.print( ... )
-        local arg_count = select( "#", ... )
+        local arg_count = raw_select( "#", ... )
         if arg_count == 0 then
             engine_consoleMessage( "\n" )
         elseif arg_count == 1 then
-            engine_consoleMessage( tostring( ... ) .. "\n" )
+            engine_consoleMessage( raw_tostring( ... ) .. "\n" )
         else
             local args = { ... }
 
             for arg_num = 1, arg_count, 1 do
-                args[ arg_num ] = tostring( args[ arg_num ] )
+                args[ arg_num ] = raw_tostring( args[ arg_num ] )
             end
 
             engine_consoleMessage( table_concat( args, "\t", 1, arg_count ) .. "\n" )
@@ -1883,7 +1948,7 @@ do
             local color = realm_color
             local args = { ... }
 
-            for ang_num = 1, select( "#", ... ), 1 do
+            for ang_num = 1, raw_select( "#", ... ), 1 do
                 local value = args[ ang_num ]
                 if isString( value ) then
                     ---@cast value string
@@ -1895,7 +1960,7 @@ do
                     end
                 else
                     ---@cast value any
-                    engine_consoleMessageColored( tostring( value ), tocolor( value ) or color )
+                    engine_consoleMessageColored( raw_tostring( value ), tocolor( value ) or color )
                 end
             end
 
@@ -1921,7 +1986,7 @@ do
             fmt = fmt .. "\n"
             fmt_length = fmt_length + 1
 
-            local arg_count = select( "#", ... )
+            local arg_count = raw_select( "#", ... )
             local arg_index = 0
             local args = { ... }
 
@@ -2080,40 +2145,35 @@ send( "dreamwork/std/codec/vdf.lua" )
 dofile( "dreamwork/std/codec/xml.lua" )
 send( "dreamwork/std/codec/xml.lua" )
 
--- fnv hash library
-dofile( "dreamwork/std/hash/fnv.lua" )
-send( "dreamwork/std/hash/fnv.lua" )
-
--- md5 hash library
-dofile( "dreamwork/std/hash/md5.lua" )
-send( "dreamwork/std/hash/md5.lua" )
-
--- sha1 hash library
-dofile( "dreamwork/std/hash/sha1.lua" )
-send( "dreamwork/std/hash/sha1.lua" )
-
--- sha256 hash library
-dofile( "dreamwork/std/hash/sha256.lua" )
-send( "dreamwork/std/hash/sha256.lua" )
-
--- sha512 hash library
-dofile( "dreamwork/std/hash/sha512.lua" )
-send( "dreamwork/std/hash/sha512.lua" )
-
--- bigint class
-dofile( "dreamwork/std/types/bigint.lua" )
-send( "dreamwork/std/types/bigint.lua" )
-
--- uuid library
-dofile( "dreamwork/std/uuid.lua" )
-send( "dreamwork/std/uuid.lua" )
-
--- hook class
-dofile( "dreamwork/std/types/hook.lua" )
-send( "dreamwork/std/types/hook.lua" )
-
+--- [SHARED AND MENU]
+---
+--- A collection of cryptographic utilities.
+---
 ---@class dreamwork.std.crypto
 std.crypto = std.crypto or {}
+
+---@alias dreamwork.std.HashClass.digest fun( data: string ): string
+
+---@class dreamwork.std.HashClass : dreamwork.std.Class
+---@field digest dreamwork.std.HashClass.digest The digest function.
+---@field digest_size integer The size of the digest in bytes.
+---@field block_size integer The size of the block in bytes.
+
+-- md5 hash library
+dofile( "dreamwork/std/crypto/md5.lua" )
+send( "dreamwork/std/crypto/md5.lua" )
+
+-- sha1 hash library
+dofile( "dreamwork/std/crypto/sha1.lua" )
+send( "dreamwork/std/crypto/sha1.lua" )
+
+-- sha256 hash library
+dofile( "dreamwork/std/crypto/sha256.lua" )
+send( "dreamwork/std/crypto/sha256.lua" )
+
+-- sha512 hash library
+dofile( "dreamwork/std/crypto/sha512.lua" )
+send( "dreamwork/std/crypto/sha512.lua" )
 
 -- hmac library
 dofile( "dreamwork/std/crypto/hmac.lua" )
@@ -2124,6 +2184,14 @@ dofile( "dreamwork/std/crypto/pbkdf2.lua" )
 send( "dreamwork/std/crypto/pbkdf2.lua" )
 
 -- TODO: crypto.ed25519 & crypto.chacha20/xchacha
+
+-- uuid library
+dofile( "dreamwork/std/uuid.lua" )
+send( "dreamwork/std/uuid.lua" )
+
+-- hook class
+dofile( "dreamwork/std/types/hook.lua" )
+send( "dreamwork/std/types/hook.lua" )
 
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )

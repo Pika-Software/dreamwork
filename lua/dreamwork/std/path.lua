@@ -531,7 +531,7 @@ end
 
 do
 
-    local string_byteTrim = string.byteTrim
+    local string_trimByte = string.trimByte
     local len = std.len
 
     --- [SHARED AND MENU]
@@ -547,7 +547,7 @@ do
         end
 
         for index = 1, segment_count, 1 do
-            local segment = string_byteTrim( segments[ index ], 0x2F --[[ / ]] )
+            local segment = string_trimByte( segments[ index ], 0x2F --[[ / ]] )
             if string_byte( segment, 1, 1 ) == nil then
                 segments[ index ] = "."
             else

@@ -23,11 +23,13 @@ local time = std.time
 local engine = dreamwork.engine
 local engine_hookCatch = engine.hookCatch
 
-dofile( "std/game.lua" )
-
 dofile( "std/timer.lua" )
 dofile( "std/hook.lua" )
+
 dofile( "std/url.lua" )
+
+dofile( "std/game.lua" )
+
 
 if dreamwork.TickTimer0_05 == nil then
     local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )

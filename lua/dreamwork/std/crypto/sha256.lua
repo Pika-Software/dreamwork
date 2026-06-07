@@ -1,23 +1,22 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
----@class dreamwork.std.hash
-local hash = std.hash or {}
-std.hash = hash
+---@class dreamwork.std.crypto
+local crypto = std.crypto
 
 --- [SHARED AND MENU]
 ---
 --- SHA256 object.
 ---
----@class dreamwork.std.hash.SHA256 : dreamwork.std.Object
----@field __class dreamwork.std.hash.SHA256Class
+---@class dreamwork.std.crypto.SHA256 : dreamwork.std.Object
+---@field __class dreamwork.std.crypto.SHA256Class
 local SHA256 = std.class.base( "SHA256" )
 
----@alias SHA256 dreamwork.std.hash.SHA256
+---@alias SHA256 dreamwork.std.crypto.SHA256
 
 --- [SHARED AND MENU]
 ---
---- SHA256 class that computes a cryptographic 256-bit hash value.
+--- SHA256 class that computes a cryptographic 256-bit crypto value.
 ---
 --- Secure Hash Algorithm 256-bit, part of the SHA-2 family.
 ---
@@ -27,13 +26,13 @@ local SHA256 = std.class.base( "SHA256" )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
 ---
----@class dreamwork.std.hash.SHA256Class : dreamwork.std.hash.SHA256
----@field __base dreamwork.std.hash.SHA256
+---@class dreamwork.std.crypto.SHA256Class : dreamwork.std.crypto.SHA256
+---@field __base dreamwork.std.crypto.SHA256
 ---@field digest_size integer
 ---@field block_size integer
----@overload fun(): dreamwork.std.hash.SHA256
+---@overload fun(): dreamwork.std.crypto.SHA256
 local SHA256Class = std.class.create( SHA256 )
-hash.SHA256 = SHA256Class
+crypto.SHA256 = SHA256Class
 
 SHA256Class.digest_size = 32
 SHA256Class.block_size = 64

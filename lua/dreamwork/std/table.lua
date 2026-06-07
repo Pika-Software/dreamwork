@@ -6,15 +6,20 @@ local std = dreamwork.std
 local len = std.len
 local next = std.next
 local select = std.select
+local isTable = std.isTable
+
+local raw = std.raw
+local raw_pairs = raw.pairs
+
+local debug = std.debug
+local debug_iscf = debug.iscf
+local debug_getmetavalue = debug.getmetavalue
 
 local math = std.math
 local math_min = math.min
 local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
-
-local debug = std.debug
-local debug_iscf = debug.iscf
 
 --- [SHARED AND MENU]
 ---
@@ -1009,4 +1014,39 @@ function table.removeByRange( tbl, start_position, end_position, tbl_length )
     for index = end_position + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
+end
+
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Creates a shallow copy of the given table.
+    ---
+    --- The original table is not modified.
+    ---
+    --- The returned table is a shallow copy of the original table.
+    ---
+    ---@param tbl table The table to copy.
+    ---@return table copy The copied table.
+    local function copy_fn( tbl )
+        local fn = debug_getmetavalue( tbl, "__copy" )
+        if fn ~= nil then
+            return fn( tbl )
+        end
+
+        local copy_tbl = {}
+
+        for key, value in raw_pairs( tbl ) do
+            if isTable( value ) then
+                copy_tbl[ key ] = copy_fn( value )
+            else
+                copy_tbl[ key ] = value
+            end
+        end
+
+        return copy_tbl
+    end
+
+    table.copy = copy_fn
+
 end

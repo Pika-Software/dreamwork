@@ -1,9 +1,7 @@
----@class dreamwork.std
 local std = dreamwork.std
 
----@class dreamwork.std.hash
-local hash = std.hash or {}
-std.hash = hash
+---@class dreamwork.std.crypto
+local crypto = std.crypto
 
 local bit = std.bit
 local bit_bxor = bit.bxor
@@ -28,11 +26,11 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---
 --- SHA1 object.
 ---
----@class dreamwork.std.hash.SHA1 : dreamwork.std.Object
----@field __class dreamwork.std.hash.SHA1Class
+---@class dreamwork.std.crypto.SHA1 : dreamwork.std.Object
+---@field __class dreamwork.std.crypto.SHA1Class
 local SHA1 = std.class.base( "SHA1" )
 
----@alias SHA1 dreamwork.std.hash.SHA1
+---@alias SHA1 dreamwork.std.crypto.SHA1
 --- [SHARED AND MENU]
 ---
 --- SHA1 class that computes a cryptographic 160-bit hash value.
@@ -50,13 +48,13 @@ local SHA1 = std.class.base( "SHA1" )
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
 ---
----@class dreamwork.std.hash.SHA1Class : dreamwork.std.hash.SHA1
----@field __base dreamwork.std.hash.SHA1
+---@class dreamwork.std.crypto.SHA1Class : dreamwork.std.crypto.SHA1
+---@field __base dreamwork.std.crypto.SHA1
 ---@field digest_size integer
 ---@field block_size integer
----@overload fun(): dreamwork.std.hash.SHA1
+---@overload fun(): dreamwork.std.crypto.SHA1
 local SHA1Class = std.class.create( SHA1 )
-hash.SHA1 = SHA1Class
+crypto.SHA1 = SHA1Class
 
 SHA1Class.digest_size = 20
 SHA1Class.block_size = 64

@@ -7,8 +7,6 @@ local std = dreamwork.std
 local assert = std.assert
 local pcall = std.pcall
 
-local isTable = std.isTable
-local isNumber = std.isNumber
 local isString = std.isString
 local isCallable = std.isCallable
 
