@@ -20,7 +20,9 @@ local bytepack = std.bytepack
 local bytepack_readUInt32 = bytepack.readUInt32
 local bytepack_writeUInt32 = bytepack.writeUInt32
 
+---@alias dreamwork.std.IPv4.Class "A" | "B" | "C" | "D" | "E"
 ---@alias dreamwork.std.IPv4 integer
+
 ---@alias dreamwork.std.IPv6 string
 
 --- [SHARED AND MENU]
@@ -93,8 +95,8 @@ function v4.parse( str )
     octets[ octet_index ] = math_clamp( string_toNumber( str, 10, std_index, std_index + octet_length - 1 ) or 0, 0, 255 )
 
     if octet_position ~= nil and octet_index ~= 4 then
-        octet_index = octet_index + 1
         std_index = octet_position + 1
+        octet_index = octet_index + 1
         goto parse_octet
     end
 
@@ -268,13 +270,12 @@ do
         return ip_address == 0
     end
 
-    ---@class dreamwork.std.ip.v4.Network
+    ---@class dreamwork.std.ip.v4.NetworkVar
     ---@field [1] dreamwork.std.IPv4 The network address.
     ---@field [2] dreamwork.std.IPv4 The broadcast address.
 
-    ---@param ranges string[] The network ranges.
-    ---@return dreamwork.std.ip.v4.Network[] The network ranges.
-    ---@return integer range_count The number of network ranges.
+    ---@param ranges string[]
+    ---@return dreamwork.std.ip.v4.NetworkVar[], integer
     local function network_ranges( ranges )
         local range_count = #ranges
         local result = {}
@@ -345,10 +346,40 @@ do
         return not isPrivate( ip_address )
     end
 
+    local classes = {
+        { "A", v4.parse( "0.0.0.0" ),   v4.parse( "127.255.255.255" ) },
+        { "B", v4.parse( "128.0.0.0" ), v4.parse( "191.255.255.255" ) },
+        { "C", v4.parse( "192.0.0.0" ), v4.parse( "223.255.255.255" ) },
+        { "D", v4.parse( "224.0.0.0" ), v4.parse( "239.255.255.255" ) },
+        -- { "E", v4.parse( "240.0.0.0" ), v4.parse( "255.255.255.255" ) },
+    }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the class of the given IP address.
+    ---
+    ---@param ip_address dreamwork.std.IPv4
+    ---@return dreamwork.std.IPv4.Class
+    function v4.class( ip_address )
+        for i = 1, 4, 1 do
+            local data = classes[ i ]
+            if inRange( ip_address, data[ 2 ], data[ 3 ] ) then
+                return data[ 1 ]
+            end
+        end
+
+        return "E"
+    end
+
 end
 
+--- [SHARED AND MENU]
+---
+---
+---
 ---@class dreamwork.std.ip.v6
 local v6 = {}
 ip.v6 = v6
+
 
 -- TODO: ipv6
