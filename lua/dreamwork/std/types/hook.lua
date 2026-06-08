@@ -328,7 +328,9 @@ do
                 self[ index - 1 ]( ... )
             elseif hook_type == 1 then -- post hook return
                 local value = self[ index - 1 ]( result, ... )
-                if value ~= nil then result = value end
+                if value ~= nil then
+                    result = value
+                end
             elseif hook_type ~= 2 then -- pre hook return and normal hook
                 local value = self[ index - 1 ]( ... )
                 if value ~= nil then

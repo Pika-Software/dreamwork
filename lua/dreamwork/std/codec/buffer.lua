@@ -3402,7 +3402,7 @@ do
     ---
     --- Serializes the specified object.
     ---
-    ---@param obj dreamwork.std.Object The object to serialize.
+    ---@param obj dreamwork.Metatable The object to serialize.
     ---@param data? any The additional data to pass to the serialization method.
     function Writer:serialize( obj, data )
         ---@type dreamwork.std.Object | nil
@@ -3447,7 +3447,7 @@ do
     ---
     --- Deserializes the data into the specified object or if it is a class, into a new empty object.
     ---
-    ---@param value dreamwork.std.Object | dreamwork.std.Class The object to deserialize into or a class to create a new object.
+    ---@param value dreamwork.Metatable | dreamwork.std.Class | dreamwork.std.Object The object to deserialize into or a class to create a new object.
     ---@param data? any The additional data to pass to the deserialization method.
     ---@return dreamwork.std.Object obj The deserialized object.
     function Reader:deserialize( value, data )
