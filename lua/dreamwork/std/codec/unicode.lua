@@ -21,7 +21,7 @@ local raw_tonumber = std.raw.tonumber
 ---
 ---@class dreamwork.std.unicode
 ---@field MAX integer The maximum number of characters that can be stored in a unicode string.
-local unicode = std.unicode or {}
+local unicode = {}
 std.unicode = unicode
 
 unicode.MAX = 0x10FFFF

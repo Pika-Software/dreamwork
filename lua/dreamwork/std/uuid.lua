@@ -14,7 +14,7 @@ local bit_band, bit_bor = bit.band, bit.bor
 --- The UUID generation library.
 ---
 ---@class dreamwork.std.uuid
-local uuid = std.uuid or {}
+local uuid = {}
 std.uuid = uuid
 
 do

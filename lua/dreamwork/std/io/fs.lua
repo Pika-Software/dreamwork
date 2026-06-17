@@ -48,8 +48,8 @@ local table_remove = table.remove
 local string = std.string
 local string_len = string.len
 local string_byte = string.byte
-local string_hasByte = string.hasByte
 local string_byteSplit = string.byteSplit
+local string_containsByte = string.containsByte
 
 local class = std.class
 
@@ -2622,7 +2622,7 @@ do
     function Directory:select( wildcard )
         if wildcard == nil then
             wildcard = "*"
-        elseif string_hasByte( wildcard, 0x2F --[[ / ]] ) then
+        elseif string_containsByte( wildcard, 0x2F --[[ / ]] ) then
             error( "wildcard cannot contain '/'", 2 )
         end
 

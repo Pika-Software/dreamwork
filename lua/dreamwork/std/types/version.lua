@@ -4,7 +4,8 @@ local std = dreamwork.std
 local raw = std.raw
 local raw_tonumber = raw.tonumber
 
-local gc_setTableRules = std.gc.setTableRules
+local gc = std.gc
+local gc_setTableRules = gc.setTableRules
 
 local bit = std.bit
 local bit_bor, bit_lshift = bit.bor, bit.lshift

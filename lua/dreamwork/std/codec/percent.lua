@@ -66,8 +66,9 @@ do
     ---@param raw_str string The string to encode.
     ---@param whitelist? table The character whitelist, optional.
     ---@param ignore_spaces? boolean Ignore spaces, optional.
+    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
     ---@return string percent_str The encoded string.
-    function percent.encode( raw_str, whitelist, ignore_spaces )
+    function percent.encode( raw_str, whitelist, ignore_spaces, str_length )
         local segments, segment_count = {}, 0
 
         if whitelist == nil then
@@ -78,7 +79,7 @@ do
 
         local uint8_last
 
-        for i = 1, string_len( raw_str ), 1 do
+        for i = 1, str_length or string_len( raw_str ), 1 do
             local uint8 = string_byte( raw_str, i, i )
 
             if whitelist[ uint8 ] then
@@ -138,17 +139,23 @@ do
         ---@param percent_str string The percent string to validate.
         ---@param whitelist? table The character whitelist, optional.
         ---@param ignore_spaces? boolean Ignore spaces, optional.
+        ---@param percent_str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
         ---@return boolean is_valid `true` if the percent string is valid, otherwise `false`.
         ---@return nil | string err_msg The error message.
-        function percent.validate( percent_str, whitelist, ignore_spaces )
-            local percent_str_length = string_len( percent_str ) + 1
-            local position = 1
-
+        function percent.validate( percent_str, whitelist, ignore_spaces, percent_str_length )
             if whitelist == nil then
                 whitelist = default_whitelist
             end
 
             ignore_spaces = ignore_spaces ~= true
+
+            if percent_str_length == nil then
+                percent_str_length = string_len( percent_str )
+            end
+
+            percent_str_length = percent_str_length + 1
+
+            local position = 1
 
             while position ~= percent_str_length do
                 local uint8_0 = string_byte( percent_str, position, position )
@@ -184,12 +191,19 @@ do
     ---
     ---@param percent_str string The string to decode.
     ---@param ignore_spaces? boolean Ignore spaces, optional.
+    ---@param percent_str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
     ---@return string raw_str The decoded string.
-    function percent.decode( percent_str, ignore_spaces )
-        local position, str_length = 1, string_len( percent_str )
-        local segments, segment_count = {}, 0
+    function percent.decode( percent_str, ignore_spaces, percent_str_length )
+        ignore_spaces = ignore_spaces ~= true
 
-        while position ~= str_length do
+        if percent_str_length == nil then
+            percent_str_length = string_len( percent_str )
+        end
+
+        local segments, segment_count = {}, 0
+        local position = 1
+
+        while position ~= percent_str_length do
             local uint8_1 = string_byte( percent_str, position, position )
             if uint8_1 == 0x25 --[[ "%" ]] then
                 segment_count = segment_count + 1
@@ -203,7 +217,7 @@ do
                     segments[ segment_count ] = string_char( decoded_uint8 )
                 end
 
-                position = math_min( position + 3, str_length )
+                position = math_min( position + 3, percent_str_length )
             elseif uint8_1 == 0x2B --[[ "+" ]] and not ignore_spaces then
                 segment_count = segment_count + 1
                 segments[ segment_count ] = "\32"

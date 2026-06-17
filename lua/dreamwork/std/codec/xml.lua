@@ -9,11 +9,14 @@ local gc = std.gc
 local table = std.table
 local table_concat = table.concat
 
+local ascii = std.ascii
+local ascii_isSpace = ascii.isSpace
+
 local string = std.string
+local string_sub = string.sub
 local string_len, string_rep = string.len, string.rep
 local string_char, string_byte = string.char, string.byte
 local string_find, string_format = string.find, string.format
-local string_isSpace, string_sub = string.isSpace, string.sub
 local string_trim, string_isEmpty = string.trim, string.isEmpty
 local string_match, string_gmatch = string.match, string.gmatch
 
@@ -480,7 +483,7 @@ function xml.deserialize( xml_str )
     end
 
     -- XML Declaration
-    if b1 == 0x3F --[[ ? ]] and b2 == 0x78 --[[ x ]] and b3 == 0x6D --[[ m ]] and b4 == 0x6C --[[ l ]] and string_isSpace( b5 ) then
+    if b1 == 0x3F --[[ ? ]] and b2 == 0x78 --[[ x ]] and b3 == 0x6D --[[ m ]] and b4 == 0x6C --[[ l ]] and ascii_isSpace( b5 ) then
         position = (xml_end or position) + 1
         goto analyze_loop
     end

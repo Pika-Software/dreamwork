@@ -23,11 +23,6 @@ local time = std.time
 local engine = dreamwork.engine
 local engine_hookCatch = engine.hookCatch
 
-dofile( "std/timer.lua" )
-dofile( "std/hook.lua" )
-
-dofile( "std/url.lua" )
-
 dofile( "std/game.lua" )
 
 

@@ -561,6 +561,10 @@ send( "dreamwork/std/gc.lua" )
 dofile( "dreamwork/std/table.lua" )
 send( "dreamwork/std/table.lua" )
 
+-- ascii library
+dofile( "dreamwork/std/ascii.lua" )
+send( "dreamwork/std/ascii.lua" )
+
 -- string library
 dofile( "dreamwork/std/string.lua" )
 send( "dreamwork/std/string.lua" )
@@ -1789,6 +1793,10 @@ end
 dofile( "dreamwork/std/types/bigint.lua" )
 send( "dreamwork/std/types/bigint.lua" )
 
+-- hook class
+dofile( "dreamwork/std/types/hook.lua" )
+send( "dreamwork/std/types/hook.lua" )
+
 -- ip library
 dofile( "dreamwork/std/ip.lua" )
 send( "dreamwork/std/ip.lua" )
@@ -1796,6 +1804,10 @@ send( "dreamwork/std/ip.lua" )
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 send( "dreamwork/engine.lua" )
+
+-- timer class
+dofile( "dreamwork/std/engine/types/timer.lua" )
+send( "dreamwork/std/engine/types/timer.lua" )
 
 local engine = dreamwork.engine
 
@@ -2144,6 +2156,10 @@ send( "dreamwork/std/codec/vdf.lua" )
 -- xml encoding library
 dofile( "dreamwork/std/codec/xml.lua" )
 send( "dreamwork/std/codec/xml.lua" )
+
+-- url class
+dofile( "dreamwork/std/types/url.lua" )
+send( "dreamwork/std/types/url.lua" )
 
 --- [SHARED AND MENU]
 ---

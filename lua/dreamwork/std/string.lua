@@ -203,15 +203,15 @@ end
 ---
 --- Extracts a string from the other string.
 ---
----@param str string The string to extract from.
----@param pattern_str string The pattern or searchable to extract by.
----@param start_position? integer The start position to extract from.
----@param default? string | nil The default string that is returned if no matches are found.
----@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
+---@param str             string       The string to extract from.
+---@param searchable      string       The pattern or searchable to extract by.
+---@param start_position? integer      The start position to extract from.
+---@param default?        string | nil The default string that is returned if no matches are found.
+---@param with_pattern?   boolean      When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return string new_string The new string without the extracted string.
 ---@return string | nil extracted The extracted string, otherwise the default string.
-function string.extract( str, pattern_str, start_position, default, with_pattern )
-    local extraction_start, extraction_end, str_matched = string_find( str, pattern_str, start_position or 1, with_pattern ~= true )
+function string.extract( str, searchable, start_position, default, with_pattern )
+    local extraction_start, extraction_end, str_matched = string_find( str, searchable, start_position or 1, with_pattern ~= true )
     if extraction_start == nil then
         return str, default
     else
@@ -324,11 +324,11 @@ end
 ---
 --- Checks if the string contains the searchable string.
 ---
----@param str string
----@param searchable string The searchable string.
----@param position? integer The position to start from.
----@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@param str           string  The string to search in.
+---@param searchable    string  The substring or pattern to search for.
+---@param position?     integer The position to start from.
+---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param str_length?   integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer index The index of the searchable string, otherwise `-1`.
 function string.indexOf( str, searchable, position, with_pattern, str_length )
     if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
@@ -392,22 +392,22 @@ end
 ---
 --- Splits the string into an array, using the specified pattern.
 ---
----@param str string The string to split.
----@param pattern_str? string The pattern to split by.
----@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
+---@param str             string  The string to split.
+---@param searchable      string  The substring or pattern to split by.
+---@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@param start_position? integer The start position to split from.
----@param end_position? integer The end position to split to.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@param end_position?   integer The end position to split to.
+---@param str_length?     integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string[] segments The string array.
 ---@return integer segment_count The length of the array.
-function string.split( str, pattern_str, with_pattern, start_position, end_position, str_length )
+function string.split( str, searchable, with_pattern, start_position, end_position, str_length )
     local segments = {}
 
     if str_length == nil then
         str_length = string_len( str )
     end
 
-    if pattern_str == nil or string_byte( pattern_str, 1, 1 ) == nil then
+    if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
         for index = 1, str_length, 1 do
             segments[ index ] = string_sub( str, index, index )
         end
@@ -437,7 +437,7 @@ function string.split( str, pattern_str, with_pattern, start_position, end_posit
 
     ::split_loop::
 
-    local segment_start, segment_end = string_find( str, pattern_str, start_position, with_pattern )
+    local segment_start, segment_end = string_find( str, searchable, start_position, with_pattern )
     if segment_start == nil or start_position > end_position then
         segment_count = segment_count + 1
         ---@diagnostic disable-next-line: param-type-mismatch
@@ -460,17 +460,17 @@ end
 ---
 --- Returns the number of matches of a string.
 ---
----@param str string The string to count.
----@param pattern_str? string The pattern to count by.
----@param with_pattern? boolean If set to `true`, `pattern_str` will be used as a pattern.
----@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@param str           string  The string to count.
+---@param searchable    string  The substring or pattern to count by.
+---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param str_length?   integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return integer match_count The number of matches.
-function string.count( str, pattern_str, with_pattern, str_length )
+function string.count( str, searchable, with_pattern, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end
 
-    if pattern_str == nil or string_byte( pattern_str, 1, 1 ) == nil then
+    if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
         return str_length
     end
 
@@ -480,7 +480,7 @@ function string.count( str, pattern_str, with_pattern, str_length )
 
     ::count_loop::
 
-    local start_position, end_position = string_find( str, pattern_str, index, with_pattern )
+    local start_position, end_position = string_find( str, searchable, index, with_pattern )
     if start_position == nil or index > str_length then
         return length
     end
@@ -775,6 +775,24 @@ string.byteSplit = byte_split
 
 --- [SHARED AND MENU]
 ---
+--- Checks if `str` contains `searchable`.
+---
+--- Wraps `string.find` and returns `true` if a match is found at or after
+--- `start_position`. By default the search is treated as a plain substring
+--- match; pass `with_pattern = true` to interpret `searchable` as a Lua
+--- pattern instead.
+---
+---@param str             string  The string to search in.
+---@param searchable      string  The substring or pattern to search for.
+---@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param start_position? integer The byte position to start searching from. Defaults to `1`. Negative values count from the end of the string.
+---@return boolean found `true` if `searchable` was found within `str`, `false` otherwise.
+function string.contains( str, searchable, with_pattern, start_position )
+    return string_find( str, searchable, start_position, with_pattern ~= true ) ~= nil
+end
+
+--- [SHARED AND MENU]
+---
 --- Checks if the string contains the specified byte.
 ---
 ---@param str string The string to check.
@@ -783,7 +801,7 @@ string.byteSplit = byte_split
 ---@param end_position? integer The end position to check to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return boolean has_byte `true` if the string contains the byte, `false` otherwise.
-function string.hasByte( str, byte, start_position, end_position, str_length )
+function string.containsByte( str, byte, start_position, end_position, str_length )
     if str_length == nil then
         str_length = string_len( str )
     end
@@ -804,13 +822,12 @@ function string.hasByte( str, byte, start_position, end_position, str_length )
         end_position = math_min( end_position, str_length )
     end
 
-    ::has_byte_loop::
+    local step = (start_position < end_position) and 1 or -1
 
-    if string_byte( str, start_position, start_position ) == byte then
-        return true
-    elseif start_position ~= end_position then
-        start_position = start_position + 1
-        goto has_byte_loop
+    for index = start_position, end_position, step do
+        if string_byte( str, index, index ) == byte then
+            return true
+        end
     end
 
     return false
@@ -892,10 +909,10 @@ do
     ---
     --- Replaces all occurrences of the supplied second string.
     ---
-    ---@param str string The string we are seeking to replace an occurrence(s).
-    ---@param searchable string What we are seeking to replace.
-    ---@param replaceable string What to replace find with.
-    ---@param with_pattern? boolean Whether to use pattern or not.
+    ---@param str           string  The string we are seeking to replace an occurrence(s).
+    ---@param searchable    string  What we are seeking to replace.
+    ---@param replaceable   string  What to replace find with.
+    ---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
     ---@return string new_string The new string with the occurrences replaced.
     function string.replace( str, searchable, replaceable, with_pattern )
         if with_pattern then
@@ -1399,72 +1416,6 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
     end
 
     return table_concat( segments, "", 1, segment_count )
-end
-
-do
-
-    ---@type table<integer, boolean>
-    local space_characters = {
-        [ 0x20 ] = true, -- space
-        [ 0x09 ] = true, -- horizontal tab
-        [ 0x0A ] = true, -- line feed ( new line )
-        [ 0x0B ] = true, -- vertical tab
-        [ 0x0C ] = true, -- form feed
-        [ 0x0D ] = true  -- carriage return
-    }
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the byte is a space character.
-    ---
-    ---@param uint_8 integer The byte to check.
-    ---@return boolean is_space `true` if the byte is a space character, `false` otherwise.
-    function string.isSpace( uint_8 )
-        return space_characters[ uint_8 ] == true
-    end
-
-end
-
-do
-
-    ---@type table<integer, boolean>
-    local hex_characters = {
-        [ 0x30 ] = true,
-        [ 0x31 ] = true,
-        [ 0x32 ] = true,
-        [ 0x33 ] = true,
-        [ 0x34 ] = true,
-        [ 0x35 ] = true,
-        [ 0x36 ] = true,
-        [ 0x37 ] = true,
-        [ 0x38 ] = true,
-        [ 0x39 ] = true,
-
-        [ 0x41 ] = true,
-        [ 0x42 ] = true,
-        [ 0x43 ] = true,
-        [ 0x44 ] = true,
-        [ 0x45 ] = true,
-        [ 0x46 ] = true,
-
-        [ 0x61 ] = true,
-        [ 0x62 ] = true,
-        [ 0x63 ] = true,
-        [ 0x64 ] = true,
-        [ 0x65 ] = true,
-        [ 0x66 ] = true
-    }
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if a byte is a valid hex character.
-    ---
-    ---@param uint_8 integer The byte to check. (integer<0-255>)
-    ---@return boolean is_hex Whether the byte is a valid hex character.
-    function string.isHexChar( uint_8 )
-        return hex_characters[ uint_8 ]
-    end
-
 end
 
 --- [SHARED AND MENU]

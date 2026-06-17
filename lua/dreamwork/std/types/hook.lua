@@ -46,8 +46,6 @@ local string_meta = debug.findmetatable( "string" )
 ---@operator call: any
 local Hook = std.class.base( "Hook" )
 
----@alias Hook dreamwork.std.Hook
-
 --- [SHARED AND MENU]
 ---
 --- Hook class.

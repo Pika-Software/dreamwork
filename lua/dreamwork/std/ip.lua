@@ -55,6 +55,40 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the octets of an IPv4 address.
+---
+---@param ip_address dreamwork.std.IPv4 The IP address.
+---@return integer a The first octet. <0-255>
+---@return integer b The second octet. <0-255>
+---@return integer c The third octet. <0-255>
+---@return integer d The fourth octet. <0-255>
+function v4.octets( ip_address )
+    local d, c, b, a = bytepack_writeUInt32( ip_address )
+    return a, b, c, d
+end
+
+--- [SHARED AND MENU]
+---
+--- Build IPv4 address from octets.
+---
+---@param a integer The first octet. <0-255>
+---@param b integer The second octet. <0-255>
+---@param c integer The third octet. <0-255>
+---@param d integer The fourth octet. <0-255>
+---@return dreamwork.std.IPv4
+local function fromOctets( a, b, c, d )
+    return bytepack_readUInt32(
+        math_clamp( d, 0, 255 ),
+        math_clamp( c, 0, 255 ),
+        math_clamp( b, 0, 255 ),
+        math_clamp( a, 0, 255 )
+    )
+end
+
+v4.fromOctets = fromOctets
+
+--- [SHARED AND MENU]
+---
 --- Parses an IPv4 address string into an IP address and subnet mask.
 ---
 ---@param str string The IPv4 address string to parse.
@@ -92,7 +126,7 @@ function v4.parse( str )
         std.errorf( 2, false, "Octet %d cannot be longer than 3 characters.", octet_index )
     end
 
-    octets[ octet_index ] = math_clamp( string_toNumber( str, 10, std_index, std_index + octet_length - 1 ) or 0, 0, 255 )
+    octets[ octet_index ] = string_toNumber( str, 10, std_index, std_index + octet_length - 1 ) or 0
 
     if octet_position ~= nil and octet_index ~= 4 then
         std_index = octet_position + 1
@@ -110,7 +144,7 @@ function v4.parse( str )
         mask = math_clamp( string_toNumber( str, 10, cdir_position + 1, str_length ) or 32, 0, 32 )
     end
 
-    return bytepack_readUInt32( octets[ 4 ], octets[ 3 ], octets[ 2 ], octets[ 1 ] ), mask
+    return fromOctets( octets[ 1 ], octets[ 2 ], octets[ 3 ], octets[ 4 ] ), mask
 end
 
 --- [SHARED AND MENU]
@@ -126,20 +160,6 @@ function v4.cdir( ip_address, mask )
     local boardcast_address = bit_bor( network_address, bin_inverted_masks[ mask ] )
 
     return bit_unsign( network_address ), bit_unsign( boardcast_address )
-end
-
---- [SHARED AND MENU]
----
---- Returns the octets of an IPv4 address.
----
----@param ip_address dreamwork.std.IPv4 The IP address.
----@return dreamwork.std.IPv4 a The first octet.
----@return dreamwork.std.IPv4 b The second octet.
----@return dreamwork.std.IPv4 c The third octet.
----@return dreamwork.std.IPv4 d The fourth octet.
-function v4.octets( ip_address )
-    local d, c, b, a = bytepack_writeUInt32( ip_address )
-    return a, b, c, d
 end
 
 --- [SHARED AND MENU]

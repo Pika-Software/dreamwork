@@ -97,7 +97,7 @@ do
         end
 
         -- we are unable to store null bytes in sqlite
-        if string.hasByte( content, 0x00 ) then
+        if string.containsByte( content, 0x00 ) then
             if ignore_errors then
                 return
             end

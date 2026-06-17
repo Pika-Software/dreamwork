@@ -1,10 +1,12 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local ascii = std.ascii
+local ascii_isHexDigit = ascii.isHexDigit
+
 local string = std.string
 local string_len = string.len
 local string_format = string.format
-local string_isHexChar = string.isHexChar
 local string_byte, string_char = string.byte, string.char
 
 local bit = std.bit
@@ -250,7 +252,7 @@ color_lib.toHex = toHex
 local function fromByte( uint8 )
     if uint8 == nil then
         return nil
-    elseif string_isHexChar( uint8 ) then
+    elseif ascii_isHexDigit( uint8 ) then
         return bytepack_readHex8( uint8, uint8 )
     else
         return uint8
