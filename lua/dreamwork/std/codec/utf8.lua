@@ -1,6 +1,9 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_select = raw.select
+
 local string = std.string
 local string_len, string_sub = string.len, string.sub
 local string_char, string_byte = string.char, string.byte
@@ -16,8 +19,6 @@ local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 local table = std.table
 local table_unpack = table.unpack
 local table_concat = table.concat
-
-local select = std.select
 
 --- [SHARED AND MENU]
 ---
@@ -652,7 +653,7 @@ function utf8.char( a, b, ... )
     if b == nil then
         return encode( a, true, 2 )
     else
-        return pack( { a, b, ... }, select( "#", a, b, ... ), true )
+        return pack( { a, b, ... }, raw_select( "#", a, b, ... ), true )
     end
 end
 
@@ -683,7 +684,15 @@ function utf8.offset( utf8_string, index, offset, lax, str_length )
         offset = math_min( offset, str_length )
     end
 
-    if index < 0 then
+    if index == 0 then
+        local strict = lax ~= true
+
+        while offset ~= 0 and raw_select( 2, seqlen( utf8_string, offset, str_length, strict ) ) ~= nil do
+            offset = offset - 1
+        end
+
+        return offset
+    elseif index < 0 then
         local sequence_length, error_position = len( utf8_string, offset, str_length, lax )
 
         if sequence_length == nil then
@@ -706,7 +715,7 @@ function utf8.offset( utf8_string, index, offset, lax, str_length )
             offset = offset + seqlen( utf8_string, offset, str_length, false )
             utf8_codepoint_count = utf8_codepoint_count + 1
         end
-    until offset >= str_length
+    until offset > str_length
 
     return nil
 end
