@@ -63,8 +63,6 @@ end
 local decode
 do
 
-    local cache = {}
-
     ---@param utf8_string string
     ---@param index integer
     ---@param str_length integer
@@ -100,13 +98,6 @@ do
             return uint8_1, nil
         end
 
-        local cache_key = string_sub( utf8_string, index, index + (sequence_length - 1) )
-
-        local cached = cache[ cache_key ]
-        if cached ~= nil then
-            return cached, sequence_length
-        end
-
         str_length = str_length + 1
         index = index + 1
 
@@ -125,13 +116,10 @@ do
                 std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_2, index )
             end
 
-            local utf8_codepoint = bit_bor(
+            return bit_bor(
                 bit_lshift( bit_band( uint8_1, 0x1F ), 6 ),
                 bit_band( uint8_2, 0x3F )
-            )
-
-            cache[ cache_key ] = utf8_codepoint
-            return utf8_codepoint, 2
+            ), 2
         end
 
         index = index + 1
@@ -157,14 +145,11 @@ do
                 end
             end
 
-            local utf8_codepoint = bit_bor(
+            return bit_bor(
                 bit_lshift( bit_band( uint8_1, 0x0F ), 12 ),
                 bit_lshift( bit_band( uint8_2, 0x3F ), 6 ),
                 bit_band( uint8_3, 0x3F )
-            )
-
-            cache[ cache_key ] = utf8_codepoint
-            return utf8_codepoint, 3
+            ), 3
         end
 
         index = index + 1
@@ -190,15 +175,12 @@ do
                 end
             end
 
-            local utf8_codepoint = bit_bor(
+            return bit_bor(
                 bit_lshift( bit_band( uint8_1, 0x07 ), 18 ),
                 bit_lshift( bit_band( uint8_2, 0x3F ), 12 ),
                 bit_lshift( bit_band( uint8_3, 0x3F ), 6 ),
                 bit_band( uint8_4, 0x3F )
-            )
-
-            cache[ cache_key ] = utf8_codepoint
-            return utf8_codepoint, 4
+            ), 4
         end
 
         if strict then
@@ -255,7 +237,7 @@ do
                 bit_bor( 0x80, bit_band( utf8_codepoint, 0x3F ) )
             )
         elseif strict then
-            std.errorf( (stack_level or 1) + 1, false, "invalid UTF-8 code point 0x%08X (code point exceeds U+10FFFF)", utf8_codepoint )
+            std.errorf( stack_level, false, "invalid UTF-8 code point 0x%08X (code point exceeds U+10FFFF)", utf8_codepoint )
         else
             return ""
         end
@@ -363,11 +345,13 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return integer | nil sequence_length The length of the string in UTF-8 code units.
 ---@return nil | integer error_position The position of the error in bytes.
-local function len( utf8_string, start_position, end_position, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+local function len( utf8_string, start_position, end_position, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return 0
@@ -415,11 +399,13 @@ utf8.len = len
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return dreamwork.std.utf8.Sequence utf8_codepoints A table of UTF-8 code points.
 ---@return integer utf8_codepoint_count The length of the string in UTF-8 code units.
-local function unpack( utf8_string, start_position, end_position, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+local function unpack( utf8_string, start_position, end_position, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return {}, 0
@@ -468,10 +454,12 @@ utf8.unpack = unpack
 ---@param start_position? integer The position to start from in UTF-8 code units.
 ---@param end_position? integer The position to end at in UTF-8 code units.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string utf8_sub The substring of the string in UTF-8 code units.
-function utf8.sub( utf8_string, start_position, end_position, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return utf8_string
@@ -571,11 +559,13 @@ do
 
     ---@param utf8_string string
     ---@param index integer
+    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
-    local function utf8_iterator( utf8_string, index )
-        ---@type integer
-        local str_length = string_len( utf8_string )
+    local function utf8_iterator( utf8_string, index, str_length )
+        if str_length == nil then
+            str_length = string_len( utf8_string )
+        end
 
         if index > str_length then
             return nil, nil
@@ -587,11 +577,13 @@ do
 
     ---@param utf8_string string
     ---@param index integer
+    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
-    local function utf8_strict_iterator( utf8_string, index )
-        ---@type integer
-        local str_length = string_len( utf8_string )
+    local function utf8_strict_iterator( utf8_string, index, str_length )
+        if str_length == nil then
+            str_length = string_len( utf8_string )
+        end
 
         if index > str_length then
             return nil, nil
@@ -676,10 +668,12 @@ end
 ---@param index integer The code point to search for in the UTF-8 units.
 ---@param offset? integer The position to start from in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
-function utf8.offset( utf8_string, index, offset, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+function utf8.offset( utf8_string, index, offset, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return nil
@@ -757,10 +751,12 @@ do
     ---@param replacement_str? string The string to replace invalid UTF-8 code points with, by default `0xFFFD`.
     ---@param start_position? integer The position to start from in bytes.
     ---@param end_position? integer The position to end at in bytes.
+    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return string utf8_normalized The normalized UTF-8 string.
-    function utf8.normalize( utf8_string, replacement_str, start_position, end_position )
-        ---@type integer
-        local str_length = string_len( utf8_string )
+    function utf8.normalize( utf8_string, replacement_str, start_position, end_position, str_length )
+        if str_length == nil then
+            str_length = string_len( utf8_string )
+        end
 
         if str_length == 0 then
             return utf8_string
@@ -2670,10 +2666,12 @@ local upper2lower = {
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string lowercase_utf8_str The lowercase UTF-8 string.
-function utf8.lower( utf8_string, start_position, end_position, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+function utf8.lower( utf8_string, start_position, end_position, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return utf8_string
@@ -2736,10 +2734,12 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string uppercase_utf8_str The uppercase UTF-8 string.
-function utf8.upper( utf8_string, start_position, end_position, lax )
-    ---@type integer
-    local str_length = string_len( utf8_string )
+function utf8.upper( utf8_string, start_position, end_position, lax, str_length )
+    if str_length == nil then
+        str_length = string_len( utf8_string )
+    end
 
     if str_length == 0 then
         return utf8_string
