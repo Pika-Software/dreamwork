@@ -835,6 +835,48 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Checks if the string contains any byte from specified byte map.
+---
+---@param str string The string to check.
+---@param byte_map table<integer, boolean> The bytes array to check in.
+---@param start_position? integer The start position to check from.
+---@param end_position? integer The end position to check to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return boolean has_byte `true` if the string contains the byte, `false` otherwise.
+function string.containsBytes( str, byte_map, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    local step = (start_position < end_position) and 1 or -1
+
+    for index = start_position, end_position, step do
+        if byte_map[ string_byte( str, index, index ) ] then
+            return true
+        end
+    end
+
+    return false
+end
+
+--- [SHARED AND MENU]
+---
 --- Removes all instances of a byte from a string.
 ---
 ---@param str string The string to purge.
