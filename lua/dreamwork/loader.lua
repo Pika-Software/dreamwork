@@ -735,6 +735,22 @@ send( "dreamwork/std/codec/bytepack.lua" )
 dofile( "dreamwork/std/codec/bitpack.lua" )
 send( "dreamwork/std/codec/bitpack.lua" )
 
+-- utf8 encoding library
+dofile( "dreamwork/std/codec/utf8.lua" )
+send( "dreamwork/std/codec/utf8.lua" )
+
+-- utf16 encoding library
+dofile( "dreamwork/std/codec/utf16.lua" )
+send( "dreamwork/std/codec/utf16.lua" )
+
+-- utf32 encoding library
+dofile( "dreamwork/std/codec/utf32.lua" )
+send( "dreamwork/std/codec/utf32.lua" )
+
+-- unicode encoding library
+dofile( "dreamwork/std/codec/unicode.lua" )
+send( "dreamwork/std/codec/unicode.lua" )
+
 -- symbols
 dofile( "dreamwork/std/types/symbol.lua" )
 send( "dreamwork/std/types/symbol.lua" )
@@ -817,18 +833,6 @@ end
 -- coroutine library
 dofile( "dreamwork/std/coroutine.lua" )
 send( "dreamwork/std/coroutine.lua" )
-
--- utf8 encoding library
-dofile( "dreamwork/std/codec/utf8.lua" )
-send( "dreamwork/std/codec/utf8.lua" )
-
--- utf16 encoding library
-dofile( "dreamwork/std/codec/utf16.lua" )
-send( "dreamwork/std/codec/utf16.lua" )
-
--- utf32 encoding library
-dofile( "dreamwork/std/codec/utf32.lua" )
-send( "dreamwork/std/codec/utf32.lua" )
 
 -- buffer library
 dofile( "dreamwork/std/codec/buffer.lua" )

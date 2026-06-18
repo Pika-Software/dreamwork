@@ -29,20 +29,15 @@ local table_concat = table.concat
 ---@class dreamwork.std.utf8
 ---@field charpattern string This is NOT a function, it's a pattern (a string, not a function) which matches exactly one UTF-8 byte sequence, assuming that the subject is a valid UTF-8 string.
 ---@field limit integer The maximum number of characters that can be stored in a UTF-8 string.
-local utf8 = std.utf8 or {}
+local utf8 = {
+    charpattern = "[%z\x01-\x7F\xC2-\xF4][\x80-\xBF]*",
+    limit = 0x7FFFFFFF
+}
+
 std.utf8 = utf8
 
 ---@alias dreamwork.std.utf8.Codepoint integer
 ---@alias dreamwork.std.utf8.Sequence dreamwork.std.utf8.Codepoint[]
-
-utf8.charpattern = "[%z\x01-\x7F\xC2-\xF4][\x80-\xBF]*"
-utf8.limit = 0x7FFFFFFF
-
----@param i integer
----@return boolean
-local function isContinuation( i )
-    return bit_band( i, 0xC0 ) == 0x80
-end
 
 ---@type table<integer, integer | nil>
 local uint8_to_length = {}
@@ -113,7 +108,7 @@ do
         local uint8_2 = string_byte( utf8_string, index, index )
 
         if sequence_length == 2 then
-            if strict and not isContinuation( uint8_2 ) then
+            if strict and bit_band( uint8_2, 0xC0 ) ~= 0x80 then
                 std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_2, index )
             end
 
@@ -137,7 +132,7 @@ do
 
         if sequence_length == 3 then
             if strict then
-                if not isContinuation( uint8_3 ) then
+                if bit_band( uint8_3, 0xC0 ) ~= 0x80 then
                     std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_3, index )
                 elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
                     std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_3, index )
@@ -167,7 +162,7 @@ do
 
         if sequence_length == 4 then
             if strict then
-                if not isContinuation( uint8_4 ) then
+                if bit_band( uint8_4, 0xC0 ) ~= 0x80 then
                     std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (out of UTF-8 range)", sequence_length, uint8_4, index )
                 elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
                     std.errorf( stack_level, false, "invalid %d-byte continuation byte '0x%02X' at position %d (overlong encoding)", sequence_length, uint8_4, index )
@@ -288,7 +283,7 @@ local function seqlen( utf8_string, index, str_length, strict )
     local uint8_2 = string_byte( utf8_string, index, index )
 
     if sequence_length == 2 then
-        if isContinuation( uint8_2 ) then
+        if bit_band( uint8_2, 0xC0 ) == 0x80 then
             return 2, nil
         else
             return 0, index
@@ -304,7 +299,7 @@ local function seqlen( utf8_string, index, str_length, strict )
     local uint8_3 = string_byte( utf8_string, index, index )
 
     if sequence_length == 3 then
-        if not isContinuation( uint8_3 ) then
+        if bit_band( uint8_3, 0xC0 ) ~= 0x80 then
             return 0, index
         elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
             return 0, index
@@ -324,7 +319,7 @@ local function seqlen( utf8_string, index, str_length, strict )
     local uint8_4 = string_byte( utf8_string, index, index )
 
     if sequence_length == 4 then
-        if not isContinuation( uint8_4 ) then
+        if bit_band( uint8_4, 0xC0 ) ~= 0x80 then
             return 0, index
         elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
             return 0, index

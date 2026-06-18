@@ -1,9 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local utf8 = std.utf8
-local utf8_char = utf8.char
-local utf8_unpack = utf8.unpack
+local raw = std.raw
+local raw_tonumber = raw.tonumber
 
 local string = std.string
 local string_sub = string.sub
@@ -13,7 +12,9 @@ local string_format = string.format
 local table = std.table
 local table_concat = table.concat
 
-local raw_tonumber = std.raw.tonumber
+local utf8 = std.utf8
+local utf8_char = utf8.char
+local utf8_unpack = utf8.unpack
 
 --- [SHARED AND MENU]
 ---
