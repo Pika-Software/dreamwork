@@ -1,35 +1,133 @@
 ---@class dreamwork.std
-local std = dreamwork.std
+local std                      = dreamwork.std
 
-local tostring = std.tostring
+local tostring                 = std.tostring
 
-local isString = std.isString
-local isNumber = std.isNumber
-local isTable = std.isTable
+local isString                 = std.isString
+local isNumber                 = std.isNumber
+local isTable                  = std.isTable
 
-local raw = std.raw
-local raw_pairs = raw.pairs
-local raw_tonumber = raw.tonumber
-local raw_get, raw_set = raw.get, raw.set
+local raw                      = std.raw
+local raw_pairs                = raw.pairs
+local raw_tonumber             = raw.tonumber
+local raw_get, raw_set         = raw.get, raw.set
 
-local math = std.math
-local math_floor = math.floor
+local math                     = std.math
+local math_floor               = math.floor
 
-local table = std.table
-local table_concat = table.concat
-local table_remove = table.remove
+local table                    = std.table
+local table_concat             = table.concat
+local table_remove             = table.remove
 
-local string = std.string
-local string_format = string.format
-local string_sub, string_gsub = string.sub, string.gsub
+local ascii                    = std.ascii
+local ascii_isLower            = ascii.isLower
+local ascii_isUpper            = ascii.isUpper
+local ascii_isAlpha            = ascii.isAlpha
+local ascii_isDigit            = ascii.isDigit
+local ascii_isHexDigit         = ascii.isHexDigit
+
+local string                   = std.string
+local string_format            = string.format
+local string_sub, string_gsub  = string.sub, string.gsub
 local string_byte, string_char = string.byte, string.char
 local string_len, string_lower = string.len, string.lower
 
-local bit = std.bit
-local bit_band, bit_bor = bit.band, bit.bor
-local bit_rshift, bit_lshift = bit.rshift, bit.lshift
+local bit                      = std.bit
+local bit_band, bit_bor        = bit.band, bit.bor
+local bit_rshift, bit_lshift   = bit.rshift, bit.lshift
 
--- TODO: glua functions below
+local utf8                     = std.utf8
+
+local class                    = std.class
+
+local percent                  = std.percent
+
+
+--- [SHARED AND MENU]
+---
+--- The URL object.
+---
+---@class dreamwork.std.URL : dreamwork.std.Object, dreamwork.std.URL.State
+---@field __class dreamwork.std.URLClass
+---@field state dreamwork.std.URL.State internal state of URL
+---@field href string full url
+---@field origin string? *readonly* scheme + hostname + port
+---@field protocol string? just a scheme with ':' appended at the end
+---@field username string? used for basic auth as username
+---@field password string? used for basic auth as password
+---@field host string hostname + port
+---@field hostname string?
+---@field port number?
+---@field pathname string?
+---@field query string?
+---@field search string? a query with '?' prepended
+---@field searchParams dreamwork.std.URL.SearchParams
+---@field fragment string?
+---@field hash string? fragment with # prepended
+local URL = class.base( "URL" )
+
+--- [SHARED AND MENU]
+---
+--- The URL class.
+---
+--- Parses given URL string and returns a new URL object
+--- using URL object with tostring(...) will result in getting `.href`
+--- ```lua
+--- local baseUrl = "https://developer.mozilla.org"
+---
+--- local A = URL("/", baseURL)
+--- -- => 'https://developer.mozilla.org/'
+---
+--- local B = URL(baseURL)
+--- -- => 'https://developer.mozilla.org/'
+---
+--- URL("en-US/docs", B)
+--- -- => 'https://developer.mozilla.org/en-US/docs'
+---
+--- local D = URL("/en-US/docs", B)
+--- -- => 'https://developer.mozilla.org/en-US/docs'
+---
+--- URL("/en-US/docs", D)
+--- -- => 'https://developer.mozilla.org/en-US/docs'
+---
+--- URL("/en-US/docs", A)
+--- -- => 'https://developer.mozilla.org/en-US/docs'
+---
+--- URL("/en-US/docs", "https://developer.mozilla.org/fr-FR/toto")
+--- -- => 'https://developer.mozilla.org/en-US/docs'
+--- ```
+---@class dreamwork.std.URLClass : dreamwork.std.URL
+---@field __base dreamwork.std.URL
+---@overload fun( url: string, base: string | dreamwork.std.URL | nil ): dreamwork.std.URL
+local URLClass = class.create( URL )
+std.URL = URLClass
+
+
+--- [SHARED AND MENU]
+---
+--- The URL search parameters object.
+---
+---@class dreamwork.std.URL.SearchParams : dreamwork.std.Object
+---@field __class dreamwork.std.URL.SearchParamsClass
+local SearchParams = class.base( "URLSearchParams" )
+
+--- [SHARED AND MENU]
+---
+--- The URL search parameters class.
+---
+--- Parses given `init` and returns a new `URLSearchParams` object
+--- if `init` is table, then it must be a list that consists of tables
+--- that have two value, name and value
+--- e.g. `{ {"name", "value"}, {"foo", "bar"}, {"good"} }`
+---
+--- also calling tostring(...) with `URLSearchParams` given will result in getting serialized query
+--- also `#` can be used to get a total count of parameters (e.g. #searchParams)
+---
+---@class dreamwork.std.URL.SearchParamsClass : dreamwork.std.URL.SearchParams
+---@field __base dreamwork.std.URL.SearchParams
+---@operator len:integer
+---@return dreamwork.std.URL.SearchParams
+local SearchParamsClass = class.create( SearchParams )
 
 -- Use result from `compileCharacterTable` in `containsCharacter` as chars
 local function containsCharacter( str, chars, startPos, endPos )
@@ -81,23 +179,7 @@ for i = 0x00, 0xFF do
     DECODE_LOOKUP_TABLE[ hex:upper() ] = string_char( i )
 end
 
-local URI_DECODE_SET
-do
-
-    local _tab_0 = {}
-    local _idx_0 = 1
-    for _key_0, _value_0 in raw_pairs( DECODE_LOOKUP_TABLE ) do
-        if _idx_0 == _key_0 then
-            _tab_0[ #_tab_0 + 1 ] = _value_0
-            _idx_0 = _idx_0 + 1
-        else
-            _tab_0[ _key_0 ] = _value_0
-        end
-    end
-
-    URI_DECODE_SET = _tab_0
-
-end
+local URI_DECODE_SET = table.shallowCopy( DECODE_LOOKUP_TABLE )
 
 for _, i in raw.ipairs( { 0x2D, 0x2E, 0x21, 0x7E, 0x2A, 0x27, 0x28, 0x29 } ) do
     local hex = bit.tohex( i, 2 )
@@ -170,17 +252,23 @@ local function percentEncode( s, encodeSet, spaceAsPlus )
     return s
 end
 
-local C0_ENCODE_SET = compilePercentEncodeSet(
+-- local c0_percent_whitelist       = percent.whitelist( "^\x00-\x1F" )
+
+local C0_ENCODE_SET            = compilePercentEncodeSet(
     {},
     { 0x00, 0x1F },
     { 0x7F, 0xFF }
 )
 
-local FRAGMENT_ENCODE_SET = compilePercentEncodeSet( C0_ENCODE_SET,
+-- local fragment_percent_whitelist = percent.whitelist(
+--     "^ \"<>`"
+-- )
+
+local FRAGMENT_ENCODE_SET      = compilePercentEncodeSet( C0_ENCODE_SET,
     " ", "\"", "<", ">", "`"
 )
 
-local QUERY_ENCODE_SET = compilePercentEncodeSet( C0_ENCODE_SET,
+local QUERY_ENCODE_SET         = compilePercentEncodeSet( C0_ENCODE_SET,
     " ", "\"", "#", "<", ">"
 )
 
@@ -188,23 +276,23 @@ local SPECIAL_QUERY_ENCODE_SET = compilePercentEncodeSet( QUERY_ENCODE_SET,
     "'"
 )
 
-local PATH_ENCODE_SET = compilePercentEncodeSet( QUERY_ENCODE_SET,
+local PATH_ENCODE_SET          = compilePercentEncodeSet( QUERY_ENCODE_SET,
     "?", "`", "{", "}"
 )
 
-local USERINFO_ENCODE_SET = compilePercentEncodeSet( PATH_ENCODE_SET,
+local USERINFO_ENCODE_SET      = compilePercentEncodeSet( PATH_ENCODE_SET,
     "/", ":", ";", "=", "@", { 0x5B, 0x5E }, "|"
 )
 
-local COMPONENT_ENCODE_SET = compilePercentEncodeSet( USERINFO_ENCODE_SET,
+local COMPONENT_ENCODE_SET     = compilePercentEncodeSet( USERINFO_ENCODE_SET,
     { 0x24, 0x26 }, "+", ","
 )
 
-local URLENCODED_ENCODE_SET = compilePercentEncodeSet( COMPONENT_ENCODE_SET,
+local URLENCODED_ENCODE_SET    = compilePercentEncodeSet( COMPONENT_ENCODE_SET,
     "!", { 0x27, 0x29 }, "~"
 )
 
-local URI_ENCODE_SET = compilePercentEncodeSet( C0_ENCODE_SET,
+local URI_ENCODE_SET           = compilePercentEncodeSet( C0_ENCODE_SET,
     0x20,
     0x22,
     0x25,
@@ -217,67 +305,38 @@ local URI_ENCODE_SET = compilePercentEncodeSet( C0_ENCODE_SET,
     { 0x7B, 0x7D }
 )
 
----@param ch integer
----@return boolean
-local function isLower( ch )
-    return ch >= 0x61 and ch <= 0x7A
-end
-
----@param ch integer
----@return boolean
-local function isUpper( ch )
-    return ch >= 0x41 and ch <= 0x5A
-end
-
----@param ch integer
----@return boolean
-local function isAlpha( ch )
-    return isLower( ch ) or isUpper( ch )
-end
-
----@param ch integer
----@return boolean
-local function isDigit( ch )
-    return ch >= 0x30 and ch <= 0x39
-end
-
----@param ch integer
----@return boolean
-local function isHexDigit( ch )
-    return isDigit( ch ) or ch >= 0x41 and ch <= 0x46 or ch >= 0x61 and ch <= 0x66
-end
-
 ---@param str string
+---@param str_length integer
 ---@return boolean
-local function isSingleDot( str )
-    local _exp_0 = string_len( str )
-    if 1 == _exp_0 then
-        return str == "."
-    elseif 3 == _exp_0 then
+local function isSingleDot( str, str_length )
+    if str_length == 1 then
+        return string_byte( str, 1, 1 ) == 0x2E -- .
+    elseif str_length == 3 then
         return string_lower( str ) == "%2e"
-    else
-        return false
     end
+
+    return false
 end
 
 ---@param str string
+---@param segment_length integer
 ---@return boolean
-local function isDoubleDot( str )
-    local _exp_0 = string_len( str )
-    if 2 == _exp_0 then
-        return str == ".."
-    elseif 4 == _exp_0 then
+local function isDoubleDot( str, segment_length )
+    if segment_length == 2 then
+        local uint8_1, uint8_2 = string_byte( str, 1, 2 )
+        return uint8_1 == 0x2E and uint8_2 == 0x2E -- .
+    elseif segment_length == 4 then
         str = string_lower( str )
         return str == "%2e." or str == ".%2e"
-    elseif 6 == _exp_0 then
+    elseif segment_length == 6 then
         return string_lower( str ) == "%2e%2e"
-    else
-        return false
     end
+
+    return false
 end
 
 local function isWindowsDriveLetterCodePoints( ch1, ch2, normalized )
-    return isAlpha( ch1 ) and (ch2 == 0x3A or (normalized == false and ch2 == 0x7C))
+    return ascii_isAlpha( ch1 ) and (ch2 == 0x3A or (normalized == false and ch2 == 0x7C))
 end
 
 local function isWindowsDriveLetter( str, normalized )
@@ -316,90 +375,6 @@ local function trimInput( str, startPos, endPos )
     return endPos - 1
 end
 
--- UTF-8 decoder from https://bjoern.hoehrmann.de/utf-8/decoder/dfa/
-local UTF8_DECODE_LOOKUP = {}
-do
-
-    local UTF8_DECODE_LOOKUP_RULES = {
-        { 0,   0x00,  0x7f },
-        { 1,   0x80,  0x8f },
-        { 9,   0x90,  0x9f },
-        { 7,   0xa0,  0xbf },
-        { 8,   0xc0,  0xc1 },
-        { 2,   0xc2,  0xdf },
-        { 0xa, 0xe0 },
-        { 0x3, 0xe1,  0xef },
-        { 0xb, 0xf0 },
-        { 0x6, 0xf1,  0xf3 },
-        { 0x5, 0xf4 },
-        { 0x8, 0xf5,  0xff },
-        { 0x0, 0x100 },
-        { 0x1, 0x101 },
-        { 0x2, 0x102 },
-        { 0x3, 0x103 },
-        { 0x5, 0x104 },
-        { 0x8, 0x105 },
-        { 0x7, 0x106 },
-        { 0x1, 0x107, 0x10f },
-        { 0x4, 0x10a },
-        { 0x6, 0x10b },
-        { 1,   0x110, 0x12f },
-        { 0,   0x121 },
-        { 0,   0x127 },
-        { 0,   0x129 },
-        { 1,   0x130, 0x14f },
-        { 2,   0x131 },
-        { 2,   0x137 },
-        { 2,   0x139 },
-        { 2,   0x147 },
-        { 1,   0x150, 0x16f },
-        { 2,   0x151 },
-        { 2,   0x159 },
-        { 3,   0x167 },
-        { 3,   0x169 },
-        { 1,   0x170, 0x18f },
-        { 3,   0x171 },
-        { 3,   0x177 },
-        { 3,   0x179 },
-        { 3,   0x181 }
-    }
-
-    for i = 1, #UTF8_DECODE_LOOKUP_RULES, 1 do
-        local rule = UTF8_DECODE_LOOKUP_RULES[ i ]
-        if rule[ 3 ] then
-            for j = rule[ 2 ], rule[ 3 ], 1 do
-                UTF8_DECODE_LOOKUP[ j ] = rule[ 1 ]
-            end
-        else
-            UTF8_DECODE_LOOKUP[ rule[ 2 ] ] = rule[ 1 ]
-        end
-    end
-
-end
-
-local function utf8Decode( str, startPos, endPos )
-    -- TODO add support for fullwidth utf8/utf16
-    local count, state, codep = 0, 0, 0
-    local output = {}
-
-    for i = startPos, endPos do
-        local b = string_byte( str, i )
-        local t = UTF8_DECODE_LOOKUP[ b ]
-        codep = (state ~= 0) and bit_bor( bit_band( b, 0x3f ), bit_lshift( codep, 6 ) ) or bit_band( bit_rshift( 0xff, t ), b )
-        state = UTF8_DECODE_LOOKUP[ 256 + state * 16 + t ]
-        if state == 0 then
-            count = count + 1
-            output[ count ] = codep
-        end
-    end
-
-    if state ~= 0 then
-        error( "Invalid URL: UTF-8 decoding error" )
-    end
-
-    return output
-end
-
 -- RFC 3492 Punycode encode
 local function punycodeEncode( str, startPos, endPos )
     local base = 36
@@ -413,8 +388,9 @@ local function punycodeEncode( str, startPos, endPos )
 
     -- Initialize the state
     local n = initialN
-    local input = utf8Decode( str, startPos, endPos )
-    local inputLen = #input
+
+    local input, inputLen = utf8.unpack( str, startPos, endPos, true )
+
     local output = {}
     local delta = 0
     local out = 0
@@ -522,7 +498,7 @@ local function parseIPv4InIPv6( str, pointer, endPos, address, pieceIndex )
             ch = pointer <= endPos and string_byte( str, pointer )
         end
 
-        while ch and isDigit( ch ) do
+        while ch and ascii_isDigit( ch ) do
             local num = charToDec( ch )
             if not ipv4Piece then
                 ipv4Piece = num
@@ -594,7 +570,7 @@ local function parseIPv6( str, startPos, endPos )
 
         local value = 0
         local length = 0
-        while length < 4 and ch and isHexDigit( ch ) do
+        while length < 4 and ch and ascii_isHexDigit( ch ) do
             value = value * 0x10 + hexToDec( ch )
             pointer = pointer + 1
             length = length + 1
@@ -684,7 +660,7 @@ local function endsInANumberChecker( str, startPos, endPos )
 
     -- sanity check, do not invoke parser if we have ONLY digits
     for i = numStart, numEnd, 1 do
-        if not isDigit( string_byte( str, i ) ) then
+        if not ascii_isDigit( string_byte( str, i ) ) then
             -- welp, let us try at least parse it, what if it is a hex number
             return parseIPv4Number( string_sub( str, numStart, numEnd ) )
         end
@@ -794,7 +770,7 @@ local function domainToASCII( domain )
             containsNonASCII = true
         elseif PUNYCODE_PREFIX[ pointer - partStart + 1 ] == ch then
             punycodePrefix = punycodePrefix + 1
-        elseif isUpper( ch ) then
+        elseif ascii_isUpper( ch ) then
             doLowerCase = true
         end
 
@@ -844,7 +820,7 @@ local parseQuery, parseFragment
 
 parseScheme = function( self, str, startPos, endPos, base, stateOverride )
     -- scheme start state
-    if startPos <= endPos and isAlpha( string_byte( str, startPos ) ) then
+    if startPos <= endPos and ascii_isAlpha( string_byte( str, startPos ) ) then
         -- scheme state
         local doLowerCase = false
         local scheme = nil
@@ -900,9 +876,9 @@ parseScheme = function( self, str, startPos, endPos, base, stateOverride )
                 end
 
                 return
-            elseif isUpper( ch ) then
+            elseif ascii_isUpper( ch ) then
                 doLowerCase = true
-            elseif not isLower( ch ) and not isDigit( ch ) and ch ~= 0x2B and ch ~= 0x2D and ch ~= 0x2E then
+            elseif not ascii_isLower( ch ) and not ascii_isDigit( ch ) and ch ~= 0x2B and ch ~= 0x2D and ch ~= 0x2E then
                 -- scheme have an invalid character, so it's not a scheme
                 break
             end
@@ -1255,9 +1231,10 @@ function parsePath( self, str, startPos, endPos, isSpecial, segments, stateOverr
         local ch = i <= endPos and string_byte( str, i )
         if ch == 0x2F or (isSpecial and ch == 0x5C) or (not stateOverride and (ch == 0x3F or ch == 0x23)) or not ch then
             local segment = percentEncode( string_sub( str, segmentStart, i - 1 ), PATH_ENCODE_SET )
+            local segment_length = string_len( segment )
             segmentStart = i + 1
 
-            if isDoubleDot( segment ) then
+            if isDoubleDot( segment, segment_length ) then
                 if segmentsCount ~= 1 or not hasWindowsLetter then
                     segments[ segmentsCount ] = nil
                     segmentsCount = segmentsCount - 1
@@ -1271,7 +1248,7 @@ function parsePath( self, str, startPos, endPos, isSpecial, segments, stateOverr
                     segmentsCount = segmentsCount + 1
                     segments[ segmentsCount ] = ""
                 end
-            elseif not isSingleDot( segment ) then
+            elseif not isSingleDot( segment, segment_length ) then
                 if isSpecial == true and segmentsCount == 0 and isWindowsDriveLetter( segment, false ) then
                     segment = string_gsub( segment, "|", ":" )
                     hasWindowsLetter = true
@@ -1652,31 +1629,6 @@ local function update( self )
     end
 end
 
---- [SHARED AND MENU]
----
---- The URL search parameters object.
----
----@class dreamwork.std.URL.SearchParams : dreamwork.std.Object
----@field __class dreamwork.std.URL.SearchParamsClass
-local SearchParams = std.class.base( "URLSearchParams" )
-
---- [SHARED AND MENU]
----
---- The URL search parameters class.
----
---- Parses given `init` and returns a new `URLSearchParams` object
---- if `init` is table, then it must be a list that consists of tables
---- that have two value, name and value
---- e.g. `{ {"name", "value"}, {"foo", "bar"}, {"good"} }`
----
---- also calling tostring(...) with `URLSearchParams` given will result in getting serialized query
---- also `#` can be used to get a total count of parameters (e.g. #searchParams)
----@class dreamwork.std.URL.SearchParamsClass : dreamwork.std.URL.SearchParams
----@field __base dreamwork.std.URL.SearchParams
----@operator len:integer
----@return dreamwork.std.URL.SearchParams
-local SearchParamsClass = std.class.create( SearchParams )
-
 ---@protected
 function SearchParams:__init( query, url )
     self.url = url
@@ -1916,64 +1868,6 @@ local function cacheValue( obj, key, value )
     raw_set( obj, key, value )
     return value
 end
-
---- [SHARED AND MENU]
----
---- The URL object.
----@class dreamwork.std.URL : dreamwork.std.Object, dreamwork.std.URL.State
----@field __class dreamwork.std.URLClass
----@field state dreamwork.std.URL.State internal state of URL
----@field href string full url
----@field origin string? *readonly* scheme + hostname + port
----@field protocol string? just a scheme with ':' appended at the end
----@field username string? used for basic auth as username
----@field password string? used for basic auth as password
----@field host string hostname + port
----@field hostname string?
----@field port number?
----@field pathname string?
----@field query string?
----@field search string? a query with '?' prepended
----@field searchParams dreamwork.std.URL.SearchParams
----@field fragment string?
----@field hash string? fragment with # prepended
-local URL = std.class.base( "URL" )
-
---- [SHARED AND MENU]
----
---- The URL class.
----
---- Parses given URL string and returns a new URL object
---- using URL object with tostring(...) will result in getting `.href`
---- ```lua
---- local baseUrl = "https://developer.mozilla.org"
----
---- local A = URL("/", baseURL)
---- -- => 'https://developer.mozilla.org/'
----
---- local B = URL(baseURL)
---- -- => 'https://developer.mozilla.org/'
----
---- URL("en-US/docs", B)
---- -- => 'https://developer.mozilla.org/en-US/docs'
----
---- local D = URL("/en-US/docs", B)
---- -- => 'https://developer.mozilla.org/en-US/docs'
----
---- URL("/en-US/docs", D)
---- -- => 'https://developer.mozilla.org/en-US/docs'
----
---- URL("/en-US/docs", A)
---- -- => 'https://developer.mozilla.org/en-US/docs'
----
---- URL("/en-US/docs", "https://developer.mozilla.org/fr-FR/toto")
---- -- => 'https://developer.mozilla.org/en-US/docs'
---- ```
----@class dreamwork.std.URLClass : dreamwork.std.URL
----@field __base dreamwork.std.URL
----@overload fun( url: string, base: string | dreamwork.std.URL | nil ): dreamwork.std.URL
-local URLClass = std.class.create( URL )
-std.URL = URLClass
 
 URLClass.SearchParams = SearchParamsClass
 
@@ -2255,42 +2149,3 @@ end
 function URLClass.decodeURIComponent( uri )
     return percentDecode( uri, DECODE_LOOKUP_TABLE )
 end
-
--- ---@class dreamwork.std
--- local std = dreamwork.std
-
--- local percent = std.encoding.percent
--- local percent_encode = percent.encode
--- local percent_decode = percent.decode
-
-
--- local url = URLClass( "https://example.com/path?query=string" )
-
--- print( url.pathname )
-
--- local URIComponentWhitelist = percent.whitelist( "A-Za-z0-9%-_%.!~*'%(%)" )
-
--- local SearchParams = std.class.base( "SearchParams" )
-
--- local SearchParamsClass = std.class.create( SearchParams )
-
-
--- local URL = std.class.base( "URL" )
-
--- local URLClass = std.class.create( URL )
-
--- URLClass.SearchParams = SearchParamsClass
--- std.URL = URLClass
-
-
--- function URLClass.encodeURIComponent( uri )
---     return percent_encode( uri, URIComponentWhitelist )
--- end
-
--- -- print( URLClass.encodeURIComponent( "test?  " ) )
-
--- function URLClass.decodeURIComponent( uri )
---     return percent_decode( uri, false )
--- end
-
--- TODO: rewrite & rebuild this
