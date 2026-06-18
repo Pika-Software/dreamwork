@@ -558,20 +558,25 @@ end
 
 do
 
+    ---@type integer
+    local str_length = 0
+
+    ---@type integer
+    local prev_sequence_length = 0
+
     ---@param utf8_string string
     ---@param index integer
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
     local function utf8_iterator( utf8_string, index )
-        ---@type integer
-        local str_length = string_len( utf8_string )
-
+        index = index + (prev_sequence_length or 0)
         if index > str_length then
             return nil, nil
         end
 
         local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, false, 2 )
-        return index + (utf8_sequence_length or 1), utf8_codepoint or 0xFFFD
+        prev_sequence_length = utf8_sequence_length or 0
+        return index, utf8_codepoint or 0xFFFD
     end
 
     ---@param utf8_string string
@@ -579,9 +584,7 @@ do
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
     local function utf8_strict_iterator( utf8_string, index )
-        ---@type integer
-        local str_length = string_len( utf8_string )
-
+        index = index + (prev_sequence_length or 0)
         if index > str_length then
             return nil, nil
         end
@@ -594,9 +597,9 @@ do
             std.errorf( 2, false, "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index )
         end
 
-        return index + utf8_sequence_length, utf8_codepoint
+        prev_sequence_length = utf8_sequence_length or 0
+        return index, utf8_codepoint
     end
-
 
     --- [SHARED AND MENU]
     ---
@@ -606,6 +609,9 @@ do
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
     ---@return ( fun( utf8_string: string, index: integer ): integer | nil, dreamwork.std.utf8.Codepoint | nil ), string, integer
     function utf8.codes( utf8_string, lax )
+        str_length = string_len( utf8_string )
+        prev_sequence_length = 0
+
         return lax ~= true and utf8_strict_iterator or utf8_iterator, utf8_string, 1
     end
 
