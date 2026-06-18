@@ -559,13 +559,11 @@ do
 
     ---@param utf8_string string
     ---@param index integer
-    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
-    local function utf8_iterator( utf8_string, index, str_length )
-        if str_length == nil then
-            str_length = string_len( utf8_string )
-        end
+    local function utf8_iterator( utf8_string, index )
+        ---@type integer
+        local str_length = string_len( utf8_string )
 
         if index > str_length then
             return nil, nil
@@ -577,13 +575,11 @@ do
 
     ---@param utf8_string string
     ---@param index integer
-    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return integer | nil
     ---@return dreamwork.std.utf8.Codepoint | nil
-    local function utf8_strict_iterator( utf8_string, index, str_length )
-        if str_length == nil then
-            str_length = string_len( utf8_string )
-        end
+    local function utf8_strict_iterator( utf8_string, index )
+        ---@type integer
+        local str_length = string_len( utf8_string )
 
         if index > str_length then
             return nil, nil
