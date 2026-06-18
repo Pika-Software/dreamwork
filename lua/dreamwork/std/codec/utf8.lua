@@ -322,7 +322,7 @@ local function seqlen( utf8_string, index, str_length, strict )
 
     local uint8_4 = string_byte( utf8_string, index, index )
 
-    if uint8_4 == 4 then
+    if sequence_length == 4 then
         if not isContinuation( uint8_4 ) then
             return 0, index
         elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
