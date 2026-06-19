@@ -864,9 +864,7 @@ function string.containsBytes( str, byte_map, start_position, end_position, str_
         end_position = math_min( end_position, str_length )
     end
 
-    local step = (start_position < end_position) and 1 or -1
-
-    for index = start_position, end_position, step do
+    for index = start_position, end_position, ((start_position < end_position) and 1 or -1) do
         if byte_map[ string_byte( str, index, index ) ] then
             return true
         end
@@ -883,6 +881,7 @@ end
 ---@param byte integer The byte to purge.
 ---@param start_position? integer The start position in the string.
 ---@param end_position? integer The end position in the string.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string str_purged The purged string.
 function string.purge( str, byte, start_position, end_position, str_length )
     local segments, segment_count = byte_split( str, byte, start_position, end_position, str_length )
@@ -902,17 +901,19 @@ do
     ---@return number | nil num The converted number, or `nil` if the string is not a number.
     local function toNumber( str, base, start_position, end_position )
         if base == nil then
-            local uint8_1, uint8_2 = string_byte( str, (start_position or 1), (start_position or 1) + 1 )
+            local uint8_1, uint8_2, uint8_3 = string_byte( str, (start_position or 1), (start_position or 1) + 2 )
             if uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]]) then
-                base = 16
+                if uint8_3 == nil then
+                    return 0
+                else
+                    base = 16
+                end
             elseif uint8_1 == 0x30 --[[ 0 ]] and uint8_2 ~= nil then
                 base = 8
             else
                 base = 10
             end
-        end
-
-        if base == 16 then
+        elseif base == 16 then
             local uint8_1, uint8_2, uint8_3 = string_byte( str, (start_position or 1), (start_position or 1) + 2 )
             if uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]]) and uint8_3 == nil then
                 return 0

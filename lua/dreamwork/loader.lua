@@ -838,10 +838,6 @@ send( "dreamwork/std/coroutine.lua" )
 dofile( "dreamwork/std/codec/buffer.lua" )
 send( "dreamwork/std/codec/buffer.lua" )
 
--- unicode encoding library
-dofile( "dreamwork/std/codec/unicode.lua" )
-send( "dreamwork/std/codec/unicode.lua" )
-
 do
 
     local timer_Simple = timer.Simple
