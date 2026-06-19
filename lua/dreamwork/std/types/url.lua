@@ -28,15 +28,19 @@ local ascii_isHexDigit         = ascii.isHexDigit
 
 local string                   = std.string
 local string_format            = string.format
+local string_containsBytes     = string.containsBytes
 local string_sub, string_gsub  = string.sub, string.gsub
-local string_byte, string_char = string.byte, string.char
 local string_len, string_lower = string.len, string.lower
+local string_byte, string_char = string.byte, string.char
 
 local bit                      = std.bit
 local bit_band, bit_bor        = bit.band, bit.bor
 local bit_rshift, bit_lshift   = bit.rshift, bit.lshift
 
 local utf8                     = std.utf8
+
+local ipv4                     = std.ip.v4
+local ipv4_parse               = ipv4.parse
 
 local class                    = std.class
 
@@ -128,17 +132,6 @@ local SearchParams = class.base( "URLSearchParams" )
 ---@operator len:integer
 ---@return dreamwork.std.URL.SearchParams
 local SearchParamsClass = class.create( SearchParams )
-
--- Use result from `compileCharacterTable` in `containsCharacter` as chars
-local function containsCharacter( str, chars, startPos, endPos )
-    for i = startPos or 1, endPos or string_len( str ) do
-        if chars[ string_byte( str, i ) ] then
-            return true
-        end
-    end
-
-    return false
-end
 
 local PUNYCODE_PREFIX = {
     0x78,
@@ -620,29 +613,6 @@ local function parseIPv6( str, startPos, endPos )
     return address
 end
 
-local function parseIPv4Number( str )
-    if string_byte( str, 1, 1 ) == nil then
-        return
-    end
-
-    local ch1, ch2 = string_byte( str, 1, 2 )
-
-    local radix
-    if ch1 == 0x30 --[[ 0 ]] and (ch2 == 0x78 --[[ x ]] or ch2 == 0x58 --[[ X ]]) then
-        radix = 16
-
-        if #str == 2 then
-            str = "0"
-        end
-    elseif ch1 == 0x30 --[[ 0 ]] and ch2 then
-        radix = 8
-    else
-        radix = 10
-    end
-
-    return raw_tonumber( str, radix )
-end
-
 local function endsInANumberChecker( str, startPos, endPos )
     -- find a starting point for number
     local numStart, numEnd = startPos, endPos
@@ -662,7 +632,8 @@ local function endsInANumberChecker( str, startPos, endPos )
     for i = numStart, numEnd, 1 do
         if not ascii_isDigit( string_byte( str, i ) ) then
             -- welp, let us try at least parse it, what if it is a hex number
-            return parseIPv4Number( string_sub( str, numStart, numEnd ) )
+            local uint8_1, uint8_2 = string_byte( str, numStart, numStart + 1 )
+            return uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]])
         end
     end
 
@@ -670,56 +641,6 @@ local function endsInANumberChecker( str, startPos, endPos )
     return numStart <= numEnd
 end
 
-local function parseIPv4( str, startPos, endPos )
-    local numbers = {}
-    local pointer = startPos
-
-    while true do
-        local ch = pointer <= endPos and string_byte( str, pointer )
-        if not ch or ch == 0x2E then
-            local num = parseIPv4Number( string_sub( str, startPos, pointer - 1 ) )
-            if not num then
-                if pointer > endPos and #numbers > 0 then
-                    break
-                end
-
-                error( "Invalid URL: IPv4 non numeric part" )
-            end
-
-            startPos = pointer + 1
-            numbers[ #numbers + 1 ] = num
-
-            if not ch then
-                break
-            end
-        end
-
-        pointer = pointer + 1
-    end
-
-    if #numbers > 4 then
-        error( "Invalid URL: IPv4 too many parts" )
-    end
-
-    for i = 1, #numbers - 1 do
-        if numbers[ i ] > 255 then
-            error( "Invalid URL: IPv4 out of range part" )
-        end
-    end
-
-    if numbers[ #numbers ] >= 256 ^ (5 - #numbers) then
-        error( "Invalid URL: IPv4 out of range part" )
-    end
-
-    local ipv4 = numbers[ #numbers ]
-    local counter = 0
-    for i = 1, #numbers - 1 do
-        ipv4 = ipv4 + (numbers[ i ] * 256 ^ (3 - counter))
-        counter = counter + 1
-    end
-
-    return ipv4
-end
 
 local function domainToASCII( domain )
     for i = 1, #domain do
@@ -738,10 +659,14 @@ local function domainToASCII( domain )
 
     local containsNonASCII = false
     local doLowerCase = false
+
     local punycodePrefix = 0
+
     local partStart = 1
     local pointer = 1
-    local parts = {}
+
+    local segments = {}
+    local segment_count = 0
 
     while true do
         local ch = string_byte( domain, pointer )
@@ -752,17 +677,22 @@ local function domainToASCII( domain )
             end
 
             local domainPart = containsNonASCII and "xn--" .. punycodeEncode( domain, partStart, pointer - 1 ) or string_sub( domain, partStart, pointer - 1 )
+
             -- btw, punycode decode lowercases the domain, so we need to lowercase it
             -- in ideal sutiation I should have written punycodeDecode, but I am not in the mood to write it
             if doLowerCase then
                 domainPart = string_lower( domainPart )
             end
 
-            parts[ #parts + 1 ] = domainPart
+            segment_count = segment_count + 1
+            segments[ segment_count ] = domainPart
+
             partStart = pointer + 1
+
             containsNonASCII = false
             doLowerCase = false
             punycodePrefix = 0
+
             if not ch then
                 break
             end
@@ -777,9 +707,16 @@ local function domainToASCII( domain )
         pointer = pointer + 1
     end
 
-    return table_concat( parts, "." )
+    if segment_count == 0 then
+        return ""
+    elseif segment_count == 1 then
+        return segments[ 1 ]
+    elseif segment_count == 2 then
+        return segments[ 1 ] .. "." .. segments[ 2 ]
+    else
+        return table_concat( segments, ".", 1, segment_count )
+    end
 end
-
 
 
 local function parseHostString( str, startPos, endPos, isSpecial )
@@ -791,25 +728,25 @@ local function parseHostString( str, startPos, endPos, isSpecial )
         return parseIPv6( str, startPos + 1, endPos - 1 )
     elseif not isSpecial then
         -- opaque host parsing
-        if containsCharacter( str, FORBIDDEN_HOST_CODE_POINTS, startPos, endPos ) then
+        if string_containsBytes( str, FORBIDDEN_HOST_CODE_POINTS, startPos, endPos ) then
             error( "Invalid URL: Host invalid code point", 2 )
         end
 
         return percentEncode( string_sub( str, startPos, endPos ), C0_ENCODE_SET )
-    else
-        local domain = percentDecode( string_sub( str, startPos, endPos ), DECODE_LOOKUP_TABLE )
-        local ascii_domain = domainToASCII( domain )
-
-        if containsCharacter( ascii_domain, FORBIDDEN_DOMAIN_CODE_POINTS ) then
-            error( "Invalid URL: Domain invalid code point", 2 )
-        end
-
-        if endsInANumberChecker( ascii_domain, 1, #ascii_domain ) then
-            return parseIPv4( ascii_domain, 1, #ascii_domain )
-        else
-            return ascii_domain
-        end
     end
+
+    local ascii_domain = domainToASCII( percentDecode( string_sub( str, startPos, endPos ), DECODE_LOOKUP_TABLE ) )
+    local ascii_domain_length = string_len( ascii_domain )
+
+    if string_containsBytes( ascii_domain, FORBIDDEN_DOMAIN_CODE_POINTS ) then
+        error( "Invalid URL: Domain invalid code point", 2 )
+    end
+
+    if endsInANumberChecker( ascii_domain, 1, ascii_domain_length ) then
+        return ipv4_parse( ascii_domain, nil, nil, ascii_domain_length )
+    end
+
+    return ascii_domain
 end
 
 -- Predefine locals so we can make functions in the order I want (as if you were reading specs)
