@@ -18,6 +18,7 @@ std.ascii = ascii
 local function isLower( uint8 )
     return uint8 >= 0x61 and uint8 <= 0x7A
 end
+
 ascii.isLower = isLower
 
 --- [SHARED AND MENU]
@@ -29,6 +30,7 @@ ascii.isLower = isLower
 local function isUpper( uint8 )
     return uint8 >= 0x41 and uint8 <= 0x5A
 end
+
 ascii.isUpper = isUpper
 
 --- [SHARED AND MENU]
@@ -40,6 +42,7 @@ ascii.isUpper = isUpper
 local function isAlpha( uint8 )
     return isLower( uint8 ) or isUpper( uint8 )
 end
+
 ascii.isAlpha = isAlpha
 
 --- [SHARED AND MENU]
@@ -51,6 +54,7 @@ ascii.isAlpha = isAlpha
 local function isDigit( uint8 )
     return uint8 >= 0x30 and uint8 <= 0x39
 end
+
 ascii.isDigit = isDigit
 
 --- [SHARED AND MENU]
@@ -64,6 +68,7 @@ local function isHexDigit( uint8 )
         or (uint8 >= 0x41 and uint8 <= 0x46)
         or (uint8 >= 0x61 and uint8 <= 0x66)
 end
+
 ascii.isHexDigit = isHexDigit
 
 --- [SHARED AND MENU]

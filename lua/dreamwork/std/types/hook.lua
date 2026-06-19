@@ -75,7 +75,7 @@ end
 ---
 --- Detaches a callback function from the hook.
 ---
----@param identifier string | Hook | any The unique name of the callback, Hook or object with `__isvalid` function in metatable.
+---@param identifier string | dreamwork.std.Hook | any The unique name of the callback, Hook or object with `__isvalid` function in metatable.
 ---@return boolean detached Returns `true` if the callback was detached, otherwise `false`.
 function Hook:detach( identifier )
     if identifier == nil then return false end
@@ -106,7 +106,7 @@ end
 ---
 --- Attaches a callback function to the hook.
 ---
----@param fn function | Hook | nil The callback function or the hook to attach.
+---@param fn function | dreamwork.std.Hook | nil The callback function or the hook to attach.
 ---@param identifier dreamwork.std.Hook.Type | any The unique identifier of the callback, object with `__isvalid` function in metatable or the type of the hook if `fn` is a Hook.
 ---@param hook_type dreamwork.std.Hook.Type | nil The type of the hook, default is `0`, can be `nil` if `fn` is a Hook and `identifier` is the type of the hook.
 function Hook:attach( fn, identifier, hook_type )
