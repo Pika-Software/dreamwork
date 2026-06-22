@@ -1,14 +1,19 @@
-local _G = _G
-local dreamwork = _G.dreamwork
+local glua_engine = engine or {}
+local glua_game = game or {}
+
+local engine = dreamwork.engine
+local engine_hookCatch = engine.hookCatch
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local debug = std.debug
+local debug_fempty = debug.fempty
+
 local Hook = std.Hook
-local engine = dreamwork.engine
+
 local console = std.console
 local console_Variable = console.Variable
-local engine_hookCatch = engine.hookCatch
 
 --- [SHARED AND MENU]
 ---
@@ -21,13 +26,10 @@ local engine_hookCatch = engine.hookCatch
 local server = std.server or {}
 std.server = server
 
-server.tickrate = 1 / (_G.FrameTime or std.debug.fempty)()
+server.tickrate = 1 / (FrameTime or debug_fempty)()
 
-local glua_engine = _G.engine or {}
-local glua_game = _G.game or {}
-
-server.singleplayer = (glua_game.SinglePlayer or std.debug.fempty)() == true
-server.dedicated = (glua_game.IsDedicated or std.debug.fempty)() == true
+server.singleplayer = (glua_game.SinglePlayer or debug_fempty)() == true
+server.dedicated = (glua_game.IsDedicated or debug_fempty)() == true
 
 -- server.ClientLimit =
 
@@ -40,7 +42,7 @@ if server.getGamemodeName == nil then
         type = "string"
     } )
 
-    local gamemode_name = (glua_engine.ActiveGamemode or std.debug.fempty)() or "base"
+    local gamemode_name = (glua_engine.ActiveGamemode or debug_fempty)() or "base"
 
     --- [SHARED AND MENU]
     ---
@@ -99,7 +101,7 @@ if server.getGamemodeName == nil then
             end
         } )
 
-        local gmod_GetGamemode = gmod ~= nil and gmod.GetGamemode or std.debug.fempty
+        local gmod_GetGamemode = gmod ~= nil and gmod.GetGamemode or debug_fempty
 
         --- [SHARED]
         ---
@@ -110,7 +112,7 @@ if server.getGamemodeName == nil then
         function server.getGamemode()
             if gamemode_value == nil then
                 ---@diagnostic disable-next-line: param-type-mismatch
-                return true, (gmod_GetGamemode() or _G.GAMEMODE or gamemode.Get( gamemode_name ))
+                return true, (gmod_GetGamemode() or GAMEMODE or gamemode.Get( gamemode_name ))
             else
                 return false, gamemode_value
             end
@@ -150,15 +152,19 @@ if server.getGamemodeName == nil then
         ---@return string title The title of the gamemode.
         function server.getGamemodeTitle()
             ---@diagnostic disable-next-line: undefined-field
-            return _G.hook.Call( "GetGameDescription" ) or (_G.GM or _G.GAMEMODE).Title or "unknown"
+            return hook.Call( "GetGameDescription" ) or (GM or GAMEMODE or {}).Title or "unknown"
         end
 
     end
 
 end
 
-server.getUptime = _G.UnPredictedCurTime
--- server.getPredictedUptime = _G.CurTime
+server.getUptime = UnPredictedCurTime
+-- server.getPredictedUptime = CurTime
+
+-- function server.getPredictionOffset()
+--     return CurTime() - UnPredictedCurTime()
+-- end
 
 if std.LUA_CLIENT and server.Tick == nil then
 
@@ -176,10 +182,10 @@ if std.LUA_CLIENT_MENU then
 
     server.getFrameTime = glua_engine.ServerFrameTime or function() return 0, 0 end
 
-    local glua_permissions = _G.permissions or {}
+    local glua_permissions = permissions or {}
 
-    server.grantPermission = glua_permissions.Grant or std.debug.fempty
-    server.revokePermission = glua_permissions.Revoke or std.debug.fempty
+    server.grantPermission = glua_permissions.Grant or debug_fempty
+    server.revokePermission = glua_permissions.Revoke or debug_fempty
     server.hasPermission = glua_permissions.IsGranted or function() return false end
     server.getAllPermissions = glua_permissions.GetAll or function() return {} end
 
@@ -278,7 +284,23 @@ end
 
 if std.LUA_CLIENT_SERVER then
 
-    server.getTimeScale = glua_game.GetTimeScale or function() return 1 end
+    do
+
+        local game_GetTimeScale = glua_game.GetTimeScale or debug
+
+        ---@type dreamwork.std.console.Variable<number>
+        local host_timescale = console_Variable.get( "host_timescale", "float" )
+
+        --- [SERVER]
+        ---
+        --- Gets the time scale of the game.
+        ---
+        ---@return number timescale The current time scale of the game.
+        function server.getTimeScale()
+            return host_timescale.value * game_GetTimeScale()
+        end
+
+    end
 
     --- [SHARED]
     ---
@@ -313,12 +335,21 @@ end
 
 if std.LUA_SERVER then
 
-    game.setTimeScale = glua_game.SetTimeScale or std.debug.fempty
-    game.close = glua_engine.CloseServer
+    server.setTimeScale = glua_game.SetTimeScale or debug_fempty
+
+    local command_run = console.Command.run
+
+    --- [SERVER]
+    ---
+    --- Shutdown the engine immediately.
+    ---
+    function server.kill()
+        command_run( "killserver" )
+    end
 
     if server.message == nil then
 
-        local PrintMessage = _G.PrintMessage or std.debug.fempty
+        local PrintMessage = PrintMessage or debug_fempty
 
         --- [SERVER]
         ---
@@ -343,7 +374,7 @@ if std.LUA_SERVER then
 
     end
 
-    server.log = _G.ServerLog
+    server.log = ServerLog
 
     --- [SERVER]
     ---
@@ -476,7 +507,7 @@ if std.LUA_SERVER then
     --- Allow/disallow closecaptions in multiplayer (for dedicated servers).
     ---
     ---@param enable boolean `true` to enable close captions, `false` to disable them.
-    function game.allowCloseCaptions( enable )
+    function server.allowCloseCaptions( enable )
         console_Variable.set( "closecaption_mp", enable )
     end
 
@@ -523,7 +554,7 @@ end
 if std.LUA_MENU then
 
     local futures_Future = std.futures.Future
-    local glua_serverlist = _G.serverlist
+    local glua_serverlist = serverlist
     local setTimeout = std.setTimeout
 
     do
@@ -644,7 +675,7 @@ if std.LUA_MENU then
         glua_serverlist.Query( data )
     end
 
-    server.isInBlacklist = _G.IsServerBlacklisted
+    server.isInBlacklist = IsServerBlacklisted
 
     do
 
