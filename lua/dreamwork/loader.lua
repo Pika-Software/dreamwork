@@ -323,15 +323,17 @@ end
 ---
 ---@param value any The value to get the string representation of.
 ---@return string str The string representation of the given value.
-function std.represent( value )
+local function represent( value )
     ---@type fun( value: any ): string
-    local fn = debug_getmetavalue( value, "__repr" )
+    local fn = debug_getmetavalue( value, "__represent" )
     if fn ~= nil then
         return fn( value )
     end
 
     return raw_tostring( value )
 end
+
+std.represent = represent
 
 --- [SHARED AND MENU]
 ---
@@ -1799,9 +1801,13 @@ end
 dofile( "dreamwork/std/types/bigint.lua" )
 sendfile( "dreamwork/std/types/bigint.lua" )
 
--- ip library
-dofile( "dreamwork/std/ip.lua" )
-sendfile( "dreamwork/std/ip.lua" )
+-- ipv4 library
+dofile( "dreamwork/std/ipv4.lua" )
+sendfile( "dreamwork/std/ipv4.lua" )
+
+-- ipv6 class
+dofile( "dreamwork/std/ipv6.lua" )
+sendfile( "dreamwork/std/ipv6.lua" )
 
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
@@ -1918,12 +1924,12 @@ do
         if arg_count == 0 then
             engine_consoleMessage( "\n" )
         elseif arg_count == 1 then
-            engine_consoleMessage( raw_tostring( ... ) .. "\n" )
+            engine_consoleMessage( represent( ... ) .. "\n" )
         else
             local args = { ... }
 
             for arg_num = 1, arg_count, 1 do
-                args[ arg_num ] = raw_tostring( args[ arg_num ] )
+                args[ arg_num ] = represent( args[ arg_num ] )
             end
 
             engine_consoleMessage( table_concat( args, "\t", 1, arg_count ) .. "\n" )
@@ -1970,7 +1976,7 @@ do
                     end
                 else
                     ---@cast value any
-                    engine_consoleMessageColored( raw_tostring( value ), tocolor( value ) or color )
+                    engine_consoleMessageColored( represent( value ), tocolor( value ) or color )
                 end
             end
 

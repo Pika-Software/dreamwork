@@ -1,13 +1,37 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local string = std.string
-local string_format = string.format
+local math = std.math
+local math_random = math.random
 
-local math_random = std.math.random
+local string = std.string
+local string_len = string.len
+local string_byte = string.byte
+local string_gsub = string.gsub
+local string_format = string.format
 
 local bit = std.bit
 local bit_band, bit_bor = bit.band, bit.bor
+
+local time = std.time
+local time_now = time.now
+
+local BigInt = std.BigInt
+local BigInt_fromNumber = BigInt.fromNumber
+local BigInt_band, BigInt_rshift = BigInt.band, BigInt.rshift
+
+local bint = BigInt.__base
+local bint_band = bint.band
+local bint_toHex = bint.toHex
+
+local base16 = std.base16
+local base16_decode = base16.decode
+
+local MD5 = std.crypto.MD5
+local MD5_digest = MD5.digest
+
+local SHA1 = std.crypto.SHA1
+local SHA1_digest = SHA1.digest
 
 --- [SHARED AND MENU]
 ---
@@ -17,78 +41,56 @@ local bit_band, bit_bor = bit.band, bit.bor
 local uuid = {}
 std.uuid = uuid
 
-do
+--- [SHARED AND MENU]
+---
+--- Generates a UUID version 3 (name-based, MD5).
+---
+--- UUID v3 is generated based on a namespace and a name using MD5 hashing.
+---
+---@param namespace string The namespace UUID (must be a valid UUID string).
+---@param name string The name to hash within the namespace.
+---@return string uuid_str A UUID v3 string.
+function uuid.v3( namespace, name )
+    local uuid_str = string_gsub( namespace, "-", "" )
 
-    local string_len = string.len
-    local string_byte = string.byte
-    local string_gsub = string.gsub
-
-    local base16_decode = std.base16.decode
-
-    do
-
-        local MD5_digest = std.crypto.MD5.digest
-
-        --- [SHARED AND MENU]
-        ---
-        --- Generates a UUID version 3 (name-based, MD5).
-        ---
-        --- UUID v3 is generated based on a namespace and a name using MD5 hashing.
-        ---
-        ---@param namespace string The namespace UUID (must be a valid UUID string).
-        ---@param name string The name to hash within the namespace.
-        ---@return string uuid_str A UUID v3 string.
-        function uuid.v3( namespace, name )
-            local uuid_str = string_gsub( namespace, "-", "" )
-
-            local uuid_str_length = string_len( uuid_str )
-            if uuid_str_length ~= 32 then
-                error( "invalid namespace UUID format", 2 )
-            end
-
-            local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( MD5_digest( base16_decode( uuid_str, 1, uuid_str_length ) .. name, false ), 1, 16 )
-
-            return string_format( "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-                uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, bit_bor( bit_band( uint8_7, 0x0F ), 0x30 ),
-                uint8_8, bit_bor( bit_band( uint8_9, 0x3F ), 0x80 ),
-                uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16
-            )
-        end
-
+    local uuid_str_length = string_len( uuid_str )
+    if uuid_str_length ~= 32 then
+        error( "invalid namespace UUID format", 2 )
     end
 
-    do
+    local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( MD5_digest( base16_decode( uuid_str, 1, uuid_str_length ) .. name, false ), 1, 16 )
 
-        local SHA1_digest = std.crypto.SHA1.digest
+    return string_format( "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, bit_bor( bit_band( uint8_7, 0x0F ), 0x30 ),
+        uint8_8, bit_bor( bit_band( uint8_9, 0x3F ), 0x80 ),
+        uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16
+    )
+end
 
-        --- [SHARED AND MENU]
-        ---
-        --- Generates a UUID version 5 (name-based, SHA-1).
-        ---
-        --- UUID v5 is similar to v3, but uses SHA-1 instead of MD5 for hashing.
-        ---
-        ---@param namespace string The namespace UUID (must be a valid UUID string).
-        ---@param name string The name to hash within the namespace.
-        ---@return string uuid_str A UUID v5 string.
-        function uuid.v5( namespace, name )
-            local uuid_str = string_gsub( namespace, "-", "" )
+--- [SHARED AND MENU]
+---
+--- Generates a UUID version 5 (name-based, SHA-1).
+---
+--- UUID v5 is similar to v3, but uses SHA-1 instead of MD5 for hashing.
+---
+---@param namespace string The namespace UUID (must be a valid UUID string).
+---@param name string The name to hash within the namespace.
+---@return string uuid_str A UUID v5 string.
+function uuid.v5( namespace, name )
+    local uuid_str = string_gsub( namespace, "-", "" )
 
-            local uuid_str_length = string_len( uuid_str )
-            if uuid_str_length ~= 32 then
-                error( "invalid namespace UUID format", 2 )
-            end
-
-            local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( SHA1_digest( base16_decode( uuid_str, 1, uuid_str_length ) .. name, false ), 1, 16 )
-
-            return string_format( "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-                uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, bit_bor( bit_band( uint8_7, 0x0F ), 0x50 ),
-                uint8_8, bit_bor( bit_band( uint8_9, 0x3F ), 0x80 ),
-                uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16
-            )
-        end
-
+    local uuid_str_length = string_len( uuid_str )
+    if uuid_str_length ~= 32 then
+        error( "invalid namespace UUID format", 2 )
     end
 
+    local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 = string_byte( SHA1_digest( base16_decode( uuid_str, 1, uuid_str_length ) .. name, false ), 1, 16 )
+
+    return string_format( "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+        uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, bit_bor( bit_band( uint8_7, 0x0F ), 0x50 ),
+        uint8_8, bit_bor( bit_band( uint8_9, 0x3F ), 0x80 ),
+        uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16
+    )
 end
 
 --- [SHARED AND MENU]
@@ -124,16 +126,6 @@ function uuid.v4()
 end
 
 do
-
-    local time_now = std.time.now
-
-    local BigInt = std.BigInt
-    local BigInt_fromNumber = BigInt.fromNumber
-    local BigInt_band, BigInt_rshift = BigInt.band, BigInt.rshift
-
-    local bint = BigInt.__base
-    local bint_band = bint.band
-    local bint_toHex = bint.toHex
 
     local bigint_0xFF = BigInt_fromNumber( 0xFF )
 
