@@ -1799,10 +1799,6 @@ end
 dofile( "dreamwork/std/types/bigint.lua" )
 sendfile( "dreamwork/std/types/bigint.lua" )
 
--- hook class
-dofile( "dreamwork/std/types/hook.lua" )
-sendfile( "dreamwork/std/types/hook.lua" )
-
 -- ip library
 dofile( "dreamwork/std/ip.lua" )
 sendfile( "dreamwork/std/ip.lua" )
@@ -1810,10 +1806,6 @@ sendfile( "dreamwork/std/ip.lua" )
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 sendfile( "dreamwork/engine.lua" )
-
--- timer class
-dofile( "dreamwork/std/engine/types/timer.lua" )
-sendfile( "dreamwork/std/engine/types/timer.lua" )
 
 local engine = dreamwork.engine
 
@@ -2214,6 +2206,10 @@ sendfile( "dreamwork/std/uuid.lua" )
 -- hook class
 dofile( "dreamwork/std/types/hook.lua" )
 sendfile( "dreamwork/std/types/hook.lua" )
+
+-- timer class
+dofile( "dreamwork/std/engine/types/timer.lua" )
+sendfile( "dreamwork/std/engine/types/timer.lua" )
 
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )
