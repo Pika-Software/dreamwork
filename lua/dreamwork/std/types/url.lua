@@ -39,7 +39,7 @@ local bit_rshift, bit_lshift   = bit.rshift, bit.lshift
 
 local utf8                     = std.utf8
 
-local ipv4                     = std.ip.v4
+local ipv4                     = std.ipv4
 local ipv4_parse               = ipv4.parse
 
 local class                    = std.class
@@ -649,6 +649,7 @@ local function domainToASCII( domain )
             -- I probably really should implement some proper punycode
             domain = string_gsub( domain, "\xC2\xAD", "" )
             domain = string_gsub( domain, "\xE3\x80\x82", "." )
+
             -- remove space characters
             domain = string_gsub( domain, "\xE2\x80\x8B", "" )
             domain = string_gsub( domain, "\xE2\x81\xA0", "" )
