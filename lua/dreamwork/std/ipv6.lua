@@ -9,6 +9,8 @@ local math_min, math_max          = math.min, math.max
 local string                      = std.string
 local string_len                  = string.len
 local string_byte                 = string.byte
+local string_rep                  = string.rep
+local string_sub                  = string.sub
 local string_format               = string.format
 local string_findByte             = string.findByte
 local string_toNumber             = string.toNumber
@@ -19,6 +21,9 @@ local bit_rshift                  = bit.rshift
 local bit_lshift                  = bit.lshift
 local bit_unsign                  = bit.unsign
 local bit_bxor, bit_band, bit_bor = bit.bxor, bit.band, bit.bor
+
+local table                       = std.table
+local table_concat                = table.concat
 
 local class                       = std.class
 
@@ -51,15 +56,62 @@ local class                       = std.class
 local IPv6 = class.base( "IPv6", false )
 
 ---@protected
+function IPv6:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
+    return setmetatable( {
+        group1 or 0, group2 or 0, group3 or 0, group4 or 0,
+        group5 or 0, group6 or 0, group7 or 0, group8 or 0
+    }, IPv6 )
+end
+
+---@protected
 ---@return string
 function IPv6:__tostring()
-    return string_format( "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x", self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ], self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ] )
+    local best_start, best_len = 0, 0
+    local start = 0
+
+    for i = 1, 8 do
+        if self[ i ] == 0 then
+            start = start ~= 0 and start or i
+
+            local len = i - start + 1
+            if len > best_len then
+                best_start, best_len = start, len
+            end
+        else
+            start = 0
+        end
+    end
+
+    if best_len < 2 then
+        return string_format(
+            "%x:%x:%x:%x:%x:%x:%x:%x",
+            self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ],
+            self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ]
+        )
+    end
+
+    local left, right
+
+    if best_start > 1 then
+        left = string_format( string_rep( "%x:", best_start - 1 ), unpack( self, 1, best_start - 1 ) )
+    else
+        left = ":"
+    end
+
+    local right_count = 8 - (best_start + best_len) + 1
+    if right_count > 0 then
+        right = string_format( string_rep( ":%x", right_count ), unpack( self, best_start + best_len, 8 ) )
+    else
+        right = ":"
+    end
+
+    return left .. right
 end
 
 ---@protected
 ---@return string
 function IPv6:__represent()
-    return string_format( "IPv6: %p [%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x]", self, self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ], self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ] )
+    return string_format( "IPv6: %p [%s]", self, self )
 end
 
 --- [SHARED AND MENU]
@@ -76,6 +128,7 @@ end
 ---@field [ 6 ] integer
 ---@field [ 7 ] integer
 ---@field [ 8 ] integer
+---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): dreamwork.std.IPv6
 local IPv6Class = class.create( IPv6 )
 std.IPv6 = IPv6
 
@@ -177,7 +230,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
 
     local double_colon_start = 0
 
-    for index = start_position, end_position, 2 do
+    for index = start_position, end_position - 1, 1 do
         local uint8_1, uint8_2 = string_byte( ipv6_str, index, index + 1 )
         if uint8_1 == 0x3A --[[ : ]] and uint8_2 == 0x3A --[[ : ]] then
             double_colon_start = index
