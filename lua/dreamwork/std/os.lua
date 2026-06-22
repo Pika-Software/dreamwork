@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local debug = std.debug
+
 --- [SHARED AND MENU]
 ---
 --- This library is implemented through table `os`.
@@ -11,7 +13,7 @@ local std = dreamwork.std
 local os = {
     ---@diagnostic disable-next-line: undefined-global
     clock = os.clock or SysTime,
-    date = os.date or std.debug.fempty,
+    date = os.date or debug.fempty,
     difftime = os.difftime or function( a, b )
         return a - b
     end,

@@ -36,6 +36,8 @@ local raw = std.raw
 local raw_type = raw.type
 local raw_index = raw.index
 
+local class = std.class
+
 ---@type table<dreamwork.std.console.Variable, ConVar>
 local variable2convar = {}
 
@@ -235,7 +237,7 @@ setmetatable( values, {
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, number>
+---@type table<dreamwork.std.console.Variable, (number | nil)>
 local mins = {}
 
 setmetatable( mins, {
@@ -252,7 +254,7 @@ setmetatable( mins, {
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, number>
+---@type table<dreamwork.std.console.Variable, (number | nil)>
 local maxs = {}
 
 setmetatable( maxs, {
@@ -283,9 +285,18 @@ gc_setTableRules( callbacks, true, false )
 ---
 --- The console variable object.
 ---
----@class dreamwork.std.console.Variable : dreamwork.std.Object
+---@generic T
+---@class dreamwork.std.console.Variable<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.console.Variable
-local Variable = std.class.base( "console.Variable", true )
+---@field value T The value of the variable.
+---@field type dreamwork.std.console.Variable.type The type of the variable (e.g., "int", "float", "string").
+---@field name string The name of the variable.
+---@field description string The description of the variable.
+---@field flags integer The flags of the variable.
+---@field default T The default value of the variable.
+---@field min T | nil The minimum value of the variable (if applicable).
+---@field max T | nil The maximum value of the variable (if applicable).
+local Variable = class.base( "console.Variable", true )
 
 ---@protected
 function Variable:__index( str_key )
@@ -441,7 +452,7 @@ end
 ---@class dreamwork.std.console.VariableClass : dreamwork.std.console.Variable
 ---@field __base dreamwork.std.console.Variable
 ---@overload fun( options: dreamwork.std.console.Variable.Options ): dreamwork.std.console.Variable
-local VariableClass = console.Variable or dreamwork.std.class.create( Variable )
+local VariableClass = class.create( Variable )
 console.Variable = VariableClass
 
 ---@param str_name string
@@ -461,6 +472,11 @@ VariableClass.exists = engine_consoleVariableExists
 ---@param str_name string The name of the console variable.
 ---@param cvar_type dreamwork.std.console.Variable.type The type of the console variable.
 ---@return dreamwork.std.console.Variable | nil variable The `console.Variable` object.
+---@overload fun( str_name: string, cvar_type: "boolean"): dreamwork.std.console.Variable<boolean> | nil
+---@overload fun( str_name: string, cvar_type: "string"): dreamwork.std.console.Variable<string> | nil
+---@overload fun( str_name: string, cvar_type: "number"): dreamwork.std.console.Variable<number> | nil
+---@overload fun( str_name: string, cvar_type: "float"): dreamwork.std.console.Variable<number> | nil
+---@overload fun( str_name: string, cvar_type: "integer"): dreamwork.std.console.Variable<integer> | nil
 function VariableClass.get( str_name, cvar_type )
     local variable = variables[ str_name ]
     if variable == nil then
@@ -725,10 +741,8 @@ local in_call = {}
 
 gc_setTableRules( in_call, true, false )
 
----@alias dreamwork.std.console.Variable.callback fun( variable: dreamwork.std.console.Variable, new_value: dreamwork.std.console.Variable.value )
-
 ---@class dreamwork.std.console.Variable.query_data : dreamwork.std.console.Command.query_data
----@field [3] nil | dreamwork.std.console.Variable.callback The callback function.
+---@field [3] (nil | fun( variable: dreamwork.std.console.Variable, new_value: dreamwork.std.console.Variable.value )) The callback function.
 
 ---@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.query_data[]>
 local queues = {}
@@ -739,7 +753,9 @@ gc_setTableRules( queues, true, false )
 ---
 --- Attaches a callback to the `console.Variable` object.
 ---
----@param fn dreamwork.std.console.Variable.callback The callback function.
+---@generic T
+---@param self dreamwork.std.console.Variable<T> The `console.Variable` object.
+---@param fn fun( variable: dreamwork.std.console.Variable<T>, new_value: T ) The callback function.
 ---@param identifier? any The identifier of the callback, default is `unnamed`.
 ---@param once? boolean `true` to run once, `false` to run forever, default is `false`.
 function Variable:attach( fn, identifier, once )

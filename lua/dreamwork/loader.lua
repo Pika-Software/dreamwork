@@ -18,6 +18,8 @@ if dreamwork == nil then
     dreamwork.Prefix = "dreamwork@" .. dreamwork.Version
 end
 
+dreamwork.dofile = dofile
+
 ---@class dreamwork.std
 ---@field _G table The global environment of Lua.
 ---@field LUA_VERSION string The version of the Lua interpreter.
@@ -166,11 +168,12 @@ raw.setmetatable = debug.setmetatable
 
 ---@type fun( lua_path: string )
 ---@diagnostic disable-next-line: undefined-global
-local send = LUA_SERVER and AddCSLuaFile or debug_fempty
+local sendfile = LUA_SERVER and AddCSLuaFile or debug_fempty
+dreamwork.sendfile = sendfile
 
-send( "dreamwork/loader.lua" )
-send( "dreamwork/std/raw.lua" )
-send( "dreamwork/std/debug.lua" )
+sendfile( "dreamwork/loader.lua" )
+sendfile( "dreamwork/std/raw.lua" )
+sendfile( "dreamwork/std/debug.lua" )
 
 std.getfenv = getfenv or debug.getfenv
 
@@ -296,7 +299,7 @@ std.isTable = isTable
 
 -- jit library
 dofile( "dreamwork/std/jit.lua" )
-send( "dreamwork/std/jit.lua" )
+sendfile( "dreamwork/std/jit.lua" )
 
 --- [SHARED AND MENU]
 ---
@@ -528,7 +531,7 @@ end
 
 -- math library
 dofile( "dreamwork/std/math.lua" )
-send( "dreamwork/std/math.lua" )
+sendfile( "dreamwork/std/math.lua" )
 
 ---@class dreamwork.std.math
 local math = std.math
@@ -545,29 +548,32 @@ std.global = std.getfenv( 1 ) or _G or _ENV
 
 -- os library
 dofile( "dreamwork/std/os.lua" )
-send( "dreamwork/std/os.lua" )
+sendfile( "dreamwork/std/os.lua" )
 
-dreamwork.InitTime = std.os.clock()
+---@class dreamwork.std.os
+local os = std.os
+
+dreamwork.InitTime = os.clock()
 
 -- detour library
 dofile( "dreamwork/detour.lua" )
-send( "dreamwork/detour.lua" )
+sendfile( "dreamwork/detour.lua" )
 
 -- garbage collector
 dofile( "dreamwork/std/gc.lua" )
-send( "dreamwork/std/gc.lua" )
+sendfile( "dreamwork/std/gc.lua" )
 
 -- table library
 dofile( "dreamwork/std/table.lua" )
-send( "dreamwork/std/table.lua" )
+sendfile( "dreamwork/std/table.lua" )
 
 -- ascii library
 dofile( "dreamwork/std/ascii.lua" )
-send( "dreamwork/std/ascii.lua" )
+sendfile( "dreamwork/std/ascii.lua" )
 
 -- string library
 dofile( "dreamwork/std/string.lua" )
-send( "dreamwork/std/string.lua" )
+sendfile( "dreamwork/std/string.lua" )
 
 ---@class dreamwork.std.string
 local string = std.string
@@ -721,43 +727,43 @@ end
 
 -- bit library
 dofile( "dreamwork/std/bit.lua" )
-send( "dreamwork/std/bit.lua" )
+sendfile( "dreamwork/std/bit.lua" )
 
 -- fnv hash functions
 dofile( "dreamwork/std/fnv.lua" )
-send( "dreamwork/std/fnv.lua" )
+sendfile( "dreamwork/std/fnv.lua" )
 
 -- bytepack library
 dofile( "dreamwork/std/codec/bytepack.lua" )
-send( "dreamwork/std/codec/bytepack.lua" )
+sendfile( "dreamwork/std/codec/bytepack.lua" )
 
 -- bitpack library
 dofile( "dreamwork/std/codec/bitpack.lua" )
-send( "dreamwork/std/codec/bitpack.lua" )
+sendfile( "dreamwork/std/codec/bitpack.lua" )
 
 -- utf8 encoding library
 dofile( "dreamwork/std/codec/utf8.lua" )
-send( "dreamwork/std/codec/utf8.lua" )
+sendfile( "dreamwork/std/codec/utf8.lua" )
 
 -- utf16 encoding library
 dofile( "dreamwork/std/codec/utf16.lua" )
-send( "dreamwork/std/codec/utf16.lua" )
+sendfile( "dreamwork/std/codec/utf16.lua" )
 
 -- utf32 encoding library
 dofile( "dreamwork/std/codec/utf32.lua" )
-send( "dreamwork/std/codec/utf32.lua" )
+sendfile( "dreamwork/std/codec/utf32.lua" )
 
 -- unicode encoding library
 dofile( "dreamwork/std/codec/unicode.lua" )
-send( "dreamwork/std/codec/unicode.lua" )
+sendfile( "dreamwork/std/codec/unicode.lua" )
 
 -- symbols
 dofile( "dreamwork/std/types/symbol.lua" )
-send( "dreamwork/std/types/symbol.lua" )
+sendfile( "dreamwork/std/types/symbol.lua" )
 
 -- class library
 dofile( "dreamwork/std/class.lua" )
-send( "dreamwork/std/class.lua" )
+sendfile( "dreamwork/std/class.lua" )
 
 do
 
@@ -805,23 +811,23 @@ end
 
 -- queue class
 dofile( "dreamwork/std/types/queue.lua" )
-send( "dreamwork/std/types/queue.lua" )
+sendfile( "dreamwork/std/types/queue.lua" )
 
 -- stack class
 dofile( "dreamwork/std/types/stack.lua" )
-send( "dreamwork/std/types/stack.lua" )
+sendfile( "dreamwork/std/types/stack.lua" )
 
 -- node class
 dofile( "dreamwork/std/types/node.lua" )
-send( "dreamwork/std/types/node.lua" )
+sendfile( "dreamwork/std/types/node.lua" )
 
 -- version class
 dofile( "dreamwork/std/types/version.lua" )
-send( "dreamwork/std/types/version.lua" )
+sendfile( "dreamwork/std/types/version.lua" )
 
 -- time library
 dofile( "dreamwork/std/time.lua" )
-send( "dreamwork/std/time.lua" )
+sendfile( "dreamwork/std/time.lua" )
 
 local time = std.time
 local gc = std.gc
@@ -832,11 +838,11 @@ end
 
 -- coroutine library
 dofile( "dreamwork/std/coroutine.lua" )
-send( "dreamwork/std/coroutine.lua" )
+sendfile( "dreamwork/std/coroutine.lua" )
 
 -- buffer library
 dofile( "dreamwork/std/codec/buffer.lua" )
-send( "dreamwork/std/codec/buffer.lua" )
+sendfile( "dreamwork/std/codec/buffer.lua" )
 
 do
 
@@ -856,7 +862,7 @@ end
 
 -- futures library
 dofile( "dreamwork/std/futures.lua" )
-send( "dreamwork/std/futures.lua" )
+sendfile( "dreamwork/std/futures.lua" )
 
 std.sleep = std.futures.sleep
 
@@ -1397,11 +1403,11 @@ local isString = std.isString
 
 -- path library
 dofile( "dreamwork/std/path.lua" )
-send( "dreamwork/std/path.lua" )
+sendfile( "dreamwork/std/path.lua" )
 
 -- color library
 dofile( "dreamwork/std/color.lua" )
-send( "dreamwork/std/color.lua" )
+sendfile( "dreamwork/std/color.lua" )
 
 local color_lib = std.color
 
@@ -1791,23 +1797,23 @@ end
 
 -- bigint class
 dofile( "dreamwork/std/types/bigint.lua" )
-send( "dreamwork/std/types/bigint.lua" )
+sendfile( "dreamwork/std/types/bigint.lua" )
 
 -- hook class
 dofile( "dreamwork/std/types/hook.lua" )
-send( "dreamwork/std/types/hook.lua" )
+sendfile( "dreamwork/std/types/hook.lua" )
 
 -- ip library
 dofile( "dreamwork/std/ip.lua" )
-send( "dreamwork/std/ip.lua" )
+sendfile( "dreamwork/std/ip.lua" )
 
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
-send( "dreamwork/engine.lua" )
+sendfile( "dreamwork/engine.lua" )
 
 -- timer class
 dofile( "dreamwork/std/engine/types/timer.lua" )
-send( "dreamwork/std/engine/types/timer.lua" )
+sendfile( "dreamwork/std/engine/types/timer.lua" )
 
 local engine = dreamwork.engine
 
@@ -2111,55 +2117,55 @@ end
 
 -- crc checksum clases
 dofile( "dreamwork/std/checksum/crc.lua" )
-send( "dreamwork/std/checksum/crc.lua" )
+sendfile( "dreamwork/std/checksum/crc.lua" )
 
 -- adler checksum classes
 dofile( "dreamwork/std/checksum/adler.lua" )
-send( "dreamwork/std/checksum/adler.lua" )
+sendfile( "dreamwork/std/checksum/adler.lua" )
 
 -- fletcher checksum library
 dofile( "dreamwork/std/checksum/fletcher.lua" )
-send( "dreamwork/std/checksum/fletcher.lua" )
+sendfile( "dreamwork/std/checksum/fletcher.lua" )
 
 -- base16 encoding library
 dofile( "dreamwork/std/codec/base16.lua" )
-send( "dreamwork/std/codec/base16.lua" )
+sendfile( "dreamwork/std/codec/base16.lua" )
 
 -- base32 encoding library
 dofile( "dreamwork/std/codec/base32.lua" )
-send( "dreamwork/std/codec/base32.lua" )
+sendfile( "dreamwork/std/codec/base32.lua" )
 
 -- base64 encoding library
 dofile( "dreamwork/std/codec/base64.lua" )
-send( "dreamwork/std/codec/base64.lua" )
+sendfile( "dreamwork/std/codec/base64.lua" )
 
 -- percent encoding library
 dofile( "dreamwork/std/codec/percent.lua" )
-send( "dreamwork/std/codec/percent.lua" )
+sendfile( "dreamwork/std/codec/percent.lua" )
 
 -- punycode encoding library
 dofile( "dreamwork/std/codec/punycode.lua" )
-send( "dreamwork/std/codec/punycode.lua" )
+sendfile( "dreamwork/std/codec/punycode.lua" )
 
 -- json encoding library
 dofile( "dreamwork/std/codec/json.lua" )
-send( "dreamwork/std/codec/json.lua" )
+sendfile( "dreamwork/std/codec/json.lua" )
 
 -- xml encoding library
 dofile( "dreamwork/std/codec/xml.lua" )
-send( "dreamwork/std/codec/xml.lua" )
+sendfile( "dreamwork/std/codec/xml.lua" )
 
 -- vdf encoding library
 dofile( "dreamwork/std/codec/vdf.lua" )
-send( "dreamwork/std/codec/vdf.lua" )
+sendfile( "dreamwork/std/codec/vdf.lua" )
 
 -- xml encoding library
 dofile( "dreamwork/std/codec/xml.lua" )
-send( "dreamwork/std/codec/xml.lua" )
+sendfile( "dreamwork/std/codec/xml.lua" )
 
 -- url class
 dofile( "dreamwork/std/types/url.lua" )
-send( "dreamwork/std/types/url.lua" )
+sendfile( "dreamwork/std/types/url.lua" )
 
 --- [SHARED AND MENU]
 ---
@@ -2177,87 +2183,89 @@ std.crypto = std.crypto or {}
 
 -- md5 hash library
 dofile( "dreamwork/std/crypto/md5.lua" )
-send( "dreamwork/std/crypto/md5.lua" )
+sendfile( "dreamwork/std/crypto/md5.lua" )
 
 -- sha1 hash library
 dofile( "dreamwork/std/crypto/sha1.lua" )
-send( "dreamwork/std/crypto/sha1.lua" )
+sendfile( "dreamwork/std/crypto/sha1.lua" )
 
 -- sha256 hash library
 dofile( "dreamwork/std/crypto/sha256.lua" )
-send( "dreamwork/std/crypto/sha256.lua" )
+sendfile( "dreamwork/std/crypto/sha256.lua" )
 
 -- sha512 hash library
 dofile( "dreamwork/std/crypto/sha512.lua" )
-send( "dreamwork/std/crypto/sha512.lua" )
+sendfile( "dreamwork/std/crypto/sha512.lua" )
 
 -- hmac library
 dofile( "dreamwork/std/crypto/hmac.lua" )
-send( "dreamwork/std/crypto/hmac.lua" )
+sendfile( "dreamwork/std/crypto/hmac.lua" )
 
 -- pbkdf2 library
 dofile( "dreamwork/std/crypto/pbkdf2.lua" )
-send( "dreamwork/std/crypto/pbkdf2.lua" )
+sendfile( "dreamwork/std/crypto/pbkdf2.lua" )
 
 -- TODO: crypto.ed25519 & crypto.chacha20/xchacha
 
 -- uuid library
 dofile( "dreamwork/std/uuid.lua" )
-send( "dreamwork/std/uuid.lua" )
+sendfile( "dreamwork/std/uuid.lua" )
 
 -- hook class
 dofile( "dreamwork/std/types/hook.lua" )
-send( "dreamwork/std/types/hook.lua" )
+sendfile( "dreamwork/std/types/hook.lua" )
 
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )
-send( "dreamwork/std/compress/lzw.lua" )
+sendfile( "dreamwork/std/compress/lzw.lua" )
 
 -- deflate compression library
 dofile( "dreamwork/std/compress/deflate.lua" )
-send( "dreamwork/std/compress/deflate.lua" )
+sendfile( "dreamwork/std/compress/deflate.lua" )
 
 -- lzma compression library
 dofile( "dreamwork/std/compress/lzma.lua" )
-send( "dreamwork/std/compress/lzma.lua" )
+sendfile( "dreamwork/std/compress/lzma.lua" )
 
 -- 2d vector class
 dofile( "dreamwork/std/types/vector2.lua" )
-send( "dreamwork/std/types/vector2.lua" )
+sendfile( "dreamwork/std/types/vector2.lua" )
 
 -- 3d vector class
 dofile( "dreamwork/std/types/vector3.lua" )
-send( "dreamwork/std/types/vector3.lua" )
+sendfile( "dreamwork/std/types/vector3.lua" )
 
 -- quaternion class
 dofile( "dreamwork/std/types/quaternion.lua" )
-send( "dreamwork/std/types/quaternion.lua" )
+sendfile( "dreamwork/std/types/quaternion.lua" )
 
 -- 3d angle class
 dofile( "dreamwork/std/types/angle3.lua" )
-send( "dreamwork/std/types/angle3.lua" )
+sendfile( "dreamwork/std/types/angle3.lua" )
 
 -- valve matrix class
 dofile( "dreamwork/std/types/vmatrix.lua" )
-send( "dreamwork/std/types/vmatrix.lua" )
+sendfile( "dreamwork/std/types/vmatrix.lua" )
 
 -- engine console library
-dofile( "dreamwork/std/io/console/init.lua" )
-send( "dreamwork/std/io/console/init.lua" )
+dofile( "dreamwork/std/io/console.lua" )
+sendfile( "dreamwork/std/io/console.lua" )
 
--- engine console variable class
-dofile( "dreamwork/std/io/console/variable.lua" )
-send( "dreamwork/std/io/console/variable.lua" )
+local console = std.console
 
--- engine console command class
-dofile( "dreamwork/std/io/console/command.lua" )
-send( "dreamwork/std/io/console/command.lua" )
+if os.exit == nil then
 
--- engine console logger class
-dofile( "dreamwork/std/io/console/logger.lua" )
-send( "dreamwork/std/io/console/logger.lua" )
+    --- [SHARED AND MENU]
+    ---
+    --- Calls the ISO C function exit to terminate the host program.
+    ---
+    function os.exit()
+        console.Command.run( "_restart" )
+    end
 
-local logger = std.console.Logger( {
+end
+
+local logger = console.Logger( {
     color = color_scheme.dreamwork_main,
     title = dreamwork.Prefix,
     interpolation = false
@@ -2413,10 +2421,20 @@ do
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
     local splash = splashes[ math.random( 1, count ) ]
 
+    std.console.clear()
     std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.utf8.len( splash ) ) )
 
 end
 
+--- [SHARED AND MENU]
+---
+--- Returns the value of the process environment variable varname or fail if the variable is not defined.
+---
+---@param key string
+---@return string value
+function os.getenv( key )
+
+end
 
 --- [SHARED AND MENU]
 ---
@@ -2459,7 +2477,7 @@ function std.require( modname, ... )
     -- TODO: reimplement
 end
 
-logger:info( "Start-up time: %.2f ms.", (std.os.clock() - dreamwork.InitTime) * 1000 )
+logger:info( "Start-up time: %.2f ms.", (os.clock() - dreamwork.InitTime) * 1000 )
 
 -- Clean-up
 time.tick( "ms" )

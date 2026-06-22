@@ -1,6 +1,12 @@
+local sendfile = dreamwork.sendfile
+local dofile = dreamwork.dofile
+
+local engine = dreamwork.engine
+local engine_consoleMessage = engine.consoleMessage
+local engine_consoleMessageColored = engine.consoleMessageColored
+
 ---@class dreamwork.std
 local std = dreamwork.std
-local engine = dreamwork.engine
 
 --- [SHARED AND MENU]
 ---
@@ -65,9 +71,6 @@ end
 
 do
 
-    local engine_consoleMessageColored = engine.consoleMessageColored
-    local engine_consoleMessage = engine.consoleMessage
-
     ---@class dreamwork.std.console.Message
     ---@field text string
     ---@field color dreamwork.std.Color | nil
@@ -101,6 +104,14 @@ do
             last_message.text = last_message.text .. "\n"
             console_write( ... )
         end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Clears the console output.
+    ---
+    function console.clear()
+        engine_consoleMessage( "\27[2J\27[H" ) -- ANSI escape codes to clear the screen and move the cursor to the top-left corner.
     end
 
 end
@@ -215,3 +226,15 @@ do
     end
 
 end
+
+-- engine console variable class
+dofile( "dreamwork/std/io/console/variable.lua" )
+sendfile( "dreamwork/std/io/console/variable.lua" )
+
+-- engine console command class
+dofile( "dreamwork/std/io/console/command.lua" )
+sendfile( "dreamwork/std/io/console/command.lua" )
+
+-- engine console logger class
+dofile( "dreamwork/std/io/console/logger.lua" )
+sendfile( "dreamwork/std/io/console/logger.lua" )
