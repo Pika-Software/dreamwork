@@ -12,8 +12,6 @@ local engine_hookCatch = engine.hookCatch
 local os_clock = std.os.clock
 local Hook = std.Hook
 
-local GameMounted = Hook( "GameMounted", false )
-
 ---@class dreamwork.std.Game : dreamwork.std.Object
 local Game = class.base( "Game", true )
 

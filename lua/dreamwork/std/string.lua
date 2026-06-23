@@ -5,7 +5,7 @@ local std = dreamwork.std
 
 local len = std.len
 local isTable = std.isTable
-local tostring = std.tostring
+local represent = std.represent
 
 local raw = std.raw
 local raw_tonumber = raw.tonumber
@@ -1301,7 +1301,7 @@ function string.interpolate( str, variables, start_position, end_position, str_l
     end
 
     for i = 1, len( variables ), 1 do
-        variables[ tostring( i ) ] = variables[ i ]
+        variables[ represent( i ) ] = variables[ i ]
         variables[ i ] = nil
     end
 
@@ -1364,7 +1364,7 @@ function string.interpolate( str, variables, start_position, end_position, str_l
             start_position = start_position + 1
         end
 
-    until start_position >= end_position
+    until start_position > end_position
 
     if break_position ~= start_position then
         segment_count = segment_count + 1

@@ -5,9 +5,6 @@
 ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
 ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
 ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
----@field DEVELOPER integer A cached value of `developer` console variable.
----@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
----@field FPS number The number of frames per second. **Client-only**
 local std = dreamwork.std
 
 ---@diagnostic disable-next-line: undefined-field
@@ -23,162 +20,15 @@ local time = std.time
 local engine = dreamwork.engine
 local engine_hookCatch = engine.hookCatch
 
-dofile( "std/game.lua" )
-
-
-if dreamwork.TickTimer0_05 == nil then
-    local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )
-    dreamwork.TickTimer0_05 = timer
-    timer:start()
-end
-
-if dreamwork.TickTimer0_1 == nil then
-    local timer = std.Timer( 0.1, 0, dreamwork.Prefix .. "::TickTimer0_1" )
-    dreamwork.TickTimer0_1 = timer
-    timer:start()
-end
-
-if dreamwork.TickTimer0_25 == nil then
-    local timer = std.Timer( 0.25, 0, dreamwork.Prefix .. "::TickTimer0_25" )
-    dreamwork.TickTimer0_25 = timer
-    timer:start()
-end
-
-if dreamwork.TickTimer1 == nil then
-    local timer = std.Timer( 1, 0, dreamwork.Prefix .. "::TickTimer1" )
-    dreamwork.TickTimer1 = timer
-    timer:start()
-end
-
 local logger = dreamwork.Logger
 
 -- dofile( "std/message.lua" )
-local std_metatable = getmetatable( std )
-
-if std_metatable == nil then
-
-    ---@type table<string, fun( self: table ): any>
-    local indexes = {}
-
-    ---@type table<string, fun( self: table, value: any )>
-    local newindexes = {}
-
-    do
-
-        local raw_set = raw.set
-
-        std_metatable = {
-            __indexes = indexes,
-            __index = function( self, key )
-                local fn = indexes[ key ]
-                if fn ~= nil then
-                    return fn( self )
-                end
-            end,
-            __newindexes = newindexes,
-            __newindex = function( self, key, value )
-                local fn = newindexes[ key ]
-
-                if fn == nil then
-                    raw_set( self, key, value )
-                    return
-                end
-
-                value = fn( self, value )
-
-                if value ~= nil then
-                    raw_set( self, key, value )
-                end
-            end
-        }
-
-        std.setmetatable( std, std_metatable )
-
-    end
-
-    do
-
-        local developer = std.console.Variable.get( "developer", "integer" )
-        if developer == nil then
-
-            ---@private
-            function indexes.DEVELOPER()
-                return 1
-            end
-
-        else
-
-            ---@private
-            function indexes.DEVELOPER()
-                return developer.value
-            end
-
-        end
-
-    end
-
-    ---@private
-    function indexes.DST_TZ()
-        if std.DST then
-            return std.TZ + 1
-        else
-            return std.TZ
-        end
-    end
-
-    if LUA_CLIENT then
-
-        local time_elapsed = time.elapsed
-
-        local frame_time = 0
-        local fps = 0
-
-        ---@private
-        function indexes.FPS()
-            return fps
-        end
-
-        ---@private
-        function indexes.FRAME_TIME()
-            return frame_time
-        end
-
-        local last_pre_render = 0
-
-        engine_hookCatch( "PreRender", function()
-            local elapsed_time = time_elapsed()
-
-            if last_pre_render ~= 0 then
-                frame_time = elapsed_time - last_pre_render
-                fps = 1 / frame_time
-            end
-
-            last_pre_render = elapsed_time
-        end, 1 )
-
-    end
-
-end
 
 dofile( "std/fs.lua" )
 dofile( "std/sqlite.lua" )
 
 dofile( "storage.lua" )
 dofile( "factory.lua" )
-
-logger:info( "Started with %d game(s) and %d addon(s).", engine.GameCount, engine.AddonCount )
-
----@param game_info dreamwork.engine.GameInfo
----@param is_mounted boolean
-engine_hookCatch( "GameMounted", function( game_info, is_mounted )
-    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
-end, 1 )
-
----@param addon_info dreamwork.engine.AddonInfo
----@param is_mounted boolean
-engine_hookCatch( "AddonMounted", function( addon_info, is_mounted )
-    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
-end, 1 )
 
 do
 

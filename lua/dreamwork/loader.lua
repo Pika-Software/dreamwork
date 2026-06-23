@@ -30,6 +30,9 @@ dreamwork.dofile = dofile
 ---@field LUA_CLIENT_MENU boolean `true` if code is running on the client or menu, `false` otherwise.
 ---@field LUA_CLIENT_SERVER boolean `true` if code is running on the client or server, `false` otherwise.
 ---@field LUA_SERVER boolean `true` if code is running on the server, `false` otherwise.
+---@field DEVELOPER integer A cached value of `developer` console variable.
+---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
+---@field FPS number The number of frames per second. **Client-only**
 local std = dreamwork.std
 
 std.LUA_VERSION = _VERSION or "unknown"
@@ -569,6 +572,10 @@ sendfile( "dreamwork/std/gc.lua" )
 dofile( "dreamwork/std/table.lua" )
 sendfile( "dreamwork/std/table.lua" )
 
+---@class dreamwork.std.table
+local table = std.table
+local table_concat = table.concat
+
 -- ascii library
 dofile( "dreamwork/std/ascii.lua" )
 sendfile( "dreamwork/std/ascii.lua" )
@@ -739,6 +746,8 @@ sendfile( "dreamwork/std/fnv.lua" )
 dofile( "dreamwork/std/codec/bytepack.lua" )
 sendfile( "dreamwork/std/codec/bytepack.lua" )
 
+local bytepack = std.bytepack
+
 -- bitpack library
 dofile( "dreamwork/std/codec/bitpack.lua" )
 sendfile( "dreamwork/std/codec/bitpack.lua" )
@@ -849,15 +858,35 @@ sendfile( "dreamwork/std/codec/buffer.lua" )
 do
 
     local timer_Simple = timer.Simple
+    local table_unpack = table.unpack
 
     --- [SHARED AND MENU]
     ---
     --- Calls the `fn` function after `delay` seconds.
     ---
+    --- **Usage example:**
+    ---
+    --- ```lua
+    --- std.setTimeout( function()
+    ---     print( "Hello, world!" )
+    --- end, 5 ) -- Calls the function after 5 seconds.
+    --- ```
+    ---
     ---@param fn function The callback function.
     ---@param delay? number The delay in seconds, default is `0`.
-    function std.setTimeout( fn, delay )
-        return timer_Simple( delay or 0, fn )
+    ---@param ... any Additional arguments to pass to the callback function.
+    function std.setTimeout( fn, delay, ... )
+        local arg_count = raw_select( "#", ... )
+        if arg_count ~= 0 then
+            local args = { ... }
+            local callback = fn
+
+            fn = function()
+                callback( table_unpack( args, 1, arg_count ) )
+            end
+        end
+
+        timer_Simple( delay or 0, fn )
     end
 
 end
@@ -867,12 +896,6 @@ dofile( "dreamwork/std/futures.lua" )
 sendfile( "dreamwork/std/futures.lua" )
 
 std.sleep = std.futures.sleep
-
----@class dreamwork.std.table
-local table = std.table
-local table_concat = table.concat
-
-local bytepack = std.bytepack
 
 do
 
@@ -2217,6 +2240,30 @@ sendfile( "dreamwork/std/types/hook.lua" )
 dofile( "dreamwork/std/engine/types/timer.lua" )
 sendfile( "dreamwork/std/engine/types/timer.lua" )
 
+if dreamwork.TickTimer0_05 == nil then
+    local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )
+    dreamwork.TickTimer0_05 = timer
+    timer:start()
+end
+
+if dreamwork.TickTimer0_1 == nil then
+    local timer = std.Timer( 0.1, 0, dreamwork.Prefix .. "::TickTimer0_1" )
+    dreamwork.TickTimer0_1 = timer
+    timer:start()
+end
+
+if dreamwork.TickTimer0_25 == nil then
+    local timer = std.Timer( 0.25, 0, dreamwork.Prefix .. "::TickTimer0_25" )
+    dreamwork.TickTimer0_25 = timer
+    timer:start()
+end
+
+if dreamwork.TickTimer1 == nil then
+    local timer = std.Timer( 1, 0, dreamwork.Prefix .. "::TickTimer1" )
+    dreamwork.TickTimer1 = timer
+    timer:start()
+end
+
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )
 sendfile( "dreamwork/std/compress/lzw.lua" )
@@ -2267,6 +2314,17 @@ if os.exit == nil then
 
 end
 
+local developer = console.Variable.get( "developer", "integer" )
+if developer == nil then
+    std.DEVELOPER = 1
+else
+    developer:attach( function( _, new_value )
+        std.DEVELOPER = new_value
+    end, "dreamwork.std", false )
+
+    std.DEVELOPER = developer.value
+end
+
 local logger = console.Logger( {
     color = color_scheme.dreamwork_main,
     title = dreamwork.Prefix,
@@ -2282,16 +2340,18 @@ dreamwork.Logger = logger
 -- Welcome message
 do
 
-    local name = "stranger"
+    local variables = {}
 
-    local cvar = std.console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
+    local cvar = console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
     if cvar ~= nil then
-        ---@type string
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        name = cvar.value
-        if string.isEmpty( name ) or name == "unnamed" then
-            name = "stranger"
+        local value = cvar.value
+        if not string.isEmpty( value ) and value ~= "unnamed" then
+            variables.username = value
         end
+    end
+
+    if variables.username == nil then
+        variables.username = std.DEVELOPER ~= 0 and "develoer" or "stranger"
     end
 
     local splashes = {
@@ -2313,14 +2373,14 @@ do
         "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
         "I'm tired of these darker days ♪",
-        "Don't worry, " .. name .. " :>",
+        "Don't worry, {username} :>",
         "Big Brother is watching you",
         "As we build it once agai1n ♪",
         "I'm turning the lights on ♪",
         "I'm calling out for help ♪",
         "I'll make you a promise.",
         "Flying over rooftops...",
-        "Hello, " .. name .. "!",
+        "Hello, {username}!",
         "Dream + Framework = <3",
         "We need more packages!",
         "Pew-pew-pew-pew-pew! ♪",
@@ -2421,10 +2481,52 @@ do
     end
 
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
-    local splash = splashes[ math.random( 1, count ) ]
+    local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
 
     std.console.clear()
     std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.utf8.len( splash ) ) )
+
+end
+
+logger:info( "%d game(s) and %d add-on(s) mounted to engine.", engine.GameCount, engine.AddonCount )
+
+---@param game_info dreamwork.engine.GameInfo
+---@param is_mounted boolean
+engine.hookCatch( "GameMounted", function( game_info, is_mounted )
+    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
+---@param addon_info dreamwork.engine.AddonInfo
+---@param is_mounted boolean
+engine.hookCatch( "AddonMounted", function( addon_info, is_mounted )
+    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
+std.FRAME_TIME = 1 / 60
+std.FPS = 60
+
+if LUA_CLIENT then
+
+    local os_clock = os.clock
+
+    local frame_time = std.FRAME_TIME
+    local fps = std.FPS
+
+    local last_pre_render = 0
+
+    engine.hookCatch( "PreRender", function()
+        local elapsed_time = os_clock()
+
+        if last_pre_render ~= 0 then
+            frame_time = elapsed_time - last_pre_render
+            std.FRAME_TIME = frame_time
+
+            fps = 1 / frame_time
+            std.FPS = fps
+        end
+
+        last_pre_render = elapsed_time
+    end, 1 )
 
 end
 

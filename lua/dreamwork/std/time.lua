@@ -39,8 +39,10 @@ do
         timezone = timezone - 24
     end
 
-    std.DST = ((raw_tonumber( os_date( "%z" ) ) * 0.01) - timezone) ~= 0
+    local is_dst = ((raw_tonumber( os_date( "%z" ) ) * 0.01) - timezone) ~= 0
+    std.DST_TZ = timezone + (is_dst and 1 or 0)
     std.TZ = timezone
+    std.DST = is_dst
 
 end
 
