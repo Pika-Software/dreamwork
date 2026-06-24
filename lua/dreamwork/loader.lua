@@ -2513,7 +2513,7 @@ end
 ---@param key string
 ---@return string value
 function os.getenv( key )
-
+    return ""
 end
 
 --- [SHARED AND MENU]
