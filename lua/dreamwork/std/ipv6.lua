@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std                         = dreamwork.std
 
+local setmetatable                = std.setmetatable
+
 local math                        = std.math
 local math_clamp                  = math.clamp
 local math_relative               = math.relative
@@ -26,6 +28,7 @@ local table                       = std.table
 local table_concat                = table.concat
 
 local class                       = std.class
+
 
 --[[
     IPv6 is represented as two 32-bit Lua integers (high, low), each covering
@@ -130,7 +133,7 @@ end
 ---@field [ 8 ] integer
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): dreamwork.std.IPv6
 local IPv6Class = class.create( IPv6 )
-std.IPv6 = IPv6
+std.IPv6 = IPv6Class
 
 ---@param str string
 ---@param str_start integer
@@ -188,15 +191,19 @@ local function parse_group( str, str_start, str_end, stack_level )
     return groups, group_count
 end
 
---- Split a colon-separated hex string into an array of group values.
+--- [SHARED AND MENU]
+---
+--- Parses an IPv6 address string (with optional CIDR prefix) into a object
+--- and a prefix length.
+---
 --- Handles the embedded "::" expansion and an optional trailing "/prefix".
 ---
----@param ipv6_str string
+---@param ipv6_str string The IPv6 address string, e.g. "2001:db8::1/32".
 ---@param start_position? integer
 ---@param end_position? integer
 ---@param str_length? integer
----@return dreamwork.std.IPv6 groups   Length-8 array of uint16
----@return integer   mask     Prefix length 0-128
+---@return dreamwork.std.IPv6 address
+---@return integer mask Prefix length (0-128).
 function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
     if str_length == nil then
         str_length = string_len( ipv6_str )
@@ -279,4 +286,357 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
 
     setmetatable( groups, IPv6 )
     return groups, mask
+end
+
+--- [SHARED AND MENU]
+---
+--- Compare two IPv6 addresses (length-8 uint16 arrays).
+---
+---@param a dreamwork.std.IPv6
+---@param b dreamwork.std.IPv6
+---@return (`-1` | `0` | `1`)
+local function compare( a, b )
+    for i = 1, 8 do
+        if a[ i ] < b[ i ] then
+            return -1
+        elseif a[ i ] > b[ i ] then
+            return 1
+        end
+    end
+
+    return 0
+end
+
+---@param b dreamwork.std.IPv6
+---@return boolean
+---@protected
+function IPv6:__eq( b )
+    return compare( self, b ) == 0
+end
+
+---@param b dreamwork.std.IPv6
+---@return boolean
+---@protected
+function IPv6:__lt( b )
+    return compare( self, b ) == -1
+end
+
+---@param b dreamwork.std.IPv6
+---@return boolean
+---@protected
+function IPv6:__le( b )
+    return compare( self, b ) <= 0
+end
+
+---@return integer
+---@protected
+function IPv6:__len()
+    return 8
+end
+
+---@return dreamwork.std.IPv6
+---@protected
+function IPv6:__unm()
+    return setmetatable( {
+        bit_bnot( self[ 1 ] ) % 0x10000,
+        bit_bnot( self[ 2 ] ) % 0x10000,
+        bit_bnot( self[ 3 ] ) % 0x10000,
+        bit_bnot( self[ 4 ] ) % 0x10000,
+        bit_bnot( self[ 5 ] ) % 0x10000,
+        bit_bnot( self[ 6 ] ) % 0x10000,
+        bit_bnot( self[ 7 ] ) % 0x10000,
+        bit_bnot( self[ 8 ] ) % 0x10000
+    }, IPv6 )
+end
+
+--- [SHARED AND MENU]
+---
+---
+---
+---@param network dreamwork.std.IPv6
+---@param broadcast dreamwork.std.IPv6
+function IPv6:inRange( network, broadcast )
+    return compare( self, network ) >= 0 and compare( self, broadcast ) <= 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Build a length-8 uint16 mask from a prefix length (0-128).
+---
+---@param prefix integer
+---@return dreamwork.std.IPv6
+local function fromPrefix( prefix )
+    local mask = {}
+
+    for i = 1, 8, 1 do
+        local bits = math_clamp( prefix - (i - 1) * 16, 0, 16 )
+        local value = 0
+
+        if bits == 16 then
+            value = 0xFFFF
+        elseif bits == 0 then
+            value = 0x0000
+        else
+            value = bit_unsign( bit_bnot( bit_rshift( 0xFFFF, bits ) ) ) % 0x10000
+        end
+
+        mask[ i ] = value
+    end
+
+    setmetatable( mask, IPv6 )
+    return mask
+end
+
+IPv6Class.fromPrefix = fromPrefix
+
+--- [SHARED AND MENU]
+---
+--- Returns the network address and broadcast (last) address for a given IPv6
+--- address and prefix length.
+---
+---@param mask integer Prefix length (0-128).
+---@return dreamwork.std.IPv6 network_address
+---@return dreamwork.std.IPv6 broadcast_address
+function IPv6:cidr( mask )
+    local prefix            = fromPrefix( mask )
+
+    local network_address   = {}
+    local broadcast_address = {}
+
+    for i = 1, 8 do
+        network_address[ i ] = bit_band( self[ i ], prefix[ i ] ) % 0x10000
+        broadcast_address[ i ] = bit_bor( network_address[ i ], bit_bnot( prefix[ i ] ) % 0x10000 ) % 0x10000
+    end
+
+    setmetatable( network_address, IPv6 )
+    setmetatable( broadcast_address, IPv6 )
+
+    return network_address, broadcast_address
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the reverse DNS pointer (ip6.arpa) for an IPv6 address.
+---
+---@return string ptr
+function IPv6:reversePointer()
+    local nibbles = {}
+
+    for i = 8, 1, -1 do
+        local g = self[ i ]
+
+        nibbles[ 9 - i ] = string_format(
+            "%x.%x.%x.%x",
+            bit_band( g, 0xF ),
+            bit_band( bit_rshift( g, 4 ), 0xF ),
+            bit_band( bit_rshift( g, 8 ), 0xF ),
+            bit_band( bit_rshift( g, 12 ), 0xF )
+        )
+    end
+
+    return table_concat( nibbles, "." ) .. ".ip6.arpa"
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is the unspecified address (::).
+---
+---@return boolean is_unspecified
+function IPv6:isUnspecified()
+    for i = 1, 8 do
+        if self[ i ] ~= 0 then
+            return false
+        end
+    end
+
+    return true
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is the loopback address (::1).
+---
+---@return boolean is_loopback
+function IPv6:isLoopback()
+    for i = 1, 7 do
+        if self[ i ] ~= 0 then return false end
+    end
+
+    return self[ 8 ] == 1
+end
+
+---@param cidr_str string
+---@return fun( ip_address: dreamwork.std.IPv6 ): boolean
+local function gen_in_range( cidr_str )
+    local address, prefix = IPv6Class.parse( cidr_str )
+    local network, broadcast = address:cidr( prefix )
+
+    return function( ip_address )
+        return ip_address:inRange( network, broadcast )
+    end
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a multicast address (ff00::/8).
+---
+IPv6.isMulticast = gen_in_range( "ff00::/8" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a link-local unicast address (fe80::/10).
+---
+IPv6.isLinkLocal = gen_in_range( "fe80::/10" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a site-local unicast address (fec0::/10).
+--- Note: deprecated by RFC 3879 but still recognisable.
+---
+IPv6.isSiteLocal = gen_in_range( "fec0::/10" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a unique-local address (fc00::/7, RFC 4193).
+---
+IPv6.isUniqueLocal = gen_in_range( "fc00::/7" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a documentation / example address
+--- (2001:db8::/32, RFC 3849).
+---
+IPv6.isDocumentation = gen_in_range( "2001:db8::/32" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a 6to4 address
+--- (2002::/16, RFC 3056).
+---
+IPv6.is6to4 = gen_in_range( "2002::/16" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a Teredo address
+--- (2001::/32, RFC 4380).
+---
+IPv6.isTeredo = gen_in_range( "2001::/32" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is an IPv4-mapped IPv6 address
+--- (::ffff:a.b.c.d).
+---
+---@return boolean
+function IPv6:isIPv4Mapped()
+    return self[ 1 ] == 0
+        and self[ 2 ] == 0
+        and self[ 3 ] == 0
+        and self[ 4 ] == 0
+        and self[ 5 ] == 0
+        and self[ 6 ] == 0xFFFF
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is an IPv4-compatible IPv6 address
+--- (::a.b.c.d).
+--- Note: deprecated by RFC 4291.
+---
+---@return boolean
+function IPv6:isIPv4Compatible()
+    return self[ 1 ] == 0
+        and self[ 2 ] == 0
+        and self[ 3 ] == 0
+        and self[ 4 ] == 0
+        and self[ 5 ] == 0
+        and self[ 6 ] == 0
+        and not self:isUnspecified()
+        and not self:isLoopback()
+end
+
+local discard_net, discard_last = IPv6Class.parse( "100::" ):cidr( 64 )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address belongs to a private/local-use range.
+---
+---@return boolean
+function IPv6:isPrivate()
+    return self:isUnspecified()
+        or self:isLoopback()
+        or self:isLinkLocal()
+        or self:isSiteLocal()
+        or self:isUniqueLocal()
+        or self:inRange( discard_net, discard_last )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address belongs to a special-purpose range.
+---
+---@return boolean
+function IPv6:isReserved()
+    return self:isDocumentation()
+        or self:isIPv4Mapped()
+        or self:isIPv4Compatible()
+        or self:is6to4()
+        or self:isTeredo()
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a global unicast address.
+---
+---@return boolean
+function IPv6:isGlobalUnicast()
+    return not self:isMulticast()
+        and not self:isUnspecified()
+        and not self:isLoopback()
+        and not self:isLinkLocal()
+        and not self:isSiteLocal()
+        and not self:isUniqueLocal()
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is globally routable.
+---
+---@return boolean
+function IPv6:isPublic()
+    return self:isGlobalUnicast()
+        and not self:isReserved()
+end
+
+--- [SHARED AND MENU]
+---
+--- Extracts the embedded IPv4 address from an IPv4-mapped or
+--- IPv4-compatible IPv6 address and returns it as a v4-style uint32.
+---
+--- This function always return IPv4 address even if address is not IPv4-mapped or
+--- IPv4-compatible.
+---
+--- So I recommend to validate address before calling this method.
+---
+---@see IPv6:isIPv4Mapped()
+---@see IPv6:isIPv4Compatible()
+---
+---@return dreamwork.std.IPv4 ipv4_address
+function IPv6:toIPv4()
+    return bit_unsign( bit_bor( bit_lshift( self[ 7 ], 0x10 ), bit_band( self[ 8 ], 0xFFFF ) ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Constructs an IPv4-mapped IPv6 address (::ffff:a.b.c.d) from a v4 uint32.
+---
+---@param ipv4_address dreamwork.std.IPv4
+---@return dreamwork.std.IPv6 ipv6_address
+function IPv6Class.fromIPv4( ipv4_address )
+    return setmetatable( {
+        0, 0, 0, 0, 0,
+        0xFFFF,
+        bit_band( bit_rshift( ipv4_address, 0x10 ), 0xFFFF ),
+        bit_band( ipv4_address, 0xFFFF ),
+    }, IPv6 )
 end
