@@ -47,7 +47,7 @@ local class                    = std.class
 local percent                  = std.percent
 
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The URL object.
 ---
@@ -70,7 +70,7 @@ local percent                  = std.percent
 ---@field hash string? fragment with # prepended
 local URL = class.base( "URL" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The URL class.
 ---
@@ -107,7 +107,7 @@ local URLClass = class.create( URL )
 std.URL = URLClass
 
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The URL search parameters object.
 ---
@@ -115,7 +115,7 @@ std.URL = URLClass
 ---@field __class dreamwork.std.URL.SearchParamsClass
 local SearchParams = class.base( "URLSearchParams" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The URL search parameters class.
 ---
@@ -1434,7 +1434,7 @@ local function serializeQuery( query )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Serializes given URLState object to full url string
 --- basically same as accessing ``.href`` of URL object
@@ -1597,7 +1597,7 @@ end
 
 -- SearchParams.__tostring = serializeQuery
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Appends name and value to the end
 ---@param name string
@@ -1607,7 +1607,7 @@ function SearchParams:append( name, value )
     update( self )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- searches all parameters with given name, and deletes them
 --- if `value` is given, then searches for exactly given name AND value
@@ -1624,7 +1624,7 @@ function SearchParams:delete( name, value )
     update( self )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finds first value associated with given name
 ---@param name string
@@ -1638,7 +1638,7 @@ function SearchParams:get( name )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finds all values associated with given name and returns them as list.
 ---@param name string
@@ -1655,7 +1655,7 @@ function SearchParams:getAll( name )
     return values
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns true if parameters with given name exists and value if given.
 ---@param name string
@@ -1672,7 +1672,7 @@ function SearchParams:has( name, value )
     return false
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets first name to a given value (or appends [name, value])
 --- and deletes other parameters with the same name
@@ -1702,7 +1702,7 @@ function SearchParams:set( name, value )
     update( self )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sorts parameters inside `URLSearchParams`.
 function SearchParams:sort()
@@ -1724,7 +1724,7 @@ function SearchParams:sort()
     update( self )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- returns iterator that can be used in for loops
 --- e.g. `for name, value in searchParams:entries() do ... end`
@@ -1742,7 +1742,7 @@ function SearchParams:iterator()
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- returns iterator that can be used in for loops
 ---@return fun(): string | nil
@@ -1759,7 +1759,7 @@ function SearchParams:keys()
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- returns iterator that can be used in for loops
 ---@return fun(): string | nil
@@ -1814,7 +1814,7 @@ do
 
     local debug_getmetatable = std.debug.getmetatable
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the given value is a `URLSearchParams`.
     ---@param any any The value to check.
@@ -1825,7 +1825,7 @@ do
 
     std.isURLSearchParams = isURLSearchParams
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the given value is a `URL`.
     ---@param value any The value to check.
@@ -2026,7 +2026,7 @@ function URL:__init( str, base )
     parse( state, str, base )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Parses given dreamwork.std.URL string but returns URLState object instead
 ---@see dreamwork.std.URL
@@ -2037,7 +2037,7 @@ function URLClass.parse( url, base )
     return parse( {}, url, base )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns true if given url can be parsed with URLState
 --- otherwise returns false and error string
@@ -2052,7 +2052,7 @@ end
 URLClass.serialize = serialize
 -- URLClass.deserialize = parse
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI
 ---@param uri string
@@ -2061,7 +2061,7 @@ function URLClass.encodeURI( uri )
     return percentEncode( uri, URI_ENCODE_SET )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURI
 ---@param uri string
@@ -2070,7 +2070,7 @@ function URLClass.decodeURI( uri )
     return percentDecode( uri, URI_DECODE_SET )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
 ---@param uri string
@@ -2079,7 +2079,7 @@ function URLClass.encodeURIComponent( uri )
     return percentEncode( uri, COMPONENT_ENCODE_SET, true )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent
 ---@param uri string

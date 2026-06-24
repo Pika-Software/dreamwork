@@ -15,7 +15,7 @@ local Queue = std.Queue
 
 local class = std.class
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- This library provides tools for asynchronous programming, such as Futures, Tasks, Channels, and async iterators.
 ---
@@ -66,7 +66,7 @@ if coroutine_listeners == nil then
     gc_setTableRules( coroutine_listeners, true, false )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Abstract type that is used to type hint async functions.
 ---
@@ -131,7 +131,7 @@ local function async_thread( fn, ... )
     return async_thread_result( pcall( fn, ... ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Executes a function in a new coroutine
 --- you can use this function to call async functions even in sync code
@@ -186,7 +186,7 @@ local function handle_pending( value, ... )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Puts current coroutine to sleep until futures.wakeup is called
 --- can be used to wait for some event.
@@ -220,7 +220,7 @@ end
 
 futures.pending = futures_pending
 
--- --- [SHARED AND MENU]
+-- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 -- ---
 -- --- Used to wake up pending coroutine.
 -- ---
@@ -231,7 +231,7 @@ futures.pending = futures_pending
 -- end
 
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Cancels execution of passed coroutine.
 ---
@@ -272,7 +272,7 @@ function futures.cancel( co )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Transfers data between coroutines in symmetrical way
 --- used in asynchronous iterators
@@ -321,7 +321,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Yields given arguments to the apairs listener.
     ---
@@ -381,7 +381,7 @@ local function handle_anext( co, ok, value, ... )
     return handle_anext( co, true, coroutine_yield() )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Retrieves next value from async iterator coroutine
 --- this function returned by apairs
@@ -396,7 +396,7 @@ end
 
 futures.anext = futures_anext
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Iterates over async iterator, calling it with given arguments.
 ---
@@ -435,7 +435,7 @@ end
 futures.apairs = futures_apairs
 std.apairs = futures_apairs
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Collects all values from async iterator into a list.
 ---
@@ -454,7 +454,7 @@ function futures.collect( iterator, ... )
     return results, length
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Collects all values from async iterator into a table.
 ---
@@ -475,7 +475,7 @@ do
 
     local table = std.table
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Futures are objects that hold the result that can be assigned asynchronously
     --- they can be awaited to get the result
@@ -535,7 +535,7 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if Future is pending.
     ---
@@ -544,7 +544,7 @@ do
         return self.state == 0
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if Future is finished (or cancelled).
     ---
@@ -553,7 +553,7 @@ do
         return self.state ~= 0
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns true if Future was cancelled.
     ---
@@ -562,7 +562,7 @@ do
         return self.state == 2
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Runs all callbacks.
     ---
@@ -580,7 +580,7 @@ do
 
         local table_insert = table.insert
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Adds callback that will be called when future is done
         --- if future is already done, callback will be called immediately.
@@ -601,7 +601,7 @@ do
 
         local table_remove = table.remove
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Removes callback that was previously added with `:addCallback`.
         ---
@@ -618,7 +618,7 @@ do
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets result of the Future, marks it as finished, and runs all callbacks
     --- if future is already finished, error will be thrown.
@@ -637,7 +637,7 @@ do
         self:runCallbacks()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets error of the Future, marks it as finished, and runs all callbacks
     --- if future is already finished, error will be thrown.
@@ -654,7 +654,7 @@ do
         self:runCallbacks()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Tries to cancel future, if it's already done, returns `false`
     --- otherwise marks it as cancelled, runs all callbacks and returns `true`.
@@ -670,7 +670,7 @@ do
         return true
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns error if future is finished and has error
     --- otherwise returns nil
@@ -689,7 +689,7 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns result if future is finished
     --- otherwise throws an error.
@@ -712,7 +712,7 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Await until future will be finished
     --- if it contains an error, then it will be thrown.
@@ -737,7 +737,7 @@ do
         return self:result()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Future class.
     ---
@@ -752,7 +752,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Async task object.
     ---
@@ -781,7 +781,7 @@ do
         end, ... )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Task is a Future wrapper around futures.run(...) to retrieve result of async function
     --- when task is created, it will immediately run given function.
@@ -811,7 +811,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A channel is a queue-type object that can be used by multiple coroutines.
     ---
@@ -839,7 +839,7 @@ do
         self.closed = false
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the number of elements in the channel.
     ---
@@ -848,7 +848,7 @@ do
         return self.queue:getLength()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if the channel is empty, `false` otherwise.
     ---
@@ -857,7 +857,7 @@ do
         return self.queue:isEmpty()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if the channel is full, `false` otherwise.
     ---
@@ -871,7 +871,7 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Closes the channel.
     ---
@@ -890,7 +890,7 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if the channel is closed, `false` otherwise.
     ---
@@ -899,7 +899,7 @@ do
         return self.closed
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Puts a value into the channel, without waiting.
     ---
@@ -920,7 +920,7 @@ do
         return true
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Puts a value into the channel.
     ---
@@ -937,7 +937,7 @@ do
         return self:putNow( value )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Gets a value from the channel, without waiting.
     ---
@@ -956,7 +956,7 @@ do
         return value
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Gets a value from the channel.
     ---
@@ -971,7 +971,7 @@ do
         return self:getNow()
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A channel is a queue-type class that can be used by multiple coroutines.
     ---
@@ -984,7 +984,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Awaits concurrently all given `awaitables` and returns results in table.
 ---
@@ -1000,7 +1000,7 @@ local function awaitList( awaitables )
     return results
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Cancels all given awaitables.
 ---
@@ -1014,7 +1014,7 @@ local function cancelList( awaitables )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Awaits concurrently all given `awaitables` and returns results in table
 ---
@@ -1037,7 +1037,7 @@ function futures.all( awaitables )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns first result of futures, or error.
 ---
@@ -1067,7 +1067,7 @@ function futures.any( futureList )
     return fut:result()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Puts current thread to sleep for given amount of seconds.
 ---

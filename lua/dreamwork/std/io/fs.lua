@@ -126,7 +126,7 @@ do
     local head = "lua/bin/gm" .. (LUA_CLIENT and "cl" or "sv") .. "_"
     local tail = "_" .. ({ "osx64", "osx", "linux64", "linux", "win64", "win32" })[ (SYSTEM_WINDOWS and 4 or 0) + (std.SYSTEM_LINUX and 2 or 0) + (SYSTEM_X86 and 1 or 0) + 1 ]
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if a binary module is available and can be loaded.
     ---
@@ -175,7 +175,7 @@ do
         sv_allowcslua = std.console.Variable.get( "sv_allowcslua", "boolean" )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Loads a binary module if available.
     ---
@@ -621,7 +621,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The high-level filesystem library.
 ---
@@ -824,7 +824,7 @@ setmetatable( async_job_counts, {
     __mode = "k"
 } )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Registers a file or directory for asynchronous monitoring.
 ---
@@ -855,7 +855,7 @@ local function async_job_register( fs_object, future )
     return true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Unregisters a file or directory from asynchronous monitoring.
 ---
@@ -1130,7 +1130,7 @@ local function directory_lookup( directory_object, path_to, start_position )
     return nil, false
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The watchdog module.
 ---
@@ -1188,7 +1188,7 @@ if std.loadbinary( "efsw" ) then
     ---@type fun( watch_id: integer )
     local efsw_unwatch = efsw ~= nil and efsw.Unwatch or debug_fempty
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Starts monitoring a file or directory.
     ---
@@ -1216,7 +1216,7 @@ if std.loadbinary( "efsw" ) then
         return true, watch_id
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Stops monitoring a file or directory.
     ---
@@ -1234,7 +1234,7 @@ if std.loadbinary( "efsw" ) then
         return true
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if a file or directory is being watched.
     ---
@@ -1368,7 +1368,7 @@ else
         end
     end )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Starts monitoring a file or directory.
     ---
@@ -1458,7 +1458,7 @@ else
         return true, watch_list_size
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Stops monitoring a file or directory.
     ---
@@ -1482,7 +1482,7 @@ else
         return true
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if a file or directory is being watched.
     ---
@@ -2077,7 +2077,7 @@ function File:__tostring()
     return string.format( "File: %p [%s]", self, self.path )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if file is busy by async operations.
 ---
@@ -2086,7 +2086,7 @@ function File:isBusy()
     return async_job_counts[ self ] ~= 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if file is empty or not.
 ---
@@ -2097,7 +2097,7 @@ function File:isEmpty()
     return sizes[ self ] == 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Touches file and sets its last modification time to the current time.
 ---
@@ -2145,7 +2145,7 @@ function File:touch()
     return modified_time
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns data of the file by given path.
 ---
@@ -2169,7 +2169,7 @@ function File:read()
     return respond.data
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Replaces whole file data with specified.
 ---
@@ -2237,7 +2237,7 @@ function File:write( data )
     return respond
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Appends data to the end of the file.
 ---
@@ -2305,7 +2305,7 @@ function File:append( data )
     return respond
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Deletes the file from it's parent directory.
 ---
@@ -2314,7 +2314,7 @@ function File:delete()
     return delete_file( self, 2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Moves a file to another directory.
 ---
@@ -2401,7 +2401,7 @@ function File:move( directory_object, name, forced )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Renames the file to another name in it's parent directory.
 ---
@@ -2469,7 +2469,7 @@ function File:rename( name, forced )
     self:write( data )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Copies file to another directory.
 ---
@@ -2585,7 +2585,7 @@ function Directory:__tostring()
     return string.format( "Directory: %p [%s]", self, self.path )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if directory is busy by async operations.
 ---
@@ -2601,7 +2601,7 @@ function Directory:lookup( relative_path )
     return directory_lookup( self, relative_path, nil )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Gets a file or directory by name.
 ---
@@ -2849,7 +2849,7 @@ function Directory:foreach( file_callback, directory_callback )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a file in the directory.
 ---
@@ -2861,7 +2861,7 @@ function Directory:makeFile( file_name, forced )
     return make_file( self, file_name, forced == true, 2, "" )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a directory in the directory.
 ---
@@ -2873,7 +2873,7 @@ function Directory:makeDirectory( directory_name, forced )
     return make_directory( self, directory_name, forced == true, 2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Touches the directory and sets its last modification time to the current time.
 ---
@@ -2911,7 +2911,7 @@ function Directory:touch()
     return new_time
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Deletes a directory.
 ---
@@ -2921,7 +2921,7 @@ function Directory:delete( recursive )
     delete_directory( self, recursive == true, 2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Copies a file to another directory.
 ---
@@ -2999,7 +2999,7 @@ do
 
     -- end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Moves a file to another directory.
     ---
@@ -3080,7 +3080,7 @@ end
 
 -- TODO: finish directory methods
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Renames a file.
 ---
@@ -3242,7 +3242,7 @@ end
 
 -- TODO: add more fs hooks
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the file or directory by given path as a `dreamwork.std.fs.File` or `dreamwork.std.fs.Directory` object.
 ---
@@ -3253,7 +3253,7 @@ function fs.lookup( path_to )
     return directory_lookup( root, path_resolve( path_to ), 2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a file or directory exists by given path.
 ---
@@ -3265,7 +3265,7 @@ function fs.exists( path_to )
     return fs_object ~= nil, is_directory
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a directory exists by given path.
 ---
@@ -3276,7 +3276,7 @@ function fs.isDirectory( directory_path )
     return directory_object ~= nil and is_directory
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a file exists by given path.
 ---
@@ -3287,7 +3287,7 @@ function fs.isFile( file_path )
     return file_object ~= nil and not is_directory
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a file or directory is empty by given path.
 ---
@@ -3307,7 +3307,7 @@ function fs.isEmpty( path_to, forced )
     return fs_object:isEmpty(), is_directory
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a directory by given path.
 ---
@@ -3321,7 +3321,7 @@ function fs.makeDirectory( directory_path, forced )
     return make_directory_chain( root, path_resolve( directory_path ), forced == true, 2, 2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a file by given path.
 ---
@@ -3338,7 +3338,7 @@ function fs.makeFile( file_path, forced, data )
     return make_file_chain( root, path_resolve( file_path ), forced == true, 2, 2, data or "" )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a file at the specified path if it does not exist.
 ---
@@ -3365,7 +3365,7 @@ function fs.touch( file_path, forced )
     return fs_object, is_directory
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the time of the last modification of file or directory at the specified path.
 ---
@@ -3384,7 +3384,7 @@ function fs.time( file_path, forced )
     return fs_object.time
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the size of a file or directory by given path.
 ---
@@ -3403,7 +3403,7 @@ function fs.size( file_path, forced )
     return fs_object.size
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Searches for files and directories in a directory by wildcard.
 ---
@@ -3441,7 +3441,7 @@ do
         return futures_yield( paths[ directory_object ], true )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Iterates over all files and directories in a directory by given path.
     ---
@@ -3458,7 +3458,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads data from a file by given path.
 ---
@@ -3480,7 +3480,7 @@ function fs.read( file_path )
     return file_object:read()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes data to a file by given path.
 ---
@@ -3520,7 +3520,7 @@ function fs.write( file_path, data, forced )
     return file_object
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Appends data to a file by given path.
 ---
@@ -3560,7 +3560,7 @@ function fs.append( file_path, data, forced )
     return file_object
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Deletes a file or directory by given path.
 ---
@@ -3586,7 +3586,7 @@ function fs.delete( path_to, recursive )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Copies a file or directory by given path.
 ---
@@ -3635,7 +3635,7 @@ end
 
 -- TODO: finish fs functions
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Moves a file or directory by given path.
 ---
@@ -3648,7 +3648,7 @@ function fs.move( source_path, target_path, forced, recursive )
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Renames a file or directory by given path.
 ---
@@ -3721,7 +3721,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the location of the specified file or directory in gmod filesystem.
 ---

@@ -2,7 +2,7 @@
 local std = dreamwork.std
 local class = std.class
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A stack is a last-in-first-out (LIFO) data structure object.
 ---
@@ -39,7 +39,7 @@ function Stack:__deserialize( reader, fallback )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the stack is empty.
 ---
@@ -48,7 +48,7 @@ function Stack:isEmpty()
     return self.size == 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Pushes a value onto the stack.
 ---
@@ -60,7 +60,7 @@ function Stack:push( value )
     return position
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Pops the value from the top of the stack.
 ---
@@ -78,7 +78,7 @@ function Stack:pop()
     return value
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the value at the top of the stack.
 ---
@@ -87,7 +87,7 @@ function Stack:peek()
     return self[ self.size ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Empties the stack.
 ---
@@ -99,7 +99,7 @@ function Stack:empty()
     self.size = 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns an iterator for the stack.
 ---
@@ -109,7 +109,7 @@ function Stack:iterator()
     return self.pop, self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A stack class.
 ---

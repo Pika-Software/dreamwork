@@ -25,7 +25,7 @@ local glua_util = _G.util
 local glue_encode = glua_util ~= nil and glua_util.Base64Encode
 local glue_decode = glua_util ~= nil and glua_util.Base64Decode
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Base64 encoding/decoding library.
 ---
@@ -35,7 +35,7 @@ local glue_decode = glua_util ~= nil and glua_util.Base64Decode
 local base64 = std.base64 or {}
 std.base64 = base64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The base64 encoding/decoding alphabet.
 ---
@@ -47,7 +47,7 @@ do
 
     local table_remove = std.table.remove
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Creates a base64 alphabet with encoding and decoding maps.
     ---
@@ -82,7 +82,7 @@ end
 local standard = base64.alphabet( "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" )
 local urlsafe = base64.alphabet( "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Base64 encoding/decoding options variant.
 ---
@@ -116,7 +116,7 @@ local variants = {
 
 variants.jwt = variants.urlsafe
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Base64 encoding/decoding options.
 ---
@@ -227,7 +227,7 @@ local function block_encode( encode_map, do_cache, cache_map, uint8_1, uint8_2, 
     return str_block
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Encodes the specified string to base64.
 ---
@@ -369,7 +369,7 @@ local function block_decode( decode_map, do_cache, cache_map, uint8_1, uint8_2, 
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Decodes the specified base64 encoded string.
 ---
@@ -443,7 +443,7 @@ do
 
     local math_floor = std.math.floor
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the specified base64 encoded string is valid.
     ---

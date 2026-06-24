@@ -28,7 +28,7 @@ local raw_get, raw_set = raw.get, raw.set
 
 ]]
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A 3D vector object.
 ---
@@ -55,7 +55,7 @@ do
 
     local debug_getmetatable = std.debug.getmetatable
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if the value is a `Vector3`.
     ---
@@ -67,7 +67,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A 3D vector class.
 ---
@@ -148,7 +148,7 @@ function Vector3:__deserialize( reader )
     self[ 3 ] = reader:readFloat()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the x, y, and z coordinates of the vector.
 ---
@@ -159,7 +159,7 @@ function Vector3:unpack()
     return self[ 1 ], self[ 2 ], self[ 3 ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the x, y, and z coordinates of the vector.
 ---
@@ -172,7 +172,7 @@ function Vector3:setUnpacked( x, y, z )
     self[ 3 ] = z
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a copy of the vector.
 ---
@@ -184,7 +184,7 @@ end
 
 Vector3.copy = Vector3_copy
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Negates the vector.
 ---
@@ -202,7 +202,7 @@ function Vector3:__unm()
     return setmetatable( { -self[ 1 ], -self[ 2 ], -self[ 3 ] }, Vector3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Scales the vector.
 ---
@@ -229,7 +229,7 @@ end
 
 Vector3.scale = Vector3_scale
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a scaled copy of the vector.
 ---
@@ -241,7 +241,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Adds the vector to another vector.
     ---
@@ -267,7 +267,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Subtracts the vector from another vector.
     ---
@@ -293,7 +293,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Multiplies the vector by another vector or a number.
     ---
@@ -326,7 +326,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Divides the vector by another vector or a number.
     ---
@@ -363,7 +363,7 @@ function Vector3:__eq( vector )
     return self[ 1 ] == vector[ 1 ] and self[ 2 ] == vector[ 2 ] and self[ 3 ] == vector[ 3 ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Calculates the distance between two vectors.
 ---
@@ -375,7 +375,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the squared length of the vector.
     ---
@@ -387,7 +387,7 @@ do
 
     Vector3.getLengthSqr = Vector3_getLengthSqr
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the length of the vector.
     ---
@@ -399,7 +399,7 @@ do
 
     Vector3.getLength = Vector3_getLength
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the dot product of two vectors.
     ---
@@ -412,7 +412,7 @@ do
 
     Vector3.dot = Vector3_dot
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the cross product of two vectors.
     ---
@@ -432,7 +432,7 @@ do
 
     Vector3.cross = Vector3_cross
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Normalizes the vector.
     ---
@@ -449,7 +449,7 @@ do
 
     Vector3.normalize = Vector3_normalize
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns a normalized copy of the vector.
     ---
@@ -460,7 +460,7 @@ do
 
     local math_asin = math.asin
 
-    -- --- [SHARED AND MENU]
+    -- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     -- ---
     -- --- Returns the angle of the vector.
     -- ---
@@ -493,7 +493,7 @@ do
 
     local math_acos = math.acos
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the angle between two vectors.
     ---
@@ -503,7 +503,7 @@ do
         return math_deg( math_acos( Vector3_dot( self, vector ) / (Vector3_getLength( self ) * Vector3_getLength( vector )) ) )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Projects the vector onto another vector.
     ---
@@ -523,7 +523,7 @@ do
 
     Vector3.project = Vector3_project
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns a copy of the vector projected onto another vector.
     ---
@@ -535,7 +535,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the vector is zero.
 ---
@@ -546,7 +546,7 @@ function Vector3:isZero()
         self[ 3 ] == 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the vector to zero.
 ---
@@ -558,7 +558,7 @@ function Vector3:zero()
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the vector is within an axis-aligned box.
 ---
@@ -572,7 +572,7 @@ function Vector3:withinAABox( vector )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the vector is equal to the given vector with the given tolerance.
 ---
@@ -587,7 +587,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Rotates the vector by the given angle.
     ---
@@ -610,7 +610,7 @@ do
 
     Vector3.rotate = Vector3_rotate
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns a copy of the vector rotated by the given angle.
     ---
@@ -622,7 +622,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Linear interpolation between two vectors.
 ---
@@ -637,7 +637,7 @@ function Vector3:lerpToVector( vector, frac )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Linear interpolation between vector and number.
 ---
@@ -651,7 +651,7 @@ function Vector3:lerpToNumber( number, frac )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Modifies the given vectors so that all of vector2's axis are larger than vector1's by switching them around.
 ---
@@ -669,7 +669,7 @@ function Vector3Class.order( mins, maxs )
     return mins, maxs
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a new vector from world position and world angle.
 ---
@@ -684,7 +684,7 @@ function Vector3Class.translateToLocal( position, angle, world_position, world_a
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a new vector from local position and local angle.
 ---
@@ -699,7 +699,7 @@ function Vector3Class.translateToWorld( local_position, local_angle, world_posit
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a new vector from screen position.
 ---

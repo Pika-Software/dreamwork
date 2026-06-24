@@ -20,7 +20,7 @@ local table = std.table
 local table_unpack = table.unpack
 local table_concat = table.concat
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The utf8 library is a standard Lua library which provides functions for the manipulation of UTF-8 strings.
 ---
@@ -333,7 +333,7 @@ local function seqlen( utf8_string, index, str_length, strict )
     return 0, index - 3
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the length of the string in UTF-8 code units.
 ---
@@ -387,7 +387,7 @@ end
 
 utf8.len = len
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a table of UTF-8 code points and the length of the string in UTF-8 code units.
 ---
@@ -442,7 +442,7 @@ end
 
 utf8.unpack = unpack
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a substring of the string in UTF-8 code units.
 ---
@@ -535,7 +535,7 @@ function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
     return string_sub( utf8_string, utf8_start, str_length )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Decodes a UTF-8 string into a sequence of code points.
 ---
@@ -596,7 +596,7 @@ do
         return index, utf8_codepoint
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns an iterator function that iterates over the code points of a UTF-8 string.
     ---
@@ -612,7 +612,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Encodes a sequence of code points into a UTF-8 string.
 ---
@@ -642,7 +642,7 @@ end
 
 utf8.pack = pack
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Encodes a sequence of code points into a UTF-8 string.
 ---
@@ -658,7 +658,7 @@ function utf8.char( a, b, ... )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the byte position of a code point in UTF-8 string.
 ---
@@ -725,7 +725,7 @@ do
 
     local table_reversed = table.reversed
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the reverse of a UTF-8 string.
     ---
@@ -747,7 +747,7 @@ do
 
     local default_replacement_str = encode( 0xFFFD, false, 2 )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Normalizes a UTF-8 string.
     ---
@@ -2664,7 +2664,7 @@ local upper2lower = {
     [ 0x10427 ] = "𐑏",
 }
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a UTF-8 string characters to lowercase.
 ---
@@ -2732,7 +2732,7 @@ function utf8.lower( utf8_string, start_position, end_position, lax, str_length 
     return table_concat( utf8_sequences, "", 1, utf8_sequence_count )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a UTF-8 string characters to uppercase.
 ---

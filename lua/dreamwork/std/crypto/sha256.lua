@@ -4,7 +4,7 @@ local std = dreamwork.std
 ---@class dreamwork.std.crypto
 local crypto = std.crypto
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- SHA256 object.
 ---
@@ -14,7 +14,7 @@ local SHA256 = std.class.base( "SHA256" )
 
 ---@alias SHA256 dreamwork.std.crypto.SHA256
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- SHA256 class that computes a cryptographic 256-bit crypto value.
 ---
@@ -49,7 +49,7 @@ else
 
     local base16_decode = std.base16.decode
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Computes the SHA256 digest of the given input string.
     ---

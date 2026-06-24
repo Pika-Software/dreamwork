@@ -26,7 +26,7 @@ local DIV255_CONST = 1 / 255
 
 ---@alias dreamwork.std.Color integer
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Library for color manipulation.
 ---
@@ -34,7 +34,7 @@ local DIV255_CONST = 1 / 255
 local color_lib = {}
 std.color = color_lib
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts RGBA components to a color value.
 ---
@@ -58,7 +58,7 @@ end
 
 color_lib.fromRGBA = fromRGBA
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a color value to RGBA components.
 ---
@@ -83,7 +83,7 @@ end
 
 color_lib.toRGBA = toRGBA
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Inverts a color value.
 ---
@@ -101,7 +101,7 @@ function color_lib.invert( color, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Adds two colors.
 ---
@@ -120,7 +120,7 @@ function color_lib.add( value1, value2, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Subtracts two colors.
 ---
@@ -140,7 +140,7 @@ function color_lib.sub( value1, value2, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Multiplies two colors.
 ---
@@ -160,7 +160,7 @@ function color_lib.mul( value1, value2, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Divides two colors.
 ---
@@ -180,7 +180,7 @@ function color_lib.div( value1, value2, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color as binary string.
 ---
@@ -190,7 +190,7 @@ function color_lib.toString( color )
     return string_char( toRGBA( color ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Parses a color from a binary string.
 ---
@@ -214,7 +214,7 @@ function color_lib.fromString( str, start_position, str_length )
     return fromRGBA( string_byte( str, start_position, start_position + 3 ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Smoothing two colors by fraction.
 ---
@@ -235,7 +235,7 @@ function color_lib.lerp( frac, color, color2, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a color value to a hexadecimal string.
 ---
@@ -306,7 +306,7 @@ local function fromBytes( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, 
     return r, g, b, fromByte( uint8_7 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a hexadecimal color string to color.
 ---
@@ -360,7 +360,7 @@ end
 
 color_lib.fromHex = fromHex
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a color from HSL values (hue, saturation, lightness).
 ---
@@ -399,7 +399,7 @@ end
 
 color_lib.fromHSL = fromHSL
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a color to HSL values (hue, saturation, lightness).
 ---
@@ -443,7 +443,7 @@ end
 
 color_lib.toHSL = toHSL
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a color from HSV values.
 ---
@@ -484,7 +484,7 @@ end
 
 color_lib.fromHSV = fromHSV
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color as HSV values (hue, saturation, value).
 ---
@@ -524,7 +524,7 @@ end
 
 color_lib.toHSV = toHSV
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a color from HWB values.
 ---
@@ -540,7 +540,7 @@ end
 
 color_lib.fromHWB = fromHWB
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color as HWB values (hue, whiteness, blackness).
 ---
@@ -555,7 +555,7 @@ end
 
 color_lib.toHWB = toHWB
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a color from CMYK values.
 ---
@@ -578,7 +578,7 @@ function color_lib.fromCMYK( cyan, magenta, yellow, black, alpha )
     )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color as CMYK values (cyan, magenta, yellow, black).
 ---
@@ -593,7 +593,7 @@ function color_lib.toCMYK( color )
     return (m - red) / m, (m - green) / m, (m - blue) / m, math_min( red, green, blue ) * DIV255_CONST
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's hue.
 ---
@@ -624,7 +624,7 @@ function color_lib.getHue( color )
     return hue < 0 and hue + 360 or hue
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's hue.
 ---
@@ -636,7 +636,7 @@ function color_lib.setHue( color, hue )
     return fromHSL( hue, saturation, lightness )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's saturation.
 ---
@@ -650,7 +650,7 @@ function color_lib.getSaturation( color )
     return max_value == 0 and 0 or (max_value - math_min( red, green, blue )) / max_value
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's saturation.
 ---
@@ -662,7 +662,7 @@ function color_lib.setSaturation( color, saturation )
     return fromHSL( hue, saturation, lightness )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's brightness.
 ---
@@ -673,7 +673,7 @@ function color_lib.getBrightness( color )
     return math_max( red, green, blue ) * DIV255_CONST
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's brightness.
 ---
@@ -685,7 +685,7 @@ function color_lib.setBrightness( color, brightness )
     return fromHSV( hue, saturation, brightness )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's lightness.
 ---
@@ -698,7 +698,7 @@ function color_lib.getLightness( color )
     return (math_max( red, green, blue ) + math_min( red, green, blue )) * 0.5
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's lightness.
 ---
@@ -710,7 +710,7 @@ function color_lib.setLightness( color, lightness )
     return fromHSL( hue, saturation, lightness )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's whiteness.
 ---
@@ -721,7 +721,7 @@ function color_lib.getWhiteness( color )
     return (1 - saturation) * brightness
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's whiteness.
 ---
@@ -734,7 +734,7 @@ function color_lib.setWhiteness( color, whiteness, alpha )
     return fromHWB( hue, whiteness, blackness, alpha )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's blackness.
 ---
@@ -745,7 +745,7 @@ function color_lib.getBlackness( color )
     return 1 - brightness
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the color's blackness.
 ---
@@ -757,7 +757,7 @@ function color_lib.setBlackness( color, blackness )
     return fromHSL( hue, saturation, blackness )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the color's luminance.
 ---
@@ -770,7 +770,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A table containing named colors.
     ---

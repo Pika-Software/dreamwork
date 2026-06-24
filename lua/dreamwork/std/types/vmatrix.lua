@@ -29,7 +29,7 @@ local math_acos, math_atan2 = math.acos, math.atan2
 
 --]]
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A 4x4 matrix object.
 ---
@@ -42,7 +42,7 @@ std.debug.registermetatable( "VMatrix", VMatrix )
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias VMatrix dreamwork.std.VMatrix
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A 4x4 matrix class.
 ---
@@ -331,7 +331,7 @@ function VMatrix:inverse()
     return true, dst
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Does a fast inverse, assuming the matrix only contains translation and rotation.
 function VMatrix:inverseTranslation()

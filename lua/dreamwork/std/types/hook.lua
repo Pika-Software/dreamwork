@@ -32,7 +32,7 @@ local string_meta = debug.findmetatable( "string" )
 ---@field [3] nil | dreamwork.std.Hook | fun( ...: any ): any The callback function or the hook to attach.
 ---@field [4] nil | dreamwork.std.Hook.Type The type of the hook.
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Hook object.
 ---
@@ -46,7 +46,7 @@ local string_meta = debug.findmetatable( "string" )
 ---@operator call: any
 local Hook = std.class.base( "Hook" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Hook class.
 ---
@@ -71,7 +71,7 @@ function Hook:__init( name, return_vararg )
     self.return_vararg = return_vararg == true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Detaches a callback function from the hook.
 ---
@@ -102,7 +102,7 @@ function Hook:detach( identifier )
     return false
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Attaches a callback function to the hook.
 ---
@@ -206,7 +206,7 @@ function Hook:attach( fn, identifier, hook_type )
     table_inject( self, { identifier, fn, hook_type }, index + 1, 1, 3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the hook is running.
 ---
@@ -217,7 +217,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Stops the hook.
     ---@return boolean stopped Returns `true` if the hook was stopped, `false` if it was already stopped.
@@ -243,7 +243,7 @@ do
         return true
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Clears the hook from all callbacks.
     ---
@@ -389,7 +389,7 @@ do
         return r1, r2, r3, r4, r5, r6
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calls the hook.
     ---
@@ -418,7 +418,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the mixer function for the hook.
 ---
@@ -432,7 +432,7 @@ function Hook:mixer( mixer_fn )
     self.mixer_fn = mixer_fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Attaches a callback function to the hook.
 ---
@@ -446,7 +446,7 @@ function Hook:once( fn, hook_type )
     end, identifier, hook_type )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Waits for the hook to finish.
 ---

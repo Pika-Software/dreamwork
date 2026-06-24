@@ -1659,7 +1659,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the ID of the activity by name.
 ---
@@ -1673,7 +1673,7 @@ function ModelClass.getGlobalActivityID( act_name )
     return activity_ids[ act_name ] or -1
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the name of the activity by ID.
 ---

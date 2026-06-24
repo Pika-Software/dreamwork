@@ -1,7 +1,7 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- An ASCII library that provides functions for this encoding.
 ---
@@ -9,7 +9,7 @@ local std = dreamwork.std
 local ascii = {}
 std.ascii = ascii
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is a lowercase ASCII letter (a–z).
 ---
@@ -21,7 +21,7 @@ end
 
 ascii.isLower = isLower
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an uppercase ASCII letter (A–Z).
 ---
@@ -33,7 +33,7 @@ end
 
 ascii.isUpper = isUpper
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an ASCII alphabetic character (a–z or A–Z).
 ---
@@ -45,7 +45,7 @@ end
 
 ascii.isAlpha = isAlpha
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an ASCII decimal digit (0–9).
 ---
@@ -57,7 +57,7 @@ end
 
 ascii.isDigit = isDigit
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is a valid hexadecimal digit (0–9, A–F, a–f).
 ---
@@ -71,7 +71,7 @@ end
 
 ascii.isHexDigit = isHexDigit
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an ASCII whitespace character.
 --- Matches: space (0x20), horizontal tab (0x09), line feed (0x0A),
@@ -88,7 +88,7 @@ function ascii.isSpace( uint8 )
         or uint8 == 0x0D -- carriage return
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an extended (non-ASCII) byte, i.e. above 0x7F.
 --- These bytes appear in multi-byte UTF-8 sequences and Latin-1 supplements.
@@ -99,7 +99,7 @@ function ascii.isExtended( uint8 )
     return uint8 > 0x7F
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is a Lua pattern magic character.
 --- Magic characters have special meaning inside Lua string patterns and
@@ -122,7 +122,7 @@ function ascii.isMagic( uint8 )
         or uint8 == 0x24 -- $
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an ASCII special (punctuation/symbol) character.
 --- Covers the following ranges and individual code points:
@@ -140,7 +140,7 @@ function ascii.isSpecial( uint8 )
         or (uint8 >= 0x7B and uint8 <= 0x7E) -- { – ~
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the byte is an ASCII control character.
 --- Control characters are non-printable bytes in the range 0x00–0x1F

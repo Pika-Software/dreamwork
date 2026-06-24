@@ -11,7 +11,7 @@ local console_Variable = console.Variable
 
 -- TODO: think about native bsp parsers (maps like objects) like https://github.com/Nak2/NikNaks/tree/main/lua/niknaks/modules
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The game-level library.
 ---
@@ -53,7 +53,7 @@ if std.LUA_CLIENT then
     level.redownloadLightmaps = level.redownloadLightmaps or _G.render.RedownloadAllLightmaps
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a map/level exists.
 ---
@@ -80,7 +80,7 @@ if std.LUA_CLIENT_SERVER then
     level.getStartSpot = level.getStartSpot or glua_game.StartSpot
     level.getContents = level.getContents or glua_util.PointContents
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the gravity of the current level.
     ---
@@ -146,7 +146,7 @@ if std.LUA_SERVER then
             } )
         }
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Checks if a map/level navmesh exists.
         ---@param name string The map/level name in maps/*.nav folder.
@@ -164,7 +164,7 @@ if std.LUA_SERVER then
 
         local command_run = console.Command.run
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- It will end the current game, load the specified map and start a new game on it. Players are not kicked from the server.
         ---@param name string
@@ -180,7 +180,7 @@ if std.LUA_SERVER then
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets the gravity of the current level.
     ---@param value integer The value to set. Default: 600
@@ -192,7 +192,7 @@ end
 
 if std.LUA_MENU then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     ---@class dreamwork.std.level.save
     local save = {}

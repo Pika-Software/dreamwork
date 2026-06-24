@@ -2,7 +2,7 @@
 local dreamwork = dreamwork
 if dreamwork.detour ~= nil then return end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A library for intercepting engine functions and runtime patching using detour/hook.
 ---
@@ -13,7 +13,7 @@ dreamwork.detour = detour
 ---@type table<function, function>
 local functions = {}
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a function that calls the `new_fn` instead of the `in_fn` and fallback to the original function if `new_fn` returns `nil`.
 ---
@@ -44,7 +44,7 @@ function detour.simple( new_fn, in_fn )
     return fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a function that calls the `new_fn` before calling `in_fn`, return result of `new_fn` will be ignored.
 ---
@@ -71,7 +71,7 @@ function detour.before( new_fn, in_fn )
     return fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a function that calls the `new_fn` after calling `in_fn`, return result of `in_fn` will be ignored.
 ---
@@ -99,7 +99,7 @@ function detour.after( new_fn, in_fn )
     return fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a function that calls the `new_fn` instead of the `in_fn`.
 ---
@@ -121,7 +121,7 @@ function detour.replace( new_fn, in_fn )
     return new_fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns a function that calls the `new_fn` instead of the `in_fn`.
 ---
@@ -149,7 +149,7 @@ function detour.attach( new_fn, in_fn )
     return fn
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the original function that the function given hooked.
 ---
@@ -167,7 +167,7 @@ function detour.detach( fn )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the unhooked function if value is hooked, else returns ``fn``.
 ---

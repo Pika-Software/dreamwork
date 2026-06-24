@@ -36,7 +36,7 @@ local bytepack_readInt48, bytepack_writeInt48 = bytepack.readInt48, bytepack.wri
 local bytepack_readInt56, bytepack_writeInt56 = bytepack.readInt56, bytepack.writeInt56
 local bytepack_readInt64, bytepack_writeInt64 = bytepack.readInt64, bytepack.writeInt64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The binary reader object.
 ---
@@ -52,7 +52,7 @@ function Reader:__tostring()
     return string.format( "buffer.Reader: %p [%d/%d bytes]", self, self.position, self.data_length )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Opens the reader.
 ---
@@ -65,7 +65,7 @@ function Reader:open( data )
     return true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Closes the reader.
 ---
@@ -77,7 +77,7 @@ end
 
 Reader.__init = Reader.close
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the current position of the reader.
 ---
@@ -86,7 +86,7 @@ function Reader:tell()
     return self.position
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the size of the reader content in bytes.
 ---
@@ -99,7 +99,7 @@ do
 
     local math_min = math.min
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets the current position of the reader.
     ---
@@ -111,7 +111,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Skips the reader position by the specified offset.
 ---
@@ -120,7 +120,7 @@ function Reader:skip( offset )
     self:seek( self.position + offset )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads the specified number of bytes from the reader.
 ---
@@ -157,7 +157,7 @@ function Reader:read( length )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The binary reader class.
 ---
@@ -167,7 +167,7 @@ end
 local ReaderClass = class.create( Reader )
 buffer.Reader = ReaderClass
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The binary writer object.
 ---
@@ -184,7 +184,7 @@ function Writer:__tostring()
     return string.format( "buffer.Writer: %p [%d/%d bytes]", self, self.position, self:size() )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Opens the writer.
 ---
@@ -210,7 +210,7 @@ function Writer:open( data )
     return true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Closes the writer.
 ---
@@ -224,7 +224,7 @@ end
 
 Writer.__init = Writer.close
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the current position of the writer.
 ---
@@ -233,7 +233,7 @@ function Writer:tell()
     return self.position
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the size of the writer data in bytes.
 ---
@@ -251,7 +251,7 @@ do
 
     local table_concat = std.table.concat
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Flushes the writer buffer.
     ---
@@ -291,7 +291,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Commits the writer buffer.
 ---
@@ -302,7 +302,7 @@ function Writer:commit()
     return new_data
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Clears the writer buffer.
 ---
@@ -311,7 +311,7 @@ function Writer:clear()
     self.buffer = {}
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Roll back the writer buffer.
 ---
@@ -325,7 +325,7 @@ function Writer:rollback()
     return data
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes the specified data to the writer.
 ---
@@ -336,7 +336,7 @@ function Writer:write( data )
     self.buffer_size = next_buffer_size
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the current position of the writer.
 ---
@@ -350,7 +350,7 @@ do
 
     local math_max = math.max
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Skips the writer position by the specified offset.
     ---
@@ -362,7 +362,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The binary writer class.
 ---
@@ -372,7 +372,7 @@ end
 local WriterClass = class.create( Writer )
 buffer.Writer = WriterClass
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 1-byte (8 bit) integer from binary string.
 ---
@@ -391,7 +391,7 @@ function buffer.readUInt8( binary_str, start_position )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 1-byte (8 bit) integer.
 ---
@@ -417,7 +417,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 1-byte (8 bit) integer as binary string.
     ---
@@ -436,7 +436,7 @@ do
 
     buffer.writeUInt8 = pack_writeUInt8
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 1-byte (8 bit) integer.
     ---
@@ -454,7 +454,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 2-byte (16 bit) integer from binary string.
 ---
@@ -483,7 +483,7 @@ function buffer.readUInt16( binary_str, big_endian, start_position )
     return bytepack_readUInt16( uint8_1, uint8_2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 2-byte (16 bit) integer.
 ---
@@ -521,7 +521,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 2-byte (16 bit) integer as binary string.
     ---
@@ -545,7 +545,7 @@ do
         return string_char( uint8_1, uint8_2 )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 2-byte (16 bit) integer.
     ---
@@ -563,7 +563,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 3-byte (24 bit) integer from binary string.
 ---
@@ -592,7 +592,7 @@ function buffer.readUInt24( binary_str, big_endian, start_position )
     return bytepack_readUInt24( uint8_1, uint8_2, uint8_3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 3-byte (24 bit) integer as binary string.
 ---
@@ -616,7 +616,7 @@ function buffer.writeUInt24( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 4-byte (32 bit) integer from binary string.
 ---
@@ -645,7 +645,7 @@ function buffer.readUInt32( binary_str, big_endian, start_position )
     return bytepack_readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 4-byte (32 bit) integer.
 ---
@@ -684,7 +684,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 4-byte (32 bit) integer as binary string.
     ---
@@ -710,7 +710,7 @@ do
 
     buffer.writeUInt32 = pack_writeUInt32
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 4-byte (32 bit) integer.
     ---
@@ -729,7 +729,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 5-byte (40 bit) integer from binary string.
 ---
@@ -760,7 +760,7 @@ function buffer.readUInt40( binary_str, big_endian, start_position )
     return bytepack_readUInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 5-byte (40 bit) integer as binary string.
 ---
@@ -784,7 +784,7 @@ function buffer.writeUInt40( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 6-byte (48 bit) integer from binary string.
 ---
@@ -813,7 +813,7 @@ function buffer.readUInt48( binary_str, big_endian, start_position )
     return bytepack_readUInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 6-byte (48 bit) integer as binary string.
 ---
@@ -837,7 +837,7 @@ function buffer.writeUInt48( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 7-byte (56 bit) integer from binary string.
 ---
@@ -868,7 +868,7 @@ function buffer.readUInt56( binary_str, big_endian, start_position )
     return bytepack_readUInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 7-byte (56 bit) integer as binary string.
 ---
@@ -894,7 +894,7 @@ function buffer.writeUInt56( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 8-byte (64 bit) integer as binary string.
 ---
@@ -925,7 +925,7 @@ function buffer.readUInt64( binary_str, big_endian, start_position )
     return bytepack_readUInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 8-byte (64 bit) integer.
 ---
@@ -966,7 +966,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 8-byte (64 bit) integer as binary string.
     ---
@@ -994,7 +994,7 @@ do
 
     buffer.writeUInt64 = pack_writeUInt64
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 8-byte (64 bit) integer.
     ---
@@ -1015,7 +1015,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads an unsigned integer with the specified number of bits.
 ---
@@ -1098,7 +1098,7 @@ function Reader:readUInt( bit_count, big_endian )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes an unsigned integer with the specified number of bits.
 ---
@@ -1196,7 +1196,7 @@ do
 
     local bytepack_readUnsignedFixedPoint = bytepack.readUnsignedFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned fixed-point number (**UQm.n**) as binary string.
     ---
@@ -1284,7 +1284,7 @@ do
         return nil, "not enough data"
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned fixed-point number (**UQm.n**).
     ---
@@ -1381,7 +1381,7 @@ do
 
     local bytepack_writeUnsignedFixedPoint = bytepack.writeUnsignedFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned fixed-point number (**UQm.n**) as binary string.
     ---
@@ -1498,7 +1498,7 @@ do
 
     buffer.writeUnsignedFixedPoint = pack_writeUnsignedFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned fixed-point number (**UQm.n**).
     ---
@@ -1527,7 +1527,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 1-byte (8 bit) integer from binary string.
 ---
@@ -1546,7 +1546,7 @@ function buffer.readInt8( binary_str, start_position )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 1-byte (8 bit) integer.
 ---
@@ -1565,7 +1565,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 1-byte (8 bit) integer as binary string.
     ---
@@ -1584,7 +1584,7 @@ do
 
     buffer.writeInt8 = pack_writeInt8
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 1-byte (8 bit) integer.
     ---
@@ -1602,7 +1602,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 2-byte (16 bit) integer as binary string.
 ---
@@ -1631,7 +1631,7 @@ function buffer.readInt16( binary_str, big_endian, start_position )
     return bytepack_readInt16( uint8_1, uint8_2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 2-byte (16 bit) integer.
 ---
@@ -1666,7 +1666,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 2-byte (16 bit) integer as binary string.
     ---
@@ -1692,7 +1692,7 @@ do
 
     buffer.writeInt16 = pack_writeInt16
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 2-byte (16 bit) integer.
     ---
@@ -1711,7 +1711,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 3-byte (24 bit) integer as binary string.
 ---
@@ -1740,7 +1740,7 @@ function buffer.readInt24( binary_str, big_endian, start_position )
     return bytepack_readInt24( uint8_1, uint8_2, uint8_3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 3-byte (24 bit) integer as binary string.
 ---
@@ -1764,7 +1764,7 @@ function buffer.writeInt24( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 4-byte (32 bit) integer from binary string.
 ---
@@ -1793,7 +1793,7 @@ function buffer.readInt32( binary_str, big_endian, start_position )
     return bytepack_readInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 4-byte (32 bit) integer.
 ---
@@ -1828,7 +1828,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 4-byte (32 bit) integer as binary string.
     ---
@@ -1854,7 +1854,7 @@ do
 
     buffer.writeInt32 = pack_writeInt32
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 4-byte (32 bit) integer.
     ---
@@ -1872,7 +1872,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 5-byte (40 bit) integer from binary string.
 ---
@@ -1901,7 +1901,7 @@ function buffer.readInt40( binary_str, big_endian, start_position )
     return bytepack_readInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 5-byte (40 bit) integer as binary string.
 ---
@@ -1925,7 +1925,7 @@ function buffer.writeInt40( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 6-byte (48 bit) integer from binary string.
 ---
@@ -1954,7 +1954,7 @@ function buffer.readInt48( binary_str, big_endian, start_position )
     return bytepack_readInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 6-byte (48 bit) integer as binary string.
 ---
@@ -1978,7 +1978,7 @@ function buffer.writeInt48( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 7-byte (56 bit) integer from binary string.
 ---
@@ -2007,7 +2007,7 @@ function buffer.readInt56( binary_str, big_endian, start_position )
     return bytepack_readInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 7-byte (56 bit) integer as binary string.
 ---
@@ -2031,7 +2031,7 @@ function buffer.writeInt56( value, big_endian )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 8-byte (64 bit) integer from binary string.
 ---
@@ -2062,7 +2062,7 @@ function buffer.readInt64( binary_str, big_endian, start_position )
     return bytepack_readInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 8-byte (64 bit) integer.
 ---
@@ -2099,7 +2099,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 8-byte (64 bit) integer as binary string.
     ---
@@ -2127,7 +2127,7 @@ do
 
     buffer.writeInt64 = pack_writeInt64
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 8-byte (64 bit) integer.
     ---
@@ -2148,7 +2148,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads an signed integer with the specified number of bits.
 ---
@@ -2231,7 +2231,7 @@ function Reader:readInt( bit_count, big_endian )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes an signed integer with the specified number of bits.
 ---
@@ -2329,7 +2329,7 @@ do
 
     local bytepack_readFixedPoint = bytepack.readFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed fixed-point number (**Qm.n**) from binary string.
     ---
@@ -2416,7 +2416,7 @@ do
         return nil, "not enough data"
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed fixed-point number (**Qm.n**).
     ---
@@ -2513,7 +2513,7 @@ do
 
     local bytepack_writeFixedPoint = bytepack.writeFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed fixed-point number (**Qm.n**) as binary string.
     ---
@@ -2630,7 +2630,7 @@ do
 
     buffer.writeFixedPoint = pack_writeFixedPoint
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed fixed-point number (**Qm.n**).
     ---
@@ -2664,7 +2664,7 @@ do
 
     local bytepack_readFloat = bytepack.readFloat
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed 4-byte (32 bit) float from binary string.
     ---
@@ -2691,7 +2691,7 @@ do
         return bytepack_readFloat( uint8_1, uint8_2, uint8_3, uint8_4 ), nil
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed 4-byte (32 bit) float.
     ---
@@ -2732,7 +2732,7 @@ do
 
     local bytepack_writeFloat = bytepack.writeFloat
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 4-byte (32 bit) float as binary string.
     ---
@@ -2753,7 +2753,7 @@ do
 
     buffer.writeFloat = pack_writeFloat
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 4-byte (32 bit) float.
     ---
@@ -2772,7 +2772,7 @@ do
 
     local bytepack_readDouble = bytepack.readDouble
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed 8-byte (64 bit) float (double) from binary string.
     ---
@@ -2799,7 +2799,7 @@ do
         return bytepack_readDouble( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads signed 8-byte (64 bit) float (double).
     ---
@@ -2840,7 +2840,7 @@ do
 
     local bytepack_writeDouble = bytepack.writeDouble
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 8-byte (64 bit) float (double) as binary string.
     ---
@@ -2859,7 +2859,7 @@ do
 
     buffer.writeDouble = pack_writeDouble
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes signed 8-byte (64 bit) float (double).
     ---
@@ -2876,7 +2876,7 @@ do
 
     local bytepack_readDate = bytepack.readDate
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads DOS formatted date from binary string.
     ---
@@ -2905,7 +2905,7 @@ do
         return bytepack_readDate( uint8_1, uint8_2 )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads DOS formatted date.
     ---
@@ -2948,7 +2948,7 @@ do
 
     local bytepack_writeDate = bytepack.writeDate
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes date in DOS format as binary string.
     ---
@@ -2969,7 +2969,7 @@ do
 
     buffer.writeDate = pack_writeDate
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes date in DOS format.
     ---
@@ -2988,7 +2988,7 @@ do
 
     local bytepack_readTime = bytepack.readTime
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads DOS formatted time from binary string.
     ---
@@ -3017,7 +3017,7 @@ do
         return bytepack_readTime( uint8_1, uint8_2 )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads DOS formatted time.
     ---
@@ -3060,7 +3060,7 @@ do
 
     local bytepack_writeTime = bytepack.writeTime
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes time in DOS format as binary string.
     ---
@@ -3081,7 +3081,7 @@ do
 
     buffer.writeTime = pack_writeTime
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes time in DOS format.
     ---
@@ -3095,7 +3095,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads fixed-length string from binary string.
 ---
@@ -3118,7 +3118,7 @@ end
 
 buffer.readFixedString = pack_readFixedString
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads fixed-length string.
 ---
@@ -3138,7 +3138,7 @@ function Reader:readFixedString( length )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes fixed-length string.
 ---
@@ -3163,7 +3163,7 @@ end
 
 buffer.writeFixedString = pack_writeFixedString
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes fixed-length string.
 ---
@@ -3173,7 +3173,7 @@ function Writer:writeFixedString( str, required_length )
     self:write( pack_writeFixedString( str, required_length ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads counted string from binary string.
 ---
@@ -3239,7 +3239,7 @@ function buffer.readCountedString( binary_str, byte_count, big_endian, start_pos
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads counted string from binary string.
 ---
@@ -3259,7 +3259,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes counted string as binary string.
     ---
@@ -3332,7 +3332,7 @@ do
 
     buffer.writeCountedString = pack_writeCountedString
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes counted string.
     ---
@@ -3356,7 +3356,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads null-terminated string from binary string.
 ---
@@ -3382,7 +3382,7 @@ function buffer.readNullTerminatedString( binary_str, start_position )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes null-terminated string as binary string.
 ---
@@ -3398,7 +3398,7 @@ do
     local class_new = class.new
     local raw_get = std.raw.get
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Serializes the specified object.
     ---
@@ -3423,7 +3423,7 @@ do
 
         local writer = WriterClass()
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Serializes the specified object.
         ---
@@ -3443,7 +3443,7 @@ do
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Deserializes the data into the specified object or if it is a class, into a new empty object.
     ---
@@ -3479,7 +3479,7 @@ do
 
         local reader = ReaderClass()
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Deserializes the data into the specified object or if it is a class, into a new empty object.
         ---
@@ -3504,7 +3504,7 @@ do
 
     local bytepack_readHex8 = bytepack.readHex8
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 1-byte (8 bit) integer from hex string (2-bytes).
     ---
@@ -3525,7 +3525,7 @@ do
 
     local bytepack_writeHex8 = bytepack.writeHex8
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 1-byte (8 bit) integer as a hex string (2-bytes).
     ---
@@ -3541,7 +3541,7 @@ do
 
     local bytepack_readHex16 = bytepack.readHex16
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 2-byte (16 bit) integer from hex string (4-bytes).
     ---
@@ -3569,7 +3569,7 @@ do
 
     local bytepack_writeHex16 = bytepack.writeHex16
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 2-byte (16 bit) integer as a hex string (4-bytes).
     ---
@@ -3592,7 +3592,7 @@ do
 
     local bytepack_readHex32 = bytepack.readHex32
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 4-byte (32 bit) integer from hex string (8-bytes).
     ---
@@ -3620,7 +3620,7 @@ do
 
     local bytepack_writeHex32 = bytepack.writeHex32
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes unsigned 4-byte (32 bit) integer as a hex string (8-bytes).
     ---

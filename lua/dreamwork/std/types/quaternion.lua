@@ -20,7 +20,7 @@ do
 
     local debug_getmetatable = std.debug.getmetatable
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` if the value is a `Quaternion`.
     ---

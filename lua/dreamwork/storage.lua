@@ -26,7 +26,7 @@ local time_tick = time.tick
 
 local raw_tonumber = std.raw.tonumber
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the value for the specified key.
 ---
@@ -37,7 +37,7 @@ function storage.read( key )
     return sqlite_queryValue( "SELECT VALUE FROM 'dreamwork.store' WHERE key=?", key )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the value for the specified key.
 ---
@@ -60,7 +60,7 @@ do
         max = 16384
     } )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A cache storage for http requests.
     ---
@@ -68,7 +68,7 @@ do
     local http = {}
     storage.http = http
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Gets the cached content for the specified URL.
     ---
@@ -78,7 +78,7 @@ do
         return sqlite_queryFirst( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets the cached content for the specified URL.
     ---
@@ -112,7 +112,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A storage for file hashes.
     ---
@@ -125,7 +125,7 @@ do
     ---@field size number
     ---@field os_time number
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the file record for the specified path.
     ---
@@ -144,7 +144,7 @@ do
         return nil
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Writes the file record for the specified path.
     ---
@@ -393,7 +393,7 @@ do
         }
     }
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if a migration exists and returns `true` or `false`.
     ---
@@ -411,7 +411,7 @@ do
 
     storage.isMigrationExists = is_migration_exists
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Runs a migration using specified migration table.
     ---
@@ -433,7 +433,7 @@ do
 
     storage.migrateByTable = migrate_by_table
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Runs a migration by its name.
     ---
@@ -501,7 +501,7 @@ local function pragma_read( ... )
     return results
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Initializes the database.
 ---

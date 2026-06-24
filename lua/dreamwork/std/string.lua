@@ -20,7 +20,7 @@ local table = std.table
 local table_unpack = table.unpack
 local table_concat = table.concat
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The string type is a sequence of characters.
 ---
@@ -94,7 +94,7 @@ local pattern_bytes = string.PatternBytes
 ---@field [2] string The end byte of the range.
 ---@field [3] integer? The step size for the range.
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a byte map from the given strings or byte ranges.
 ---
@@ -118,7 +118,7 @@ function string.byteMap( ... )
     return byte_map
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finds the first byte of the given byte in the string.
 ---
@@ -158,7 +158,7 @@ function string.findByte( str, searchable_byte, start_position, end_position, st
     return nil
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string is empty.
 ---
@@ -168,7 +168,7 @@ function string.isEmpty( str )
     return string_byte( str, 1, 1 ) == nil
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Splits the string into segments of the specified size.
 ---
@@ -199,7 +199,7 @@ function string.divide( str, size, str_length )
     return segments, segment_count
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Extracts a string from the other string.
 ---
@@ -219,7 +219,7 @@ function string.extract( str, searchable, start_position, default, with_pattern 
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Inserts a value into the string.
 ---
@@ -255,7 +255,7 @@ function string.insert( str, index, value, str_length )
     return string_sub( str, 1, index - 1 ) .. value .. string_sub( str, index, str_length )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Removes the specified interval from the string.
 ---
@@ -292,7 +292,7 @@ function string.remove( str, start_position, end_position, str_length )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string starts with the prefix.
 ---
@@ -305,7 +305,7 @@ function string.hasPrefix( str, prefix, prefix_length, start_position )
     return str == prefix or string_sub( str, (start_position or 1), prefix_length or string_len( prefix ) ) == prefix
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string ends with the suffix.
 ---
@@ -320,7 +320,7 @@ function string.hasSuffix( str, suffix, str_length, suffix_length )
         string_sub( str, -((suffix_length or string_len( suffix ))), (str_length or string_len( str )) ) == suffix
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string contains the searchable string.
 ---
@@ -350,7 +350,7 @@ function string.indexOf( str, searchable, position, with_pattern, str_length )
     return string_find( str, searchable, position, with_pattern ~= true ) or -1
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Pads the string to a desired length.
 ---
@@ -388,7 +388,7 @@ function string.pad( str, desired_length, char, direction, str_length )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Splits the string into an array, using the specified pattern.
 ---
@@ -456,7 +456,7 @@ function string.split( str, searchable, with_pattern, start_position, end_positi
     goto split_loop
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the number of matches of a string.
 ---
@@ -491,7 +491,7 @@ function string.count( str, searchable, with_pattern, str_length )
     goto count_loop
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the number of specified byte repetitions.
 ---
@@ -565,7 +565,7 @@ function string.countByte( str, counted_byte, direction, start_position, end_pos
     goto byte_count_loop
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the number of consecutive repetitions of the specified byte.
 ---
@@ -641,7 +641,7 @@ function string.countConsecutiveByte( str, counted_byte, direction, start_positi
     goto byte_count_consecutive_loop
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the string trimmed by the specified byte.
 ---
@@ -703,7 +703,7 @@ function string.trimByte( str, trailing_byte, direction, start_position, end_pos
     return string_sub( str, start_position, end_position ), end_position - start_position + 1
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Splits the string into an array, using the specified byte.
 ---
@@ -773,7 +773,7 @@ end
 
 string.byteSplit = byte_split
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if `str` contains `searchable`.
 ---
@@ -791,7 +791,7 @@ function string.contains( str, searchable, with_pattern, start_position )
     return string_find( str, searchable, start_position, with_pattern ~= true ) ~= nil
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string contains the specified byte.
 ---
@@ -833,7 +833,7 @@ function string.containsByte( str, byte, start_position, end_position, str_lengt
     return false
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the string contains any byte from specified byte map.
 ---
@@ -873,7 +873,7 @@ function string.containsBytes( str, byte_map, start_position, end_position, str_
     return false
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Removes all instances of a byte from a string.
 ---
@@ -890,7 +890,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Converts a string to a number.
     ---
@@ -929,7 +929,7 @@ do
 
     string.toNumber = toNumber
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the string is a number.
     ---
@@ -948,7 +948,7 @@ do
 
     local string_gsub = string.gsub
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Replaces all occurrences of the supplied second string.
     ---
@@ -998,7 +998,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a string is a URL.
 ---
@@ -1010,7 +1010,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if a string is bytecode.
     ---
@@ -1031,7 +1031,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Escapes a string for use it as a pattern.
 ---
@@ -1103,7 +1103,7 @@ function string.escapePattern( str, start_position, end_position, str_length )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Removes leading/trailing matches of a string.
 ---
@@ -1198,7 +1198,7 @@ do
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Generates a random string.
     ---
@@ -1259,7 +1259,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Interpolates a string with the given arguments.
 ---
@@ -1378,7 +1378,7 @@ function string.interpolate( str, variables, start_position, end_position, str_l
     return table_concat( segments, "", 1, segment_count )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Replaces a byte in the string with the given variables.
 ---
@@ -1461,7 +1461,7 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
     return table_concat( segments, "", 1, segment_count )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Packs a sequence of bytes into a string.
 ---
@@ -1504,7 +1504,7 @@ function string.pack( bytes, byte_count )
     return table_concat( segments, "", 1, segment_count )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Unpacks a string into a sequence of bytes.
 ---
@@ -1577,7 +1577,7 @@ function string.unpack( str, start_position, end_position, str_length )
     return segments, total
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Formats a number with a separator (e.g. comma) for thousands.
 ---

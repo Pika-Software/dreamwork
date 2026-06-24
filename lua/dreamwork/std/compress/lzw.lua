@@ -15,7 +15,7 @@ local string_char, string_byte = string.char, string.byte
 
 local table_concat = std.table.concat
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A lzw library.
 ---
@@ -31,7 +31,7 @@ for i = 0, 255 do
     basedictcompress[ ic ], basedictdecompress[ iic ] = iic, ic
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Compresses a string using LZW compression.
 ---
@@ -114,7 +114,7 @@ function lzw.compress( raw_data, forced )
     return table_concat( parts, "", 1, part_count )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Decompresses a string using LZW compression.
 ---

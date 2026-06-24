@@ -7,7 +7,7 @@ local coroutine_running = coroutine.running
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- coroutine library
 ---
@@ -32,7 +32,7 @@ std.coroutine = coroutine
 ---@diagnostic disable-next-line: deprecated
 if glua_coroutine.isyieldable == nil then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns `true` when the running coroutine can yield.
     ---
@@ -50,7 +50,7 @@ end
 
 local time_elapsed = std.time.elapsed
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Repeatedly yields the coroutine for the given duration before continuing.
 ---

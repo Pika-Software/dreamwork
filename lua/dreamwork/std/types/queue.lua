@@ -2,7 +2,7 @@
 local std = dreamwork.std
 local class = std.class
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A queue is a first-in-first-out (FIFO) data structure object.
 ---
@@ -41,7 +41,7 @@ function Queue:__deserialize( reader, fallback )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the length of the queue.
 ---
@@ -50,7 +50,7 @@ function Queue:getLength()
     return self.front - self.back
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the queue is empty.
 ---
@@ -59,7 +59,7 @@ function Queue:isEmpty()
     return self.front == self.back
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Empties the queue.
 ---
@@ -72,7 +72,7 @@ function Queue:empty()
     self.back = 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the value at the front of the queue or the back if `from_tail` is `true`.
 ---
@@ -82,7 +82,7 @@ function Queue:peek( from_tail )
     return self[ from_tail and self.front or (self.back + 1) ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Appends a value to the end of the queue or the front if `to_head` is `true`.
 ---
@@ -100,7 +100,7 @@ function Queue:push( value, to_head )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Removes and returns the value at the back of the queue or the front if `from_tail` is `true`.
 ---
@@ -139,7 +139,7 @@ function Queue:pop( from_tail )
     return value
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns an iterator for the queue.
 ---
@@ -151,7 +151,7 @@ function Queue:iterator( from_tail )
     return self.pop, self, from_tail == true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A queue class.
 ---

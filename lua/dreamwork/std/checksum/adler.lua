@@ -6,7 +6,7 @@ local string = std.string
 local string_len = string.len
 local string_byte = string.byte
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Adler-32 checksum calculation object.
 ---
@@ -28,7 +28,7 @@ function Adler32:__init()
     self:reset()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Resets checksum to the initial value.
 ---
@@ -38,7 +38,7 @@ function Adler32:reset()
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Updates checksum with the specified string.
 ---
@@ -541,7 +541,7 @@ function Adler32:update( raw_str )
     goto perform_block
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -550,7 +550,7 @@ function Adler32:digest()
     return (self.b * 0x10000) + self.a
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Adler-32 checksum calculation class.
 ---
@@ -568,7 +568,7 @@ do
 
     local adler32 = Adler32Class()
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the Adler-32 checksum of the specified string.
     ---

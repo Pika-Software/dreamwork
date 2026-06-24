@@ -23,7 +23,7 @@ local utf8 = std.utf8
 local utf8_pack = utf8.pack
 local utf8_unpack = utf8.unpack
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Punycode encoding/decoding library.
 ---
@@ -35,7 +35,7 @@ local utf8_unpack = utf8.unpack
 local punycode = {}
 std.punycode = punycode
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Encodes a UTF-8 string into Punycode.
 ---
@@ -187,7 +187,7 @@ end
 
 punycode.pack = punycode_pack
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Unpacks a Punycode string.
 ---
@@ -355,7 +355,7 @@ end
 
 punycode.unpack = punycode_unpack
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Encodes a string into a Punycode string.
 ---
@@ -392,7 +392,7 @@ function punycode.encode( str, ignore_prefix, start_position, end_position, lax 
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Decodes a Punycode string into a string.
 ---

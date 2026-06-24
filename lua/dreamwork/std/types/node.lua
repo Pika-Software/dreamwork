@@ -5,7 +5,7 @@ local class = std.class
 local table_remove = std.table.remove
 local string_format = std.string.format
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A node.
 ---
@@ -60,7 +60,7 @@ function Node:__deserialize( reader, fallback )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Unlinks the node from its parent.
 ---
@@ -91,7 +91,7 @@ function Node:unlink()
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Links the node to a parent node.
 ---
@@ -126,7 +126,7 @@ function Node:link( parent )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Traverses the node tree.
 ---
@@ -139,7 +139,7 @@ function Node:traverse( callback )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the size of the node tree.
 ---
@@ -154,7 +154,7 @@ function Node:size()
     return size
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A node class.
 ---

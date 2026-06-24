@@ -117,7 +117,7 @@ function IPv6:__represent()
     return string_format( "IPv6: %p [%s]", self, self )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Class that contains methods and properties for working with Internet Protocol v6 addresses as objects.
 ---
@@ -191,7 +191,7 @@ local function parse_group( str, str_start, str_end, stack_level )
     return groups, group_count
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Parses an IPv6 address string (with optional CIDR prefix) into a object
 --- and a prefix length.
@@ -288,7 +288,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
     return groups, mask
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Compare two IPv6 addresses (length-8 uint16 arrays).
 ---
@@ -349,7 +349,7 @@ function IPv6:__unm()
     }, IPv6 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 ---
 ---
@@ -359,7 +359,7 @@ function IPv6:inRange( network, broadcast )
     return compare( self, network ) >= 0 and compare( self, broadcast ) <= 0
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Build a length-8 uint16 mask from a prefix length (0-128).
 ---
@@ -389,7 +389,7 @@ end
 
 IPv6Class.fromPrefix = fromPrefix
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the network address and broadcast (last) address for a given IPv6
 --- address and prefix length.
@@ -414,7 +414,7 @@ function IPv6:cidr( mask )
     return network_address, broadcast_address
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the reverse DNS pointer (ip6.arpa) for an IPv6 address.
 ---
@@ -437,7 +437,7 @@ function IPv6:reversePointer()
     return table_concat( nibbles, "." ) .. ".ip6.arpa"
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is the unspecified address (::).
 ---
@@ -452,7 +452,7 @@ function IPv6:isUnspecified()
     return true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is the loopback address (::1).
 ---
@@ -476,53 +476,53 @@ local function gen_in_range( cidr_str )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a multicast address (ff00::/8).
 ---
 IPv6.isMulticast = gen_in_range( "ff00::/8" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a link-local unicast address (fe80::/10).
 ---
 IPv6.isLinkLocal = gen_in_range( "fe80::/10" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a site-local unicast address (fec0::/10).
 --- Note: deprecated by RFC 3879 but still recognisable.
 ---
 IPv6.isSiteLocal = gen_in_range( "fec0::/10" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a unique-local address (fc00::/7, RFC 4193).
 ---
 IPv6.isUniqueLocal = gen_in_range( "fc00::/7" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a documentation / example address
 --- (2001:db8::/32, RFC 3849).
 ---
 IPv6.isDocumentation = gen_in_range( "2001:db8::/32" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a 6to4 address
 --- (2002::/16, RFC 3056).
 ---
 IPv6.is6to4 = gen_in_range( "2002::/16" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a Teredo address
 --- (2001::/32, RFC 4380).
 ---
 IPv6.isTeredo = gen_in_range( "2001::/32" )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is an IPv4-mapped IPv6 address
 --- (::ffff:a.b.c.d).
@@ -537,7 +537,7 @@ function IPv6:isIPv4Mapped()
         and self[ 6 ] == 0xFFFF
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is an IPv4-compatible IPv6 address
 --- (::a.b.c.d).
@@ -557,7 +557,7 @@ end
 
 local discard_net, discard_last = IPv6Class.parse( "100::" ):cidr( 64 )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address belongs to a private/local-use range.
 ---
@@ -571,7 +571,7 @@ function IPv6:isPrivate()
         or self:inRange( discard_net, discard_last )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address belongs to a special-purpose range.
 ---
@@ -584,7 +584,7 @@ function IPv6:isReserved()
         or self:isTeredo()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is a global unicast address.
 ---
@@ -598,7 +598,7 @@ function IPv6:isGlobalUnicast()
         and not self:isUniqueLocal()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns whether the address is globally routable.
 ---
@@ -608,7 +608,7 @@ function IPv6:isPublic()
         and not self:isReserved()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Extracts the embedded IPv4 address from an IPv4-mapped or
 --- IPv4-compatible IPv6 address and returns it as a v4-style uint32.
@@ -626,7 +626,7 @@ function IPv6:toIPv4()
     return bit_unsign( bit_bor( bit_lshift( self[ 7 ], 0x10 ), bit_band( self[ 8 ], 0xFFFF ) ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Constructs an IPv4-mapped IPv6 address (::ffff:a.b.c.d) from a v4 uint32.
 ---

@@ -25,7 +25,7 @@ local Adler32_digest = std.Adler32.digest
 local raw_pairs = std.raw.pairs
 local math_max = std.math.max
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A library for compressing and decompressing data using the deflate algorithm and more.
 ---
@@ -33,7 +33,7 @@ local math_max = std.math.max
 local deflate = {}
 std.deflate = deflate
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A library for compressing and decompressing data using the zlib algorithm and more.
 ---

@@ -7,7 +7,7 @@ local debug = std.debug
 local debug_newproxy = debug.newproxy
 local debug_getmetatable = debug.getmetatable
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A symbol.
 ---
@@ -35,7 +35,7 @@ function Symbol:__tostring()
     return types[ self ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a new symbol.
 ---
@@ -52,7 +52,7 @@ function std.Symbol( name )
     return symbol
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if a value is a symbol.
 ---

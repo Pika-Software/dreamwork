@@ -25,7 +25,7 @@ local bytepack_writeUInt32        = bytepack.writeUInt32
 ---@alias dreamwork.std.IPv4.Class "A" | "B" | "C" | "D" | "E"
 ---@alias dreamwork.std.IPv4 integer
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Provides utility functions for working with Internet Protocol v4 addresses as integers.
 ---
@@ -45,7 +45,7 @@ for i = 0, 32, 1 do
     bin_inverted_masks[ i ] = bit_bxor( bin_masks[ i ], bin_masks[ 32 ] )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the octets of an IPv4 address.
 ---
@@ -59,7 +59,7 @@ function ipv4.octets( ip_address )
     return a, b, c, d
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Build IPv4 address from octets.
 ---
@@ -79,7 +79,7 @@ end
 
 ipv4.fromOctets = fromOctets
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Parses an IPv4 address octets string into an IP address and subnet mask.
 ---
@@ -174,7 +174,7 @@ function ipv4.parse( ipv4_str, start_position, end_position, str_length )
     return fromOctets( octets[ 1 ], octets[ 2 ], octets[ 3 ], octets[ 4 ] ), mask
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the network address and boardcast address for a given IPv4 address and subnet mask.
 ---
@@ -189,7 +189,7 @@ function ipv4.cdir( ip_address, mask )
     return bit_unsign( network_address ), bit_unsign( boardcast_address )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the wildcard address of a network address and boardcast address.
 ---
@@ -200,7 +200,7 @@ function ipv4.wildcard( network_address, boardcast_address )
     return bit_bxor( network_address, boardcast_address )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the mask of a network address and boardcast address.
 ---
@@ -211,7 +211,7 @@ function ipv4.mask( network_address, boardcast_address )
     return bit_bnot( bit_bxor( network_address, boardcast_address ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the range of an IPv4 address range.
 ---
@@ -223,7 +223,7 @@ function ipv4.range( network_address, boardcast_address )
     return network_address + 1, boardcast_address - 1
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the number of addresses in an IPv4 address range.
 ---
@@ -236,7 +236,7 @@ function ipv4.count( network_address, boardcast_address )
     return diff + 1, diff - 1
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the string representation of an IPv4 address.
 ---
@@ -247,7 +247,7 @@ function ipv4.toString( ip_address )
     return string_format( "%d.%d.%d.%d", a, b, c, d )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the reverse pointer of an IPv4 address.
 ---
@@ -260,7 +260,7 @@ end
 
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is within a given range.
     ---
@@ -283,31 +283,31 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is a link-local address.
     ---
     ipv4.isLinkLocal = gen_in_range( "169.254.0.0/16" )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is a loopback address.
     ---
     ipv4.isLoopback = gen_in_range( "127.0.0.0/8" )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is a multicast address.
     ---
     ipv4.isMulticast = gen_in_range( "224.0.0.0/4" )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is reserved.
     ---
     ipv4.isReserved = gen_in_range( "240.0.0.0/4" )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether an IP address is the unspecified address.
     ---
@@ -357,7 +357,7 @@ do
         "100.64.0.0/10",
     } )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether the given IP address is private.
     ---
@@ -383,7 +383,7 @@ do
 
     ipv4.isPrivate = isPrivate
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether the given IP address is public.
     ---
@@ -401,7 +401,7 @@ do
         -- { "E", ipv4.parse( "240.0.0.0" ), ipv4.parse( "255.255.255.255" ) },
     }
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the class of the given IP address.
     ---

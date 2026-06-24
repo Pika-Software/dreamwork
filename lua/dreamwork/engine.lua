@@ -53,7 +53,7 @@ NPC.__parent = ENTITY
 local NEXTBOT = debug.initmetatable( "NextBot" )
 NEXTBOT.__parent = ENTITY
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Source engine library.
 ---
@@ -177,7 +177,7 @@ if engine.hookCatch == nil then
 
             local select = std.select
 
-            --- [SHARED AND MENU]
+            --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
             ---
             --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
             ---
@@ -208,7 +208,7 @@ if engine.hookCatch == nil then
             end
         end
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Adds a callback to the `hookCatch` event.
         ---
@@ -236,7 +236,7 @@ if engine.hookCatch == nil then
             end
         end
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Calls a source engine event.
         ---
@@ -265,7 +265,7 @@ do
     ---@type integer
     local queue_size = 0
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calls a function on the next tick.
     ---
@@ -346,7 +346,7 @@ if LUA_CLIENT_SERVER then
         end
     } )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets up garbage collection for the given table by type.
     ---
@@ -515,7 +515,7 @@ do
     local ConVarExists = _G.ConVarExists or debug_fempty
     local CreateConVar = _G.CreateConVar or debug_fempty
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
     ---
@@ -553,7 +553,7 @@ do
 
     engine.ConsoleVariables = console_variables
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Get console variable C object (userdata).
     ---
@@ -563,7 +563,7 @@ do
         return console_variables[ name ]
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Create console variable C object (userdata).
     ---
@@ -585,7 +585,7 @@ do
         return variable
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the console variable exists.
     ---
@@ -602,7 +602,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
     ---@type table<string, boolean>
     local exists_commands = {}
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the console command exists.
     ---
@@ -614,7 +614,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
 
     local AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Tells the engine to register a console command.
     ---
@@ -634,7 +634,7 @@ end
 
 if engine.consoleCommandRun == nil then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Run console command.
     ---
@@ -688,7 +688,7 @@ do
     local cache = {}
     std.gc.setTableRules( cache, true, false )
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Updates the color proxy with a new color.
     ---
@@ -760,7 +760,7 @@ do
     local utf8 = std.utf8
     local utf8_sub, utf8_len = utf8.sub, utf8.len
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Prints the given arguments to the console.
     ---
@@ -788,7 +788,7 @@ do
 
         local color_buffer = std.ColorProxy( 255, 255, 255, 255 )
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Prints the given arguments to the console.
         ---
@@ -1433,7 +1433,7 @@ if engine.loadMaterial == nil then
 
         local bit2param_count = #bit2params
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Loads a material from the file.
         ---
@@ -1467,7 +1467,7 @@ if engine.loadMaterial == nil then
 
     else
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Loads a material from the file.
         ---

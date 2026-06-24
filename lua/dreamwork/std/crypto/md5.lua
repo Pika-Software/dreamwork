@@ -25,7 +25,7 @@ local bytepack = std.bytepack
 local bytepack_readUInt32 = bytepack.readUInt32
 local bytepack_writeUInt32 = bytepack.writeUInt32
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- MD5 object.
 ---
@@ -35,7 +35,7 @@ local MD5 = class.base( "MD5" )
 
 ---@alias MD5 dreamwork.std.crypto.MD5
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- MD5 class that computes a cryptographic 128-bit hash value.
 ---
@@ -101,7 +101,7 @@ local function z( a, b, c, x, shift, constant )
     return bit_bor( bit_lshift( bit_band( a, bit_rshift( 0xFFFFFFFF, shift ) ), shift ), bit_rshift( a, 32 - shift ) ) + b
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Performs a single MD5 transformation.
 ---
@@ -209,7 +209,7 @@ local function transform( in_str, index, in_a, in_b, in_c, in_d )
         (in_d + out_d) % 0xFFFFFFFF
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Resets the MD5 object to its initial state.
 ---
@@ -232,7 +232,7 @@ MD5.__init = MD5.reset
 
 local bucket64 = math.bucketize( 64 )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Updates the MD5 object with the given string.
 ---
@@ -267,7 +267,7 @@ function MD5:update( str )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Calculates the MD5 digest based on the current state or input of the object.
 ---
@@ -319,7 +319,7 @@ local engine_MD5 = dreamwork.engine.MD5
 
 if engine_MD5 == nil then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Computes the MD5 digest of the given input string.
     ---
@@ -370,7 +370,7 @@ else
 
     local base16_decode = std.base16.decode
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Computes the MD5 digest of the given input string.
     ---

@@ -75,7 +75,7 @@ do
     local file_read = std.fs.read
     local pcall = std.pcall
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Loads a string as
     --- a bytecode chunk in the specified environment
@@ -97,7 +97,7 @@ do
 
     std.loadbytecode = loadbytecode
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Loads a file as
     --- a lua code chunk in the specified environment

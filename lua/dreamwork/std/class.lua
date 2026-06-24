@@ -15,7 +15,7 @@ local raw_get, raw_set = raw.get, raw.set
 
 local setmetatable = std.setmetatable
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A library for creating classes, implementing inheritance, and working with the object model in Lua.
 ---
@@ -71,7 +71,7 @@ do
         __init = true
     }
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Creates a new class base ( metatable ).
     ---
@@ -132,7 +132,7 @@ end
 local class__call
 do
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- This function is optional and can be used to re-initialize the object.
     ---
@@ -153,7 +153,7 @@ do
 
     class.init = class_init
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Creates a new class object.
     ---
@@ -200,7 +200,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Creates a new class from the given base.
 ---
@@ -247,7 +247,7 @@ function class.create( base )
     return cls
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the value is an instance of the given class.
 ---

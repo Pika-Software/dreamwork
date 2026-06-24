@@ -21,7 +21,7 @@ local hmac_key = hmac.key
 local hmac_padding = hmac.padding
 local hmac_compute = hmac.compute
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Derives a password using the pbkdf2 algorithm.
 ---

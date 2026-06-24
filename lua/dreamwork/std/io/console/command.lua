@@ -43,7 +43,7 @@ local commands = {}
 
 gc_setTableRules( commands, false, true )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The console command object.
 ---
@@ -96,7 +96,7 @@ function Command:__tostring()
     return string.format( "console.Command: %p [%s][%s]", self, names[ self ], descriptions[ self ] )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The console command class.
 ---
@@ -113,7 +113,7 @@ function CommandClass:__new( name )
     return commands[ name ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the console command with the given name.
 ---
@@ -125,7 +125,7 @@ end
 CommandClass.exists = engine.consoleCommandExists
 CommandClass.run = engine_consoleCommandRun
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Runs the console command.
 ---
@@ -160,7 +160,7 @@ do
     ---@diagnostic disable-next-line: undefined-field
     local IsConCommandBlocked = IsConCommandBlocked
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the console command is blacklisted.
     ---
@@ -176,7 +176,7 @@ do
 
     CommandClass.isBlacklisted = isBlacklisted
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns whether the console command is blacklisted.
     ---
@@ -212,7 +212,7 @@ local queues = {}
 
 gc_setTableRules( queues, true, false )
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Adds a callback to the console command object.
 ---
@@ -257,7 +257,7 @@ function Command:attach( fn, identifier, once )
     lst[ lst_length + 3 ] = once == true
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Removes a callback from the console command object.
 ---
@@ -294,7 +294,7 @@ function Command:detach( identifier )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Clears all callbacks from the `console.Command` object.
 ---
@@ -303,7 +303,7 @@ function Command:clear()
     in_call[ self ] = nil
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Waits for the console command to be executed.
 ---
@@ -376,7 +376,7 @@ gc_setTableRules( auto_complete, true, false )
 ---@alias dreamwork.std.console.Command.extended_auto_complete_fn fun( command: dreamwork.std.console.Command, argument_string: string, args: string[] ): boolean, string[]
 ---@alias dreamwork.std.console.Command.auto_complete_fn dreamwork.std.console.Command.simple_auto_complete_fn | dreamwork.std.console.Command.extended_auto_complete_fn
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the auto complete function for the console command or `nil` if it does not exist.
 ---
@@ -385,7 +385,7 @@ function Command:getAutoComplete()
     return auto_complete[ self ]
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns `true` if the console command has an auto complete function.
 ---
@@ -394,7 +394,7 @@ function Command:hasAutoComplete()
     return auto_complete[ self ] ~= nil
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Sets the auto complete function for the console command.
 ---

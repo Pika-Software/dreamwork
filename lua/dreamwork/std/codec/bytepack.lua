@@ -15,7 +15,7 @@ local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
 -- TODO: ffi support?
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Library that packs/unpacks types as bytes.
 ---
@@ -25,7 +25,7 @@ std.bytepack = bytepack
 
 ---@alias dreamwork.std.bytepack.Sequence integer[] The sequence of bytes (integers<0-255>).
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 8-bit integer from a byte.
 ---
@@ -38,7 +38,7 @@ function bytepack.readUInt8( uint8 )
     return uint8
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 2-byte (16 bit) integer from little endian bytes.
 ---
@@ -56,7 +56,7 @@ end
 
 bytepack.readUInt16 = readUInt16
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 2-byte (16 bit) integer as little endian bytes.
 ---
@@ -72,7 +72,7 @@ end
 
 bytepack.writeUInt16 = writeUInt16
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 3-byte (24 bit) integer from little endian bytes.
 ---
@@ -92,7 +92,7 @@ end
 
 bytepack.readUInt24 = readUInt24
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 3-byte (24 bit) integer as little endian bytes.
 ---
@@ -110,7 +110,7 @@ end
 
 bytepack.writeUInt24 = writeUInt24
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 4-byte (32 bit) integer from little endian bytes.
 ---
@@ -135,7 +135,7 @@ end
 
 bytepack.readUInt32 = readUInt32
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 4-byte (32 bit) integer as little endian bytes.
 ---
@@ -155,7 +155,7 @@ end
 
 bytepack.writeUInt32 = writeUInt32
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 5-byte (40 bit) integer from little endian bytes.
 ---
@@ -173,7 +173,7 @@ end
 
 bytepack.readUInt40 = readUInt40
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 5-byte (40 bit) integer as little endian bytes.
 ---
@@ -195,7 +195,7 @@ end
 
 bytepack.writeUInt40 = writeUInt40
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 6-byte (48 bit) integer from little endian bytes.
 ---
@@ -214,7 +214,7 @@ end
 
 bytepack.readUInt48 = readUInt48
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 6-byte (48 bit) integer as little endian bytes.
 ---
@@ -238,7 +238,7 @@ end
 
 bytepack.writeUInt48 = writeUInt48
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 7-byte (56 bit) integer from little endian bytes.
 ---
@@ -260,7 +260,7 @@ end
 
 bytepack.readUInt56 = readUInt56
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 7-byte (56 bit) integer as little endian bytes.
 ---
@@ -288,7 +288,7 @@ end
 
 bytepack.writeUInt56 = writeUInt56
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned 8-byte (64 bit) integer from little endian bytes.
 ---
@@ -311,7 +311,7 @@ end
 
 bytepack.readUInt64 = readUInt64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned 8-byte (64 bit) integer as little endian bytes.
 ---
@@ -341,7 +341,7 @@ end
 
 bytepack.writeUInt64 = writeUInt64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads time in DOS format from little endian bytes.
 ---
@@ -358,7 +358,7 @@ function bytepack.readTime( uint8_1, uint8_2 )
         bit_band( short, 0x1F ) * 2
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes time in DOS format as little endian bytes.
 ---
@@ -380,7 +380,7 @@ function bytepack.writeTime( hours, minutes, seconds )
     ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads date in DOS format from little endian bytes.
 ---
@@ -397,7 +397,7 @@ function bytepack.readDate( uint8_1, uint8_2 )
         bit_rshift( bit_band( short, 0xFE00 ), 9 ) + 1980
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes date in DOS format as little endian bytes.
 ---
@@ -419,7 +419,7 @@ function bytepack.writeDate( day, month, year )
     ) )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned fixed-point number (**UQm.n**) as little endian bytes.
 ---
@@ -469,7 +469,7 @@ function bytepack.readUnsignedFixedPoint( n, uint8_1, uint8_2, uint8_3, uint8_4,
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned fixed-point number (**UQm.n**) as little endian bytes.
 ---
@@ -521,7 +521,7 @@ function bytepack.writeUnsignedFixedPoint( value, m, n )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 1-byte (8 bit) integer as little endian bytes.
 ---
@@ -535,7 +535,7 @@ end
 
 bytepack.readInt8 = readInt8
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 1-byte (8 bit) integer as little endian bytes.
 ---
@@ -549,7 +549,7 @@ end
 
 bytepack.writeInt8 = writeInt8
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 2-byte (16 bit) integer as little endian bytes.
 ---
@@ -564,7 +564,7 @@ end
 
 bytepack.readInt16 = readInt16
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 2-byte (16 bit) integer as little endian bytes.
 ---
@@ -579,7 +579,7 @@ end
 
 bytepack.writeInt16 = writeInt16
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 3-byte (24 bit) integer as little endian bytes.
 ---
@@ -595,7 +595,7 @@ end
 
 bytepack.readInt24 = readInt24
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 3-byte (24 bit) integer as little endian bytes.
 ---
@@ -611,7 +611,7 @@ end
 
 bytepack.writeInt24 = writeInt24
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 4-byte (32 bit) integer from little endian bytes.
 ---
@@ -628,7 +628,7 @@ end
 
 bytepack.readInt32 = readInt32
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 4-byte (32 bit) integer as little endian bytes.
 ---
@@ -645,7 +645,7 @@ end
 
 bytepack.writeInt32 = writeInt32
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 5-byte (40 bit) integer from little endian bytes.
 ---
@@ -663,7 +663,7 @@ end
 
 bytepack.readInt40 = readInt40
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 5-byte (40 bit) integer as little endian bytes.
 ---
@@ -681,7 +681,7 @@ end
 
 bytepack.writeInt40 = writeInt40
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 6-byte (48 bit) integer from little endian bytes.
 ---
@@ -700,7 +700,7 @@ end
 
 bytepack.readInt48 = readInt48
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 6-byte (48 bit) integer as little endian bytes.
 ---
@@ -719,7 +719,7 @@ end
 
 bytepack.writeInt48 = writeInt48
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 7-byte (56 bit) integer from little endian bytes.
 ---
@@ -743,7 +743,7 @@ end
 
 bytepack.readInt56 = readInt56
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 7-byte (56 bit) integer as little endian bytes.
 ---
@@ -769,7 +769,7 @@ end
 
 bytepack.writeInt56 = writeInt56
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 8-byte (64 bit) integer from little endian bytes.
 ---
@@ -796,7 +796,7 @@ end
 
 bytepack.readInt64 = readInt64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 8-byte (64 bit) integer as little endian bytes.
 ---
@@ -826,7 +826,7 @@ end
 
 bytepack.writeInt64 = writeInt64
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed fixed-point number (**Qm.n**) as little endian bytes.
 ---
@@ -876,7 +876,7 @@ function bytepack.readFixedPoint( n, uint8_1, uint8_2, uint8_3, uint8_4, uint8_5
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned fixed-point number (**UQm.n**) as little endian bytes.
 ---
@@ -928,7 +928,7 @@ function bytepack.writeFixedPoint( value, m, n )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 4-byte (32 bit) float from little endian bytes.
 ---
@@ -967,7 +967,7 @@ function bytepack.readFloat( uint8_1, uint8_2, uint8_3, uint8_4 )
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 4-byte (32 bit) float as little endian bytes.
 ---
@@ -1011,7 +1011,7 @@ function bytepack.writeFloat( value, big_endian )
         (sign and 0x80 or 0) + math_floor( expo / 0x2 )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed 8-byte (64 bit) float (double) from little endian bytes.
 ---
@@ -1054,7 +1054,7 @@ function bytepack.readDouble( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8
     end
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed 8-byte (64 bit) float (double) as little endian bytes.
 ---
@@ -1145,7 +1145,7 @@ do
             end
         end
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Reads unsigned 1-byte (8 bit) integer from big endian hex bytes.
         ---
@@ -1158,7 +1158,7 @@ do
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 2-byte (16 bit) integer from big endian hex bytes.
     ---
@@ -1176,7 +1176,7 @@ do
         )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 3-byte (24 bit) integer from big endian hex bytes.
     ---
@@ -1198,7 +1198,7 @@ do
         )
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads unsigned 4-byte (32 bit) integer from big endian hex bytes.
     ---
@@ -1262,7 +1262,7 @@ do
             uint8_cache_2[ uint8 ] = encode_map[ bit_band( uint8, 0x0F ) ]
         end
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Encodes unsigned 1-byte (8 bit) integer to big endian hex bytes.
         ---
@@ -1277,7 +1277,7 @@ do
 
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Encodes unsigned 2-byte (16 bit) integer to big endian hex bytes.
     ---
@@ -1295,7 +1295,7 @@ do
             encode_map[ bit_band( uint16, 0x0F ) ]
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Encodes unsigned 3-byte (24 bit) integer to big endian hex bytes.
     ---
@@ -1317,7 +1317,7 @@ do
             encode_map[ bit_band( uint24, 0x0F ) ]
     end
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Encodes unsigned 4-byte (32 bit) integer to big endian hex bytes.
     ---

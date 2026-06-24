@@ -6,7 +6,7 @@ local std = dreamwork.std
 ---@class dreamwork.std.raw
 local raw = std.raw
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The debug library is intended to help you debug your scripts,
 --- however it also has several other powerful uses.
@@ -18,7 +18,7 @@ std.debug = debug
 local fempty = debug.fempty
 if fempty == nil then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Just empty function, do nothing.
     ---
@@ -46,7 +46,7 @@ do
     debug.getlocal = glua_debug.getlocal
     debug.setlocal = glua_debug.setlocal
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the metatable of the given value.
     ---
@@ -55,7 +55,7 @@ do
     ---@type fun( object: any ): dreamwork.Metatable | nil
     debug.getmetatable = glua_debug.getmetatable or std.getmetatable
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Sets the metatable for the given value to the given table (which can be `nil`).
     ---
@@ -86,7 +86,7 @@ if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == ni
     error( "execution environment is broken or sandboxed - it's over ;c" )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Calls the given function or object with the given arguments.
 ---
@@ -133,7 +133,7 @@ do
 
     local raw_get = raw.get
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the value of the given key in the metatable of the given value.
     ---
@@ -159,7 +159,7 @@ do
 
     local debug_getupvalue = debug.getupvalue
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns all upvalues of the given function.
     ---
@@ -190,7 +190,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the function at the given stack level.
 ---
@@ -221,7 +221,7 @@ end
 
 local raw_type = raw.type
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Checks if the given function or stack level is a C function.
 ---
@@ -243,7 +243,7 @@ end
 
 local registry = debug.getregistry()
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the registry table.
 ---
@@ -265,7 +265,7 @@ do
 
     else
 
-        --- [SHARED AND MENU]
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
         ---
         --- Returns the metatable of the given name or `nil` if not found.
         ---
@@ -296,7 +296,7 @@ do
     ---@diagnostic disable-next-line: undefined-global
     local RegisterMetaTable = RegisterMetaTable or fempty
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Registers the metatable of the given name and table.
     ---
@@ -317,7 +317,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 ---
 ---@param name string The name of the metatable.
@@ -339,7 +339,7 @@ end
 
 if debug_getmetatable( fempty ) == nil then
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the metatable of the given value or `nil` if not found.
     ---
@@ -354,7 +354,7 @@ if debug_getmetatable( fempty ) == nil then
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the current call stack relative to the specified stack level.
 ---
@@ -382,7 +382,7 @@ function debug.getstack( stack_level, what )
     return stack, stack_length
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Returns the main function of the current stack.
 ---
@@ -413,7 +413,7 @@ do
 
     local string_match = string.match
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Returns the path to the file that the function is defined in.
     ---

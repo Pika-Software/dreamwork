@@ -11,7 +11,7 @@ local debug_getfmain = debug.getfmain
 
 -- TODO: docs
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The jit library is a standard Lua library which provides functions to manipulate the JIT compiler.
 ---
@@ -158,7 +158,7 @@ if util_funcinfo == nil then
 
 else
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Checks if the given function is a FFI function.
     ---

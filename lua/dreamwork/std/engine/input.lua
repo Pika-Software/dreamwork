@@ -9,7 +9,7 @@ local glua_input = _G.input
 local std = dreamwork.std
 local Command_run = std.console.Command.run
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The input library allows you to
 --- manipulate the client's input devices
@@ -223,6 +223,7 @@ if std.LUA_CLIENT_MENU then
                     __index = function( _, key_code )
                         local key_name = input_GetKeyName( key_code )
                         if key_name == nil then return "unknown" end
+
                         key2name[ key_code ] = key_name
                         return key_name
                     end
@@ -250,6 +251,7 @@ if std.LUA_CLIENT_MENU then
                     __index = function( _, key_name )
                         local key_code = input_GetKeyCode( key_name )
                         if key_code == nil then return 0 end
+
                         name2key[ key_name ] = key_code
                         return key_code
                     end

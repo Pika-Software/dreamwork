@@ -6,7 +6,7 @@ local string = std.string
 local string_len = string.len
 local string_byte = string.byte
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Fletcher-16 checksum calculation object.
 ---
@@ -26,7 +26,7 @@ function Fletcher16:__init()
     self:reset()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Resets checksum to the initial value.
 ---
@@ -36,7 +36,7 @@ function Fletcher16:reset()
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Updates checksum with the specified string.
 ---
@@ -54,7 +54,7 @@ function Fletcher16:update( raw_str )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -63,7 +63,7 @@ function Fletcher16:digest()
     return (self.b * 0x0100) + self.a
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Fletcher-16 checksum calculation class.
 ---
@@ -81,7 +81,7 @@ do
 
     local fletcher16 = Fletcher16Class()
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the Fletcher-16 checksum of the specified string.
     ---
@@ -93,7 +93,7 @@ do
 
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Fletcher-32 checksum calculation object.
 ---
@@ -111,7 +111,7 @@ function Fletcher32:__init()
     self:reset()
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Updates checksum with the specified string.
 ---
@@ -129,7 +129,7 @@ function Fletcher32:update( raw_str )
     return self
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -138,7 +138,7 @@ function Fletcher32:digest()
     return (self.b * 0x10000) + self.a
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- The Fletcher-32 checksum calculation class.
 ---
@@ -157,7 +157,7 @@ do
 
     local fletcher32 = Fletcher32Class()
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Calculates the Fletcher-32 checksum of the specified string.
     ---

@@ -12,7 +12,7 @@ local math_floor = math.floor
 
 local len = std.len
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Library that packs/unpacks types as bit sequences.
 ---
@@ -22,7 +22,7 @@ std.bitpack = bitpack
 
 ---@alias dreamwork.std.bitpack.Sequence boolean[] The sequence of bits (booleans).
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads unsigned integer from table of bits (booleans).
 ---
@@ -58,7 +58,7 @@ end
 
 bitpack.readUInt = bitpack_readUInt
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes unsigned integer as table of bits (booleans).
 ---
@@ -92,7 +92,7 @@ end
 
 bitpack.writeUInt = bitpack_writeUInt
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads signed integer from table of bits (booleans).
 ---
@@ -104,7 +104,7 @@ function bitpack.readInt( bit_sequence, bit_sequence_size, start_position )
     return bitpack_readUInt( bit_sequence, bit_sequence_size, start_position ) - (2 ^ (bit_sequence_size - 1))
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes signed integer as table of bits (booleans).
 ---
@@ -115,7 +115,7 @@ function bitpack.writeInt( value, bit_sequence_size )
     return bitpack_writeUInt( value + (2 ^ (bit_sequence_size - 1)), bit_sequence_size )
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Writes table of bits (booleans) as bytecodes.
 ---
@@ -149,7 +149,7 @@ function bitpack.pack( bit_sequence, bit_sequence_size, big_endian )
     return bytes, byte_count
 end
 
---- [SHARED AND MENU]
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Reads bytecodes as table of bits (booleans).
 ---
@@ -187,7 +187,7 @@ do
 
     local table_concat = std.table.concat
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Converts table of bits (booleans) to string of 0s and 1s.
     ---
@@ -221,7 +221,7 @@ do
 
     local string_find = string.find
 
-    --- [SHARED AND MENU]
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
     ---
     --- Reads bit sequence from string of 0s and 1s.
     ---
