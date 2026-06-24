@@ -106,12 +106,16 @@ do
         end
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Clears the console output.
-    ---
-    function console.clear()
-        engine_consoleMessage( "\27[2J\27[H" ) -- ANSI escape codes to clear the screen and move the cursor to the top-left corner.
+    if SERVER then
+
+        --- [SHARED AND MENU]
+        ---
+        --- Clears the console output.
+        ---
+        function console.clear()
+            engine_consoleMessage( "\27[2J\27[H" ) -- ANSI escape codes to clear the screen and move the cursor to the top-left corner.
+        end
+
     end
 
 end
@@ -238,3 +242,9 @@ sendfile( "dreamwork/std/io/console/command.lua" )
 -- engine console logger class
 dofile( "dreamwork/std/io/console/logger.lua" )
 sendfile( "dreamwork/std/io/console/logger.lua" )
+
+if not SERVER then
+    function console.clear()
+        console.Command.run( "clear" ) -- fuck facepunch
+    end
+end
