@@ -993,21 +993,9 @@ end
 
 do
 
-    local getGames, getAddons
-
-    local glua_engine = _G.engine
-    if glua_engine ~= nil then
-        getGames = glua_engine.GetGames
-        getAddons = glua_engine.GetAddons
-    end
-
-    if getGames == nil then
-        getGames = debug_fempty
-    end
-
-    if getAddons == nil then
-        getAddons = debug_fempty
-    end
+    local glua_engine = _G.engine or {}
+    local getGames = glua_engine.GetGames or debug_fempty
+    local getAddons = glua_engine.GetAddons or debug_fempty
 
     ---@class dreamwork.engine.GameInfo
     ---@field depot integer The game's Steam Depot ID.
@@ -1046,34 +1034,42 @@ do
     engine.AddonList, engine.AddonCount, engine.AddonHash = actual_addon_list, actual_addon_count, actual_addon_hash
 
     engine_hookCatch( "GameContentUpdate", function()
-        ---@type dreamwork.engine.GameInfo[], dreamwork.engine.AddonInfo[]
-        local game_list, addon_list = getGames() or {}, getAddons() or {}
-        local game_count, addon_count = #game_list, #addon_list
-
-        local game_hash, addon_hash = {}, {}
-
-        -- Supported Games - Cleanup
         for app_id in raw_pairs( supported_games ) do
             supported_games[ app_id ] = nil
         end
 
-        local game_changes = 0
+        ---@type dreamwork.engine.GameInfo[]
+        local engine_games = getGames() or {}
 
-        -- Mounted & Supported Games - Sync
-        for i = 1, game_count, 1 do
-            local game_info = game_list[ i ]
-            game_info.index = i
+        ---@type table<integer, dreamwork.engine.GameInfo>
+        local games_hash = {}
+
+        ---@type integer
+        local games_changed = 0
+
+        ---@type dreamwork.engine.GameInfo[]
+        local game_list = {}
+
+        ---@type integer
+        local game_count = 0
+
+        for i = 1, #engine_games, 1 do
+            local game_info = engine_games[ i ]
 
             local app_id = game_info.depot
             supported_games[ app_id ] = game_info
 
             if game_info.mounted then
                 if actual_game_hash[ app_id ] == nil then
-                    engine_hookCall( "GameMounted", game_info, true )
-                    game_changes = game_changes + 1
+                    engine_hookCall( "GameMount", game_info, true )
+                    games_changed = games_changed + 1
                 end
 
-                game_hash[ app_id ] = game_info
+                games_hash[ app_id ] = game_info
+
+                game_count = game_count + 1
+                game_info.index = game_count
+                game_list[ game_count ] = game_info
             end
         end
 
@@ -1081,49 +1077,60 @@ do
             local game_info = actual_game_list[ i ]
             local depot = game_info.depot
 
-            if actual_game_hash[ depot ] ~= nil and game_hash[ depot ] == nil then
-                engine_hookCall( "GameMounted", game_info, false )
-                game_changes = game_changes + 1
+            if actual_game_hash[ depot ] ~= nil and games_hash[ depot ] == nil then
+                engine_hookCall( "GameMount", game_info, false )
+                games_changed = games_changed + 1
             end
 
             actual_game_list[ i ] = nil
         end
 
-        --- Game List - Sync
-        actual_game_count = game_count
-        engine.GameCount = actual_game_count
+        for app_id in raw_pairs( actual_game_hash ) do
+            actual_game_hash[ app_id ] = nil
+        end
+
+        for app_id, game_info in raw_pairs( games_hash ) do
+            actual_game_hash[ app_id ] = game_info
+        end
 
         for i = 1, game_count, 1 do
             actual_game_list[ i ] = game_list[ i ]
         end
 
-        -- Game Hash - Cleanup
-        for app_id in raw_pairs( actual_game_hash ) do
-            actual_game_hash[ app_id ] = nil
-        end
+        actual_game_count = game_count
+        engine.GameCount = game_count
 
-        -- Game Hash - Sync
-        for app_id, game_info in raw_pairs( game_hash ) do
-            actual_game_hash[ app_id ] = game_info
-        end
+        ---@type dreamwork.engine.AddonInfo[]
+        local engine_addons = getAddons() or {}
 
-        local addon_changes = 0
+        ---@type table<integer, dreamwork.engine.AddonInfo>
+        local addons_hash = {}
 
-        -- Mounted Addons - Sync
-        for i = 1, addon_count, 1 do
-            local addon_info = addon_list[ i ]
-            addon_info.index = i
+        ---@type integer
+        local addons_changed = 0
+
+        ---@type dreamwork.engine.AddonInfo[]
+        local addon_list = {}
+
+        ---@type integer
+        local addon_count = 0
+
+        for i = 1, #engine_addons, 1 do
+            local addon_info = engine_addons[ i ]
 
             if addon_info.mounted then
                 local addon_title = addon_info.title
-
                 if actual_addon_hash[ addon_title ] == nil then
                     addon_info.folder = string_format( "gma_%.4x", addon_info.index )
-                    engine_hookCall( "AddonMounted", addon_info, true )
-                    addon_changes = addon_changes + 1
+                    engine_hookCall( "AddonMount", addon_info, true )
+                    addons_changed = addons_changed + 1
                 end
 
-                addon_hash[ addon_title ] = addon_info
+                addons_hash[ addon_title ] = addon_info
+
+                addon_count = addon_count + 1
+                addon_info.index = addon_count
+                addon_list[ addon_count ] = addon_info
             end
         end
 
@@ -1131,33 +1138,30 @@ do
             local addon_info = actual_addon_list[ i ]
             local addon_title = addon_info.title
 
-            if actual_addon_hash[ addon_title ] ~= nil and addon_hash[ addon_title ] == nil then
-                engine_hookCall( "AddonMounted", addon_info, false )
-                addon_changes = addon_changes + 1
+            if actual_addon_hash[ addon_title ] ~= nil and addons_hash[ addon_title ] == nil then
+                engine_hookCall( "AddonMount", addon_info, false )
+                addons_changed = addons_changed + 1
             end
 
             actual_addon_list[ i ] = nil
         end
 
-        -- Addon List - Sync
-        actual_addon_count = addon_count
-        engine.AddonCount = actual_addon_count
+        for addon_title in raw_pairs( actual_addon_hash ) do
+            actual_addon_hash[ addon_title ] = nil
+        end
+
+        for addon_title, addon_info in raw_pairs( addons_hash ) do
+            actual_addon_hash[ addon_title ] = addon_info
+        end
 
         for i = 1, addon_count, 1 do
             actual_addon_list[ i ] = addon_list[ i ]
         end
 
-        -- Addon Hash - Cleanup
-        for addon_title in raw_pairs( actual_addon_hash ) do
-            actual_addon_hash[ addon_title ] = nil
-        end
+        actual_addon_count = addon_count
+        engine.AddonCount = addon_count
 
-        -- Addon Hash - Sync
-        for addon_title, addon_info in raw_pairs( addon_hash ) do
-            actual_addon_hash[ addon_title ] = addon_info
-        end
-
-        return game_changes, addon_changes
+        return games_changed, addons_changed
     end, 1 )
 
 end

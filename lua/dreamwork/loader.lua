@@ -2464,6 +2464,18 @@ do
 
 end
 
+---@param game_info dreamwork.engine.GameInfo
+---@param is_mounted boolean
+engine.hookCatch( "GameMount", function( game_info, is_mounted )
+    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
+---@param addon_info dreamwork.engine.AddonInfo
+---@param is_mounted boolean
+engine.hookCatch( "AddonMount", function( addon_info, is_mounted )
+    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
+end, 1 )
+
 do
 
     local changes_timeout = std.Timer( 0.5, 1, dreamwork.Prefix .. "::ContentWatcher" )
@@ -2490,19 +2502,7 @@ do
 
 end
 
-logger:info( "%d game(s) and %d add-on(s) mounted to engine.", engine.GameCount, engine.AddonCount )
-
----@param game_info dreamwork.engine.GameInfo
----@param is_mounted boolean
-engine.hookCatch( "GameMounted", function( game_info, is_mounted )
-    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
-end, 1 )
-
----@param addon_info dreamwork.engine.AddonInfo
----@param is_mounted boolean
-engine.hookCatch( "AddonMounted", function( addon_info, is_mounted )
-    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
-end, 1 )
+logger:info( "%d game(s) and %d add-on(s) mounted to game.", engine.GameCount, engine.AddonCount )
 
 std.FRAME_TIME = 1 / 60
 std.FPS = 60
