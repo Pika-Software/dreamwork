@@ -1,62 +1,47 @@
 ---@class dreamwork.std
-local std                         = dreamwork.std
+local std               = dreamwork.std
 
-local setmetatable                = std.setmetatable
+local setmetatable      = std.setmetatable
 
-local math                        = std.math
-local math_clamp                  = math.clamp
-local math_relative               = math.relative
-local math_min, math_max          = math.min, math.max
+local math              = std.math
+local math_clamp        = math.clamp
+local math_relative     = math.relative
+local math_min          = math.min
 
-local string                      = std.string
-local string_len                  = string.len
-local string_byte                 = string.byte
-local string_rep                  = string.rep
-local string_sub                  = string.sub
-local string_format               = string.format
-local string_findByte             = string.findByte
-local string_toNumber             = string.toNumber
+local string            = std.string
+local string_len        = string.len
+local string_byte       = string.byte
+local string_rep        = string.rep
+local string_format     = string.format
+local string_toNumber   = string.toNumber
 
-local bit                         = std.bit
-local bit_bnot                    = bit.bnot
-local bit_rshift                  = bit.rshift
-local bit_lshift                  = bit.lshift
-local bit_unsign                  = bit.unsign
-local bit_bxor, bit_band, bit_bor = bit.bxor, bit.band, bit.bor
+local bit               = std.bit
+local bit_bnot          = bit.bnot
+local bit_rshift        = bit.rshift
+local bit_lshift        = bit.lshift
+local bit_unsign        = bit.unsign
+local bit_band, bit_bor = bit.band, bit.bor
 
-local table                       = std.table
-local table_concat                = table.concat
+local table             = std.table
+local table_concat      = table.concat
 
-local class                       = std.class
+local class             = std.class
 
-
---[[
-    IPv6 is represented as two 32-bit Lua integers (high, low), each covering
-    two 16-bit groups (hextets).  hi holds groups 1-4, lo holds groups 5-8.
-
-    Group layout inside a 32-bit word:
-        bits 31-16 = first group
-        bits 15-0  = second group
-
-    Where "group" index N (1-based, left to right):
-        hi -> groups 1-2  (bits 31-16 and 15-0 of hi)
-        lo -> groups 3-4  (bits 31-16 and 15-0 of lo)
-        ... etc.
-
-    Because Lua's bit library works on 32-bit signed integers we store groups
-    as 16-bit values packed into 32-bit ints and use bit_unsign where a
-    non-negative result is required.
-]]
-
---- An IPv6 address is a table of four 16-bit unsigned integers (host groups 1-8,
---- two groups per cell stored separately for clarity, or just store all 8 groups).
-
---- For simplicity we represent an IPv6 address as a plain array of 8 integers,
---- each in [0, 65535], indexed 1-8 (most significant first).
-
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
+--- A object that representing IPv6 address.
+---
 ---@class dreamwork.std.IPv6 : dreamwork.std.Object
 ---@field __class dreamwork.std.IPv6Class
-local IPv6 = class.base( "IPv6", false )
+---@field [ 1 ] integer
+---@field [ 2 ] integer
+---@field [ 3 ] integer
+---@field [ 4 ] integer
+---@field [ 5 ] integer
+---@field [ 6 ] integer
+---@field [ 7 ] integer
+---@field [ 8 ] integer
+local IPv6              = class.base( "IPv6", false )
 
 ---@protected
 function IPv6:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
@@ -123,14 +108,6 @@ end
 ---
 ---@class dreamwork.std.IPv6Class : dreamwork.std.IPv6
 ---@field __base dreamwork.std.IPv6
----@field [ 1 ] integer
----@field [ 2 ] integer
----@field [ 3 ] integer
----@field [ 4 ] integer
----@field [ 5 ] integer
----@field [ 6 ] integer
----@field [ 7 ] integer
----@field [ 8 ] integer
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): dreamwork.std.IPv6
 local IPv6Class = class.create( IPv6 )
 std.IPv6 = IPv6Class
