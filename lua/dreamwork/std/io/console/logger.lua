@@ -1,5 +1,7 @@
 local std = dreamwork.std
 
+local represent = std.represent
+
 local raw = std.raw
 local raw_select = raw.select
 local raw_tostring = raw.tostring
@@ -140,7 +142,7 @@ local function write_log( object, color, level, fmt, ... )
         local args = {}
 
         for i = 1, raw_select( "#", ... ), 1 do
-            args[ raw_tostring( i ) ] = raw_tostring( raw_select( i, ... ) )
+            args[ raw_tostring( i ) ] = represent( raw_select( i, ... ) )
         end
 
         engine_consoleMessageColored( string_gsub( fmt, "{([0-9]+)}", args ) .. "\n", object.text_color )

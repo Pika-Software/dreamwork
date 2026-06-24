@@ -5,9 +5,13 @@ local std = dreamwork.std
 
 local len = std.len
 
+local debug = std.debug
+local debug_getmetavalue = debug.getmetavalue
+
 --- [SHARED AND MENU]
 ---
 --- The powerful math library.
+---
 ---@class dreamwork.std.math
 ---@field e number A variable containing the mathematical constant e. (2.7182818284590)
 ---@field ln2 number A variable containing the mathematical constant natural logarithm of 2. (0.69314718055995)
@@ -849,6 +853,23 @@ do
         return math_floor( math_log10( math_abs( x ) ) ) + 1
     end
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the floor division of two numbers.
+---
+---@generic T: number | any
+---@param a T The first number.
+---@param b T The second number.
+---@return T x The floor division of the two numbers.
+function math.fdiv( a, b )
+    local fn = debug_getmetavalue( a, "__idiv" )
+    if fn == nil then
+        return math_floor( a / b )
+    else
+        return fn( a, b )
+    end
 end
 
 -- Source code of functions

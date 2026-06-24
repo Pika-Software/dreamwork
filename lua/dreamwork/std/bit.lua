@@ -1,8 +1,15 @@
--- Based on https://gist.github.com/x4fx77x4f/5b97e803825d3dc16f6e9c5227ec6a04
+--- Based on https://gist.github.com/x4fx77x4f/5b97e803825d3dc16f6e9c5227ec6a04
+---@diagnostic disable: duplicate-set-field
+
+---@type table
 local glua_bit = bit or {}
 
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local debug = std.debug
+local debug_getmetavalue = debug.getmetavalue
+
 local math = std.math
 
 --- [SHARED AND MENU]
@@ -43,7 +50,6 @@ if bit.tohex == nil then
     ---@param x integer The value to be converted.
     ---@param length integer? The number of digits. Defaults to 8.
     ---@return string str The hexadecimal representation.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.tohex( x, length )
         return string_format( "%0" .. (length or 8) .. "x", x )
     end
@@ -58,7 +64,6 @@ if bit.tobit == nil then
     ---
     ---@param x integer The value to be normalized.
     ---@return integer result The normalized value.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.tobit( x )
         x = x % 0x100000000
 
@@ -93,7 +98,6 @@ if bit.arshift == nil then
     ---@param x integer The value to be manipulated.
     ---@param disp integer Amounts of bits to shift.
     ---@return integer result The arithmetically shifted value.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.arshift( x, disp )
         if x < 0x80000000 then
             return bit_tobit( math_floor( x / (2 ^ disp) ) )
@@ -105,6 +109,18 @@ if bit.arshift == nil then
 end
 
 if bit.lshift == nil then
+    function bit.lshift( x, disp )
+        if disp > 31 then
+            return 0
+        else
+            return bit_tobit( x * (2 ^ disp) )
+        end
+    end
+end
+
+do
+
+    local bit_lshift = bit.lshift
 
     --- [SHARED AND MENU]
     ---
@@ -125,21 +141,39 @@ if bit.lshift == nil then
     ---     0111 1000   120
     --- ```
     ---
-    ---@param x integer The value to be manipulated.
-    ---@param disp integer Amounts of bits to shift left by.
-    ---@return integer result The left shifted value.
+    --- **NOTE**: The returned value will be clamped to a signed 32-bit integer, even on 64-bit builds.
+    ---
+    --- See [this wiki article](https://en.wikipedia.org/wiki/Bitwise_operation#Bit_shifts) for more details.
+    ---
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated.
+    ---@param bit_count integer Amounts of bits to shift left by.
+    ---@return T result The left shifted value. Input of `0b1001` will become `0b10010` for one left shift, etc.
     ---@diagnostic disable-next-line: duplicate-set-field
-    function bit.lshift( x, disp )
-        if disp > 31 then
-            return 0
+    function bit.lshift( x, bit_count )
+        local fn = debug_getmetavalue( x, "__shl" )
+        if fn == nil then
+            return bit_lshift( x, bit_count )
         else
-            return bit_tobit( x * (2 ^ disp) )
+            return fn( x, bit_count )
         end
     end
 
 end
 
 if bit.rshift == nil then
+    function bit.rshift( x, disp )
+        if disp > 31 then
+            return 0
+        else
+            return bit_tobit( math_floor( x / (2 ^ disp) ) )
+        end
+    end
+end
+
+do
+
+    local bit_rshift = bit.rshift
 
     --- [SHARED AND MENU]
     ---
@@ -158,15 +192,21 @@ if bit.rshift == nil then
     ---     0000 1111   15
     --- ```
     ---
-    ---@param x integer The value to be manipulated.
-    ---@param disp integer Amounts of bits to shift right by.
-    ---@return integer result The right shifted value.
+    --- **NOTE**: The returned value will be clamped to a signed 32-bit integer, even on 64-bit builds.
+    ---
+    --- See [this wiki article](https://en.wikipedia.org/wiki/Bitwise_operation#Bit_shifts) for more details.
+    ---
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated.
+    ---@param bit_count integer Amounts of bits to shift right by.
+    ---@return T result The right shifted value.
     ---@diagnostic disable-next-line: duplicate-set-field
-    function bit.rshift( x, disp )
-        if disp > 31 then
-            return 0
+    function bit.rshift( x, bit_count )
+        local fn = debug_getmetavalue( x, "__shr" )
+        if fn == nil then
+            return bit_rshift( x, bit_count )
         else
-            return bit_tobit( math_floor( x / (2 ^ disp) ) )
+            return fn( x, bit_count )
         end
     end
 
@@ -180,7 +220,6 @@ if bit.bswap == nil then
     ---
     ---@param x integer The 32-bit integer to be byte-swapped.
     ---@return integer result The byte-swapped value.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bswap( x )
         return bit_tobit( ((x % 0x100) * 0x1000000) + ((math_floor( x / 0x100 ) % 0x100) * 0x10000) + ((math_floor( x / 0x10000 ) % 0x100) * 0x100) + (math_floor( x / 0x1000000 ) % 0x100) )
     end
@@ -188,10 +227,30 @@ if bit.bswap == nil then
 end
 
 if bit.bnot == nil then
+    function bit.bnot( x )
+        local result = 0
+
+        for i = 0, 31, 1 do
+            if x % 2 == 0 then
+                result = result + 2 ^ i
+            end
+
+            x = math_floor( x * 0.5 )
+        end
+
+        return bit_tobit( result )
+    end
+end
+
+do
+
+    local bit_bnot = bit.bnot
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the bitwise negation of `x`.
+    --- Returns the bitwise NOT ( negation ) of `x`.
+    ---
+    --- Inverts every bit of the 32-bit integer.
     ---
     --- ```
     --- NOT 1111 0000   240
@@ -207,52 +266,23 @@ if bit.bnot == nil then
     --- assert( bit.bnot( x ) == ( -1 - x ) % 2 ^ 32 )
     --- ````
     ---
-    ---@param x integer The value to be manipulated.
-    ---@return integer result The bitwise `not` of the value.
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated/inverted.
+    ---@return T result The result of bitwise `NOT` (`0101` becomes `1010`).
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bnot( x )
-        local result = 0
-
-        for i = 0, 31, 1 do
-            if x % 2 == 0 then
-                result = result + 2 ^ i
-            end
-
-            x = math_floor( x * 0.5 )
+        local fn = debug_getmetavalue( x, "__bnot" )
+        if fn == nil then
+            return bit_bnot( x )
+        else
+            return fn( x )
         end
-
-        return bit_tobit( result )
     end
 
 end
 
-if bit.band == nil then
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the bitwise AND of all provided numbers.
-    ---
-    --- Each bit is tested against the following truth table:
-    ---
-    --- | A | B | Output |
-    --- |:-:|:-:|:------:|
-    --- | 0 | 0 |   0    |
-    --- | 1 | 0 |   0    |
-    --- | 0 | 1 |   0    |
-    --- | 1 | 1 |   1    |
-    ---
-    --- ```
-    ---     1100 1110   222
-    ---     0101 1000   88
-    --- AND 0100 1001   73
-    --- _____________
-    ---     0100 1000   72
-    --- ```
-    ---
-    ---@param x integer The value to be manipulated.
-    ---@param ... integer? Values bit and with.
-    ---@return integer result The bitwise `and` result between all values.
-    ---@diagnostic disable-next-line: duplicate-set-field
+if bit.band == nil then
     function bit.band( x, ... )
         local args = { x, ... }
         local result = 0xFFFFFFFF
@@ -272,36 +302,50 @@ if bit.band == nil then
 
         return bit_tobit( result )
     end
-
 end
 
-if bit.bor == nil then
+do
+
+    local bit_band = bit.band
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the bitwise OR of all provided numbers.
+    --- Returns the bitwise AND of all provided values.
     ---
     --- Each bit is tested against the following truth table:
     ---
     --- | A | B | Output |
     --- |:-:|:-:|:------:|
     --- | 0 | 0 |   0    |
-    --- | 1 | 0 |   1    |
-    --- | 0 | 1 |   1    |
+    --- | 1 | 0 |   0    |
+    --- | 0 | 1 |   0    |
     --- | 1 | 1 |   1    |
     ---
     --- ```
-    ---     0101 0001   81
-    ---     0001 0101   21
-    --- OR  0000 0101   5
+    ---     1100 1110   222
+    ---     0101 1000   88
+    --- AND 0100 1001   73
     --- _____________
-    ---     0101 0101   85
+    ---     0100 1000   72
     --- ```
     ---
-    ---@param x integer The value to be manipulated.
-    ---@param ... integer? Values bit or with.
-    ---@return integer result The bitwise `or` result between all values.
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated.
+    ---@param ... T? Values bit to perform bitwise AND with. Optional.
+    ---@return T result The bitwise AND result between all values.
     ---@diagnostic disable-next-line: duplicate-set-field
+    function bit.band( x, ... )
+        local fn = debug_getmetavalue( x, "__band" )
+        if fn == nil then
+            return bit_band( x, ... )
+        else
+            return fn( x, ... )
+        end
+    end
+
+end
+
+if bit.bor == nil then
     function bit.bor( x, ... )
         local args = { x, ... }
         local result = 0
@@ -321,14 +365,15 @@ if bit.bor == nil then
 
         return bit_tobit( result )
     end
-
 end
 
-if bit.bxor == nil then
+do
+
+    local bit_bor = bit.bor
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the bitwise XOR of all provided numbers.
+    --- Returns the bitwise OR of all provided values.
     ---
     --- Each bit is tested against the following truth table:
     ---
@@ -337,22 +382,33 @@ if bit.bxor == nil then
     --- | 0 | 0 |   0    |
     --- | 1 | 0 |   1    |
     --- | 0 | 1 |   1    |
-    --- | 1 | 1 |   0    |
-    ---
-    --- <br/>
+    --- | 1 | 1 |   1    |
     ---
     --- ```
     ---     0101 0001   81
     ---     0001 0101   21
-    --- XOR 0000 0101   5
+    --- OR  0000 0101   5
     --- _____________
-    ---     0100 0001   65
+    ---     0101 0101   85
     --- ```
     ---
-    ---@param x integer The value to be manipulated.
-    ---@param ... integer? Values bit xor with.
-    ---@return integer result Result of bitwise `xor` operation.
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated.
+    ---@param ... T? Values bit or with. Optional.
+    ---@return T result The bitwise OR result between all values.
     ---@diagnostic disable-next-line: duplicate-set-field
+    function bit.bor( x, ... )
+        local fn = debug_getmetavalue( x, "__bor" )
+        if fn == nil then
+            return bit_bor( x, ... )
+        else
+            return fn( x, ... )
+        end
+    end
+
+end
+
+if bit.bxor == nil then
     function bit.bxor( x, ... )
         local args = { x, ... }
 
@@ -377,6 +433,48 @@ if bit.bxor == nil then
 
         return bit_tobit( output )
     end
+end
+
+do
+
+    local bit_bxor = bit.bxor
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the bitwise XOR of all provided numbers.
+    ---
+    --- Each bit is tested against the following truth table:
+    ---
+    --- | A | B | Output |
+    --- |:-:|:-:|:------:|
+    --- | 0 | 0 |   0    |
+    --- | 1 | 0 |   1    |
+    --- | 0 | 1 |   1    |
+    --- | 1 | 1 |   0    |
+    ---
+    --- <br/>
+    ---
+    --- ```
+    ---     0101 0001   81
+    ---     0001 0101   21
+    --- XOR 0000 0101   5
+    --- _____________
+    ---     0100 0001   65
+    --- ```
+    ---
+    ---@generic T: integer | any
+    ---@param x T The value to be manipulated.
+    ---@param ... T? Values bit XOR with. Optional.
+    ---@return T result Result of bitwise XOR` operation.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function bit.bxor( x, ... )
+        local fn = debug_getmetavalue( x, "__bxor" )
+        if fn == nil then
+            return bit_bxor( x, ... )
+        else
+            return fn( x, ... )
+        end
+    end
 
 end
 
@@ -400,7 +498,6 @@ if bit.lrotate == nil then
     ---@param x integer The value to be manipulated.
     ---@param disp integer Amounts of bits to rotate left by.
     ---@return integer result The left rotated value.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.lrotate( x, disp )
         return bit_bor( bit_lshift( x, disp ), bit_rshift( x, 32 - disp ) )
     end
@@ -426,7 +523,6 @@ if bit.rrotate == nil then
     ---@param x integer The value to be manipulated.
     ---@param disp integer Amounts of bits to rotate right by.
     ---@return integer result The right rotated value.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function bit.rrotate( x, disp )
         return bit_bor( bit_rshift( x, disp ), bit_lshift( x, 32 - disp ) )
     end

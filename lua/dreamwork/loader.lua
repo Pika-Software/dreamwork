@@ -64,51 +64,6 @@ std.LUA_MENU_SERVER = LUA_MENU_SERVER
 local LUA_CLIENT_SERVER = LUA_CLIENT or LUA_SERVER
 std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 
----@generic K, V
----@class dreamwork.Metatable<K, V>
----@field __type? string
----@field MetaName? string
----@field __typeid? integer
----@field MetaID? integer
----@field __mode? "v" | "k" | "kv"
----@field __metatable? any
----@field __tostring? fun(self: table<K, V>): string
----@field __gc? fun(self: table<K,V>)
----@field __add? fun(self: table<K,V>, other: any): any
----@field __sub? fun(self: table<K,V>, other: any): any
----@field __mul? fun(self: table<K,V>, other: any): any
----@field __div? fun(self: table<K,V>, other: any): any
----@field __mod? fun(self: table<K,V>, other: any): any
----@field __pow? fun(self: table<K,V>, other: any): any
----@field __unm? fun(self: table<K,V>): any
----@field __idiv? fun(self: table<K,V>, other: any): any
----@field __band? fun(self: table<K,V>, other: any): any
----@field __bor? fun(self: table<K,V>, other: any): any
----@field __bxor? fun(self: table<K,V>, other: any): any
----@field __bnot? fun(self: table<K,V>): any
----@field __shl? fun(self: table<K,V>, other: any): any
----@field __shr? fun(self: table<K,V>, other: any): any
----@field __concat? fun(self: table<K,V>, other: any): any
----@field __len? fun(self: table<K,V>): number
----@field __eq? fun(self: table<K,V>, other: any): boolean
----@field __lt? fun(self: table<K,V>, other: any): boolean
----@field __le? fun(self: table<K,V>, other: any): boolean
----@field __index? table<any, any>|fun(self: table<K,V>, key: K): any
----@field __newindex? table<any, any>|fun(self: table<K,V>, key: K, value: V)
----@field __call? fun(self: table<K,V>, ...): any
----@field __pairs? fun(self: table<K,V>): fun(tbl: table<K,V>, key: K?): K?, V?
----@field __close? fun(self: table<K,V>, errobj: any): any
----@field __copy? fun(self: table<K,V>): table<K,V>
----@field __serialize? fun(self: table<K,V>, writer: dreamwork.std.buffer.Writer, data: any?)
----@field __deserialize? fun(self: table<K,V>, reader: dreamwork.std.buffer.Reader, data: any?)
----@field __tostring? fun(self: table<K,V>): string
----@field __tonumber? fun(self: table<K,V>): number
----@field __toboolean? fun(self: table<K,V>): boolean
----@field __tocolor? fun(self: table<K,V>): dreamwork.std.Color
----@field __represent? fun(self: table<K,V>): string
----@field __isvalid? fun(self: table<K,V>): boolean
----@field __hash? fun(self: table<K,V>): integer
-
 --- [SHARED AND MENU]
 ---
 --- If object does not have a metatable, returns `nil`.
@@ -154,9 +109,6 @@ local raw_pairs = raw.pairs
 local raw_select = raw.select
 std.select = raw_select
 
-local raw_tostring = raw.tostring
-std.tostring = raw_tostring
-
 -- debug library
 dofile( "dreamwork/std/debug.lua" )
 
@@ -164,6 +116,36 @@ dofile( "dreamwork/std/debug.lua" )
 local debug = std.debug
 local debug_fempty = debug.fempty
 local debug_getmetavalue = debug.getmetavalue
+
+do
+
+    local raw_tostring = raw.tostring
+
+    --- [SHARED AND MENU]
+    ---
+    --- Receives a value of any type and converts it to a string in a human-readable format.
+    ---
+    --- If the metatable of `v` has a `__tostring` field, then `tostring` calls the corresponding value with `v` as argument, and uses the result of the call as its result.
+    ---
+    --- Otherwise, if the metatable of `v` has a `__name` field with a string value, `tostring` may use that string in its final result.
+    ---
+    --- For complete control of how numbers are converted, use [string.format](http://www.lua.org/manual/5.4/manual.html#pdf-string.format).
+    ---
+    ---
+    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-tostring)
+    ---
+    function std.tostring( value )
+        local name = debug_getmetavalue( value, "__name" )
+        if name == nil then
+            return raw_tostring( value )
+        else
+            return name
+        end
+    end
+
+end
+
+local tostring = std.tostring
 
 -- we need more sugar!!1
 raw.getmetatable = debug.getmetatable
@@ -313,11 +295,11 @@ sendfile( "dreamwork/std/jit.lua" )
 function std.len( value )
     ---@type nil | fun( value: any ): number
     local fn = debug_getmetavalue( value, "__len" )
-    if fn ~= nil then
+    if fn == nil then
+        return #value
+    else
         return fn( value )
     end
-
-    return #value
 end
 
 --- [SHARED AND MENU]
@@ -329,11 +311,11 @@ end
 local function represent( value )
     ---@type fun( value: any ): string
     local fn = debug_getmetavalue( value, "__represent" )
-    if fn ~= nil then
+    if fn == nil then
+        return tostring( value )
+    else
         return fn( value )
     end
-
-    return raw_tostring( value )
 end
 
 std.represent = represent
@@ -347,11 +329,11 @@ std.represent = represent
 function std.hash( value )
     ---@type fun( value: any ): integer
     local fn = debug_getmetavalue( value, "__hash" )
-    if fn ~= nil then
+    if fn == nil then
+        return nil
+    else
         return fn( value )
     end
-
-    return nil
 end
 
 --- [SHARED AND MENU]
@@ -370,11 +352,11 @@ end
 ---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
 function std.tonumber( e, base )
     local fn = debug_getmetavalue( e, "__tonumber" )
-    if fn ~= nil then
+    if fn == nil then
+        return nil
+    else
         return fn( e, base or 10 )
     end
-
-    return nil
 end
 
 --- [SHARED AND MENU]
@@ -387,11 +369,11 @@ end
 ---@return boolean | nil bool The boolean value of `e`, or `nil` if `e` cannot be converted to a boolean.
 function std.toboolean( e )
     local fn = debug_getmetavalue( e, "__toboolean" )
-    if fn ~= nil then
+    if fn == nil then
+        return nil
+    else
         return fn( e )
     end
-
-    return nil
 end
 
 -- Alias for lazy developers
@@ -408,11 +390,11 @@ std.tobool = std.toboolean
 function std.tocolor( value )
     ---@type fun(value: any): dreamwork.std.Color | nil
     local fn = debug_getmetavalue( value, "__tocolor" )
-    if fn ~= nil then
+    if fn == nil then
+        return nil
+    else
         return fn( value )
     end
-
-    return nil
 end
 
 --- [SHARED AND MENU]
@@ -1174,7 +1156,6 @@ do
         debug_registermetatable( "nil", Nil )
 
         Nil.__type = "nil"
-        Nil.__typeid = 0
 
         ---@private
         function Nil.__toboolean()
@@ -1216,7 +1197,6 @@ do
         debug_registermetatable( "boolean", Boolean )
 
         Boolean.__type = "boolean"
-        Boolean.__typeid = 1
 
         ---@private
         function Boolean.__toboolean( value )
@@ -1261,7 +1241,6 @@ do
         debug_registermetatable( "number", Number )
 
         Number.__type = "number"
-        Number.__typeid = 3
 
         ---@private
         function Number.__toboolean( value )
@@ -1323,7 +1302,6 @@ do
         debug_registermetatable( "string", String )
 
         String.__type = "string"
-        String.__typeid = 4
 
         ---@private
         function String.__toboolean( value )
@@ -1363,7 +1341,6 @@ do
         debug_registermetatable( "function", Function )
 
         Function.__type = "function"
-        Function.__typeid = 6
 
         --- [SHARED AND MENU]
         ---
@@ -1406,7 +1383,6 @@ do
         debug_registermetatable( "thread", Thread )
 
         Thread.__type = "thread"
-        Thread.__typeid = 8
 
         --- [SHARED AND MENU]
         ---
@@ -1867,7 +1843,7 @@ do
         if message == nil then
             message = "unknown"
         else
-            message = raw_tostring( message )
+            message = tostring( message )
         end
 
         if stack_level == nil then
@@ -2583,8 +2559,8 @@ end
 
 logger:info( "Start-up time: %.2f ms.", (os.clock() - dreamwork.InitTime) * 1000 )
 
--- Clean-up
+-- Memory clean-up
 time.tick( "ms" )
 gc.collect()
 
-logger:info( "Clean-up time: %.2f ms.", time.tick( "ms" ) )
+logger:info( "Clean-up finished, took %.2f ms, memory consumed by Lua: %.02f MB.", time.tick( "ms" ), gc.getMemory() / 1024 )
