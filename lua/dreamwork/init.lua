@@ -30,32 +30,6 @@ dofile( "std/sqlite.lua" )
 dofile( "storage.lua" )
 dofile( "factory.lua" )
 
-do
-
-    local changes_timeout = std.Timer( 0.5, 1, dreamwork.Prefix .. "::ContentWatcher" )
-
-    local function perform_synchronization()
-        logger:debug( "Game content change triggered, synchronization..." )
-        time.tick( "ms", false )
-
-        local game_changes, addon_changes = engine.hookCall( "GameContentUpdate" )
-
-        if game_changes == 0 and addon_changes == 0 then
-            logger:debug( "No changes found, skipped." )
-        else
-            logger:debug( "Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
-        end
-    end
-
-    changes_timeout:attach( perform_synchronization )
-    perform_synchronization()
-
-    engine_hookCatch( "GameContentChanged", function()
-        changes_timeout:start()
-    end, 1 )
-
-end
-
 dofile( "std/i18n.lua" )
 dofile( "std/game.hooks.lua" )
 dofile( "std/audio_stream.lua" )

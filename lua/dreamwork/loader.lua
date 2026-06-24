@@ -2464,6 +2464,32 @@ do
 
 end
 
+do
+
+    local changes_timeout = std.Timer( 0.5, 1, dreamwork.Prefix .. "::ContentWatcher" )
+
+    local function perform_synchronization()
+        logger:debug( "Game content change triggered, synchronization..." )
+        time.tick( "ms", false )
+
+        local game_changes, addon_changes = engine.hookCall( "GameContentUpdate" )
+
+        if game_changes == 0 and addon_changes == 0 then
+            logger:debug( "No changes found, skipped." )
+        else
+            logger:debug( "Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
+        end
+    end
+
+    changes_timeout:attach( perform_synchronization )
+    perform_synchronization()
+
+    engine.hookCatch( "GameContentChanged", function()
+        changes_timeout:start()
+    end, 1 )
+
+end
+
 logger:info( "%d game(s) and %d add-on(s) mounted to engine.", engine.GameCount, engine.AddonCount )
 
 ---@param game_info dreamwork.engine.GameInfo
