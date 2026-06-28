@@ -96,6 +96,8 @@ std.getmetatable = getmetatable
 std.setmetatable = setmetatable
 
 std.xpcall = xpcall
+
+local pcall = pcall
 std.pcall = pcall
 
 -- raw data library
@@ -1082,18 +1084,27 @@ do
     ---@field SYSTEM_WINDOWS boolean `true` if the game is running on Windows.
     ---@field SYSTEM_X64 boolean `true` if the game is running on 64-bit architecture.
     ---@field SYSTEM_X32 boolean `true` if the game is running on 32-bit architecture.
-    ---@field SYSTEM_X86 boolean `true` if the game is running on 32-bit architecture.
+    ---@field SYSTEM_NAME "osx64" | "osx" | "linux64" | "linux" | "win64" | "win32" The short name of the currently running system with architecture.
 
     local jit = std.jit
     local jit_os = string.lower( jit.os )
 
-    std.SYSTEM_OSX = jit_os == "osx"
-    std.SYSTEM_LINUX = jit_os == "linux"
-    std.SYSTEM_WINDOWS = jit_os == "windows"
+    local SYSTEM_OSX = jit_os == "osx"
+    std.SYSTEM_OSX = SYSTEM_OSX
 
-    std.SYSTEM_X64 = string.match( jit.arch, "64" ) ~= nil
-    std.SYSTEM_X32 = not std.SYSTEM_X64
-    std.SYSTEM_X86 = std.SYSTEM_X32
+    local SYSTEM_LINUX = jit_os == "linux"
+    std.SYSTEM_LINUX = SYSTEM_LINUX
+
+    local SYSTEM_WINDOWS = jit_os == "windows"
+    std.SYSTEM_WINDOWS = SYSTEM_WINDOWS
+
+    local SYSTEM_X64 = string.match( jit.arch, "64" ) ~= nil
+    std.SYSTEM_X64 = SYSTEM_X64
+
+    local SYSTEM_X32 = not SYSTEM_X64
+    std.SYSTEM_X32 = SYSTEM_X32
+
+    std.SYSTEM_NAME = ({ "osx64", "osx", "linux64", "linux", "win64", "win32" })[ (SYSTEM_WINDOWS and 4 or 0) + (SYSTEM_LINUX and 2 or 0) + (SYSTEM_X32 and 1 or 0) + 1 ]
 
 end
 
@@ -2240,6 +2251,66 @@ if dreamwork.TickTimer1 == nil then
     timer:start()
 end
 
+do
+
+    ---@class dreamwork.std
+    ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
+    ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
+    ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
+
+    local glua_system = system or {}
+
+    std.SYSTEM_COUNTRY = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
+
+    local system_BatteryPower = glua_system.BatteryPower
+    if system_BatteryPower ~= nil then
+
+        local battery_power = 0
+
+        local function update_battery()
+            if battery_power ~= system_BatteryPower() then
+                battery_power = system_BatteryPower()
+
+                if battery_power == 255 then
+                    std.SYSTEM_HAS_BATTERY = false
+                    std.SYSTEM_BATTERY_LEVEL = 100
+                else
+                    std.SYSTEM_HAS_BATTERY = true
+                    std.SYSTEM_BATTERY_LEVEL = battery_power
+                end
+            end
+        end
+
+        dreamwork.TickTimer1:attach( update_battery, "dreamwork::battery" )
+        update_battery()
+
+    end
+
+    -- if LUA_CLIENT_MENU then
+
+    --     local system_HasFocus = glua_system.HasFocus
+    --     if system_HasFocus ~= nil then
+
+    --         ---@class dreamwork.std.window
+    --         ---@field focus boolean `true` if the game's window has focus, `false` otherwise.
+    --         local window = std.window
+
+    --         local has_focus = system_HasFocus()
+    --         window.focus = has_focus
+
+    --         dreamwork.TickTimer0_05:attach( function()
+    --             if has_focus ~= system_HasFocus() then
+    --                 has_focus = not has_focus
+    --                 window.focus = has_focus
+    --             end
+    --         end, "dreamwork::window_focus" )
+
+    --     end
+
+    -- end
+
+end
+
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )
 sendfile( "dreamwork/std/compress/lzw.lua" )
@@ -2312,6 +2383,14 @@ if std.LUA_VERSION ~= "Lua 5.1" then
 end
 
 dreamwork.Logger = logger
+
+-- file system library
+dofile( "std/io/fs.lua" )
+sendfile( "std/io/fs.lua" )
+
+-- sqlite library
+dofile( "std/db/sqlite.lua" )
+sendfile( "std/db/sqlite.lua" )
 
 -- Welcome message
 do
@@ -2464,6 +2543,49 @@ do
 
 end
 
+-- https://github.com/willox/gmbc
+if std.loadbinary( "gmbc" ) then
+    logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )
+else
+    logger:warn( "'gmbc' is missing, bytecode compilation not available." )
+end
+
+do
+
+    ---@diagnostic disable-next-line: undefined-global
+    local gmbc_load_bytecode = gmbc_load_bytecode
+
+    if gmbc_load_bytecode == nil then
+        ---@diagnostic disable-next-line: duplicate-set-field
+        function std.loadbytecode()
+            error( "bytecode compilation not available.", 2 )
+        end
+    else
+
+        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        ---
+        --- Loads a string as
+        --- a bytecode chunk in the specified environment
+        --- and returns function as a compile result.
+        ---
+        ---@param bytecode string The luajit bytecode chunk.
+        ---@param env table | nil The environment of compiled function.
+        ---@return function | nil fn The compiled function.
+        ---@return string | nil msg The error message.
+        function std.loadbytecode( bytecode, env )
+            local success, result = pcall( gmbc_load_bytecode, bytecode )
+            if success then
+                setfenv( result, env or getfenv( 2 ) )
+                return result, nil
+            end
+
+            return nil, result
+        end
+
+    end
+
+end
+
 ---@param game_info dreamwork.engine.GameInfo
 ---@param is_mounted boolean
 engine.hookCatch( "GameMount", function( game_info, is_mounted )
@@ -2590,3 +2712,5 @@ time.tick( "ms" )
 gc.collect()
 
 logger:info( "Clean-up finished, took %.2f ms, memory consumed by Lua: %.02f MB.", time.tick( "ms" ), gc.getMemory() / 1024 )
+
+-- TODO: Globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier

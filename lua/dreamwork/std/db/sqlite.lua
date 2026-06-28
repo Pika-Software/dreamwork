@@ -1,10 +1,10 @@
+local glua_sql = sql
+local sql_Query = glua_sql.Query
+
 local dreamwork_Logger = dreamwork.Logger
 
 ---@class dreamwork.std
 local std = dreamwork.std
-
-local glua_sql = sql
-local sql_Query = glua_sql.Query
 
 local isBoolean = std.isBoolean
 local isNumber = std.isNumber

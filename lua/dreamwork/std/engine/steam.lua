@@ -9,6 +9,8 @@ local futures_Future = std.futures.Future
 local setTimeout = std.setTimeout
 local isString = std.isString
 
+-- TODO: https://wiki.facepunch.com/gmod/resource.AddWorkshop
+
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Steam API library.
