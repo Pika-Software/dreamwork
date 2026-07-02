@@ -374,10 +374,7 @@ if LUA_CLIENT_SERVER then
                 local key
 
                 local fn = track_instructions[ tbl ]
-                if fn == nil then
-                    table.remove( tables, i )
-                    record_count = record_count - 1
-                else
+                if fn ~= nil then
                     key = fn( object )
                 end
 
