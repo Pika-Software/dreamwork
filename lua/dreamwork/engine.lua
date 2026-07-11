@@ -1060,16 +1060,17 @@ do
             supported_games[ app_id ] = game_info
 
             if game_info.mounted then
+                game_count = game_count + 1
+                game_list[ game_count ] = game_info
+
+                game_info.index = game_count
+
+                games_hash[ app_id ] = game_info
+
                 if actual_game_hash[ app_id ] == nil then
                     engine_hookCall( "GameMount", game_info, true )
                     games_changed = games_changed + 1
                 end
-
-                games_hash[ app_id ] = game_info
-
-                game_count = game_count + 1
-                game_info.index = game_count
-                game_list[ game_count ] = game_info
             end
         end
 
@@ -1119,18 +1120,19 @@ do
             local addon_info = engine_addons[ i ]
 
             if addon_info.mounted then
+                addon_count = addon_count + 1
+                addon_list[ addon_count ] = addon_info
+
+                addon_info.index = addon_count
+
                 local addon_title = addon_info.title
+                addons_hash[ addon_title ] = addon_info
+
                 if actual_addon_hash[ addon_title ] == nil then
                     addon_info.folder = string_format( "gma_%.4x", addon_info.index )
                     engine_hookCall( "AddonMount", addon_info, true )
                     addons_changed = addons_changed + 1
                 end
-
-                addons_hash[ addon_title ] = addon_info
-
-                addon_count = addon_count + 1
-                addon_info.index = addon_count
-                addon_list[ addon_count ] = addon_info
             end
         end
 
