@@ -61,7 +61,7 @@ do
     ---
     ---@param value any The value.
     ---@return boolean is_vector3 `true` if the value is a `Vector3`, `false` otherwise.
-    function std.isvector3( value )
+    function std.isVector3( value )
         return debug_getmetatable( value ) == Vector3
     end
 

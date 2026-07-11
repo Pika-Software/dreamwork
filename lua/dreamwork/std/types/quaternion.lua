@@ -26,7 +26,7 @@ do
     ---
     ---@param value any The value.
     ---@return boolean is_quaternion `true` if the value is a `Quaternion`, `false` otherwise.
-    function std.isquaternion( value )
+    function std.isQuaternion( value )
         return debug_getmetatable( value ) == Quaternion
     end
 

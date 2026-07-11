@@ -22,10 +22,11 @@ local utf8_unpack = utf8.unpack
 ---
 ---@class dreamwork.std.unicode
 ---@field MAX integer The maximum number of characters that can be stored in a unicode string.
-local unicode = {}
-std.unicode = unicode
+local unicode = {
+    MAX = 0x10FFFF
+}
 
-unicode.MAX = 0x10FFFF
+std.unicode = unicode
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
@@ -81,6 +82,8 @@ end
 
 do
 
+    ---@param hex_str string
+    ---@return string
     local function unescape( hex_str )
         return utf8_char( raw_tonumber( hex_str, 16 ) )
     end

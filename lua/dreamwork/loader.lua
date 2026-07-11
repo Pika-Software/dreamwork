@@ -262,7 +262,7 @@ if std.setfenv == nil then
 
 end
 
----@diagnostic disable-next-line: undefined-global
+---@type fun( value: any ): boolean
 local isTable = istable
 
 if isTable == nil then
@@ -275,7 +275,6 @@ if isTable == nil then
     ---
     ---@param value any The value to check.
     ---@return boolean is_table `true` if the value is a `table`, `false` otherwise.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function isTable( value )
         return raw_type( value ) == "table"
     end
@@ -770,11 +769,11 @@ do
     ---
     ---@param value any The value to check for being a class.
     ---@return boolean is_class `true` if `value` is a class, `false` otherwise.
-    local function isclass( value )
+    local function isClass( value )
         return isTable( value ) and raw_get( value, "__base" ) ~= nil
     end
 
-    std.isclass = isclass
+    std.isClass = isClass
 
     local isInherited = std.class.isInherited
 
@@ -790,7 +789,7 @@ do
 
         for i = 1, raw_select( "#", ... ) do
             local parent = raw_select( i, ... )
-            if isclass( parent ) then
+            if isClass( parent ) then
                 if isInherited( object, parent ) then
                     return true
                 end
@@ -874,12 +873,6 @@ do
     end
 
 end
-
--- futures library
-dofile( "dreamwork/std/futures.lua" )
-sendfile( "dreamwork/std/futures.lua" )
-
-std.sleep = std.futures.sleep
 
 do
 
@@ -1410,6 +1403,12 @@ do
     end
 
 end
+
+-- futures library
+dofile( "dreamwork/std/futures.lua" )
+sendfile( "dreamwork/std/futures.lua" )
+
+std.sleep = std.futures.sleep
 
 local isString = std.isString
 

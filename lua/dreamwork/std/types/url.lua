@@ -1830,7 +1830,7 @@ do
     --- Checks if the given value is a `URL`.
     ---@param value any The value to check.
     ---@return boolean result Returns `true` if the value is a URL, otherwise `false`.
-    function std.isurl( value )
+    function std.isURL( value )
         return debug_getmetatable( value ) == URL
     end
 

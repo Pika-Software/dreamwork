@@ -88,7 +88,7 @@ do
     ---
     ---@param value any The value.
     ---@return boolean is_angle3 `true` if the value is an `Angle3`, `false` otherwise.
-    function std.isangle3( value )
+    function std.isAngle3( value )
         return debug_getmetatable( value ) == Angle3
     end
 

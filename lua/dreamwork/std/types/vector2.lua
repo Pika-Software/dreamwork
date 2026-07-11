@@ -49,7 +49,7 @@ do
     ---
     ---@param value any The value.
     ---@return boolean is_vector2 `true` if the value is a `Vector2`, `false` otherwise.
-    function std.isvector2( value )
+    function std.isVector2( value )
         return debug_getmetatable( value ) == Vector2
     end
 

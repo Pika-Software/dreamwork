@@ -57,6 +57,6 @@ end
 --- Checks if a value is a symbol.
 ---
 ---@param value any The value to check.
-function std.issymbol( value )
+function std.isSymbol( value )
     return debug_getmetatable( value ) == Symbol
 end
