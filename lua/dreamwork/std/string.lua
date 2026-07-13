@@ -1612,3 +1612,42 @@ function string.comma( str, separator, offset, str_length )
 
     return str
 end
+
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
+--- Returns a string that is the concatenation of `repetitions` copies of the byte `rep_byte`.
+---
+---@param rep_byte integer The byte to repeat.
+---@param repetitions? integer The number of times to repeat the byte. Defaults to 1.
+---@return string rep_str The repeated byte as a string.
+function string.repByte( rep_byte, repetitions )
+    if repetitions == nil then
+        repetitions = 1
+    end
+
+    if repetitions == 1 then
+        return string_char( rep_byte )
+    elseif repetitions == 2 then
+        return string_char( rep_byte, rep_byte )
+    elseif repetitions == 3 then
+        return string_char( rep_byte, rep_byte, rep_byte )
+    elseif repetitions == 4 then
+        return string_char( rep_byte, rep_byte, rep_byte, rep_byte )
+    elseif repetitions == 5 then
+        return string_char( rep_byte, rep_byte, rep_byte, rep_byte, rep_byte )
+    elseif repetitions == 6 then
+        return string_char( rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte )
+    elseif repetitions == 7 then
+        return string_char( rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte )
+    elseif repetitions == 8 then
+        return string_char( rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte, rep_byte )
+    end
+
+    local bytes = {}
+
+    for i = 1, repetitions, 1 do
+        bytes[ i ] = rep_byte
+    end
+
+    return string_char( table_unpack( bytes, 1, repetitions ) )
+end
