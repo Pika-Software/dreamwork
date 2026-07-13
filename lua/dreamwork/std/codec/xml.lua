@@ -860,6 +860,31 @@ do
         end
     end
 
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Converts XML node structure to a Lua table.
+    ---
+    ---@return table
+    function XMLNode:toTable()
+        local result = {}
+
+        local data = self.data
+        if data ~= nil and not isString( data ) then
+            ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+
+            for key, value in raw_pairs( data ) do
+                if isNode( value ) then
+                    ---@cast value dreamwork.std.XMLNode
+                    result[ key ] = value:toTable()
+                else
+                    result[ key ] = value
+                end
+            end
+        end
+
+        return result
+    end
+
     ---@return string
     ---@protected
     function XMLNode:__tostring()
@@ -1120,7 +1145,7 @@ do
     --- Converts an XML string to an XML node structure.
     ---
     ---@param xml_str string
-    ---@return dreamwork.std.XMLNode
+    ---@return dreamwork.std.XMLNode | nil
     function XMLNodeClass.fromString( xml_str )
         ---@type dreamwork.std.XMLNode
         local active_node
@@ -1135,9 +1160,11 @@ do
         local xml_start, xml_end, xml_content, xml_tag = string_find( xml_str, "^([^<]*)<([^>]-)>", position, false )
         if xml_start == nil or xml_end == nil then
             if string_match( xml_str, "^%s*$", position ) == nil then
-                std.errorf( 2, false, "XML parsing failed, no more tags." )
+                std.errorf( 2, false, "XML parsing failed, no more tags/EOF." )
+                return nil
             elseif active_node ~= nil then
                 std.errorf( 2, false, "XML parsing failed, incomplete XML." )
+                return nil
             end
 
             return root_node
@@ -1214,6 +1241,7 @@ do
             local cdata_start, cdata_end, cdata_text = string_find( xml_str, "<%!%[CDATA%[(.-)%]%]>", position )
             if cdata_start == nil then
                 std.errorf( 2, false, "CDATA not found at position %d", position )
+                return nil
             end
 
             tree_text( active_node, cdata_text )
@@ -1242,6 +1270,7 @@ do
         extension_start, extension_end, extension_text = string_find( xml_str, "(%/?)>", xml_end + 1 )
         if extension_start == nil then
             std.errorf( 2, false, "XML tag not closed at position %d", position )
+            return nil
         end
 
         xml_tag = xml_tag .. string_sub( xml_str, xml_end, extension_end - 1 )
@@ -1256,8 +1285,10 @@ do
         if xml_start_with_slash then
             if tag_attributes ~= nil then
                 std.errorf( 2, false, "Attributes not allowed in end tag (%s)", tag_name )
-            elseif active_node.name ~= tag_name then
+                return nil
+            elseif active_node == nil or active_node.name ~= tag_name then
                 std.errorf( 2, false, "Unmatched tag (%s) at position %d", tag_name, position )
+                return nil
             end
 
             tree_endtag( active_node, tag_name )
@@ -1286,6 +1317,3 @@ do
     end
 
 end
-
--- TODO: Node:toTable
--- TODO: improve error handling
