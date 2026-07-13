@@ -194,6 +194,8 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
         start_position = math_min( start_position, str_length )
     end
 
+    ---@cast start_position integer
+
     if end_position == nil then
         end_position = str_length
     elseif end_position < 0 then
@@ -201,6 +203,8 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
     else
         end_position = math_min( end_position, str_length )
     end
+
+    ---@cast end_position integer
 
     local mask = 128
 
