@@ -2,6 +2,10 @@
 local std = dreamwork.std
 
 local isString = std.isString
+local isTable = std.isTable
+
+local tostring = std.tostring
+local pairs = std.pairs
 
 local raw = std.raw
 local raw_next = raw.next
@@ -82,8 +86,8 @@ local XMLNode = class.base( "XMLNode", false )
 ---@class dreamwork.std.XMLNodeClass : dreamwork.std.XMLNode
 ---@field __base dreamwork.std.XMLNode
 ---@overload fun(name: string, attributes: (table<string, string> | nil), parent: (dreamwork.std.XMLNode | nil) ): dreamwork.std.XMLNode
-local NodeClass = class.create( XMLNode )
-std.XMLNode = NodeClass
+local XMLNodeClass = class.create( XMLNode )
+std.XMLNode = XMLNodeClass
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
@@ -356,7 +360,7 @@ function XMLNode:set( key, value )
         goto set_loop
     end
 
-    node = NodeClass( name, nil, self )
+    node = XMLNodeClass( name, nil, self )
     data[ name ] = node
     goto set_loop
 end
@@ -528,7 +532,8 @@ function XMLNode:push( key, value )
 
     local data = self.data
     if data == nil or isString( data ) then
-        return
+        data = {}
+        self.data = data
     end
 
     ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
@@ -1077,9 +1082,46 @@ do
         return tag_name, tag_attributes
     end
 
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Converts a table to an XML node structure.
+    ---
+    ---@param tbl table The table to convert to an XML node.
+    ---@param name? string The name of the root node.
+    ---@return dreamwork.std.XMLNode root_node The root node of the XML tree.
+    function XMLNodeClass.fromTable( tbl, name )
+        local node = XMLNodeClass( name or "root", nil, nil )
+
+        for key, value in pairs( tbl ) do
+            if not isString( key ) then
+                key = tostring( key )
+            end
+
+            if isNode( value ) then
+                ---@cast value dreamwork.std.XMLNode
+                node:push( key, value )
+            elseif isTable( value ) then
+                ---@cast value table
+                node:push( key, XMLNodeClass.fromTable( value, key ) )
+            elseif isString( value ) then
+                ---@cast value string
+                node:push( key, value )
+            else
+                ---@cast value any
+                node:push( key, tostring( value ) )
+            end
+        end
+
+        return node
+    end
+
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Converts an XML string to an XML node structure.
+    ---
     ---@param xml_str string
     ---@return dreamwork.std.XMLNode
-    function NodeClass.fromString( xml_str )
+    function XMLNodeClass.fromString( xml_str )
         ---@type dreamwork.std.XMLNode
         local active_node
 
@@ -1225,7 +1267,7 @@ do
             goto analyze_loop
         end
 
-        active_node = NodeClass( tag_name, tag_attributes, active_node )
+        active_node = XMLNodeClass( tag_name, tag_attributes, active_node )
 
         if root_node == nil then
             root_node = active_node
@@ -1245,4 +1287,5 @@ do
 
 end
 
--- TODO: Node:fromTable & Node:toTable
+-- TODO: Node:toTable
+-- TODO: improve error handling
