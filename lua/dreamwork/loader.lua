@@ -2166,10 +2166,6 @@ sendfile( "dreamwork/std/codec/xml.lua" )
 dofile( "dreamwork/std/codec/vdf.lua" )
 sendfile( "dreamwork/std/codec/vdf.lua" )
 
--- xml encoding library
-dofile( "dreamwork/std/codec/xml.lua" )
-sendfile( "dreamwork/std/codec/xml.lua" )
-
 -- url class
 dofile( "dreamwork/std/types/url.lua" )
 sendfile( "dreamwork/std/types/url.lua" )
