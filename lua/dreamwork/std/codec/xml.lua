@@ -31,6 +31,20 @@ local string_trim, string_isEmpty = string.trim, string.isEmpty
 ---
 --- Can be converted to string using `:toString()` or `tostring()`.
 ---
+--- Usage:
+---
+--- ```lua
+--- local root = XMLNode.fromString( [[
+--- <root>
+---     <child>
+---         <title>Test Title</title>
+---     </child>
+--- </root>
+--- ]] )
+---
+--- print( root:toString( false ) ) -- <root><child><title>Test Title</title></child></root>
+--- ```
+---
 ---@class dreamwork.std.XMLNode : dreamwork.std.Object
 ---@field __class dreamwork.std.XMLNodeClass
 ---@field name string The name of the node.
@@ -44,6 +58,26 @@ local XMLNode = class.base( "XMLNode", false )
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- A XML node class, allowing parsing and creation of XML nodes.
+---
+--- Usage:
+---
+--- ```lua
+--- local root = XMLNode.fromString( [[
+--- <root>
+---     <child>
+---         <title>Test Title</title>
+---     </child>
+---     <child>
+---         <title>Test Title 2</title>
+---     </child>
+---     <child>
+---         <title>Test Title 3</title>
+---     </child>
+--- </root>
+--- ]] )
+---
+--- print( root:get( "child[2].title" ) ) -- Test Title 2
+--- ```
 ---
 ---@class dreamwork.std.XMLNodeClass : dreamwork.std.XMLNode
 ---@field __base dreamwork.std.XMLNode
