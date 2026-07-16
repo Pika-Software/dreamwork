@@ -391,72 +391,111 @@ function string.pad( str, desired_length, char, direction, str_length )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
----
---- Splits the string into an array, using the specified pattern.
----
----@param str             string  The string to split.
----@param searchable      string  The substring or pattern to split by.
----@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
----@param start_position? integer The start position to split from.
----@param end_position?   integer The end position to split to.
----@param str_length?     integer The length of the string. Optionally, it should be used to speed up calculations.
----@return string[] segments The string array.
----@return integer segment_count The length of the array.
-function string.split( str, searchable, with_pattern, start_position, end_position, str_length )
-    local segments = {}
+do
 
-    if str_length == nil then
-        str_length = string_len( str )
-    end
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Splits the string into an array, using the specified pattern.
+    ---
+    ---@param str             string  The string to split.
+    ---@param searchable?     string  The substring or pattern to split by.
+    ---@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+    ---@param start_position? integer The start position to split from.
+    ---@param end_position?   integer The end position to split to.
+    ---@param str_length?     integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string[] segments The string array.
+    ---@return integer segment_count The length of the array.
+    local function split( str, searchable, with_pattern, start_position, end_position, str_length )
+        ---@type string[]
+        local segments = {}
 
-    if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
-        for index = 1, str_length, 1 do
-            segments[ index ] = string_sub( str, index, index )
+        if str_length == nil then
+            str_length = string_len( str )
         end
 
-        return segments, str_length
-    end
+        if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
+            for index = 1, str_length, 1 do
+                segments[ index ] = string_sub( str, index, index )
+            end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+            return segments, str_length
+        end
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+        if start_position == nil then
+            start_position = 1
+        elseif start_position < 0 then
+            start_position = math_relative( start_position, str_length )
+        else
+            start_position = math_min( start_position, str_length )
+        end
 
-    with_pattern = with_pattern ~= true
+        if end_position == nil then
+            end_position = str_length
+        elseif end_position < 0 then
+            end_position = math_relative( end_position, str_length )
+        else
+            end_position = math_min( end_position, str_length )
+        end
 
-    local segment_count = 0
+        with_pattern = with_pattern ~= true
 
-    ::split_loop::
+        ---@type integer
+        local segment_count = 0
 
-    local segment_start, segment_end = string_find( str, searchable, start_position, with_pattern )
-    if segment_start == nil or start_position > end_position then
+        ::split_loop::
+
+        local segment_start, segment_end = string_find( str, searchable, start_position, with_pattern )
+        if segment_end == nil then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( str, start_position, end_position )
+            return segments, segment_count
+        end
+
         segment_count = segment_count + 1
-        ---@diagnostic disable-next-line: param-type-mismatch
-        segments[ segment_count ] = string_sub( str, start_position )
+        segments[ segment_count ] = string_sub( str, start_position, math_min( segment_start - 1, end_position ) )
 
-        return segments, segment_count
+        local split_position = segment_end + 1
+
+        if split_position > end_position then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( str, split_position, end_position )
+
+            return segments, segment_count
+        end
+
+        start_position = split_position
+
+        ---@diagnostic disable-next-line: missing-return
+        goto split_loop
     end
 
-    segment_count = segment_count + 1
+    string.split = split
 
-    ---@diagnostic disable-next-line: param-type-mismatch
-    segments[ segment_count ] = string_sub( str, start_position, segment_start - 1 )
-    start_position = segment_end + 1
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Replaces all occurrences of the supplied second string.
+    ---
+    ---@param str           string  The string we are seeking to replace an occurrence(s) in.
+    ---@param searchable?   string  What we are seeking to replace, or the substring or pattern to split by.
+    ---@param replaceable?  string  What to replace it with. If `nil`, occurrences are removed.
+    ---@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+    ---@param start_position? integer The start position to replace from.
+    ---@param end_position?   integer The end position to replace to.
+    ---@param str_length?     integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string str_replaced The new string with the occurrences replaced.
+    function string.replace( str, searchable, replaceable, with_pattern, start_position, end_position, str_length )
+        local segments, segment_count = split( str, searchable, with_pattern, start_position, end_position, str_length )
+        if segment_count == 0 then
+            return str
+        elseif segment_count == 1 then
+            return segments[ 1 ]
+        elseif segment_count == 2 then
+            return segments[ 1 ] .. (replaceable or "") .. segments[ 2 ]
+        else
+            return table_concat( segments, replaceable or "", 1, segment_count )
+        end
+    end
 
-    ---@diagnostic disable-next-line: missing-return
-    goto split_loop
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
@@ -768,15 +807,15 @@ end
 --- Splits the string into an array, using the specified byte.
 ---
 ---@param str string The string to split.
----@param split_byte? integer The byte to split by.
+---@param searchable_byte? integer The byte to split by.
 ---@param start_position? integer The start position to split from.
 ---@param end_position? integer The end position to split to.
 ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
 ---@return string[] segments The string array.
 ---@return integer segment_count The length of the array.
-local function byte_split( str, split_byte, start_position, end_position, str_length )
-    if split_byte == nil then
-        split_byte = 0x20 --[[ Space ]]
+local function byte_split( str, searchable_byte, start_position, end_position, str_length )
+    if searchable_byte == nil then
+        searchable_byte = 0x20 --[[ Space ]]
     end
 
     if str_length == nil then
@@ -809,7 +848,7 @@ local function byte_split( str, split_byte, start_position, end_position, str_le
 
     ::byte_split_loop::
 
-    if string_byte( str, start_position, start_position ) == split_byte then
+    if string_byte( str, start_position, start_position ) == searchable_byte then
         if split_position ~= start_position then
             segment_count = segment_count + 1
             segments[ segment_count ] = string_sub( str, split_position + 1, start_position - 1 )
@@ -823,15 +862,37 @@ local function byte_split( str, split_byte, start_position, end_position, str_le
         goto byte_split_loop
     end
 
-    if split_position ~= start_position then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, split_position + 1, start_position )
-    end
+    segment_count = segment_count + 1
+    segments[ segment_count ] = string_sub( str, split_position + 1, start_position )
 
     return segments, segment_count
 end
 
 string.byteSplit = byte_split
+
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
+--- Replaces all occurrences of the supplied second string.
+---
+---@param str           string  The string we are seeking to replace an occurrence(s) in.
+---@param searchable_byte? integer The byte to split by.
+---@param replaceable?  string  What to replace it with. If `nil`, occurrences are removed.
+---@param start_position? integer The start position to replace from.
+---@param end_position?   integer The end position to replace to.
+---@param str_length?     integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return string str_replaced The new string with the occurrences replaced.
+function string.byteReplace( str, searchable_byte, replaceable, start_position, end_position, str_length )
+    local segments, segment_count = byte_split( str, searchable_byte, start_position, end_position, str_length )
+    if segment_count == 0 then
+        return str
+    elseif segment_count == 1 then
+        return segments[ 1 ]
+    elseif segment_count == 2 then
+        return segments[ 1 ] .. (replaceable or "") .. segments[ 2 ]
+    else
+        return table_concat( segments, replaceable or "", 1, segment_count )
+    end
+end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
@@ -1002,59 +1063,6 @@ do
         return toNumber( str, base, start_position, end_position ) ~= nil
     end
 
-end
-
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
----
---- Replaces all occurrences of the supplied second string.
----
----@param str           string  The string we are seeking to replace an occurrence(s) in.
----@param searchable    string  What we are seeking to replace.
----@param replaceable?  string  What to replace it with. If `nil`, occurrences are removed.
----@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
----@return string new_string The new string with the occurrences replaced.
-function string.replace( str, searchable, replaceable, with_pattern )
-    if searchable == "" then
-        return str
-    end
-
-    with_pattern = with_pattern ~= true
-
-    local start_position, end_position = string_find( str, searchable, 1, with_pattern )
-    if end_position == nil then
-        return str
-    end
-
-    ---@type string[]
-    local segments = {}
-
-    ---@type integer
-    local segment_count = 0
-
-    ---@type integer
-    local split_position = 1
-
-    ::replace_loop::
-
-    segment_count = segment_count + 1
-    segments[ segment_count ] = string_sub( str, split_position, start_position - 1 )
-
-    if replaceable ~= nil then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = replaceable
-    end
-
-    split_position = end_position + 1
-    start_position, end_position = string_find( str, searchable, split_position, with_pattern )
-
-    if end_position == nil then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, split_position )
-        return table_concat( segments, "", 1, segment_count )
-    end
-
-    ---@diagnostic disable-next-line: missing-return
-    goto replace_loop
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
