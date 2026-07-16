@@ -162,12 +162,9 @@ github.apiRequest = apiRequest
 ---@param replaces table<string, any> The table to replace placeholders with.
 ---@return string pathname The path with placeholders replaced.
 local function template( pathname, replaces )
-    local result = string_gsub( pathname, "{([%w_-]-)}", function( str )
+    return (string_gsub( pathname, "{([%w_-]-)}", function( str )
         return tostring( replaces[ str ] )
-        ---@diagnostic disable-next-line: redundant-return-value
-    end )
-
-    return result
+    end ))
 end
 
 github.template = template

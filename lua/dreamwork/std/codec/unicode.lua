@@ -96,8 +96,7 @@ do
     ---@param escaped_str string A string containing Unicode escape sequences
     ---@return string utf8_str A string with the escape sequences converted to real Unicode characters
     function unicode.unescape( escaped_str )
-        local utf8_str = string_gsub( escaped_str, "\\u([0-9a-fA-F]+)", unescape )
-        return utf8_str
+        return (string_gsub( escaped_str, "\\u([0-9a-fA-F]+)", unescape ))
     end
 
 end

@@ -3,6 +3,9 @@ local glua_string = _G.string
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local ascii = std.ascii
+local ascii_isSpace = ascii.isSpace
+
 local len = std.len
 local isTable = std.isTable
 local represent = std.represent
@@ -705,6 +708,63 @@ end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
+--- Returns the trimmed string (without leading/trailing space characters) and its length.
+---
+---@param str string The string to trim.
+---@param direction boolean | nil The trim direction, `true` for right, `false` for left, `nil` for both.
+---@param start_position? integer The start position to trim from.
+---@param end_position? integer The end position to trim to.
+---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return string trimmed_str The trimmed string.
+---@return integer trimmed_length The length of the trimmed string.
+function string.trimSpaces( str, direction, start_position, end_position, str_length )
+    if str_length == nil then
+        str_length = string_len( str )
+    end
+
+    if start_position == nil then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_relative( start_position, str_length )
+    else
+        start_position = math_min( start_position, str_length )
+    end
+
+    if end_position == nil then
+        end_position = str_length
+    elseif end_position < 0 then
+        end_position = math_relative( end_position, str_length )
+    else
+        end_position = math_min( end_position, str_length )
+    end
+
+    if direction ~= true then
+        while ascii_isSpace( string_byte( str, start_position, start_position ) ) do
+            if start_position == end_position then
+                return string_sub( str, end_position + 1, str_length ), str_length - end_position
+            else
+                start_position = start_position + 1
+            end
+        end
+    end
+
+    if direction ~= false then
+        while ascii_isSpace( string_byte( str, end_position, end_position ) ) do
+            if end_position == 1 then
+                return "", 0
+            else
+                end_position = end_position - 1
+            end
+        end
+    end
+
+    ---@cast start_position integer
+
+    return string_sub( str, start_position, end_position ), end_position - start_position + 1
+end
+
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
 --- Splits the string into an array, using the specified byte.
 ---
 ---@param str string The string to split.
@@ -952,48 +1012,35 @@ do
     ---
     --- Replaces all occurrences of the supplied second string.
     ---
-    ---@param str           string  The string we are seeking to replace an occurrence(s).
+    ---@param str           string  The string we are seeking to replace an occurrence(s) in.
     ---@param searchable    string  What we are seeking to replace.
-    ---@param replaceable   string  What to replace find with.
+    ---@param replaceable   string  What to replace it with. If `nil`, occurrences are removed.
     ---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
     ---@return string new_string The new string with the occurrences replaced.
     function string.replace( str, searchable, replaceable, with_pattern )
         if with_pattern then
-            local new_str = string_gsub( str, searchable, replaceable or "" )
-            return new_str
+            return (string_gsub( str, searchable, replaceable or "" ))
         end
 
-        local start_position, end_position = string_find( str, searchable, 1, true )
-
-        if start_position == nil or end_position == nil then
+        if searchable == "" then
             return str
         end
 
-        if replaceable == nil then
-            ::replace_loop1::
+        replaceable = replaceable or ""
 
-            str = string_sub( str, 1, start_position - 1 ) .. string_sub( str, end_position + 1 )
-            start_position, end_position = string_find( str, searchable, end_position + 1, true )
-
-            if start_position == nil then
-                return str
-            end
-
-            ---@diagnostic disable-next-line: missing-return
-            goto replace_loop1
-        end
-
-        ::replace_loop2::
-
-        str = string_sub( str, 1, start_position - 1 ) .. replaceable .. string_sub( str, end_position + 1 )
-        start_position, end_position = string_find( str, searchable, end_position + 1, true )
-
+        local start_position, end_position = string_find( str, searchable, 1, true )
         if start_position == nil then
             return str
         end
 
-        ---@diagnostic disable-next-line: missing-return
-        goto replace_loop2
+        ::replace_loop::
+        str = string_sub( str, 1, start_position - 1 ) .. replaceable .. string_sub( str, end_position + 1 )
+        start_position, end_position = string_find( str, searchable, start_position + #replaceable, true )
+        if start_position ~= nil then
+            goto replace_loop
+        end
+
+        return str
     end
 
 end
@@ -1650,4 +1697,59 @@ function string.repByte( rep_byte, repetitions )
     end
 
     return string_char( table_unpack( bytes, 1, repetitions ) )
+end
+
+do
+
+    local string_replace = string.replace
+
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Quotes a string using single or double quotes.
+    ---
+    ---@param str string The string to quote.
+    ---@param use_single boolean Whether to use single quotes (true) or double quotes (false).
+    ---@return string The quoted string.
+    function string.quote( str, use_single )
+        if use_single then
+            return "'" .. string_replace( str, "'", "\\'" ) .. "'"
+        else
+            return '"' .. string_replace( str, '"', '\\"' ) .. '"'
+        end
+    end
+
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Unquotes a string using single or double quotes.
+    ---
+    ---@param str string The string to unquote.
+    ---@param use_single boolean Whether to use single quotes (true) or double quotes (false).
+    ---@return string The unquoted string.
+    function string.unquote( str, use_single )
+        if use_single then
+            return string_replace( string_match( str, "^'(.*)'$" ) or str, "\\'", "'" )
+        else
+            return string_replace( string_match( str, "^\"(.*)\"$" ) or str, '\\"', '"' )
+        end
+    end
+
+end
+
+do
+
+    local string_trimSpaces = string.trimSpaces
+    local string_repByte = string.repByte
+
+    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    ---
+    --- Sets the space indentation size for a string.
+    ---
+    ---@param str string The string to indent.
+    ---@param size integer The number of spaces to indent.
+    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string The indented string.
+    function string.indent( str, size, str_length )
+        return string_repByte( 0x20, size ) .. string_trimSpaces( str, false, nil, nil, str_length )
+    end
+
 end

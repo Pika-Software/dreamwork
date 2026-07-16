@@ -184,8 +184,7 @@ end
 ---@param decodeSet table
 ---@return string
 local function percentDecode( str, decodeSet )
-    ---@diagnostic disable-next-line: redundant-return-value
-    return string_gsub( str, "%%(%x%x)", decodeSet ), nil
+    return (string_gsub( str, "%%(%x%x)", decodeSet ))
 end
 
 local function compilePercentEncodeSet( encodeSet, ... )

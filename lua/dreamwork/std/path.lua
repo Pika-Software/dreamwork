@@ -255,8 +255,7 @@ end
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
 function path.stripTrailingSlash( file_path )
-    file_path = string_gsub( file_path, "[/\\]+$", "" )
-    return file_path
+    return (string_gsub( file_path, "[/\\]+$", "" ))
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
@@ -280,8 +279,7 @@ end
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
 function path.stripLeadingSlash( file_path )
-    file_path = string_gsub( file_path, "^[/\\]+", "" )
-    return file_path
+    return (string_gsub( file_path, "^[/\\]+", "" ))
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
@@ -305,8 +303,7 @@ end
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
 function path.normalizeSlashes( file_path )
-    file_path = string_gsub( file_path, "[/\\]+", "/" )
-    return file_path
+    return (string_gsub( file_path, "[/\\]+", "/" ))
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
