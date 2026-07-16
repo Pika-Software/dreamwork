@@ -1,4 +1,3 @@
----@class dreamwork.std
 local std = dreamwork.std
 
 local math = std.math
@@ -16,7 +15,10 @@ local bit_bxor = bit.bxor
 local buffer = std.buffer
 local buffer_writeUInt32 = buffer.writeUInt32
 
-local hmac = std.crypto.hmac
+---@class dreamwork.std.crypto
+local crypto = std.crypto
+
+local hmac = crypto.hmac
 local hmac_key = hmac.key
 local hmac_padding = hmac.padding
 local hmac_compute = hmac.compute
@@ -29,7 +31,7 @@ local hmac_compute = hmac.compute
 ---
 ---@param options dreamwork.std.pbkdf2.Options
 ---@return string pbkdf2_str The derived password as a hex string.
-function std.pbkdf2( options )
+function crypto.pbkdf2( options )
     local pbkdf2_iterations = options.iterations or 4096
     local pbkdf2_length = options.length or 16
     local pbkdf2_password = options.password

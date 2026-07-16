@@ -12,8 +12,6 @@ local crypto = std.crypto
 ---@field __class dreamwork.std.crypto.SHA256Class
 local SHA256 = std.class.base( "SHA256" )
 
----@alias SHA256 dreamwork.std.crypto.SHA256
-
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- SHA256 class that computes a cryptographic 256-bit crypto value.

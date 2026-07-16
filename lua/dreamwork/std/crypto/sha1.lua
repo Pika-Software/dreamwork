@@ -30,7 +30,6 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---@field __class dreamwork.std.crypto.SHA1Class
 local SHA1 = std.class.base( "SHA1" )
 
----@alias SHA1 dreamwork.std.crypto.SHA1
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- SHA1 class that computes a cryptographic 160-bit hash value.

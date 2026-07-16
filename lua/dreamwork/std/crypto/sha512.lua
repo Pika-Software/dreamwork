@@ -8,8 +8,6 @@ local crypto = std.crypto
 ---@field __class dreamwork.std.crypto.SHA512Class
 local SHA512 = std.class.base( "SHA512" )
 
----@alias SHA512 dreamwork.std.crypto.SHA512
-
 ---@class dreamwork.std.crypto.SHA512Class : dreamwork.std.crypto.SHA512
 ---@field __base dreamwork.std.crypto.SHA512
 ---@field digest_size integer

@@ -33,8 +33,6 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---@field __class dreamwork.std.crypto.MD5Class
 local MD5 = class.base( "MD5" )
 
----@alias MD5 dreamwork.std.crypto.MD5
-
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- MD5 class that computes a cryptographic 128-bit hash value.
@@ -57,7 +55,7 @@ local MD5 = class.base( "MD5" )
 ---@field digest_size integer
 ---@field block_size integer
 ---@overload fun(): dreamwork.std.crypto.MD5
-local MD5Class = std.class.create( MD5 )
+local MD5Class = class.create( MD5 )
 crypto.MD5 = MD5Class
 
 MD5Class.digest_size = 16
