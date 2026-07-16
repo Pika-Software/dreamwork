@@ -2306,18 +2306,6 @@ do
 
 end
 
--- lzw compression library
-dofile( "dreamwork/std/compress/lzw.lua" )
-sendfile( "dreamwork/std/compress/lzw.lua" )
-
--- deflate compression library
-dofile( "dreamwork/std/compress/deflate.lua" )
-sendfile( "dreamwork/std/compress/deflate.lua" )
-
--- lzma compression library
-dofile( "dreamwork/std/compress/lzma.lua" )
-sendfile( "dreamwork/std/compress/lzma.lua" )
-
 -- 2d vector class
 dofile( "dreamwork/std/types/vector2.lua" )
 sendfile( "dreamwork/std/types/vector2.lua" )
@@ -2382,6 +2370,22 @@ dreamwork.Logger = logger
 -- file system library
 dofile( "std/io/fs.lua" )
 sendfile( "std/io/fs.lua" )
+
+-- lzw compression library
+dofile( "dreamwork/std/compress/lzw.lua" )
+sendfile( "dreamwork/std/compress/lzw.lua" )
+
+-- lz4 compression library
+dofile( "dreamwork/std/compress/lz4.lua" )
+sendfile( "dreamwork/std/compress/lz4.lua" )
+
+-- deflate compression library
+dofile( "dreamwork/std/compress/deflate.lua" )
+sendfile( "dreamwork/std/compress/deflate.lua" )
+
+-- lzma compression library
+dofile( "dreamwork/std/compress/lzma.lua" )
+sendfile( "dreamwork/std/compress/lzma.lua" )
 
 -- sqlite library
 dofile( "std/db/sqlite.lua" )

@@ -124,12 +124,12 @@ bytepack.writeUInt24 = writeUInt24
 local function readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
     -- return ((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
     return bit_unsign(
-        bit_band( bit_bor(
+        bit_bor(
             bit_lshift( uint8_4, 24 ),
             bit_lshift( uint8_3, 16 ),
             bit_lshift( uint8_2, 8 ),
             uint8_1
-        ) )
+        )
     )
 end
 
