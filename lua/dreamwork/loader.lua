@@ -1431,13 +1431,13 @@ do
     color_scheme.white = color_scheme[ 255 ]
     color_scheme.black = color_scheme[ 0 ]
 
-    color_scheme.red = color_lib.fromRGBA( 255, 0, 0, 255 )
-    color_scheme.green = color_lib.fromRGBA( 0, 255, 0, 255 )
-    color_scheme.blue = color_lib.fromRGBA( 0, 0, 255, 255 )
+    color_scheme.red = color_lib.fromRGBA( 255, 0, 0 )
+    color_scheme.green = color_lib.fromRGBA( 0, 255, 0 )
+    color_scheme.blue = color_lib.fromRGBA( 0, 0, 255 )
 
-    color_scheme.yellow = color_lib.fromRGBA( 255, 255, 0, 255 )
-    color_scheme.cyan = color_lib.fromRGBA( 0, 255, 255, 255 )
-    color_scheme.magenta = color_lib.fromRGBA( 255, 0, 255, 255 )
+    color_scheme.yellow = color_lib.fromRGBA( 255, 255, 0 )
+    color_scheme.cyan = color_lib.fromRGBA( 0, 255, 255 )
+    color_scheme.magenta = color_lib.fromRGBA( 255, 0, 255 )
 
     color_scheme.gray = color_scheme[ 128 ]
 
@@ -1447,14 +1447,14 @@ do
     -- Garry's Mod
     -- Thank you code_gs <3
     -- https://discord.com/channels/565105920414318602/565108080300261398/905385921283756062
-    color_scheme.server_message = color_lib.fromRGBA( 156, 241, 255, 200 )
-    color_scheme.server_error = color_lib.fromRGBA( 136, 221, 255, 255 )
+    color_scheme.server_message = color_lib.fromRGBA( 156, 241, 255 )
+    color_scheme.server_error = color_lib.fromRGBA( 136, 221, 255 )
 
-    color_scheme.client_message = color_lib.fromRGBA( 255, 241, 122, 200 )
-    color_scheme.client_error = color_lib.fromRGBA( 255, 221, 102, 255 )
+    color_scheme.client_message = color_lib.fromRGBA( 255, 241, 122 )
+    color_scheme.client_error = color_lib.fromRGBA( 255, 221, 102 )
 
-    color_scheme.menu_message = color_lib.fromRGBA( 100, 220, 100, 200 )
-    color_scheme.menu_error = color_lib.fromRGBA( 120, 220, 100, 255 )
+    color_scheme.menu_message = color_lib.fromRGBA( 100, 220, 100 )
+    color_scheme.menu_error = color_lib.fromRGBA( 120, 220, 100 )
 
     -- DreamWork
     color_scheme.dreamwork_main = color_lib.fromRGBA( 180, 180, 255 )

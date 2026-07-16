@@ -696,7 +696,7 @@ do
     function ColorProxy:update( clr )
         if cache[ self ] == clr then return end
 
-        self.r, self.g, self.b, self.a = color_toRGBA( clr )
+        self.r, self.g, self.b = color_toRGBA( clr )
         cache[ self ] = clr
     end
 
@@ -796,12 +796,7 @@ do
         ---@param color dreamwork.std.Color The color to print the string with.
         function engine.consoleMessageColored( str, color )
             local index, str_length = 1, utf8_len( str )
-
-            if color == nil then
-                color = 0xFFFFFF
-            end
-
-            color_buffer:update( color )
+            color_buffer:update( color or 0xFFFFFF )
 
             while str_length ~= 0 do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control

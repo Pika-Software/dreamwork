@@ -385,7 +385,25 @@ local function len( utf8_string, start_position, end_position, lax, str_length )
     return utf8_codepoint_count, nil
 end
 
-utf8.len = len
+
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
+--- Returns the length of the string in UTF-8 code units.
+---
+---@param utf8_string string The UTF-8/16/32 string to get the length of.
+---@param start_position? integer The position to start from in bytes.
+---@param end_position? integer The position to end at in bytes.
+---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
+---@return integer sequence_length The length of the string in UTF-8 code units.
+function utf8.len( utf8_string, start_position, end_position, lax, str_length )
+    local sequence_length, error_position = len( utf8_string, start_position, end_position, lax, str_length )
+    if sequence_length == nil then
+        std.errorf( 2, false, "invalid UTF-8 sequence at position %d", error_position )
+    end
+
+    return sequence_length or 0
+end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---

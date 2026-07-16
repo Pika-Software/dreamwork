@@ -12,7 +12,7 @@ local Car = std.class.base("Car")
 ---@protected               <-- do not forget to add protected so __init won't be shown
 function Car:__init()
     self.speed = 0
-    self.color = Color(255, 255, 255)
+    self.color = 0xFF0000
 end
 ```
 

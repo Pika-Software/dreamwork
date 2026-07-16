@@ -11,7 +11,9 @@ local holylib_DecompressLZ4 = util ~= nil and util.DecompressLZ4
 ---
 --- [Source Code](https://github.com/RiskoZS/llz4)
 ---
---- Author: RiskoZS
+--- Author: [RiskoZS](https://github.com/RiskoZS)
+---
+--- Edited by Unknown Developer
 ---
 ---@class dreamwork.std.lz4
 local lz4 = {}

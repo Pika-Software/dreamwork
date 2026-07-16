@@ -16,8 +16,8 @@ local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 local math = std.math
 local math_abs = math.abs
 local math_lerp = math.lerp
+local math_min, math_max = math.min, math.max
 local math_ceil, math_floor = math.ceil, math.floor
-local math_clamp, math_min, math_max = math.clamp, math.min, math.max
 
 local bytepack = std.bytepack
 local bytepack_readHex8 = bytepack.readHex8
@@ -41,19 +41,13 @@ std.color = color_lib
 ---@param red integer The 8-bit red channel, in the range [0, 255].
 ---@param green integer The 8-bit green channel, in the range [0, 255].
 ---@param blue integer The 8-bit blue channel, in the range [0, 255].
----@param alpha integer? The 8-bit alpha channel, in the range [0, 255].
 ---@return dreamwork.std.Color color The color value.
-local function fromRGBA( red, green, blue, alpha )
-    if alpha == nil then
-        return (math_clamp( red, 0, 255 ) * 0x100 +
-                math_clamp( green, 0, 255 )) * 0x100 +
-            math_clamp( blue, 0, 255 )
-    end
-
-    return ((math_clamp( red, 0, 255 ) * 0x100 +
-                math_clamp( green, 0, 255 )) * 0x100 +
-            math_clamp( blue, 0, 255 )) * 0x100 +
-        math_clamp( alpha, 0, 255 )
+local function fromRGBA( red, green, blue )
+    return bit_bor(
+        bit_lshift( bit_band( red, 0xFF ), 16 ),
+        bit_lshift( bit_band( green, 0xFF ), 8 ),
+        bit_band( blue, 0xFF )
+    )
 end
 
 color_lib.fromRGBA = fromRGBA
@@ -66,19 +60,10 @@ color_lib.fromRGBA = fromRGBA
 ---@return integer red The 8-bit red channel, in the range [0, 255].
 ---@return integer green The 8-bit green channel, in the range [0, 255].
 ---@return integer blue The 8-bit blue channel, in the range [0, 255].
----@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 local function toRGBA( color )
-    if color > 0xFFFFFF then
-        return bit_band( bit_rshift( color, 24 ), 0xFF ),
-            bit_band( bit_rshift( color, 16 ), 0xFF ),
-            bit_band( bit_rshift( color, 8 ), 0xFF ),
-            bit_band( color, 0xFF )
-    else
-        return bit_band( bit_rshift( color, 16 ), 0xFF ),
-            bit_band( bit_rshift( color, 8 ), 0xFF ),
-            bit_band( color, 0xFF ),
-            0xFF
-    end
+    return bit_band( bit_rshift( color, 16 ), 0xFF ),
+        bit_band( bit_rshift( color, 8 ), 0xFF ),
+        bit_band( color, 0xFF )
 end
 
 color_lib.toRGBA = toRGBA
@@ -88,16 +73,14 @@ color_lib.toRGBA = toRGBA
 --- Inverts a color value.
 ---
 ---@param color dreamwork.std.Color The color value to invert.
----@param alpha integer? The 8-bit alpha channel, in the range [0, 255].
 ---@return dreamwork.std.Color The inverted color value.
-function color_lib.invert( color, alpha )
-    local r, g, b, a = toRGBA( color )
+function color_lib.invert( color )
+    local r, g, b = toRGBA( color )
 
     return fromRGBA(
         math_abs( 255 - r ),
         math_abs( 255 - g ),
-        math_abs( 255 - b ),
-        alpha or a
+        math_abs( 255 - b )
     )
 end
 
@@ -107,16 +90,14 @@ end
 ---
 ---@param value1 dreamwork.std.Color The first color to add.
 ---@param value2 dreamwork.std.Color The second color to add.
----@param alpha? integer The alpha value to use.
-function color_lib.add( value1, value2, alpha )
-    local r1, g1, b1, a1 = toRGBA( value1 )
-    local r2, g2, b2, a2 = toRGBA( value2 )
+function color_lib.add( value1, value2 )
+    local r1, g1, b1 = toRGBA( value1 )
+    local r2, g2, b2 = toRGBA( value2 )
 
     return fromRGBA(
         math_ceil( r1 + r2 ),
         math_ceil( g1 + g2 ),
-        math_ceil( b1 + b2 ),
-        alpha or math_ceil( a1 + a2 )
+        math_ceil( b1 + b2 )
     )
 end
 
@@ -126,17 +107,15 @@ end
 ---
 ---@param value1 dreamwork.std.Color The first color to subtract.
 ---@param value2 dreamwork.std.Color The second color to subtract.
----@param alpha? integer The alpha value to use.
 ---@return dreamwork.std.Color new_color The result of the subtraction.
-function color_lib.sub( value1, value2, alpha )
-    local r1, g1, b1, a1 = toRGBA( value1 )
-    local r2, g2, b2, a2 = toRGBA( value2 )
+function color_lib.sub( value1, value2 )
+    local r1, g1, b1 = toRGBA( value1 )
+    local r2, g2, b2 = toRGBA( value2 )
 
     return fromRGBA(
         math_ceil( r1 - r2 ),
         math_ceil( g1 - g2 ),
-        math_ceil( b1 - b2 ),
-        alpha or math_ceil( a1 - a2 )
+        math_ceil( b1 - b2 )
     )
 end
 
@@ -146,17 +125,15 @@ end
 ---
 ---@param value1 dreamwork.std.Color The first color to multiply.
 ---@param value2 dreamwork.std.Color The second color to multiply.
----@param alpha? integer The alpha value to use.
 ---@return dreamwork.std.Color new_color The result of the multiplication.
-function color_lib.mul( value1, value2, alpha )
-    local r1, g1, b1, a1 = toRGBA( value1 )
-    local r2, g2, b2, a2 = toRGBA( value2 )
+function color_lib.mul( value1, value2 )
+    local r1, g1, b1 = toRGBA( value1 )
+    local r2, g2, b2 = toRGBA( value2 )
 
     return fromRGBA(
         math_ceil( r1 * r2 ),
         math_ceil( g1 * g2 ),
-        math_ceil( b1 * b2 ),
-        alpha or math_ceil( a1 * a2 )
+        math_ceil( b1 * b2 )
     )
 end
 
@@ -166,17 +143,15 @@ end
 ---
 ---@param value1 dreamwork.std.Color The first color to divide.
 ---@param value2 dreamwork.std.Color The second color to divide.
----@param alpha? integer The alpha value to use.
 ---@return dreamwork.std.Color new_color The result of the division.
-function color_lib.div( value1, value2, alpha )
-    local r1, g1, b1, a1 = toRGBA( value1 )
-    local r2, g2, b2, a2 = toRGBA( value2 )
+function color_lib.div( value1, value2 )
+    local r1, g1, b1 = toRGBA( value1 )
+    local r2, g2, b2 = toRGBA( value2 )
 
     return fromRGBA(
         math_ceil( r1 / r2 ),
         math_ceil( g1 / g2 ),
-        math_ceil( b1 / b2 ),
-        alpha or math_ceil( a1 / a2 )
+        math_ceil( b1 / b2 )
     )
 end
 
@@ -221,17 +196,15 @@ end
 ---@param frac number The interpolation factor.
 ---@param color dreamwork.std.Color The starting color.
 ---@param color2 dreamwork.std.Color The ending color.
----@param alpha? integer The alpha value.
 ---@return dreamwork.std.Color The interpolated color.
-function color_lib.lerp( frac, color, color2, alpha )
-    local r, g, b, a = toRGBA( color )
-    local r2, g2, b2, a2 = toRGBA( color2 )
+function color_lib.lerp( frac, color, color2 )
+    local r, g, b = toRGBA( color )
+    local r2, g2, b2 = toRGBA( color2 )
 
     return fromRGBA(
         math_lerp( frac, r, r2 ),
         math_lerp( frac, g, g2 ),
-        math_lerp( frac, b, b2 ),
-        alpha or math_lerp( frac, a, a2 )
+        math_lerp( frac, b, b2 )
     )
 end
 
@@ -265,97 +238,63 @@ end
 ---@param uint8_4 integer
 ---@param uint8_5 integer
 ---@param uint8_6 integer
----@param uint8_7 integer
----@param uint8_8 integer
 ---@return integer | nil
 ---@return integer | nil
 ---@return integer | nil
----@return integer | nil
-local function fromBytes( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    if uint8_7 == nil then
-        if uint8_6 == nil then
-            local r, g, b = fromByte( uint8_1 ),
-                fromByte( uint8_2 ),
-                fromByte( uint8_3 )
-
-            if uint8_5 == nil then
-                return r, g, b, fromByte( uint8_4 )
-            end
-
-            return r, g, b, bytepack_readHex8( uint8_4, uint8_5 )
-        end
-
+local function fromBytes( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+    if uint8_1 == nil then
+        return 0x000000
+    elseif uint8_2 == nil then
+        return bytepack_readHex8( uint8_1, 0x00 ), 0x00, 0x00
+    elseif uint8_3 == nil then
+        return bytepack_readHex8( uint8_1, uint8_2 ), 0x00, 0x00
+    elseif uint8_4 == nil then
+        return bytepack_readHex8( uint8_1, uint8_2 ), bytepack_readHex8( uint8_3, 0x00 ), 0x00
+    elseif uint8_5 == nil then
+        return bytepack_readHex8( uint8_1, uint8_2 ), bytepack_readHex8( uint8_3, uint8_4 ), 0x00
+    elseif uint8_6 == nil then
         return bytepack_readHex8( uint8_1, uint8_2 ),
             bytepack_readHex8( uint8_3, uint8_4 ),
-            bytepack_readHex8( uint8_5, uint8_6 ),
-            255
+            bytepack_readHex8( uint8_5, 0x00 )
+    else
+        return bytepack_readHex8( uint8_1, uint8_2 ),
+            bytepack_readHex8( uint8_3, uint8_4 ),
+            bytepack_readHex8( uint8_5, uint8_6 )
     end
-
-    local r, g, b = bytepack_readHex8( uint8_1, uint8_2 ),
-        bytepack_readHex8( uint8_3, uint8_4 ),
-        bytepack_readHex8( uint8_5, uint8_6 )
-
-    if uint8_8 ~= nil then
-        return r, g, b, bytepack_readHex8( uint8_7, uint8_8 )
-    end
-
-    if uint8_7 == nil then
-        return r, g, b, 255
-    end
-
-    return r, g, b, fromByte( uint8_7 )
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
 --- Converts a hexadecimal color string to color.
 ---
---- Supports **any** hexadecimal color string format:
+--- Formats:
 ---
---- `0xRRGGBB` / `0xRRGGBBAA` / `0xRGB` / `0xRGBA`
----
---- `#RRGGBB` / `#RRGGBBAA` / `#RGB` / `#RGBA`
----
---- `RRGGBB` / `RRGGBBAA` / `RGB` / `RGBA`
+--- `0xRRGGBB` / `#RRGGBB` / `RRGGBB`
 ---
 ---@param hex_str string The hexadecimal color string to convert.
 ---@return dreamwork.std.Color color The color value.
 local function fromHex( hex_str )
     local uint8_1 = string_byte( hex_str, 1, 1 )
     if uint8_1 == nil then
-        return fromRGBA( 0,
-            0,
-            0,
-            255
-        )
+        return 0x000000
     end
 
     local uint8_2 = string_byte( hex_str, 2, 2 )
     if uint8_2 == nil then
-        return fromRGBA(
-            fromByte( uint8_1 ) or 0,
-            0,
-            0,
-            255
-        )
+        return fromRGBA( fromByte( uint8_1 ) or 0, 0, 0 )
     end
 
-    local r, g, b, a
+    local r, g, b
 
     if uint8_1 == 0x23 --[[ # ]] then
-        r, g, b, a = fromBytes( uint8_2, string_byte( hex_str, 3, 9 ) )
+        r, g, b = fromBytes( uint8_2, string_byte( hex_str, 3, 9 ) )
     elseif uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x58 --[[ X ]] or uint8_2 == 0x78 --[[ x ]]) then
-        r, g, b, a = fromBytes( string_byte( hex_str, 3, 10 ) )
+        r, g, b = fromBytes( string_byte( hex_str, 3, 10 ) )
     else
-        r, g, b, a = fromBytes( uint8_1, uint8_2, string_byte( hex_str, 3, 8 ) )
+        r, g, b = fromBytes( uint8_1, uint8_2, string_byte( hex_str, 3, 8 ) )
     end
 
-    return fromRGBA(
-        r or 0,
-        g or 0,
-        b or 0,
-        a or 255
-    )
+    return fromRGBA( r or 0, g or 0, b or 0 )
 end
 
 color_lib.fromHex = fromHex
@@ -450,9 +389,8 @@ color_lib.toHSL = toHSL
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
----@param alpha? integer The alpha as integer [0, 255].
 ---@return dreamwork.std.Color new_color The new color.
-local function fromHSV( hue, saturation, brightness, alpha )
+local function fromHSV( hue, saturation, brightness )
     hue = hue % 360
 
     local c = brightness * saturation
@@ -477,8 +415,7 @@ local function fromHSV( hue, saturation, brightness, alpha )
     return fromRGBA(
         math_floor( (r + m) * 255 ),
         math_floor( (g + m) * 255 ),
-        math_floor( (b + m) * 255 ),
-        alpha
+        math_floor( (b + m) * 255 )
     )
 end
 
@@ -531,11 +468,10 @@ color_lib.toHSV = toHSV
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
----@param alpha? integer The alpha as integer [0, 255].
 ---@return dreamwork.std.Color new_color The new color.
-local function fromHWB( hue, saturation, brightness, alpha )
+local function fromHWB( hue, saturation, brightness )
     brightness = 1 - brightness
-    return fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness, alpha )
+    return fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness )
 end
 
 color_lib.fromHWB = fromHWB
@@ -563,9 +499,8 @@ color_lib.toHWB = toHWB
 ---@param magenta number The magenta as fraction [0, 1].
 ---@param yellow number The yellow as fraction [0, 1].
 ---@param black number The black as fraction [0, 1].
----@param alpha? integer The alpha as integer [0, 255].
 ---@return dreamwork.std.Color new_color The new color.
-function color_lib.fromCMYK( cyan, magenta, yellow, black, alpha )
+function color_lib.fromCMYK( cyan, magenta, yellow, black )
     cyan, magenta, yellow, black = cyan * 0.01, magenta * 0.01, yellow * 0.01, black * 0.01
 
     local mk = 1 - black
@@ -573,8 +508,7 @@ function color_lib.fromCMYK( cyan, magenta, yellow, black, alpha )
     return fromRGBA(
         math_floor( ((1 - cyan) * mk) * 255 ),
         math_floor( ((1 - magenta) * mk) * 255 ),
-        math_floor( ((1 - yellow) * mk) * 255 ),
-        alpha
+        math_floor( ((1 - yellow) * mk) * 255 )
     )
 end
 
@@ -727,11 +661,10 @@ end
 ---
 ---@param color dreamwork.std.Color The color to set the whiteness of.
 ---@param whiteness number The whiteness as fraction [0, 1].
----@param alpha number The alpha as integer [0, 255].
 ---@return dreamwork.std.Color new_color The new color.
-function color_lib.setWhiteness( color, whiteness, alpha )
+function color_lib.setWhiteness( color, whiteness )
     local hue, _, blackness = toHWB( color )
-    return fromHWB( hue, whiteness, blackness, alpha )
+    return fromHWB( hue, whiteness, blackness )
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
@@ -809,10 +742,10 @@ do
             ---@cast name string
             ---@diagnostic disable-next-line: redundant-parameter
             local engine_color = NamedColor( name ) or tmp
-            color = fromRGBA( engine_color.r, engine_color.g, engine_color.b, engine_color.a )
+            color = fromRGBA( engine_color.r, engine_color.g, engine_color.b )
         elseif isNumber( name ) then
             ---@cast name integer
-            color = fromRGBA( name, name, name, 255 )
+            color = fromRGBA( name, name, name )
         else
             error( "color name must be string or integer to resolve color.", 3 )
         end

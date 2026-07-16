@@ -154,9 +154,9 @@ do
     ---@param end_position Vector3
     ---@param width number
     ---@param texture_end number
-    ---@param color Color
-    function gfx3d.drawBeam( start_position, end_position, width, texture_start, texture_end, color )
-        render_DrawBeam( start_position, end_position, width, texture_start, texture_end, color )
+    ---@param color dreamwork.std.Color
+    function gfx3d.drawBeam( start_position, end_position, width, texture_start, texture_end, color, alpha )
+        -- render_DrawBeam( start_position, end_position, width, texture_start, texture_end, color, alpha )
     end
 
     local render_DrawWireframeBox = glua_render.DrawWireframeBox
@@ -194,7 +194,7 @@ do
     ---@field origin Vector3
     ---@field width number
     ---@field texture_end number
-    ---@field color Color
+    ---@field color dreamwork.std.Color
 
     --- [CLIENT]
     ---
@@ -210,7 +210,7 @@ do
 
         for i = 1, segment_count do
             local segment = segments[ i ]
-            render_AddBeam( segment.origin, segment.width, segment.texture_end, segment.color )
+            -- render_AddBeam( segment.origin, segment.width, segment.texture_end, segment.color )
         end
 
         render_EndBeam()
