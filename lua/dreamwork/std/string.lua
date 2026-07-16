@@ -1004,45 +1004,57 @@ do
 
 end
 
-do
-
-    local string_gsub = string.gsub
-
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
-    ---
-    --- Replaces all occurrences of the supplied second string.
-    ---
-    ---@param str           string  The string we are seeking to replace an occurrence(s) in.
-    ---@param searchable    string  What we are seeking to replace.
-    ---@param replaceable   string  What to replace it with. If `nil`, occurrences are removed.
-    ---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
-    ---@return string new_string The new string with the occurrences replaced.
-    function string.replace( str, searchable, replaceable, with_pattern )
-        if with_pattern then
-            return (string_gsub( str, searchable, replaceable or "" ))
-        end
-
-        if searchable == "" then
-            return str
-        end
-
-        replaceable = replaceable or ""
-
-        local start_position, end_position = string_find( str, searchable, 1, true )
-        if start_position == nil then
-            return str
-        end
-
-        ::replace_loop::
-        str = string_sub( str, 1, start_position - 1 ) .. replaceable .. string_sub( str, end_position + 1 )
-        start_position, end_position = string_find( str, searchable, start_position + #replaceable, true )
-        if start_position ~= nil then
-            goto replace_loop
-        end
-
+--- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+---
+--- Replaces all occurrences of the supplied second string.
+---
+---@param str           string  The string we are seeking to replace an occurrence(s) in.
+---@param searchable    string  What we are seeking to replace.
+---@param replaceable?  string  What to replace it with. If `nil`, occurrences are removed.
+---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@return string new_string The new string with the occurrences replaced.
+function string.replace( str, searchable, replaceable, with_pattern )
+    if searchable == "" then
         return str
     end
 
+    with_pattern = with_pattern ~= true
+
+    local start_position, end_position = string_find( str, searchable, 1, with_pattern )
+    if end_position == nil then
+        return str
+    end
+
+    ---@type string[]
+    local segments = {}
+
+    ---@type integer
+    local segment_count = 0
+
+    ---@type integer
+    local split_position = 1
+
+    ::replace_loop::
+
+    segment_count = segment_count + 1
+    segments[ segment_count ] = string_sub( str, split_position, start_position - 1 )
+
+    if replaceable ~= nil then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = replaceable
+    end
+
+    split_position = end_position + 1
+    start_position, end_position = string_find( str, searchable, split_position, with_pattern )
+
+    if end_position == nil then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, split_position )
+        return table_concat( segments, "", 1, segment_count )
+    end
+
+    ---@diagnostic disable-next-line: missing-return
+    goto replace_loop
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
