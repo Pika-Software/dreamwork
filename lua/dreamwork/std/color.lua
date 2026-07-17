@@ -42,7 +42,7 @@ std.color = color_lib
 ---@param green integer The 8-bit green channel, in the range [0, 255].
 ---@param blue integer The 8-bit blue channel, in the range [0, 255].
 ---@return dreamwork.std.Color color The color value.
-local function fromRGBA( red, green, blue )
+local function fromRGB( red, green, blue )
     return bit_bor(
         bit_lshift( bit_band( red, 0xFF ), 16 ),
         bit_lshift( bit_band( green, 0xFF ), 8 ),
@@ -50,7 +50,7 @@ local function fromRGBA( red, green, blue )
     )
 end
 
-color_lib.fromRGBA = fromRGBA
+color_lib.fromRGB = fromRGB
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
@@ -77,7 +77,7 @@ color_lib.toRGBA = toRGBA
 function color_lib.invert( color )
     local r, g, b = toRGBA( color )
 
-    return fromRGBA(
+    return fromRGB(
         math_abs( 255 - r ),
         math_abs( 255 - g ),
         math_abs( 255 - b )
@@ -94,7 +94,7 @@ function color_lib.add( value1, value2 )
     local r1, g1, b1 = toRGBA( value1 )
     local r2, g2, b2 = toRGBA( value2 )
 
-    return fromRGBA(
+    return fromRGB(
         math_ceil( r1 + r2 ),
         math_ceil( g1 + g2 ),
         math_ceil( b1 + b2 )
@@ -112,7 +112,7 @@ function color_lib.sub( value1, value2 )
     local r1, g1, b1 = toRGBA( value1 )
     local r2, g2, b2 = toRGBA( value2 )
 
-    return fromRGBA(
+    return fromRGB(
         math_ceil( r1 - r2 ),
         math_ceil( g1 - g2 ),
         math_ceil( b1 - b2 )
@@ -130,7 +130,7 @@ function color_lib.mul( value1, value2 )
     local r1, g1, b1 = toRGBA( value1 )
     local r2, g2, b2 = toRGBA( value2 )
 
-    return fromRGBA(
+    return fromRGB(
         math_ceil( r1 * r2 ),
         math_ceil( g1 * g2 ),
         math_ceil( b1 * b2 )
@@ -148,7 +148,7 @@ function color_lib.div( value1, value2 )
     local r1, g1, b1 = toRGBA( value1 )
     local r2, g2, b2 = toRGBA( value2 )
 
-    return fromRGBA(
+    return fromRGB(
         math_ceil( r1 / r2 ),
         math_ceil( g1 / g2 ),
         math_ceil( b1 / b2 )
@@ -186,7 +186,7 @@ function color_lib.fromString( str, start_position, str_length )
         error( "not enough bytes in string to parse color", 2 )
     end
 
-    return fromRGBA( string_byte( str, start_position, start_position + 3 ) )
+    return fromRGB( string_byte( str, start_position, start_position + 3 ) )
 end
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
@@ -201,7 +201,7 @@ function color_lib.lerp( frac, color, color2 )
     local r, g, b = toRGBA( color )
     local r2, g2, b2 = toRGBA( color2 )
 
-    return fromRGBA(
+    return fromRGB(
         math_lerp( frac, r, r2 ),
         math_lerp( frac, g, g2 ),
         math_lerp( frac, b, b2 )
@@ -281,7 +281,7 @@ local function fromHex( hex_str )
 
     local uint8_2 = string_byte( hex_str, 2, 2 )
     if uint8_2 == nil then
-        return fromRGBA( fromByte( uint8_1 ) or 0, 0, 0 )
+        return fromRGB( fromByte( uint8_1 ) or 0, 0, 0 )
     end
 
     local r, g, b
@@ -294,7 +294,7 @@ local function fromHex( hex_str )
         r, g, b = fromBytes( uint8_1, uint8_2, string_byte( hex_str, 3, 8 ) )
     end
 
-    return fromRGBA( r or 0, g or 0, b or 0 )
+    return fromRGB( r or 0, g or 0, b or 0 )
 end
 
 color_lib.fromHex = fromHex
@@ -329,7 +329,7 @@ local function fromHSL( hue, saturation, lightness )
         r, g, b = c, 0, x
     end
 
-    return fromRGBA(
+    return fromRGB(
         math_floor( (r + m) * 255 ),
         math_floor( (g + m) * 255 ),
         math_floor( (b + m) * 255 )
@@ -412,7 +412,7 @@ local function fromHSV( hue, saturation, brightness )
         r, g, b = c, 0, x
     end
 
-    return fromRGBA(
+    return fromRGB(
         math_floor( (r + m) * 255 ),
         math_floor( (g + m) * 255 ),
         math_floor( (b + m) * 255 )
@@ -505,7 +505,7 @@ function color_lib.fromCMYK( cyan, magenta, yellow, black )
 
     local mk = 1 - black
 
-    return fromRGBA(
+    return fromRGB(
         math_floor( ((1 - cyan) * mk) * 255 ),
         math_floor( ((1 - magenta) * mk) * 255 ),
         math_floor( ((1 - yellow) * mk) * 255 )
@@ -742,10 +742,10 @@ do
             ---@cast name string
             ---@diagnostic disable-next-line: redundant-parameter
             local engine_color = NamedColor( name ) or tmp
-            color = fromRGBA( engine_color.r, engine_color.g, engine_color.b )
+            color = fromRGB( engine_color.r, engine_color.g, engine_color.b )
         elseif isNumber( name ) then
             ---@cast name integer
-            color = fromRGBA( name, name, name )
+            color = fromRGB( name, name, name )
         else
             error( "color name must be string or integer to resolve color.", 3 )
         end
