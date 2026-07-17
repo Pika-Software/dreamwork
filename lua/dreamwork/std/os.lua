@@ -12,7 +12,7 @@ local debug = std.debug
 ---@class dreamwork.std.os
 local os = {
     ---@diagnostic disable-next-line: undefined-global
-    clock = os.clock or SysTime,
+    clock = os.clock or SysTime or CurTime,
     date = os.date or debug.fempty,
     difftime = os.difftime or function( a, b )
         return a - b

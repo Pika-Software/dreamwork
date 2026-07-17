@@ -8,7 +8,6 @@ local os = std.os
 
 local os_time = os.time
 local os_date = os.date
-local os_clock = os.clock
 
 local math = std.math
 local math_min = math.min
@@ -296,7 +295,7 @@ function time.transform( timestamp, unit, target, as_float )
 end
 
 ---@diagnostic disable-next-line: undefined-global
-local seconds_elapsed = SysTime or os_clock
+local milliseconds_elapsed = SysTime or os.clock
 
 --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
 ---
@@ -307,35 +306,35 @@ local seconds_elapsed = SysTime or os_clock
 ---@return number timestamp The elapsed time in the specified unit.
 function time.elapsed( unit, as_float )
     if unit == "ns" then
-        local float = seconds_elapsed() * 1e9
+        local float = milliseconds_elapsed() * 1e9
         if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "us" then
-        local float = seconds_elapsed() * 1e6
+        local float = milliseconds_elapsed() * 1e6
         if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "ms" then
-        local float = os_clock() * 1e3
+        local float = milliseconds_elapsed() * 1e3
         if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     elseif unit == "s" or unit == nil then
-        local float = os_clock()
+        local float = milliseconds_elapsed()
         if as_float ~= false then
             return float
         else
             return math_floor( float )
         end
     else
-        return transform( os_clock(), "s", unit, as_float ~= false, 2 )
+        return transform( milliseconds_elapsed(), "s", unit, as_float ~= false, 2 )
     end
 end
 
@@ -351,7 +350,7 @@ do
     ---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
     ---@return number delta The elapsed time in the specified unit.
     function time.tick( unit, as_float )
-        local elapsed = seconds_elapsed()
+        local elapsed = milliseconds_elapsed()
 
         local delta = transform( elapsed - previous, nil, unit, as_float ~= false, 2 )
         previous = elapsed
@@ -376,17 +375,11 @@ local function now( unit, as_float )
         timestamp = timestamp + (current_timezone - basic_timezone) * 3600
     end
 
-    if unit == nil or unit == "s" then
-        if as_float then
-            timestamp = timestamp + (os_clock() % 1)
-        end
-
+    if unit == nil or unit == "s" and not as_float then
         return timestamp
-    elseif unit == "ms" or unit == "us" or unit == "ns" then
-        timestamp = timestamp + (seconds_elapsed() % 1)
     end
 
-    return transform( timestamp, nil, unit, as_float, 2 )
+    return transform( timestamp + (milliseconds_elapsed() % 1), nil, unit, as_float, 2 )
 end
 
 time.now = now

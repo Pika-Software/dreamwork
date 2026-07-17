@@ -17,7 +17,7 @@ local LUA_SERVER = std.LUA_SERVER
 local string = std.string
 local string_len = string.len
 
-local os_clock = os.clock
+local UnPredictedCurTime = UnPredictedCurTime or std.os.clock
 
 ---@type dreamwork.std.math
 local math = std.math
@@ -342,7 +342,7 @@ if LUA_SERVER then
     } )
 
     engine.hookCatch( "Think", function()
-        local time_used = os_clock()
+        local time_used = UnPredictedCurTime()
 
         for i = outgoing_activity[ 0 ], 1, -1 do
             local thread_data = outgoing_activity[ i ]
@@ -373,7 +373,7 @@ if LUA_SERVER then
 
         for i = thread_count, 1, -1 do
             if outgoing_activity[ i ].thread == thread then
-                outgoing_activity[ i ].time = os_clock() + (engine_hookCall( "NetworkTimeout", network ) or network.timeout)
+                outgoing_activity[ i ].time = UnPredictedCurTime() + (engine_hookCall( "NetworkTimeout", network ) or network.timeout)
                 return
             end
         end
@@ -383,7 +383,7 @@ if LUA_SERVER then
 
         outgoing_activity[ thread_count ] = {
             thread = thread,
-            time = os_clock() + network.timeout,
+            time = UnPredictedCurTime() + network.timeout,
             client = client
         }
     end
@@ -585,7 +585,7 @@ if LUA_CLIENT then
     local incoming_activity = { [ 0 ] = 0 }
 
     engine.hookCatch( "Think", function()
-        local time_used = os_clock()
+        local time_used = UnPredictedCurTime()
 
         for i = 1, incoming_activity[ 0 ], 1 do
             local thread_data = incoming_activity[ i ]
@@ -602,7 +602,7 @@ if LUA_CLIENT then
 
         for i = thread_count, 1, -1 do
             if incoming_activity[ i ].value == value then
-                incoming_activity[ i ].time = os_clock() + network.timeout
+                incoming_activity[ i ].time = UnPredictedCurTime() + network.timeout
                 return
             end
         end
@@ -612,7 +612,7 @@ if LUA_CLIENT then
 
         incoming_activity[ thread_count ] = {
             value = value,
-            time = os_clock() + network.timeout
+            time = UnPredictedCurTime() + network.timeout
         }
     end
 

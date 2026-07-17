@@ -9,7 +9,7 @@ local class = std.class
 local engine = dreamwork.engine
 local engine_hookCatch = engine.hookCatch
 
-local os_clock = std.os.clock
+local CurTime = CurTime
 local Hook = std.Hook
 
 ---@class dreamwork.std.Game : dreamwork.std.Object
@@ -36,6 +36,7 @@ do
 
     ---@diagnostic disable-next-line: undefined-field
     local engine_TickCount = glua_engine.TickCount
+    local UnPredictedCurTime = UnPredictedCurTime
 
     if engine_TickCount == nil then
         function engine_TickCount()
@@ -43,23 +44,24 @@ do
         end
     end
 
-    ---@diagnostic disable-next-line: undefined-field
-    local tick_interval = (glua_engine.TickInterval or std.debug.fempty)()
-    local last_tick = os_clock()
-
+    local last_call = UnPredictedCurTime()
     local tick_id = engine_TickCount()
+
+    local tick_interval = 0
+
+    -- TODO: attempt to implement manual tick counter, to stop calling engine fn
 
     engine.hookCatch( "Tick", function()
         local ticks_elapsed = engine_TickCount()
         if ticks_elapsed ~= tick_id then
             tick_id = ticks_elapsed
 
-            local current_tick = os_clock()
-            tick_interval, last_tick = current_tick - last_tick, current_tick
+            local current_time = UnPredictedCurTime()
+            tick_interval, last_call = current_time - last_call, current_time
 
             game.TickInterval = tick_interval
             game.TPS = 1 / tick_interval
-            game.TickTime = last_tick
+            game.TickTime = last_call
             game.TickCount = tick_id
         end
     end, 1 )

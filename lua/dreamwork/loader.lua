@@ -541,7 +541,7 @@ sendfile( "dreamwork/std/os.lua" )
 ---@class dreamwork.std.os
 local os = std.os
 
-dreamwork.InitTime = os.clock()
+dreamwork.InitTime = SysTime()
 
 -- detour library
 dofile( "dreamwork/detour.lua" )
@@ -2537,7 +2537,6 @@ do
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
     local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
 
-    std.console.clear()
     std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.utf8.len( splash ) ) )
 
 end
@@ -2630,25 +2629,18 @@ std.FPS = 60
 
 if LUA_CLIENT then
 
-    local os_clock = os.clock
+    local CurTime = CurTime
 
-    local frame_time = std.FRAME_TIME
-    local fps = std.FPS
-
-    local last_pre_render = 0
+    local last_call = CurTime()
 
     engine.hookCatch( "PreRender", function()
-        local elapsed_time = os_clock()
+        local elapsed_time = CurTime()
 
-        if last_pre_render ~= 0 then
-            frame_time = elapsed_time - last_pre_render
-            std.FRAME_TIME = frame_time
+        local frame_time = elapsed_time - last_call
+        last_call = elapsed_time
 
-            fps = 1 / frame_time
-            std.FPS = fps
-        end
-
-        last_pre_render = elapsed_time
+        std.FRAME_TIME = frame_time
+        std.FPS = 1 / frame_time
     end, 1 )
 
 end
@@ -2704,7 +2696,7 @@ function std.require( modname, ... )
     -- TODO: reimplement
 end
 
-logger:info( "Start-up time: %.2f ms.", (os.clock() - dreamwork.InitTime) * 1000 )
+logger:info( "Start-up time: %.2f ms.", (SysTime() - dreamwork.InitTime) * 1000 )
 
 -- Memory clean-up
 time.tick( "ms" )
