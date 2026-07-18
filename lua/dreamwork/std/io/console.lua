@@ -96,14 +96,20 @@ do
     ---
     ---@param ... dreamwork.std.console.Message The message to write to the console.
     function console.writeLine( ... )
+        if (...) == nil then
+            engine_consoleMessage( "\n" )
+            return
+        end
+
         ---@type dreamwork.std.console.Message | nil
         local last_message = select( -1, ... )
         if last_message == nil then
             engine_consoleMessage( "\n" )
-        else
-            last_message.text = last_message.text .. "\n"
-            console_write( ... )
+            return
         end
+
+        last_message.text = last_message.text .. "\n"
+        console_write( ... )
     end
 
     if SERVER then
