@@ -1372,20 +1372,32 @@ function string.interpolate( str, variables, start_position, end_position, str_l
         variables[ i ] = nil
     end
 
+    ---@type integer
     local break_position = start_position
-    local segments, segment_count = {}, 0
+
+    ---@type string[]
+    local segments = {}
+
+    ---@type integer
+    local segment_count = 0
+
+    if start_position ~= 1 then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, 1, start_position - 1 )
+    end
 
     repeat
 
         local uint8_1 = string_byte( str, start_position, start_position )
 
         if uint8_1 == 0x7B --[[ { ]] then
+            ---@type integer
             local index_start = start_position + 1
-
             if index_start >= end_position then
                 break
             end
 
+            ---@type integer
             local index = index_start
 
             repeat
@@ -1436,6 +1448,11 @@ function string.interpolate( str, variables, start_position, end_position, str_l
     if break_position ~= start_position then
         segment_count = segment_count + 1
         segments[ segment_count ] = string_sub( str, break_position, end_position )
+    end
+
+    if end_position ~= str_length then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, end_position + 1, str_length )
     end
 
     if segment_count == 0 then
@@ -1496,7 +1513,17 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
         return str
     end
 
-    local segments, segment_count = {}, 0
+    ---@type string[]
+    local segments = {}
+
+    ---@type integer
+    local segment_count = 0
+
+    if start_position ~= 1 then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, 1, start_position - 1 )
+    end
+
     local break_point = start_position - 1
     local index = 0
 
@@ -1523,6 +1550,15 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
     if break_point ~= end_position then
         segment_count = segment_count + 1
         segments[ segment_count ] = string_sub( str, break_point + 1, end_position )
+    end
+
+    if end_position ~= str_length then
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( str, end_position + 1, str_length )
+    end
+
+    if segment_count == 0 then
+        return ""
     end
 
     return table_concat( segments, "", 1, segment_count )
