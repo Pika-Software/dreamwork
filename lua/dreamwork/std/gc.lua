@@ -1,7 +1,7 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
 ---
@@ -34,7 +34,7 @@ if collectgarbage == nil then
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Performs a full garbage-collection cycle.
 ---
@@ -42,7 +42,7 @@ function gc.collect()
     collectgarbage( "collect" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The value has a fractional part, so that it multiplied by 1024 gives the exact number of bytes in use by Lua (except for overflows).
 ---
@@ -51,7 +51,7 @@ function gc.getMemory()
     return collectgarbage( "count" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Stops automatic execution of the garbage collector.
 --- The collector will run only when explicitly invoked, until a call to restart it.
@@ -60,7 +60,7 @@ function gc.stop()
     collectgarbage( "stop" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Restarts automatic execution of the garbage collector.
 ---
@@ -68,7 +68,7 @@ function gc.restart()
     collectgarbage( "restart" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a boolean that tells whether the collector is running (i.e., not stopped).
 ---
@@ -77,7 +77,7 @@ function gc.isRunning()
     return collectgarbage( "isrunning" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The garbage-collector pause controls how long the collector waits before starting a new cycle.
 --- Larger values make the collector less aggressive.
@@ -91,7 +91,7 @@ function gc.setPause( value )
     return collectgarbage( "setpause", value )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The garbage-collector step multiplier controls the relative speed of the collector relative to memory allocation.
 --- Larger values make the collector more aggressive but also increase the size of each incremental step.
@@ -105,7 +105,7 @@ function gc.setStep( size )
     return collectgarbage( "step", size )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If you set the step multiplier to a very large number (larger than 10% of the maximum number of bytes that the program may use), the collector behaves like a stop-the-world collector.
 --- If you then set the pause to 200, the collector behaves as in old Lua versions, doing a complete collection every time Lua doubles its memory usage.
@@ -122,7 +122,7 @@ do
 
     local raw_get = std.raw.get
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns info about the garbage collector rules for the given table.
     ---
@@ -158,7 +158,7 @@ do
         [ 3 ] = { __mode = "v" }
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets the garbage-collector rules for the given table.
     ---

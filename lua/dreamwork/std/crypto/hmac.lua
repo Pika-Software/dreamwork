@@ -15,7 +15,7 @@ local string_byte, string_char = string.byte, string.char
 local bit = std.bit
 local bit_bxor = bit.bxor
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Hash-based Message Authentication Code library.
 ---
@@ -24,7 +24,7 @@ local bit_bxor = bit.bxor
 local hmac = {}
 crypto.hmac = hmac
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Normalizes the key to the block size of the hash function.
 ---
@@ -45,7 +45,7 @@ end
 
 hmac.key = key_normalize
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes the key padding.
 ---
@@ -99,7 +99,7 @@ end
 
 hmac.padding = key_padding
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes hmac and returns the result using the given hash function.
 ---
@@ -113,7 +113,7 @@ function hmac.compute( hash_fn, outer, inner, msg, as_hex )
     return hash_fn( outer .. hash_fn( inner .. msg ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes hmac and returns the result using the given hash function.
 ---
@@ -130,7 +130,7 @@ end
 
 hmac.hash = hash
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a function that computes hmac using the given hash function and block length.
 ---
@@ -147,25 +147,25 @@ function hmac.preset( digest_fn, block_size )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes a hmac using the MD5 hashing.
 ---
 hmac.md5 = hmac.preset( crypto.MD5.digest, crypto.MD5.block_size )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes a hmac using the SHA-1 hashing.
 ---
 hmac.sha1 = hmac.preset( crypto.SHA1.digest, crypto.SHA1.block_size )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Computes a hmac using the SHA-256 hashing.
 ---
 hmac.sha256 = hmac.preset( crypto.SHA256.digest, crypto.SHA256.block_size )
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Computes a hmac using the SHA-512 hashing.
 -- ---

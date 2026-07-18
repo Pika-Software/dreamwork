@@ -37,7 +37,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Github API library.
 ---
@@ -49,7 +49,7 @@ http.github = github
 local next_mutation_time = 0
 local ratelimit_reset_time = 0
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sends a request to the Github API.
 ---
@@ -125,7 +125,7 @@ end
 
 github.request = request
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Makes a request to the Github API.
 ---
@@ -154,7 +154,7 @@ end
 
 github.apiRequest = apiRequest
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Replaces all occurrences of `{name}` in `pathname` with `tbl[name]`.
 ---
@@ -169,7 +169,7 @@ end
 
 github.template = template
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Replaces all occurrences of `{name}` in `pathname` with `tbl[name]` and makes a request to the Github API.
 ---
@@ -184,7 +184,7 @@ end
 
 github.templateRequest = templateRequest
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a list of all github emojis.
 ---
@@ -194,7 +194,7 @@ function github.getEmojis()
     return apiRequest( "GET", "/emojis" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a list of all github licenses.
 ---
@@ -204,7 +204,7 @@ function github.getLicenses()
     return apiRequest( "GET", "/licenses" )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a list of all repositories owned by an organization.
 ---
@@ -217,7 +217,7 @@ function github.getRepositories( organization )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a detailed information about a specific repository.
 ---
@@ -232,7 +232,7 @@ function github.getRepository( owner, repo )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a lists the tags (versions) of a repository.
 ---
@@ -249,7 +249,7 @@ function github.getRepositoryTags( owner, repo, page )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a single Git tree — that is, a snapshot of the repository's file structure at a specific commit or tree.
 ---
@@ -268,7 +268,7 @@ function github.getTree( owner, repo, tree_sha, recursive )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches the content of a blob (a blob = file contents) in a repository, using its SHA-1.
 ---
@@ -292,7 +292,7 @@ function github.getBlob( owner, repo, file_sha )
     return result
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a list of repository contributors.
 ---
@@ -307,7 +307,7 @@ function github.getContributors( owner, repo )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches a list of repository languages.
 ---
@@ -322,7 +322,7 @@ function github.getLanguages( owner, repo )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Fetches the repository contents as a ZIP archive based on a specific reference (branch name, tag name, or commit sha-1).
 ---

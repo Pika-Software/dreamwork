@@ -11,7 +11,7 @@ local string_byteSplit = string.byteSplit
 local table = std.table
 local table_concat = table.concat
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Dreamwork Code Fabric
 ---

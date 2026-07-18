@@ -13,7 +13,7 @@ local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
 local table_concat = std.table.concat
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Base32 encoding/decoding library.
 ---
@@ -23,7 +23,7 @@ local table_concat = std.table.concat
 local base32 = std.base32 or {}
 std.base32 = base32
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The base32 encoding/decoding alphabet.
 ---
@@ -31,7 +31,7 @@ std.base32 = base32
 ---@field [1] table<integer, string> The encoding map.
 ---@field [2] table<integer, integer> The decoding map.
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a base32 alphabet with encoding and decoding maps.
 ---
@@ -161,7 +161,7 @@ local function block_encode( encode_map, segments, segment_count, do_padding, ui
     return segment_count
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Encodes the specified string to base32.
 ---
@@ -266,7 +266,7 @@ local function block_decode( decode_map, uint8_1, uint8_2, uint8_3, uint8_4, uin
     )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Decodes the specified base32 encoded string.
 ---
@@ -327,7 +327,7 @@ function base32.decode( base32_str, ignore_padding, alphabet )
     return table_concat( segments, "", 1, segment_count )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the specified base32 encoded string is valid.
 ---

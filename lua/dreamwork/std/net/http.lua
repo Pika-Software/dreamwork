@@ -74,7 +74,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The http library allows either the server or client to communicate with external websites via HTTP.
 ---
@@ -84,7 +84,7 @@ std.http = http
 
 if http.StatusCodes == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The table that converts HTTP status codes into their descriptions.
     ---
@@ -217,7 +217,7 @@ end
 ---@type table<string, dreamwork.std.http.Request.session_cache>
 local session_cache = {}
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes an asynchronous http request with the given options.
 ---
@@ -392,7 +392,7 @@ end
 
 http.request = request
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sends a GET request.
 ---
@@ -410,7 +410,7 @@ function http.get( url, headers, timeout )
     } )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sends a POST request.
 ---
@@ -432,7 +432,7 @@ end
 
 -- TODO: https://github.com/nmap/nmap/blob/master/nselib/http.lua#L1222-L1307
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sends a HEAD request.
 ---

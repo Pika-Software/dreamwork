@@ -9,7 +9,7 @@ local bit = std.bit
 local bit_bxor = bit.bxor
 local bit_lshift = bit.lshift
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the Fowler-Noll-Vo (FNV-0) [deprecated] hash of the string.
 ---
@@ -28,7 +28,7 @@ function string.fnv0( str )
     return hash_int % 0xFFFFFFFF
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the Fowler-Noll-Vo (FNV-1) hash of the string.
 ---
@@ -47,7 +47,7 @@ function string.fnv1( str )
     return hash_int % 0xFFFFFFFF
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the Fowler-Noll-Vo (FNV-1a) hash of the string.
 ---

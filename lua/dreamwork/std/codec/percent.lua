@@ -9,7 +9,7 @@ local string_char, string_byte = string.char, string.byte
 
 local table_concat = std.table.concat
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Percent (URL/URI) encoding/decoding library.
 ---
@@ -25,7 +25,7 @@ local table_concat = std.table.concat
 local percent = std.percent or {}
 std.percent = percent
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a character whitelist for the given pattern.
 ---
@@ -59,7 +59,7 @@ do
 
     local default_whitelist = percent.whitelist( "%w%-_%.~" )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Encodes the specified string to percent encoding.
     ---
@@ -132,7 +132,7 @@ do
             [ 0x66 --[[ "f" ]] ] = true
         }
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Validates the specified percent string.
         ---
@@ -185,7 +185,7 @@ do
     local bytepack_readHex8 = bytepack.readHex8
     local math_min = std.math.min
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Decodes the specified string from percent encoding.
     ---

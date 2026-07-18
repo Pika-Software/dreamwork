@@ -22,7 +22,7 @@ local string_byte, string_char = string.byte, string.char
 local table_concat = std.table.concat
 local raw_tonumber = std.raw.tonumber
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A library for working with time and date.
 ---
@@ -212,7 +212,7 @@ do
     local bit_lshift = bit.lshift
     local bit_bor = bit.bor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Transforms a timestamp from one unit to another.
     ---
@@ -281,7 +281,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Transforms a timestamp to a different unit.
 ---
@@ -297,7 +297,7 @@ end
 ---@diagnostic disable-next-line: undefined-global
 local milliseconds_elapsed = SysTime or os.clock
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the time elapsed since lua/game was started.
 ---
@@ -342,7 +342,7 @@ do
 
     local previous = 0
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the time elapsed since the last call to this function.
     ---
@@ -360,7 +360,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the current time in the specified unit.
 ---
@@ -386,7 +386,7 @@ time.now = now
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a year is a leap year.
     ---
@@ -408,7 +408,7 @@ do
 
         local months = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the number of days in a month.
         ---
@@ -494,7 +494,7 @@ do
         return transform( seconds + nanoseconds * 1e-9 + microseconds * 1e-6 + milliseconds * 1e-3, nil, unit, as_float, 2 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a duration string to the specified unit.
     ---
@@ -521,7 +521,7 @@ do
         return fromDuration( duration_str, unit, as_float, 2 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Adds a duration to a timestamp.
     ---
@@ -549,7 +549,7 @@ do
         return timestamp + fromDuration( duration_str, unit, as_float, 2 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Subtracts a duration from a timestamp.
     ---
@@ -581,7 +581,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Splits a timestamp into seconds, milliseconds, microseconds and nanoseconds.
     ---
@@ -607,7 +607,7 @@ do
         return seconds, milliseconds, microseconds, transform( timestamp, unit, "ns", false, error_level )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Represents a date and time.
     ---
@@ -632,7 +632,7 @@ do
 
         local string_byteSplit = string.byteSplit
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns a table with the date and time components.
         ---
@@ -692,7 +692,7 @@ do
         { 60,       "m" }
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a number of seconds to a duration string.
     ---
@@ -822,7 +822,7 @@ do
         date_time = "%c"
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a timestamp to a formatted string.
     ---

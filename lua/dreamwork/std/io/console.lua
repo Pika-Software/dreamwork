@@ -8,7 +8,7 @@ local engine_consoleMessageColored = engine.consoleMessageColored
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The source engine console library.
 ---
@@ -75,7 +75,7 @@ do
     ---@field text string
     ---@field color dreamwork.std.Color | nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Writes a message to the console.
     ---
@@ -90,7 +90,7 @@ do
 
     console.write = console_write
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Writes a message to the console with new line after the text.
     ---
@@ -108,7 +108,7 @@ do
 
     if SERVER then
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Clears the console output.
         ---
@@ -200,7 +200,7 @@ do
         flag_to_integer[ flag[ 1 ] ] = flag[ 2 ]
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the integer flag value for the given flag name.
     ---
@@ -211,7 +211,7 @@ do
         return flag_to_integer[ flag_name ]
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Builds an integer flag value from the given flag map.
     ---

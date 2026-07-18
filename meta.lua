@@ -2,7 +2,7 @@
 
 ---@alias bool boolean
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Dreamwork powered metatables.
 ---
@@ -505,7 +505,7 @@ metatable.__isvalid = nil
 ---@type fun(self: T): integer
 metatable.__hash = nil
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- HTTP request method.
 ---
@@ -518,7 +518,7 @@ metatable.__hash = nil
 ---| "DELETE" # Remove a resource from the server.
 ---| "OPTIONS" # Describe communication options for the target resource.
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- HTTP request URL.
 ---
@@ -528,7 +528,7 @@ metatable.__hash = nil
 ---| "http://" # Default protocol.
 ---| "https://" # Default secure protocol.
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- HTTP request content type.
 ---
@@ -558,13 +558,13 @@ metatable.__hash = nil
 ---| "video/mp4"
 ---| "video/webm"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- HTTP request headers.
 ---
 ---@alias dreamwork.std.http.Request.headers table<string, string>
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- HTTP request parameters.
 ---
@@ -572,7 +572,7 @@ metatable.__hash = nil
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Options table for `http.request` function.
     ---
@@ -641,7 +641,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The success callback.
     ---
@@ -667,7 +667,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The server information table.
     ---@class dreamwork.std.server.Info
@@ -1085,7 +1085,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Table used by `console.Command` class constructor.
     ---
@@ -1291,7 +1291,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Table used by `console.Variable` class constructor.
     ---
@@ -1337,7 +1337,7 @@ do
     ---@type dreamwork.std.console.Variable.value
     variable.default = nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The value of the console variable.
     ---
@@ -1362,7 +1362,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Table used by `console.Logger` constructor.
     ---
@@ -1393,7 +1393,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The result table of executing `path.parse`.
     ---
@@ -1442,7 +1442,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The URL state object.
     ---@class dreamwork.std.URL.State
@@ -1460,7 +1460,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Git Tree
     ---
@@ -1493,14 +1493,14 @@ do
     ---@type boolean
     tree.truncated = nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A list of files and directories in the tree.
     ---
     ---@class dreamwork.std.http.github.Tree.Item[]
     tree.tree = nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A single file or directory in a tree.
     ---
@@ -1551,7 +1551,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A GitHub user.
     ---
@@ -1651,7 +1651,7 @@ do
     ---@type string
     user.subscriptions_url = nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A GitHub user who has contributed to a repository.
     ---
@@ -1676,7 +1676,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A GitHub repository tag commit.
     ---
@@ -1693,7 +1693,7 @@ do
     ---@type string
     commit.url = nil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A GitHub repository tag.
     ---
@@ -1729,7 +1729,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The GitHub license.
     ---
@@ -1765,7 +1765,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The GitHub repository.
     ---
@@ -2171,7 +2171,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A GitHub blob object.
     ---
@@ -2216,7 +2216,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The options for the pbkdf2 function.
     ---
@@ -2266,7 +2266,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Source game item.
     ---
@@ -2305,43 +2305,43 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop publication content type.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.ContentType "addon" | "save" | "dupe" | "demo"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop publication type.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.Type "gamemode" | "map" | "weapon" | "vehicle" | "npc" | "entity" | "tool" | "effects" | "model" | "servercontent"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop addon tag.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.AddonTag "fun" | "roleplay" | "scenic" | "movie" | "realism" | "cartoon" | "water" | "comic" | "build"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop dupe tag.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.DupeTag "buildings" | "machines" | "posed" | "scenes" | "vehicles" | "other"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop save tag.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.SaveTag "buildings" | "courses" | "machines" | "scenes" | "other"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop tag.
 ---
 ---@alias dreamwork.std.steam.workshop.Item.Tag dreamwork.std.steam.workshop.Item.ContentType | dreamwork.std.steam.workshop.Item.Type | dreamwork.std.steam.workshop.Item.AddonTag | dreamwork.std.steam.workshop.Item.DupeTag | dreamwork.std.steam.workshop.Item.SaveTag
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop search type.
 ---
@@ -2387,13 +2387,13 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop content descriptor.
 ---
 ---@alias dreamwork.std.steam.workshop.Warning "general_mature" | "gore" | "suggestive" | "nudity" | "adult_only"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Visibility of a Steam Workshop item.
 ---
@@ -2401,7 +2401,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The Steam Workshop item details.
     ---
@@ -2530,7 +2530,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A Steam API response.
     ---
@@ -2548,7 +2548,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Details of a Steam Workshop item.
     ---
@@ -2666,7 +2666,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The type of a Steam Workshop item.
 ---
@@ -2675,7 +2675,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Details of a Steam Workshop collection item.
     ---
@@ -2701,7 +2701,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Details of a Steam Workshop collection.
     ---
@@ -2852,7 +2852,7 @@ end
 ---| "WriteZ_DX9"
 ---| "YUV"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- https://developer.valvesoftware.com/wiki/Category:Shader_parameters
 ---

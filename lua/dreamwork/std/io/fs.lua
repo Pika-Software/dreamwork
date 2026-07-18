@@ -38,7 +38,7 @@ do
     local head = "lua/bin/gm" .. (LUA_CLIENT and "cl" or "sv") .. "_"
     local tail = "_" .. std.SYSTEM_NAME
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a binary module is available and can be loaded.
     ---
@@ -83,7 +83,7 @@ do
         sv_allowcslua = console.Variable.get( "sv_allowcslua", "boolean" )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Loads a binary module if available.
     ---

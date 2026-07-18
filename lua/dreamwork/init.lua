@@ -20,7 +20,7 @@ do
     local loadstring = std.loadstring
     local file_read = std.fs.read
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Loads a file as
     --- a lua code chunk in the specified environment

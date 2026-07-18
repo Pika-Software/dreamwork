@@ -39,21 +39,21 @@ do
 end
 
 ---@alias dreamwork.std.gfx3d.ModelFlags
----| `1` STUDIO_RENDER # The current render is for opaque renderables only.
----| `2` STUDIO_VIEWXFORMATTACHMENTS # Applies view-space transforms to model attachments (used for attachment positioning/rendering in view models).
----| `4` STUDIO_DRAWTRANSLUCENTSUBMODELS # The current render is for translucent renderables only.
----| `8` STUDIO_TWOPASS # The current render is for both opaque and translucent renderables.
----| `16` STUDIO_STATIC_LIGHTING # Uses precomputed/static lighting instead of dynamic lighting.
----| `32` STUDIO_WIREFRAME # Renders the model in wireframe mode.
----| `64` STUDIO_ITEM_BLINK # Enables blinking/item highlight effect.
----| `128` STUDIO_NOSHADOWS # Prevents the model from casting or receiving shadows.
----| `256` STUDIO_WIREFRAME_VCOLLIDE # Renders the vcollide/collision mesh in wireframe mode.
----| `1024` STUDIO_SKIP_FLEXES # Do not update/apply flexes.
----| `16777216` STUDIO_GENERATE_STATS # Not a studio flag, but used to flag when we want studio stats.
----| `134217728` STUDIO_SSAODEPTHTEXTURE # Not a studio flag, but used to flag model as using SSAO depth material override.
----| `268435456` STUDIO_SKIP_DECALS # Do not render decals.
----| `1073741824` STUDIO_SHADOWDEPTHTEXTURE # Not a studio flag, but used to flag model as using shadow depth material override.
----| `2147483648` STUDIO_TRANSPARENCY # Not a studio flag, but used to flag model as a non-sorting brush model.
+---| 1 STUDIO_RENDER # The current render is for opaque renderables only.
+---| 2 STUDIO_VIEWXFORMATTACHMENTS # Applies view-space transforms to model attachments (used for attachment positioning/rendering in view models).
+---| 4 STUDIO_DRAWTRANSLUCENTSUBMODELS # The current render is for translucent renderables only.
+---| 8 STUDIO_TWOPASS # The current render is for both opaque and translucent renderables.
+---| 16 STUDIO_STATIC_LIGHTING # Uses precomputed/static lighting instead of dynamic lighting.
+---| 32 STUDIO_WIREFRAME Renders the model in wireframe mode.
+---| 64 STUDIO_ITEM_BLINK Enables blinking/item highlight effect.
+---| 128 STUDIO_NOSHADOWS # Prevents the model from casting or receiving shadows.
+---| 256 STUDIO_WIREFRAME_VCOLLIDE # Renders the vcollide/collision mesh in wireframe mode.
+---| 1024 STUDIO_SKIP_FLEXES # Do not update/apply flexes.
+---| 16777216 STUDIO_GENERATE_STATS # Not a studio flag, but used to flag when we want studio stats.
+---| 134217728 STUDIO_SSAODEPTHTEXTURE # Not a studio flag, but used to flag model as using SSAO depth material override.
+---| 268435456 STUDIO_SKIP_DECALS # Do not render decals.
+---| 1073741824 STUDIO_SHADOWDEPTHTEXTURE # Not a studio flag, but used to flag model as using shadow depth material override.
+---| 2147483648 STUDIO_TRANSPARENCY # Not a studio flag, but used to flag model as a non-sorting brush model.
 
 -- TODO: add 3d render. functions
 

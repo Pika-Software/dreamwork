@@ -55,7 +55,7 @@ local raw_get, raw_set = raw.get, raw.set
 
 ]]
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A 3D angle object.
 ---
@@ -82,7 +82,7 @@ do
 
     local debug_getmetatable = debug.getmetatable
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is an `Angle3`.
     ---
@@ -94,7 +94,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A 3D angle class.
 ---
@@ -171,7 +171,7 @@ function Angle3:__deserialize( reader )
     self[ 3 ] = (reader:readUInt8() / 255 * 360) - 180
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Unpacks the angle.
 ---
@@ -182,7 +182,7 @@ function Angle3:unpack()
     return self[ 1 ], self[ 2 ], self[ 3 ]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the angle from unpacked angles.
 ---
@@ -197,7 +197,7 @@ function Angle3:setUnpacked( pitch, yaw, roll )
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a copy of the angle.
 ---
@@ -211,7 +211,7 @@ Angle3.copy = Angle3_copy
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Adds the angle.
     ---
@@ -238,7 +238,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Subtracts the angle.
     ---
@@ -263,7 +263,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Multiplies the angle with a number or angle.
     ---
@@ -299,7 +299,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Divides the angle with a number or angle.
     ---
@@ -331,7 +331,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Negates the angle.
 ---
@@ -353,7 +353,7 @@ function Angle3:__eq( angle )
     return self[ 1 ] == angle[ 1 ] and self[ 2 ] == angle[ 2 ] and self[ 3 ] == angle[ 3 ]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Linearly interpolates the angle.
 ---
@@ -376,7 +376,7 @@ function Angle3:lerp( angle, frac )
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a copy of the angle linearly interpolated between two angles.
 ---
@@ -387,7 +387,7 @@ function Angle3:getLerped( angle, frac )
     return self:copy():lerp( angle, frac )
 end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the forward direction of the angle.
 -- ---
@@ -396,7 +396,7 @@ end
 --     return setmetatable( { 1, 0, 0 }, Vector3 ):rotate( self )
 -- end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the backward direction of the angle.
 -- ---
@@ -405,7 +405,7 @@ end
 --     return setmetatable( { -1, 0, 0 }, Vector3 ):rotate( self )
 -- end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the left direction of the angle.
 -- ---
@@ -414,7 +414,7 @@ end
 --     return setmetatable( { 0, 1, 0 }, Vector3 ):rotate( self )
 -- end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the right direction of the angle.
 -- ---
@@ -423,7 +423,7 @@ end
 --     return setmetatable( { 0, -1, 0 }, Vector3 ):rotate( self )
 -- end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the up direction of the angle.
 -- ---
@@ -432,7 +432,7 @@ end
 --     return setmetatable( { 0, 0, 1 }, Vector3 ):rotate( self )
 -- end
 
--- --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+-- --- [SHARED AND MENU]
 -- ---
 -- --- Returns the down direction of the angle.
 -- ---
@@ -445,7 +445,7 @@ do
 
     local math_angleNormalize = math.angleNormalize
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Normalizes the angle.
     ---
@@ -457,7 +457,7 @@ do
         return self
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a normalized copy of the angle.
     ---
@@ -468,7 +468,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the angle is within the given tolerance of the given angle.
 ---
@@ -481,7 +481,7 @@ function Angle3:isNear( angle, tolerance )
         math_abs( self[ 3 ] - angle[ 3 ] ) <= tolerance
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the angle is zero.
 ---
@@ -490,7 +490,7 @@ function Angle3:isZero()
     return self[ 1 ] == 0 and self[ 2 ] == 0 and self[ 3 ] == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the angle to zero.
 ---
@@ -502,7 +502,7 @@ function Angle3:zero()
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Rotates the angle around the specified axis by the specified degrees.
 ---

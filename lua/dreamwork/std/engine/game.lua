@@ -17,7 +17,7 @@ local Game = class.base( "Game", true )
 
 local GameClass = class.base( "GameClass", false, Game )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The game library.
 ---
@@ -74,7 +74,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a list of items corresponding to all games from which Garry's Mod supports content mounting.
     ---
@@ -85,7 +85,7 @@ do
         return {}, 0
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks whether or not a game is currently mounted.
     ---
@@ -141,7 +141,7 @@ end, "engine" )
 
 if game.OnTick == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A hook that is called every tick.
     ---

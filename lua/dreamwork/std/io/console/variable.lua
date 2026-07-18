@@ -281,7 +281,7 @@ local callbacks = {}
 
 gc_setTableRules( callbacks, true, false )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The console variable object.
 ---
@@ -445,7 +445,7 @@ function Variable:__tostring()
     return string_format( "console.Variable: %p [%s][%s]", self, names[ self ], values[ self ] )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The console variable class.
 ---
@@ -465,7 +465,7 @@ end
 local engine_consoleVariableExists = engine.consoleVariableExists
 VariableClass.exists = engine_consoleVariableExists
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets a `console.Variable` object by its name.
 ---
@@ -495,7 +495,7 @@ function VariableClass.get( str_name, cvar_type )
     return variable
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the value of the `console.Variable` object as a string.
 ---
@@ -510,7 +510,7 @@ function VariableClass.getString( name )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the value of the `console.Variable` object as an integer.
 ---
@@ -525,7 +525,7 @@ function VariableClass.getInteger( name )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the value of the `console.Variable` object as a float/double.
 ---
@@ -542,7 +542,7 @@ end
 
 VariableClass.getNumber = VariableClass.getFloat
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the value of the `console.Variable` object as a boolean.
 ---
@@ -559,7 +559,7 @@ end
 
 VariableClass.getBool = VariableClass.getBoolean
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Reverts the value of the `console.Variable` object to its default value.
 ---
@@ -570,7 +570,7 @@ function Variable:revert()
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Reverts the value of the `console.Variable` object to its default value.
 ---
@@ -588,7 +588,7 @@ do
 
     local convar_getHelpText = CONVAR.GetHelpText
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Gets the help text of the `console.Variable` object.
     ---
@@ -605,7 +605,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the default value of the `console.Variable` object.
 ---
@@ -624,7 +624,7 @@ do
 
     local convar_getFlags = CONVAR.GetFlags
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Gets the flags of the `console.Variable` object.
     ---
@@ -641,7 +641,7 @@ do
 
     VariableClass.getFlags = getFlags
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets the value of the `console.Variable` object.
     ---
@@ -672,7 +672,7 @@ do
 
     local convar_isFlagSet = CONVAR.IsFlagSet
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the flag is set on the `console.Variable` object.
     ---
@@ -690,7 +690,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the minimum value of the `console.Variable` object.
 ---
@@ -705,7 +705,7 @@ function VariableClass.getMin( name )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gets the maximum value of the `console.Variable` object.
 ---
@@ -720,7 +720,7 @@ function VariableClass.getMax( name )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the minimum and maximum values of the `console.Variable` object.
 ---
@@ -749,7 +749,7 @@ local queues = {}
 
 gc_setTableRules( queues, true, false )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Attaches a callback to the `console.Variable` object.
 ---
@@ -796,7 +796,7 @@ function Variable:attach( fn, identifier, once )
     lst[ lst_length + 3 ] = once == true
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Detaches a callback from the `console.Variable` object.
 ---
@@ -833,7 +833,7 @@ function Variable:detach( identifier )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Clears all callbacks from the `console.Variable` object.
 ---
@@ -842,7 +842,7 @@ function Variable:clear()
     in_call[ self ] = nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Waits for the `console.Variable` object to change.
 ---

@@ -53,7 +53,7 @@ NPC.__parent = ENTITY
 local NEXTBOT = debug.initmetatable( "NextBot" )
 NEXTBOT.__parent = ENTITY
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Source engine library.
 ---
@@ -177,7 +177,7 @@ if engine.hookCatch == nil then
 
             local select = std.select
 
-            --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+            --- [SHARED AND MENU]
             ---
             --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
             ---
@@ -208,7 +208,7 @@ if engine.hookCatch == nil then
             end
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Adds a callback to the `hookCatch` event.
         ---
@@ -236,7 +236,7 @@ if engine.hookCatch == nil then
             end
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Calls a source engine event.
         ---
@@ -265,7 +265,7 @@ do
     ---@type integer
     local queue_size = 0
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calls a function on the next tick.
     ---
@@ -346,7 +346,7 @@ if LUA_CLIENT_SERVER then
         end
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets up garbage collection for the given table by type.
     ---
@@ -515,7 +515,7 @@ do
     local ConVarExists = _G.ConVarExists or debug_fempty
     local CreateConVar = _G.CreateConVar or debug_fempty
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
     ---
@@ -553,7 +553,7 @@ do
 
     engine.ConsoleVariables = console_variables
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Get console variable C object (userdata).
     ---
@@ -563,7 +563,7 @@ do
         return console_variables[ name ]
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Create console variable C object (userdata).
     ---
@@ -585,7 +585,7 @@ do
         return variable
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the console variable exists.
     ---
@@ -602,7 +602,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
     ---@type table<string, boolean>
     local exists_commands = {}
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the console command exists.
     ---
@@ -614,7 +614,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
 
     local AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Tells the engine to register a console command.
     ---
@@ -634,7 +634,7 @@ end
 
 if engine.consoleCommandRun == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Run console command.
     ---
@@ -688,7 +688,7 @@ do
     local cache = {}
     std.gc.setTableRules( cache, true, false )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Updates the color proxy with a new color.
     ---
@@ -760,7 +760,7 @@ do
     local utf8 = std.utf8
     local utf8_sub, utf8_len = utf8.sub, utf8.len
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Prints the given arguments to the console.
     ---
@@ -788,7 +788,7 @@ do
 
         local color_buffer = std.ColorProxy( 255, 255, 255, 255 )
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Prints the given arguments to the console.
         ---
@@ -1397,13 +1397,13 @@ end
 if engine.loadMaterial == nil then
 
     ---@alias dreamwork.engine.ImageParameters integer
-    ---| `1` Makes the created material a `VertexLitGeneric`, so it can be applied to models. Default shader is `UnlitGeneric`.
-    ---| `2` Sets the `$nocull` to `1` in the created material.
-    ---| `4` Sets the `$alphatest` to `1` in the created material instead of `$vertexalpha` being set to `1`.
-    ---| `8` Generates Mipmaps for the imported texture, or sets **No Level Of Detail** and **No Mipmaps** if unset. This adjusts the material's dimensions to a power of 2.
-    ---| `16` Makes the image able to tile when used with non standard UV maps. Sets the `CLAMPS` and `CLAMPT` flags if unset.
-    ---| `32` If set does nothing, if unset - enables **Point Sampling (Texture Filtering)** on the material as well as adds the **No Level Of Detail** flag to it.
-    ---| `64` If set, the material will be given `$ignorez` flag, which is necessary for some rendering operations, such as render targets and 3d2d rendering.
+    ---| 1 # Makes the created material a `VertexLitGeneric`, so it can be applied to models. Default shader is `UnlitGeneric`.
+    ---| 2 # Sets the `$nocull` to `1` in the created material.
+    ---| 4 # Sets the `$alphatest` to `1` in the created material instead of `$vertexalpha` being set to `1`.
+    ---| 8 # Generates Mipmaps for the imported texture, or sets **No Level Of Detail** and **No Mipmaps** if unset. This adjusts the material's dimensions to a power of 2.
+    ---| 16 # Makes the image able to tile when used with non standard UV maps. Sets the `CLAMPS` and `CLAMPT` flags if unset.
+    ---| 32 # If set does nothing, if unset - enables **Point Sampling (Texture Filtering)** on the material as well as adds the **No Level Of Detail** flag to it.
+    ---| 64 # If set, the material will be given `$ignorez` flag, which is necessary for some rendering operations, such as render targets and 3d2d rendering.
 
     local bitpack = std.bitpack
     local bitpack_toString = bitpack.toString
@@ -1434,7 +1434,7 @@ if engine.loadMaterial == nil then
 
         local bit2param_count = #bit2params
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Loads a material from the file.
         ---
@@ -1468,7 +1468,7 @@ if engine.loadMaterial == nil then
 
     else
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Loads a material from the file.
         ---

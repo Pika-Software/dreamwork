@@ -13,7 +13,7 @@ local string = std.string
 local string_len = string.len
 local string_byte = string.byte
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-8 checksum calculation object.
 ---
@@ -61,7 +61,7 @@ function CRC8:__init( poly, init, ref_in, ref_out, xor_out )
     self:reset()
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Resets checksum to the initial value.
 ---
@@ -100,7 +100,7 @@ do
         end
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Updates checksum with the specified string.
     ---
@@ -125,7 +125,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -145,7 +145,7 @@ function CRC8:digest()
     return bit_band( value, 0xFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-8 checksum calculation class.
 ---
@@ -159,7 +159,7 @@ end
 local CRC8Class = class.create( CRC8 )
 std.CRC8 = CRC8Class
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the CRC-8 checksum of the specified string.
 ---
@@ -174,7 +174,7 @@ function CRC8Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     return CRC8Class( poly, init, ref_in, ref_out, xor_out ):update( raw_str ):digest()
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-8 checksum class that uses MAXIM algorithm parameters.
 ---
@@ -183,7 +183,7 @@ function CRC8Class.MAXIM()
     return CRC8Class( 0x31, 0x00, true, true )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-8 checksum class that uses ROHC algorithm parameters.
 ---
@@ -192,7 +192,7 @@ function CRC8Class.ROHC()
     return CRC8Class( 0x07, 0xFF, true, true )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-8 checksum class that uses CDMA2000 algorithm parameters.
 ---
@@ -201,7 +201,7 @@ function CRC8Class.CDMA2000()
     return CRC8Class( 0x9B, 0xFF, false, false )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-16 checksum calculation object.
 ---
@@ -298,7 +298,7 @@ do
         end
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Updates checksum with the specified string.
     ---
@@ -323,7 +323,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -339,7 +339,7 @@ function CRC16:digest()
     return bit_band( value, 0xFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-16 checksum calculation class.
 ---
@@ -354,7 +354,7 @@ end
 local CRC16Class = class.create( CRC16 )
 std.CRC16 = CRC16Class
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the CRC-16 checksum of the specified string.
 ---
@@ -369,7 +369,7 @@ function CRC16Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     return CRC16Class( poly, init, ref_in, ref_out, xor_out ):update( raw_str ):digest()
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-16 checksum class that uses MAXIM algorithm parameters.
 ---
@@ -378,7 +378,7 @@ function CRC16Class.MAXIM()
     return CRC16Class( 0x8005, 0x0000, true, true )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-16 checksum class that uses XMODEM algorithm parameters.
 ---
@@ -387,7 +387,7 @@ function CRC16Class.XMODEM()
     return CRC16Class( 0x1021, 0x0000, false, false )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-16 checksum class that uses USB algorithm parameters.
 ---
@@ -396,7 +396,7 @@ function CRC16Class.USB()
     return CRC16Class( 0x8005, 0xFFFF, true, true, 0xFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum calculation object.
 ---
@@ -475,7 +475,7 @@ do
         end
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Updates checksum with the specified string.
     ---
@@ -500,7 +500,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
@@ -521,7 +521,7 @@ function CRC32:digest()
     return value % 0x100000000
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum calculation class.
 ---
@@ -541,7 +541,7 @@ do
     local engine_CRC32 = dreamwork.engine.CRC32
     local raw_tonumber = std.raw.tonumber
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calculates the CRC-32 checksum of the specified string.
     ---
@@ -583,7 +583,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses BZIP2 algorithm parameters.
 ---
@@ -592,7 +592,7 @@ function CRC32Class.BZIP2()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, false, false, 0xFFFFFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses Castagnoli/C algorithm parameters.
 ---
@@ -601,7 +601,7 @@ function CRC32Class.C()
     return CRC32Class( 0x1EDC6F41, 0xFFFFFFFF, true, true, 0xFFFFFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses D algorithm parameters.
 ---
@@ -610,7 +610,7 @@ function CRC32Class.D()
     return CRC32Class( 0xA833982B, 0xFFFFFFFF, true, true, 0xFFFFFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses JamCRC algorithm parameters.
 ---
@@ -619,7 +619,7 @@ function CRC32Class.JAMCRC()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, true, true, 0x00000000 )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses MPEG-2 algorithm parameters.
 ---
@@ -628,7 +628,7 @@ function CRC32Class.MPEG2()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, false, false, 0x00000000 )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses POSIX algorithm parameters.
 ---
@@ -637,7 +637,7 @@ function CRC32Class.POSIX()
     return CRC32Class( 0x04C11DB7, 0x00000000, false, false, 0xFFFFFFFF )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses Q algorithm parameters.
 ---
@@ -646,7 +646,7 @@ function CRC32Class.Q()
     return CRC32Class( 0x814141AB, 0x00000000, false, false, 0x00000000 )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum class that uses XFER algorithm parameters.
 ---

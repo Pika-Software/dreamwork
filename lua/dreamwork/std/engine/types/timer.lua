@@ -30,7 +30,7 @@ local timer_Adjust = timer.Adjust
 ---| `1` # Timer paused.
 ---| `2` # Timer running.
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The timer object.
 ---
@@ -49,7 +49,7 @@ local timer_Adjust = timer.Adjust
 ---@field start_time number The start time of the timer in seconds. **Read-only.**
 local Timer = std.class.base( "Timer", true )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The timer class.
 ---
@@ -102,7 +102,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the timer object is stopped.
 ---
@@ -111,7 +111,7 @@ function Timer:isStopped()
     return self.state == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the timer object is paused.
 ---
@@ -120,7 +120,7 @@ function Timer:isPaused()
     return self.state == 1
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the timer object is running.
 ---
@@ -389,7 +389,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Attaches a callback to the timer object.
 ---
@@ -438,7 +438,7 @@ do
 
     local debug_fempty = std.debug.fempty
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Detaches a callback from the timer object.
     ---
@@ -477,7 +477,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Detaches all callbacks from the timer object.
 ---
@@ -490,7 +490,7 @@ do
 
     local timer_Start = timer.Start
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Starts/restarts the timer object.
     ---
@@ -516,7 +516,7 @@ do
 
     local timer_Stop = timer.Stop
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Stops the timer object.
     ---
@@ -547,7 +547,7 @@ do
 
     local timer_Pause = timer.Pause
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Pauses the timer object.
     ---
@@ -568,7 +568,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Resumes/unpauses the timer object.
 ---

@@ -16,7 +16,7 @@ local utf8 = std.utf8
 local utf8_char = utf8.char
 local utf8_unpack = utf8.unpack
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The unicode library provides functions for the manipulation of unicode encoded UTF-8 strings.
 ---
@@ -28,7 +28,7 @@ local unicode = {
 
 std.unicode = unicode
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a string representation of the given unicode codepoint.
 ---
@@ -38,7 +38,7 @@ function unicode.tag( utf8_codepoint )
     return string_format( utf8_codepoint > 0xFFFF and "U+%06X" or "U+%04X", utf8_codepoint )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the unicode codepoint represented by the given string.
 ---
@@ -48,7 +48,7 @@ function unicode.untag( utf8_tag )
     return raw_tonumber( string_sub( utf8_tag, 3 ), 16 )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts each character in the input string into a Unicode escape sequence
 --- (`\uXXXX` or `\u{XXXX}`), suitable for serialization, logging, or safe ASCII output.
@@ -88,7 +88,7 @@ do
         return utf8_char( raw_tonumber( hex_str, 16 ) )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts Unicode escape sequences (such as `\uXXXX` or `\u{XXXX}`) into actual characters.
     --- Supports both fixed-length and variable-length Unicode escape formats.

@@ -4,7 +4,7 @@ if dofile == nil then
 end
 
 if dreamwork == nil then
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Lua runtime and package manager.
     ---
@@ -64,7 +64,7 @@ std.LUA_MENU_SERVER = LUA_MENU_SERVER
 local LUA_CLIENT_SERVER = LUA_CLIENT or LUA_SERVER
 std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If object does not have a metatable, returns `nil`.
 ---
@@ -77,7 +77,7 @@ std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 ---@type fun(object: any): dreamwork.Metatable | nil
 std.getmetatable = getmetatable
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the metatable for the given table.
 ---
@@ -123,7 +123,7 @@ do
 
     local raw_tostring = raw.tostring
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Receives a value of any type and converts it to a string in a human-readable format.
     ---
@@ -173,7 +173,7 @@ if std.getfenv == nil then
     ---@diagnostic disable-next-line: undefined-global
     local _G = _G or _ENV
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the current environment in use by the function.
     ---
@@ -226,7 +226,7 @@ if std.setfenv == nil then
     local debug_getf = debug.getf
     local raw_type = raw.type
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets the environment of the specified function.
     ---
@@ -269,7 +269,7 @@ if isTable == nil then
 
     local raw_type = raw.type
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks whether the value is a `table`.
     ---
@@ -287,7 +287,7 @@ std.isTable = isTable
 dofile( "dreamwork/std/jit.lua" )
 sendfile( "dreamwork/std/jit.lua" )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the length of the given value.
 ---
@@ -303,7 +303,7 @@ function std.len( value )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a string representation of the given value.
 ---
@@ -321,7 +321,7 @@ end
 
 std.represent = represent
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the hash of the given value.
 ---
@@ -337,7 +337,7 @@ function std.hash( value )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If `e` has a metamethod `__tonumber`, calls it with `e` and `base` as arguments and returns its result.
 ---
@@ -360,7 +360,7 @@ function std.tonumber( e, base )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If `e` has a metamethod `__toboolean`, calls it with `e` as argument and returns its result.
 ---
@@ -380,7 +380,7 @@ end
 -- Alias for lazy developers
 std.tobool = std.toboolean
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If `value` has a metamethod `__tocolor`, calls it with `value` as argument and returns its result.
 ---
@@ -398,7 +398,7 @@ function std.tocolor( value )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the value is valid.
 ---
@@ -417,7 +417,7 @@ do
 
     local raw_next = raw.next
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
     ---
@@ -439,7 +439,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
 ---
@@ -469,7 +469,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the next value in the table `t`, with the given `index`.
     ---
@@ -491,7 +491,7 @@ do
 
     local raw_ipairs = raw.ipairs
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns three values (an iterator function, the table `t`, and `0`) so that the construction
     --- ```lua
@@ -526,7 +526,7 @@ local math = std.math
 local math_min = math.min
 local math_relative = math.relative
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The global environment table (outside of DreamWork).
 ---
@@ -576,7 +576,7 @@ local string_char, string_byte = string.char, string.byte
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the value of the given key path.
     ---
@@ -648,7 +648,7 @@ do
         return tbl
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets the value of the given key path.
     ---
@@ -763,7 +763,7 @@ do
 
     local debub_getmetatable = debug.getmetatable
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the value is a class.
     ---
@@ -777,7 +777,7 @@ do
 
     local isInherited = std.class.isInherited
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the value is an instance of the given parent.
     ---
@@ -843,7 +843,7 @@ do
     local timer_Simple = timer.Simple
     local table_unpack = table.unpack
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calls the `fn` function after `delay` seconds.
     ---
@@ -892,7 +892,7 @@ do
         [ 0x27 ] = "\\\'"
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Escapes special characters in a string.
     ---
@@ -970,7 +970,7 @@ do
         [ 0x27 ] = "\'"
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Unescapes special characters in a string.
     ---
@@ -1103,7 +1103,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Runs a benchmark on the given function, measuring the time it takes to execute a specified number of iterations.
     ---
@@ -1173,7 +1173,7 @@ do
 
         Nil.__len = Nil.__tonumber
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is `nil`.
         ---
@@ -1217,7 +1217,7 @@ do
             return 1
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is `boolean`.
         ---
@@ -1279,7 +1279,7 @@ do
 
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is a `number`.
         ---
@@ -1315,7 +1315,7 @@ do
         String.__tonumber = raw.tonumber
         String.__len = string.len
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is a `string`.
         ---
@@ -1346,7 +1346,7 @@ do
 
         Function.__type = "function"
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is a `function`.
         ---
@@ -1356,7 +1356,7 @@ do
             return debug_getmetatable( value ) == Function
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks if the value is callable, basically it's a function or a table with a callable `__call` metamethod.
         ---
@@ -1388,7 +1388,7 @@ do
 
         Thread.__type = "thread"
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is a `thread`.
         ---
@@ -1489,7 +1489,7 @@ do
 
     local string_hasPrefix = string.hasPrefix
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the value of the key in a table.
     ---
@@ -1514,7 +1514,7 @@ do
     local debug_getinfo = debug.getinfo
     local raw_type = raw.type
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a string representing the name of the type of the passed object.
     ---
@@ -1528,7 +1528,7 @@ do
 
     std.type = type
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Validates the type of the argument and returns a boolean and an error message.
     ---
@@ -1590,7 +1590,7 @@ do
             return nil
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Overloads the given function with the given inputs.
         ---
@@ -1636,7 +1636,7 @@ do
 
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Overloads the given function with the given inputs.
     ---
@@ -1711,7 +1711,7 @@ do
     local CompileString = _G.CompileString
     local getfenv, setfenv = std.getfenv, std.setfenv
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Loads a string as
     --- a lua code chunk in the specified environment
@@ -1748,7 +1748,7 @@ do
 
     local empty_env = {}
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a function that accepts a variable
     --- number of arguments and returns them in
@@ -1842,7 +1842,7 @@ do
     local string_match = string.match
     local string_rep = string.rep
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Throws an error with the specified message and level.
     ---
@@ -1891,7 +1891,7 @@ do
 
     std.error = std_error
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Throws an error with the specified message and level.
     ---
@@ -1903,7 +1903,7 @@ do
         return std_error( string_format( fmt, ... ), (stack_level or 1) + 1, dont_break )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Throws an error if the given expression is false.
     ---
@@ -1922,7 +1922,7 @@ do
 
     local engine_consoleMessage = engine.consoleMessage
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Prints the given arguments to the console.
     ---
@@ -1945,7 +1945,7 @@ do
         end
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Prints a formatted string to the console.
     ---
@@ -1964,7 +1964,7 @@ do
         local color_fromHex = std.color.fromHex
         local tocolor = std.tocolor
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Prints the given arguments to the console with colors!
         ---
@@ -1994,7 +1994,7 @@ do
 
         -- TODO: rewrite function below with goto
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Prints a formatted string to the console with colors!
         ---
@@ -2170,7 +2170,7 @@ sendfile( "dreamwork/std/codec/vdf.lua" )
 dofile( "dreamwork/std/types/url.lua" )
 sendfile( "dreamwork/std/types/url.lua" )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A collection of cryptographic utilities.
 ---
@@ -2334,7 +2334,7 @@ local console = std.console
 
 if os.exit == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calls the ISO C function exit to terminate the host program.
     ---
@@ -2560,7 +2560,7 @@ do
         end
     else
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Loads a string as
         --- a bytecode chunk in the specified environment
@@ -2645,7 +2645,7 @@ if LUA_CLIENT then
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the value of the process environment variable varname or fail if the variable is not defined.
 ---
@@ -2655,7 +2655,7 @@ function os.getenv( key )
     return ""
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 ---
 ---
@@ -2666,7 +2666,7 @@ function std.import( package_name, package_version )
     -- TODO: implement
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Opens the named file and executes its content as a Lua chunk.
 ---
@@ -2683,7 +2683,7 @@ function std.dofile( file_path, ... )
     -- TODO: reimplement
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Loads the given module, returns any value returned by the searcher(`true` when `nil`). Besides that value, also returns as a second result the loader data returned by the searcher, which indicates how `require` found the module. (For instance, if the module came from a file, this loader data is the file path.)
 ---

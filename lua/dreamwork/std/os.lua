@@ -3,7 +3,7 @@ local std = dreamwork.std
 
 local debug = std.debug
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- This library is implemented through table `os`.
 ---

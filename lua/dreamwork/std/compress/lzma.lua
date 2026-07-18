@@ -4,7 +4,7 @@ local std = dreamwork.std
 local pack_readUInt32 = std.buffer.readUInt32
 local glua_util = util
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The lzma format is a lossless data compression algorithm that is used to compress large files.
 ---
@@ -16,7 +16,7 @@ std.lzma = lzma
 lzma.compress = glua_util.Compress or function() return "" end
 lzma.decompress = glua_util.Decompress or lzma.compress
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the decompressed size of the given string.
 ---

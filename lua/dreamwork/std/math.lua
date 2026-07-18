@@ -8,7 +8,7 @@ local len = std.len
 local debug = std.debug
 local debug_getmetavalue = debug.getmetavalue
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The powerful math library.
 ---
@@ -99,7 +99,7 @@ if math.atan == nil then
 
     local math_atan51 = math.atan51
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the arc tangent of y/x.
     ---@param y number The y coordinate.
@@ -123,7 +123,7 @@ if math.frexp == nil then
 
     local math_ln2 = math.ln2
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns `m` and `e` such that `x = m2e`, `e` is an integer and the absolute value of `m` is in the range ((0.5, 1) (or zero when x is zero).
     ---
@@ -160,7 +160,7 @@ end
 
 if math.ldexp == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Takes a normalised number and returns the floating point representation.
     ---
@@ -202,7 +202,7 @@ if std.debug.getmetatable( math ) == nil then
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is a byte (8-bit).
 ---
@@ -219,7 +219,7 @@ function math.isbyte( x, signed )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is a short integer (16-bit).
 ---
@@ -236,7 +236,7 @@ function math.isshort( x, signed )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is a long integer (32-bit).
 ---
@@ -253,7 +253,7 @@ function math.islong( x, signed )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is an unsigned integer.
 ---
@@ -263,7 +263,7 @@ function math.isuint( x )
     return x >= 0 and (x % 1) == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is an signed integer.
 ---
@@ -273,7 +273,7 @@ function math.isint( x )
     return (x % 1) == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is a float (32-bit).
 ---
@@ -283,7 +283,7 @@ function math.isfloat( x )
     return (x % 1) ~= 0 and x >= 1.175494351E-38 and x <= 3.402823466E+38
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is a double.
 ---
@@ -293,7 +293,7 @@ function math.isdouble( x )
     return (x % 1) ~= 0 and (x < 1.175494351E-38 or x > 3.402823466E+38)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is positive or negative infinity.
 ---
@@ -303,7 +303,7 @@ function math.isinf( x )
     return x == math_huge or x == math_tiny
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is NaN.
 ---
@@ -313,7 +313,7 @@ function math.isnan( x )
     return x ~= x
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is finite.
 ---
@@ -323,7 +323,7 @@ function math.isfinite( x )
     return x ~= math_huge and x ~= math_tiny and x == x
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is divisible by another number without remainder.
 ---
@@ -334,7 +334,7 @@ function math.isdivideable( a, b )
     return (a % b) == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is even.
 ---
@@ -344,7 +344,7 @@ function math.iseven( x )
     return x == 0 or (x % 2) == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is odd.
 ---
@@ -354,7 +354,7 @@ function math.isodd( x )
     return x ~= 0 and (x % 2) ~= 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is positive.
 ---
@@ -364,7 +364,7 @@ function math.ispositive( x )
     return (1 / x) > 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is negative.
 ---
@@ -374,7 +374,7 @@ function math.isnegative( x )
     return (1 / x) < 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Rounds the given value to the nearest whole number or to the given decimal places.
 ---
@@ -390,7 +390,7 @@ function math.round( number, decimals )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the smallest integer greater than or equal to the given number.
 ---
@@ -405,7 +405,7 @@ do
 
     local math_ceil = math.ceil
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the integer part of the given number.
     ---
@@ -417,7 +417,7 @@ do
 
     math.trunc = math_trunc
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Splits a number into its integer and fractional parts.
     ---
@@ -430,7 +430,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the natural logarithm of the given number.
 ---
@@ -444,7 +444,7 @@ do
 
     local math_ln2 = math.ln2
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the base 2 logarithm of the given number.
     ---
@@ -460,7 +460,7 @@ do
 
     local math_random = math.random
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a random floating point number in the range [a, b).
     ---
@@ -475,7 +475,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the square root of the sum of squares of its arguments.
     ---
@@ -497,7 +497,7 @@ do
 
     local one_third = 1 / 3
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the cube root of the given number.
     ---
@@ -509,7 +509,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the root of a given number with a given base.
 ---
@@ -520,7 +520,7 @@ function math.root( a, b )
     return a ^ (1 / b)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Gradually approaches the target value by the specified amount.
 ---
@@ -537,7 +537,7 @@ function math.approach( current, target, change )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Clamps a number between a minimum and maximum value.
 ---
@@ -549,7 +549,7 @@ function math.clamp( number, min, max )
     return math_min( math_max( number, min ), max )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Performs a linear interpolation from the start number to the end number.
 ---
@@ -561,7 +561,7 @@ function math.lerp( fraction, from, to )
     return from + (to - from) * fraction
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Performs an inverse linear interpolation from the start number to the end number.
 ---
@@ -573,7 +573,7 @@ function math.ilerp( result, from, to )
     return (result - from) / (to - from)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Performs a smooth interpolation from the start number to the end number.
 ---
@@ -585,7 +585,7 @@ function math.smooth( previous, next, alpha )
     return alpha * next + (1 - alpha) * previous
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Remaps a number from one range to another.
 ---
@@ -599,7 +599,7 @@ function math.remap( number, inMin, inMax, outMin, outMax )
     return outMin + (outMax - outMin) * (number - inMin) / (inMax - inMin)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a number is in a range.
 ---
@@ -616,7 +616,7 @@ do
     local math_atan = math.atan
     local math_deg = math.deg
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calculates the angle between two points.
     ---
@@ -631,7 +631,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the normalised angle between two points.
 ---
@@ -643,7 +643,7 @@ end
 
 math.angleNormalize = angleNormalize
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the difference between two angles.
 ---
@@ -659,7 +659,7 @@ function math.angleDifference( a, b )
     return diff - 360
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the magnitude (distance) between two points.
 ---
@@ -674,7 +674,7 @@ end
 
 math.magnitude = magnitude
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the direction between two points.
 ---
@@ -693,7 +693,7 @@ function math.direction( x1, y1, x2, y2 )
     return (x2 - x1) / diff, (y2 - y1) / diff
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the euclidean modulus.
 ---
@@ -709,7 +709,7 @@ function math.euclideanMod( numerator, denominator )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if two floating point numbers are nearly equal.
 ---
@@ -723,7 +723,7 @@ function math.isNear( a, b, tolerance )
     return math_abs( a - b ) <= (tolerance or 1e-8)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns x with the same sign as y.
 ---
@@ -736,7 +736,7 @@ function math.copySign( x, y )
     return ((1 / x) > 0) == ((1 / y) > 0) and x or -x
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts an integer with a sign to an unsigned integer.
 ---
@@ -748,7 +748,7 @@ function math.toUInt( x, bit_count )
     return x % (2 ^ bit_count)
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts an signed integer with a sign to an integer.
 ---
@@ -767,7 +767,7 @@ function math.toInt( x, bit_count )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts a number to a 32-bit unsigned integer.
 ---
@@ -778,7 +778,7 @@ function math.toUInt32( x )
     return x % 0x100000000
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts a number to a 32-bit signed integer.
 ---
@@ -795,7 +795,7 @@ function math.toInt32( x )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts a number to a float32.
 ---
@@ -805,7 +805,7 @@ function math.toFloat32( number )
     return math_floor( (number * 1e+06) + 0.5 ) * 1e-06
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a function that bucketizes a number.
 ---
@@ -819,7 +819,7 @@ function math.bucketize( y )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Translate a relative position, negative means back from end.
 ---
@@ -839,7 +839,7 @@ do
 
     local math_log10 = math.log10
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the length of the integer.
     ---
@@ -855,7 +855,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the floor division of two numbers.
 ---
@@ -890,7 +890,7 @@ do
     local n1 = 7.5625
     local d1 = 2.75
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- The math easing functions.
     ---
@@ -898,7 +898,7 @@ do
     local ease = {}
     math.ease = ease
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in using `math.sin`.
     ---
@@ -908,7 +908,7 @@ do
         return 1 - math_cos( (fraction * math_pi) * 0.5 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out using `math.sin`.
     ---
@@ -918,7 +918,7 @@ do
         return math_sin( (fraction * math_pi) * 0.5 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out using `math.sin`.
     ---
@@ -928,7 +928,7 @@ do
         return -(math_cos( math_pi * fraction ) - 1) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in by squaring the fraction.
     ---
@@ -938,7 +938,7 @@ do
         return fraction ^ 2
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out by squaring the fraction.
     ---
@@ -948,7 +948,7 @@ do
         return 1 - (1 - fraction) * (1 - fraction)
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out by squaring the fraction.
     ---
@@ -959,7 +959,7 @@ do
             or 1 - ((-2 * fraction + 2) ^ 2) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in by cubing the fraction.
     ---
@@ -969,7 +969,7 @@ do
         return fraction ^ 3
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out by cubing the fraction.
     ---
@@ -979,7 +979,7 @@ do
         return 1 - ((1 - fraction) ^ 3)
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out by cubing the fraction.
     ---
@@ -990,7 +990,7 @@ do
             or 1 - ((-2 * fraction + 2) ^ 3) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in by raising the fraction to the power of 4.
     ---
@@ -1000,7 +1000,7 @@ do
         return fraction ^ 4
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out by raising the fraction to the power of 4.
     ---
@@ -1010,7 +1010,7 @@ do
         return 1 - ((1 - fraction) ^ 4)
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out by raising the fraction to the power of 4.
     ---
@@ -1021,7 +1021,7 @@ do
             or 1 - ((-2 * fraction + 2) ^ 4) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in by raising the fraction to the power of 5.
     ---
@@ -1031,7 +1031,7 @@ do
         return fraction ^ 5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out by raising the fraction to the power of 5.
     ---
@@ -1041,7 +1041,7 @@ do
         return 1 - ((1 - fraction) ^ 5)
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out by raising the fraction to the power of 5.
     ---
@@ -1052,7 +1052,7 @@ do
             or 1 - ((-2 * fraction + 2) ^ 5) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in using an exponential equation with a base of 2 and where the fraction is used in the exponent.
     ---
@@ -1062,7 +1062,7 @@ do
         return fraction == 0 and 0 or (2 ^ (10 * fraction - 10))
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out using an exponential equation with a base of 2 and where the fraction is used in the exponent.
     ---
@@ -1072,7 +1072,7 @@ do
         return fraction == 1 and 1 or 1 - (2 ^ (-10 * fraction))
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out using an exponential equation with a base of 2 and where the fraction is used in the exponent.
     ---
@@ -1084,7 +1084,7 @@ do
             or fraction < 0.5 and (2 ^ (20 * fraction - 10)) * 0.5 or (2 - (2 ^ (-20 * fraction + 10))) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in using a circular function.
     ---
@@ -1094,7 +1094,7 @@ do
         return 1 - math_sqrt( 1 - (fraction ^ 2) )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out using a circular function.
     ---
@@ -1104,7 +1104,7 @@ do
         return math_sqrt( 1 - ((fraction - 1) ^ 2) )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out using a circular function.
     ---
@@ -1115,7 +1115,7 @@ do
             or (math_sqrt( 1 - ((-2 * fraction + 2) ^ 2) ) + 1) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in by reversing the direction of the ease slightly before returning.
     ---
@@ -1125,7 +1125,7 @@ do
         return c3 * fraction ^ 3 - c1 * fraction ^ 2
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out by reversing the direction of the ease slightly before finishing.
     ---
@@ -1135,7 +1135,7 @@ do
         return 1 + c3 * ((fraction - 1) ^ 3) + c1 * ((fraction - 1) ^ 2)
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out by reversing the direction of the ease slightly before returning on both ends.
     ---
@@ -1146,7 +1146,7 @@ do
             or (((2 * fraction - 2) ^ 2) * ((c2 + 1) * (fraction * 2 - 2) + c2) + 2) * 0.5
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in like a rubber band.
     ---
@@ -1158,7 +1158,7 @@ do
             or -(2 ^ (10 * fraction - 10)) * math_sin( (fraction * 10 - 10.75) * c4 )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out like a rubber band.
     ---
@@ -1169,7 +1169,7 @@ do
             or (2 ^ (-10 * fraction)) * math_sin( (fraction * 10 - 0.75) * c4 ) + 1
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out like a rubber band.
     ---
@@ -1181,7 +1181,7 @@ do
             or ((2 ^ (-20 * fraction + 10)) * math_sin( (20 * fraction - 11.125) * c5 )) * 0.5 + 1
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases out like a bouncy ball.
     ---
@@ -1202,7 +1202,7 @@ do
         end
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in like a bouncy ball.
     ---
@@ -1214,7 +1214,7 @@ do
 
     ease.bounceOut = ease_bounceOut
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Eases in and out like a bouncy ball.
     ---

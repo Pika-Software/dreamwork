@@ -22,7 +22,7 @@ local bytepack = std.bytepack
 local bytepack_readUInt32 = bytepack.readUInt32
 local bytepack_writeUInt32 = bytepack.writeUInt32
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- SHA1 object.
 ---
@@ -30,7 +30,7 @@ local bytepack_writeUInt32 = bytepack.writeUInt32
 ---@field __class dreamwork.std.crypto.SHA1Class
 local SHA1 = std.class.base( "SHA1" )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- SHA1 class that computes a cryptographic 160-bit hash value.
 ---
@@ -94,7 +94,7 @@ local function blk( block, index )
     return value
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Perform a single SHA1 transformation.
 ---
@@ -539,7 +539,7 @@ else
 
     local base16_decode = std.base16.decode
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Computes the SHA1 digest of the given input string.
     ---

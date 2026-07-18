@@ -21,7 +21,7 @@ local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The table library is a standard Lua library which provides functions to manipulate tables.
 ---
@@ -53,7 +53,7 @@ if table.pack == nil then
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Inserts a value into a table at the specified index.
 ---
@@ -114,7 +114,7 @@ end
 
 if table.move == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Moves elements from one table to another.
     ---
@@ -169,7 +169,7 @@ do
 
     local table_unpack = table.unpack
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a shallow copy of the given table.
     ---
@@ -183,7 +183,7 @@ do
         return { table_unpack( tbl ) }
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a range of elements from the given table.
     ---
@@ -220,7 +220,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a slice of the given table.
 ---
@@ -265,7 +265,7 @@ end
 
 table.sub = table.slice
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Truncates the given table.
 ---
@@ -283,7 +283,7 @@ function table.truncate( tbl, new_length, tbl_length )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a truncated copy of the given table.
 ---
@@ -305,7 +305,7 @@ function table.truncated( tbl, tbl_length )
     return truncated
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Injects values from one table to another.
 ---
@@ -371,7 +371,7 @@ function table.inject( destination, source, offset, start_position, end_position
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Ejects selected range of values from the given table.
 ---
@@ -420,7 +420,7 @@ function table.eject( tbl, start_position, end_position, tbl_length )
     return values, values_length
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given table is empty.
 ---
@@ -430,7 +430,7 @@ function table.isEmpty( tbl )
     return next( tbl ) == nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the index of the value in the given table.
 ---
@@ -451,7 +451,7 @@ function table.getIndex( tbl, searchable, tbl_length )
     return nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the key of the value in the given table.
 ---
@@ -475,7 +475,7 @@ function table.getKey( tbl, searchable )
     return nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns list (table) of keys and length of this list.
 ---
@@ -496,7 +496,7 @@ function table.keys( tbl )
     return keys, key_count
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns list (table) of values and length of this list.
 ---
@@ -517,7 +517,7 @@ function table.values( tbl )
     return values, value_count
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the count of keys in the given table.
 ---
@@ -535,7 +535,7 @@ function table.count( tbl )
     return key_count
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Flips the keys with values in the given list (table).
 ---
@@ -555,7 +555,7 @@ function table.flip( tbl )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a flipped version of the given table.
 ---
@@ -584,7 +584,7 @@ end
 ---@field [1] K The key of the pair.
 ---@field [2] V The value of the pair.
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the list (table) of key/value pairs and length of this list.
 ---
@@ -605,7 +605,7 @@ function table.pairs( tbl )
     return result, result_length
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given table is sequential.
 ---
@@ -627,7 +627,7 @@ function table.isSequential( tbl )
     return true
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Empties the indexes of the given table.
 ---
@@ -640,7 +640,7 @@ function table.clearIndexes( tbl, tbl_length )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Empties the keys of the given table.
 ---
@@ -654,7 +654,7 @@ function table.clearKeys( tbl )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Shuffles the given table.
 ---
@@ -674,7 +674,7 @@ function table.shuffle( tbl, tbl_length )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a random index and its value from the given sequential table.
 ---
@@ -698,7 +698,7 @@ function table.randomVI( tbl, tbl_length )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a random key and its value from the given table.
 ---
@@ -730,7 +730,7 @@ function table.randomVK( tbl )
     return value, key
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Reverses all indexes in the given table.
 ---
@@ -766,7 +766,7 @@ function table.reverse( tbl, tbl_length )
     return tbl, tbl_length - 1
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a reversed by indexes copy of the given table.
 ---
@@ -805,7 +805,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new table, filled with the given value and size.
     ---
@@ -830,7 +830,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Extracts selected range of values from the table.
 ---
@@ -873,7 +873,7 @@ function table.extract( tbl, start_position, end_position, step_size, tbl_length
     return extracted, extracted_length
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Applies a function to each value of the table.
 ---
@@ -909,7 +909,7 @@ do
 
     local pairs = std.pairs
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Applies a function to each key/value pair of the table.
     ---
@@ -933,7 +933,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a provided function once for each table value.
 ---
@@ -955,7 +955,7 @@ do
 
     local table_remove = table.remove
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Removes a value from the given table by its value.
     ---
@@ -975,7 +975,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Removes a range of values from the given table.
 ---
@@ -1018,7 +1018,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a shallow copy of the given table.
     ---

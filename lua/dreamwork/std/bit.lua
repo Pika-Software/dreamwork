@@ -12,7 +12,7 @@ local debug_getmetavalue = debug.getmetavalue
 
 local math = std.math
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The bit library.
 ---
@@ -43,7 +43,7 @@ if bit.tohex == nil then
 
     local string_format = std.string.format
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the hexadecimal representation of the number with the specified digits.
     ---
@@ -58,7 +58,7 @@ end
 
 if bit.tobit == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Normalizes the specified value and clamps it in the range of a signed 32bit integer.
     ---
@@ -81,7 +81,7 @@ local bit_tobit = bit.tobit
 
 if bit.arshift == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number `x` shifted `disp` bits to the right.
     ---
@@ -122,7 +122,7 @@ do
 
     local bit_lshift = bit.lshift
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number `x` shifted `disp` bits to the left.
     ---
@@ -175,7 +175,7 @@ do
 
     local bit_rshift = bit.rshift
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number `x` shifted `disp` bits to the right.
     ---
@@ -214,7 +214,7 @@ end
 
 if bit.bswap == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Swaps the byte order of a 32-bit integer.
     ---
@@ -246,7 +246,7 @@ do
 
     local bit_bnot = bit.bnot
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the bitwise NOT ( negation ) of `x`.
     ---
@@ -308,7 +308,7 @@ do
 
     local bit_band = bit.band
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the bitwise AND of all provided values.
     ---
@@ -371,7 +371,7 @@ do
 
     local bit_bor = bit.bor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the bitwise OR of all provided values.
     ---
@@ -439,7 +439,7 @@ do
 
     local bit_bxor = bit.bxor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the bitwise XOR of all provided numbers.
     ---
@@ -483,7 +483,7 @@ local bit_band, bit_bor = bit.band, bit.bor
 
 if bit.lrotate == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number `x` rotated `disp` bits to the left.
     ---
@@ -506,7 +506,7 @@ end
 
 if bit.rrotate == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number `x` rotated `disp` bits to the right.
     ---
@@ -531,7 +531,7 @@ end
 
 if bit.countlz == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number of consecutive zero bits in the 32-bit representation of the provided number starting from the left-most (most significant) bit.
     ---
@@ -561,7 +561,7 @@ end
 
 if bit.countrz == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the number of consecutive zero bits in the 32-bit representation of the provided number starting from the right-most (least significant) bit.
     ---
@@ -588,7 +588,7 @@ end
 
 if bit.extract == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the unsigned number formed by the bits `field` to `field + width - 1` from `n`.
     ---
@@ -612,7 +612,7 @@ if bit.replace == nil then
 
     local bit_bnot = bit.bnot
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a copy of `n` with the bits `field` to `field + width - 1` replaced by the value `v`.
     ---
@@ -632,7 +632,7 @@ end
 
 if bit.btest == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a boolean signalling whether the bitwise and of its operands is different from zero.
     ---
@@ -647,7 +647,7 @@ end
 
 if bit.byteswap == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the given number with the order of the bytes swapped.
     ---
@@ -664,7 +664,7 @@ if bit.byteswap == nil then
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Reverses the bits of the specified value.
 ---
@@ -685,7 +685,7 @@ end
 
 local bit_bxor = bit.bxor
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the result of a ternary operation.
 ---
@@ -697,7 +697,7 @@ function bit.ternary( a, b, c )
     return bit_bxor( c, bit_band( a, bit_bxor( b, c ) ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the result of a majority operation.
 ---
@@ -709,7 +709,7 @@ function bit.majority( a, b, c )
     return bit_bor( bit_band( a, bit_bor( b, c ) ), bit_band( b, c ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the sign of an integer.
 ---
@@ -723,7 +723,7 @@ function bit.sign( x )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the unsigned value of an integer.
 ---

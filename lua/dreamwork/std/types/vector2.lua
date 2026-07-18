@@ -18,7 +18,7 @@ local raw = std.raw
 local raw_index = raw.index
 local raw_get, raw_set = raw.get, raw.set
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A 2D vector object.
 ---
@@ -43,7 +43,7 @@ do
 
     local debug_getmetatable = std.debug.getmetatable
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is a `Vector2`.
     ---
@@ -55,7 +55,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A 2D vector class.
 ---
@@ -123,7 +123,7 @@ function Vector2:__deserialize( reader )
     self[ 2 ] = reader:readFloat()
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the x and y coordinates of the vector.
 ---
@@ -133,7 +133,7 @@ function Vector2:unpack()
     return self[ 1 ], self[ 2 ]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the x and y coordinates of the vector.
 ---
@@ -144,7 +144,7 @@ function Vector2:setUnpacked( x, y )
     self[ 2 ] = math_toFloat32( y )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Creates a copy of the vector.
 ---
@@ -156,7 +156,7 @@ end
 
 Vector2.copy = Vector2_copy
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Negates the vector.
 ---
@@ -172,7 +172,7 @@ function Vector2:__unm()
     return setmetatable( { -self[ 1 ], -self[ 2 ] }, Vector2 )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Scales the vector.
 ---
@@ -196,7 +196,7 @@ end
 
 Vector2.scale = Vector2_scale
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a scaled copy of the vector.
 ---
@@ -208,7 +208,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Adds the vector to another vector.
     ---
@@ -243,7 +243,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Subtracts the vector from another vector.
     ---
@@ -278,7 +278,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Multiplies the vector by another vector or a number.
     ---
@@ -313,7 +313,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Divides the vector by another vector or a number.
     ---
@@ -347,7 +347,7 @@ function Vector2:__eq( vector )
     return self[ 1 ] == vector[ 1 ] and self[ 2 ] == vector[ 2 ]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the distance between two vectors.
 ---
@@ -359,7 +359,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calculates the squared length of the vector.
     ---
@@ -371,7 +371,7 @@ do
 
     Vector2.getLengthSqr = Vector2_getLengthSqr
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Calculates the length of the vector.
     ---
@@ -383,7 +383,7 @@ do
 
     Vector2.getLength = Vector2_getLength
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Normalizes the vector.
     ---
@@ -400,7 +400,7 @@ do
 
     Vector2.normalize = Vector2_normalize
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a normalized copy of the vector.
     ---
@@ -411,7 +411,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the vector is zero.
 ---
@@ -420,7 +420,7 @@ function Vector2:isZero()
     return self[ 1 ] == 0 and self[ 2 ] == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the vector to zero.
 ---
@@ -431,7 +431,7 @@ function Vector2:zero()
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the dot product of two vectors.
 ---
@@ -441,7 +441,7 @@ function Vector2:dot( vector )
     return (self[ 1 ] * vector[ 1 ]) + (self[ 2 ] * vector[ 2 ])
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Calculates the cross product of two vectors.
 ---
@@ -451,7 +451,7 @@ function Vector2:cross( vector )
     return (self[ 1 ] * vector[ 2 ]) - (self[ 2 ] * vector[ 1 ])
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the angle of the vector.
 ---
@@ -468,7 +468,7 @@ end
 
 Vector2.getAngle = Vector2_getAngle
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Linear interpolation between two vectors.
 ---
@@ -484,7 +484,7 @@ end
 
 Vector2.lerpToVector = Vector2_lerpToVector
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Linear interpolation between two vectors.
 ---
@@ -495,7 +495,7 @@ function Vector2:getLerpedToVector( vector, frac )
     return Vector2_lerpToVector( Vector2_copy( self ), vector, frac )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Linear interpolation between vector and number.
 ---
@@ -511,7 +511,7 @@ end
 
 Vector2.lerpToNumber = Vector2_lerpToNumber
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Linear interpolation between vector and number.
 ---

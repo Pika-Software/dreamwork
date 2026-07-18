@@ -15,7 +15,7 @@ local Hook = std.Hook
 local console = std.console
 local console_Variable = console.Variable
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The game's server library.
 ---
@@ -44,7 +44,7 @@ if server.getGamemodeName == nil then
 
     local gamemode_name = (glua_engine.ActiveGamemode or debug_fempty)() or "base"
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Gets the name of the active gamemode.
     ---
@@ -145,7 +145,7 @@ if server.getGamemodeName == nil then
 
     if server.getGamemodeTitle == nil then
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the title of the gamemode in the server browser.
         ---
@@ -210,7 +210,7 @@ do
     local game_GetIPAddress = glua_engine.GetIPAddress or function() return "127.0.0.1:27015" end
     server.getAddress = game_GetIPAddress
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the IP of the server.
     ---
@@ -219,7 +219,7 @@ do
         return string_match( game_GetIPAddress(), "(%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?):" ) or "127.0.0.1"
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the port of the server.
     ---
@@ -239,7 +239,7 @@ if server.getName == nil then
         type = "string"
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Gets the name of the server.
     ---

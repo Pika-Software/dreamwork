@@ -9,7 +9,7 @@ local glua_input = _G.input
 local std = dreamwork.std
 local Command_run = std.console.Command.run
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The input library allows you to
 --- manipulate the client's input devices

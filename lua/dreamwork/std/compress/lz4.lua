@@ -5,7 +5,7 @@ local std = dreamwork.std
 local holylib_CompressLZ4 = util ~= nil and util.CompressLZ4
 local holylib_DecompressLZ4 = util ~= nil and util.DecompressLZ4
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- LZ4 is lossless compression algorithm, providing compression speed > 500 MB/s per core (>0.15 Bytes/cycle).
 ---
@@ -76,7 +76,7 @@ end
 
 if holylib_CompressLZ4 == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Compresses a string using the LZ4 block format.
     ---
@@ -235,7 +235,7 @@ end
 
 if holylib_DecompressLZ4 == nil then
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Decompresses a string that was compressed using the LZ4 block format. If any
     --- issue is encountered during decompression, this function will throw an

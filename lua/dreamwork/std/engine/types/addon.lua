@@ -26,7 +26,7 @@ local function find_workshop_item( wsid )
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns all subscribed publications.
 ---
@@ -36,7 +36,7 @@ function AddonClass.getDownloaded()
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns all mounted addons.
 ---

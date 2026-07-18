@@ -2,7 +2,7 @@
 local std = dreamwork.std
 
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The audio stream object.
 ---

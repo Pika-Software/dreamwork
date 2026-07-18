@@ -11,7 +11,7 @@ local tonumber = std.raw.tonumber
 local steam = std.steam or {}
 std.steam = steam
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- [Steam Account Type](https://developer.valvesoftware.com/wiki/SteamID#Types_of_Steam_Accounts)
 ---
@@ -28,7 +28,7 @@ std.steam = steam
 ---| `"ConsoleUser"`
 ---| `"AnonUser"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- [Steam Account Universe](https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts)
 ---
@@ -85,7 +85,7 @@ local letter2int = {
 local int2universe = table.flipped( universe2int )
 local int2type = table.flipped( type2int )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam ID object.
 ---
@@ -99,7 +99,7 @@ local int2type = table.flipped( type2int )
 ---@operator sub( integer ): dreamwork.std.steam.Identifier
 local Identifier = std.class.base( "Identifier" )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam ID class.
 ---
@@ -143,7 +143,7 @@ do
 
     local string_format = string.format
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a SteamID object to a Steam2 identifier.
     ---
@@ -170,7 +170,7 @@ do
         AnonUser = "a"
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a SteamID object to a Steam3 identifier.
     ---
@@ -194,7 +194,7 @@ do
     local bit_lshift = bit.lshift
     local bit_bor = bit.bor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a SteamID object to a 64-bit integer.
     ---
@@ -237,7 +237,7 @@ do
             [ 7 ] = "groups"
         }
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Gets the URL for a SteamID object.
         ---
@@ -277,7 +277,7 @@ do
         [ 0x39 ] = 9
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a string is a valid 64-bit identifier.
     ---
@@ -300,7 +300,7 @@ do
         return true
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new SteamID object from a 64-bit number string.
     ---
@@ -330,7 +330,7 @@ do
 
     local string_match = string.match
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a string is a valid Steam2 identifier.
     ---
@@ -359,7 +359,7 @@ do
         return true
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a string is a valid Steam3 identifier.
     ---
@@ -384,7 +384,7 @@ do
         return true
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new SteamID object from a steam2 string.
     ---
@@ -410,7 +410,7 @@ do
         }, Identifier )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new SteamID object from a steam3 string.
     ---

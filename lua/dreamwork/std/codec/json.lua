@@ -3,7 +3,7 @@ local glua_util = util
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The JSON format is a lightweight data interchange format.
 ---
@@ -19,7 +19,7 @@ if json.deserialize == nil then
 
     local util_JSONToTable = glua_util.JSONToTable or std.debug.fempty
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Deserialize a JSON string into a table.
     ---

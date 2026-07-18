@@ -15,7 +15,7 @@ local math_relative = math.relative
 
 local table_concat = std.table.concat
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Base16 (hexadecimal) encoding/decoding library.
 ---
@@ -25,7 +25,7 @@ local table_concat = std.table.concat
 local base16 = std.base16 or {}
 std.base16 = base16
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Encodes the specified string to base16.
 ---
@@ -67,7 +67,7 @@ function base16.encode( raw_str, start_position, end_position )
     return table_concat( segments, "", 1, segment_count )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Decodes the specified base16 string to a string.
 ---
@@ -117,7 +117,7 @@ function base16.decode( base16_str, start_position, end_position )
     return table_concat( segments, "", 1, segment_count )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Validates the specified base16 string.
 ---
@@ -167,7 +167,7 @@ do
 
     local string_sub = string.sub
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Escapes the specified base16 string.
     ---
@@ -217,7 +217,7 @@ do
         end
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Unescapes the specified base16 string.
     ---

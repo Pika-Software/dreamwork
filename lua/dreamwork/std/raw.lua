@@ -4,7 +4,7 @@ local pairs = pairs
 ---@class dreamwork.std
 local std = dreamwork.std
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Library containing functions for working with raw data. (ignoring metatables)
 ---@class dreamwork.std.raw

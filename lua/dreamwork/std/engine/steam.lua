@@ -11,7 +11,7 @@ local isString = std.isString
 
 -- TODO: https://wiki.facepunch.com/gmod/resource.AddWorkshop
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Steam API library.
 ---
@@ -98,7 +98,7 @@ if std.LUA_CLIENT_MENU then
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Steam [EResult](https://partner.steamgames.com/doc/api/steam_api#EResult) messages.
 local EResultMessages = {
@@ -211,7 +211,7 @@ local EResultMessages = {
     [ 108 ] = "There are too many of this thing pending already"
 }
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Steam [EWorkshopFileType](https://partner.steamgames.com/doc/api/ISteamRemoteStorage#EWorkshopFileType)'s.
 ---
@@ -248,7 +248,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Steam [ERemoteStoragePublishedFileVisibility](https://partner.steamgames.com/doc/api/ISteamRemoteStorage#ERemoteStoragePublishedFileVisibility) int32 to string.
 ---
@@ -296,7 +296,7 @@ if std.LUA_CLIENT_MENU then
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The Steam Workshop API library.
 ---
@@ -308,7 +308,7 @@ do
 
     local string_match = string.match
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if the given Steam Workshop item ID is valid.
     ---
@@ -346,7 +346,7 @@ do
 
     do
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the details of a Steam Workshop collection's.
         ---
@@ -436,7 +436,7 @@ do
 
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the details of a Steam Workshop item's.
     ---
@@ -550,7 +550,7 @@ do
             [ -6 ] = "Steam Workshop item ID in response is mismatching the requested file ID."
         }
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Fetches a detailed information about a specific Steam Workshop item or collection.
         ---
@@ -825,7 +825,7 @@ do
 
     fs.makeDirectory( "/garrysmod/data/dreamwork/cache/workshop", true )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Downloads the item from the Steam Workshop.
     ---
@@ -876,7 +876,7 @@ do
         end
     } )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a search for publications.
     ---
@@ -910,7 +910,7 @@ do
         return ids, data.numresults, data.totalresults
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a quick search for publications.
     ---
@@ -947,7 +947,7 @@ do
         return ids, data.numresults, data.totalresults
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns a list of publications published by the client.
     ---

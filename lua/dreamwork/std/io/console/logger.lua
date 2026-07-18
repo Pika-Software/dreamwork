@@ -31,7 +31,7 @@ end
 ---@class dreamwork.std.console
 local console = std.console
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The logger object.
 ---
@@ -45,7 +45,7 @@ local console = std.console
 ---@field debug_fn fun( dreamwork.std.console.Logger ): boolean The logger debug function.
 local Logger = std.class.base( "console.Logger" )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The logger class.
 ---
@@ -123,7 +123,7 @@ function Logger:__init( options )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Logs a message.
 ---@param color dreamwork.std.Color The log level color.
@@ -158,7 +158,7 @@ do
 
     local info_color = color_scheme.dreamwork_info
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Logs an info message.
     ---
@@ -172,7 +172,7 @@ do
 
     local warn_color = color_scheme.dreamwork_warn
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Logs a warning message.
     ---
@@ -186,7 +186,7 @@ do
 
     local error_color = color_scheme.dreamwork_error
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Logs an error message.
     ---
@@ -200,7 +200,7 @@ do
 
     local debug_color = color_scheme.dreamwork_debug
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Logs a debug message.
     ---

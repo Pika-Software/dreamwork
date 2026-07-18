@@ -33,7 +33,7 @@ local MD5_digest = MD5.digest
 local SHA1 = std.crypto.SHA1
 local SHA1_digest = SHA1.digest
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The UUID generation library.
 ---
@@ -41,7 +41,7 @@ local SHA1_digest = SHA1.digest
 local uuid = {}
 std.uuid = uuid
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Generates a UUID version 3 (name-based, MD5).
 ---
@@ -67,7 +67,7 @@ function uuid.v3( namespace, name )
     )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Generates a UUID version 5 (name-based, SHA-1).
 ---
@@ -93,7 +93,7 @@ function uuid.v5( namespace, name )
     )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Generates a UUID version 4 (random).
 ---
@@ -129,7 +129,7 @@ do
 
     local bigint_0xFF = BigInt_fromNumber( 0xFF )
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Generates a UUID version 7 (time-ordered).
     ---
@@ -176,7 +176,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns a UUID v8 string from the given bytes.
 ---

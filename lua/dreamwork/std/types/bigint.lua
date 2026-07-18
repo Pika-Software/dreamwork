@@ -26,7 +26,7 @@ local math = std.math
 local math_min, math_max = math.min, math.max
 local math_floor, math_clamp = math.floor, math.clamp
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The big integer object.
 ---
@@ -58,7 +58,7 @@ function BigInt:__tobool()
     return self[ 0 ] ~= 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The big integer class.
 ---
@@ -68,7 +68,7 @@ end
 local BigIntClass = std.class.create( BigInt )
 std.BigInt = BigIntClass
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Makes a copy of the big integer.
 ---
@@ -174,7 +174,7 @@ BigInt.copy = copy
 local one = setmetatable( { [ 0 ] = 1, 1 }, BigInt )
 local negaive_one = setmetatable( { [ 0 ] = -1, 1 }, BigInt )
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the big integer object to zero, removing all values.
 ---
@@ -232,7 +232,7 @@ end
 
 local tobigint
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Performs an unsigned comparison between two big integers.
 ---
@@ -258,7 +258,7 @@ local function compare_unsigned( object, other )
     return 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Removes leading zeros from the big integer.
 ---
@@ -279,7 +279,7 @@ end
 
 BigInt.rstrip = rstrip
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets a big integer object from a lua_number (must be an integer).
 ---
@@ -314,7 +314,7 @@ end
 
 BigInt.fromNumber = from_number
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts a lua_number (must be an integer) to a new big integer.
 ---@param value integer
@@ -325,7 +325,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts the big integer to a hex string.
     ---@param object dreamwork.std.BigInt
@@ -357,7 +357,7 @@ do
 
     BigInt.toHex = toHex
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts the big integer to a binary [01] string.
     ---
@@ -429,7 +429,7 @@ do
         "x", "y", "z"
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts the big integer to a string in the specified (or not) base.
     ---
@@ -498,7 +498,7 @@ do
     BigInt.toString = toString
     BigInt.__tostring = toString
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts the big integer to a decimal string.
     ---
@@ -511,7 +511,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets a big integer object from an byte array and a sign.
     ---
@@ -546,7 +546,7 @@ do
         return object
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object from an byte array and a sign.
     ---
@@ -559,7 +559,7 @@ do
         return fromBytes( setmetatable( {}, BigInt ), bytes, byte_count or #bytes, signed == true, big_endian == true )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object from an byte array and a sign.
     ---
@@ -572,7 +572,7 @@ do
         return fromBytes( self, bytes, byte_count or #bytes, signed == true, big_endian == true )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets a big integer object from a binary data string.
     ---
@@ -587,7 +587,7 @@ do
         return fromBytes( object, { string_byte( str, start_position, (start_position + byte_count) - 1 ) }, byte_count, signed == true, big_endian == true )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object from a binary data string.
     ---
@@ -601,7 +601,7 @@ do
         return fromBinary( setmetatable( {}, BigInt ), str, byte_count or string_len( str ), big_endian == true, start_position or 1, signed == true )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object from a binary data string.
     ---
@@ -621,7 +621,7 @@ do
 
     local string_char = string.char
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts the big integer to a binary string [01].
     ---
@@ -681,7 +681,7 @@ do
     local string_sub = string.sub
     local tonumber = std.tonumber
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Sets a big integer object from a decimal string with an optional base.
     ---
@@ -767,7 +767,7 @@ do
 
     BigInt.fromString = from_string
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a big integer object from a decimal string with an optional base.
     ---
@@ -783,7 +783,7 @@ do
         local isString, isNumber = std.isString, std.isNumber
         local debug_getmetatable = std.debug.getmetatable
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Converts a given value to a big integer object.
         ---
@@ -831,7 +831,7 @@ do
         max_number = from_string( setmetatable( { [ 0 ] = 0 }, BigInt ), "0x1FFFFFFFFFFFFF" )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a big integer object to a lua_number (always an integer).
     ---
@@ -857,7 +857,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a big integer object is even.
     ---
@@ -869,7 +869,7 @@ do
 
     BigInt.isEven = is_even
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if a big integer object is odd.
     ---
@@ -880,7 +880,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a big integer object is zero.
 ---
@@ -889,7 +889,7 @@ function BigInt:isZero()
     return self[ 0 ] == 0
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a big integer object is one.
 ---
@@ -900,7 +900,7 @@ end
 
 BigInt.isOne = is_one
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Negates a big integer object.
 ---
@@ -922,7 +922,7 @@ function BigInt:__unm()
     return negate( copy( self ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Makes a big integer object absolute (simply removes the sign).
 ---
@@ -943,7 +943,7 @@ do
 
     local bit_rshift
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Shifts a big integer object to the left by a given number of bits (positive or negative).
     ---
@@ -996,7 +996,7 @@ do
 
     BigInt.lshift = bit_lshift
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of shifting a given big integer object to the left by a given number of bits.
     ---
@@ -1007,7 +1007,7 @@ do
         return bit_lshift( copy( object ), shift )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Shifts a big integer object to the right by a given number of bits (positive or negative).
     ---
@@ -1069,7 +1069,7 @@ do
 
     BigInt.rshift = bit_rshift
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of shifting a given big integer object to the right by a given number of bits.
     ---
@@ -1084,7 +1084,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a bitwise OR operation between two big integer objects.
     ---
@@ -1135,7 +1135,7 @@ do
 
     BigInt.bor = bor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of a bitwise OR operation between two big integer objects.
     ---
@@ -1157,7 +1157,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a bitwise AND operation between two big integer objects.
     ---
@@ -1210,7 +1210,7 @@ do
 
     BigInt.band = band
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of a bitwise AND operation between two big integer objects.
     ---
@@ -1232,7 +1232,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a bitwise XOR operation between two big integer objects.
     ---
@@ -1276,7 +1276,7 @@ do
 
     BigInt.bxor = bxor
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of a bitwise XOR operation between two big integer objects.
     ---
@@ -1299,7 +1299,7 @@ end
 local bnot
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Performs a bitwise NOT operation on a big integer object.
     ---
@@ -1341,7 +1341,7 @@ do
 
     BigInt.bnot = bnot
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Creates a new big integer object that is the result of a bitwise NOT operation on a big integer object.
     ---
@@ -1354,7 +1354,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the value of a given bit in a big integer object.
 ---
@@ -1378,7 +1378,7 @@ function BigInt:getBit( index )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets `true` of one or more bits in a big integer object.
 ---
@@ -1422,7 +1422,7 @@ function BigInt:setBits( ... )
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Unsets `false` of one or more bits in a big integer object.
 ---
@@ -1462,7 +1462,7 @@ function BigInt:unsetBits( ... )
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Adds big integer to a big integer object.
 ---@param object dreamwork.std.BigInt The big integer object to add to.
@@ -1561,7 +1561,7 @@ function BigInt:__add( value )
     return add( copy( self ), tobigint( value ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Subtracts big integer from a big integer object.
 ---
@@ -1581,7 +1581,7 @@ function BigInt:__sub( value )
     return sub( copy( self ), tobigint( value ) )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Multiplies big integer with a big integer object.
 ---
@@ -1685,7 +1685,7 @@ end
 local full_div
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Divides big integer by a big integer object and returns the quotient and remainder.
     ---
@@ -1816,7 +1816,7 @@ do
         return other_copy, object_copy
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Divides big integer by a big integer object.
     ---
@@ -1837,7 +1837,7 @@ do
         return div( self, tobigint( value ) )
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the remainder from dividing two big integers.
     ---
@@ -1862,7 +1862,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the log2 of a big integer object. ( calculate log2 by finding highest 1 bit )
     ---
@@ -1887,7 +1887,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the log2 of a big integer object. ( return log2 if it's an integer, else `nil` )
     ---
@@ -1921,7 +1921,7 @@ do
         return power
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Raises a big integer object to a power.
     ---
@@ -1981,7 +1981,7 @@ do
 
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Convert 2's complement unsigned number to signed.
 ---
@@ -2004,7 +2004,7 @@ function BigInt:toSigned( byte_amt )
     return self
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Convert 2's complement signed number to unsigned.
 ---
@@ -2029,7 +2029,7 @@ end
 
 do
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Compares big integer objects.
     ---
@@ -2058,7 +2058,7 @@ do
         end
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if two big integer objects are equal.
     ---
@@ -2068,7 +2068,7 @@ do
         return compare( self, other ) == 0
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if two big integer objects are not equal.
     ---
@@ -2078,7 +2078,7 @@ do
         return compare( self, other ) ~= 0
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if one big integer object is less than another.
     ---
@@ -2088,7 +2088,7 @@ do
         return compare( self, other ) == -1
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if one big integer object is less than or equal to another.
     ---
@@ -2098,7 +2098,7 @@ do
         return compare( self, other ) <= 0
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if one big integer object is greater than another.
     ---
@@ -2108,7 +2108,7 @@ do
         return compare( self, other ) == 1
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Checks if one big integer object is greater than or equal to another.
     ---
@@ -2124,7 +2124,7 @@ do
 
     do
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the greatest common divisor (GCD) of two big integer objects.
         ---
@@ -2146,7 +2146,7 @@ do
 
         BigInt.gcd = gcd
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the least common multiple (LCM) of two big integer objects.
         ---
@@ -2161,7 +2161,7 @@ do
             return full_div( temp, gcd( a, b ), true ), nil
         end
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns whether two big integer objects are coprime.
         ---
@@ -2174,7 +2174,7 @@ do
 
         BigInt.coprime = coprime
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the modular inverse using the extended Euclidean algorithm.
         ---
@@ -2211,7 +2211,7 @@ do
 
         local two = setmetatable( { [ 0 ] = 1, 2 }, BigInt )
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Modular exponentiation: (base ^ exponent) % modulus
         ---

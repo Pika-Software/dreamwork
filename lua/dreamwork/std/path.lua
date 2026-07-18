@@ -13,7 +13,7 @@ local table = std.table
 local table_concat = table.concat
 local table_insert, table_remove = table.insert, table.remove
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The file path library.
 ---
@@ -26,7 +26,7 @@ std.path = path
 path.delimiter = ":"
 path.sep = "/"
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Check to see if the file path is absolute.
 ---
@@ -36,7 +36,7 @@ function path.isAbsolute( file_path )
     return string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Check to see if the file path is relative.
 ---
@@ -52,7 +52,7 @@ if std.SYSTEM_WINDOWS or std.SYSTEM_OSX then
 
     local string_lower = string.lower
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Check to see if the paths are equal.
     ---
@@ -65,7 +65,7 @@ if std.SYSTEM_WINDOWS or std.SYSTEM_OSX then
 
 else
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Check to see if the paths are equal.
     ---
@@ -80,7 +80,7 @@ end
 
 path.equals = equals
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Get the name of the file path.
 ---
@@ -122,7 +122,7 @@ function path.getFile( file_path, keep_extension )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Get the directory of the file path.
 ---
@@ -143,7 +143,7 @@ end
 
 path.getDirectory = getDirectory
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Get the extension of the file path.
 ---
@@ -167,7 +167,7 @@ function path.getExtension( file_path, keep_dot )
     return ""
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Split a file path into a directory and a file name.
 ---
@@ -187,7 +187,7 @@ end
 
 path.split = split
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Split a file path into a file name and an extension.
 ---
@@ -210,7 +210,7 @@ end
 
 path.splitExtension = splitExtension
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Replaces the file name in the file path.
 ---
@@ -221,7 +221,7 @@ function path.replaceName( file_path, file_name )
     return split( file_path, true ) .. file_name
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Replaces the directory in the file path.
 ---
@@ -237,7 +237,7 @@ function path.replaceDirectory( file_path, dir_name )
     return dir_name .. file_name
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Replaces the extension in the file path.
 ---
@@ -248,7 +248,7 @@ function path.replaceExtension( file_path, ext_name )
     return splitExtension( file_path, false ) .. "." .. ext_name
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Strips the trailing slash from the file path.
 ---
@@ -258,7 +258,7 @@ function path.stripTrailingSlash( file_path )
     return (string_gsub( file_path, "[/\\]+$", "" ))
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Ensures the file path has a trailing slash.
 ---
@@ -272,7 +272,7 @@ function path.ensureTrailingSlash( file_path )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Strips the leading slash from the file path.
 ---
@@ -282,7 +282,7 @@ function path.stripLeadingSlash( file_path )
     return (string_gsub( file_path, "^[/\\]+", "" ))
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Ensures the file path has a leading slash.
 ---
@@ -296,7 +296,7 @@ function path.ensureLeadingSlash( file_path )
     end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Normalizes the slashes in the file path.
 ---
@@ -306,7 +306,7 @@ function path.normalizeSlashes( file_path )
     return (string_gsub( file_path, "[/\\]+", "/" ))
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Parse a file path into [root, dir, basename, ext, name, abs] table.
 ---
@@ -328,7 +328,7 @@ function path.parse( file_path )
     return { root = is_abs and "/" or "", dir = directory, base = base, ext = ext, name = name, abs = is_abs }
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Normalizes a file path by removing all "." and ".." parts.
 ---
@@ -442,7 +442,7 @@ do
 
     path.get = get
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Resolves a file path to an absolute file path.
     ---
@@ -469,7 +469,7 @@ do
 
         local math_min = std.math.min
 
-        --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+        --- [SHARED AND MENU]
         ---
         --- Returns the relative path from from to to based on the current working directory.
         ---
@@ -531,7 +531,7 @@ do
     local string_trimByte = string.trimByte
     local len = std.len
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Join the file paths into a single file path and normalize it.
     ---
@@ -804,7 +804,7 @@ do
         end
     }
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a wildcard string to a Lua pattern.
     ---

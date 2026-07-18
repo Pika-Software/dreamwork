@@ -22,7 +22,7 @@ local string_lower = string.lower
 local string_replace = string.replace
 local string_interpolateByte = string.interpolateByte
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- The local SQLite library wrapper.
 ---
@@ -49,7 +49,7 @@ std.sqlite = sqlite
 ---@alias dreamwork.std.sqlite.QueryValue boolean | integer | number | string
 ---@alias dreamwork.std.sqlite.QueryRow table<string, dreamwork.std.sqlite.QueryValue>
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the last error message from the last query.
 ---
@@ -58,7 +58,7 @@ function sqlite.getLastError()
     return glua_sql.m_strError
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Converts a string to a safe string for use in an SQL query.
 ---
@@ -83,7 +83,7 @@ end
 
 sqlite.escape = escape
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a raw SQL query.
 ---
@@ -103,7 +103,7 @@ end
 
 sqlite.rawQuery = query_raw
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if a table exists in the database.
 ---
@@ -113,7 +113,7 @@ function sqlite.tableExists( name )
     return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='table'" ) ~= nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if an index exists in the database.
 ---
@@ -123,7 +123,7 @@ function sqlite.indexExists( name )
     return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='index'" ) ~= nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a SQL query with parameters.
 ---
@@ -172,7 +172,7 @@ end
 
 sqlite.query = query
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a SQL query and returns a specific row.
 ---
@@ -191,7 +191,7 @@ end
 
 sqlite.queryRow = query_row
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a SQL query and returns the first row.
 ---
@@ -204,7 +204,7 @@ end
 
 sqlite.queryFirst = query_first
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a SQL query and returns the first value of the first row.
 ---
@@ -222,7 +222,7 @@ end
 
 ---@alias dreamwork.std.sqlite.QueryFn fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): dreamwork.std.sqlite.QueryRow[] | nil
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Executes a transaction of SQL queries in one block.
 ---

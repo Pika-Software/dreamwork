@@ -29,7 +29,7 @@ local string_gsub, string_match = string.gsub, string.match
 local string_find, string_format = string.find, string.format
 local string_trim, string_isEmpty = string.trim, string.isEmpty
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A XML node object, representing a node in an XML document.
 ---
@@ -59,7 +59,7 @@ local XMLNode = class.base( "XMLNode", false )
 
 ---@alias dreamwork.std.XMLNode.Value string | dreamwork.std.XMLNode
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- A XML node class, allowing parsing and creation of XML nodes.
 ---
@@ -89,7 +89,7 @@ local XMLNode = class.base( "XMLNode", false )
 local XMLNodeClass = class.create( XMLNode )
 std.XMLNode = XMLNodeClass
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks whether the value type is a `XMLNode`.
 ---
@@ -151,7 +151,7 @@ function XMLNode:__init( name, attributes, parent )
     value[ #value + 1 ] = self -- append self to existing array
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks whether the node is empty.
 ---
@@ -160,7 +160,7 @@ function XMLNode:isEmpty()
     return self.data == nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the value of the attribute with the given name or `nil` if not found.
 ---
@@ -175,7 +175,7 @@ function XMLNode:getAttribute( name )
     return attributes[ name ]
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the value of the attribute with the given name.
 ---
@@ -194,7 +194,7 @@ function XMLNode:setAttribute( name, value )
     attributes[ name ] = value
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the value of the node at the given key or `nil` if not found.
 ---
@@ -308,7 +308,7 @@ function XMLNode:get( key )
     return nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Sets the value of the node at the given key, supporting dot-separated keys for nested values.
 ---
@@ -365,7 +365,7 @@ function XMLNode:set( key, value )
     goto set_loop
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the node contains a value at the given key, supporting dot-separated keys for nested values.
 ---
@@ -393,7 +393,7 @@ function XMLNode:contains( key )
     return data[ key ] ~= nil
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the node contains a list at the given key, supporting dot-separated keys for nested values.
 ---
@@ -422,7 +422,7 @@ function XMLNode:containsList( key )
     return not (value == nil or isString( value ) or isNode( value ))
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the node contains a string at the given key, supporting dot-separated keys for nested values.
 ---
@@ -450,7 +450,7 @@ function XMLNode:containsString( key )
     return isString( data[ key ] )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Checks if the node contains a node at the given key, supporting dot-separated keys for nested values.
 ---
@@ -478,7 +478,7 @@ function XMLNode:containsNode( key )
     return isNode( data[ key ] )
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns the length of the list at the given key, supporting dot-separated keys for nested values.
 ---
@@ -512,7 +512,7 @@ function XMLNode:getLength( key )
     return #value
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Pushes a value to the list at the given key, supporting dot-separated keys for nested values.
 ---
@@ -559,7 +559,7 @@ function XMLNode:push( key, value )
     data_value[ #data_value + 1 ] = value
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Pops a value from the list at the given key, supporting dot-separated keys for nested values.
 ---
@@ -605,7 +605,7 @@ function XMLNode:pop( key )
     return value
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Clears the list at the given key, supporting dot-separated keys for nested values.
 ---
@@ -639,7 +639,7 @@ function XMLNode:clear( key )
     return true
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Returns an iterator function for the node at the given key, supporting dot-separated keys for nested values.
 ---
@@ -837,7 +837,7 @@ do
         return line_count
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Returns the XML string representation of this node.
     ---
@@ -860,7 +860,7 @@ do
         end
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts XML node structure to a Lua table.
     ---
@@ -1107,7 +1107,7 @@ do
         return tag_name, tag_attributes
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts a table to an XML node structure.
     ---
@@ -1140,7 +1140,7 @@ do
         return node
     end
 
-    --- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+    --- [SHARED AND MENU]
     ---
     --- Converts an XML string to an XML node structure.
     ---
