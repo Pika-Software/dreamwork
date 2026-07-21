@@ -11,76 +11,56 @@ local raw = std.raw
 --- The debug library is intended to help you debug your scripts,
 --- however it also has several other powerful uses.
 ---
----@class dreamwork.std.debug
-local debug = {}
-std.debug = debug
-
-local fempty = debug.fempty
-if fempty == nil then
-
-    --- [SHARED AND MENU]
-    ---
-    --- Just empty function, do nothing.
-    ---
-    --- Sometimes makes jit happy :>
-    ---
-    function fempty()
-        -- yep, it's literally empty
-    end
-
-    debug.fempty = fempty
-
-end
-
-do
-
+---@class dreamwork.std.debug : debuglib
+--- [SHARED AND MENU]
+---
+--- Just empty function, do nothing.
+---
+--- Sometimes makes jit happy :>
+---
+---@field fempty fun()
+--- [SHARED AND MENU]
+---
+--- Sets the metatable for the given value to the given table (which can be `nil`).
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
+---
+---@field setmetatable fun( object: any, metatable: ( dreamwork.Metatable | nil ) )
+local debug = std.debug or {
     -- LuaJIT
-    debug.newproxy = newproxy
+    newproxy = newproxy,
+    fempty = function() end, -- yep, it's literally empty function
 
     -- Lua 5.1
-    debug.debug = glua_debug.debug
-    debug.getinfo = glua_debug.getinfo
-    debug.getregistry = glua_debug.getregistry
-    debug.traceback = glua_debug.traceback
+    debug = glua_debug.debug, -- dont answer me
+    getinfo = glua_debug.getinfo,
+    getregistry = glua_debug.getregistry,
+    traceback = glua_debug.traceback,
 
-    debug.getlocal = glua_debug.getlocal
-    debug.setlocal = glua_debug.setlocal
+    getlocal = glua_debug.getlocal,
+    setlocal = glua_debug.setlocal,
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the metatable of the given value.
-    ---
-    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
-    ---
-    ---@type fun( object: any ): dreamwork.Metatable | nil
-    debug.getmetatable = glua_debug.getmetatable or std.getmetatable
+    getmetatable = glua_debug.getmetatable or std.getmetatable,
+    setmetatable = glua_debug.setmetatable,
 
-    --- [SHARED AND MENU]
-    ---
-    --- Sets the metatable for the given value to the given table (which can be `nil`).
-    ---
-    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
-    ---
-    ---@type fun( object: any, metatable: dreamwork.Metatable | nil )
-    debug.setmetatable = glua_debug.setmetatable
+    getupvalue = glua_debug.getupvalue, -- fucked up in menu
+    setupvalue = glua_debug.setupvalue, -- fucked up in menu
 
-    debug.getupvalue = glua_debug.getupvalue -- fucked up in menu
-    debug.setupvalue = glua_debug.setupvalue -- fucked up in menu
+    getfenv = glua_debug.getfenv or getfenv,
+    setfenv = glua_debug.setfenv or setfenv,
 
-    debug.getfenv = glua_debug.getfenv or getfenv
-    debug.setfenv = glua_debug.setfenv or setfenv
-
-    debug.gethook = glua_debug.gethook
-    debug.sethook = glua_debug.sethook
+    gethook = glua_debug.gethook,
+    sethook = glua_debug.sethook,
 
     -- Lua 5.2/jit
-    debug.upvalueid = glua_debug.upvalueid       -- fucked up in menu
-    debug.upvaluejoin = glua_debug.upvaluejoin   -- fucked up in menu
+    upvalueid = glua_debug.upvalueid,       -- fucked up in menu
+    upvaluejoin = glua_debug.upvaluejoin,   -- fucked up in menu
 
-    debug.getuservalue = glua_debug.getuservalue -- fucked up in menu
-    debug.setuservalue = glua_debug.setuservalue -- fucked up in menu
+    getuservalue = glua_debug.getuservalue, -- fucked up in menu
+    setuservalue = glua_debug.setuservalue, -- fucked up in menu
+}
 
-end
+std.debug = debug
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
@@ -294,7 +274,7 @@ do
 
     ---@type fun(name: string, tbl: dreamwork.Metatable)
     ---@diagnostic disable-next-line: undefined-global
-    local RegisterMetaTable = RegisterMetaTable or fempty
+    local RegisterMetaTable = RegisterMetaTable or debug.fempty
 
     --- [SHARED AND MENU]
     ---
@@ -332,6 +312,8 @@ function debug.initmetatable( name )
     return metatable
 end
 
+local fempty = debug.fempty
+
 -- gmod developer/s sanity check
 if debug_getmetatable( fempty ) == nil then
     debug.setmetatable( fempty, {} )
@@ -343,8 +325,10 @@ if debug_getmetatable( fempty ) == nil then
     ---
     --- Returns the metatable of the given value or `nil` if not found.
     ---
+    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
+    ---
     ---@param value any The value.
-    ---@return dreamwork.Metatable | nil meta The metatable.
+    ---@return dreamwork.Metatable | nil metatable The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
         return debug_getmetatable( value ) or registry[ raw_type( value ) ]

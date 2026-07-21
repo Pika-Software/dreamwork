@@ -716,11 +716,7 @@ end
 ---@param x integer The integer to get the sign of.
 ---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
 function bit.sign( x )
-    if x > 0 then
-        return x - 0x100000000
-    else
-        return x
-    end
+    return (x > 0) and (x - 0x100000000) or x
 end
 
 --- [SHARED AND MENU]
@@ -730,9 +726,5 @@ end
 ---@param x integer The integer to get the unsigned value of.
 ---@return integer result The unsigned value of the integer.
 function bit.unsign( x )
-    if x < 0 then
-        return x + 0x100000000
-    else
-        return x
-    end
+    return (x < 0) and (x + 0x100000000) or x
 end
