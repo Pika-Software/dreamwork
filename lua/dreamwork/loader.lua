@@ -2541,6 +2541,12 @@ do
 
 end
 
+-- https://github.com/wrefgtzweve/gm_getregistry
+if std.loadbinary( "getregistry" ) and getregistry ~= nil then
+    debug.setregistry( (getregistry.Get or debug_fempty)() )
+    logger:info( "'gm_getregistry' was loaded & connected, enjoy full access to `debug.getregistry`." )
+end
+
 -- https://github.com/willox/gmbc
 if std.loadbinary( "gmbc" ) then
     logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )

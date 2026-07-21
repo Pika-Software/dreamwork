@@ -5,6 +5,8 @@ local std = dreamwork.std
 
 ---@class dreamwork.std.raw
 local raw = std.raw
+local raw_get = raw.get
+local raw_pairs = raw.pairs
 
 --- [SHARED AND MENU]
 ---
@@ -109,30 +111,24 @@ if debug.newproxy == nil then
 
 end
 
-do
-
-    local raw_get = raw.get
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the value of the given key in the metatable of the given value.
-    ---
-    --- Returns `nil` if not found.
-    ---
-    ---@param value any The value to get the metatable from.
-    ---@param key string The searchable key.
-    ---@return any | nil value The value of the given key.
-    function debug.getmetavalue( value, key, allow_index )
-        local metatable = debug_getmetatable( value )
-        if metatable == nil then
-            return nil
-        elseif allow_index then
-            return metatable[ key ]
-        else
-            return raw_get( metatable, key )
-        end
+--- [SHARED AND MENU]
+---
+--- Returns the value of the given key in the metatable of the given value.
+---
+--- Returns `nil` if not found.
+---
+---@param value any The value to get the metatable from.
+---@param key string The searchable key.
+---@return any | nil value The value of the given key.
+function debug.getmetavalue( value, key, allow_index )
+    local metatable = debug_getmetatable( value )
+    if metatable == nil then
+        return nil
+    elseif allow_index then
+        return metatable[ key ]
+    else
+        return raw_get( metatable, key )
     end
-
 end
 
 do
@@ -230,6 +226,34 @@ local registry = debug.getregistry()
 ---@diagnostic disable-next-line: duplicate-set-field
 function debug.getregistry()
     return registry
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets registry table.
+---
+--- **ATTENTION**
+---
+--- This function is extremly dangerous,
+--- only reason why this exists is fact
+--- that `getregistry` originally broken by cockpunch
+--- and i cannot set locals over debug,
+--- so only way to implement 3rd party moudles support
+--- is implement this function :c
+---
+---@param tbl table
+function debug.setregistry( tbl )
+    if registry == nil then
+        registry = {} -- why and how
+    end
+
+    for key, value in raw_pairs( registry ) do
+        if raw_get( tbl, key ) == nil then -- copy old values if missing
+            tbl[ key ] = value
+        end
+    end
+
+    registry = tbl or registry
 end
 
 do
