@@ -19,8 +19,8 @@ local bit_unsign                  = bit.unsign
 local bit_bxor, bit_band, bit_bor = bit.bxor, bit.band, bit.bor
 
 local bytepack                    = std.bytepack
-local bytepack_readUInt32         = bytepack.readUInt32
-local bytepack_writeUInt32        = bytepack.writeUInt32
+local bytepack_readUInt32         = bytepack.readUInt32BE
+local bytepack_writeUInt32        = bytepack.writeUInt32BE
 
 ---@alias dreamwork.std.IPv4.Class "A" | "B" | "C" | "D" | "E"
 ---@alias dreamwork.std.IPv4 integer

@@ -2,12 +2,18 @@
 local std = dreamwork.std
 
 local bytepack = std.bytepack
+local bytepack_readHex8 = bytepack.readHex8
+local bytepack_writeHex8 = bytepack.writeHex8
+
+local math = std.math
+local math_min = math.min
 
 local string = std.string
 local string_len = string.len
 local string_char, string_byte = string.char, string.byte
 
-local table_concat = std.table.concat
+local table = std.table
+local table_concat = table.concat
 
 --- [SHARED AND MENU]
 ---
@@ -22,7 +28,7 @@ local table_concat = std.table.concat
 --- See https://en.wikipedia.org/wiki/Percent-encoding & https://datatracker.ietf.org/doc/html/rfc3986#section-2.1
 ---
 ---@class dreamwork.std.percent
-local percent = std.percent or {}
+local percent = {}
 std.percent = percent
 
 --- [SHARED AND MENU]
@@ -54,8 +60,6 @@ function percent.whitelist( pattern_str, base )
 end
 
 do
-
-    local bytepack_writeHex8 = bytepack.writeHex8
 
     local default_whitelist = percent.whitelist( "%w%-_%.~" )
 
@@ -103,8 +107,6 @@ do
     end
 
     do
-
-        local math_min = std.math.min
 
         ---@type table<integer, boolean>
         local hex_bytes = {
@@ -180,56 +182,49 @@ do
 
 end
 
-do
+--- [SHARED AND MENU]
+---
+--- Decodes the specified string from percent encoding.
+---
+---@param percent_str string The string to decode.
+---@param ignore_spaces? boolean Ignore spaces, optional.
+---@param percent_str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+---@return string raw_str The decoded string.
+function percent.decode( percent_str, ignore_spaces, percent_str_length )
+    ignore_spaces = ignore_spaces ~= true
 
-    local bytepack_readHex8 = bytepack.readHex8
-    local math_min = std.math.min
-
-    --- [SHARED AND MENU]
-    ---
-    --- Decodes the specified string from percent encoding.
-    ---
-    ---@param percent_str string The string to decode.
-    ---@param ignore_spaces? boolean Ignore spaces, optional.
-    ---@param percent_str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
-    ---@return string raw_str The decoded string.
-    function percent.decode( percent_str, ignore_spaces, percent_str_length )
-        ignore_spaces = ignore_spaces ~= true
-
-        if percent_str_length == nil then
-            percent_str_length = string_len( percent_str )
-        end
-
-        local segments, segment_count = {}, 0
-        local position = 1
-
-        while position ~= percent_str_length do
-            local uint8_1 = string_byte( percent_str, position, position )
-            if uint8_1 == 0x25 --[[ "%" ]] then
-                segment_count = segment_count + 1
-
-                local uint8_2, uint8_3 = string_byte( percent_str, position + 1, position + 2 )
-
-                local decoded_uint8 = bytepack_readHex8( uint8_2, uint8_3 )
-                if decoded_uint8 == nil then
-                    segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3 )
-                else
-                    segments[ segment_count ] = string_char( decoded_uint8 )
-                end
-
-                position = math_min( position + 3, percent_str_length )
-            elseif uint8_1 == 0x2B --[[ "+" ]] and not ignore_spaces then
-                segment_count = segment_count + 1
-                segments[ segment_count ] = "\32"
-                position = position + 1
-            else
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_char( uint8_1 )
-                position = position + 1
-            end
-        end
-
-        return table_concat( segments, "", 1, segment_count )
+    if percent_str_length == nil then
+        percent_str_length = string_len( percent_str )
     end
 
+    local segments, segment_count = {}, 0
+    local position = 1
+
+    while position ~= percent_str_length do
+        local uint8_1 = string_byte( percent_str, position, position )
+        if uint8_1 == 0x25 --[[ "%" ]] then
+            segment_count = segment_count + 1
+
+            local uint8_2, uint8_3 = string_byte( percent_str, position + 1, position + 2 )
+
+            local decoded_uint8 = bytepack_readHex8( uint8_2, uint8_3 )
+            if decoded_uint8 == nil then
+                segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3 )
+            else
+                segments[ segment_count ] = string_char( decoded_uint8 )
+            end
+
+            position = math_min( position + 3, percent_str_length )
+        elseif uint8_1 == 0x2B --[[ "+" ]] and not ignore_spaces then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = "\32"
+            position = position + 1
+        else
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_char( uint8_1 )
+            position = position + 1
+        end
+    end
+
+    return table_concat( segments, "", 1, segment_count )
 end

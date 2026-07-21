@@ -22,8 +22,8 @@ local math = std.math
 local math_floor = math.floor
 
 local bytepack = std.bytepack
-local bytepack_readUInt32 = bytepack.readUInt32
-local bytepack_writeUInt32 = bytepack.writeUInt32
+local bytepack_readUInt32 = bytepack.readUInt32BE
+local bytepack_writeUInt32 = bytepack.writeUInt32BE
 
 --- [SHARED AND MENU]
 ---

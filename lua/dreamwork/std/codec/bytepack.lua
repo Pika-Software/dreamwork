@@ -1,8 +1,9 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local math = std.math
+local setmetatable = std.setmetatable
 
+local math = std.math
 local math_ispositive = math.ispositive
 local math_clamp, math_floor = math.clamp, math.floor
 local math_frexp, math_ldexp = math.frexp, math.ldexp
@@ -13,7 +14,7 @@ local bit_unsign = bit.unsign
 local bit_band, bit_bor = bit.band, bit.bor
 local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
--- TODO: ffi support?
+-- TODO: ffi/holylib support?
 
 --- [SHARED AND MENU]
 ---
@@ -23,503 +24,8 @@ local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 local bytepack = {}
 std.bytepack = bytepack
 
----@alias dreamwork.std.bytepack.Sequence integer[] The sequence of bytes (integers<0-255>).
+---@alias dreamwork.std.bytepack.Sequence integer[] # The sequence of bytes (integers<0-255>).
 
---- [SHARED AND MENU]
----
---- Reads unsigned 8-bit integer from a byte.
----
---- **NOTE: This is technical function and should be never used.**
----
----@param uint8 integer The byte to read.
----@return integer value The unsigned 8-bit integer.
----@deprecated
-function bytepack.readUInt8( uint8 )
-    return uint8
-end
-
---- [SHARED AND MENU]
----
---- Reads unsigned 2-byte (16 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `65535`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@return integer value The unsigned 2-byte integer.
-local function readUInt16( uint8_1, uint8_2 )
-    return bit_bor(
-        bit_lshift( uint8_2, 8 ),
-        uint8_1
-    )
-end
-
-bytepack.readUInt16 = readUInt16
-
---- [SHARED AND MENU]
----
---- Writes unsigned 2-byte (16 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `65535`
----
----@param value integer The unsigned 2-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
-local function writeUInt16( value )
-    return bit_band( value, 0xFF ),
-        bit_band( bit_rshift( value, 8 ), 0xFF )
-end
-
-bytepack.writeUInt16 = writeUInt16
-
---- [SHARED AND MENU]
----
---- Reads unsigned 3-byte (24 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `16777215`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@return integer value The unsigned 3-byte integer.
-local function readUInt24( uint8_1, uint8_2, uint8_3 )
-    return bit_bor(
-        bit_lshift( uint8_3, 16 ),
-        bit_lshift( uint8_2, 8 ),
-        uint8_1
-    )
-end
-
-bytepack.readUInt24 = readUInt24
-
---- [SHARED AND MENU]
----
---- Writes unsigned 3-byte (24 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `16777215`
----
----@param value integer The unsigned 3-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
-local function writeUInt24( value )
-    return bit_band( value, 0xFF ),
-        bit_band( bit_rshift( value, 8 ), 0xFF ),
-        bit_band( bit_rshift( value, 16 ), 0xFF )
-end
-
-bytepack.writeUInt24 = writeUInt24
-
---- [SHARED AND MENU]
----
---- Reads unsigned 4-byte (32 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `4294967295`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@return integer value The unsigned 4-byte integer.
-local function readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
-    -- return ((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-    return bit_unsign(
-        bit_bor(
-            bit_lshift( uint8_4, 24 ),
-            bit_lshift( uint8_3, 16 ),
-            bit_lshift( uint8_2, 8 ),
-            uint8_1
-        )
-    )
-end
-
-bytepack.readUInt32 = readUInt32
-
---- [SHARED AND MENU]
----
---- Writes unsigned 4-byte (32 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `4294967295`
----
----@param value integer The unsigned 4-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
-local function writeUInt32( value )
-    return bit_band( value, 0xFF ),
-        bit_band( bit_rshift( value, 8 ), 0xFF ),
-        bit_band( bit_rshift( value, 16 ), 0xFF ),
-        bit_band( bit_rshift( value, 24 ), 0xFF )
-end
-
-bytepack.writeUInt32 = writeUInt32
-
---- [SHARED AND MENU]
----
---- Reads unsigned 5-byte (40 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `1099511627775`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@return integer value The unsigned 5-byte integer.
-local function readUInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-    return (((uint8_5 * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-end
-
-bytepack.readUInt40 = readUInt40
-
---- [SHARED AND MENU]
----
---- Writes unsigned 5-byte (40 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `1099511627775`.
----
----@param value integer The unsigned 5-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
-local function writeUInt40( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100
-end
-
-bytepack.writeUInt40 = writeUInt40
-
---- [SHARED AND MENU]
----
---- Reads unsigned 6-byte (48 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `281474976710655`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@return integer value The unsigned 6-byte integer.
-local function readUInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-    return ((((uint8_6 * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-end
-
-bytepack.readUInt48 = readUInt48
-
---- [SHARED AND MENU]
----
---- Writes unsigned 6-byte (48 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `281474976710655`
----
----@param value integer The unsigned 6-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
-local function writeUInt48( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100,
-        math_floor( value / 0x10000000000 ) % 0x100
-end
-
-bytepack.writeUInt48 = writeUInt48
-
---- [SHARED AND MENU]
----
---- Reads unsigned 7-byte (56 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@param uint8_7 integer The seventh byte.
----@return integer value The unsigned 7-byte integer.
-local function readUInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-    return (((((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-end
-
-bytepack.readUInt56 = readUInt56
-
---- [SHARED AND MENU]
----
---- Writes unsigned 7-byte (56 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param value integer The unsigned 7-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
----@return integer uint8_7 The seventh byte.
-local function writeUInt56( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100,
-        math_floor( value / 0x10000000000 ) % 0x100,
-        math_floor( value / 0x1000000000000 ) % 0x100
-end
-
-bytepack.writeUInt56 = writeUInt56
-
---- [SHARED AND MENU]
----
---- Reads unsigned 8-byte (64 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `0` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@param uint8_7 integer The seventh byte.
----@param uint8_8 integer The eighth byte.
----@return integer value The unsigned 8-byte integer.
-local function readUInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    return ((((((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-end
-
-bytepack.readUInt64 = readUInt64
-
---- [SHARED AND MENU]
----
---- Writes unsigned 8-byte (64 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `0` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param value integer The unsigned 8-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
----@return integer uint8_7 The seventh byte.
----@return integer uint8_8 The eighth byte.
-local function writeUInt64( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100,
-        math_floor( value / 0x10000000000 ) % 0x100,
-        math_floor( value / 0x1000000000000 ) % 0x100,
-        0
-end
-
-bytepack.writeUInt64 = writeUInt64
-
---- [SHARED AND MENU]
----
---- Reads time in DOS format from little endian bytes.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@return integer hours The number of hours.
----@return integer minutes The number of minutes.
----@return integer seconds The number of seconds, **will be rounded**.
-function bytepack.readTime( uint8_1, uint8_2 )
-    local short = readUInt16( uint8_1, uint8_2 )
-
-    return bit_rshift( bit_band( short, 0xF800 ), 11 ),
-        bit_rshift( bit_band( short, 0x7E0 ), 5 ),
-        bit_band( short, 0x1F ) * 2
-end
-
---- [SHARED AND MENU]
----
---- Writes time in DOS format as little endian bytes.
----
----@param hours? integer The number of hours.
----@param minutes? integer The number of minutes.
----@param seconds? integer The number of seconds, **will be rounded**.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
-function bytepack.writeTime( hours, minutes, seconds )
-    return writeUInt16( bit_bor(
-    ---@cast hours integer
-        bit_lshift( hours == nil and 0 or math_clamp( hours, 0, 24 ), 11 ),
-
-        ---@cast minutes integer
-        bit_lshift( minutes == nil and 0 or math_clamp( minutes, 0, 60 ), 5 ),
-
-        ---@cast seconds integer
-        seconds == nil and 0 or math_floor( math_clamp( seconds, 0, 60 ) * 0.5 )
-    ) )
-end
-
---- [SHARED AND MENU]
----
---- Reads date in DOS format from little endian bytes.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@return integer day The day.
----@return integer month The month.
----@return integer year The year.
-function bytepack.readDate( uint8_1, uint8_2 )
-    local short = readUInt16( uint8_1, uint8_2 )
-
-    return bit_band( short, 0x1F ),
-        bit_rshift( bit_band( short, 0x1E0 ), 5 ),
-        bit_rshift( bit_band( short, 0xFE00 ), 9 ) + 1980
-end
-
---- [SHARED AND MENU]
----
---- Writes date in DOS format as little endian bytes.
----
----@param day? integer The day.
----@param month? integer The month.
----@param year? integer The year.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
-function bytepack.writeDate( day, month, year )
-    return writeUInt16( bit_bor(
-    ---@cast day integer
-        day == nil and 1 or math_clamp( day, 1, 31 ),
-
-        ---@cast month integer
-        bit_lshift( month == nil and 1 or math_clamp( month, 1, 12 ), 5 ),
-
-        ---@cast year integer
-        bit_lshift( year == nil and 0 or (math_clamp( year, 1980, 2107 ) - 1980), 9 )
-    ) )
-end
-
---- [SHARED AND MENU]
----
---- Reads unsigned fixed-point number (**UQm.n**) as little endian bytes.
----
---- ### Commonly Used UQm.n Formats
---- | Format  | Range                          | Precision (Step)        |
---- |:--------|:-------------------------------|:------------------------|
---- | UQ8.8   | `0 to 255.996`                 | 0.00390625 (1/256)      |
---- | UQ10.6  | `0 to 1023.984375`             | 0.015625 (1/64)         |
---- | UQ12.4  | `0 to 4095.9375`               | 0.0625 (1/16)           |
---- | UQ16.16 | `0 to 65,535.99998`            | 0.0000152588 (1/65536)  |
---- | UQ24.8  | `0 to 16,777,215.996`          | 0.00390625 (1/256)      |
---- | UQ32.16 | `0 to 4,294,967,295.99998`     | 0.0000152588 (1/65536)  |
----
----@param n integer Number of fractional bits.
----@param uint8_1 integer The first byte.
----@param uint8_2? integer The second byte.
----@param uint8_3? integer The third byte.
----@param uint8_4? integer The fourth byte.
----@param uint8_5? integer The fifth byte.
----@param uint8_6? integer The sixth byte.
----@param uint8_7? integer The seventh byte.
----@param uint8_8? integer The eighth byte.
----@return number value The unsigned fixed-point number.
-function bytepack.readUnsignedFixedPoint( n, uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    if uint8_1 == nil then
-        return 0
-    end
-
-    local divisor = 2 ^ n
-
-    if uint8_2 == nil then
-        return uint8_1 / divisor
-    elseif uint8_3 == nil then
-        return readUInt16( uint8_1, uint8_2 ) / divisor
-    elseif uint8_4 == nil then
-        return readUInt24( uint8_1, uint8_2, uint8_3 ) / divisor
-    elseif uint8_5 == nil then
-        return readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 ) / divisor
-    elseif uint8_6 == nil then
-        return readUInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) / divisor
-    elseif uint8_7 == nil then
-        return readUInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) / divisor
-    elseif uint8_8 == nil then
-        return readUInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 ) / divisor
-    else
-        return readUInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 ) / divisor
-    end
-end
-
---- [SHARED AND MENU]
----
---- Writes unsigned fixed-point number (**UQm.n**) as little endian bytes.
----
---- ### Commonly Used UQm.n Formats
---- | Format  | Range                          | Precision (Step)        |
---- |:--------|:-------------------------------|:------------------------|
---- | UQ8.8   | `0 to 255.996`                 | 0.00390625 (1/256)      |
---- | UQ10.6  | `0 to 1023.984375`             | 0.015625 (1/64)         |
---- | UQ12.4  | `0 to 4095.9375`               | 0.0625 (1/16)           |
---- | UQ16.16 | `0 to 65,535.99998`            | 0.0000152588 (1/65536)  |
---- | UQ24.8  | `0 to 16,777,215.996`          | 0.00390625 (1/256)      |
---- | UQ32.16 | `0 to 4,294,967,295.99998`     | 0.0000152588 (1/65536)  |
----
----@param value number The unsigned fixed-point number.
----@param m integer Number of integer bits (including sign bit).
----@param n integer Number of fractional bits.
----@return integer uint8_1 The first byte.
----@return integer? uint8_2 The second byte.
----@return integer? uint8_3 The third byte.
----@return integer? uint8_4 The fourth byte.
----@return integer? uint8_5 The fifth byte.
----@return integer? uint8_6 The sixth byte.
----@return integer? uint8_7 The seventh byte.
----@return integer? uint8_8 The eighth byte.
-function bytepack.writeUnsignedFixedPoint( value, m, n )
-    local byte_count = (m + n) * 0.125
-    if byte_count % 1 ~= 0 then
-        error( "invalid number of integer or fractional bits", 2 )
-    end
-
-    local unsigned_integer = value * (2 ^ n)
-
-    if byte_count == 1 then
-        return unsigned_integer
-    elseif byte_count == 2 then
-        return writeUInt16( unsigned_integer )
-    elseif byte_count == 3 then
-        return writeUInt24( unsigned_integer )
-    elseif byte_count == 4 then
-        return writeUInt32( unsigned_integer )
-    elseif byte_count == 5 then
-        return writeUInt40( unsigned_integer )
-    elseif byte_count == 6 then
-        return writeUInt48( unsigned_integer )
-    elseif byte_count == 7 then
-        return writeUInt56( unsigned_integer )
-    else
-        return writeUInt64( unsigned_integer )
-    end
-end
 
 --- [SHARED AND MENU]
 ---
@@ -529,11 +35,9 @@ end
 ---
 ---@param uint8_1 integer The byte.
 ---@return integer value The signed 1-byte integer.
-local function readInt8( uint8_1 )
+function bytepack.readInt8( uint8_1 )
     return uint8_1 - 0x80
 end
-
-bytepack.readInt8 = readInt8
 
 --- [SHARED AND MENU]
 ---
@@ -543,294 +47,1616 @@ bytepack.readInt8 = readInt8
 ---
 ---@param value integer The signed 1-byte integer.
 ---@return integer uint8_1 The byte.
-local function writeInt8( value )
+function bytepack.writeInt8( value )
     return value + 0x80
 end
 
-bytepack.writeInt8 = writeInt8
+-- U/Int16 Read [BE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 2-byte (16 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-32768` - `32767`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@return integer value The signed 2-byte integer.
-local function readInt16( uint8_1, uint8_2 )
-    return readUInt16( uint8_1, uint8_2 ) - 0x8000
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 2-byte (16 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The unsigned 2-byte integer.
+    local function bytepack_readUInt16BE( uint8_1, uint8_2 )
+        return bit_bor(
+            bit_lshift( uint8_1, 8 ),
+            uint8_2
+        )
+    end
+
+    bytepack.readUInt16BE = bytepack_readUInt16BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 2-byte (16 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-32768` - `32767`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The signed 2-byte integer.
+    function bytepack.readInt16BE( uint8_1, uint8_2 )
+        return bytepack_readUInt16BE( uint8_1, uint8_2 ) - 0x8000
+    end
+
 end
 
-bytepack.readInt16 = readInt16
+-- U/Int16 Write [BE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 2-byte (16 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-32768` - `32767`
----
----@param value integer The signed 2-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
-local function writeInt16( value )
-    return writeUInt16( value + 0x8000 )
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 2-byte (16 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param value integer The unsigned 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    local function bytepack_writeUInt16BE( value )
+        return bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeUInt16BE = bytepack_writeUInt16BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 2-byte (16 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-32768` - `32767`
+    ---
+    ---@param value integer The signed 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    function bytepack.writeInt16BE( value )
+        return bytepack_writeUInt16BE( value + 0x8000 )
+    end
+
 end
 
-bytepack.writeInt16 = writeInt16
+-- U/Int16 Read [LE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 3-byte (24 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-8388608` - `8388607`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@return integer value The signed 3-byte integer.
-local function readInt24( uint8_1, uint8_2, uint8_3 )
-    return readUInt24( uint8_1, uint8_2, uint8_3 ) - 0x800000
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 2-byte (16 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The unsigned 2-byte integer.
+    local function bytepack_readUInt16LE( uint8_1, uint8_2 )
+        return bit_bor(
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        )
+    end
+
+    bytepack.readUInt16LE = bytepack_readUInt16LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 2-byte (16 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-32768` - `32767`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The signed 2-byte integer.
+    function bytepack.readInt16LE( uint8_1, uint8_2 )
+        return bytepack_readUInt16LE( uint8_1, uint8_2 ) - 0x8000
+    end
+
 end
 
-bytepack.readInt24 = readInt24
+-- U/Int16 Write [LE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 3-byte (24 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-8388608` - `8388607`
----
----@param value integer The signed 3-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
-local function writeInt24( value )
-    return writeUInt24( value + 0x800000 )
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 2-byte (16 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param value integer The unsigned 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    local function bytepack_writeUInt16LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF )
+    end
+
+    bytepack.writeUInt16LE = bytepack_writeUInt16LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 2-byte (16 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-32768` - `32767`
+    ---
+    ---@param value integer The signed 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    function bytepack.writeInt16LE( value )
+        return bytepack_writeUInt16LE( value + 0x8000 )
+    end
+
 end
 
-bytepack.writeInt24 = writeInt24
+-- U/Int24 Read [BE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 4-byte (32 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `-2147483648` - `2147483647`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@return integer value The signed 4-byte integer.
-local function readInt32( uint8_1, uint8_2, uint8_3, uint8_4 )
-    return readUInt32( uint8_1, uint8_2, uint8_3, uint8_4 ) - 0x80000000
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 3-byte (24 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The unsigned 3-byte integer.
+    local function bytepack_readUInt24BE( uint8_1, uint8_2, uint8_3 )
+        return bit_bor(
+            bit_lshift( uint8_1, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_3
+        )
+    end
+
+    bytepack.readUInt24BE = bytepack_readUInt24BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 3-byte (24 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-8388608` - `8388607`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The signed 3-byte integer.
+    function bytepack.readInt24BE( uint8_1, uint8_2, uint8_3 )
+        return bytepack_readUInt24BE( uint8_1, uint8_2, uint8_3 ) - 0x800000
+    end
+
 end
 
-bytepack.readInt32 = readInt32
+-- U/Int24 Write [BE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 4-byte (32 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-2147483648` - `2147483647`
----
----@param value integer The signed 4-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
-local function writeInt32( value )
-    return writeUInt32( value + 0x80000000 )
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 3-byte (24 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param value integer The unsigned 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    local function bytepack_writeUInt24BE( value )
+        return bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeUInt24BE = bytepack_writeUInt24BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 3-byte (24 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-8388608` - `8388607`
+    ---
+    ---@param value integer The signed 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    function bytepack.writeInt24BE( value )
+        return bytepack_writeUInt24BE( value + 0x800000 )
+    end
+
 end
 
-bytepack.writeInt32 = writeInt32
+-- U/Int24 Read [LE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 5-byte (40 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `-549755813888` - `549755813887`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@return integer value The signed 5-byte integer.
-local function readInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-    return readUInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) - 0x8000000000
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 3-byte (24 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The unsigned 3-byte integer.
+    local function bytepack_readUInt24LE( uint8_1, uint8_2, uint8_3 )
+        return bit_bor(
+            bit_lshift( uint8_3, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        )
+    end
+
+    bytepack.readUInt24LE = bytepack_readUInt24LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 3-byte (24 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-8388608` - `8388607`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The signed 3-byte integer.
+    function bytepack.readInt24LE( uint8_1, uint8_2, uint8_3 )
+        return bytepack_readUInt24LE( uint8_1, uint8_2, uint8_3 ) - 0x800000
+    end
+
 end
 
-bytepack.readInt40 = readInt40
+-- U/Int24 Write [LE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 5-byte (40 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-549755813888` - `549755813887`
----
----@param value integer The signed 5-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
-local function writeInt40( value )
-    return writeUInt40( value + 0x8000000000 )
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 3-byte (24 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param value integer The unsigned 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    local function bytepack_writeUInt24LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF )
+    end
+
+    bytepack.writeUInt24LE = bytepack_writeUInt24LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 3-byte (24 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-8388608` - `8388607`
+    ---
+    ---@param value integer The signed 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    function bytepack.writeInt24LE( value )
+        return bytepack_writeUInt24LE( value + 0x800000 )
+    end
+
 end
 
-bytepack.writeInt40 = writeInt40
+-- U/Int32 Read [BE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 6-byte (48 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `-140737488355328` - `140737488355327`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@return integer value The signed 6-byte integer.
-local function readInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-    return readUInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) - 0x800000000000
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 4-byte (32 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The unsigned 4-byte integer.
+    local function bytepack_readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_unsign(
+            bit_bor(
+                bit_lshift( uint8_1, 24 ),
+                bit_lshift( uint8_2, 16 ),
+                bit_lshift( uint8_3, 8 ),
+                uint8_4
+            )
+        )
+    end
+
+    bytepack.readUInt32BE = bytepack_readUInt32BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 4-byte (32 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-2147483648` - `2147483647`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The signed 4-byte integer.
+    function bytepack.readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bytepack_readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 ) - 0x80000000
+    end
+
 end
 
-bytepack.readInt48 = readInt48
+-- U/Int32 Write [BE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 6-byte (48 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-140737488355328` - `140737488355327`
----
----@param value integer The signed 6-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
-local function writeInt48( value )
-    return writeUInt48( value + 0x800000000000 )
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 4-byte (32 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param value integer The unsigned 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    local function bytepack_writeUInt32BE( value )
+        return bit_band( bit_rshift( value, 24 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeUInt32BE = bytepack_writeUInt32BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 4-byte (32 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-2147483648` - `2147483647`
+    ---
+    ---@param value integer The signed 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeInt32BE( value )
+        return bytepack_writeUInt32BE( value + 0x80000000 )
+    end
+
 end
 
-bytepack.writeInt48 = writeInt48
+-- U/Int32 Read [LE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 7-byte (56 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@param uint8_7 integer The seventh byte.
----@return integer value The signed 7-byte integer.
-local function readInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-    if uint8_1 < 0x80 then
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 4-byte (32 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The unsigned 4-byte integer.
+    local function bytepack_readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_unsign(
+            bit_bor(
+                bit_lshift( uint8_4, 24 ),
+                bit_lshift( uint8_3, 16 ),
+                bit_lshift( uint8_2, 8 ),
+                uint8_1
+            )
+        )
+    end
+
+    bytepack.readUInt32LE = bytepack_readUInt32LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 4-byte (32 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-2147483648` - `2147483647`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The signed 4-byte integer.
+    function bytepack.readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bytepack_readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 ) - 0x80000000
+    end
+
+end
+
+-- U/Int32 Write [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 4-byte (32 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param value integer The unsigned 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    local function bytepack_writeUInt32LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 24 ), 0xFF )
+    end
+
+    bytepack.writeUInt32LE = bytepack_writeUInt32LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 4-byte (32 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-2147483648` - `2147483647`
+    ---
+    ---@param value integer The signed 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeInt32LE( value )
+        return bytepack_writeUInt32LE( value + 0x80000000 )
+    end
+
+end
+
+-- U/Int40 Read [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 5-byte (40 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `1099511627775`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@return integer value The unsigned 5-byte integer.
+    local function bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5
+    end
+
+    bytepack.readUInt40BE = bytepack_readUInt40BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 5-byte (40 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-549755813888` - `549755813887`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@return integer value The signed 5-byte integer.
+    function bytepack.readInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        return bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) - 0x8000000000
+    end
+
+end
+
+-- U/Int40 Write [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 5-byte (40 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `1099511627775`.
+    ---
+    ---@param value integer The unsigned 5-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    local function bytepack_writeUInt40BE( value )
+        return math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+    bytepack.writeUInt40BE = bytepack_writeUInt40BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 5-byte (40 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-549755813888` - `549755813887`
+    ---
+    ---@param value integer The signed 5-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    function bytepack.writeInt40BE( value )
+        return bytepack_writeUInt40BE( value + 0x8000000000 )
+    end
+
+end
+
+-- U/Int40 Read [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 5-byte (40 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `1099511627775`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@return integer value The unsigned 5-byte integer.
+    local function bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        return (((uint8_5 * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+    end
+
+    bytepack.readUInt40LE = bytepack_readUInt40LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 5-byte (40 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-549755813888` - `549755813887`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@return integer value The signed 5-byte integer.
+    function bytepack.readInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        return bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) - 0x8000000000
+    end
+
+end
+
+-- U/Int40 Write [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 5-byte (40 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `1099511627775`.
+    ---
+    ---@param value integer The unsigned 5-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    local function bytepack_writeUInt40LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100
+    end
+
+    bytepack.writeUInt40LE = bytepack_writeUInt40LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 5-byte (40 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-549755813888` - `549755813887`
+    ---
+    ---@param value integer The signed 5-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    function bytepack.writeInt40LE( value )
+        return bytepack_writeUInt40LE( value + 0x8000000000 )
+    end
+
+end
+
+-- U/Int48 Read [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 6-byte (48 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `281474976710655`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@return integer value The unsigned 6-byte integer.
+    local function bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        return ((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6
+    end
+
+    bytepack.readUInt48BE = bytepack_readUInt48BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 6-byte (48 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@return integer value The signed 6-byte integer.
+    function bytepack.readInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        return bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) - 0x800000000000
+    end
+
+end
+
+-- U/Int48 Write [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 6-byte (48 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `281474976710655`
+    ---
+    ---@param value integer The unsigned 6-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    local function bytepack_writeUInt48BE( value )
+        return math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+    bytepack.writeUInt48BE = bytepack_writeUInt48BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 6-byte (48 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
+    ---
+    ---@param value integer The signed 6-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    function bytepack.writeInt48BE( value )
+        return bytepack_writeUInt48BE( value + 0x800000000000 )
+    end
+
+end
+
+
+-- U/Int48 Read [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 6-byte (48 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `281474976710655`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@return integer value The unsigned 6-byte integer.
+    local function bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        return ((((uint8_6 * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+    end
+
+    bytepack.readUInt48LE = bytepack_readUInt48LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 6-byte (48 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@return integer value The signed 6-byte integer.
+    function bytepack.readInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        return bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) - 0x800000000000
+    end
+
+end
+
+-- U/Int48 Write [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 6-byte (48 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `281474976710655`
+    ---
+    ---@param value integer The unsigned 6-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    local function bytepack_writeUInt48LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100
+    end
+
+    bytepack.writeUInt48LE = bytepack_writeUInt48LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 6-byte (48 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
+    ---
+    ---@param value integer The signed 6-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    function bytepack.writeInt48LE( value )
+        return bytepack_writeUInt48LE( value + 0x800000000000 )
+    end
+
+end
+
+-- U/Int56 Read [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 7-byte (56 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@return integer value The unsigned 7-byte integer.
+    function bytepack.readUInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
+        return (((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 7-byte (56 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@return integer value The signed 7-byte integer.
+    function bytepack.readInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
+        if uint8_1 < 0x80 then
+            return (((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7
+        else
+            return (((((((uint8_1 - 0xFF) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_7 - 0xFF)) - 1
+        end
+    end
+
+end
+
+-- U/Int56 Write [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 7-byte (56 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The unsigned 7-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    function bytepack.writeUInt56BE( value )
+        return math_floor( value / 0x1000000000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 7-byte (56 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
+    ---
+    ---@param value integer The signed 7-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    function bytepack.writeInt56BE( value )
+        return math_ispositive( value ) and 0 or 0xFF,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+end
+
+-- U/Int56 Read [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 7-byte (56 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@return integer value The unsigned 7-byte integer.
+    function bytepack.readUInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         return (((((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-    else
-        return (((((((uint8_7 - 0xFF) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
     end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 7-byte (56 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@return integer value The signed 7-byte integer.
+    function bytepack.readInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
+        if uint8_1 < 0x80 then
+            return (((((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        else
+            return (((((((uint8_7 - 0xFF) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
+        end
+    end
+
 end
 
-bytepack.readInt56 = readInt56
+-- U/Int56 Write [LE]
+do
 
---- [SHARED AND MENU]
----
---- Writes signed 7-byte (56 bit) integer as little endian bytes.
----
---- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
----
----@param value integer The signed 7-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
----@return integer uint8_7 The seventh byte.
-local function writeInt56( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100,
-        math_floor( value / 0x10000000000 ) % 0x100,
-        math_ispositive( value ) and 0 or 0xFF
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 7-byte (56 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The unsigned 7-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    function bytepack.writeUInt56LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x1000000000000 ) % 0x100
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 7-byte (56 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
+    ---
+    ---@param value integer The signed 7-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    function bytepack.writeInt56LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_ispositive( value ) and 0 or 0xFF
+    end
+
 end
 
-bytepack.writeInt56 = writeInt56
+-- U/Int64 Read [BE]
+do
 
---- [SHARED AND MENU]
----
---- Reads signed 8-byte (64 bit) integer from little endian bytes.
----
---- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@param uint8_7 integer The seventh byte.
----@param uint8_8 integer The eighth byte.
----@return integer value The signed 8-byte integer.
-local function readInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    if uint8_1 < 0x80 then
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 8-byte (64 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return integer value The unsigned 8-byte integer.
+    function bytepack.readUInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        return ((((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 8-byte (64 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return integer value The signed 8-byte integer.
+    function bytepack.readInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        if uint8_1 < 0x80 then
+            return ((((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+        else
+            return ((((((((uint8_1 - 0xFF) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_7 - 0xFF)) * 0x100 + (uint8_8 - 0xFF)) - 1
+        end
+    end
+
+end
+
+-- U/Int64 Write [BE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 8-byte (64 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The unsigned 8-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeUInt64BE( value )
+        return 0, -- skip first byte because luajit cannot handle such huge numbers
+            math_floor( value / 0x1000000000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 8-byte (64 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The signed 8-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeInt64BE( value )
+        return math_ispositive( value ) and 0 or 0xFF,
+            math_floor( value / 0x1000000000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            value % 0x100
+    end
+
+end
+
+-- U/Int64 Read [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 8-byte (64 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return integer value The unsigned 8-byte integer.
+    function bytepack.readUInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         return ((((((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-    else
-        return ((((((((uint8_8 - 0xFF) * 0x100 + (uint8_7 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
     end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 8-byte (64 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return integer value The signed 8-byte integer.
+    function bytepack.readInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        if uint8_1 < 0x80 then
+            return ((((((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        else
+            return ((((((((uint8_8 - 0xFF) * 0x100 + (uint8_7 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
+        end
+    end
+
 end
 
-bytepack.readInt64 = readInt64
+
+-- U/Int64 Write [LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 8-byte (64 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The unsigned 8-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeUInt64LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x1000000000000 ) % 0x100,
+            0 -- skip last byte because luajit cannot handle such huge numbers
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 8-byte (64 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
+    ---
+    --- All values above will have problems when working with them.
+    ---
+    ---@param value integer The signed 8-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeInt64LE( value )
+        return value % 0x100,
+            math_floor( value / 0x100 ) % 0x100,
+            math_floor( value / 0x10000 ) % 0x100,
+            math_floor( value / 0x1000000 ) % 0x100,
+            math_floor( value / 0x100000000 ) % 0x100,
+            math_floor( value / 0x10000000000 ) % 0x100,
+            math_floor( value / 0x1000000000000 ) % 0x100,
+            math_ispositive( value ) and 0 or 0xFF
+    end
+
+end
+
+-- Float Read [BE/LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 4-byte (32 bit) float from big endian bytes.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return number value The signed 4-byte float.
+    local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        local sign = uint8_1 > 0x7F
+        local expo = (uint8_1 % 0x80) * 0x2 + math_floor( uint8_2 / 0x80 )
+        local mant = ((uint8_2 % 0x80) * 0x100 + uint8_3) * 0x100 + uint8_4
+
+        if mant == 0 and expo == 0 then
+            if sign then
+                return -0.0
+            else
+                return 0.0
+            end
+        elseif expo == 0xFF then
+            if mant == 0 then
+                if sign then
+                    return math_tiny
+                else
+                    return math_huge
+                end
+            else
+                return math_nan
+            end
+        end
+
+        if sign then
+            return -math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
+        else
+            return math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
+        end
+    end
+
+    bytepack.readFloatBE = bytepack_readFloatBE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 4-byte (32 bit) float from little endian bytes.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return number value The signed 4-byte float.
+    function bytepack.readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
+    end
+
+end
+
+-- Float Write [BE/LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 4-byte (32 bit) float as big endian bytes.
+    ---
+    ---@param value number The signed 4-byte float.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    local function bytepack_writeFloatBE( value )
+        if value ~= value then
+            return 0, 0, 136, 255
+        end
+
+        local sign = false
+        if value < 0.0 then
+            value = -value
+            sign = true
+        end
+
+        local mant, expo = math_frexp( value )
+        if mant == math_huge or expo > 0x80 then
+            if sign then
+                return 0, 0, 128, 255
+            else
+                return 0, 0, 128, 127
+            end
+        elseif (mant == 0.0 and expo == 0) or (expo < -0x7E) then
+            if (1 / value) == math_huge then
+                return 0, 0, 0, 0
+            else
+                return 0, 0, 0, 128
+            end
+        end
+
+        mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 24 ) )
+        expo = expo + 0x7E
+
+        return (sign and 0x80 or 0) + math_floor( expo / 0x2 ),
+            (expo % 0x2) * 0x80 + math_floor( mant / 0x10000 ),
+            math_floor( mant / 0x100 ) % 0x100,
+            mant % 0x100
+    end
+
+    bytepack.writeFloatBE = bytepack_writeFloatBE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 4-byte (32 bit) float as little endian bytes.
+    ---
+    ---@param value number The signed 4-byte float.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeFloatLE( value )
+        local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeFloatBE( value )
+        return uint8_4, uint8_3, uint8_2, uint8_1
+    end
+
+end
+
+-- Double Read [BE/LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 8-byte (64 bit) float (double) from big endian bytes.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return number value The signed 8-byte float.
+    local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        local sign = uint8_1 > 0x7F
+        local expo = (uint8_1 % 0x80) * 0x10 + math_floor( uint8_2 / 0x10 )
+        local mant = ((((((uint8_2 % 0x10) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+
+        if mant == 0 and expo == 0 then
+            if sign then
+                return -0.0
+            else
+                return 0.0
+            end
+        elseif expo == 0x7FF then
+            if mant == 0 then
+                if sign then
+                    return math_tiny
+                else
+                    return math_huge
+                end
+            else
+                return math_nan
+            end
+        end
+
+        if sign then
+            return -math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
+        else
+            return math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
+        end
+    end
+
+    bytepack.readDoubleBE = bytepack_readDoubleBE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads signed 8-byte (64 bit) float (double) from little endian bytes.
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@param uint8_5 integer The fifth byte.
+    ---@param uint8_6 integer The sixth byte.
+    ---@param uint8_7 integer The seventh byte.
+    ---@param uint8_8 integer The eighth byte.
+    ---@return number value The signed 8-byte float.
+    function bytepack.readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        return bytepack_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
+    end
+
+end
+
+-- Double Write [BE/LE]
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 8-byte (64 bit) float (double) as big endian bytes.
+    ---
+    ---@param value number The signed 8-byte float.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    local function bytepack_writeDoubleBE( value )
+        if value ~= value then -- NaN
+            return 0, 0, 0, 0, 0, 0, 248, 255
+        end
+
+        local sign = false
+        if value < 0.0 then
+            value = -value
+            sign = true
+        end
+
+        local mant, expo = math_frexp( value )
+        if mant == math_huge or expo > 0x400 then -- inf
+            if sign then
+                return 0, 0, 0, 0, 0, 0, 240, 255
+            else
+                return 0, 0, 0, 0, 0, 0, 240, 127
+            end
+        elseif (mant == 0.0 and expo == 0) or (expo < -0x3FE) then -- zero
+            if (1 / value) == math_huge then
+                return 0, 0, 0, 0, 0, 0, 0, 0
+            else
+                return 0, 0, 0, 0, 0, 0, 0, 128
+            end
+        end
+
+        mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 53 ) )
+        expo = expo + 0x3FE
+
+        return (sign and 0x80 or 0) + math_floor( expo / 0x10 ),
+            (expo % 0x10) * 0x10 + math_floor( mant / 0x1000000000000 ),
+            math_floor( mant / 0x10000000000 ) % 0x100,
+            math_floor( mant / 0x100000000 ) % 0x100,
+            math_floor( mant / 0x1000000 ) % 0x100,
+            math_floor( mant / 0x10000 ) % 0x100,
+            math_floor( mant / 0x100 ) % 0x100,
+            mant % 0x100
+    end
+
+    bytepack.writeDoubleBE = bytepack_writeDoubleBE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes signed 8-byte (64 bit) float (double) as little endian bytes.
+    ---
+    ---@param value number The signed 8-byte float.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeDoubleLE( value )
+        local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeDoubleBE( value )
+        return uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1
+    end
+
+end
 
 --- [SHARED AND MENU]
 ---
---- Writes signed 8-byte (64 bit) integer as little endian bytes.
+--- Reads `hours`, `minutes` and `seconds` from single `Short` number ( UInt16 ).
 ---
---- Valid values without loss of precision: `-9007199254740991` - `9007199254740991`
----
---- All values above will have problems when working with them.
----
----@param value integer The signed 8-byte integer.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
----@return integer uint8_7 The seventh byte.
----@return integer uint8_8 The eighth byte.
-local function writeInt64( value )
-    return value % 0x100,
-        math_floor( value / 0x100 ) % 0x100,
-        math_floor( value / 0x10000 ) % 0x100,
-        math_floor( value / 0x1000000 ) % 0x100,
-        math_floor( value / 0x100000000 ) % 0x100,
-        math_floor( value / 0x10000000000 ) % 0x100,
-        math_floor( value / 0x1000000000000 ) % 0x100,
-        math_ispositive( value ) and 0 or 0xFF
+---@param uint16 integer The uint16 to read from.
+---@return integer hours The number of hours.
+---@return integer minutes The number of minutes.
+---@return integer seconds The number of seconds, **will be rounded**.
+function bytepack.readTime( uint16 )
+    return bit_rshift( bit_band( uint16, 0xF800 ), 11 ),
+        bit_rshift( bit_band( uint16, 0x7E0 ), 5 ),
+        bit_band( uint16, 0x1F ) * 2
 end
-
-bytepack.writeInt64 = writeInt64
 
 --- [SHARED AND MENU]
 ---
---- Reads signed fixed-point number (**Qm.n**) as little endian bytes.
+--- Writes time in DOS format as single `Short` number ( UInt16 ).
 ---
---- ### Commonly Used Qm.n Formats
+---@param hours? integer The number of hours.
+---@param minutes? integer The number of minutes.
+---@param seconds? integer The number of seconds, **will be rounded**.
+---@return integer uint16 The uint16 to read from.
+function bytepack.writeTime( hours, minutes, seconds )
+    if hours == nil then
+        hours = 0
+    else
+        hours = math_clamp( hours, 0, 24 )
+    end
+
+    if minutes == nil then
+        minutes = 0
+    else
+        minutes = math_clamp( minutes, 0, 60 )
+    end
+
+    if seconds == nil then
+        seconds = 0
+    else
+        seconds = math_floor( math_clamp( seconds, 0, 60 ) * 0.5 )
+    end
+
+    return bit_bor(
+        bit_lshift( hours, 11 ),
+        bit_lshift( minutes, 5 ),
+        seconds
+    )
+end
+
+--- [SHARED AND MENU]
+---
+--- Reads date in DOS format from single `Short` number ( UInt16 ).
+---
+---@param uint16 integer The uint16 to read from.
+---@return integer day The day.
+---@return integer month The month.
+---@return integer year The year.
+function bytepack.readDate( uint16 )
+    return bit_band( uint16, 0x1F ),
+        bit_rshift( bit_band( uint16, 0x1E0 ), 5 ),
+        bit_rshift( bit_band( uint16, 0xFE00 ), 9 ) + 1980
+end
+
+--- [SHARED AND MENU]
+---
+--- Writes date in DOS format as single `Short` number ( UInt16 ).
+---
+---@param day? integer The day.
+---@param month? integer The month.
+---@param year? integer The year.
+---@return integer uint16 The uint16 to read from.
+function bytepack.writeDate( day, month, year )
+    if day == nil then
+        day = 1
+    else
+        day = math_clamp( day, 1, 31 )
+    end
+
+    if month == nil then
+        month = 1
+    else
+        month = math_clamp( month, 1, 12 )
+    end
+
+    if year == nil then
+        year = 0
+    else
+        year = math_clamp( year, 1980, 2107 ) - 1980
+    end
+
+    return bit_bor( day,
+        bit_lshift( month, 5 ),
+        bit_lshift( year, 9 )
+    )
+end
+
+--- [SHARED AND MENU]
+---
+--- Reads fixed-point number (**UQm.n**) from specified integer with `n` bits.
+---
+--- ### Commonly Used UQm.n Formats (**unsigned**)
+--- | Format  | Range                          | Precision (Step)        |
+--- |:--------|:-------------------------------|:------------------------|
+--- | UQ8.8   | `0 to 255.996`                 | 0.00390625 (1/256)      |
+--- | UQ10.6  | `0 to 1023.984375`             | 0.015625 (1/64)         |
+--- | UQ12.4  | `0 to 4095.9375`               | 0.0625 (1/16)           |
+--- | UQ16.16 | `0 to 65,535.99998`            | 0.0000152588 (1/65536)  |
+--- | UQ24.8  | `0 to 16,777,215.996`          | 0.00390625 (1/256)      |
+--- | UQ32.16 | `0 to 4,294,967,295.99998`     | 0.0000152588 (1/65536)  |
+---
+--- ### Commonly Used Qm.n Formats (**signed**)
 --- | Format | Range                          | Precision (Step)        |
 --- |:-------|:-------------------------------|:------------------------|
 --- | Q8.8   | `-128.0 to 127.996`            | 0.00390625 (1/256)      |
@@ -841,38 +1667,13 @@ bytepack.writeInt64 = writeInt64
 --- | Q32.16 | `-2,147,483,648.0 to 2,147,483,647.99998` | 0.0000152588 (1/65536) |
 ---
 ---@param n integer Number of fractional bits.
----@param uint8_1 integer The first byte.
----@param uint8_2? integer The second byte.
----@param uint8_3? integer The third byte.
----@param uint8_4? integer The fourth byte.
----@param uint8_5? integer The fifth byte.
----@param uint8_6? integer The sixth byte.
----@param uint8_7? integer The seventh byte.
----@param uint8_8? integer The eighth byte.
----@return number value The signed fixed-point number.
-function bytepack.readFixedPoint( n, uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    if uint8_1 == nil then
+---@param integer integer The integer number to read from.
+---@return number value The unsigned fixed-point number.
+function bytepack.readFixedPoint( n, integer )
+    if integer == 0 then
         return 0
-    end
-
-    local divisor = 2 ^ n
-
-    if uint8_2 == nil then
-        return readInt8( uint8_1 ) / divisor
-    elseif uint8_3 == nil then
-        return readInt16( uint8_1, uint8_2 ) / divisor
-    elseif uint8_4 == nil then
-        return readInt24( uint8_1, uint8_2, uint8_3 ) / divisor
-    elseif uint8_5 == nil then
-        return readInt32( uint8_1, uint8_2, uint8_3, uint8_4 ) / divisor
-    elseif uint8_6 == nil then
-        return readInt40( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) / divisor
-    elseif uint8_7 == nil then
-        return readInt48( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) / divisor
-    elseif uint8_8 == nil then
-        return readInt56( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 ) / divisor
     else
-        return readInt64( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 ) / divisor
+        return integer / (2 ^ n)
     end
 end
 
@@ -880,258 +1681,61 @@ end
 ---
 --- Writes unsigned fixed-point number (**UQm.n**) as little endian bytes.
 ---
---- ### Commonly Used Qm.n Formats
---- | Format | Range                          | Precision (Step)        |
---- |:-------|:-------------------------------|:------------------------|
---- | Q8.8   | `-128.0 to 127.996`            | 0.00390625 (1/256)      |
---- | Q10.6  | `-512.0 to 511.984375`         | 0.015625 (1/64)         |
---- | Q12.4  | `-2048.0 to 2047.9375`         | 0.0625 (1/16)           |
---- | Q16.16 | `-32,768.0 to 32,767.99998`    | 0.0000152588 (1/65536)  |
---- | Q24.8  | `-8,388,608.0 to 8,388,607.996`| 0.00390625 (1/256)      |
---- | Q32.16 | `-2,147,483,648.0 to 2,147,483,647.99998` | 0.0000152588 (1/65536) |
+--- ### Commonly Used UQm.n Formats
+--- | Format  | Range                          | Precision (Step)        |
+--- |:--------|:-------------------------------|:------------------------|
+--- | UQ8.8   | `0 to 255.996`                 | 0.00390625 (1/256)      |
+--- | UQ10.6  | `0 to 1023.984375`             | 0.015625 (1/64)         |
+--- | UQ12.4  | `0 to 4095.9375`               | 0.0625 (1/16)           |
+--- | UQ16.16 | `0 to 65,535.99998`            | 0.0000152588 (1/65536)  |
+--- | UQ24.8  | `0 to 16,777,215.996`          | 0.00390625 (1/256)      |
+--- | UQ32.16 | `0 to 4,294,967,295.99998`     | 0.0000152588 (1/65536)  |
 ---
 ---@param value number The unsigned fixed-point number.
 ---@param m integer Number of integer bits (including sign bit).
 ---@param n integer Number of fractional bits.
----@return integer uint8_1 The first byte.
----@return integer? uint8_2 The second byte.
----@return integer? uint8_3 The third byte.
----@return integer? uint8_4 The fourth byte.
----@return integer? uint8_5 The fifth byte.
----@return integer? uint8_6 The sixth byte.
----@return integer? uint8_7 The seventh byte.
----@return integer? uint8_8 The eighth byte.
+---@return integer integer The integer number to read from.
 function bytepack.writeFixedPoint( value, m, n )
     local byte_count = (m + n) * 0.125
     if byte_count % 1 ~= 0 then
-        error( "invalid byte count", 2 )
+        error( "invalid count of integer/fractional bits", 2 )
     end
 
-    local signed_integer = value * (2 ^ n)
-
-    if byte_count == 1 then
-        return writeInt8( signed_integer )
-    elseif byte_count == 2 then
-        return writeInt16( signed_integer )
-    elseif byte_count == 3 then
-        return writeInt24( signed_integer )
-    elseif byte_count == 4 then
-        return writeInt32( signed_integer )
-    elseif byte_count == 5 then
-        return writeInt40( signed_integer )
-    elseif byte_count == 6 then
-        return writeInt48( signed_integer )
-    elseif byte_count == 7 then
-        return writeInt56( signed_integer )
-    else
-        return writeInt64( signed_integer )
-    end
+    return value * (2 ^ n)
 end
 
---- [SHARED AND MENU]
----
---- Reads signed 4-byte (32 bit) float from little endian bytes.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@return number value The signed 4-byte float.
-function bytepack.readFloat( uint8_1, uint8_2, uint8_3, uint8_4 )
-    local sign = uint8_4 > 0x7F
-    local expo = (uint8_4 % 0x80) * 0x2 + math_floor( uint8_3 / 0x80 )
-    local mant = ((uint8_3 % 0x80) * 0x100 + uint8_2) * 0x100 + uint8_1
-
-    if mant == 0 and expo == 0 then
-        if sign then
-            return -0.0
-        else
-            return 0.0
-        end
-    elseif expo == 0xFF then
-        if mant == 0 then
-            if sign then
-                return math_tiny
-            else
-                return math_huge
-            end
-        else
-            return math_nan
-        end
-    end
-
-    if sign then
-        return -math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
-    else
-        return math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
-    end
-end
-
---- [SHARED AND MENU]
----
---- Writes signed 4-byte (32 bit) float as little endian bytes.
----
----@param value number The signed 4-byte float.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
-function bytepack.writeFloat( value, big_endian )
-    if value ~= value then
-        return 255, 136, 0, 0
-    end
-
-    local sign = false
-    if value < 0.0 then
-        value = -value
-        sign = true
-    end
-
-    local mant, expo = math_frexp( value )
-    if mant == math_huge or expo > 0x80 then
-        if sign then
-            return 255, 128, 0, 0
-        else
-            return 127, 128, 0, 0
-        end
-    elseif (mant == 0.0 and expo == 0) or (expo < -0x7E) then
-        if (1 / value) == math_huge then
-            return 0, 0, 0, 0
-        else
-            return 128, 0, 0, 0
-        end
-    end
-
-    mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 24 ) )
-    expo = expo + 0x7E
-
-    return mant % 0x100,
-        math_floor( mant / 0x100 ) % 0x100,
-        (expo % 0x2) * 0x80 + math_floor( mant / 0x10000 ),
-        (sign and 0x80 or 0) + math_floor( expo / 0x2 )
-end
-
---- [SHARED AND MENU]
----
---- Reads signed 8-byte (64 bit) float (double) from little endian bytes.
----
----@param uint8_1 integer The first byte.
----@param uint8_2 integer The second byte.
----@param uint8_3 integer The third byte.
----@param uint8_4 integer The fourth byte.
----@param uint8_5 integer The fifth byte.
----@param uint8_6 integer The sixth byte.
----@param uint8_7 integer The seventh byte.
----@param uint8_8 integer The eighth byte.
----@return number value The signed 8-byte float.
-function bytepack.readDouble( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-    local sign = uint8_8 > 0x7F
-    local expo = (uint8_8 % 0x80) * 0x10 + math_floor( uint8_7 / 0x10 )
-    local mant = ((((((uint8_7 % 0x10) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
-
-    if mant == 0 and expo == 0 then
-        if sign then
-            return -0.0
-        else
-            return 0.0
-        end
-    elseif expo == 0x7FF then
-        if mant == 0 then
-            if sign then
-                return math_tiny
-            else
-                return math_huge
-            end
-        else
-            return math_nan
-        end
-    end
-
-    if sign then
-        return -math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
-    else
-        return math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
-    end
-end
-
---- [SHARED AND MENU]
----
---- Writes signed 8-byte (64 bit) float (double) as little endian bytes.
----
----@param value number The signed 8-byte float.
----@return integer uint8_1 The first byte.
----@return integer uint8_2 The second byte.
----@return integer uint8_3 The third byte.
----@return integer uint8_4 The fourth byte.
----@return integer uint8_5 The fifth byte.
----@return integer uint8_6 The sixth byte.
----@return integer uint8_7 The seventh byte.
----@return integer uint8_8 The eighth byte.
-function bytepack.writeDouble( value )
-    if value ~= value then -- NaN
-        return 255, 248, 0, 0, 0, 0, 0, 0
-    end
-
-    local sign = false
-    if value < 0.0 then
-        value = -value
-        sign = true
-    end
-
-    local mant, expo = math_frexp( value )
-    if mant == math_huge or expo > 0x400 then -- inf
-        if sign then
-            return 255, 240, 0, 0, 0, 0, 0, 0
-        else
-            return 127, 240, 0, 0, 0, 0, 0, 0
-        end
-    elseif (mant == 0.0 and expo == 0) or (expo < -0x3FE) then -- zero
-        if (1 / value) == math_huge then
-            return 0, 0, 0, 0, 0, 0, 0, 0
-        else
-            return 128, 0, 0, 0, 0, 0, 0, 0
-        end
-    end
-
-    mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 53 ) )
-    expo = expo + 0x3FE
-
-    return mant % 0x100,
-        math_floor( mant / 0x100 ) % 0x100,
-        math_floor( mant / 0x10000 ) % 0x100,
-        math_floor( mant / 0x1000000 ) % 0x100,
-        math_floor( mant / 0x100000000 ) % 0x100,
-        math_floor( mant / 0x10000000000 ) % 0x100,
-        (expo % 0x10) * 0x10 + math_floor( mant / 0x1000000000000 ),
-        (sign and 0x80 or 0) + math_floor( expo / 0x10 )
-end
-
+-- HEX Read [BE/LE]
 do
 
     ---@type table<integer, integer>
     local decode_map = {
-        [ 0x30 ] = 0x0,
-        [ 0x31 ] = 0x1,
-        [ 0x32 ] = 0x2,
-        [ 0x33 ] = 0x3,
-        [ 0x34 ] = 0x4,
-        [ 0x35 ] = 0x5,
-        [ 0x36 ] = 0x6,
-        [ 0x37 ] = 0x7,
-        [ 0x38 ] = 0x8,
-        [ 0x39 ] = 0x9,
-        [ 0x41 ] = 0xA,
-        [ 0x42 ] = 0xB,
-        [ 0x43 ] = 0xC,
-        [ 0x44 ] = 0xD,
-        [ 0x45 ] = 0xE,
-        [ 0x46 ] = 0xF,
-        [ 0x61 ] = 0xA,
-        [ 0x62 ] = 0xB,
-        [ 0x63 ] = 0xC,
-        [ 0x64 ] = 0xD,
-        [ 0x65 ] = 0xE,
-        [ 0x66 ] = 0xF
+        -- digits
+        [ 0x30 ] = 0x0, --[[ 0 ]]
+        [ 0x31 ] = 0x1, --[[ 1 ]]
+        [ 0x32 ] = 0x2, --[[ 2 ]]
+        [ 0x33 ] = 0x3, --[[ 3 ]]
+        [ 0x34 ] = 0x4, --[[ 4 ]]
+        [ 0x35 ] = 0x5, --[[ 5 ]]
+        [ 0x36 ] = 0x6, --[[ 6 ]]
+        [ 0x37 ] = 0x7, --[[ 7 ]]
+        [ 0x38 ] = 0x8, --[[ 8 ]]
+        [ 0x39 ] = 0x9, --[[ 9 ]]
+
+        -- upper-case letters
+        [ 0x41 ] = 0xA, --[[ A ]]
+        [ 0x42 ] = 0xB, --[[ B ]]
+        [ 0x43 ] = 0xC, --[[ C ]]
+        [ 0x44 ] = 0xD, --[[ D ]]
+        [ 0x45 ] = 0xE, --[[ E ]]
+        [ 0x46 ] = 0xF, --[[ F ]]
+
+        -- lower-case letters
+        [ 0x61 ] = 0xA, --[[ a ]]
+        [ 0x62 ] = 0xB, --[[ b ]]
+        [ 0x63 ] = 0xC, --[[ c ]]
+        [ 0x64 ] = 0xD, --[[ d ]]
+        [ 0x65 ] = 0xE, --[[ e ]]
+        [ 0x66 ] = 0xF, --[[ f ]]
     }
 
     do
@@ -1167,7 +1771,7 @@ do
     ---@param uint8_3 integer The third byte.
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The unsigned 2-byte integer.
-    function bytepack.readHex16( uint8_1, uint8_2, uint8_3, uint8_4 )
+    function bytepack.readHex16BE( uint8_1, uint8_2, uint8_3, uint8_4 )
         return bit_bor(
             bit_lshift( decode_map[ uint8_1 ], 12 ),
             bit_lshift( decode_map[ uint8_2 ], 8 ),
@@ -1187,7 +1791,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The unsigned 3-byte integer.
-    function bytepack.readHex24( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+    function bytepack.readHex24BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         return bit_bor(
             bit_lshift( decode_map[ uint8_1 ], 20 ),
             bit_lshift( decode_map[ uint8_2 ], 16 ),
@@ -1211,7 +1815,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 4-byte integer.
-    function bytepack.readHex32( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+    function bytepack.readHex32BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         return bit_bor(
             bit_lshift( decode_map[ uint8_1 ], 28 ),
             bit_lshift( decode_map[ uint8_2 ], 24 ),
@@ -1226,56 +1830,92 @@ do
 
 end
 
+-- HEX Write [BE/LE]
 do
 
     ---@type table<integer, integer>
     local encode_map = {
-        [ 0x0 ] = 0x30,
-        [ 0x1 ] = 0x31,
-        [ 0x2 ] = 0x32,
-        [ 0x3 ] = 0x33,
-        [ 0x4 ] = 0x34,
-        [ 0x5 ] = 0x35,
-        [ 0x6 ] = 0x36,
-        [ 0x7 ] = 0x37,
-        [ 0x8 ] = 0x38,
-        [ 0x9 ] = 0x39,
-        [ 0xA ] = 0x41,
-        [ 0xB ] = 0x42,
-        [ 0xC ] = 0x43,
-        [ 0xD ] = 0x44,
-        [ 0xE ] = 0x45,
-        [ 0xF ] = 0x46
+        -- digits
+        [ 0x0 ] = 0x30, --[[ 0 ]]
+        [ 0x1 ] = 0x31, --[[ 1 ]]
+        [ 0x2 ] = 0x32, --[[ 2 ]]
+        [ 0x3 ] = 0x33, --[[ 3 ]]
+        [ 0x4 ] = 0x34, --[[ 4 ]]
+        [ 0x5 ] = 0x35, --[[ 5 ]]
+        [ 0x6 ] = 0x36, --[[ 6 ]]
+        [ 0x7 ] = 0x37, --[[ 7 ]]
+        [ 0x8 ] = 0x38, --[[ 8 ]]
+        [ 0x9 ] = 0x39, --[[ 9 ]]
+
+        -- upper-case letters
+        [ 0xA ] = 0x41, --[[ A ]]
+        [ 0xB ] = 0x42, --[[ B ]]
+        [ 0xC ] = 0x43, --[[ C ]]
+        [ 0xD ] = 0x44, --[[ D ]]
+        [ 0xE ] = 0x45, --[[ E ]]
+        [ 0xF ] = 0x46, --[[ F ]]
     }
 
-    do
+    ---@type table<integer, integer>
+    local hex_cache_1 = {}
 
-        local uint8_cache_1 = {}
+    setmetatable( hex_cache_1, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( uint, 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
 
-        for uint8 = 0, 255, 1 do
-            uint8_cache_1[ uint8 ] = encode_map[ bit_band( bit_rshift( uint8, 4 ), 0x0F ) ]
-        end
+    ---@type table<integer, integer>
+    local hex_cache_2 = {}
 
-        local uint8_cache_2 = {}
+    setmetatable( hex_cache_2, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 4 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
 
-        for uint8 = 0, 255, 1 do
-            uint8_cache_2[ uint8 ] = encode_map[ bit_band( uint8, 0x0F ) ]
-        end
-
-        --- [SHARED AND MENU]
-        ---
-        --- Encodes unsigned 1-byte (8 bit) integer to big endian hex bytes.
-        ---
-        --- Valid values without loss of precision: `0` - `255`
-        ---
-        ---@param uint8 integer The unsigned 1-byte integer.
-        ---@return integer uint8_1 The first byte.
-        ---@return integer uint8_2 The second byte.
-        function bytepack.writeHex8( uint8 )
-            return uint8_cache_1[ uint8 ], uint8_cache_2[ uint8 ]
-        end
-
+    --- [SHARED AND MENU]
+    ---
+    --- Encodes unsigned 1-byte (8 bit) integer to big endian hex bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `255`
+    ---
+    ---@param uint8 integer The unsigned 1-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    function bytepack.writeHex8( uint8 )
+        return hex_cache_2[ uint8 ], hex_cache_1[ uint8 ]
     end
+
+    ---@type table<integer, integer>
+    local hex_cache_3 = {}
+
+    setmetatable( hex_cache_3, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 8 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
+
+    ---@type table<integer, integer>
+    local hex_cache_4 = {}
+
+    setmetatable( hex_cache_4, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 12 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
 
     --- [SHARED AND MENU]
     ---
@@ -1288,12 +1928,50 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
-    function bytepack.writeHex16( uint16 )
-        return encode_map[ bit_band( bit_rshift( uint16, 12 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint16, 8 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint16, 4 ), 0x0F ) ],
-            encode_map[ bit_band( uint16, 0x0F ) ]
+    function bytepack.writeHex16BE( uint16 )
+        return hex_cache_4[ uint16 ], hex_cache_3[ uint16 ],
+            hex_cache_2[ uint16 ], hex_cache_1[ uint16 ]
     end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Encodes unsigned 2-byte (16 bit) integer to little endian hex bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param uint16 integer The unsigned 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeHex16LE( uint16 )
+        return hex_cache_2[ uint16 ], hex_cache_1[ uint16 ],
+            hex_cache_4[ uint16 ], hex_cache_3[ uint16 ]
+    end
+
+    ---@type table<integer, integer>
+    local hex_cache_5 = {}
+
+    setmetatable( hex_cache_5, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 16 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
+
+    ---@type table<integer, integer>
+    local hex_cache_6 = {}
+
+    setmetatable( hex_cache_6, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 20 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
 
     --- [SHARED AND MENU]
     ---
@@ -1308,14 +1986,54 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
-    function bytepack.writeHex24( uint24 )
-        return encode_map[ bit_band( bit_rshift( uint24, 20 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint24, 16 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint24, 12 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint24, 8 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint24, 4 ), 0x0F ) ],
-            encode_map[ bit_band( uint24, 0x0F ) ]
+    function bytepack.writeHex24BE( uint24 )
+        return hex_cache_6[ uint24 ], hex_cache_5[ uint24 ],
+            hex_cache_4[ uint24 ], hex_cache_3[ uint24 ],
+            hex_cache_2[ uint24 ], hex_cache_1[ uint24 ]
     end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Encodes unsigned 3-byte (24 bit) integer to little endian hex bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param uint24 integer The unsigned 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    function bytepack.writeHex24LE( uint24 )
+        return hex_cache_2[ uint24 ], hex_cache_1[ uint24 ],
+            hex_cache_4[ uint24 ], hex_cache_3[ uint24 ],
+            hex_cache_6[ uint24 ], hex_cache_5[ uint24 ]
+    end
+
+    ---@type table<integer, integer>
+    local hex_cache_7 = {}
+
+    setmetatable( hex_cache_7, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 24 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
+
+    ---@type table<integer, integer>
+    local hex_cache_8 = {}
+
+    setmetatable( hex_cache_8, {
+        __index = function( self, uint )
+            local value = encode_map[ bit_band( bit_rshift( uint, 28 ), 0x0F ) ]
+            self[ uint ] = value
+            return value
+        end,
+        __mode = "v"
+    } )
 
     --- [SHARED AND MENU]
     ---
@@ -1332,15 +2050,33 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
-    function bytepack.writeHex32( uint32 )
-        return encode_map[ bit_band( bit_rshift( uint32, 28 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 24 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 20 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 16 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 12 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 8 ), 0x0F ) ],
-            encode_map[ bit_band( bit_rshift( uint32, 4 ), 0x0F ) ],
-            encode_map[ bit_band( uint32, 0x0F ) ]
+    function bytepack.writeHex32BE( uint32 )
+        return hex_cache_8[ uint32 ], hex_cache_7[ uint32 ],
+            hex_cache_6[ uint32 ], hex_cache_5[ uint32 ],
+            hex_cache_4[ uint32 ], hex_cache_3[ uint32 ],
+            hex_cache_2[ uint32 ], hex_cache_1[ uint32 ]
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Encodes unsigned 4-byte (32 bit) integer to little endian hex bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param uint32 integer The unsigned 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    ---@return integer uint8_5 The fifth byte.
+    ---@return integer uint8_6 The sixth byte.
+    ---@return integer uint8_7 The seventh byte.
+    ---@return integer uint8_8 The eighth byte.
+    function bytepack.writeHex32LE( uint32 )
+        return hex_cache_2[ uint32 ], hex_cache_1[ uint32 ],
+            hex_cache_4[ uint32 ], hex_cache_3[ uint32 ],
+            hex_cache_6[ uint32 ], hex_cache_5[ uint32 ],
+            hex_cache_8[ uint32 ], hex_cache_7[ uint32 ]
     end
 
 end

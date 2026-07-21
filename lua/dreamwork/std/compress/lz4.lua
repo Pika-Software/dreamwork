@@ -32,7 +32,7 @@ local table = std.table
 local table_concat = table.concat
 
 local bytepack = std.bytepack
-local bytepack_readUInt32 = bytepack.readUInt32
+local bytepack_readUInt32 = bytepack.readUInt32BE
 
 local MIN_MATCH = 4 -- A sequence is 3 bytes, so it has to encode at least 4 to have any use
 local MIN_LENGTH = 13

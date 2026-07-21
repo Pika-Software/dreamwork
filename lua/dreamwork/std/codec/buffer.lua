@@ -18,23 +18,24 @@ local buffer = std.buffer or {}
 std.buffer = buffer
 
 -- TODO: ffi support?
+-- TODO: rework highly required
 
-local bytepack_readUInt16, bytepack_writeUInt16 = bytepack.readUInt16, bytepack.writeUInt16
-local bytepack_readUInt24, bytepack_writeUInt24 = bytepack.readUInt24, bytepack.writeUInt24
-local bytepack_readUInt32, bytepack_writeUInt32 = bytepack.readUInt32, bytepack.writeUInt32
-local bytepack_readUInt40, bytepack_writeUInt40 = bytepack.readUInt40, bytepack.writeUInt40
-local bytepack_readUInt48, bytepack_writeUInt48 = bytepack.readUInt48, bytepack.writeUInt48
-local bytepack_readUInt56, bytepack_writeUInt56 = bytepack.readUInt56, bytepack.writeUInt56
-local bytepack_readUInt64, bytepack_writeUInt64 = bytepack.readUInt64, bytepack.writeUInt64
+local bytepack_readUInt16, bytepack_writeUInt16 = bytepack.readUInt16BE, bytepack.writeUInt16BE
+local bytepack_readUInt24, bytepack_writeUInt24 = bytepack.readUInt24BE, bytepack.writeUInt24BE
+local bytepack_readUInt32, bytepack_writeUInt32 = bytepack.readUInt32BE, bytepack.writeUInt32BE
+local bytepack_readUInt40, bytepack_writeUInt40 = bytepack.readUInt40BE, bytepack.writeUInt40BE
+local bytepack_readUInt48, bytepack_writeUInt48 = bytepack.readUInt48BE, bytepack.writeUInt48BE
+local bytepack_readUInt56, bytepack_writeUInt56 = bytepack.readUInt56BE, bytepack.writeUInt56BE
+local bytepack_readUInt64, bytepack_writeUInt64 = bytepack.readUInt64BE, bytepack.writeUInt64BE
 
 local bytepack_readInt8, bytepack_writeInt8 = bytepack.readInt8, bytepack.writeInt8
-local bytepack_readInt16, bytepack_writeInt16 = bytepack.readInt16, bytepack.writeInt16
-local bytepack_readInt24, bytepack_writeInt24 = bytepack.readInt24, bytepack.writeInt24
-local bytepack_readInt32, bytepack_writeInt32 = bytepack.readInt32, bytepack.writeInt32
-local bytepack_readInt40, bytepack_writeInt40 = bytepack.readInt40, bytepack.writeInt40
-local bytepack_readInt48, bytepack_writeInt48 = bytepack.readInt48, bytepack.writeInt48
-local bytepack_readInt56, bytepack_writeInt56 = bytepack.readInt56, bytepack.writeInt56
-local bytepack_readInt64, bytepack_writeInt64 = bytepack.readInt64, bytepack.writeInt64
+local bytepack_readInt16, bytepack_writeInt16 = bytepack.readInt16BE, bytepack.writeInt16BE
+local bytepack_readInt24, bytepack_writeInt24 = bytepack.readInt24BE, bytepack.writeInt24BE
+local bytepack_readInt32, bytepack_writeInt32 = bytepack.readInt32BE, bytepack.writeInt32BE
+local bytepack_readInt40, bytepack_writeInt40 = bytepack.readInt40BE, bytepack.writeInt40BE
+local bytepack_readInt48, bytepack_writeInt48 = bytepack.readInt48BE, bytepack.writeInt48BE
+local bytepack_readInt56, bytepack_writeInt56 = bytepack.readInt56BE, bytepack.writeInt56BE
+local bytepack_readInt64, bytepack_writeInt64 = bytepack.readInt64BE, bytepack.writeInt64BE
 
 --- [SHARED AND MENU]
 ---
