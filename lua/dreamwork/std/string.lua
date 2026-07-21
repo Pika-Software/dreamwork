@@ -14,6 +14,7 @@ local raw = std.raw
 local raw_tonumber = raw.tonumber
 
 local math = std.math
+local math_abs = math.abs
 local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
@@ -1705,7 +1706,7 @@ function string.comma( str, separator, offset, str_length )
     if offset == nil then
         offset = 3
     else
-        offset = math.max( 0, math.floor( math.abs( offset ) ) )
+        offset = math_max( 0, math_floor( math_abs( offset ) ) )
         if offset == 0 then return str end
     end
 
