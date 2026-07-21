@@ -1,19 +1,21 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local isTable = std.isTable
+local setmetatable = std.setmetatable
+
 local string = std.string
+local string_byte = string.byte
 local string_format = string.format
 
 local debug = std.debug
 local debug_newproxy = debug.newproxy
-local debub_getmetatable = debug.getmetatable
+local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
 local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
-
-local setmetatable = std.setmetatable
 
 --- [SHARED AND MENU]
 ---
@@ -27,6 +29,10 @@ std.class = class
 ---@alias dreamwork.std.Class.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
 ---@alias dreamwork.std.Object.__init fun( obj: dreamwork.std.Object, ...: any? )
 
+--- [SHARED AND MENU]
+---
+--- A base for objects were created by `class` library.
+---
 ---@class dreamwork.std.Object : dreamwork.Metatable
 ---@field private __type string The name of object type. **READ ONLY**
 ---@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
@@ -37,11 +43,43 @@ std.class = class
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.std.Object
 
+--- [SHARED AND MENU]
+---
+--- A general structure for every class that created with `class` library.
+---
 ---@class dreamwork.std.Class : dreamwork.std.Object
 ---@field __base dreamwork.std.Object The base of the class. **READ ONLY**
 ---@field __parent? dreamwork.std.Class The parent of the class. **READ ONLY**
 ---@field __private boolean If the class is private. **READ ONLY**
 ---@field private __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is a class.
+---
+---@param value any The value to check for being a class.
+---@return boolean is_class `true` if `value` is a class, `false` otherwise.
+function std.isClass( value )
+    if not isTable( value ) then return false end
+
+    local base = raw_get( value, "__base" )
+    if base == nil then return false end
+
+    return raw_get( base, "__class" ) == value
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is a object created by class.
+---
+---@param value any The value to check for being a object.
+---@return boolean is_object `true` is `value` is a object created by class, `false` otherwise.
+function std.isObject( value )
+    local base = debug_getmetatable( value )
+    if base == nil then return false end
+
+    return raw_get( base, "__class" ) ~= nil
+end
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Class dreamwork.std.Class
@@ -58,9 +96,6 @@ local function __tostring( obj )
 end
 
 do
-
-    local debug_getmetatable = debug.getmetatable
-    local string_byte = string.byte
 
     ---@type table<string, boolean>
     local meta_blacklist = {
@@ -228,6 +263,7 @@ function class.create( base )
 
     setmetatable( cls, {
         __index = base,
+        __metatable = base,
         __call = class__call,
         __tostring = __tostring,
         __type = raw_get( base, "__type" ) .. "Class"
@@ -255,7 +291,7 @@ end
 ---@param cls dreamwork.std.Class | dreamwork.std.Object The class to check against.
 ---@return boolean is_instance `true` if `object` is an instance of the given class, `false` otherwise.
 function class.isInherited( object, cls )
-    local metatable = debub_getmetatable( object )
+    local metatable = debug_getmetatable( object )
     if metatable == nil then
         return false
     end
@@ -267,7 +303,7 @@ function class.isInherited( object, cls )
             return true
         end
 
-        base = debub_getmetatable( base )
+        base = debug_getmetatable( base )
     end
 
     return false

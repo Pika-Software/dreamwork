@@ -762,20 +762,8 @@ sendfile( "dreamwork/std/class.lua" )
 do
 
     local debub_getmetatable = debug.getmetatable
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the value is a class.
-    ---
-    ---@param value any The value to check for being a class.
-    ---@return boolean is_class `true` if `value` is a class, `false` otherwise.
-    local function isClass( value )
-        return isTable( value ) and raw_get( value, "__base" ) ~= nil
-    end
-
-    std.isClass = isClass
-
     local isInherited = std.class.isInherited
+    local isClass = std.isClass
 
     --- [SHARED AND MENU]
     ---
