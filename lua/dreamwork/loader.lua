@@ -558,6 +558,7 @@ sendfile( "dreamwork/std/os.lua" )
 ---@class dreamwork.std.os
 local os = std.os
 
+local SysTime = SysTime or os.clock
 dreamwork.InitTime = SysTime()
 
 -- detour library
@@ -1413,7 +1414,32 @@ end
 dofile( "dreamwork/std/futures.lua" )
 sendfile( "dreamwork/std/futures.lua" )
 
-std.sleep = std.futures.sleep
+do
+
+    local futures = std.futures
+    local futures_sleep = futures.sleep
+    local futures_running = futures.running
+
+    --- [SHARED AND MENU]
+    ---
+    --- Puts current thread to sleep for given amount of seconds.
+    ---
+    --- **CAUTION**: This function could pause the main thread.
+    ---
+    ---@see dreamwork.std.futures.sleep
+    ---@param seconds number
+    function std.sleep( seconds )
+        if futures_running() == nil then -- main thread
+            local deadline = SysTime() + seconds
+            while SysTime() < deadline do end
+
+            return
+        end
+
+        futures_sleep( seconds ) -- second thread
+    end
+
+end
 
 local isString = std.isString
 
