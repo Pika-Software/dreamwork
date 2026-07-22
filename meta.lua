@@ -505,6 +505,13 @@ metatable.__isvalid = nil
 ---@type fun(self: T): integer
 metatable.__hash = nil
 
+---
+--- Returns binary size of the `object` as integer of bit/bytes.
+---
+---@generic T
+---@type fun(self: T, as_bytes: boolean): integer
+metatable.__sizeof = nil
+
 ---@class getregistry
 getregistry = {}
 

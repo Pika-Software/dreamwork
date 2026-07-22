@@ -305,6 +305,23 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns binary size of the `value` as integer of bit/bytes.
+---
+---@param value any The value to get the size of.
+---@param as_bytes? boolean Whether return size as bytes. By default: `false`
+---@return integer | nil size The size of the `value`.
+function std.sizeof( value, as_bytes )
+    ---@type nil | fun( value: any, as_bytes: boolean ): integer
+    local fn = debug_getmetavalue( value, "__sizeof" )
+    if fn == nil then
+        return nil
+    else
+        return fn( value, as_bytes == true )
+    end
+end
+
+--- [SHARED AND MENU]
+---
 --- Returns a string representation of the given value.
 ---
 ---@param value any The value to get the string representation of.
