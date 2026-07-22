@@ -37,8 +37,8 @@ std.class = class
 ---@field private __type string The name of object type. **READ ONLY**
 ---@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
 ---@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**
----@field private __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
----@field protected __new? dreamwork.std.Class.__new A function that will be called when a new class is created and allows you to replace the result.
+---@field __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
+---@field __new? dreamwork.std.Class.__new A function that will be called when a new class is created and allows you to replace the result.
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.std.Object
@@ -51,7 +51,7 @@ std.class = class
 ---@field __base dreamwork.std.Object The base of the class. **READ ONLY**
 ---@field __parent? dreamwork.std.Class The parent of the class. **READ ONLY**
 ---@field __private boolean If the class is private. **READ ONLY**
----@field private __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
+---@field __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
 
 --- [SHARED AND MENU]
 ---
