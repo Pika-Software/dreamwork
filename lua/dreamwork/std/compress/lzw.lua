@@ -1,26 +1,26 @@
---[[
-    Original library was made by Rochet2
-    https://github.com/Rochet2/lualzw
-
-    Edit by Unknown Developer
-]]
-
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local table = std.table
+local table_concat = table.concat
 
 local string = std.string
 local string_sub = string.sub
 local string_len = string.len
 local string_char, string_byte = string.char, string.byte
 
-local table_concat = std.table.concat
-
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
---- A lzw library.
+--- Lempel–Ziv–Welch (LZW) is a universal lossless compression algorithm created by Abraham Lempel, Jacob Ziv, and Terry Welch.
+---
+--- [Source Code](https://github.com/Rochet2/lualzw)
+---
+--- Author: [Rochet2](https://github.com/Rochet2)
+---
+--- Edited by Unknown Developer
 ---
 ---@class dreamwork.std.lzw
-local lzw = std.lzw or {}
+local lzw = {}
 std.lzw = lzw
 
 local basedictcompress = {}
@@ -31,12 +31,12 @@ for i = 0, 255 do
     basedictcompress[ ic ], basedictdecompress[ iic ] = iic, ic
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Compresses a string using LZW compression.
 ---
 ---@param raw_data string The string to compress.
----@param forced? boolean If `true`, compression will ignore the excess length of compressed data relative to uncompressed data.
+---@param forced? boolean If `true`, compression will ignore the excess length of compressed data relative to uncompressed data. By default: `true`
 ---@return string | nil compressed_data The compressed string or `nil` if the compression fails.
 ---@return nil | string error_message The error message or `nil` if the compression succeeds.
 function lzw.compress( raw_data, forced )
@@ -47,16 +47,25 @@ function lzw.compress( raw_data, forced )
         return nil, "compressed string cannot be so short"
     end
 
-    local parts, part_count = {}, 0
-    forced = forced == true
+    forced = forced ~= false
 
+    ---@type string[]
+    local parts = {}
+
+    ---@type integer
+    local part_count = 0
+
+    ---@type integer | nil
     local parts_length
+
     if not forced then
         parts_length = 1
     end
 
+    ---@type table<string, string>
     local dictionary = {}
     local a, b = 0, 1
+
     local word = ""
 
     for i = 1, data_length, 1 do
@@ -96,9 +105,11 @@ function lzw.compress( raw_data, forced )
         end
     end
 
-    local str = basedictcompress[ word ] or dictionary[ word ]
-
-    if not forced then
+    if forced then
+        part_count = part_count + 1
+        parts[ part_count ] = basedictcompress[ word ] or dictionary[ word ]
+    else
+        local str = basedictcompress[ word ] or dictionary[ word ]
         parts_length = parts_length + string_len( str )
 
         if data_length < parts_length then
@@ -106,15 +117,21 @@ function lzw.compress( raw_data, forced )
         elseif data_length == parts_length then
             return nil, "compressed data length equal to uncompressed"
         end
+
+        part_count = part_count + 1
+        parts[ part_count ] = str
     end
 
-    part_count = part_count + 1
-    parts[ part_count ] = str
-
-    return table_concat( parts, "", 1, part_count )
+    if part_count == 1 then
+        return parts[ 1 ]
+    elseif part_count == 2 then
+        return parts[ 1 ] .. parts[ 2 ]
+    else
+        return table_concat( parts, "", 1, part_count )
+    end
 end
 
---- ![(SHARED AND MENU)](https://github.com/user-attachments/assets/8f5230ff-38f7-493b-b9fc-cc70ffd5b3f4)
+--- [SHARED AND MENU]
 ---
 --- Decompresses a string using LZW compression.
 ---
@@ -129,11 +146,19 @@ function lzw.decompress( encoded_data )
     local data_length = string_len( encoded_data )
     if data_length < 2 then
         return nil, "compressed string cannot be so short"
+    elseif data_length % 2 ~= 0 then
+        return nil, "corrupt compressed data: odd length"
     end
 
-    local parts, part_count = {}, 0
+    ---@type string[]
+    local parts = {}
+
+    ---@type integer
+    local part_count = 0
+
     local last = string_sub( encoded_data, 1, 2 )
 
+    ---@type table<string, string>
     local dictionary = {}
     local a, b = 0, 1
 

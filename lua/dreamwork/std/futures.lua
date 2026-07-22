@@ -1088,5 +1088,5 @@ function futures.sleep( seconds )
 
     -- TODO: replace with tick based timers/events
 
-    return futures_pending()
+    futures_pending()
 end
