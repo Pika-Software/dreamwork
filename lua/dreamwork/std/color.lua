@@ -60,13 +60,13 @@ color_lib.fromRGB = fromRGB
 ---@return integer red The 8-bit red channel, in the range [0, 255].
 ---@return integer green The 8-bit green channel, in the range [0, 255].
 ---@return integer blue The 8-bit blue channel, in the range [0, 255].
-local function toRGBA( color )
+local function toRGB( color )
     return bit_band( bit_rshift( color, 16 ), 0xFF ),
         bit_band( bit_rshift( color, 8 ), 0xFF ),
         bit_band( color, 0xFF )
 end
 
-color_lib.toRGBA = toRGBA
+color_lib.toRGB = toRGB
 
 --- [SHARED AND MENU]
 ---
@@ -75,7 +75,7 @@ color_lib.toRGBA = toRGBA
 ---@param color dreamwork.std.Color The color value to invert.
 ---@return dreamwork.std.Color The inverted color value.
 function color_lib.invert( color )
-    local r, g, b = toRGBA( color )
+    local r, g, b = toRGB( color )
 
     return fromRGB(
         math_abs( 255 - r ),
@@ -91,8 +91,8 @@ end
 ---@param value1 dreamwork.std.Color The first color to add.
 ---@param value2 dreamwork.std.Color The second color to add.
 function color_lib.add( value1, value2 )
-    local r1, g1, b1 = toRGBA( value1 )
-    local r2, g2, b2 = toRGBA( value2 )
+    local r1, g1, b1 = toRGB( value1 )
+    local r2, g2, b2 = toRGB( value2 )
 
     return fromRGB(
         math_ceil( r1 + r2 ),
@@ -109,8 +109,8 @@ end
 ---@param value2 dreamwork.std.Color The second color to subtract.
 ---@return dreamwork.std.Color new_color The result of the subtraction.
 function color_lib.sub( value1, value2 )
-    local r1, g1, b1 = toRGBA( value1 )
-    local r2, g2, b2 = toRGBA( value2 )
+    local r1, g1, b1 = toRGB( value1 )
+    local r2, g2, b2 = toRGB( value2 )
 
     return fromRGB(
         math_ceil( r1 - r2 ),
@@ -127,8 +127,8 @@ end
 ---@param value2 dreamwork.std.Color The second color to multiply.
 ---@return dreamwork.std.Color new_color The result of the multiplication.
 function color_lib.mul( value1, value2 )
-    local r1, g1, b1 = toRGBA( value1 )
-    local r2, g2, b2 = toRGBA( value2 )
+    local r1, g1, b1 = toRGB( value1 )
+    local r2, g2, b2 = toRGB( value2 )
 
     return fromRGB(
         math_ceil( r1 * r2 ),
@@ -145,8 +145,8 @@ end
 ---@param value2 dreamwork.std.Color The second color to divide.
 ---@return dreamwork.std.Color new_color The result of the division.
 function color_lib.div( value1, value2 )
-    local r1, g1, b1 = toRGBA( value1 )
-    local r2, g2, b2 = toRGBA( value2 )
+    local r1, g1, b1 = toRGB( value1 )
+    local r2, g2, b2 = toRGB( value2 )
 
     return fromRGB(
         math_ceil( r1 / r2 ),
@@ -162,7 +162,7 @@ end
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string binary_string The color as binary string.
 function color_lib.toString( color )
-    return string_char( toRGBA( color ) )
+    return string_char( toRGB( color ) )
 end
 
 --- [SHARED AND MENU]
@@ -198,8 +198,8 @@ end
 ---@param color2 dreamwork.std.Color The ending color.
 ---@return dreamwork.std.Color The interpolated color.
 function color_lib.lerp( frac, color, color2 )
-    local r, g, b = toRGBA( color )
-    local r2, g2, b2 = toRGBA( color2 )
+    local r, g, b = toRGB( color )
+    local r2, g2, b2 = toRGB( color2 )
 
     return fromRGB(
         math_lerp( frac, r, r2 ),
@@ -215,7 +215,7 @@ end
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string The hexadecimal representation of the color.
 local function toHex( color )
-    return string_format( "%02x%02x%02x%02x", toRGBA( color ) )
+    return string_format( "%02x%02x%02x%02x", toRGB( color ) )
 end
 
 color_lib.toHex = toHex
@@ -347,7 +347,7 @@ color_lib.fromHSL = fromHSL
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number lightness The lightness as fraction [0, 1].
 local function toHSL( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local min_value, max_value = math_min( red, green, blue ), math_max( red, green, blue )
@@ -430,7 +430,7 @@ color_lib.fromHSV = fromHSV
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number value The value as fraction [0, 1].
 local function toHSV( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local min_value, max_value = math_min( red, green, blue ), math_max( red, green, blue )
@@ -522,7 +522,7 @@ end
 ---@return number yellow The yellow as fraction [0, 1].
 ---@return number black The black as fraction [0, 1].
 function color_lib.toCMYK( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     local m = math_max( red, green, blue )
     return (m - red) / m, (m - green) / m, (m - blue) / m, math_min( red, green, blue ) * DIV255_CONST
 end
@@ -534,7 +534,7 @@ end
 ---@param color dreamwork.std.Color The color to get the hue of.
 ---@return integer hue The hue in degrees [0, 360].
 function color_lib.getHue( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local max_value = math_max( red, green, blue )
@@ -577,7 +577,7 @@ end
 ---@param color dreamwork.std.Color The color to get the saturation of.
 ---@return number saturation The saturation as fraction [0, 1].
 function color_lib.getSaturation( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local max_value = math_max( red, green, blue )
@@ -603,7 +603,7 @@ end
 ---@param color dreamwork.std.Color The color to get the brightness of.
 ---@return number brightness The brightness as fraction [0, 1].
 function color_lib.getBrightness( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     return math_max( red, green, blue ) * DIV255_CONST
 end
 
@@ -626,7 +626,7 @@ end
 ---@param color dreamwork.std.Color The color to get the lightness of.
 ---@return number lightness The lightness as fraction [0, 1].
 function color_lib.getLightness( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     return (math_max( red, green, blue ) + math_min( red, green, blue )) * 0.5
@@ -697,7 +697,7 @@ end
 ---@param color dreamwork.std.Color The color to get the luminance of.
 ---@return number luminance The luminance as integer [0, 255].
 function color_lib.getLuminance( color )
-    local red, green, blue = toRGBA( color )
+    local red, green, blue = toRGB( color )
     return math_ceil( red * 0.2126 + green * 0.7152 + blue * 0.0722 )
 end
 

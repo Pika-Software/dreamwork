@@ -682,7 +682,7 @@ do
         return string.format( "ColorProxy(%d, %d, %d, %d)", self.r, self.g, self.b, self.a )
     end
 
-    local color_toRGBA = std.color.toRGBA
+    local color_toRGB = std.color.toRGB
 
     ---@type table<dreamwork.engine.ColorProxy, dreamwork.std.Color>
     local cache = {}
@@ -696,7 +696,7 @@ do
     function ColorProxy:update( clr )
         if cache[ self ] == clr then return end
 
-        self.r, self.g, self.b = color_toRGBA( clr )
+        self.r, self.g, self.b = color_toRGB( clr )
         cache[ self ] = clr
     end
 

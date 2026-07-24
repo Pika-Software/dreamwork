@@ -192,8 +192,9 @@ do
     ---
     --- Creates a new class object.
     ---
-    ---@param base dreamwork.std.Object The base object, aka metatable.
-    ---@return dreamwork.std.Object object The new object.
+    ---@generic T : dreamwork.std.Object
+    ---@param base T The base object, aka metatable.
+    ---@return T object The new object.
     local function class_new( base )
         if raw_get( base, "__private" ) then
             ---@diagnostic disable-next-line: return-type-mismatch

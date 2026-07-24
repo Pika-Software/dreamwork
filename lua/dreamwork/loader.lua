@@ -1314,8 +1314,12 @@ do
         String.__type = "string"
 
         ---@private
-        function String.__toboolean( value )
-            return value ~= "" and value ~= "0" and value ~= "false"
+        function String:__toboolean()
+            return self ~= "" and self ~= "0" and self ~= "false"
+        end
+
+        function String:__represent()
+            return string_format( "string: %p [%s]", self, self )
         end
 
         String.__tonumber = raw.tonumber

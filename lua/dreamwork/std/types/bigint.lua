@@ -54,7 +54,7 @@ end
 
 ---@return boolean
 ---@protected
-function BigInt:__tobool()
+function BigInt:__toboolean()
     return self[ 0 ] ~= 0
 end
 
@@ -116,7 +116,6 @@ local function copy( object )
             object[ 15 ],
             object[ 16 ]
         }, BigInt )
-
     elseif length < 33 then
         return setmetatable( {
             [ 0 ] = object[ 0 ],

@@ -8,6 +8,8 @@ local engine_consoleMessageColored = engine.consoleMessageColored
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local isNumber = std.isNumber
+
 --- [SHARED AND MENU]
 ---
 --- The source engine console library.
@@ -71,20 +73,25 @@ end
 
 do
 
-    ---@class dreamwork.std.console.Message
-    ---@field text string
-    ---@field color dreamwork.std.Color | nil
-
     --- [SHARED AND MENU]
     ---
     --- Writes a message to the console.
     ---
-    ---@param ... dreamwork.std.console.Message The message to write to the console.
+    ---@param ... string | dreamwork.std.Color The message to write to the console.
     local function console_write( ... )
+        ---@type dreamwork.std.Color
+        local color = 0xFFFFFF
+
         for i = 1, select( "#", ... ), 1 do
-            ---@type dreamwork.std.console.Message
-            local message = select( i, ... )
-            engine_consoleMessageColored( message.text, message.color )
+            ---@type string | dreamwork.std.Color
+            local value = select( i, ... )
+            if isNumber( value ) then
+                ---@cast value integer
+                color = value
+            else
+                ---@cast value string
+                engine_consoleMessageColored( value, color )
+            end
         end
     end
 
@@ -94,22 +101,10 @@ do
     ---
     --- Writes a message to the console with new line after the text.
     ---
-    ---@param ... dreamwork.std.console.Message The message to write to the console.
+    ---@param ... string | dreamwork.std.Color The message to write to the console.
     function console.writeLine( ... )
-        if (...) == nil then
-            engine_consoleMessage( "\n" )
-            return
-        end
-
-        ---@type dreamwork.std.console.Message | nil
-        local last_message = select( -1, ... )
-        if last_message == nil then
-            engine_consoleMessage( "\n" )
-            return
-        end
-
-        last_message.text = last_message.text .. "\n"
         console_write( ... )
+        engine_consoleMessage( "\n" )
     end
 
     if SERVER then
