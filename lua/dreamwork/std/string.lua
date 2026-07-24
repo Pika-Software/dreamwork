@@ -1765,7 +1765,7 @@ do
     --- Quotes a string using single or double quotes.
     ---
     ---@param str string The string to quote.
-    ---@param use_single boolean Whether to use single quotes (true) or double quotes (false).
+    ---@param use_single? boolean Whether to use single quotes (true) or double quotes (false).
     ---@return string The quoted string.
     function string.quote( str, use_single )
         if use_single then
@@ -1780,7 +1780,7 @@ do
     --- Unquotes a string using single or double quotes.
     ---
     ---@param str string The string to unquote.
-    ---@param use_single boolean Whether to use single quotes (true) or double quotes (false).
+    ---@param use_single? boolean Whether to use single quotes (true) or double quotes (false).
     ---@return string The unquoted string.
     function string.unquote( str, use_single )
         if use_single then
