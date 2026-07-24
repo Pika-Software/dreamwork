@@ -152,3 +152,35 @@ function ascii.isControl( uint8 )
     return (uint8 >= 0x00 and uint8 <= 0x1F)
         or uint8 == 0x7F -- DEL
 end
+
+do
+
+    ---@type table<integer, integer>
+    local byte_to_number = {}
+
+    -- general digits
+    for uint8 = 48, 57, 1 do
+        byte_to_number[ uint8 ] = uint8 - 48
+    end
+
+    -- uppercase letters
+    for uint8 = 65, 90, 1 do
+        byte_to_number[ uint8 ] = uint8 - 55
+    end
+
+    -- lowercase letters
+    for uint8 = 97, 122, 1 do
+        byte_to_number[ uint8 ] = uint8 - 87
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the numerical representation of the given byte.
+    ---
+    ---@param uint8 integer The byte to convert.
+    ---@return integer | nil number A number in Lua that equals this byte.
+    function ascii.toInteger( uint8 )
+        return byte_to_number[ uint8 ]
+    end
+
+end
