@@ -8,7 +8,7 @@ local math_floor = std.math.floor
 local tonumber = std.raw.tonumber
 
 ---@class dreamwork.std.steam
-local steam = std.steam or {}
+local steam = {}
 std.steam = steam
 
 --- [SHARED AND MENU]

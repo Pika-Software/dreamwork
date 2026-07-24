@@ -1026,8 +1026,9 @@ do
     ---
     --- The returned table is a shallow copy of the original table.
     ---
-    ---@param tbl table The table to copy.
-    ---@return table copy The copied table.
+    ---@generic T
+    ---@param tbl T The table to copy.
+    ---@return T copy The copied table.
     local function copy_fn( tbl )
         local fn = debug_getmetavalue( tbl, "__copy" )
         if fn ~= nil then

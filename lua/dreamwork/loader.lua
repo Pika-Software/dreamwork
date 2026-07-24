@@ -356,6 +356,22 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the copy of the `value`.
+---
+---@generic T
+---@param value T The value to copy.
+---@return T copy The copy of the `value`.
+function std.copy( value )
+    local fn = debug_getmetavalue( value, "__copy" )
+    if fn == nil then
+        return nil
+    else
+        return fn( value )
+    end
+end
+
+--- [SHARED AND MENU]
+---
 --- If `e` has a metamethod `__tonumber`, calls it with `e` and `base` as arguments and returns its result.
 ---
 --- When called with no `base`, `tonumber` tries to convert its argument to a number. If the argument is already a number or a string convertible to a number, then `tonumber` returns this number; otherwise, it returns `fail`.
