@@ -151,6 +151,8 @@ do
     ---@return T result The left shifted value. Input of `0b1001` will become `0b10010` for one left shift, etc.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.lshift( x, bit_count )
+        ---@generic T
+        ---@type fun(self: T, bit_count: integer): T
         local fn = debug_getmetavalue( x, "__shl" )
         if fn == nil then
             return bit_lshift( x, bit_count )
@@ -202,6 +204,8 @@ do
     ---@return T result The right shifted value.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.rshift( x, bit_count )
+        ---@generic T
+        ---@type fun(self: T, bit_count: integer): T
         local fn = debug_getmetavalue( x, "__shr" )
         if fn == nil then
             return bit_rshift( x, bit_count )
@@ -271,6 +275,8 @@ do
     ---@return T result The result of bitwise `NOT` (`0101` becomes `1010`).
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bnot( x )
+        ---@generic T
+        ---@type fun(self: T): T
         local fn = debug_getmetavalue( x, "__bnot" )
         if fn == nil then
             return bit_bnot( x )
@@ -335,6 +341,8 @@ do
     ---@return T result The bitwise AND result between all values.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.band( x, ... )
+        ---@generic T
+        ---@type fun(self: T, ...:T): T
         local fn = debug_getmetavalue( x, "__band" )
         if fn == nil then
             return bit_band( x, ... )
@@ -398,6 +406,8 @@ do
     ---@return T result The bitwise OR result between all values.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bor( x, ... )
+        ---@generic T
+        ---@type fun(self: T, ...:T): T
         local fn = debug_getmetavalue( x, "__bor" )
         if fn == nil then
             return bit_bor( x, ... )
@@ -468,6 +478,8 @@ do
     ---@return T result Result of bitwise XOR` operation.
     ---@diagnostic disable-next-line: duplicate-set-field
     function bit.bxor( x, ... )
+        ---@generic T
+        ---@type fun(self: T, ...:T): T
         local fn = debug_getmetavalue( x, "__bxor" )
         if fn == nil then
             return bit_bxor( x, ... )

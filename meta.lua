@@ -191,7 +191,7 @@ metatable.__idiv = nil
 --- Used by `bit.band( a, b )` function.
 ---
 ---@generic T
----@type fun(self: T, ...: T?): any
+---@type fun(self: T, ...: T?): T
 metatable.__band = nil
 
 ---
@@ -200,7 +200,7 @@ metatable.__band = nil
 --- Used by `bit.bor( a, b )` function.
 ---
 ---@generic T
----@type fun(self: T, ...:T): any
+---@type fun(self: T, ...:T): T
 metatable.__bor = nil
 
 ---
@@ -463,7 +463,7 @@ metatable.__deserialize = nil
 --- Converts the object into a number.
 ---
 ---@generic T
----@type fun(self: T): number | integer
+---@type fun(self: T, base: integer): number | integer
 metatable.__tonumber = nil
 
 ---
