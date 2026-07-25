@@ -10,8 +10,8 @@ local math_frexp, math_ldexp = math.frexp, math.ldexp
 local math_huge, math_tiny, math_nan = math.huge, math.tiny, math.nan
 
 local bit = std.bit
-local bit_unsign = bit.unsign
 local bit_band, bit_bor = bit.band, bit.bor
+local bit_sign, bit_unsign = bit.sign, bit.unsign
 local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
 -- TODO: ffi/holylib support?
@@ -56,24 +56,6 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Reads unsigned 2-byte (16 bit) integer from big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `65535`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@return integer value The unsigned 2-byte integer.
-    local function bytepack_readUInt16BE( uint8_1, uint8_2 )
-        return bit_bor(
-            bit_lshift( uint8_1, 8 ),
-            uint8_2
-        )
-    end
-
-    bytepack.readUInt16BE = bytepack_readUInt16BE
-
-    --- [SHARED AND MENU]
-    ---
     --- Reads signed 2-byte (16 bit) integer as big endian bytes.
     ---
     --- Valid values without loss of precision: `-32768` - `32767`
@@ -81,30 +63,32 @@ do
     ---@param uint8_1 integer The first byte.
     ---@param uint8_2 integer The second byte.
     ---@return integer value The signed 2-byte integer.
-    function bytepack.readInt16BE( uint8_1, uint8_2 )
-        return bytepack_readUInt16BE( uint8_1, uint8_2 ) - 0x8000
+    local function bytepack_readInt16BE( uint8_1, uint8_2 )
+        return bit_bor(
+            bit_lshift( uint8_1, 8 ),
+            uint8_2
+        )
+    end
+
+    bytepack.readInt16BE = bytepack_readInt16BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 2-byte (16 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The unsigned 2-byte integer.
+    function bytepack.readUInt16BE( uint8_1, uint8_2 )
+        return bit_unsign( bytepack_readInt16BE( uint8_1, uint8_2 ), 16 )
     end
 
 end
 
 -- U/Int16 Write [BE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 2-byte (16 bit) integer as big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `65535`
-    ---
-    ---@param value integer The unsigned 2-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    local function bytepack_writeUInt16BE( value )
-        return bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
-    end
-
-    bytepack.writeUInt16BE = bytepack_writeUInt16BE
 
     --- [SHARED AND MENU]
     ---
@@ -115,32 +99,30 @@ do
     ---@param value integer The signed 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
-    function bytepack.writeInt16BE( value )
-        return bytepack_writeUInt16BE( value + 0x8000 )
+    local function bytepack_writeInt16BE( value )
+        return bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeInt16BE = bytepack_writeInt16BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 2-byte (16 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param value integer The unsigned 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    function bytepack.writeUInt16BE( value )
+        return bytepack_writeInt16BE( bit_unsign( value, 16 ) )
     end
 
 end
 
 -- U/Int16 Read [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads unsigned 2-byte (16 bit) integer from little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `65535`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@return integer value The unsigned 2-byte integer.
-    local function bytepack_readUInt16LE( uint8_1, uint8_2 )
-        return bit_bor(
-            bit_lshift( uint8_2, 8 ),
-            uint8_1
-        )
-    end
-
-    bytepack.readUInt16LE = bytepack_readUInt16LE
 
     --- [SHARED AND MENU]
     ---
@@ -151,30 +133,32 @@ do
     ---@param uint8_1 integer The first byte.
     ---@param uint8_2 integer The second byte.
     ---@return integer value The signed 2-byte integer.
-    function bytepack.readInt16LE( uint8_1, uint8_2 )
-        return bytepack_readUInt16LE( uint8_1, uint8_2 ) - 0x8000
+    local function bytepack_readInt16LE( uint8_1, uint8_2 )
+        return bit_bor(
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        )
+    end
+
+    bytepack.readInt16LE = bytepack_readInt16LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 2-byte (16 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@return integer value The unsigned 2-byte integer.
+    function bytepack.readUInt16LE( uint8_1, uint8_2 )
+        return bit_unsign( bytepack_readInt16LE( uint8_1, uint8_2 ), 16 )
     end
 
 end
 
 -- U/Int16 Write [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 2-byte (16 bit) integer as little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `65535`
-    ---
-    ---@param value integer The unsigned 2-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    local function bytepack_writeUInt16LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF )
-    end
-
-    bytepack.writeUInt16LE = bytepack_writeUInt16LE
 
     --- [SHARED AND MENU]
     ---
@@ -185,34 +169,30 @@ do
     ---@param value integer The signed 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
-    function bytepack.writeInt16LE( value )
-        return bytepack_writeUInt16LE( value + 0x8000 )
+    local function bytepack_writeInt16LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF )
+    end
+
+    bytepack.writeInt16LE = bytepack_writeInt16LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 2-byte (16 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `65535`
+    ---
+    ---@param value integer The unsigned 2-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    function bytepack.writeUInt16LE( value )
+        return bytepack_writeInt16LE( bit_unsign( value, 16 ) )
     end
 
 end
 
 -- U/Int24 Read [BE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads unsigned 3-byte (24 bit) integer from big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `16777215`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@return integer value The unsigned 3-byte integer.
-    local function bytepack_readUInt24BE( uint8_1, uint8_2, uint8_3 )
-        return bit_bor(
-            bit_lshift( uint8_1, 16 ),
-            bit_lshift( uint8_2, 8 ),
-            uint8_3
-        )
-    end
-
-    bytepack.readUInt24BE = bytepack_readUInt24BE
 
     --- [SHARED AND MENU]
     ---
@@ -224,32 +204,34 @@ do
     ---@param uint8_2 integer The second byte.
     ---@param uint8_3 integer The third byte.
     ---@return integer value The signed 3-byte integer.
-    function bytepack.readInt24BE( uint8_1, uint8_2, uint8_3 )
-        return bytepack_readUInt24BE( uint8_1, uint8_2, uint8_3 ) - 0x800000
+    local function bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 )
+        return bit_bor(
+            bit_lshift( uint8_1, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_3
+        )
+    end
+
+    bytepack.readInt24BE = bytepack_readInt24BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 3-byte (24 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The unsigned 3-byte integer.
+    function bytepack.readUInt24BE( uint8_1, uint8_2, uint8_3 )
+        return bit_unsign( bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 ), 24 )
     end
 
 end
 
 -- U/Int24 Write [BE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 3-byte (24 bit) integer as big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `16777215`
-    ---
-    ---@param value integer The unsigned 3-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    local function bytepack_writeUInt24BE( value )
-        return bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
-    end
-
-    bytepack.writeUInt24BE = bytepack_writeUInt24BE
 
     --- [SHARED AND MENU]
     ---
@@ -261,34 +243,32 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
-    function bytepack.writeInt24BE( value )
-        return bytepack_writeUInt24BE( value + 0x800000 )
+    local function bytepack_writeInt24BE( value )
+        return bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeInt24BE = bytepack_writeInt24BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 3-byte (24 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param value integer The unsigned 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    function bytepack.writeUInt24BE( value )
+        return bytepack_writeInt24BE( bit_unsign( value, 24 ) )
     end
 
 end
 
 -- U/Int24 Read [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads unsigned 3-byte (24 bit) integer from little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `16777215`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@return integer value The unsigned 3-byte integer.
-    local function bytepack_readUInt24LE( uint8_1, uint8_2, uint8_3 )
-        return bit_bor(
-            bit_lshift( uint8_3, 16 ),
-            bit_lshift( uint8_2, 8 ),
-            uint8_1
-        )
-    end
-
-    bytepack.readUInt24LE = bytepack_readUInt24LE
 
     --- [SHARED AND MENU]
     ---
@@ -300,32 +280,34 @@ do
     ---@param uint8_2 integer The second byte.
     ---@param uint8_3 integer The third byte.
     ---@return integer value The signed 3-byte integer.
-    function bytepack.readInt24LE( uint8_1, uint8_2, uint8_3 )
-        return bytepack_readUInt24LE( uint8_1, uint8_2, uint8_3 ) - 0x800000
+    local function bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 )
+        return bit_bor(
+            bit_lshift( uint8_3, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        )
+    end
+
+    bytepack.readInt24LE = bytepack_readInt24LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 3-byte (24 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@return integer value The unsigned 3-byte integer.
+    function bytepack.readUInt24LE( uint8_1, uint8_2, uint8_3 )
+        return bit_unsign( bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 ), 24 )
     end
 
 end
 
 -- U/Int24 Write [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 3-byte (24 bit) integer as little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `16777215`
-    ---
-    ---@param value integer The unsigned 3-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    local function bytepack_writeUInt24LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF )
-    end
-
-    bytepack.writeUInt24LE = bytepack_writeUInt24LE
 
     --- [SHARED AND MENU]
     ---
@@ -337,38 +319,32 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
-    function bytepack.writeInt24LE( value )
-        return bytepack_writeUInt24LE( value + 0x800000 )
+    local function bytepack_writeInt24LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF )
+    end
+
+    bytepack.writeInt24LE = bytepack_writeInt24LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 3-byte (24 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `16777215`
+    ---
+    ---@param value integer The unsigned 3-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    function bytepack.writeUInt24LE( value )
+        return bytepack.writeInt24LE( bit_unsign( value, 24 ) )
     end
 
 end
 
 -- U/Int32 Read [BE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads unsigned 4-byte (32 bit) integer from big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `4294967295`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@return integer value The unsigned 4-byte integer.
-    local function bytepack_readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_unsign(
-            bit_bor(
-                bit_lshift( uint8_1, 24 ),
-                bit_lshift( uint8_2, 16 ),
-                bit_lshift( uint8_3, 8 ),
-                uint8_4
-            )
-        )
-    end
-
-    bytepack.readUInt32BE = bytepack_readUInt32BE
 
     --- [SHARED AND MENU]
     ---
@@ -381,34 +357,36 @@ do
     ---@param uint8_3 integer The third byte.
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The signed 4-byte integer.
-    function bytepack.readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bytepack_readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 ) - 0x80000000
+    local function bytepack_readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_bor(
+            bit_lshift( uint8_1, 24 ),
+            bit_lshift( uint8_2, 16 ),
+            bit_lshift( uint8_3, 8 ),
+            uint8_4
+        )
+    end
+
+    bytepack.readInt32BE = bytepack_readInt32BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 4-byte (32 bit) integer from big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The unsigned 4-byte integer.
+    function bytepack.readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_unsign( bytepack_readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
     end
 
 end
 
 -- U/Int32 Write [BE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 4-byte (32 bit) integer as big endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `4294967295`
-    ---
-    ---@param value integer The unsigned 4-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    local function bytepack_writeUInt32BE( value )
-        return bit_band( bit_rshift( value, 24 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
-    end
-
-    bytepack.writeUInt32BE = bytepack_writeUInt32BE
 
     --- [SHARED AND MENU]
     ---
@@ -421,38 +399,34 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
-    function bytepack.writeInt32BE( value )
-        return bytepack_writeUInt32BE( value + 0x80000000 )
+    local function bytepack_writeInt32BE( value )
+        return bit_band( bit_rshift( value, 24 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( value, 0xFF )
+    end
+
+    bytepack.writeInt32BE = bytepack_writeInt32BE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 4-byte (32 bit) integer as big endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param value integer The unsigned 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeUInt32BE( value )
+        return bytepack_writeInt32BE( bit_unsign( value ) )
     end
 
 end
 
 -- U/Int32 Read [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads unsigned 4-byte (32 bit) integer from little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `4294967295`
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@return integer value The unsigned 4-byte integer.
-    local function bytepack_readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_unsign(
-            bit_bor(
-                bit_lshift( uint8_4, 24 ),
-                bit_lshift( uint8_3, 16 ),
-                bit_lshift( uint8_2, 8 ),
-                uint8_1
-            )
-        )
-    end
-
-    bytepack.readUInt32LE = bytepack_readUInt32LE
 
     --- [SHARED AND MENU]
     ---
@@ -465,34 +439,36 @@ do
     ---@param uint8_3 integer The third byte.
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The signed 4-byte integer.
-    function bytepack.readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bytepack_readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 ) - 0x80000000
+    local function bytepack_readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_bor(
+            bit_lshift( uint8_4, 24 ),
+            bit_lshift( uint8_3, 16 ),
+            bit_lshift( uint8_2, 8 ),
+            uint8_1
+        )
+    end
+
+    bytepack.readInt32LE = bytepack_readInt32LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Reads unsigned 4-byte (32 bit) integer from little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param uint8_1 integer The first byte.
+    ---@param uint8_2 integer The second byte.
+    ---@param uint8_3 integer The third byte.
+    ---@param uint8_4 integer The fourth byte.
+    ---@return integer value The unsigned 4-byte integer.
+    function bytepack.readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
+        return bit_unsign( bytepack_readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
     end
 
 end
 
 -- U/Int32 Write [LE]
 do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes unsigned 4-byte (32 bit) integer as little endian bytes.
-    ---
-    --- Valid values without loss of precision: `0` - `4294967295`
-    ---
-    ---@param value integer The unsigned 4-byte integer.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    local function bytepack_writeUInt32LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 24 ), 0xFF )
-    end
-
-    bytepack.writeUInt32LE = bytepack_writeUInt32LE
 
     --- [SHARED AND MENU]
     ---
@@ -505,8 +481,28 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
-    function bytepack.writeInt32LE( value )
-        return bytepack_writeUInt32LE( value + 0x80000000 )
+    local function bytepack_writeInt32LE( value )
+        return bit_band( value, 0xFF ),
+            bit_band( bit_rshift( value, 8 ), 0xFF ),
+            bit_band( bit_rshift( value, 16 ), 0xFF ),
+            bit_band( bit_rshift( value, 24 ), 0xFF )
+    end
+
+    bytepack.writeInt32LE = bytepack_writeInt32LE
+
+    --- [SHARED AND MENU]
+    ---
+    --- Writes unsigned 4-byte (32 bit) integer as little endian bytes.
+    ---
+    --- Valid values without loss of precision: `0` - `4294967295`
+    ---
+    ---@param value integer The unsigned 4-byte integer.
+    ---@return integer uint8_1 The first byte.
+    ---@return integer uint8_2 The second byte.
+    ---@return integer uint8_3 The third byte.
+    ---@return integer uint8_4 The fourth byte.
+    function bytepack.writeUInt32LE( value )
+        return bytepack_writeInt32LE( bit_unsign( value ) )
     end
 
 end
