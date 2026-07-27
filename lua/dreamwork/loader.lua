@@ -305,6 +305,33 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Compares two values for equality.
+---
+--- Unlike Lua's `==` operator, this function invokes the `__eq` metamethod
+--- from either operand if one is available. If neither operand defines
+--- `__eq`, it falls back to the built-in equality operator.
+---
+---@param a any The first value to compare.
+---@param b any The second value to compare.
+---@return boolean is_equal `true` if the values are considered equal; otherwise `false`.
+function std.eq( a, b )
+    ---@type nil | fun( a: any, b: any ): boolean
+    local a__eq = debug_getmetavalue( a, "__eq" )
+    if a__eq == nil then
+        ---@type nil | fun( a: any, b: any ): boolean
+        local b__eq = debug_getmetavalue( b, "__eq" )
+        if b__eq == nil then
+            return a == b
+        else
+            return b__eq( b, a )
+        end
+    else
+        return a__eq( a, b )
+    end
+end
+
+--- [SHARED AND MENU]
+---
 --- Returns binary size of the `value` as integer of bit/bytes.
 ---
 ---@param value any The value to get the size of.
