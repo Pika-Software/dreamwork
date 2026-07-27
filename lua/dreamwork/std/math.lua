@@ -209,7 +209,7 @@ end
 ---@param x number The number to check.
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_byte `true` if the number is an integer, otherwise `false`.
-function math.isbyte( x, signed )
+function math.isByte( x, signed )
     if (x % 1) ~= 0 then
         return false
     elseif signed then
@@ -226,7 +226,7 @@ end
 ---@param x number The number to check.
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_short `true` if the number is an integer, otherwise `false`.
-function math.isshort( x, signed )
+function math.isShort( x, signed )
     if (x % 1) ~= 0 then
         return false
     elseif signed then
@@ -243,7 +243,7 @@ end
 ---@param x number The number to check.
 ---@param signed boolean `true` if the number is signed, otherwise `false`.
 ---@return boolean is_long `true` if the number is an integer, otherwise `false`.
-function math.islong( x, signed )
+function math.isLong( x, signed )
     if (x % 1) ~= 0 then
         return false
     elseif signed then
@@ -259,7 +259,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_uint `true` if the number is an integer, otherwise `false`.
-function math.isuint( x )
+function math.isUInt( x )
     return x >= 0 and (x % 1) == 0
 end
 
@@ -269,7 +269,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_int `true` if the number is an integer, otherwise `false`.
-function math.isint( x )
+function math.isInt( x )
     return (x % 1) == 0
 end
 
@@ -279,7 +279,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_float `true` if the number is a float, otherwise `false`.
-function math.isfloat( x )
+function math.isFloat( x )
     return (x % 1) ~= 0 and x >= 1.175494351E-38 and x <= 3.402823466E+38
 end
 
@@ -289,7 +289,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_double `true` if the number is a double, otherwise `false`.
-function math.isdouble( x )
+function math.isDouble( x )
     return (x % 1) ~= 0 and (x < 1.175494351E-38 or x > 3.402823466E+38)
 end
 
@@ -299,7 +299,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_inf `true` if the number is positive or negative infinity, otherwise `false`.
-function math.isinf( x )
+function math.isInf( x )
     return x == math_huge or x == math_tiny
 end
 
@@ -309,7 +309,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_nan `true` if the number is NaN, otherwise `false`.
-function math.isnan( x )
+function math.isNaN( x )
     return x ~= x
 end
 
@@ -319,7 +319,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_finite `true` if the number is finite, otherwise `false`.
-function math.isfinite( x )
+function math.isFinite( x )
     return x ~= math_huge and x ~= math_tiny and x == x
 end
 
@@ -330,7 +330,7 @@ end
 ---@param a number The first number to check.
 ---@param b number The second number to check.
 ---@return boolean is_divideable `true` if the first number is divisible by the second number, otherwise `false`.
-function math.isdivideable( a, b )
+function math.isDivideable( a, b )
     return (a % b) == 0
 end
 
@@ -340,7 +340,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_even `true` if the number is even, otherwise `false`.
-function math.iseven( x )
+function math.isEven( x )
     return x == 0 or (x % 2) == 0
 end
 
@@ -350,7 +350,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_odd `true` if the number is odd, otherwise `false`.
-function math.isodd( x )
+function math.isOdd( x )
     return x ~= 0 and (x % 2) ~= 0
 end
 
@@ -360,7 +360,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_positive `true` if the number is positive, otherwise `false`.
-function math.ispositive( x )
+function math.isPositive( x )
     return (1 / x) > 0
 end
 
@@ -370,8 +370,26 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_negative `true` if the number is negative, otherwise `false`.
-function math.isnegative( x )
+function math.isNegative( x )
     return (1 / x) < 0
+end
+
+do
+
+    local math_frexp = math.frexp
+
+    --- [SHARED AND MENU]
+    ---
+    --- Check if a value is a power-of-two.
+    ---
+    --- Returns `true` if a number is a valid power-of-two, otherwise `false`.
+    ---
+    ---@param x number
+    ---@return boolean is_pot
+    function math.isPowerOfTwo( x )
+        return math_frexp( x ) == 0.5
+    end
+
 end
 
 --- [SHARED AND MENU]
@@ -384,10 +402,10 @@ end
 function math.round( number, decimals )
     if decimals == nil then
         return math_floor( number + 0.5 )
-    else
-        local multiplier = 10 ^ decimals
-        return math_floor( (number * multiplier) + 0.5 ) / multiplier
     end
+
+    local multiplier = 10 ^ decimals
+    return math_floor( (number * multiplier) + 0.5 ) / multiplier
 end
 
 --- [SHARED AND MENU]
@@ -403,31 +421,30 @@ end
 
 do
 
-    local math_ceil = math.ceil
+    local math_modf = math.modf
 
     --- [SHARED AND MENU]
     ---
     --- Returns the integer part of the given number.
     ---
-    ---@param number number The number to truncate.
-    ---@return integer trunced The integer part of the number.
-    local function math_trunc( number )
-        return (number < 0 and math_ceil or math_floor)( number )
+    ---@param x number The number to truncate.
+    ---@return integer truncated The integer part of the number.
+    function math.trunc( x )
+        return (math_modf( x ))
     end
 
-    math.trunc = math_trunc
+end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Splits a number into its integer and fractional parts.
-    ---
-    ---@param x number The number to split.
-    ---@return integer integer The integer part of the number.
-    ---@return number fraction The fractional part of the number.
-    function math.split( x )
-        return math_trunc( x ), x % 1
-    end
-
+--- [SHARED AND MENU]
+---
+--- Wraps a number to keep it within a specific minimum and maximum range.
+---
+---@param value number The number to wrap.
+---@param min number The lower limit of the wrap range.
+---@param max number The upper limit of the wrap range.
+---@return number wrapped The number wrapped within [min, max).
+function math.wrap( value, min, max )
+    return ((value - min) % (max - min)) + min
 end
 
 --- [SHARED AND MENU]
@@ -711,16 +728,80 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if two floating point numbers are nearly equal.
+--- Check if value is equal or greater than threshold.
 ---
---- This is useful to mitigate [accuracy issues in floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems).
+--- **NOTE**: This is useful to mitigate [accuracy issues in floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems).
 ---
----@param a number The first number to compare.
----@param b number The second number to compare.
----@param tolerance number? The maximum difference between the two numbers to consider them equal, default is `1e-8`.
----@return boolean is_nearly_equal `true` if the numbers are near, otherwise `false`.
-function math.isNear( a, b, tolerance )
-    return math_abs( a - b ) <= (tolerance or 1e-8)
+--- Examples:
+--- ```lua
+--- local a = 10
+--- local b = 13.3
+---
+--- if math.threshold( a - b, 4 ) then
+---     print( "yes" )
+--- else
+---     print( "no" )
+--- end
+---
+--- -- print: `no` because difference between a and b is not so far from 4
+--- ```
+---
+---@param x number The number to check.
+---@param threshold number? The maximum difference between numbers at which they are considered equal; by default `1e-8`.
+---@return boolean is_greater_equal `true` if the numbers are equal or greater, otherwise `false`.
+function math.threshold( x, threshold )
+    return math_abs( x ) >= (threshold or 1e-8)
+end
+
+--- [SHARED AND MENU]
+---
+--- Check if value is equal or less than threshold.
+---
+--- **NOTE**: This is useful to mitigate [accuracy issues in floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems).
+---
+--- Examples:
+--- ```lua
+--- local a = 10
+--- local b = 13.3
+---
+--- if math.tolerance( a - b, 4 ) then
+---     print( "yes" )
+--- else
+---     print( "no" )
+--- end
+---
+--- -- print: `yes` because difference between a and b is near of 4
+--- ```
+---
+---@param x number The number to check.
+---@param threshold number? The maximum difference between numbers at which they are considered equal; by default `1e-8`.
+---@return boolean is_nearly_equal `true` if the numbers are equal or less, otherwise `false`.
+function math.tolerance( x, threshold )
+    return math_abs( x ) <= (threshold or 1e-8)
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns `x` if its absolute value is equal to or greater than `size`, otherwise returns `0`.
+---
+---@param x number The number to check.
+---@param size number The minimum allowed absolute value before snapping to 0.
+---@return number result The original number, or 0.
+function math.lower( x, size )
+    return (math_abs( x ) < size) and 0 or x
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns `x` if its absolute value is equal to or less than `size`, otherwise returns `0`.
+---
+--- Useful for ignoring extreme spikes or outliers in values.
+---
+---@param x number The number to check.
+---@param size number The maximum allowed absolute value before snapping to 0.
+---@return number result The original number, or 0.
+function math.upper( x, size )
+    return (math_abs( x ) > size) and 0 or x
 end
 
 --- [SHARED AND MENU]

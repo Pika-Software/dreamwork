@@ -1280,13 +1280,13 @@ do
 
         do
 
-            local math_ceil, math_log, math_isfinite = math.ceil, math.log, math.isfinite
+            local math_ceil, math_log, math_isFinite = math.ceil, math.log, math.isFinite
             local math_ln2 = math.ln2
 
             ---@param value number
             ---@private
             function Number.__len( value )
-                if math_isfinite( value ) then
+                if math_isFinite( value ) then
                     if (value % 1) == 0 then
                         return math_ceil( math_log( value + 1 ) / math_ln2 ) + (value < 0 and 1 or 0)
                     elseif value >= 1.175494351E-38 and value <= 3.402823466E+38 then
