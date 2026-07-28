@@ -554,17 +554,16 @@ do
         ---
         --- Fetches a detailed information about a specific Steam Workshop item or collection.
         ---
-        ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the item/collection.
+        ---@param wsid string The workshop ID of the item/collection.
         ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
         ---@return dreamwork.std.steam.workshop.ItemInfo info The details of the item/collection.
         ---@async
         function workshop.fetchInfo( wsid, timeout )
-            local wsid_str = tostring( wsid )
             local f = futures_Future()
 
-            glua_steamworks.FileInfo( wsid_str, function( item )
+            glua_steamworks.FileInfo( wsid, function( item )
                 if item == nil then
-                    f:setError( "failed to fetch info for '" .. wsid_str .. "', unknown error." )
+                    f:setError( "failed to fetch info for '" .. wsid .. "', unknown error." )
                     return
                 end
 
@@ -627,7 +626,7 @@ do
 
             setTimeout( function()
                 if f:isPending() then
-                    f:setError( "fetch info for '" .. wsid_str .. "' timed out." )
+                    f:setError( "fetch info for '" .. wsid .. "' timed out." )
                 end
 
                 ---@diagnostic disable-next-line: param-type-mismatch
@@ -646,7 +645,7 @@ if std.LUA_CLIENT_MENU then
     ---
     --- Returns whether the addon should be mounted on local server start-up.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@return boolean `true` if the addon is enabled, `false` otherwise.
     ---@see dreamwork.std.steam.workshop.setAddonEnabled
     function workshop.isAddonEnabled( wsid )
@@ -657,42 +656,41 @@ if std.LUA_CLIENT_MENU then
     ---
     --- Returns whether the publication is subscribed.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@return boolean `true` if client has subscribed to the item, `false` otherwise.
     ---@see dreamwork.std.steam.workshop.setItemSubscribed
     function workshop.isItemSubscribed( wsid )
-        return glua_steamworks.IsSubscribed( tostring( wsid ) )
+        return glua_steamworks.IsSubscribed( wsid )
     end
 
     --- [CLIENT AND MENU]
     ---
     --- Opens the page of the addon in the Steam Workshop.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     function workshop.openPage( wsid )
-        glua_steamworks.ViewFile( tostring( wsid ) )
+        glua_steamworks.ViewFile( wsid )
     end
 
     --- [MENU]
     ---
     --- Downloads the icon of the Steam Workshop item and returns the absolute path to the file.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@param uncompress? boolean Whether the icon should be uncompressed, `true` by default.
     ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string file_path The absolute path to the icon file.
     ---@async
     function workshop.downloadIcon( wsid, uncompress, timeout )
-        local wsid_str = tostring( wsid )
         local f = futures_Future()
 
         -- TODO: re-write function with
         -- https://wiki.facepunch.com/gmod/Global.AddonMaterial
         -- to be sure that material readable
 
-        glua_steamworks.Download( wsid_str, uncompress ~= false, function( file_path )
+        glua_steamworks.Download( wsid, uncompress ~= false, function( file_path )
             if file_path == nil then
-                f:setError( "failed to download icon file for '" .. wsid_str .. "', unknown error." )
+                f:setError( "failed to download icon file for '" .. wsid .. "', unknown error." )
             else
                 f:setResult( "/workspace/" .. file_path )
             end
@@ -700,7 +698,7 @@ if std.LUA_CLIENT_MENU then
 
         setTimeout( function()
             if f:isPending() then
-                f:setError( "failed to download icon file for '" .. wsid_str .. "', timed out." )
+                f:setError( "failed to download icon file for '" .. wsid .. "', timed out." )
             end
 
             ---@diagnostic disable-next-line: param-type-mismatch
@@ -717,7 +715,7 @@ if std.LUA_MENU then
     ---
     --- Sets whether the addon should be mounted on local server start-up.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@param enabled boolean `true` to enable the addon, `false` to disable it.
     ---@see dreamwork.std.steam.workshop.isAddonEnabled
     ---@see dreamwork.std.steam.workshop.reload
@@ -729,16 +727,12 @@ if std.LUA_MENU then
     ---
     --- Subscribes or unsubscribes the publication.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@param subscribed boolean `true` to subscribe, `false` to unsubscribe.
     ---@see dreamwork.std.steam.workshop.isItemSubscribed
     ---@see dreamwork.std.steam.workshop.reload
     function workshop.setItemSubscribed( wsid, subscribed )
-        if subscribed then
-            glua_steamworks.Subscribe( tostring( wsid ) )
-        else
-            glua_steamworks.Unsubscribe( tostring( wsid ) )
-        end
+        (subscribed and glua_steamworks.Subscribe or glua_steamworks.Unsubscribe)( wsid )
     end
 
     --- [MENU]
@@ -757,28 +751,28 @@ if std.LUA_MENU then
     ---
     --- Marks the Steam Workshop item as completed.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     function workshop.markAsCompleted( wsid )
-        glua_steamworks.SetFileCompleted( tostring( wsid ) )
+        glua_steamworks.SetFileCompleted( wsid )
     end
 
     --- [MENU]
     ---
     --- Marks the Steam Workshop item as played.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     function workshop.markAsPlayed( wsid )
-        glua_steamworks.SetFilePlayed( tostring( wsid ) )
+        glua_steamworks.SetFilePlayed( wsid )
     end
 
     --- [MENU]
     ---
     --- Votes for the Steam Workshop item.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@param vote boolean `true` to vote for, `false` to vote against.
     function workshop.vote( wsid, vote )
-        glua_steamworks.Vote( tostring( wsid ), vote )
+        glua_steamworks.Vote( wsid, vote )
     end
 
 end
@@ -803,18 +797,18 @@ do
     local uuid_v7 = std.uuid.v7
 
     ---@param f dreamwork.std.futures.Future
-    ---@param wsid_str string
+    ---@param wsid string
     ---@param file_path string?
     ---@param file_class File?
     ---@async
-    local function perform_response( f, wsid_str, file_path, file_class )
+    local function perform_response( f, wsid, file_path, file_class )
         if file_path ~= nil and fs_isFile( "/garrysmod/" .. file_path ) then
             f:setResult( "/workspace/" .. file_path )
             return
         end
 
         if file_class == nil then
-            f:setError( "failed to download addon '" .. wsid_str .. "', unknown error." )
+            f:setError( "failed to download addon '" .. wsid .. "', unknown error." )
             return
         end
 
@@ -829,27 +823,26 @@ do
     ---
     --- Downloads the item from the Steam Workshop.
     ---
-    ---@param wsid string | integer | dreamwork.std.BigInt The workshop ID of the addon.
+    ---@param wsid string The workshop ID of the addon.
     ---@param timeout number The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string file_path The absolute path to the downloaded addon `.gma`.
     ---@async
     function workshop.download( wsid, timeout )
-        local wsid_str = tostring( wsid )
         local f = futures_Future()
 
         local fn = glua_steamworks.DownloadUGC
         if fn == nil then
-            f:setError( "failed to download addon '" .. wsid_str .. "', part of Steam Workshop API is missing." )
+            f:setError( "failed to download addon '" .. wsid .. "', part of Steam Workshop API is missing." )
             return f:await()
         end
 
-        fn( wsid_str, function( file_path, file_class )
-            futures_run( perform_response, nil, f, wsid_str, file_path, file_class )
+        fn( wsid, function( file_path, file_class )
+            futures_run( perform_response, nil, f, wsid, file_path, file_class )
         end )
 
         setTimeout( function()
             if f:isPending() then
-                f:setError( "failed to download addon '" .. wsid_str .. "', timed out." )
+                f:setError( "failed to download addon '" .. wsid .. "', timed out." )
             end
 
             ---@diagnostic disable-next-line: param-type-mismatch

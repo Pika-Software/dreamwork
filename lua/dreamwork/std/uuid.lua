@@ -11,18 +11,14 @@ local string_gsub = string.gsub
 local string_format = string.format
 
 local bit = std.bit
+local bit_rshift = bit.rshift
 local bit_band, bit_bor = bit.band, bit.bor
 
 local time = std.time
 local time_now = time.now
 
-local BigInt = std.BigInt
-local BigInt_fromNumber = BigInt.fromNumber
-local BigInt_band, BigInt_rshift = BigInt.band, BigInt.rshift
-
-local bint = BigInt.__base
-local bint_band = bint.band
-local bint_toHex = bint.toHex
+local BigInteger = std.BigInteger
+local BigInteger_toInteger = BigInteger.toInteger
 
 local base16 = std.base16
 local base16_decode = base16.decode
@@ -127,7 +123,7 @@ end
 
 do
 
-    local bigint_0xFF = BigInt_fromNumber( 0xFF )
+    local bigint_0xFF = BigInteger( 0xFF )
 
     --- [SHARED AND MENU]
     ---
@@ -144,21 +140,21 @@ do
     --- excellent choice for record identifiers
     --- in databases, including distributed ones.
     ---
-    ---@param timestamp? dreamwork.std.BigInt The UNIX-64 timestamp to use.
+    ---@param timestamp? dreamwork.std.BigInteger The UNIX-64 timestamp to use.
     ---@return string uuid_str A UUID v7 string.
     function uuid.v7( timestamp )
         if timestamp == nil then
-            timestamp = BigInt_fromNumber( time_now( "ms", false ) )
+            timestamp = BigInteger( time_now( "ms", false ) )
         end
 
-        return string_format( "0%s%s%s%s-%s%s-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-            bint_toHex( bint_band( BigInt_rshift( timestamp, 40 ), bigint_0xFF ), true ),
-            bint_toHex( bint_band( BigInt_rshift( timestamp, 32 ), bigint_0xFF ), true ),
-            bint_toHex( bint_band( BigInt_rshift( timestamp, 24 ), bigint_0xFF ), true ),
-            bint_toHex( bint_band( BigInt_rshift( timestamp, 16 ), bigint_0xFF ), true ),
+        return string_format( "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            BigInteger_toInteger( bit_band( bit_rshift( timestamp, 40 ), bigint_0xFF ) ),
+            BigInteger_toInteger( bit_band( bit_rshift( timestamp, 32 ), bigint_0xFF ) ),
+            BigInteger_toInteger( bit_band( bit_rshift( timestamp, 24 ), bigint_0xFF ) ),
+            BigInteger_toInteger( bit_band( bit_rshift( timestamp, 16 ), bigint_0xFF ) ),
 
-            bint_toHex( bint_band( BigInt_rshift( timestamp, 8 ), bigint_0xFF ), true ),
-            bint_toHex( BigInt_band( timestamp, bigint_0xFF ), true ),
+            BigInteger_toInteger( bit_band( bit_rshift( timestamp, 8 ), bigint_0xFF ) ),
+            BigInteger_toInteger( bit_band( timestamp, bigint_0xFF ) ),
             bit_bor( bit_band( math_random( 0, 255 ), 0x0F ), 0x70 ),
             math_random( 0, 255 ),
 

@@ -13,12 +13,12 @@ local debug_getmetavalue = debug.getmetavalue
 --- The powerful math library.
 ---
 ---@class dreamwork.std.math
----@field e number A variable containing the mathematical constant e. (2.7182818284590)
----@field ln2 number A variable containing the mathematical constant natural logarithm of 2. (0.69314718055995)
----@field nan number A variable containing number "not a number". (nan)
----@field pi number A variable containing the mathematical constant pi. (3.1415926535898)
----@field huge number A variable that effectively represents infinity, in the sense that in any numerical comparison every number will be less than this. (inf)
----@field tiny number A variable that effectively represents negative infinity, in the sense that in any numerical comparison every number will be greater than this. (-inf)
+---@field e number A variable containing the mathematical constant e. [`2.7182818284590`]
+---@field ln2 number A variable containing the mathematical constant natural logarithm of 2. [`0.69314718055995`]
+---@field nan number A variable containing number "not a number". [`nan`]
+---@field pi number A variable containing the mathematical *π* constant. [`3.1415926535898`]
+---@field huge number A variable that effectively represents infinity, in the sense that in any numerical comparison every number will be less than this. [`inf`]
+---@field tiny number A variable that effectively represents negative infinity, in the sense that in any numerical comparison every number will be greater than this. [`-inf`]
 ---@field ln10 number A variable containing the mathematical constant natural logarithm of 10. (2.3025850929940)
 ---@field log10e number A variable containing the mathematical constant logarithm of 10 to the base e. (0.43429448190325)
 ---@field log2e number A variable containing the mathematical constant logarithm of 2 to the base e. (1.4426950408889)
