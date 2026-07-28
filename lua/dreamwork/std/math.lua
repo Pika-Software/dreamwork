@@ -95,6 +95,22 @@ do
 
 end
 
+do
+
+    local math_atan51 = math.atan51
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the cotangent of the given angle.
+    ---
+    ---@param x number The angle in radians.
+    ---@return number cotangent The cotangent of the given angle.
+    function math.cot( x )
+        return 1 / math_atan51( x )
+    end
+
+end
+
 if math.atan == nil then
 
     local math_atan51 = math.atan51
@@ -102,6 +118,7 @@ if math.atan == nil then
     --- [SHARED AND MENU]
     ---
     --- Returns the arc tangent of y/x.
+    ---
     ---@param y number The y coordinate.
     ---@param x number The x coordinate.
     ---@return number arc_tan The arc tangent of y/x.
