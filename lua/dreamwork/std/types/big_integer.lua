@@ -739,11 +739,13 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Creates a big integer object from any given value, if its possible of course.
+    --- Creates a `BigInteger` object from the given value.
     ---
-    ---@param value any The value to be converted to big integer.
-    ---@param base? integer The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
-    ---@return dreamwork.std.BigInteger
+    --- If `value` is already a `BigInteger`, it is returned unchanged.
+    ---
+    ---@param value any The value to convert to a `BigInteger`.
+    ---@param base? integer The numeric base used when parsing string values. Must be between `2` and `36` (inclusive). Defaults to `10`.
+    ---@return dreamwork.std.BigInteger obj
     function std.toBigInteger( value, base )
         if isBigInteger( value ) then
             ---@cast value dreamwork.std.BigInteger
@@ -757,6 +759,57 @@ do
 
     std.toBigInt = std.toBigInteger
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Replaces the contents of this `BigInteger` with the given bytes.
+---
+--- The bytes are interpreted in big-endian order (most significant byte first).
+--- If `signed` is `true`, the resulting value is interpreted as a signed
+--- two's-complement integer.
+---
+---@param signed boolean Whether the byte sequence represents a signed integer.
+---@param ... integer The bytes to store, each in the range `0`–`255`.
+---@return dreamwork.std.BigInteger self
+function BigInteger:fromBytes( signed, ... )
+    local byte_count = raw_select( "#", ... )
+
+    self.bytes = { [ 0 ] = byte_count, ... }
+    self.signed = false
+
+    if signed then
+        self:toSigned( byte_count )
+    end
+
+    return self
+end
+
+--- [SHARED AND MENU]
+---
+--- Creates a new `BigInteger` from the given bytes.
+---
+--- The bytes are interpreted in big-endian order (most significant byte first).
+--- If `signed` is `true`, the resulting value is interpreted as a signed
+--- two's-complement integer.
+---
+---@param signed boolean Whether the byte sequence represents a signed integer.
+---@param ... integer The bytes of the integer, each in the range `0`–`255`.
+---@return dreamwork.std.BigInteger new_obj
+function BigIntegerClass.fromBytes( signed, ... )
+    local byte_count = raw_select( "#", ... )
+
+    ---@type dreamwork.std.BigInteger
+    local obj = setmetatable( {
+        bytes = { [ 0 ] = byte_count, ... },
+        signed = false
+    }, BigInteger )
+
+    if signed then
+        obj:toSigned( byte_count )
+    end
+
+    return obj
 end
 
 local toBigInteger = std.toBigInteger
