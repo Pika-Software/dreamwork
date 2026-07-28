@@ -382,10 +382,8 @@ do
     ---
     --- Check if a value is a power-of-two.
     ---
-    --- Returns `true` if a number is a valid power-of-two, otherwise `false`.
-    ---
-    ---@param x number
-    ---@return boolean is_pot
+    ---@param x number The number to check.
+    ---@return boolean is_pot `true` if a number is a valid power-of-two, otherwise `false`.
     function math.isPowerOfTwo( x )
         return math_frexp( x ) == 0.5
     end

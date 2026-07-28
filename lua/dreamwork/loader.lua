@@ -109,6 +109,19 @@ local raw_get = raw.get
 local raw_pairs = raw.pairs
 
 local raw_select = raw.select
+
+--- [SHARED AND MENU]
+---
+--- If `index` is a number, returns all arguments after argument number `index`;
+---
+--- a negative number indexes from the end (`-1` is the last argument).
+---
+--- Otherwise, `index` must be the string `"#"`, and `select` returns the total number of extra arguments it received.
+---
+--- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-select)
+---
+---@overload fun( parameter: "#", ...: any ): integer
+---@overload fun( parameter: integer, ...: any ): ...: any
 std.select = raw_select
 
 -- debug library
