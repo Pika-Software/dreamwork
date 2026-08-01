@@ -506,11 +506,10 @@ end
 ---@param change number The amount that the current value is allowed to change by to approach the target.
 ---@return number approached The approached value.
 function math.approach( current, target, change )
-    local diff = target - current
-    if diff < 0 then
-        return -(current + math_min( -diff, change ))
+    if current < target  then
+        return math_min( current + math_abs( change ), target )
     else
-        return current + math_min( diff, change )
+        return math_max( current - math_abs( change ), target )
     end
 end
 
