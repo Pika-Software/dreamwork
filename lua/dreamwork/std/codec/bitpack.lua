@@ -210,9 +210,9 @@ do
 
         if full_bytes then
             return string_rep( "0", (math_ceil( bit_sequence_size * 0.125 ) * 8) - bit_sequence_size ) .. bit_str
-        else
-            return bit_str
         end
+
+        return bit_str
     end
 
 end

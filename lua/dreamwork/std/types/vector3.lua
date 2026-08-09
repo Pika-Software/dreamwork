@@ -26,6 +26,10 @@ local raw_get, raw_set = raw.get, raw.set
         Vec3 as Nak2 checked must be writed as 3 floats but this required more tests i guess
         Same for Vec2
 
+        ref: https://github.com/excessive/cpml/blob/master/modules/vec3.lua
+
+        ref: https://github.com/excessive/cpml/blob/master/modules/intersect.lua
+
 ]]
 
 --- [SHARED AND MENU]

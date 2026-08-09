@@ -7,6 +7,8 @@ local string_format = std.string.format
 --- TODO: implement Quaternion class / object
 ---
 --- ref: https://github.com/thegrb93/StarfallEx/blob/master/lua/starfall/libs_sh/quaternion.lua
+---
+--- ref: https://github.com/excessive/cpml/blob/master/modules/quat.lua
 
 ---@class dreamwork.std.Quaternion : dreamwork.std.Object
 ---@operator unm: Quaternion
