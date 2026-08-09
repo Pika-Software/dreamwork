@@ -6,7 +6,7 @@ local class = std.class
 ---
 --- A stack is a last-in-first-out (LIFO) data structure object.
 ---
----@class dreamwork.std.Stack : dreamwork.std.Object
+---@class dreamwork.std.Stack<T>: dreamwork.std.Object
 ---@field __class dreamwork.std.StackClass
 ---@field size integer The size of the stack. **Read-only**
 local Stack = class.base( "Stack" )
@@ -52,7 +52,9 @@ end
 ---
 --- Pushes a value onto the stack.
 ---
----@param value any The value to push onto the stack.
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@param value T The value to push onto the stack.
 ---@return integer position The position of the value in the stack.
 function Stack:push( value )
     local position = self.size + 1
@@ -64,7 +66,9 @@ end
 ---
 --- Pops the value from the top of the stack.
 ---
----@return any value The value that was removed from the stack.
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@return T | nil value The value that was removed from the stack, or `nil` if the stack is empty.
 function Stack:pop()
     local position = self.size
     if position == 0 then
@@ -82,7 +86,9 @@ end
 ---
 --- Returns the value at the top of the stack.
 ---
----@return any value The value at the top of the stack.
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@return T | nil value The value at the top of the stack, or `nil` if the stack is empty.
 function Stack:peek()
     return self[ self.size ]
 end

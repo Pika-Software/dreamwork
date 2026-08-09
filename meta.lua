@@ -6,7 +6,6 @@
 ---
 --- Dreamwork powered metatables.
 ---
----@generic K, V
 ---@class dreamwork.Metatable<K, V>
 local metatable = {}
 
@@ -81,8 +80,8 @@ metatable.__name = nil
 --- Otherwise, if the metatable of `v` has a `__name` field with a string value,
 --- tostring may use that string in its final result.
 ---
----@generic T
----@type fun(self: T): string
+---@generic K, V
+---@type fun(self: table<K, V>): string
 metatable.__tostring = nil
 
 ---
@@ -92,8 +91,8 @@ metatable.__tostring = nil
 ---
 --- See [§2.5.3](https://www.lua.org/manual/5.4/manual.html#2.5.3)
 ---
----@generic T
----@type fun(self: T)
+---@generic K, V
+---@type fun(self: table<K, V>)
 metatable.__gc = nil
 
 ---
@@ -101,8 +100,8 @@ metatable.__gc = nil
 ---
 --- See [§3.3.8](https://www.lua.org/manual/5.4/manual.html#3.3.8)
 ---
----@generic T
----@type fun(self: T, errobj: any): any
+---@generic K, V
+---@type fun(self: table<K, V>, errobj: any): any
 metatable.__close = nil
 
 ---
@@ -110,8 +109,8 @@ metatable.__close = nil
 ---
 --- `a + b = result`
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__add = nil
 
 ---
@@ -119,8 +118,8 @@ metatable.__add = nil
 ---
 --- `a - b = result`
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__sub = nil
 
 ---
@@ -128,8 +127,8 @@ metatable.__sub = nil
 ---
 --- `a * b = result`
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__mul = nil
 
 ---
@@ -137,8 +136,8 @@ metatable.__mul = nil
 ---
 --- `a / b = result`
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__div = nil
 
 ---
@@ -148,8 +147,8 @@ metatable.__div = nil
 ---
 --- This is equivalent to `a * -1`.
 ---
----@generic T
----@type fun(self: T): T
+---@generic K, V
+---@type fun(self: table<K, V>): table<K, V>
 metatable.__unm = nil
 
 ---
@@ -161,8 +160,8 @@ metatable.__unm = nil
 ---
 --- Note that this is different from `math.modf( a )`, which returns the remainder and fractional part of a number.
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__mod = nil
 
 ---
@@ -172,8 +171,8 @@ metatable.__mod = nil
 ---
 --- This is equivalent to `math.pow( a, b )`.
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__pow = nil
 
 ---
@@ -181,8 +180,8 @@ metatable.__pow = nil
 ---
 --- Used by `math.fdiv( a, b )` function.
 ---
----@generic T
----@type fun(self: T, other: any): T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): table<K, V>
 metatable.__idiv = nil
 
 ---
@@ -190,8 +189,8 @@ metatable.__idiv = nil
 ---
 --- Used by `bit.band( a, b )` function.
 ---
----@generic T
----@type fun(self: T, ...: T?): T
+---@generic K, V
+---@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
 metatable.__band = nil
 
 ---
@@ -199,8 +198,8 @@ metatable.__band = nil
 ---
 --- Used by `bit.bor( a, b )` function.
 ---
----@generic T
----@type fun(self: T, ...:T): T
+---@generic K, V
+---@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
 metatable.__bor = nil
 
 ---
@@ -208,8 +207,8 @@ metatable.__bor = nil
 ---
 --- Used by `bit.bxor( a, b )` function.
 ---
----@generic T
----@type fun(self: T, ...: T?): T
+---@generic K, V
+---@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
 metatable.__bxor = nil
 
 ---
@@ -217,8 +216,8 @@ metatable.__bxor = nil
 ---
 --- Used by `bit.bnot( a )` function.
 ---
----@generic T
----@type fun(self: T): T
+---@generic K, V
+---@type fun(self: table<K, V>): table<K, V>
 metatable.__bnot = nil
 
 ---
@@ -226,8 +225,8 @@ metatable.__bnot = nil
 ---
 --- Used by `bit.lshift( a, b )` function.
 ---
----@generic T
----@type fun(self: T, bit_count: integer): T
+---@generic K, V
+---@type fun(self: table<K, V>, bit_count: integer): table<K, V>
 metatable.__shl = nil
 
 ---
@@ -235,8 +234,8 @@ metatable.__shl = nil
 ---
 --- Used by `bit.rshift( a, b )` function.
 ---
----@generic T
----@type fun(self: T, bit_count: integer): T
+---@generic K, V
+---@type fun(self: table<K, V>, bit_count: integer): table<K, V>
 metatable.__shr = nil
 
 ---
@@ -247,8 +246,8 @@ metatable.__shr = nil
 --- any operand is neither a string nor a number
 --- (which is always coercible to a string).
 ---
----@generic T
----@type fun(self: T, other: any): string | T
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): string | table<K, V>
 metatable.__concat = nil
 
 ---
@@ -269,8 +268,8 @@ metatable.__concat = nil
 ---
 --- See [§3.4.7](https://www.lua.org/manual/5.4/manual.html#3.4.7)
 ---
----@generic T
----@type fun(self: T): integer
+---@generic K, V
+---@type fun(self: table<K, V>): integer
 metatable.__len = nil
 
 ---
@@ -284,8 +283,8 @@ metatable.__len = nil
 ---
 --- The result of the call is always converted to a `boolean`.
 ---
----@generic T
----@type fun(self: T, other: any): boolean
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): boolean
 metatable.__eq = nil
 
 ---
@@ -298,8 +297,8 @@ metatable.__eq = nil
 ---
 --- Moreover, the result of the call is always converted to a boolean.
 ---
----@generic T
----@type fun(self: T, other: any): boolean
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): boolean
 metatable.__lt = nil
 
 ---
@@ -307,8 +306,8 @@ metatable.__lt = nil
 ---
 --- Behavior similar to the less than operation.
 ---
----@generic T
----@type fun(self: T, other: any): boolean
+---@generic K, V
+---@type fun(self: table<K, V>, other: any): boolean
 metatable.__le = nil
 
 ---
@@ -441,43 +440,43 @@ metatable.__pairs = nil
 ---
 --- If you want to create a deep copy, you will need to implement this metamethod yourself.
 ---
----@generic T
----@type fun(self: T): T
+---@generic K, V
+---@type fun(self: table<K, V>): table<K, V>
 metatable.__copy = nil
 
 ---
 --- Serializes the object into a writer.
 ---
----@generic T
----@type fun(self: T, writer: dreamwork.std.buffer.Writer, data: any?)
+---@generic K, V
+---@type fun(self: table<K, V>, writer: dreamwork.std.BinaryWriter, ...: any?)
 metatable.__serialize = nil
 
 ---
 --- Deserializes the object from a reader.
 ---
----@generic T
----@type fun(self: T, reader: dreamwork.std.buffer.Reader, data: any?)
+---@generic K, V
+---@type fun(self: table<K, V>, reader: dreamwork.std.BinaryReader, ...: any?)
 metatable.__deserialize = nil
 
 ---
 --- Converts the object into a number.
 ---
----@generic T
----@type fun(self: T, base: integer): number | integer
+---@generic K, V
+---@type fun(self: table<K, V>, base: integer): number | integer
 metatable.__tonumber = nil
 
 ---
 --- Converts the object into a boolean value.
 ---
----@generic T
----@type fun(self: T): boolean
+---@generic K, V
+---@type fun(self: table<K, V>): boolean
 metatable.__toboolean = nil
 
 ---
 --- Converts the object into a color.
 ---
----@generic T
----@type fun(self: T): dreamwork.std.Color
+---@generic K, V
+---@type fun(self: table<K, V>): dreamwork.std.Color
 metatable.__tocolor = nil
 
 ---
@@ -487,30 +486,72 @@ metatable.__tocolor = nil
 ---
 --- Also this affects `print`-like functions.
 ---
----@generic T
----@type fun(self: T): string
+---@generic K, V
+---@type fun(self: table<K, V>): string
 metatable.__represent = nil
 
 ---
 --- Checks whether the object is valid.
 ---
----@generic T
----@type fun(self: T): boolean
+---@generic K, V
+---@type fun(self: table<K, V>): boolean
 metatable.__isvalid = nil
 
 ---
 --- Returns a stable hash value for the object.
 ---
----@generic T
----@type fun(self: T): integer
+---@generic K, V
+---@type fun(self: table<K, V>): integer
 metatable.__hash = nil
 
 ---
 --- Returns binary size of the `object` as integer of bit/bytes.
 ---
----@generic T
----@type fun(self: T, as_bytes: boolean): integer
+---@generic K, V
+---@type fun(self: table<K, V>, as_bytes: boolean): integer
 metatable.__sizeof = nil
+
+--- [SHARED AND MENU]
+---
+--- Specifies what information to retrieve from `debug.getinfo`.
+--- Each letter selects a group of fields to populate on the returned
+--- `debuginfo` table; unrequested fields are left `nil`. Multiple
+--- letters can be combined in a single string (e.g. `"nSl"`).
+---
+---@alias dreamwork.std.debug.InfoWhat string
+---|+"n" # Name info. Fills `name` and `namewhat`.
+---|+"S" # Source info. Fills `source`, `short_src`, `linedefined`, `lastlinedefined`, and `what`.
+---|+"l" # Current line. Fills `currentline`.
+---|+"t" # Tail call flag. Fills `istailcall`.
+---|+"u" # Upvalue/parameter info. Fills `nups`, `nparams`, and `isvararg`.
+---|+"f" # Function value. Fills `func`.
+---|+"r" # Transfer info (line/count hooks only). Fills `ftransfer` and `ntransfer`.
+---|+"L" # Active lines. Fills `activelines`.
+---|+">" # LuaJIT extension. Causes this function to use the last argument to get the data from, instead of treating it as a stack level; the function value is popped/consumed in the process. No fields of its own — combine with other letters (e.g. `">S"`).
+
+--- [SHARED AND MENU]
+---
+--- Contains information about a function.
+---
+--- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.getinfo)
+---
+---@class dreamwork.std.debug.Info
+---@field name             string   The name of the function, if a reasonable name can be found. Only valid when `what` includes `"n"`.
+---@field namewhat         string   Explains the `name` field. Its value may be `"global"`, `"local"`, `"method"`, `"field"`, `"upvalue"`, or `""` (the empty string) when no other option applies.
+---@field source           string   The source of the chunk that created the function. If it starts with `@`, the function was defined in a file whose name follows the `@`. If it starts with `=`, the remainder describes the source in a user-dependent manner. Otherwise, the function was defined in a string equal to `source`.
+---@field short_src        string   A "printable" version of `source`, to be used in error messages.
+---@field linedefined      integer  The line number where the definition of the function starts.
+---@field lastlinedefined  integer  The line number where the definition of the function ends.
+---@field what             string   The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
+---@field currentline      integer  The current line where the given function is executing. -1 when no line information is available.
+---@field istailcall       boolean  `true` if this function invocation was called by a tail call. In this case, the caller of this level is not in the stack.
+---@field nups             integer  The number of upvalues of the function.
+---@field nparams          integer  The number of fixed parameters of the function (always 0 for C functions).
+---@field isvararg         boolean  `true` if the function is a vararg function (always `true` for C functions).
+---@field func             function The function itself. Only valid when `what` includes `"f"`.
+---@field ftransfer        integer  The index of the first value transferred to the function (calls) or the first value returned from it (returns). Only valid for line and count events.
+---@field ntransfer        integer  The number of values transferred, as described in `ftransfer`. Only valid for line and count events.
+---@field activelines      table<integer, true> A set whose keys are the line numbers with associated code (i.e. valid lines for breakpoints); each present key maps to `true`. Only valid when `what` includes `"L"`.
 
 ---@class getregistry
 getregistry = {}
@@ -1306,9 +1347,6 @@ do
 
 end
 
----@alias dreamwork.std.console.Variable.type "boolean" | "string" | "integer" | "float" | "number"
----@alias dreamwork.std.console.Variable.value boolean | number | string | integer
-
 do
 
     --- [SHARED AND MENU]
@@ -1320,12 +1358,12 @@ do
 
     --- The type of the console variable.
     ---
-    ---@type dreamwork.std.console.Variable.type?
+    ---@type dreamwork.std.console.VariableType?
     options.type = nil
 
     --- The default value of the console variable.
     ---
-    ---@type dreamwork.std.console.Variable.value?
+    ---@type dreamwork.std.console.VariableValue?
     options.default = nil
 
     --- The minimal value of the console variable.
@@ -1347,21 +1385,21 @@ do
 
     --- The type of the console variable.
     ---
-    ---@type dreamwork.std.console.Variable.type
+    ---@type dreamwork.std.console.VariableType
     variable.type = nil
 
     --- **READ-ONLY**
     ---
     --- The default value of the console variable.
     ---
-    ---@type dreamwork.std.console.Variable.value
+    ---@type dreamwork.std.console.VariableValue
     variable.default = nil
 
     --- [SHARED AND MENU]
     ---
     --- The value of the console variable.
     ---
-    ---@type dreamwork.std.console.Variable.value
+    ---@type dreamwork.std.console.VariableValue
     variable.value = nil
 
     --- **READ-ONLY**

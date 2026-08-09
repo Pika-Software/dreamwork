@@ -30,11 +30,15 @@ local raw_pairs = raw.pairs
 ---@field setmetatable fun( object: any, metatable: ( dreamwork.Metatable | nil ) )
 local debug = std.debug or {
     -- LuaJIT
+    ---@diagnostic disable-next-line: deprecated
     newproxy = newproxy,
     fempty = function() end, -- yep, it's literally empty function
 
     -- Lua 5.1
     debug = glua_debug.debug, -- dont answer me
+
+    ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat? ): dreamwork.std.debug.Info
+    ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat? ): dreamwork.std.debug.Info | nil
     getinfo = glua_debug.getinfo,
     getregistry = glua_debug.getregistry,
     traceback = glua_debug.traceback,
@@ -48,7 +52,10 @@ local debug = std.debug or {
     getupvalue = glua_debug.getupvalue, -- fucked up in menu
     setupvalue = glua_debug.setupvalue, -- fucked up in menu
 
+    ---@diagnostic disable-next-line: deprecated
     getfenv = glua_debug.getfenv or getfenv,
+
+    ---@diagnostic disable-next-line: deprecated
     setfenv = glua_debug.setfenv or setfenv,
 
     gethook = glua_debug.gethook,
@@ -63,6 +70,41 @@ local debug = std.debug or {
 }
 
 std.debug = debug
+
+if debug.getinfo == nil and glua_debug.getinfo ~= nil then
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a table with information about a function. You can give the
+    --- function directly, or you can give a number as the value of `location`, which
+    --- means the function running at level `location` of the call stack of the given
+    --- thread: level 0 is the current function (`getinfo` itself); level 1 is
+    --- the function that called `getinfo` (except for tail calls, which do not
+    --- count on the stack); and so on. If `location` is a number larger than the
+    --- number of active functions, then `getinfo` returns `nil`.
+    ---
+    --- The parameter `what` (a string) controls which fields of the returned
+    --- table are filled in — see `dreamwork.std.debug.InfoWhat` for the list
+    --- of letters and what each one populates. The default (when `what` is
+    --- omitted) is to get all information, except the table of active lines.
+    ---
+    --- If the option `"f"` is given, then `func` is set with the function
+    --- itself. If the option `"L"` is given, then `activelines` is set with
+    --- the table of active lines.
+    ---
+    --- If `what` contains the `">"` modifier, `location` is
+    --- consumed as the value to inspect and treated as if it were passed via
+    --- the trailing argument rather than as a stack level — this lets you
+    --- write `debug.getinfo(thread, level, ">S")`-style calls where the
+    --- object being inspected is taken from the end of the argument list. See
+    --- the `">"` entry in `InfoWhat` for details.
+    ---
+    ---@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
+    ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
+    ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
+    debug.getinfo = glua_debug.getinfo
+
+end
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
@@ -176,9 +218,9 @@ function debug.getf( level )
     local info = debug_getinfo( level + 1, "f" )
     if info == nil then
         return nil
-    else
-        return info.func
     end
+
+    return info.func
 end
 
 if raw.type == nil then
@@ -367,8 +409,8 @@ end
 --- Returns the current call stack relative to the specified stack level.
 ---
 ---@param stack_level? integer The stack `stack_level` to get the stack from.
----@param what? infowhat The fields to get from the stack.
----@return debuginfo[] stack The debug info stack.
+---@param what? dreamwork.std.debug.InfoWhat The fields to get from the stack.
+---@return dreamwork.std.debug.Info[] stack The debug info stack.
 ---@return integer stack_size The size of the stack.
 function debug.getstack( stack_level, what )
     if what == nil then
@@ -379,12 +421,12 @@ function debug.getstack( stack_level, what )
 
     for location = 1 + (stack_level or 1), 16, 1 do
         local info = debug_getinfo( location, what )
-        if info then
-            stack_length = stack_length + 1
-            stack[ stack_length ] = info
-        else
+        if info == nil then
             break
         end
+
+        stack_length = stack_length + 1
+        stack[ stack_length ] = info
     end
 
     return stack, stack_length

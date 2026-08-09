@@ -1,62 +1,90 @@
 local std = dreamwork.std
 
+---@alias dreamwork.std.console.VariableType "boolean" | "string" | "integer" | "float" | "number"
+---@alias dreamwork.std.console.VariableValue boolean | number | string | integer
+
 ---@class dreamwork.std.console
 local console = std.console
 
 local engine = dreamwork.engine
 local engine_consoleCommandRun = engine.consoleCommandRun
 local engine_consoleVariableGet = engine.consoleVariableGet
+local engine_consoleVariableCreate = engine.consoleVariableCreate
 
-local tostring = std.tostring
-local toboolean = std.toboolean
-
-local bit_band = std.bit.band
 local LUA_SERVER = std.LUA_SERVER
-local debug_fempty = std.debug.fempty
-local string_format = std.string.format
 
-local raw_tonumber = std.raw.tonumber
-local futures_Future = std.futures.Future
-local gc_setTableRules = std.gc.setTableRules
-local table_removeByRange = std.table.removeByRange
+local debug = std.debug
+local debug_fempty = debug.fempty
 
-local CONVAR = std.debug.findmetatable( "ConVar" ) or {}
----@cast CONVAR ConVar
+local bit = std.bit
+local bit_band = bit.band
 
-local convar_getInt = CONVAR.GetInt
-local convar_getBool = CONVAR.GetBool
-local convar_getFloat = CONVAR.GetFloat
-local convar_getString = CONVAR.GetString
-local convar_getDefault = CONVAR.GetDefault
-local convar_getMin, convar_getMax = CONVAR.GetMin, CONVAR.GetMax
+local gc = std.gc
+local gc_setTableRules = gc.setTableRules
 
-local math_floor = std.math.floor
+local table = std.table
+local table_removeByRange = table.removeByRange
+
+local string = std.string
+local string_format = string.format
+
+local futures_Future = std.Future
+local toboolean = std.toboolean
+local tostring = std.tostring
+local arg = std.arg
+
+---@diagnostic disable-next-line: undefined-doc-class
+---@class dreamwork.GModConVar : ConVar
+---@field GetInt fun(self: dreamwork.GModConVar): integer
+---@field GetBool fun(self: dreamwork.GModConVar): boolean
+---@field GetFloat fun(self: dreamwork.GModConVar): number
+---@field GetString fun(self: dreamwork.GModConVar): string
+---@field GetDefault fun(self: dreamwork.GModConVar): string
+---@field GetMin fun(self: dreamwork.GModConVar): number
+---@field GetMax fun(self: dreamwork.GModConVar): number
+---@field GetName fun(self: dreamwork.GModConVar): string
+---@field GetHelpText fun(self: dreamwork.GModConVar): string
+---@field GetFlags fun(self: dreamwork.GModConVar): integer
+---@field IsFlagSet fun(self: dreamwork.GModConVar, flag: integer): boolean
+local GModConVar = debug.findmetatable( "ConVar" ) or {}
+
+local GModConVar_getInt = GModConVar.GetInt
+local GModConVar_getBool = GModConVar.GetBool
+local GModConVar_getFloat = GModConVar.GetFloat
+local GModConVar_getString = GModConVar.GetString
+local GModConVar_getDefault = GModConVar.GetDefault
+local GModConVar_getMin, GModConVar_getMax = GModConVar.GetMin, GModConVar.GetMax
+
+local math = std.math
+local math_floor = math.floor
+local math_isInt = math.isInt
 
 local raw = std.raw
 local raw_type = raw.type
 local raw_index = raw.index
+local raw_tonumber = raw.tonumber
 
 local class = std.class
 
----@type table<dreamwork.std.console.Variable, ConVar>
-local variable2convar = {}
+---@type table<dreamwork.std.console.Variable, dreamwork.GModConVar>
+local variable_to_gmodconvar = {}
 
 ---@type table<dreamwork.std.console.Variable, string>
-local names = {}
+local gmodconvar_names = {}
 
 do
 
-    local convar_getName = CONVAR.GetName
+    local GModConVar_getName = GModConVar.GetName
 
-    setmetatable( names, {
+    setmetatable( gmodconvar_names, {
         __index = function( _, self )
-            local cvar = variable2convar[ self ]
+            local cvar = variable_to_gmodconvar[ self ]
             if cvar == nil then
                 return "unknown"
             end
 
-            local name = convar_getName( cvar )
-            names[ self ] = name
+            local name = GModConVar_getName( cvar )
+            gmodconvar_names[ self ] = name
             return name
         end,
         __mode = "k"
@@ -68,12 +96,12 @@ do
 
     local raw_get = raw.get
 
-    setmetatable( variable2convar, {
+    setmetatable( variable_to_gmodconvar, {
         __index = function( _, self )
-            local name = raw_get( names, self )
+            local name = raw_get( gmodconvar_names, self )
             if name ~= nil then
                 local cvar = engine_consoleVariableGet( name )
-                variable2convar[ self ] = cvar
+                variable_to_gmodconvar[ self ] = cvar
                 return cvar
             end
         end,
@@ -83,21 +111,21 @@ do
 end
 
 ---@type table<dreamwork.std.console.Variable, string>
-local descriptions = {}
+local gmodconvar_descriptions = {}
 
 do
 
-    local convar_getDescription = CONVAR.GetHelpText
+    local GModConVar_getDescription = GModConVar.GetHelpText
 
-    setmetatable( descriptions, {
+    setmetatable( gmodconvar_descriptions, {
         __index = function( _, self )
-            local cvar = variable2convar[ self ]
+            local cvar = variable_to_gmodconvar[ self ]
             if cvar == nil then
                 return "unknown"
             end
 
-            local description = convar_getDescription( cvar )
-            descriptions[ self ] = description
+            local description = GModConVar_getDescription( cvar )
+            gmodconvar_descriptions[ self ] = description
             return description
         end,
         __mode = "k"
@@ -105,14 +133,14 @@ do
 
 end
 
----@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.type>
+---@type table<dreamwork.std.console.Variable, dreamwork.std.console.VariableType>
 local types = {}
 
 do
 
     local raw_set = raw.set
 
-    ---@type table<dreamwork.std.console.Variable.type, boolean>
+    ---@type table<dreamwork.std.console.VariableType, boolean>
     local supported_types = {
         boolean = true,
         integer = true,
@@ -136,21 +164,21 @@ do
 end
 
 ---@type table<dreamwork.std.console.Variable, integer>
-local flags = {}
+local gmodconvar_flags = {}
 
 do
 
-    local convar_getFlags = CONVAR.GetFlags
+    local GModConVar_getFlags = GModConVar.GetFlags
 
-    setmetatable( flags, {
+    setmetatable( gmodconvar_flags, {
         __index = function( _, self )
-            local cvar = variable2convar[ self ]
+            local cvar = variable_to_gmodconvar[ self ]
             if cvar == nil then
                 return 0
             end
 
-            local int32_flags = convar_getFlags( cvar )
-            flags[ self ] = int32_flags
+            local int32_flags = GModConVar_getFlags( cvar )
+            gmodconvar_flags[ self ] = int32_flags
             return int32_flags
         end,
         __mode = "k"
@@ -165,14 +193,14 @@ local number_types = {
     float = true
 }
 
----@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.value>
-local defaults = {}
+---@type table<dreamwork.std.console.Variable, dreamwork.std.console.VariableValue>
+local gmodconvar_defaults = {}
 
-setmetatable( defaults, {
+setmetatable( gmodconvar_defaults, {
     __index = function( _, variable )
         local cvar_type = types[ variable ]
 
-        local cvar = variable2convar[ variable ]
+        local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             if number_types[ cvar_type ] then
                 return 0
@@ -183,7 +211,7 @@ setmetatable( defaults, {
             return ""
         end
 
-        local str_default = convar_getDefault( cvar )
+        local str_default = GModConVar_getDefault( cvar )
         if number_types[ cvar_type ] then
             local float_default = raw_tonumber( str_default, 10 ) or 0
 
@@ -191,45 +219,45 @@ setmetatable( defaults, {
                 float_default = math_floor( float_default )
             end
 
-            defaults[ variable ] = float_default
+            gmodconvar_defaults[ variable ] = float_default
             return float_default
         elseif cvar_type == "boolean" then
             local bool_default = toboolean( str_default )
-            defaults[ variable ] = bool_default
+            gmodconvar_defaults[ variable ] = bool_default
             return bool_default
         else
-            defaults[ variable ] = str_default
+            gmodconvar_defaults[ variable ] = str_default
             return str_default
         end
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.value>
+---@type table<dreamwork.std.console.Variable, dreamwork.std.console.VariableValue>
 local values = {}
 
 setmetatable( values, {
     __index = function( _, variable )
-        local cvar = variable2convar[ variable ]
+        local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
-            return defaults[ variable ]
+            return gmodconvar_defaults[ variable ]
         end
 
         local type = types[ variable ]
         if type == "float" or type == "number" then
-            local float_value = convar_getFloat( cvar )
+            local float_value = GModConVar_getFloat( cvar )
             values[ variable ] = float_value
             return float_value
         elseif type == "integer" then
-            local integer_value = convar_getInt( cvar )
+            local integer_value = GModConVar_getInt( cvar )
             values[ variable ] = integer_value
             return integer_value
         elseif type == "boolean" then
-            local bool_value = convar_getBool( cvar )
+            local bool_value = GModConVar_getBool( cvar )
             values[ variable ] = bool_value
             return bool_value
         else
-            local str_value = convar_getString( cvar )
+            local str_value = GModConVar_getString( cvar )
             values[ variable ] = str_value
             return str_value
         end
@@ -242,12 +270,12 @@ local mins = {}
 
 setmetatable( mins, {
     __index = function( _, variable )
-        local cvar = variable2convar[ variable ]
+        local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             return nil
         end
 
-        local float_min = convar_getMin( cvar )
+        local float_min = GModConVar_getMin( cvar )
         mins[ variable ] = float_min
         return float_min
     end,
@@ -259,12 +287,12 @@ local maxs = {}
 
 setmetatable( maxs, {
     __index = function( _, variable )
-        local cvar = variable2convar[ variable ]
+        local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             return nil
         end
 
-        local float_max = convar_getMax( cvar )
+        local float_max = GModConVar_getMax( cvar )
         maxs[ variable ] = float_max
         return float_max
     end,
@@ -285,11 +313,10 @@ gc_setTableRules( callbacks, true, false )
 ---
 --- The console variable object.
 ---
----@generic T
 ---@class dreamwork.std.console.Variable<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.console.Variable
 ---@field value T The value of the variable.
----@field type dreamwork.std.console.Variable.type The type of the variable (e.g., "int", "float", "string").
+---@field type dreamwork.std.console.VariableType The type of the variable (e.g., "int", "float", "string").
 ---@field name string The name of the variable.
 ---@field description string The description of the variable.
 ---@field flags integer The flags of the variable.
@@ -303,13 +330,13 @@ function Variable:__index( str_key )
     if str_key == "type" then
         return types[ self ]
     elseif str_key == "name" then
-        return names[ self ]
+        return gmodconvar_names[ self ]
     elseif str_key == "description" then
-        return descriptions[ self ]
+        return gmodconvar_descriptions[ self ]
     elseif str_key == "flags" then
-        return flags[ self ]
+        return gmodconvar_flags[ self ]
     elseif str_key == "default" then
-        return defaults[ self ]
+        return gmodconvar_defaults[ self ]
     elseif str_key == "min" then
         return mins[ self ]
     elseif str_key == "max" then
@@ -323,7 +350,7 @@ function Variable:__index( str_key )
         return raw_index( Variable, str_key )
     end
 
-    return bit_band( flags[ self ], int32_flag ) ~= 0
+    return bit_band( gmodconvar_flags[ self ], int32_flag ) ~= 0
 end
 
 ---@protected
@@ -332,7 +359,7 @@ function Variable:__newindex( str_key, value )
         local cvar_type = types[ self ]
         if cvar_type == "boolean" then
             local bool_value = toboolean( value )
-            engine_consoleCommandRun( names[ self ], bool_value and "1" or "0" )
+            engine_consoleCommandRun( gmodconvar_names[ self ], bool_value and "1" or "0" )
             values[ self ] = bool_value
         elseif number_types[ cvar_type ] then
             local float_value = raw_tonumber( value, 10 ) or 0.0
@@ -341,11 +368,11 @@ function Variable:__newindex( str_key, value )
                 float_value = math_floor( float_value )
             end
 
-            engine_consoleCommandRun( names[ self ], string_format( "%f", float_value ) )
+            engine_consoleCommandRun( gmodconvar_names[ self ], string_format( "%f", float_value ) )
             values[ self ] = float_value
         else
             local str_value = tostring( value )
-            engine_consoleCommandRun( names[ self ], str_value )
+            engine_consoleCommandRun( gmodconvar_names[ self ], str_value )
             values[ self ] = str_value
         end
     elseif str_key == "type" then
@@ -355,94 +382,88 @@ function Variable:__newindex( str_key, value )
     end
 end
 
-do
+---@param options dreamwork.std.console.Variable.Options
+---@protected
+function Variable:__init( options )
+    local str_name = options.name
+    gmodconvar_names[ self ] = str_name
 
-    local engine_consoleVariableCreate = engine.consoleVariableCreate
-    local arg = std.arg
+    local cvar_type = options.type or "string"
+    types[ self ] = cvar_type
 
-    ---@param options dreamwork.std.console.Variable.Options
-    ---@protected
-    function Variable:__init( options )
-        local str_name = options.name
-        names[ self ] = str_name
+    local cvar = engine_consoleVariableGet( str_name )
+    if cvar == nil then
+        local str_description = options.description or ""
+        gmodconvar_descriptions[ self ] = str_description
 
-        local cvar_type = options.type or "string"
-        types[ self ] = cvar_type
+        local str_default = options.default
 
-        local cvar = engine_consoleVariableGet( str_name )
-        if cvar == nil then
-            local str_description = options.description or ""
-            descriptions[ self ] = str_description
-
-            local str_default = options.default
-
-            if str_default == nil then
-                if cvar_type == "boolean" then
-                    str_default = false
-                elseif number_types[ cvar_type ] then
-                    str_default = 0
-                else
-                    str_default = ""
-                end
-            end
-
-            local ok, error_msg = arg( str_default, "default", number_types[ cvar_type ] and "number" or cvar_type )
-
-            if not ok then
-                error( error_msg, 3 )
-            end
-
+        if str_default == nil then
             if cvar_type == "boolean" then
-                str_default = str_default and "1" or "0"
+                str_default = false
             elseif number_types[ cvar_type ] then
-                str_default = tostring( str_default ) or "0"
+                str_default = 0
+            else
+                str_default = ""
             end
-
-            ---@cast str_default string
-
-            local int32_flags = console.flags( options.flags or 0, options )
-            flags[ self ] = int32_flags
-
-            local int32_min, int32_max
-
-            if cvar_type ~= "string" then
-                int32_min = options.min
-
-                if int32_min ~= nil and cvar_type == "integer" then
-                    int32_min = math_floor( int32_min )
-                elseif cvar_type == "boolean" then
-                    int32_min = 0
-                end
-
-                int32_max = options.max
-
-                if int32_max ~= nil and cvar_type == "integer" then
-                    int32_max = math_floor( int32_max )
-                elseif cvar_type == "boolean" then
-                    int32_max = 1
-                end
-
-                mins[ self ], maxs[ self ] = int32_min, int32_max
-            end
-
-            cvar = engine_consoleVariableCreate( str_name, str_default, int32_flags, str_description, int32_min, int32_max )
         end
 
-        if cvar == nil then
-            error( "failed to create console variable, unknown error", 3 )
-        else
-            variable2convar[ self ] = cvar
+        local ok, error_msg = arg( str_default, "default", number_types[ cvar_type ] and "number" or cvar_type )
+
+        if not ok then
+            error( error_msg, 3 )
         end
 
-        callbacks[ self ] = {}
-        variables[ str_name ] = self
+        if cvar_type == "boolean" then
+            str_default = str_default and "1" or "0"
+        elseif number_types[ cvar_type ] then
+            str_default = tostring( str_default ) or "0"
+        end
+
+        ---@cast str_default string
+
+        local int32_flags = console.flags( options.flags or 0, options )
+        gmodconvar_flags[ self ] = int32_flags
+
+        local int32_min, int32_max
+
+        if cvar_type ~= "string" then
+            int32_min = options.min
+
+            if int32_min ~= nil and cvar_type == "integer" then
+                int32_min = math_floor( int32_min )
+            elseif cvar_type == "boolean" then
+                int32_min = 0
+            end
+
+            int32_max = options.max
+
+            if int32_max ~= nil and cvar_type == "integer" then
+                int32_max = math_floor( int32_max )
+            elseif cvar_type == "boolean" then
+                int32_max = 1
+            end
+
+            mins[ self ], maxs[ self ] = int32_min, int32_max
+        end
+
+        cvar = engine_consoleVariableCreate( str_name, str_default, int32_flags, str_description, int32_min, int32_max )
     end
+
+    if cvar == nil then
+        error( "failed to create console variable, unknown error", 3 )
+    else
+        variable_to_gmodconvar[ self ] = cvar
+    end
+
+    callbacks[ self ] = {}
+    variables[ str_name ] = self
 end
 
 ---@return string
 ---@protected
 function Variable:__tostring()
-    return string_format( "console.Variable: %p [%s][%s]", self, names[ self ], values[ self ] )
+    return string_format( "console.Variable: %p [%s][%s]", self, gmodconvar_names[ self ], values[ self ] )
 end
 
 --- [SHARED AND MENU]
@@ -470,7 +491,7 @@ VariableClass.exists = engine_consoleVariableExists
 --- Gets a `console.Variable` object by its name.
 ---
 ---@param str_name string The name of the console variable.
----@param cvar_type dreamwork.std.console.Variable.type The type of the console variable.
+---@param cvar_type dreamwork.std.console.VariableType The type of the console variable.
 ---@return dreamwork.std.console.Variable | nil variable The `console.Variable` object.
 ---@overload fun( str_name: string, cvar_type: "boolean"): dreamwork.std.console.Variable<boolean> | nil
 ---@overload fun( str_name: string, cvar_type: "string"): dreamwork.std.console.Variable<string> | nil
@@ -506,7 +527,7 @@ function VariableClass.getString( name )
     if object == nil then
         return ""
     else
-        return convar_getString( object )
+        return GModConVar_getString( object )
     end
 end
 
@@ -521,7 +542,7 @@ function VariableClass.getInteger( name )
     if object == nil then
         return 0
     else
-        return convar_getInt( object )
+        return GModConVar_getInt( object )
     end
 end
 
@@ -536,7 +557,7 @@ function VariableClass.getFloat( name )
     if object == nil then
         return 0.0
     else
-        return convar_getFloat( object )
+        return GModConVar_getFloat( object )
     end
 end
 
@@ -553,7 +574,7 @@ function VariableClass.getBoolean( name )
     if object == nil then
         return false
     else
-        return convar_getBool( object )
+        return GModConVar_getBool( object )
     end
 end
 
@@ -563,11 +584,13 @@ VariableClass.getBool = VariableClass.getBoolean
 ---
 --- Reverts the value of the `console.Variable` object to its default value.
 ---
+---@generic T
+---@param self dreamwork.std.console.Variable<T>
+---@return T default The default value of the `console.Variable` object.
 function Variable:revert()
-    local name = names[ self ]
-    if name ~= nil then
-        engine_consoleCommandRun( name, self.default )
-    end
+    local default = self.default
+    self.value = default
+    return default
 end
 
 --- [SHARED AND MENU]
@@ -579,14 +602,14 @@ function VariableClass.revert( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
         error( "Variable '" .. name .. "' does not exist.", 2 )
-    else
-        engine_consoleCommandRun( name, convar_getDefault( object ) )
     end
+
+    engine_consoleCommandRun( name, GModConVar_getDefault( object ) )
 end
 
 do
 
-    local convar_getHelpText = CONVAR.GetHelpText
+    local GModConVar_getHelpText = GModConVar.GetHelpText
 
     --- [SHARED AND MENU]
     ---
@@ -598,9 +621,9 @@ do
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return ""
-        else
-            return convar_getHelpText( object )
         end
+
+        return GModConVar_getHelpText( object )
     end
 
 end
@@ -615,14 +638,14 @@ function VariableClass.getDefault( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
         return ""
-    else
-        return convar_getDefault( object )
     end
+
+    return GModConVar_getDefault( object )
 end
 
 do
 
-    local convar_getFlags = CONVAR.GetFlags
+    local GModConVar_getFlags = GModConVar.GetFlags
 
     --- [SHARED AND MENU]
     ---
@@ -634,9 +657,9 @@ do
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return 0
-        else
-            return convar_getFlags( object )
         end
+
+        return GModConVar_getFlags( object )
     end
 
     VariableClass.getFlags = getFlags
@@ -646,7 +669,7 @@ do
     --- Sets the value of the `console.Variable` object.
     ---
     ---@param name string The name of the console variable.
-    ---@param value dreamwork.std.console.Variable.value The value to set.
+    ---@param value dreamwork.std.console.VariableValue The value to set.
     function VariableClass.set( name, value )
         if bit_band( getFlags( name ), 8192 ) ~= 0 and not LUA_SERVER then
             error( "replicated convar is cannot be changed by client.", 2 )
@@ -654,23 +677,31 @@ do
 
         local cvar_type = raw_type( value )
         if cvar_type == "boolean" then
+            ---@cast value boolean
             engine_consoleCommandRun( name, value and "1" or "0" )
         elseif cvar_type == "string" then
+            ---@cast value string
             engine_consoleCommandRun( name, value )
-        elseif cvar_type == "float" or cvar_type == "number" then
-            engine_consoleCommandRun( name, string_format( "%f", raw_tonumber( value, 10 ) or 0.0 ) )
-        elseif cvar_type == "integer" then
-            engine_consoleCommandRun( name, string_format( "%d", raw_tonumber( value, 10 ) or 0 ) )
-        else
-            error( "invalid value type, must be boolean, string, integer, float or number.", 2 )
+        elseif cvar_type == "number" then
+            ---@cast value number | integer
+
+            if math_isInt( value ) then
+                ---@cast value integer
+                engine_consoleCommandRun( name, string_format( "%d", value ) )
+            else
+                ---@cast value number
+                engine_consoleCommandRun( name, string_format( "%f", value ) )
+            end
         end
+
+        error( "invalid value type, must be boolean, string, integer, float or number.", 2 )
     end
 
 end
 
 do
 
-    local convar_isFlagSet = CONVAR.IsFlagSet
+    local GModConVar_isFlagSet = GModConVar.IsFlagSet
 
     --- [SHARED AND MENU]
     ---
@@ -683,9 +714,9 @@ do
         local object = engine_consoleVariableGet( name )
         if object == nil then
             return false
-        else
-            return convar_isFlagSet( object, flags )
         end
+
+        return GModConVar_isFlagSet( object, flags )
     end
 
 end
@@ -700,9 +731,9 @@ function VariableClass.getMin( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
         return 0
-    else
-        return convar_getMin( object )
     end
+
+    return GModConVar_getMin( object )
 end
 
 --- [SHARED AND MENU]
@@ -715,9 +746,9 @@ function VariableClass.getMax( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
         return 0
-    else
-        return convar_getMax( object )
     end
+
+    return GModConVar_getMax( object )
 end
 
 --- [SHARED AND MENU]
@@ -731,9 +762,9 @@ function VariableClass.getBounds( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
         return 0, 0
-    else
-        return convar_getMin( object ), convar_getMax( object )
     end
+
+    return GModConVar_getMin( object ), GModConVar_getMax( object )
 end
 
 ---@type table<dreamwork.std.console.Variable, boolean>
@@ -742,7 +773,7 @@ local in_call = {}
 gc_setTableRules( in_call, true, false )
 
 ---@class dreamwork.std.console.Variable.query_data : dreamwork.std.console.Command.query_data
----@field [3] (nil | fun( variable: dreamwork.std.console.Variable, new_value: dreamwork.std.console.Variable.value )) The callback function.
+---@field [3] (nil | fun( variable: dreamwork.std.console.Variable, new_value: dreamwork.std.console.VariableValue )) The callback function.
 
 ---@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.query_data[]>
 local queues = {}
@@ -846,7 +877,9 @@ end
 ---
 --- Waits for the `console.Variable` object to change.
 ---
----@return dreamwork.std.console.Variable.value
+---@generic T
+---@param self dreamwork.std.console.Variable<T>
+---@return T new_value
 ---@async
 function Variable:wait()
     local future = futures_Future()

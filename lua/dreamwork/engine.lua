@@ -508,18 +508,26 @@ end
 
 do
 
+    ---@type fun(name: string): dreamwork.GModConVar | nil
+    ---@diagnostic disable-next-line: undefined-field
     local GetConVar_Internal = _G.GetConVar_Internal or debug_fempty
+
+    ---@type fun(name: string): boolean
+    ---@diagnostic disable-next-line: undefined-field
     local ConVarExists = _G.ConVarExists or debug_fempty
+
+    ---@type fun(name: string, value: string, flags: number): dreamwork.GModConVar
+    ---@diagnostic disable-next-line: undefined-field
     local CreateConVar = _G.CreateConVar or debug_fempty
 
     --- [SHARED AND MENU]
     ---
     --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
     ---
-    ---@type table<string, ConVar>
+    ---@type table<string, dreamwork.GModConVar>
     local console_variables = {}
 
-    ---@type dreamwork.Metatable<string, ConVar>
+    ---@type dreamwork.Metatable<string, dreamwork.GModConVar>
     local metatable = {
         __mode = "v"
     }
@@ -555,7 +563,7 @@ do
     --- Get console variable C object (userdata).
     ---
     ---@param name string The name of the console variable.
-    ---@return ConVar? cvar The console variable object.
+    ---@return dreamwork.GModConVar? cvar The console variable object.
     function engine.consoleVariableGet( name )
         return console_variables[ name ]
     end
@@ -570,7 +578,7 @@ do
     ---@param description? string The description of the console variable.
     ---@param min? number The minimum value of the console variable.
     ---@param max? number The maximum value of the console variable.
-    ---@return ConVar? cvar The console variable object.
+    ---@return dreamwork.GModConVar? cvar The console variable object.
     function engine.consoleVariableCreate( name, default, flags, description, min, max )
         local variable = console_variables[ name ]
         if variable == nil then
@@ -619,7 +627,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
     ---
     ---@param name string The name of the console command.
     ---@param description string The description of the console command.
-    ---@param flags FCVAR The bit flags of the console command.
+    ---@param flags integer The bit flags of the console command.
     function engine.consoleCommandRegister( name, description, flags )
         if exists_commands[ name ] == nil then
             exists_commands[ name ] = true

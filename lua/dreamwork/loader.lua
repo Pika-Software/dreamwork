@@ -1,3 +1,4 @@
+---@diagnostic disable-next-line: undefined-global
 local dofile = dofile or include
 if dofile == nil then
     error( "`dofile` not found, dreamwork cannot be loaded!" )
@@ -37,7 +38,7 @@ local std = dreamwork.std
 
 std.LUA_VERSION = _VERSION or "unknown"
 
----@diagnostic disable-next-line: assign-type-mismatch
+---@diagnostic disable-next-line: assign-type-mismatch, undefined-global
 std.GAME_VERSION = VERSION or 0
 
 ---@diagnostic disable-next-line: undefined-global
@@ -276,6 +277,7 @@ if std.setfenv == nil then
 end
 
 ---@type fun( value: any ): boolean
+---@diagnostic disable-next-line: undefined-global
 local isTable = istable
 
 if isTable == nil then
@@ -614,6 +616,7 @@ sendfile( "dreamwork/std/os.lua" )
 ---@class dreamwork.std.os
 local os = std.os
 
+---@diagnostic disable-next-line: undefined-global
 local SysTime = SysTime or os.clock
 dreamwork.InitTime = SysTime()
 
@@ -902,6 +905,7 @@ sendfile( "dreamwork/std/codec/buffer.lua" )
 
 do
 
+    ---@diagnostic disable-next-line: undefined-global
     local timer_Simple = timer.Simple
     local table_unpack = table.unpack
 
@@ -1917,6 +1921,7 @@ local engine = dreamwork.engine
 
 do
 
+    ---@diagnostic disable-next-line: undefined-global
     local ErrorNoHalt = ErrorNoHalt
 
     if ErrorNoHalt == nil then
@@ -2724,8 +2729,10 @@ logger:info( "%d game(s) and %d add-on(s) mounted to game.", engine.GameCount, e
 std.FRAME_TIME = 1 / 60
 std.FPS = 60
 
-if LUA_CLIENT then
+---@diagnostic disable-next-line: undefined-global
+if LUA_CLIENT and CurTime ~= nil then
 
+    ---@diagnostic disable-next-line: undefined-global
     local CurTime = CurTime
 
     local last_call = CurTime()

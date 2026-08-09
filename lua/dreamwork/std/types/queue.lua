@@ -6,7 +6,7 @@ local class = std.class
 ---
 --- A queue is a first-in-first-out (FIFO) data structure object.
 ---
----@class dreamwork.std.Queue : dreamwork.std.Object
+---@class dreamwork.std.Queue<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.QueueClass
 ---@field front integer The front of the queue. **Read-only**
 ---@field back integer The back of the queue. **Read-only**
@@ -76,8 +76,10 @@ end
 ---
 --- Returns the value at the front of the queue or the back if `from_tail` is `true`.
 ---
+---@generic T
+---@param self dreamwork.std.Queue<T>
 ---@param from_tail? boolean If `true`, returns the value at the back of the queue.
----@return any value The value at the front of the queue.
+---@return T | nil value The value at the front of the queue, or `nil` if the queue is empty.
 function Queue:peek( from_tail )
     return self[ from_tail and self.front or (self.back + 1) ]
 end
@@ -86,7 +88,9 @@ end
 ---
 --- Appends a value to the end of the queue or the front if `to_head` is `true`.
 ---
----@param value any The value to append.
+---@generic T
+---@param self dreamwork.std.Queue<T>
+---@param value T The value to append.
 ---@param to_head? boolean If `true`, appends the value to the front of the queue.
 function Queue:push( value, to_head )
     if to_head then
@@ -104,8 +108,10 @@ end
 ---
 --- Removes and returns the value at the back of the queue or the front if `from_tail` is `true`.
 ---
+---@generic T
+---@param self dreamwork.std.Queue<T>
 ---@param from_tail? boolean If `true`, removes and returns the value at the front of the queue.
----@return any value The value at the back of the queue or the front if `from_tail` is `true`.
+---@return T | nil value The value at the back of the queue or the front if `from_tail` is `true`, or `nil` if the queue is empty.
 function Queue:pop( from_tail )
     local back, front = self.back, self.front
     if back == front then return nil end
@@ -143,9 +149,11 @@ end
 ---
 --- Returns an iterator for the queue.
 ---
+---@generic T
+---@param self dreamwork.std.Queue<T>
 ---@param from_tail? boolean If `true`, returns an iterator for the back of the queue.
----@return fun( queue: dreamwork.std.Queue, from_tail: boolean ): any iterator The iterator function.
----@return dreamwork.std.Queue queue The queue being iterated over.
+---@return fun( queue: dreamwork.std.Queue<T>, from_tail: boolean ): T iterator The iterator function.
+---@return dreamwork.std.Queue<T> queue The queue being iterated over.
 ---@return boolean from_tail `true` if the iterator is for the back of the queue.
 function Queue:iterator( from_tail )
     return self.pop, self, from_tail == true

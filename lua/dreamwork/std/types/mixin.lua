@@ -9,8 +9,7 @@ local class = std.class
 local table = std.table
 local table_removeByValue = table.removeByValue
 
----@generic A, B, C, D, E, F
----@class dreamwork.std.Mixin : dreamwork.std.Object
+---@class dreamwork.std.Mixin<A, B, C, D, E, F> : dreamwork.std.Object
 ---@field depth integer
 ---@overload fun( a: A, b: B, c: C, d: D, e: E, f: F ): A, B, C, D, E, F
 ---@diagnostic disable-next-line: assign-type-mismatch
@@ -21,6 +20,7 @@ function Mixin:__init()
 end
 
 ---@generic A, B, C, D, E, F
+---@param self dreamwork.std.Mixin<A, B, C, D, E, F>
 ---@param mixer fun( a: A, b: B, c: C, d: D, e: E, f: F ): (A | any), (B | any), (C | any), (D | any), (E | any), (F | any)
 ---@return integer depth
 function Mixin:attach( mixer )
@@ -38,6 +38,7 @@ function Mixin:attach( mixer )
 end
 
 ---@generic A, B, C, D, E, F
+---@param self dreamwork.std.Mixin<A, B, C, D, E, F>
 ---@param mixer fun( a: A, b: B, c: C, d: D, e: E, f: F ): (A | any), (B | any), (C | any), (D | any), (E | any), (F | any)
 ---@return boolean
 function Mixin:detach( mixer )
@@ -53,6 +54,7 @@ function Mixin:detach( mixer )
 end
 
 ---@generic A, B, C, D, E, F
+---@param self dreamwork.std.Mixin<A, B, C, D, E, F>
 ---@param mixer fun( a: A, b: B, c: C, d: D, e: E, f: F ): (A | any), (B | any), (C | any), (D | any), (E | any), (F | any)
 function Mixin:__add( mixer )
     self:attach( mixer )
@@ -60,6 +62,7 @@ function Mixin:__add( mixer )
 end
 
 ---@generic A, B, C, D, E, F
+---@param self dreamwork.std.Mixin<A, B, C, D, E, F>
 ---@param mixer fun( a: A, b: B, c: C, d: D, e: E, f: F ): (A | any), (B | any), (C | any), (D | any), (E | any), (F | any)
 function Mixin:__sub( mixer )
     self:detach( mixer )
@@ -67,6 +70,7 @@ function Mixin:__sub( mixer )
 end
 
 ---@generic A, B, C, D, E, F
+---@param self dreamwork.std.Mixin<A, B, C, D, E, F>
 ---@param a A
 ---@param b B
 ---@param c C

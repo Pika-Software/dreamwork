@@ -156,7 +156,7 @@ do
 
     ---@class dreamwork.std.console.Flag
     ---@field [1] dreamwork.std.console.Flags
-    ---@field [2] integer | FCVAR flag
+    ---@field [2] integer flag
 
     ---@type dreamwork.std.console.Flag[]
     local existing_flags = {
@@ -207,7 +207,7 @@ do
     ---
     ---
     ---@param flag_name dreamwork.std.console.Flags
-    ---@return integer | FCVAR int32_flag
+    ---@return integer int32_flag
     function console.flag( flag_name )
         return flag_to_integer[ flag_name ]
     end
@@ -218,7 +218,7 @@ do
     ---
     ---@param int32_flags integer
     ---@param flag_map table<dreamwork.std.console.Flags, boolean>
-    ---@return integer | FCVAR flag
+    ---@return integer flag
     function console.flags( int32_flags, flag_map )
         for i = 1, existing_flag_count, 1 do
             local flag = existing_flags[ i ]
