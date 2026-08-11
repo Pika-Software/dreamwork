@@ -1782,7 +1782,7 @@ do
     ---@param str string The string to unquote.
     ---@param use_single? boolean Whether to use single quotes (true) or double quotes (false).
     ---@return string The unquoted string.
-    function string.unquote( str, use_single )
+    function string.unQuote( str, use_single )
         if use_single then
             return string_replace( string_match( str, "^'(.*)'$" ) or str, "\\'", "'" )
         else
@@ -1799,14 +1799,82 @@ do
 
     --- [SHARED AND MENU]
     ---
+    --- Unindents a string by removing leading spaces.
+    ---
+    ---@param str string The string to unindent.
+    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string unindented The unindented string.
+    local function unIndent( str, str_length )
+        return (string_trimSpaces( str, false, nil, nil, str_length ))
+    end
+
+    string.unIndent = unIndent
+
+    --- [SHARED AND MENU]
+    ---
     --- Sets the space indentation size for a string.
     ---
     ---@param str string The string to indent.
     ---@param size integer The number of spaces to indent.
     ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
-    ---@return string The indented string.
-    function string.indent( str, size, str_length )
-        return string_repByte( 0x20, size ) .. string_trimSpaces( str, false, nil, nil, str_length )
+    ---@return string indented The indented string.
+    function string_indent( str, size, str_length )
+        return string_repByte( 0x20, size ) .. unIndent( str, str_length )
+    end
+
+    string.indent = string_indent
+
+    --- [SHARED AND MENU]
+    ---
+    --- Indents a string by adding leading spaces on each line.
+    ---
+    ---@param str string The string to indent.
+    ---@param size integer The number of spaces to indent.
+    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string indented The indented string.
+    function string.indentLines( str, size, str_length )
+        local lines, line_count = byte_split( str, 0x0A, nil, nil, str_length )
+
+        if line_count == 0 then
+            return ""
+        elseif line_count == 1 then
+            return string_indent( str, size, str_length )
+        end
+
+        ---@type string[]
+        local output = {}
+
+        for i = 1, line_count, 1 do
+            output[ i ] = string_indent( lines[ i ], size, str_length )
+        end
+
+        return table_concat( output, "\n", 1, line_count )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Unindents a string by removing leading spaces on each line.
+    ---
+    ---@param str string The string to unindent.
+    ---@param str_length? integer The length of the string. Optionally, it should be used to speed up calculations.
+    ---@return string unindented The unindented string.
+    function string.unIndentLines( str, str_length )
+        local lines, line_count = byte_split( str, 0x0A, nil, nil, str_length )
+
+        if line_count == 0 then
+            return ""
+        elseif line_count == 1 then
+            return unIndent( str, str_length )
+        end
+
+        ---@type string[]
+        local output = {}
+
+        for i = 1, line_count, 1 do
+            output[ i ] = unIndent( lines[ i ], str_length )
+        end
+
+        return table_concat( output, "\n", 1, line_count )
     end
 
 end
