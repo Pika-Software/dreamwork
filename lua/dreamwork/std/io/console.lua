@@ -1,6 +1,12 @@
 local sendfile = dreamwork.sendfile
 local dofile = dreamwork.dofile
 
+---@class GModGUI
+---@field ShowConsole fun() | nil
+---@field IsConsoleVisible ( fun(): boolean ) | nil
+---@diagnostic disable-next-line: undefined-global
+local glua_gui = gui or {}
+
 local engine = dreamwork.engine
 local engine_consoleMessage = engine.consoleMessage
 local engine_consoleMessageColored = engine.consoleMessageColored
@@ -30,7 +36,7 @@ if std.LUA_MENU then
     ---
     --- Shows the console.
     ---
-    console.show = gui.ShowConsole or function()
+    console.show = glua_gui.ShowConsole or function()
         engine_consoleCommandRun( "showconsole" )
     end
 
@@ -56,7 +62,7 @@ console.VisibilityHook = std.Hook( "console.VisibilityHook" )
 
 if std.LUA_CLIENT_MENU then
 
-    local gui_IsConsoleVisible = gui.IsConsoleVisible or function() return false end
+    local gui_IsConsoleVisible = glua_gui.IsConsoleVisible or function() return false end
 
     local visible = gui_IsConsoleVisible()
     console.visible = visible
@@ -90,7 +96,7 @@ do
                 color = value
             else
                 ---@cast value string
-                engine_consoleMessageColored( value, color )
+                (color == 0xFFFFFF and engine_consoleMessage and engine_consoleMessageColored)( value, color )
             end
         end
     end
@@ -107,7 +113,7 @@ do
         engine_consoleMessage( "\n" )
     end
 
-    if SERVER then
+    if std.LUA_SERVER then
 
         --- [SHARED AND MENU]
         ---
@@ -244,7 +250,7 @@ sendfile( "dreamwork/std/io/console/command.lua" )
 dofile( "dreamwork/std/io/console/logger.lua" )
 sendfile( "dreamwork/std/io/console/logger.lua" )
 
-if not SERVER then
+if not std.LUA_SERVER then
     function console.clear()
         console.Command.run( "clear" ) -- fuck facepunch
     end
