@@ -34,7 +34,7 @@ std.class = class
 --- A base for objects were created by `class` library.
 ---
 ---@class dreamwork.std.Object : dreamwork.Metatable
----@field private __type string The name of object type. **READ ONLY**
+---@field __type string The name of object type. **READ ONLY**
 ---@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
 ---@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**
 ---@field __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
