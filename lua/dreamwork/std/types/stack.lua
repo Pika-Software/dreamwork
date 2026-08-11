@@ -1,5 +1,7 @@
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local string = std.string
 local class = std.class
 
 --- [SHARED AND MENU]
@@ -9,7 +11,25 @@ local class = std.class
 ---@class dreamwork.std.Stack<T>: dreamwork.std.Object
 ---@field __class dreamwork.std.StackClass
 ---@field size integer The size of the stack. **Read-only**
-local Stack = class.base( "Stack" )
+local Stack = class.base( "Stack", false, nil )
+
+---@return string
+---@protected
+function Stack:__represent()
+    return string.format( "%s: %p [%d]", self.__type, self, self.size )
+end
+
+---@return boolean
+---@protected
+function Stack:__toboolean()
+    return self.size ~= 0
+end
+
+---@return integer
+---@protected
+function Stack:__len()
+    return self.size
+end
 
 ---@protected
 function Stack:__init()
@@ -110,7 +130,7 @@ end
 --- Returns an iterator for the stack.
 ---
 ---@return function iterator The iterator function.
----@return Stack stack The stack being iterated over.
+---@return dreamwork.std.Stack stack The stack being iterated over.
 function Stack:iterator()
     return self.pop, self
 end
@@ -124,6 +144,3 @@ end
 ---@overload fun(): dreamwork.std.Stack
 local StackClass = class.create( Stack )
 std.Stack = StackClass
-
----@diagnostic disable-next-line: duplicate-doc-alias
----@alias Stack dreamwork.std.Stack

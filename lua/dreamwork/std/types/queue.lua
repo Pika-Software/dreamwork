@@ -1,5 +1,7 @@
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local string = std.string
 local class = std.class
 
 --- [SHARED AND MENU]
@@ -10,7 +12,25 @@ local class = std.class
 ---@field __class dreamwork.std.QueueClass
 ---@field front integer The front of the queue. **Read-only**
 ---@field back integer The back of the queue. **Read-only**
-local Queue = class.base( "Queue" )
+local Queue = class.base( "Queue", false, nil )
+
+---@return string
+---@protected
+function Queue:__represent()
+    return string.format( "%s: %p [%d]", self.__type, self, self.front - self.back )
+end
+
+---@return boolean
+---@protected
+function Queue:__toboolean()
+    return not self:isEmpty()
+end
+
+---@return integer
+---@protected
+function Queue:__len()
+    return self.front - self.back
+end
 
 ---@protected
 function Queue:__init()
@@ -39,15 +59,6 @@ function Queue:__deserialize( reader, fallback )
     for i = back + 1, front, 1 do
         self[ i ] = reader:deserialize( self[ i ] or fallback or Queue, fallback )
     end
-end
-
---- [SHARED AND MENU]
----
---- Returns the length of the queue.
----
----@return integer length The length of the queue.
-function Queue:getLength()
-    return self.front - self.back
 end
 
 --- [SHARED AND MENU]
@@ -168,5 +179,3 @@ end
 ---@overload fun(): dreamwork.std.Queue
 local QueueClass = class.create( Queue )
 std.Queue = QueueClass
-
----@alias Queue dreamwork.std.Queue

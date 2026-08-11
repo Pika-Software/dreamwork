@@ -382,22 +382,6 @@ std.represent = represent
 
 --- [SHARED AND MENU]
 ---
---- Returns the hash of the given value.
----
----@param value any The value to get the hash of.
----@return integer | nil  hash The hash of the given value.
-function std.hash( value )
-    ---@type fun( value: any ): integer
-    local fn = debug_getmetavalue( value, "__hash" )
-    if fn == nil then
-        return nil
-    else
-        return fn( value )
-    end
-end
-
---- [SHARED AND MENU]
----
 --- Returns the copy of the `value`.
 ---
 ---@generic T
@@ -650,6 +634,29 @@ local string = std.string
 local string_format = string.format
 local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
+
+
+do
+
+    local string_toNumber = string.toNumber
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the hash of the given value.
+    ---
+    ---@param value any The value to get the hash of.
+    ---@return integer | nil  hash The hash of the given value.
+    function std.hash( value )
+        ---@type fun( value: any ): integer
+        local fn = debug_getmetavalue( value, "__hash" )
+        if fn == nil then
+            return string_toNumber( string_format( "%p", value ), 16 )
+        else
+            return fn( value )
+        end
+    end
+
+end
 
 do
 
@@ -1268,13 +1275,21 @@ do
 
         Boolean.__type = "boolean"
 
+        ---@param value boolean
         ---@private
         function Boolean.__toboolean( value )
             return value
         end
 
+        ---@param value boolean
         ---@private
         function Boolean.__tonumber( value )
+            return value == true and 1 or 0
+        end
+
+        ---@param value boolean
+        ---@private
+        function Boolean.__hash( value )
             return value == true and 1 or 0
         end
 
@@ -1312,13 +1327,21 @@ do
 
         Number.__type = "number"
 
+        ---@param value number
         ---@private
         function Number.__toboolean( value )
             return value ~= 0
         end
 
+        ---@param value number
         ---@private
         function Number.__tonumber( value )
+            return value
+        end
+
+        ---@param value number
+        ---@private
+        function Number.__hash( value )
             return value
         end
 
