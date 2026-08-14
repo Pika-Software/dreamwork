@@ -125,6 +125,32 @@ local raw_select = raw.select
 ---@overload fun( parameter: integer, ...: any ): ...: any
 std.select = raw_select
 
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Replaces the value at `index` with `value` in the argument list `...`.
+    ---
+    --- If `index` is out of bounds, `...` is returned unchanged.
+    ---
+    ---@param index integer The index of the value to replace.
+    ---@param value any The value to replace at `index`.
+    ---@param ... any The argument list to replace values in.
+    ---@return any ... The updated argument list with `value` at `index`.
+    local function replace( index, value, ... )
+        if ... == nil then
+            return nil
+        elseif index == 1 then
+            return value, raw_select( 2, ... )
+        else
+            return (...), replace( index - 1, value, raw_select( 2, ... ) )
+        end
+    end
+
+    std.replace = replace
+
+end
+
 -- debug library
 dofile( "dreamwork/std/debug.lua" )
 
@@ -150,6 +176,8 @@ do
     ---
     --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-tostring)
     ---
+    ---@param value any The value to convert to a string.
+    ---@return string str The string representation of `value`.
     function std.tostring( value )
         local name = debug_getmetavalue( value, "__name" )
         if name == nil then
