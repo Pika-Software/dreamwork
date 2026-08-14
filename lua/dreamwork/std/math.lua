@@ -563,7 +563,7 @@ end
 function math.approach( current, target, change )
     local diff = target - current
     if diff < 0 then
-        return -(current + math_min( -diff, change ))
+        return current - math_min( -diff, change )
     else
         return current + math_min( diff, change )
     end
