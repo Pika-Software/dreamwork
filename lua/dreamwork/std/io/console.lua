@@ -1,7 +1,7 @@
 local sendfile = dreamwork.sendfile
 local dofile = dreamwork.dofile
 
----@class GModGUI
+---@class dreamwork.GModGUILibrary
 ---@field ShowConsole fun() | nil
 ---@field IsConsoleVisible ( fun(): boolean ) | nil
 ---@diagnostic disable-next-line: undefined-global

@@ -139,7 +139,12 @@ end
 
 if std.LUA_CLIENT_MENU then
 
-    local translateAlias = input ~= nil and input.TranslateAlias
+    ---@class dreamwork.GModInputLibrary
+    ---@field TranslateAlias fun( str: string ): string | nil
+    ---@diagnostic disable-next-line: undefined-global
+    local glua_input = input
+
+    local input_TranslateAlias = glua_input.TranslateAlias or debug_fempty
 
     --- [CLIENT AND MENU]
     ---
@@ -148,17 +153,15 @@ if std.LUA_CLIENT_MENU then
     ---@param str string The alias to lookup.
     ---@return string | nil cmd The command(s) this alias will execute if ran, or nil if the alias doesn't exist.
     function CommandClass.translateAlias( str )
-        if translateAlias ~= nil then
-            return translateAlias( str )
-        end
+        return input_TranslateAlias( str )
     end
 
 end
 
 do
 
-    ---@diagnostic disable-next-line: undefined-field
-    local IsConCommandBlocked = IsConCommandBlocked
+    ---@diagnostic disable-next-line: undefined-global
+    local IsConCommandBlocked = IsConCommandBlocked or function( str ) return false end
 
     --- [SHARED AND MENU]
     ---
@@ -167,11 +170,7 @@ do
     ---@param name string The name of the console command.
     ---@return boolean is_blacklisted `true` if the console command is blacklisted, `false` otherwise.
     local function isBlacklisted( name )
-        if IsConCommandBlocked == nil then
-            return false
-        else
-            return IsConCommandBlocked( name )
-        end
+        return IsConCommandBlocked( name )
     end
 
     CommandClass.isBlacklisted = isBlacklisted
@@ -185,9 +184,9 @@ do
         local name = names[ self ]
         if name == nil then
             return false
-        else
-            return isBlacklisted( name )
         end
+
+        return isBlacklisted( name )
     end
 
 end
