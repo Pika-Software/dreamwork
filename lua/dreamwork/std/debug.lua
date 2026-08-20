@@ -406,27 +406,58 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the current call stack relative to the specified stack level.
+--- Captures the current call stack, starting at `stack_level` relative to the caller
+--- of this function, and returns it as a list of debug info tables.
 ---
----@param stack_level? integer The stack `stack_level` to get the stack from.
----@param what? dreamwork.std.debug.InfoWhat The fields to get from the stack.
----@return dreamwork.std.debug.Info[] stack The debug info stack.
----@return integer stack_size The size of the stack.
-function debug.getstack( stack_level, what )
+---@param stack_level? integer The level to start capturing from, where `0` is the function that called `getstackinfo`. Default is `0`.
+---@param what? dreamwork.std.debug.InfoWhat A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
+---@param head_skip? integer Number of extra frames to skip from the top ( nearest the caller ) before capturing begins. Default is `0`.
+---@param tail_skip? integer Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
+---@return dreamwork.std.debug.Info[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
+---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
+function debug.getstackinfo( stack_level, what, head_skip, tail_skip )
     if what == nil then
         what = "Snluf"
     end
 
-    local stack, stack_length = {}, 0
+    if stack_level == nil then
+        stack_level = 2
+    else
+        stack_level = stack_level + 1
+    end
 
-    for location = 1 + (stack_level or 1), 16, 1 do
-        local info = debug_getinfo( location, what )
-        if info == nil then
-            break
-        end
+    if head_skip ~= nil and head_skip > 0 then
+        stack_level = stack_level + head_skip
+    end
 
+    ---@type dreamwork.std.debug.Info[]
+    local stack = {}
+
+    ---@type integer
+    local stack_length = 0
+
+    ::debug_getstack_loop::
+
+    local info = debug_getinfo( stack_level, what )
+    if info ~= nil then
         stack_length = stack_length + 1
         stack[ stack_length ] = info
+
+        stack_level = stack_level + 1
+        goto debug_getstack_loop
+    end
+
+    if tail_skip ~= nil and tail_skip > 0 then
+        local trimmed_length = stack_length - tail_skip
+        if trimmed_length <= 0 then
+            return {}, 0
+        end
+
+        for i = trimmed_length + 1, stack_length, 1 do
+            stack[ i ] = nil
+        end
+
+        return stack, trimmed_length
     end
 
     return stack, stack_length

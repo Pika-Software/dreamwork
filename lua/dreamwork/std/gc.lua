@@ -1,6 +1,14 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_get = raw.get
+
+local debug = std.debug
+local debug_getmetatable = debug.getmetatable
+
+local setmetatable = std.setmetatable
+
 --- [SHARED AND MENU]
 ---
 --- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
@@ -14,14 +22,14 @@ std.gc = gc
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-collectgarbage51)
 ---
----@overload fun(opt: "collect")
----@overload fun(opt: "stop")
----@overload fun(opt: "restart")
----@overload fun(opt: "count"): number
----@overload fun(opt: "step", arg: integer): true
----@overload fun(opt: "setpause", arg: integer): integer
----@overload fun(opt: "setstepmul", arg: integer): integer
----@overload fun(opt: "isrunning"): boolean
+---@overload fun( opt: "collect" )
+---@overload fun( opt: "stop" )
+---@overload fun( opt: "restart" )
+---@overload fun( opt: "count" ): number
+---@overload fun( opt: "step", arg: integer ): true
+---@overload fun( opt: "setpause", arg: integer ): integer
+---@overload fun( opt: "setstepmul", arg: integer ): integer
+---@overload fun( opt: "isrunning" ): boolean
 local collectgarbage = collectgarbage
 
 if collectgarbage == nil then
@@ -116,11 +124,7 @@ function gc.setStepMultiplier( value )
     return collectgarbage( "setstepmul", value )
 end
 
-local debug_getmetatable = debug.getmetatable
-
 do
-
-    local raw_get = std.raw.get
 
     --- [SHARED AND MENU]
     ---
@@ -149,8 +153,6 @@ do
 end
 
 do
-
-    local setmetatable = std.setmetatable
 
     local presets = {
         [ 1 ] = { __mode = "kv" },
