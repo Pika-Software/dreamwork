@@ -204,6 +204,13 @@ sendfile( "dreamwork/loader.lua" )
 sendfile( "dreamwork/std/raw.lua" )
 sendfile( "dreamwork/std/debug.lua" )
 
+-- garbage collector
+dofile( "dreamwork/std/gc.lua" )
+sendfile( "dreamwork/std/gc.lua" )
+
+local gc = std.gc
+local startup_memory = gc.getMemory()
+
 std.getfenv = getfenv or debug.getfenv
 
 if std.getfenv == nil then
@@ -636,10 +643,6 @@ dreamwork.InitTime = SysTime()
 dofile( "dreamwork/detour.lua" )
 sendfile( "dreamwork/detour.lua" )
 
--- garbage collector
-dofile( "dreamwork/std/gc.lua" )
-sendfile( "dreamwork/std/gc.lua" )
-
 -- table library
 dofile( "dreamwork/std/table.lua" )
 sendfile( "dreamwork/std/table.lua" )
@@ -673,12 +676,12 @@ do
     --- Returns the hash of the given value.
     ---
     ---@param value any The value to get the hash of.
-    ---@return integer | nil  hash The hash of the given value.
+    ---@return integer hash The hash of the given value.
     function std.hash( value )
         ---@type fun( value: any ): integer
         local fn = debug_getmetavalue( value, "__hash" )
         if fn == nil then
-            return string_toNumber( string_format( "%p", value ), 16 )
+            return string_toNumber( string_format( "%p", value ), 16 ) or 0
         else
             return fn( value )
         end
@@ -883,7 +886,7 @@ do
     ---
     ---@param object any The object to check for being an instance of the given parent.
     ---@param ... any The parent classes/metatables to check against.
-    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes, `false` otherwise.
+    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
     function std.isInstance( object, ... )
         local metatable = debub_getmetatable( object )
 
@@ -896,6 +899,25 @@ do
             elseif metatable == parent then
                 return true
             end
+        end
+
+        return false
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param value any The parent class/metatable to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+    function std.is( object, value )
+        if isClass( value ) then
+            if isInherited( object, value ) then
+                return true
+            end
+        elseif debub_getmetatable( object ) == value then
+            return true
         end
 
         return false
@@ -2851,12 +2873,14 @@ function std.require( modname, ... )
     -- TODO: reimplement
 end
 
-logger:info( "Start-up time: %.2f ms.", (SysTime() - dreamwork.InitTime) * 1000 )
+local total_memory = gc.getMemory()
+logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (SysTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )
 
 -- Memory clean-up
 time.tick( "ms" )
 gc.collect()
 
-logger:info( "Clean-up finished, took %.2f ms, memory consumed by Lua: %.02f MB.", time.tick( "ms" ), gc.getMemory() / 1024 )
+local cleanup_memory = gc.getMemory()
+logger:info( "Clean-up finished, took %.2f ms, cleaned up %.02f MB of garbage, total memory used by LuaJIT: %.02f MB.", time.tick( "ms" ), (total_memory - cleanup_memory) / 1024, cleanup_memory / 1024 )
 
 -- TODO: Globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier
