@@ -8,6 +8,17 @@ local class = std.class
 ---
 --- A queue is a first-in-first-out (FIFO) data structure object.
 ---
+--- Values are appended at one end and removed from the other by default
+--- (`push` appends to the front, `pop` removes from the back), so the
+--- earliest-pushed value is the first one popped.
+---
+--- Both `push` and `pop` accept an optional flag to operate on the opposite
+--- end instead, which lets the same object also be used as a deque.
+---
+--- Elements are stored between the `back` and `front` indices,
+--- which are advanced/rewound as values are pushed and popped,
+--- and are reset to `0` whenever the queue becomes empty.
+---
 ---@class dreamwork.std.Queue<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.QueueClass
 ---@field front integer The front of the queue. **Read-only**
@@ -65,15 +76,19 @@ end
 ---
 --- Checks if the queue is empty.
 ---
----@return boolean isEmpty Returns true if the queue is empty.
+---@generic T
+---@param self dreamwork.std.Queue<T>
+---@return boolean is_empty Returns `true` if the queue has no values, otherwise `false`.
 function Queue:isEmpty()
     return self.front == self.back
 end
 
 --- [SHARED AND MENU]
 ---
---- Empties the queue.
+--- Empties the queue, removing every value and resetting `front` and `back` to `0`.
 ---
+---@generic T
+---@param self dreamwork.std.Queue<T>
 function Queue:empty()
     for i = self.back + 1, self.front, 1 do
         self[ i ] = nil
@@ -172,10 +187,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- A queue class.
+--- The class used to create new `Queue` instances.
 ---
 ---@class dreamwork.std.QueueClass : dreamwork.std.Queue
 ---@field __base dreamwork.std.Queue
 ---@overload fun(): dreamwork.std.Queue
-local QueueClass = class.create( Queue )
-std.Queue = QueueClass
+std.Queue = class.create( Queue )

@@ -1,98 +1,130 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_error = raw.error
+
 local debug = std.debug
 local debug_fempty = debug.fempty
-local debug_getmetatable = debug.getmetatable
-
-local math = std.math
-local math_clamp = math.clamp
-local math_floor = math.floor
 
 local table = std.table
-local table_inject = table.inject
-local table_removeByRange = table.removeByRange
+local table_sort = table.sort
+local table_remove = table.remove
+local table_unpack = table.unpack
 
-local uuid_v7 = std.uuid.v7
-local isNumber = std.isNumber
-local futures_Future = std.futures.Future
+local string = std.string
+local string_format = string.format
 
-local string_meta = debug.findmetatable( "string" )
+local class = std.class
 
----@alias dreamwork.std.Hook.Type
----| `-2` # PRE_HOOK - This hook is guaranteed to be called under all circumstances, and cannot be interrupted by a return statement. You can rely on its consistent execution.
----| `-1` # PRE_HOOK_RETURN - Consider a scenario where you have an admin mod that checks for "!menu". In this case, your hook might not be called before it.
----| `0`  # NORMAL_HOOK - This hook is called after the normal hook, but before the post hook.
----| `1`  # POST_HOOK_RETURN - This allows for the modification of results returned from preceding hooks!
----| `2`  # POST_HOOK - This hook is guaranteed to be called under all circumstances, and cannot be interrupted by a return statement. You can rely on its consistent execution.
+local pcall = std.pcall
+local is = std.is
 
----@class dreamwork.std.Hook.query_data
----@field [1] boolean `true` to attach, `false` to detach.
----@field [2] any The identifier of the callback.
----@field [3] nil | dreamwork.std.Hook | fun( ...: any ): any The callback function or the hook to attach.
----@field [4] nil | dreamwork.std.Hook.Type The type of the hook.
+local Future = std.Future
 
 --- [SHARED AND MENU]
 ---
---- Hook object.
+--- A hook is a named, prioritized event pipeline that other code can attach
+--- handlers to and later call to run them. Handlers are grouped into four
+--- ordered stages - `peek`, `provide`, `mixin`, and `observe` - which run in
+--- that order each time the hook is called via `Hook:call` (or by calling the
+--- hook object itself, since it is callable).
 ---
----@class dreamwork.std.Hook : dreamwork.std.Object
+--- Hook call pipeline, stages run in this order:
+---
+--- ```md
+--- ┌─────────┐
+--- │  peek   │ --> Always called, return is optional;
+--- └─────────┘     if any handler returns a value,
+---      ↓          it overrides the `provide` stage.
+--- ┌─────────┐
+--- │ provide │ --> Called only if `peek` produced `nil`.
+--- └─────────┘     First hook that returns a value wins,
+---      ↓          its return value becomes the result.
+--- ┌─────────┐
+--- │  mixin  │ --> Called as long as a result exists.
+--- └─────────┘     Lets handlers mutate the result,
+---      ↓          receiving both the old & new value.
+--- ┌─────────┐
+--- │ observe │ --> Read-only listeners for the final
+--- └─────────┘     result and args. Any return values
+---                 will be ignored.
+---```
+---
+---@class dreamwork.std.Hook<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.HookClass
----@field name string The name of the hook. **READ-ONLY**
----@field is_running boolean Whether the hook is running. **READ-ONLY**
----@field return_vararg boolean Whether the hook returns vararg. **READ-ONLY**
----@field mixer_fn nil | fun( old_value: any, new_value: any ): any The mixer function for the hook.
----@field protected queues dreamwork.std.Hook.query_data[] The queue of queries.
----@operator call: any
-local Hook = std.class.base( "Hook" )
-
---- [SHARED AND MENU]
----
---- Hook class.
----
----@class dreamwork.std.HookClass : dreamwork.std.Hook
----@field __base dreamwork.std.Hook
----@overload fun( name: string?, return_vararg: boolean? ): dreamwork.std.Hook
-local HookClass = std.class.create( Hook )
-std.Hook = HookClass
+---@field name string The name of the hook.
+---@field protected running boolean Whether the hook is currently running.
+---@field protected has_changes boolean Whether the hook has changes to apply.
+---@field protected peek_handlers (dreamwork.std.Hook<T> | fun( ...: any ): T)[]
+---@field protected peek_priorities table<(dreamwork.std.Hook<T> | fun( ...: any ): T), integer>
+---@field protected provide_handlers (dreamwork.std.Hook<T> | fun( ...: any ): T)[]
+---@field protected provide_priorities table<(dreamwork.std.Hook<T> | fun( ...: any ): T), integer>
+---@field protected observe_handlers (dreamwork.std.Hook<T> | fun( ...: any ): T)[]
+---@field protected observe_priorities table<(dreamwork.std.Hook<T> | fun( ...: any ): T), integer>
+---@field protected mixin_handlers (dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T)[]
+---@field protected mixin_priorities table<(dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T), integer>
+local Hook = class.base( "Hook", false, nil )
 
 ---@return string
 ---@protected
-function Hook:__tostring()
-    return std.string.format( "Hook: %p [%s][%s]", self, self.name, self.is_running and "running" or "stopped" )
+function Hook:__represent()
+    return string_format( "Hook: %p [%s][%s]", self, self.name, self.running and "running" or "stopped" )
 end
 
----@param name? string The name of the hook.
----@param return_vararg? boolean Whether the hook returns vararg.
+---@return boolean
 ---@protected
-function Hook:__init( name, return_vararg )
-    self.is_running = false
-    self.name = name or "unnamed"
-    self.return_vararg = return_vararg == true
+function Hook:__toboolean()
+    return self.running
+end
+
+---@return integer
+---@protected
+function Hook:__len()
+    return self.peek_handlers[ 0 ] +
+        self.provide_handlers[ 0 ] +
+        self.mixin_handlers[ 0 ] +
+        self.observe_handlers[ 0 ]
+end
+
+---@param name string | nil
+---@protected
+function Hook:__init( name )
+    self.name = name or string_format( "%p", self )
+    self.has_changes = false
+    self.running = false
+    self:clear()
 end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a callback function from the hook.
+--- Checks if the hook is running currently.
 ---
----@param identifier string | dreamwork.std.Hook | any The unique name of the callback, Hook or object with `__isvalid` function in metatable.
----@return boolean detached Returns `true` if the callback was detached, otherwise `false`.
-function Hook:detach( identifier )
-    if identifier == nil then return false end
+---@return boolean is_running Returns `true` if the hook is running currently, otherwise `false`.
+function Hook:isRunning()
+    return self.running
+end
 
-    for i = #self - 2, 1, -3 do
-        if self[ i ] == identifier then
-            if self.is_running then
-                self[ i + 1 ] = debug_fempty
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param handlers (dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T)[]
+---@param priorities table<( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T ), integer>
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T
+---@return boolean
+local function detach_type( self, handlers, priorities, handler )
+    local count = handlers[ 0 ]
+    for i = count, 1, -1 do
+        if handlers[ i ] == handler then
+            priorities[ handler ] = nil
 
-                local queue = self.queues
-                if queue == nil then
-                    self.queues = { { false, identifier } }
-                else
-                    queue[ #queue + 1 ] = { false, identifier }
-                end
+            ---@diagnostic disable-next-line: invisible
+            if self.running then
+                handlers[ i ] = debug_fempty
+                ---@diagnostic disable-next-line: invisible
+                self.has_changes = true
             else
-                table_removeByRange( self, i, i + 2 )
+                table_remove( handlers, i )
+                handlers[ 0 ] = count - 1
             end
 
             return true
@@ -102,363 +134,413 @@ function Hook:detach( identifier )
     return false
 end
 
---- [SHARED AND MENU]
----
---- Attaches a callback function to the hook.
----
----@param fn function | dreamwork.std.Hook | nil The callback function or the hook to attach.
----@param identifier dreamwork.std.Hook.Type | any The unique identifier of the callback, object with `__isvalid` function in metatable or the type of the hook if `fn` is a Hook.
----@param hook_type dreamwork.std.Hook.Type | nil The type of the hook, default is `0`, can be `nil` if `fn` is a Hook and `identifier` is the type of the hook.
-function Hook:attach( fn, identifier, hook_type )
-    if identifier == nil then
-        identifier = "nil"
-    end
+local active_priorities
 
-    if debug_getmetatable( fn ) == Hook then
-        ---@cast fn dreamwork.std.Hook
-
-        if isNumber( identifier ) then
-            ---@cast identifier number
-            ---@diagnostic disable-next-line: cast-local-type
-            hook_type = math_floor( identifier )
-        elseif not isNumber( hook_type ) then
-            ---@diagnostic disable-next-line: cast-local-type
-            hook_type = 0
-        end
-
-        identifier = fn
-    end
-
-    local metatable = debug_getmetatable( identifier )
-    if metatable == nil then
-        error( "callback identifier has no metatable", 2 )
-        return
-    end
-
-    if metatable ~= string_meta then
-        ---@cast identifier any
-        ---@cast fn function
-
-        local isvalid = metatable.__isvalid
-        if isvalid == nil then
-            error( "callback identifier has no `__isvalid` function", 2 )
-            return
-        end
-
-        if not isvalid( identifier ) then
-            self:detach( identifier )
-            return
-        end
-
-        local real_fn = fn
-        function fn( ... )
-            if isvalid( identifier ) then
-                return real_fn( identifier, ... )
-            end
-
-            self:detach( identifier )
-        end
-    end
-
-    if hook_type == nil then
-        ---@diagnostic disable-next-line: cast-local-type
-        hook_type = 0
-    else
-        ---@diagnostic disable-next-line: cast-local-type
-        hook_type = math_clamp( math_floor( hook_type ), -2, 2 )
-    end
-
-    for i = #self - 2, 1, -3 do
-        if self[ i ] == identifier then
-            if self[ i + 2 ] == hook_type then
-                self[ i + 1 ] = fn
-                return
-            end
-
-            self:detach( identifier )
-            break
-        end
-    end
-
-    if self.is_running then
-        local queue = self.queues
-        if queue == nil then
-            ---@diagnostic disable-next-line: assign-type-mismatch
-            self.queues = { { true, identifier, fn, hook_type } }
-        else
-            ---@diagnostic disable-next-line: assign-type-mismatch
-            queue[ #queue + 1 ] = { true, identifier, fn, hook_type }
-        end
-
-        return
-    end
-
-    local callback_count = #self
-
-    local index = callback_count
-    for i = 3, callback_count, 3 do
-        if self[ i ] > hook_type then
-            index = i - 3
-            break
-        end
-    end
-
-    table_inject( self, { identifier, fn, hook_type }, index + 1, 1, 3 )
+---@generic T
+---@param a dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T
+---@param b dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T
+---@return boolean
+local function priority_sort( a, b )
+    return active_priorities[ a ] < active_priorities[ b ]
 end
 
---- [SHARED AND MENU]
----
---- Checks if the hook is running.
----
----@return boolean is_running Returns `true` if the hook is running, otherwise `false`.
-function Hook:isRunning()
-    return self.is_running
+---@generic T
+---@param handlers (dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T)[]
+---@param priorities table<( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T ), integer>
+local function sync_priorities( handlers, priorities )
+    active_priorities = priorities
+    table_sort( handlers, priority_sort )
 end
 
-do
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param handlers (dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T)[]
+---@param priorities table<( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T ), integer>
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T
+---@param priority integer | nil
+local function attach_type( self, handlers, priorities, handler, priority )
+    for i = handlers[ 0 ], 1, -1 do
+        if handlers[ i ] == handler then
+            if priority ~= nil and priorities[ handler ] ~= priority then
+                priorities[ handler ] = priority
 
-    --- [SHARED AND MENU]
-    ---
-    --- Stops the hook.
-    ---@return boolean stopped Returns `true` if the hook was stopped, `false` if it was already stopped.
-    local function hook_stop( self )
-        if not self.is_running then return false end
-
-        self.is_running = false
-
-        local queue = self.queues
-        if queue ~= nil then
-            self.queues = nil
-
-            for i = 1, #queue, 1 do
-                local args = queue[ i ]
-                if args[ 1 ] then
-                    self:attach( args[ 2 ], args[ 3 ], args[ 4 ] )
+                ---@diagnostic disable-next-line: invisible
+                if self.running then
+                    ---@diagnostic disable-next-line: invisible
+                    self.has_changes = true
                 else
-                    self:detach( args[ 2 ] )
+                    sync_priorities( handlers, priorities )
                 end
             end
-        end
 
+            return
+        end
+    end
+
+    local count = handlers[ 0 ] + 1
+    handlers[ count ] = handler
+    handlers[ 0 ] = count
+
+    priorities[ handler ] = priority or 0
+
+    ---@diagnostic disable-next-line: invisible
+    if self.running then
+        ---@diagnostic disable-next-line: invisible
+        self.has_changes = true
+    else
+        sync_priorities( handlers, priorities )
+    end
+end
+
+--- [SHARED AND MENU]
+---
+--- Detaches a previously attached handler from the given stage of the hook.
+--- If the hook is currently running, the handler is replaced with a no-op and
+--- the actual removal is deferred until the hook finishes running.
+---
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to detach the handler from. Defaults to `"provide"` when `nil`.
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T The exact handler reference that was previously passed to `attach`.
+---@return boolean is_detached Returns `true` if the handler was found and detached, otherwise `false`.
+function Hook:detach( type, handler )
+    if type == nil or type == "provide" then
+        return detach_type( self, self.provide_handlers, self.provide_priorities, handler )
+    elseif type == "peek" then
+        return detach_type( self, self.peek_handlers, self.peek_priorities, handler )
+    elseif type == "observe" then
+        return detach_type( self, self.observe_handlers, self.observe_priorities, handler )
+    elseif type == "mixin" then
+        return detach_type( self, self.mixin_handlers, self.mixin_priorities, handler )
+    end
+
+    raw_error( "attempt to detach unknown hook type", 2 )
+    return false
+end
+
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param parent dreamwork.std.Hook<T>
+---@return boolean is_contained
+local function contains_parent( self, parent )
+    if self == parent then
         return true
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Clears the hook from all callbacks.
-    ---
-    function Hook:clear()
-        hook_stop( self )
-
-        for i = 1, #self, 1 do
-            self[ i ] = nil
+    local peeks = self.peek_handlers
+    for i = 1, peeks[ 0 ], 1 do
+        ---@type dreamwork.std.Hook<any>
+        local value = peeks[ i ]
+        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+            return true
         end
     end
 
-    Hook.stop = hook_stop
-
-    --- hook call without mixer and vararg
-    local function call_without_mixer_and_vararg( self, ... )
-        local result
-        for index = 3, #self, 3 do
-            if not self.is_running then break end
-
-            local hook_type = self[ index ]
-            if hook_type == -2 then    -- pre hook
-                self[ index - 1 ]( ... )
-            elseif hook_type == 1 then -- post hook return
-                local value = self[ index - 1 ]( result, ... )
-                if value ~= nil then result = value end
-            elseif hook_type ~= 2 then -- pre hook return and normal hook
-                local value = self[ index - 1 ]( ... )
-                if value ~= nil then result = value end
-            end
+    local providers = self.provide_handlers
+    for i = 1, providers[ 0 ], 1 do
+        ---@type dreamwork.std.Hook<any>
+        local value = providers[ i ]
+        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+            return true
         end
-
-        hook_stop( self )
-
-        for index = 3, #self, 3 do
-            if self[ index ] == 2 then -- post hook
-                self[ index - 1 ]( result, ... )
-            end
-        end
-
-        return result
     end
 
-    --- hook call without mixer but with vararg
-    local function call_without_mixer( self, ... )
-        local r1, r2, r3, r4, r5, r6
-        for index = 3, #self, 3 do
-            if not self.is_running then break end
-
-            local hook_type = self[ index ]
-            if hook_type == -2 then    -- pre hook
-                self[ index - 1 ]( ... )
-            elseif hook_type == 1 then -- post hook return
-                local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
-                if v1 ~= nil then r1, r2, r3, r4, r5, r6 = v1, v2, v3, v4, v5, v6 end
-            elseif hook_type ~= 2 then -- pre hook return and normal hook
-                local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( ... )
-                if v1 ~= nil then r1, r2, r3, r4, r5, r6 = v1, v2, v3, v4, v5, v6 end
-            end
+    local mixins = self.mixin_handlers
+    for i = 1, mixins[ 0 ], 1 do
+        ---@type dreamwork.std.Hook<any>
+        local value = mixins[ i ]
+        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+            return true
         end
-
-        hook_stop( self )
-
-        for index = 3, #self, 3 do
-            if self[ index ] == 2 then -- post hook
-                self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
-            end
-        end
-
-        return r1, r2, r3, r4, r5, r6
     end
 
-    --- hook call with mixer and without vararg
-    local function call_with_mixer( self, mixer_fn, ... )
-        local result
-        for index = 3, #self, 3 do
-            if not self.is_running then break end
-
-            local hook_type = self[ index ]
-            if hook_type == -2 then    -- pre hook
-                self[ index - 1 ]( ... )
-            elseif hook_type == 1 then -- post hook return
-                local value = self[ index - 1 ]( result, ... )
-                if value ~= nil then
-                    result = value
-                end
-            elseif hook_type ~= 2 then -- pre hook return and normal hook
-                local value = self[ index - 1 ]( ... )
-                if value ~= nil then
-                    local mixed = mixer_fn( result, value )
-                    if mixed == nil then
-                        result = value
-                    else
-                        result = mixed
-                    end
-                end
-            end
+    local observers = self.observe_handlers
+    for i = 1, observers[ 0 ], 1 do
+        ---@type dreamwork.std.Hook<any>
+        local value = observers[ i ]
+        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+            return true
         end
-
-        hook_stop( self )
-
-        for index = 3, #self, 3 do
-            if self[ index ] == 2 then -- post hook
-                self[ index - 1 ]( result, ... )
-            end
-        end
-
-        return result
     end
 
-    --- hook call with mixer and vararg
-    local function call_with_mixer_and_vararg( self, mixer_fn, ... )
-        local r1, r2, r3, r4, r5, r6
-        for index = 3, #self, 3 do
-            if not self.is_running then break end
+    return false
+end
 
-            local hook_type = self[ index ]
-            if hook_type == -2 then    -- pre hook
-                self[ index - 1 ]( ... )
-            elseif hook_type == 1 then -- post hook return
-                local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
-                if v1 ~= nil then r1, r2, r3, r4, r5, r6 = v1, v2, v3, v4, v5, v6 end
-            elseif hook_type ~= 2 then -- pre hook return and normal hook
-                local v1, v2, v3, v4, v5, v6 = self[ index - 1 ]( ... )
-                if v1 ~= nil then
-                    local m1, m2, m3, m4, m5, m6 = mixer_fn( { r1, r2, r3, r4, r5, r6 }, { v1, v2, v3, v4, v5, v6 } )
-                    if m1 == nil then
-                        r1, r2, r3, r4, r5, r6 = v1, v2, v3, v4, v5, v6
-                    else
-                        r1, r2, r3, r4, r5, r6 = m1, m2, m3, m4, m5, m6
-                    end
-                end
-            end
-        end
-
-        hook_stop( self )
-
-        for index = 3, #self, 3 do
-            if self[ index ] == 2 then -- post hook
-                self[ index - 1 ]( { r1, r2, r3, r4, r5, r6 }, ... )
-            end
-        end
-
-        return r1, r2, r3, r4, r5, r6
+--- [SHARED AND MENU]
+---
+--- Attaches a handler function to the given stage of the hook.
+--- If the handler is already attached to that stage, only its priority is
+--- updated (when a new one is supplied); it will not be attached twice.
+---
+--- If the hook is currently running, the change is deferred and applied once
+--- the hook finishes running.
+---
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to attach the handler to. Defaults to `"provide"` when `nil`.
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any )
+---@param priority integer | nil The priority of the handler within its stage; handlers with a lower value run earlier. Defaults to `0`.
+---@overload fun( self: dreamwork.std.Hook<T>, type: "peek", handler: ( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): ( T | nil ) ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: ( "provide" | nil ), handler: ( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): ( T | nil ) ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: "mixin", handler: fun( old_value: ( T | nil ), new_value: T, ...: any ): ( T | nil ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: "observe", handler: fun( value: T, ...: any ), priority: ( integer | nil ) )
+function Hook:attach( type, handler, priority )
+    if is( handler, Hook ) and ---@cast handler dreamwork.std.Hook<any>
+        contains_parent( handler, self ) then
+        raw_error( "attempt to create circular hook reference", 2 )
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the hook.
-    ---
-    ---@param ... any The arguments to pass to the hook.
-    ---@return any ... The return values from the hook.
-    function Hook:call( ... )
-        if self.is_running then return end
+    if type == nil or type == "provide" then
+        return attach_type( self, self.provide_handlers, self.provide_priorities, handler, priority )
+    elseif type == "peek" then
+        return attach_type( self, self.peek_handlers, self.peek_priorities, handler, priority )
+    elseif type == "observe" then
+        return attach_type( self, self.observe_handlers, self.observe_priorities, handler, priority )
+    elseif type == "mixin" then
+        return attach_type( self, self.mixin_handlers, self.mixin_priorities, handler, priority )
+    end
 
-        self.is_running = true
+    raw_error( "attempt to attach unknown hook type", 2 )
+end
 
-        local mixer_fn = self.mixer_fn
-        if mixer_fn == nil then
-            if self.return_vararg then
-                return call_without_mixer( self, ... )
-            else
-                return call_without_mixer_and_vararg( self, ... )
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@return boolean
+local function hook_cancel( self )
+    ---@diagnostic disable-next-line: invisible
+    if not self.running then
+        return false
+    end
+
+    ---@diagnostic disable-next-line: invisible
+    if self.has_changes then
+        local peeks = self.peek_handlers
+        local peek_size = peeks[ 0 ]
+
+        for i = peek_size, 1, -1 do
+            if peeks[ i ] == debug_fempty then
+                peek_size = peek_size - 1
+                table_remove( peeks, i )
             end
-        elseif self.return_vararg then
-            return call_with_mixer_and_vararg( self, mixer_fn, ... )
+        end
+
+        peeks[ 0 ] = peek_size
+
+        sync_priorities( peeks, self.peek_priorities )
+
+        local providers = self.provide_handlers
+        local provider_size = providers[ 0 ]
+
+        for i = provider_size, 1, -1 do
+            if providers[ i ] == debug_fempty then
+                provider_size = provider_size - 1
+                table_remove( providers, i )
+            end
+        end
+
+        providers[ 0 ] = provider_size
+
+        sync_priorities( providers, self.provide_priorities )
+
+        local observers = self.observe_handlers
+        local observer_size = observers[ 0 ]
+
+        for i = observer_size, 1, -1 do
+            if observers[ i ] == debug_fempty then
+                observer_size = observer_size - 1
+                table_remove( observers, i )
+            end
+        end
+
+        observers[ 0 ] = observer_size
+
+        sync_priorities( observers, self.observe_priorities )
+
+        local mixins = self.mixin_handlers
+        local mixin_size = mixins[ 0 ]
+
+        for i = mixin_size, 1, -1 do
+            if mixins[ i ] == debug_fempty then
+                mixin_size = mixin_size - 1
+                table_remove( mixins, i )
+            end
+        end
+
+        mixins[ 0 ] = mixin_size
+
+        sync_priorities( mixins, self.mixin_priorities )
+
+        ---@diagnostic disable-next-line: invisible
+        self.has_changes = false
+    end
+
+    ---@diagnostic disable-next-line: invisible
+    self.running = false
+    return true
+end
+
+Hook.cancel = hook_cancel
+
+--- [SHARED AND MENU]
+---
+--- Cancels the hook if it is currently running, and removes every handler
+--- attached to every stage (`peek`, `provide`, `observe`, `mixin`), resetting
+--- their priority tables as well.
+---
+function Hook:clear()
+    hook_cancel( self )
+
+    self.peek_handlers = { [ 0 ] = 0 }
+    self.peek_priorities = {}
+
+    self.provide_handlers = { [ 0 ] = 0 }
+    self.provide_priorities = {}
+
+    self.observe_handlers = { [ 0 ] = 0 }
+    self.observe_priorities = {}
+
+    self.mixin_handlers = { [ 0 ] = 0 }
+    self.mixin_priorities = {}
+end
+
+--- [SHARED AND MENU]
+---
+--- Runs the hook, calling its handlers in order across all four stages:
+--- `peek` (early handlers that may short-circuit the result), `provide`
+--- (produces the base result), `mixin` (allowed to transform the result),
+--- and `observe` (read-only listeners called with the final result).
+---
+--- Throws (and cancels the hook) if any handler errors, or if the hook is
+--- already running.
+---
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param ... any Arguments forwarded to every handler in every stage.
+---@return T | nil result The final value produced by `peek`/`provide` and possibly transformed by `mixin` handlers; `nil` if no handler produced a value.
+function Hook:call( ... )
+    if self.running then
+        raw_error( "hook is already running, please wait until it finish", 2 )
+    end
+
+    self.running = true
+
+    -- peek stage
+    local peeks = self.peek_handlers
+    local peek_value
+
+    for i = 1, peeks[ 0 ], 1 do
+        local is_successful_peek, peek_result = pcall( peeks[ i ], ... )
+        if is_successful_peek then
+            if peek_result ~= nil then
+                peek_value = peek_result
+            end
         else
-            return call_with_mixer( self, mixer_fn, ... )
+            hook_cancel( self )
+            raw_error( peek_result, 2 )
         end
     end
 
-    Hook.__call = Hook.call
+    -- provide stage
+    local providers = self.provide_handlers
+    local provide_value
 
+    if peek_value == nil then
+        for i = 1, providers[ 0 ], 1 do
+            local is_successful_provide, provide_result = pcall( providers[ i ], ... )
+            if is_successful_provide then
+                if provide_result ~= nil then
+                    provide_value = provide_result
+                    break
+                end
+            else
+                hook_cancel( self )
+                raw_error( provide_result, 2 )
+            end
+        end
+    else
+        provide_value = peek_value
+    end
+
+    -- mixin stage
+    if provide_value ~= nil then
+        local mixins = self.mixin_handlers
+        local mixin_value
+
+        for i = 1, mixins[ 0 ], 1 do
+            local is_successful_mixin, mixin_result = pcall( mixins[ i ], mixin_value, provide_value, ... )
+            if is_successful_mixin then
+                mixin_value, provide_value = provide_value, mixin_result
+            else
+                hook_cancel( self )
+                raw_error( mixin_result, 2 )
+            end
+        end
+    end
+
+    -- observe stage
+    local observers = self.observe_handlers
+    for i = 1, observers[ 0 ], 1 do
+        local is_successful_observation, error_message = pcall( observers[ i ], provide_value, ... )
+        if not is_successful_observation then
+            hook_cancel( self )
+            raw_error( error_message, 2 )
+        end
+    end
+
+    hook_cancel( self )
+
+    return provide_value
+end
+
+Hook.__call = Hook.call
+
+--- [SHARED AND MENU]
+---
+--- Attaches a handler function to the hook that automatically detaches
+--- itself right before being invoked, so it only ever runs once.
+---
+---@generic T
+---@param self dreamwork.std.Hook<T>
+---@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to attach the handler to. Defaults to `"provide"` when `nil`.
+---@param handler dreamwork.std.Hook<T> | fun( ...: any )
+---@param priority integer | nil The priority of the handler within its stage; handlers with a lower value run earlier. Defaults to `0`.
+---@overload fun( self: dreamwork.std.Hook<T>, type: ( "peek" | nil ), handler: ( dreamwork.std.Hook<T> | fun( ...: any ): ( T | nil ) ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: "provide", handler: ( dreamwork.std.Hook<T> | fun( ...: any ): T ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: "mixin", handler: ( dreamwork.std.Mixin<T> | fun( old_value: ( T | nil ), new_value: T, ...: any ): T ), priority: ( integer | nil ) )
+---@overload fun( self: dreamwork.std.Hook<T>, type: "observe", handler: fun( value: T, ...: any ), priority: ( integer | nil ) )
+function Hook:once( type, handler, priority )
+    local function temp_func( ... )
+        self:detach( type, temp_func )
+        return handler( ... )
+    end
+
+    return self:attach( type, temp_func, priority )
 end
 
 --- [SHARED AND MENU]
 ---
---- Sets the mixer function for the hook.
+--- Asynchronously suspends the caller until the given stage of the hook is
+--- next called, then resumes with the arguments that stage's handler
+--- received.
 ---
---- This function will be called after pre
---- and normal callbacks that changes the
---- return value of the hook,
---- and can change that value.
----
----@param mixer_fn nil | fun( old_value, new_value ): any The function to perform mixing, `nil` if no mixing is required.
-function Hook:mixer( mixer_fn )
-    self.mixer_fn = mixer_fn
-end
-
---- [SHARED AND MENU]
----
---- Attaches a callback function to the hook.
----
----@param fn function | dreamwork.std.Hook.Type The callback function or the type of the hook if `identifier` is a Hook.
----@param hook_type? dreamwork.std.Hook.Type The type of the hook, default is `0`.
-function Hook:once( fn, hook_type )
-    local identifier = uuid_v7()
-    self:attach( function( ... )
-        self:detach( identifier )
-        return fn( ... )
-    end, identifier, hook_type )
-end
-
---- [SHARED AND MENU]
----
---- Waits for the hook to finish.
----
----@param hook_type dreamwork.std.Hook.Type? The type of the hook, default is `0`.
----@return any ... The return values from the hook.
+---@param type "provide" | "peek" | "observe" | "mixin" The stage to wait for.
+---@return any ... The arguments passed to the handler when the awaited stage fired.
 ---@async
-function Hook:wait( hook_type )
-    local f = futures_Future()
+function Hook:await( type )
+    local f = Future()
 
-    self:once( function( ... )
+    self:once( type, function( ... )
         f:setResult( { ... } )
-    end, hook_type )
+    end )
 
-    return f:await()
+    return table_unpack( f:await() )
 end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `Hook` instances.
+---
+---@class dreamwork.std.HookClass : dreamwork.std.Hook
+---@field __base dreamwork.std.Hook
+---@overload fun( name: string? ): dreamwork.std.Hook
+std.Hook = class.create( Hook )

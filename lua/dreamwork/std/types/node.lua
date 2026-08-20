@@ -1,28 +1,54 @@
 ---@class dreamwork.std
 local std = dreamwork.std
-local class = std.class
 
-local table_remove = std.table.remove
-local string_format = std.string.format
+local table = std.table
+local table_remove = table.remove
+
+local string = std.string
+local class = std.class
 
 --- [SHARED AND MENU]
 ---
---- A node.
+--- A node in a generic tree structure.
 ---
----@class dreamwork.std.Node : dreamwork.std.Object
+--- Each node holds an arbitrary `value`,
+--- an optional `parent` link, and a list
+--- of child nodes (stored in the node's array part, sized by `width`).
+---
+--- Nodes track their own `depth` (distance from the root)
+--- and expose helpers to link/unlink from a parent,
+--- traverse the subtree, and measure its size.
+---
+---@class dreamwork.std.Node<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.NodeClass
----@field value any The value of the node.
----@field parent dreamwork.std.Node The parent node of the node.
----@field depth number The depth of the node in the tree.
----@field width number The width of the node in the tree.
-local Node = class.base( "Node" )
+---@field value T The value stored in the node.
+---@field parent? dreamwork.std.Node<T> The parent node, or `nil` if this node is a root (not currently linked to anything).
+---@field depth number How many links deep this node is from its root (root has depth `0`).
+---@field width number The number of direct children this node has.
+local Node = class.base( "Node", false, nil )
 
 ---@return string
 ---@protected
-function Node:__tostring()
-    return string_format( "Node: %p [%s][%d]", self, self.value, self.depth )
+function Node:__represent()
+    return string.format( "Node: %p [%s][%d]", self, self.value, self.depth )
 end
 
+---@return boolean
+---@protected
+function Node:__toboolean()
+    return self.width > 0
+end
+
+---@return integer
+---@protected
+function Node:__len()
+    return self.width
+end
+
+---@generic T
+---@param self dreamwork.std.Node<T>
+---@param value T
+---@param parent dreamwork.std.Node<T> | nil
 ---@protected
 function Node:__init( value, parent )
     self.depth, self.width = 0, 0
@@ -33,6 +59,8 @@ function Node:__init( value, parent )
     end
 end
 
+---@generic T
+---@param self dreamwork.std.Node<T>
 ---@param writer dreamwork.std.buffer.Writer
 ---@protected
 function Node:__serialize( writer )
@@ -46,6 +74,8 @@ function Node:__serialize( writer )
     end
 end
 
+---@generic T
+---@param self dreamwork.std.Node<T>
 ---@param reader dreamwork.std.buffer.Reader
 ---@param fallback dreamwork.std.Object | nil
 ---@protected
@@ -62,8 +92,14 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Unlinks the node from its parent.
+--- Unlinks this node from its parent, removing it from the parent's child
+--- list and resetting this node's depth to `0`.
 ---
+--- Any children of this node are then re-linked to it so their depths stay
+--- consistent with the change.
+---
+---@generic T
+---@param self dreamwork.std.Node<T>
 function Node:unlink()
     local parent = self.parent
     if parent == nil then
@@ -78,24 +114,30 @@ function Node:unlink()
         if parent[ index ] == self then
             table_remove( parent, index )
             width = width - 1
+            parent.width = width
             break
         end
     end
 
-    parent.width = width
-
     self.depth = 0
 
-    for index = 1, self.width, 1 do
+    for index = 1, width, 1 do
         self[ index ]:link( self )
     end
 end
 
 --- [SHARED AND MENU]
 ---
---- Links the node to a parent node.
+--- Links this node to a parent node, appending it to the parent's child
+--- list and updating this node's depth to `parent.depth + 1`.
 ---
----@param parent dreamwork.std.Node The parent node to link to.
+--- Throws if `parent` is (or is a descendant of) this node, since that
+--- would create a cycle. Existing children of this node are re-linked
+--- afterward so their depths stay consistent with the change.
+---
+---@generic T
+---@param self dreamwork.std.Node<T>
+---@param parent dreamwork.std.Node<T> The parent node to link to.
 function Node:link( parent )
     local width = parent.width
     for index = 1, width, 1 do
@@ -128,9 +170,12 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Traverses the node tree.
+--- Walks this node and every descendant in depth-first, parent-before-child
+--- order, calling `callback` once for each node visited.
 ---
----@param callback fun( node: dreamwork.std.Node ) The callback function.
+---@generic T
+---@param self dreamwork.std.Node<T>
+---@param callback fun( node: dreamwork.std.Node<T> ) The callback invoked for each node in the subtree.
 function Node:traverse( callback )
     callback( self )
 
@@ -143,6 +188,8 @@ end
 ---
 --- Returns the size of the node tree.
 ---
+---@generic T
+---@param self dreamwork.std.Node<T>
 ---@return integer size The size of the node tree.
 function Node:size()
     local size = 1
@@ -156,10 +203,10 @@ end
 
 --- [SHARED AND MENU]
 ---
---- A node class.
+--- The class used to create new `Node` instances.
 ---
+---@generic T
 ---@class dreamwork.std.NodeClass : dreamwork.std.Node
 ---@field __base dreamwork.std.Node
----@overload fun( value: any, parent: dreamwork.std.Node? ): dreamwork.std.Node
-local NodeClass = class.create( Node )
-std.Node = NodeClass
+---@overload fun( value: T, parent: ( dreamwork.std.Node<T> | nil ) ): dreamwork.std.Node<T>
+std.Node = class.create( Node )
