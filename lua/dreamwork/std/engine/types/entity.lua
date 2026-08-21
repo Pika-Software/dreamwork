@@ -48,15 +48,15 @@ std.Entity = EntityClass
 --     return entity_indexes[ entity ]
 -- end
 
--- engine_hookCatch( "dreamwork.engine.EntityCreated", function( entity, is_player )
+-- engine_hookCatch( "dreamwork.entity.spawn", function( entity, is_player )
 --     print( "EntityCreated: " .. tostring( entity ) .. " and it's " .. (is_player and "a player" or "a entity") )
 -- end )
 
--- engine_hookCatch( "dreamwork.engine.EntityRemoved", function( entity, is_player )
+-- engine_hookCatch( "dreamwork.entity.destroy", function( entity, is_player )
 --     print( "EntityRemoved: " .. tostring( entity ) .. " and it's " .. (is_player and "a player" or "a entity") )
 -- end )
 
--- engine_hookCatch( "dreamwork.engine.EntityCountChanged", function( _, old_count, _, new_count )
+-- engine_hookCatch( "dreamwork.entity.count", function( _, old_count, _, new_count )
 --     print( "EntityCountChanged: " .. tostring( old_count ) .. " -> " .. tostring( new_count ) )
 -- end )
 

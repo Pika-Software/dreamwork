@@ -308,7 +308,7 @@ do
     for i = 1, #entity_metatables, 1 do
         local metatable = entity_metatables[ i ]
         metatable.__gc = detour.before( function( entity_userdata )
-            engine_hookCall( "EntityGarbageCollected", entity_userdata )
+            engine_hookCall( "dreamwork.entity.gc", entity_userdata )
         end, metatable.__gc )
     end
 
@@ -445,7 +445,7 @@ end
 if std.LUA_MENU then
 
     _G.ListAddonPresets = detour.before( function()
-        engine_hookCall( "AddonPresetsLoaded", _G.LoadAddonPresets() )
+        engine_hookCall( "dreamwork.addon.presets", _G.LoadAddonPresets() )
     end, _G.ListAddonPresets )
 
     ---@param server_name string
@@ -455,7 +455,7 @@ if std.LUA_MENU then
     ---@param player_steamid64 string
     ---@param gamemode_name string
     _G.GameDetails = detour.before( function( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
-        engine_hookCall( "ServerDetailsReceived", {
+        engine_hookCall( "dreamwork.server.details", {
             server_name = server_name,
             loading_url = loading_url,
             map_name = map_name,
@@ -484,7 +484,7 @@ do
     ---@param args string[]
     ---@param argument_string string
     concommand.Run = detour.simple( function( ply, cmd, args, argument_string )
-        local success_execution = engine_hookCall( "ConsoleCommandExecuted", ply, cmd, args, argument_string ) == true
+        local success_execution = engine_hookCall( "dreamwork.console.command.execute", ply, cmd, args, argument_string ) == true
         if not success_execution then
             if fallback_exists then
                 return nil
@@ -501,7 +501,7 @@ do
     ---@param args string[]
     ---@return string[] | nil
     concommand.AutoComplete = detour.simple( function( cmd, argument_string, args )
-        return engine_hookCall( "ConsoleCommandAutocomplete", cmd, argument_string, args )
+        return engine_hookCall( "dreamwork.console.command.autocomplete", cmd, argument_string, args )
     end, concommand.AutoComplete )
 
 end
@@ -646,7 +646,7 @@ if engine.consoleCommandRun == nil then
     ---@param name string The name of the console command.
     ---@param ... string? The arguments of the console command.
     engine.consoleCommandRun = _G.RunConsoleCommand or function( name, ... )
-        std.print( "engine.consoleCommandRun", name, ... )
+        raw.print( "dreamwork.engine.consoleCommandRun", name, ... )
     end
 
 end
@@ -663,7 +663,7 @@ do
     ---@param old_value string
     ---@param new_value string
     cvars.OnConVarChanged = detour.before( function( name, old_value, new_value )
-        engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
+        engine_hookCall( "dreamwork.console.variable.change", name, old_value, new_value )
     end, cvars.OnConVarChanged )
 
 end
@@ -752,7 +752,7 @@ do
             values[ name ] = new_value
         end
 
-        engine_hookCall( "ConsoleVariableChanged", name, old_value, new_value )
+        engine_hookCall( "dreamwork.console.variable.change", name, old_value, new_value )
     end, 1 )
 
 end
@@ -819,9 +819,13 @@ end
 
 do
 
+    ---@class dreamwork.GModScriptedEntsLib
+    ---@field GetStored fun( class_name: string ): table | nil
+    ---@field Get fun( name: string, output: table | nil ): table | nil
+    ---@field OnLoaded fun()
     local scripted_ents = _G.scripted_ents
     if scripted_ents == nil then
-        ---@diagnostic disable-next-line: inject-field
+        ---@diagnostic disable-next-line: inject-field, missing-fields
         scripted_ents = {}; _G.scripted_ents = scripted_ents
     end
 
@@ -829,20 +833,29 @@ do
     ---@param output table | nil
     ---@return table | nil
     scripted_ents.Get = detour.simple( function( name, output )
-        return engine_hookCall( "EntityCreate", name, output )
+        return engine_hookCall( "dreamwork.entity.create", name, output )
     end, scripted_ents.Get )
 
+    ---@type table<string, table>
+    local SEntList = debug.getupvalues( scripted_ents.GetStored ).SEntList
+
     scripted_ents.OnLoaded = detour.before( function()
-        engine_hookCall( "EntitiesLoaded" )
+        for class_name, metatable in raw_pairs( SEntList ) do
+            engine_hookCall( "dreamwork.entity.load", class_name, metatable )
+        end
     end, scripted_ents.OnLoaded )
 
 end
 
 do
 
+    ---@class dreamwork.GModWeaponsLib
+    ---@field GetStored fun( class_name: string ): table | nil
+    ---@field Get fun( name: string, output: table | nil ): table | nil
+    ---@field OnLoaded fun()
     local weapons = _G.weapons
     if weapons == nil then
-        ---@diagnostic disable-next-line: inject-field
+        ---@diagnostic disable-next-line: inject-field, missing-fields
         weapons = {}; _G.weapons = weapons
     end
 
@@ -850,20 +863,27 @@ do
     ---@param output table | nil
     ---@return table | nil
     weapons.Get = detour.simple( function( name, output )
-        return engine_hookCall( "WeaponCreate", name, output )
+        return engine_hookCall( "dreamwork.weapon.create", name, output )
     end, weapons.Get )
 
+    ---@type table<string, table>
+    local WeaponList = debug.getupvalues( weapons.GetStored ).WeaponList
+
     weapons.OnLoaded = detour.before( function()
-        engine_hookCall( "WeaponsLoaded" )
+        for class_name, metatable in raw_pairs( WeaponList ) do
+            engine_hookCall( "dreamwork.weapon.load", class_name, metatable )
+        end
     end, weapons.OnLoaded )
 
 end
 
 do
 
+    ---@class dreamwork.GModEffectsLib
+    ---@field Create fun(name: string, output: table | nil): table | nil
     local effects = _G.effects
     if effects == nil then
-        ---@diagnostic disable-next-line: inject-field
+        ---@diagnostic disable-next-line: inject-field, missing-fields
         effects = {}; _G.effects = effects
     end
 
@@ -871,8 +891,10 @@ do
     ---@param output table | nil
     ---@return table | nil
     effects.Create = detour.simple( function( name, output )
-        return engine_hookCall( "EffectCreate", name, output )
+        return engine_hookCall( "dreamwork.effect.create", name, output )
     end, effects.Create )
+
+    -- TODO: register?
 
 end
 
@@ -907,7 +929,7 @@ do
             new_map[ entity ] = i
 
             if entity_map[ entity ] == nil then
-                engine_hookCall( "dreamwork.engine.EntityCreated", entity, is_player )
+                engine_hookCall( "dreamwork.entity.spawn", entity, is_player )
                 has_changes = true
             end
         end
@@ -915,7 +937,7 @@ do
         for i = 1, entity_count, 1 do
             local entity = entity_list[ i ]
             if new_map[ entity ] == nil then
-                engine_hookCall( "dreamwork.engine.EntityRemoved", entity, is_player )
+                engine_hookCall( "dreamwork.entity.destroy", entity, is_player )
                 has_changes = true
             end
         end
@@ -925,7 +947,7 @@ do
         entity_map = new_map
 
         if has_changes then
-            engine_hookCall( "dreamwork.engine.EntityCountChanged", entity_list, entity_count, new_entities, new_count )
+            engine_hookCall( "dreamwork.entity.count", entity_list, entity_count, new_entities, new_count )
         end
     end, _G.InvalidateInternalEntityCache )
 
@@ -954,7 +976,7 @@ do
         ---@diagnostic disable-next-line: duplicate-set-field
         function gamemode.Get( name )
             local tbl = gamemodes[ name ]
-            return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
+            return engine_hookCall( "dreamwork.gamemode.select", name, tbl ) or tbl
         end
 
         if gamemode.Register == nil then
@@ -982,7 +1004,7 @@ do
         gamemode.Get = detour.attach( function( fn, name )
             ---@diagnostic disable-next-line: need-check-nil
             local tbl = fn( name )
-            return engine_hookCall( "GamemodeSelected", name, tbl ) or tbl
+            return engine_hookCall( "dreamwork.gamemode.select", name, tbl ) or tbl
         end, gamemode.Get )
 
         gamemode.Register = gamemode.Register or debug_fempty
@@ -1068,7 +1090,7 @@ do
                 games_hash[ app_id ] = game_info
 
                 if actual_game_hash[ app_id ] == nil then
-                    engine_hookCall( "GameMount", game_info, true )
+                    engine_hookCall( "dreamwork.game.mount", game_info, true )
                     games_changed = games_changed + 1
                 end
             end
@@ -1079,7 +1101,7 @@ do
             local depot = game_info.depot
 
             if actual_game_hash[ depot ] ~= nil and games_hash[ depot ] == nil then
-                engine_hookCall( "GameMount", game_info, false )
+                engine_hookCall( "dreamwork.game.mount", game_info, false )
                 games_changed = games_changed + 1
             end
 
@@ -1130,7 +1152,7 @@ do
 
                 if actual_addon_hash[ addon_title ] == nil then
                     addon_info.folder = string_format( "gma_%.4x", addon_info.index )
-                    engine_hookCall( "AddonMount", addon_info, true )
+                    engine_hookCall( "dreamwork.addon.mount", addon_info, true )
                     addons_changed = addons_changed + 1
                 end
             end
@@ -1141,7 +1163,7 @@ do
             local addon_title = addon_info.title
 
             if actual_addon_hash[ addon_title ] ~= nil and addons_hash[ addon_title ] == nil then
-                engine_hookCall( "AddonMount", addon_info, false )
+                engine_hookCall( "dreamwork.addon.mount", addon_info, false )
                 addons_changed = addons_changed + 1
             end
 
@@ -1324,7 +1346,7 @@ do
 
             local string_lower = string.lower
 
-            ---@type table<string, fun( remaining_bits: integer, sender: Player | nil )>
+            ---@type table<string, fun( remaining_bits: integer, sender: ( Player | nil ) )>
             local receivers = glua_net.Receivers or {}
             glua_net.Receivers = receivers
 
@@ -1337,7 +1359,7 @@ do
 
                 remaining_bits = remaining_bits - full_header_size
 
-                local complete, block_size = engine_hookCall( "IncomingNetworkMessage", network_id, unreliable, remaining_bits, sender )
+                local complete, block_size = engine_hookCall( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
                 if complete == true then return end
 
                 if block_size ~= nil then

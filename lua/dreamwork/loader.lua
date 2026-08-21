@@ -2837,13 +2837,13 @@ end
 
 ---@param game_info dreamwork.engine.GameInfo
 ---@param is_mounted boolean
-engine.hookCatch( "GameMount", function( game_info, is_mounted )
+engine.hookCatch( "dreamwork.game.mount", function( game_info, is_mounted )
     logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
 end, 1 )
 
 ---@param addon_info dreamwork.engine.AddonInfo
 ---@param is_mounted boolean
-engine.hookCatch( "AddonMount", function( addon_info, is_mounted )
+engine.hookCatch( "dreamwork.addon.mount", function( addon_info, is_mounted )
     logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
 end, 1 )
 

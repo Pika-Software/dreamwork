@@ -49,7 +49,7 @@ function Message:__init( name )
 
 end
 
-dreamwork.engine.hookCatch( "ConsoleCommandExecuted", function( sender, name, args )
+dreamwork.engine.hookCatch( "dreamwork.console.command.execute", function( sender, name, args )
     local message = messages[ name ]
     if message ~= nil then
 

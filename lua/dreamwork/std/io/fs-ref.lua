@@ -3054,7 +3054,7 @@ local root = DirectoryClass( "", "BASE_PATH", "" )
 
 ---@param game_info dreamwork.engine.GameInfo
 ---@param is_mounted boolean
-engine_hookCatch( "GameMount", function( game_info, is_mounted )
+engine_hookCatch( "dreamwork.game.mount", function( game_info, is_mounted )
     local game_folder = game_info.folder
     eject( root, game_folder )
 
@@ -3083,7 +3083,7 @@ do
 
     ---@param addon_info dreamwork.engine.AddonInfo
     ---@param is_mounted boolean
-    engine_hookCatch( "AddonMount", function( addon_info, is_mounted )
+    engine_hookCatch( "dreamwork.addon.mount", function( addon_info, is_mounted )
         local addon_folder = addon_info.folder
         eject( addons, addon_folder )
 

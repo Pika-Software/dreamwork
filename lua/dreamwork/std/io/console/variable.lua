@@ -891,7 +891,7 @@ function Variable:wait()
     return future:await()
 end
 
-engine.hookCatch( "ConsoleVariableChanged", function( str_name, str_old, str_new )
+engine.hookCatch( "dreamwork.console.variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
     if variable == nil then
         return

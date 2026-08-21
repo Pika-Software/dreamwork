@@ -552,7 +552,7 @@ if LUA_SERVER then
     ---@param unreliable boolean
     ---@param message_length integer
     ---@param sender Player | nil
-    engine.hookCatch( "IncomingNetworkMessage", function( network_id, unreliable, message_length, sender )
+    engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length, sender )
         local networks = outgoing_transmissions[ sender ]
         if networks ~= nil and unreliable then
             local outgoing_thread = networks[ network_id ]
@@ -712,7 +712,7 @@ if LUA_CLIENT then
     ---@param network_id integer
     ---@param unreliable boolean
     ---@param message_length integer
-    engine.hookCatch( "IncomingNetworkMessage", function( network_id, unreliable, message_length )
+    engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length )
         local network = index_to_network[ network_id ]
         if network == nil then return false end
 
@@ -891,6 +891,6 @@ else
 
 end
 
--- engine.hookCatch( "IncomingNetworkMessage", function( network_id, unreliable, message_length )
+-- engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length )
 --     dreamwork.Logger:debug( "Received message, id: %d, unreliable: %s, message_length: %d", network_id, unreliable and "true" or "false", message_length )
 -- end, 1 )
