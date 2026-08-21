@@ -215,7 +215,7 @@ end
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string The hexadecimal representation of the color.
 local function toHex( color )
-    return string_format( "%02x%02x%02x%02x", toRGB( color ) )
+    return string_format( "%02x%02x%02x", toRGB( color ) )
 end
 
 color_lib.toHex = toHex
