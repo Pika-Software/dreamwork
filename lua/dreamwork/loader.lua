@@ -958,7 +958,6 @@ dofile( "dreamwork/std/time.lua" )
 sendfile( "dreamwork/std/time.lua" )
 
 local time = std.time
-local gc = std.gc
 
 if math.randomseed == 0 then
     math.randomseed = time.now( "ms", false )
