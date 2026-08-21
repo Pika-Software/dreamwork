@@ -23,6 +23,7 @@ dreamwork.dofile = dofile
 
 ---@class dreamwork.std
 ---@field _G table The global environment of Lua.
+---@field _R table The registry of Lua.
 ---@field LUA_VERSION string The version of the Lua interpreter.
 ---@field GAME_VERSION integer Contains the version number of the Garrys Mod. For example: `201211` = `01.01.2012`
 ---@field GAME_BRANCH "x86-64" | "dev" | "prerelease" | "unknown" | string The branch the Garry's Mod is running on. This will be `unknown` on main branch.
@@ -2723,7 +2724,7 @@ end
 
 -- https://github.com/wrefgtzweve/gm_getregistry
 if std.loadbinary( "getregistry" ) and getregistry ~= nil then
-    debug.setregistry( (getregistry.Get or debug_fempty)() )
+    raw.set( std, "_R", (getregistry.Get or debug.getregistry)() )
     logger:info( "'gm_getregistry' was loaded & connected, enjoy full access to `debug.getregistry`." )
 end
 

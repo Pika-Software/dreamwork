@@ -6,7 +6,6 @@ local std = dreamwork.std
 ---@class dreamwork.std.raw
 local raw = std.raw
 local raw_get = raw.get
-local raw_pairs = raw.pairs
 
 --- [SHARED AND MENU]
 ---
@@ -37,9 +36,6 @@ local debug = std.debug or {
     -- Lua 5.1
     debug = glua_debug.debug, -- dont answer me
 
-    ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat? ): dreamwork.std.debug.Info
-    ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat? ): dreamwork.std.debug.Info | nil
-    getinfo = glua_debug.getinfo,
     getregistry = glua_debug.getregistry,
     traceback = glua_debug.traceback,
 
@@ -71,40 +67,36 @@ local debug = std.debug or {
 
 std.debug = debug
 
-if debug.getinfo == nil and glua_debug.getinfo ~= nil then
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns a table with information about a function. You can give the
-    --- function directly, or you can give a number as the value of `location`, which
-    --- means the function running at level `location` of the call stack of the given
-    --- thread: level 0 is the current function (`getinfo` itself); level 1 is
-    --- the function that called `getinfo` (except for tail calls, which do not
-    --- count on the stack); and so on. If `location` is a number larger than the
-    --- number of active functions, then `getinfo` returns `nil`.
-    ---
-    --- The parameter `what` (a string) controls which fields of the returned
-    --- table are filled in — see `dreamwork.std.debug.InfoWhat` for the list
-    --- of letters and what each one populates. The default (when `what` is
-    --- omitted) is to get all information, except the table of active lines.
-    ---
-    --- If the option `"f"` is given, then `func` is set with the function
-    --- itself. If the option `"L"` is given, then `activelines` is set with
-    --- the table of active lines.
-    ---
-    --- If `what` contains the `">"` modifier, `location` is
-    --- consumed as the value to inspect and treated as if it were passed via
-    --- the trailing argument rather than as a stack level — this lets you
-    --- write `debug.getinfo(thread, level, ">S")`-style calls where the
-    --- object being inspected is taken from the end of the argument list. See
-    --- the `">"` entry in `InfoWhat` for details.
-    ---
-    ---@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
-    ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
-    ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
-    debug.getinfo = glua_debug.getinfo
-
-end
+--- [SHARED AND MENU]
+---
+--- Returns a table with information about a function. You can give the
+--- function directly, or you can give a number as the value of `location`, which
+--- means the function running at level `location` of the call stack of the given
+--- thread: level 0 is the current function (`getinfo` itself); level 1 is
+--- the function that called `getinfo` (except for tail calls, which do not
+--- count on the stack); and so on. If `location` is a number larger than the
+--- number of active functions, then `getinfo` returns `nil`.
+---
+--- The parameter `what` (a string) controls which fields of the returned
+--- table are filled in — see `dreamwork.std.debug.InfoWhat` for the list
+--- of letters and what each one populates. The default (when `what` is
+--- omitted) is to get all information, except the table of active lines.
+---
+--- If the option `"f"` is given, then `func` is set with the function
+--- itself. If the option `"L"` is given, then `activelines` is set with
+--- the table of active lines.
+---
+--- If `what` contains the `">"` modifier, `location` is
+--- consumed as the value to inspect and treated as if it were passed via
+--- the trailing argument rather than as a stack level — this lets you
+--- write `debug.getinfo(thread, level, ">S")`-style calls where the
+--- object being inspected is taken from the end of the argument list. See
+--- the `">"` entry in `InfoWhat` for details.
+---
+---@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
+---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
+---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
+debug.getinfo = glua_debug.getinfo
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
@@ -241,6 +233,42 @@ local raw_type = raw.type
 
 --- [SHARED AND MENU]
 ---
+--- Attempts to determine the name and kind of a function,
+--- the same way the `n` option of the standard `debug.getinfo` does.
+---
+--- `location` can be either a function reference or a stack level
+--- (an integer, where `1` is the function that called `getfname`).
+---
+--- Since Lua functions have no inherent name, this works by inspecting
+--- how the function was called or accessed - e.g. as a global, a local variable,
+--- a table field, a method, or an upvalue - and can fail to find anything,
+--- in which case both results are `nil`.
+---
+---@param location? integer | function The function or stack level.
+---@return string | nil name The name of the function, or `nil` if unknown.
+---@return "global" | "local" | "method" | "field" | "upvalue" | nil name_what The kind of the function, or `nil` if unknown.
+function debug.getfname( location )
+    if location == nil then
+        location = 2
+    elseif raw_type( location ) == "number" then
+        location = location + 1
+    end
+
+    local info = debug_getinfo( location, "n" )
+    if info == nil then
+        return nil, nil
+    end
+
+    local name_what = info.namewhat
+    if name_what == "" then
+        return info.name, nil
+    end
+
+    return info.name, name_what
+end
+
+--- [SHARED AND MENU]
+---
 --- Checks if the given function or stack level is a C function.
 ---
 ---@param location integer | function The function or stack level.
@@ -259,7 +287,9 @@ function debug.iscf( location )
     return not (what == "Lua" or what == "lua")
 end
 
-local registry = debug.getregistry()
+if std._R == nil then
+    raw.set( std, "_R", (debug.getregistry or debug.fempty)() or {} )
+end
 
 --- [SHARED AND MENU]
 ---
@@ -267,35 +297,7 @@ local registry = debug.getregistry()
 ---
 ---@diagnostic disable-next-line: duplicate-set-field
 function debug.getregistry()
-    return registry
-end
-
---- [SHARED AND MENU]
----
---- Sets registry table.
----
---- **ATTENTION**
----
---- This function is extremly dangerous,
---- only reason why this exists is fact
---- that `getregistry` originally broken by cockpunch
---- and i cannot set locals over debug,
---- so only way to implement 3rd party moudles support
---- is implement this function :c
----
----@param tbl table
-function debug.setregistry( tbl )
-    if registry == nil then
-        registry = {} -- why and how
-    end
-
-    for key, value in raw_pairs( registry ) do
-        if raw_get( tbl, key ) == nil then -- copy old values if missing
-            tbl[ key ] = value
-        end
-    end
-
-    registry = tbl or registry
+    return std._R
 end
 
 do
@@ -306,7 +308,7 @@ do
     if FindMetaTable == nil then
 
         function debug.findmetatable( name )
-            return registry[ name ]
+            return std._R[ name ]
         end
 
     else
@@ -318,14 +320,14 @@ do
         ---@param name string The name of the metatable.
         ---@return dreamwork.Metatable | nil meta The metatable.
         function debug.findmetatable( name )
-            local cached = registry[ name ]
+            local cached = std._R[ name ]
             if cached ~= nil then
                 return cached
             end
 
             local metatable = FindMetaTable( name )
             if metatable ~= nil then
-                registry[ name ] = metatable
+                std._R[ name ] = metatable
                 return metatable
             end
 
@@ -351,8 +353,8 @@ do
     ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
-        tbl = registry[ name ] or tbl
-        registry[ name ] = tbl
+        tbl = std._R[ name ] or tbl
+        std._R[ name ] = tbl
 
         if do_full_register then
             RegisterMetaTable( name, tbl )
@@ -397,7 +399,7 @@ if debug_getmetatable( fempty ) == nil then
     ---@return dreamwork.Metatable | nil metatable The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
-        return debug_getmetatable( value ) or registry[ raw_type( value ) ]
+        return debug_getmetatable( value ) or std._R[ raw_type( value ) ]
     end
 
     raw.print( "at any cost, but we'll build it once again..." )
@@ -506,7 +508,7 @@ do
             local source = info.source
             if source ~= nil then
                 local rel_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-                return "/workspace/lua/" .. (string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path)
+                return "/workspace/" .. (string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path)
             end
         end
 
