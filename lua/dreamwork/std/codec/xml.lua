@@ -607,17 +607,17 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Clears the list at the given key, supporting dot-separated keys for nested values.
+--- Removes the value at the given key, supporting dot-separated keys for nested values.
 ---
----@param key string The key to clear, with dot-separated keys for nested values.
----@return boolean Returns `true` if the list was cleared, `false` otherwise.
-function XMLNode:clear( key )
+---@param key string The key to remove, with dot-separated keys for nested values.
+---@return boolean success Returns `true` if the value was removed, `false` otherwise (e.g. key not found).
+function XMLNode:remove( key )
     local key_path, key_name = string_match( key, "^(.+)%.([^.]+)$" )
     if key_path ~= nil and key_name ~= nil then
         local node = self:get( key_path )
         if isNode( node ) then
             ---@cast node dreamwork.std.XMLNode
-            return node:clear( key_name )
+            return node:remove( key_name )
         end
 
         return false
