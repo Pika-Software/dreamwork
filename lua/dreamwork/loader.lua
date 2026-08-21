@@ -26,6 +26,7 @@ dreamwork.dofile = dofile
 ---@field LUA_VERSION string The version of the Lua interpreter.
 ---@field GAME_VERSION integer Contains the version number of the Garrys Mod. For example: `201211` = `01.01.2012`
 ---@field GAME_BRANCH "x86-64" | "dev" | "prerelease" | "unknown" | string The branch the Garry's Mod is running on. This will be `unknown` on main branch.
+---@field LUA_REALM "server" | "client" | "menu" | "unknown" The realm the code is running on.
 ---@field LUA_MENU boolean `true` if code is running on the menu, `false` otherwise.
 ---@field LUA_CLIENT boolean `true` if code is running on the client, `false` otherwise.
 ---@field LUA_CLIENT_MENU boolean `true` if code is running on the client or menu, `false` otherwise.
@@ -64,6 +65,16 @@ std.LUA_MENU_SERVER = LUA_MENU_SERVER
 
 local LUA_CLIENT_SERVER = LUA_CLIENT or LUA_SERVER
 std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
+
+if LUA_SERVER then
+    std.LUA_REALM = "server"
+elseif LUA_CLIENT then
+    std.LUA_REALM = "client"
+elseif LUA_MENU then
+    std.LUA_REALM = "menu"
+else
+    std.LUA_REALM = "unknown"
+end
 
 --- [SHARED AND MENU]
 ---
