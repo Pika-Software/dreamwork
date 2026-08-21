@@ -89,7 +89,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.Queue<T>
-function Queue:empty()
+function Queue:clear()
     for i = self.back + 1, self.front, 1 do
         self[ i ] = nil
     end

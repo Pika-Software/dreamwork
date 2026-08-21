@@ -17,35 +17,36 @@ local class = std.class
 ---
 ---@class dreamwork.std.Stack<T>: dreamwork.std.Object
 ---@field __class dreamwork.std.StackClass
+---@field size integer The size of the stack. **Read-only**
 local Stack = class.base( "Stack", false, nil )
 
 ---@return string
 ---@protected
 function Stack:__represent()
-    return string.format( "%s: %p [%d]", self.__type, self, self[ 0 ] )
+    return string.format( "%s: %p [%d]", self.__type, self, self.size )
 end
 
 ---@return boolean
 ---@protected
 function Stack:__toboolean()
-    return self[ 0 ] ~= 0
+    return self.size ~= 0
 end
 
 ---@return integer
 ---@protected
 function Stack:__len()
-    return self[ 0 ]
+    return self.size
 end
 
 ---@protected
 function Stack:__init()
-    self[ 0 ] = 0
+    self.size = 0
 end
 
 ---@param writer dreamwork.std.buffer.Writer
 ---@protected
 function Stack:__serialize( writer )
-    local size = self[ 0 ]
+    local size = self.size
     writer:writeInt32( size )
 
     for i = 1, size, 1 do
@@ -58,7 +59,7 @@ end
 ---@protected
 function Stack:__deserialize( reader, fallback )
     local size = reader:readInt32() or 0
-    self[ 0 ] = size
+    self.size = size
 
     for i = 1, size, 1 do
         self[ i ] = reader:deserialize( self[ i ] or fallback or Stack, fallback )
@@ -69,11 +70,9 @@ end
 ---
 --- Checks if the stack is empty.
 ---
----@generic T
----@param self dreamwork.std.Stack<T>
 ---@return boolean is_empty Returns `true` if the stack has no values, otherwise `false`.
 function Stack:isEmpty()
-    return self[ 0 ] == 0
+    return self.size == 0
 end
 
 --- [SHARED AND MENU]
@@ -85,8 +84,8 @@ end
 ---@param value T The value to push onto the stack.
 ---@return integer position The position of the value in the stack.
 function Stack:push( value )
-    local position = self[ 0 ] + 1
-    self[ 0 ], self[ position ] = position, value
+    local position = self.size + 1
+    self.size, self[ position ] = position, value
     return position
 end
 
@@ -98,12 +97,12 @@ end
 ---@param self dreamwork.std.Stack<T>
 ---@return T | nil value The value that was removed from the stack, or `nil` if the stack is empty.
 function Stack:pop()
-    local position = self[ 0 ]
+    local position = self.size
     if position == 0 then
         return nil
     end
 
-    self[ 0 ] = position - 1
+    self.size = position - 1
 
     local value = self[ position ]
     self[ position ] = nil
@@ -118,21 +117,19 @@ end
 ---@param self dreamwork.std.Stack<T>
 ---@return T | nil value The value at the top of the stack, or `nil` if the stack is empty.
 function Stack:peek()
-    return self[ self[ 0 ] ]
+    return self[ self.size ]
 end
 
 --- [SHARED AND MENU]
 ---
 --- Empties the stack, removing every value and resetting its size to `0`.
 ---
----@generic T
----@param self dreamwork.std.Stack<T>
-function Stack:empty()
-    for i = 1, self[ 0 ], 1 do
+function Stack:clear()
+    for i = 1, self.size, 1 do
         self[ i ] = nil
     end
 
-    self[ 0 ] = 0
+    self.size = 0
 end
 
 --- [SHARED AND MENU]
