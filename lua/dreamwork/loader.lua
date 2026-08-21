@@ -1591,6 +1591,7 @@ do
 end
 
 local isString = std.isString
+local isNumber = std.isNumber
 
 -- path library
 dofile( "dreamwork/std/path.lua" )
@@ -1600,29 +1601,93 @@ sendfile( "dreamwork/std/path.lua" )
 dofile( "dreamwork/std/color.lua" )
 sendfile( "dreamwork/std/color.lua" )
 
+---@class dreamwork.std.color
 local color_lib = std.color
 
+--- [SHARED AND MENU]
+---
+--- A table containing named colors.
+---
+--- Also takes colors from `resource/ClientScheme.res` if available. [CLIENT/MENU?]
+---
+--- If no color is found, a new empty color will be created and assigned to specified name.
+---
+--- Table key must be `string` or `integer`.
+---
 ---@class dreamwork.std.color.Scheme
-local color_scheme = color_lib.Scheme
+local color_scheme = color_lib.Scheme or {}
+color_lib.Scheme = color_scheme
 
 do
 
-    -- General
-    color_scheme.white = color_scheme[ 255 ]
-    color_scheme.black = color_scheme[ 0 ]
+    local color_fromRGB = color_lib.fromRGB
 
-    color_scheme.red = color_lib.fromRGB( 255, 0, 0 )
-    color_scheme.green = color_lib.fromRGB( 0, 255, 0 )
-    color_scheme.blue = color_lib.fromRGB( 0, 0, 255 )
+    do
 
-    color_scheme.yellow = color_lib.fromRGB( 255, 255, 0 )
-    color_scheme.cyan = color_lib.fromRGB( 0, 255, 255 )
-    color_scheme.magenta = color_lib.fromRGB( 255, 0, 255 )
+        local Scheme = std.getmetatable( color_scheme ) or {}
+        std.setmetatable( color_scheme, Scheme )
 
-    color_scheme.gray = color_scheme[ 128 ]
+        ---@protected
+        function Scheme:__tostring()
+            return string_format( "ColorScheme: %p", self )
+        end
 
-    color_scheme.text_primary = color_scheme[ 200 ]
-    color_scheme.text_secondary = color_scheme[ 150 ]
+        ---@diagnostic disable-next-line: undefined-global
+        local NamedColor = NamedColor or std.debug.fempty
+
+        local tmp = { r = 255, g = 255, b = 255, a = 255 }
+
+        ---@param name string | integer
+        ---@protected
+        function Scheme:__index( name )
+            local color
+
+            if isString( name ) then
+                ---@cast name string
+                ---@diagnostic disable-next-line: redundant-parameter
+                local engine_color = NamedColor( name ) or tmp
+                color = color_fromRGB( engine_color.r, engine_color.g, engine_color.b )
+            elseif isNumber( name ) then
+                ---@cast name integer
+                color = color_fromRGB( name, name, name )
+            else
+                error( "color name must be string or integer to resolve color.", 3 )
+            end
+
+            self[ name ] = color
+            return color
+        end
+
+    end
+
+    -- Basic Colors
+    color_scheme.white = 0xFFFFFF
+    color_scheme.white_smoke = 0xF0F0F0
+
+    color_scheme.black = 0x000000
+
+    color_scheme.red = 0xFF0000
+    color_scheme.mona_lisa = 0xFF8A80
+
+    color_scheme.green = 0x00FF00
+
+    color_scheme.blue = 0x0000FF
+    color_scheme.spray = 0x7EC8E3
+    color_scheme.robin_egg_blue = 0x7EC8E3
+
+    color_scheme.yellow = 0xFFFF00
+    color_scheme.sandstone = 0xC9B896
+
+    color_scheme.cyan = 0x00FFFF
+    color_scheme.magenta = 0xFF00FF
+
+    color_scheme.gray = 0x808080
+    color_scheme.dark_gray = 0xA9A9A9
+    color_scheme.light_gray = 0xD0D0D0
+    color_scheme.suva_gray = 0x8A8A8A
+
+    color_scheme.turquoise = 0x40e0d0
+    color_scheme.dark_turquoise = 0x00D0D0
 
     -- Garry's Mod
     -- Thank you code_gs <3
