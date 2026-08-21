@@ -536,22 +536,22 @@ metatable.__sizeof = nil
 --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-debug.getinfo)
 ---
 ---@class dreamwork.std.debug.Info
----@field name             string   The name of the function, if a reasonable name can be found. Only valid when `what` includes `"n"`.
----@field namewhat         string   Explains the `name` field. Its value may be `"global"`, `"local"`, `"method"`, `"field"`, `"upvalue"`, or `""` (the empty string) when no other option applies.
----@field source           string   The source of the chunk that created the function. If it starts with `@`, the function was defined in a file whose name follows the `@`. If it starts with `=`, the remainder describes the source in a user-dependent manner. Otherwise, the function was defined in a string equal to `source`.
----@field short_src        string   A "printable" version of `source`, to be used in error messages.
----@field linedefined      integer  The line number where the definition of the function starts.
----@field lastlinedefined  integer  The line number where the definition of the function ends.
----@field what             string   The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
----@field currentline      integer  The current line where the given function is executing. -1 when no line information is available.
----@field istailcall       boolean  `true` if this function invocation was called by a tail call. In this case, the caller of this level is not in the stack.
----@field nups             integer  The number of upvalues of the function.
----@field nparams          integer  The number of fixed parameters of the function (always 0 for C functions).
----@field isvararg         boolean  `true` if the function is a vararg function (always `true` for C functions).
----@field func             function The function itself. Only valid when `what` includes `"f"`.
----@field ftransfer        integer  The index of the first value transferred to the function (calls) or the first value returned from it (returns). Only valid for line and count events.
----@field ntransfer        integer  The number of values transferred, as described in `ftransfer`. Only valid for line and count events.
----@field activelines      table<integer, true> A set whose keys are the line numbers with associated code (i.e. valid lines for breakpoints); each present key maps to `true`. Only valid when `what` includes `"L"`.
+---@field name             string | nil  The name of the function, if a reasonable name can be found. Only valid when `what` includes `"n"`.
+---@field namewhat         string | nil  Explains the `name` field. Its value may be `"global"`, `"local"`, `"method"`, `"field"`, `"upvalue"`, or `""` (the empty string) when no other option applies.
+---@field source           string | nil  The source of the chunk that created the function. If it starts with `@`, the function was defined in a file whose name follows the `@`. If it starts with `=`, the remainder describes the source in a user-dependent manner. Otherwise, the function was defined in a string equal to `source`.
+---@field short_src        string | nil  A "printable" version of `source`, to be used in error messages.
+---@field linedefined      integer | nil The line number where the definition of the function starts.
+---@field lastlinedefined  integer | nil The line number where the definition of the function ends.
+---@field what             string | nil  The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
+---@field currentline      integer | nil The current line where the given function is executing. -1 when no line information is available.
+---@field istailcall       boolean | nil `true` if this function invocation was called by a tail call. In this case, the caller of this level is not in the stack.
+---@field nups             integer | nil The number of upvalues of the function.
+---@field nparams          integer | nil The number of fixed parameters of the function (always 0 for C functions).
+---@field isvararg         boolean | nil `true` if the function is a vararg function (always `true` for C functions).
+---@field func             function | nil The function itself. Only valid when `what` includes `"f"`.
+---@field ftransfer        integer | nil  The index of the first value transferred to the function (calls) or the first value returned from it (returns). Only valid for line and count events.
+---@field ntransfer        integer | nil  The number of values transferred, as described in `ftransfer`. Only valid for line and count events.
+---@field activelines      table<integer, ( true | nil )> | nil A set whose keys are the line numbers with associated code (i.e. valid lines for breakpoints); each present key maps to `true`. Only valid when `what` includes `"L"`.
 
 ---@class getregistry
 getregistry = {}
