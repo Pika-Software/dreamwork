@@ -96,7 +96,7 @@ do
                 color = value
             else
                 ---@cast value string
-                (color == 0xFFFFFF and engine_consoleMessage and engine_consoleMessageColored)( value, color )
+                engine_consoleMessageColored( value, color )
             end
         end
     end
