@@ -98,12 +98,11 @@ end
 do
 
     ---@type table<string, boolean>
-    local meta_blacklist = {
+    local non_inheritable = {
         __private = true,
         __class = true,
         __base = true,
         __type = true,
-        __init = true
     }
 
     --- [SHARED AND MENU]
@@ -153,7 +152,7 @@ do
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
                 local uint8_1, uint8_2 = string_byte( key, 1, 2 )
-                if (uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]]) and not (key == "__index" and value == parent_base) and not meta_blacklist[ key ] then
+                if (uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]]) and not (key == "__index" and value == parent_base) and not non_inheritable[ key ] then
                     base[ key ] = value
                 end
             end
