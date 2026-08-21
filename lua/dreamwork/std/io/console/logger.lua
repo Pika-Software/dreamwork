@@ -1,32 +1,34 @@
-local std = dreamwork.std
+local engine                       = dreamwork.engine
+local engine_consoleMessageColored = engine.consoleMessageColored
+
+
+local std           = dreamwork.std
+
+local raw           = std.raw
+local raw_select    = raw.select
+local raw_tostring  = raw.tostring
+
+local color_scheme  = std.color.Scheme
+local realm_color   = color_scheme.realm
+
+local time          = std.time
+local time_format   = time.format
+
+local string        = std.string
+local string_gsub   = string.gsub
+local string_format = string.format
+
+local class         = std.class
+
 
 local represent = std.represent
 
-local raw = std.raw
-local raw_select = raw.select
-local raw_tostring = raw.tostring
-
-local color_scheme = std.color.Scheme
-local realm_color = color_scheme.realm
-
-local time_format = std.time.format
-
-local string = std.string
-local string_format, string_gsub = string.format, string.gsub
-
-local engine_consoleMessageColored = dreamwork.engine.consoleMessageColored
-
-local realm_text
-
-if std.LUA_MENU then
-    realm_text = "[Main Menu] "
-elseif std.LUA_CLIENT then
-    realm_text = "[ Client ]  "
-elseif std.LUA_SERVER then
-    realm_text = "[ Server ]  "
-else
-    realm_text = "[ Unknown ] "
-end
+local realm_text = ({
+    menu = string.pad( "[ Menu ]", 11, " ", true ),
+    client = string.pad( "[ Client ]", 11, " ", true ),
+    server = string.pad( "[ Server ]", 11, " ", true ),
+    unknown = string.pad( "[ N/A ]", 11, " ", true ),
+})[ std.LUA_REALM ]
 
 ---@class dreamwork.std.console
 local console = std.console
@@ -43,7 +45,7 @@ local console = std.console
 ---@field text_color dreamwork.std.Color The logger text color.
 ---@field interpolation boolean The logger interpolation.
 ---@field debug_fn fun( dreamwork.std.console.Logger ): boolean The logger debug function.
-local Logger = std.class.base( "console.Logger" )
+local Logger = class.base( "console.Logger" )
 
 --- [SHARED AND MENU]
 ---
@@ -52,8 +54,7 @@ local Logger = std.class.base( "console.Logger" )
 ---@class dreamwork.std.console.LoggerClass : dreamwork.std.console.Logger
 ---@field __base dreamwork.std.console.Logger
 ---@overload fun( options: dreamwork.std.console.Logger.Options? ) : dreamwork.std.console.Logger
-local LoggerClass = std.class.create( Logger )
-console.Logger = LoggerClass
+console.Logger = class.create( Logger )
 
 local developer_cvar = console.Variable.get( "developer", "number" )
 local default_debug_fn
@@ -73,8 +74,8 @@ else
 end
 
 local white_color = color_scheme.white
-local primary_text_color = color_scheme.text_primary
-local secondary_text_color = color_scheme.text_secondary
+local primary_text_color = color_scheme.light_gray
+local secondary_text_color = color_scheme.dark_gray
 
 ---@protected
 function Logger:__init( options )
