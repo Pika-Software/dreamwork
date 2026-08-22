@@ -26,20 +26,16 @@ local raw_get, raw_set = raw.get, raw.set
 ---
 ---@class dreamwork.std.Vector2 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector2Class
----@operator add( Vector2 | number ): Vector2
----@operator sub( Vector2 | number ): Vector2
----@operator mul( Vector2 | number ): Vector2
----@operator div( Vector2 | number ): Vector2
----@operator unm: Vector2
+---@operator add( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
+---@operator sub( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
+---@operator mul( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
+---@operator div( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2
+---@operator unm: dreamwork.std.Vector2
 ---@field [1] number
 ---@field x number
 ---@field [2] number
 ---@field y number
 local Vector2 = class.base( "Vector2" )
-
----@alias Vector2 dreamwork.std.Vector2
-
-std.debug.registermetatable( "Vector2", Vector2 )
 
 do
 

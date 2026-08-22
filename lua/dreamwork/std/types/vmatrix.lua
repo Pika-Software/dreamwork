@@ -37,8 +37,6 @@ local math_acos, math_atan2 = math.acos, math.atan2
 ---@field __class dreamwork.std.VMatrixClass
 local VMatrix = class.base( "VMatrix" )
 
-std.debug.registermetatable( "VMatrix", VMatrix )
-
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias VMatrix dreamwork.std.VMatrix
 

@@ -61,11 +61,11 @@ local raw_get, raw_set = raw.get, raw.set
 ---
 ---@class dreamwork.std.Angle3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Angle3Class
----@operator add( Angle3 | number ): Angle3
----@operator sub( Angle3 | number ): Angle3
----@operator mul( Angle3 | number ): Angle3
----@operator div( Angle3 | number ): Angle3
----@operator unm: Angle3
+---@operator add( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
+---@operator sub( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
+---@operator mul( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
+---@operator div( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3
+---@operator unm: dreamwork.std.Angle3
 ---@field pitch number
 ---@field [1] number
 ---@field yaw number
@@ -74,17 +74,13 @@ local raw_get, raw_set = raw.get, raw.set
 ---@field [3] number
 local Angle3 = class.base( "Angle3", false )
 
----@alias Angle3 dreamwork.std.Angle3
-
-std.debug.registermetatable( "Angle3", Angle3 )
-
 do
 
     local debug_getmetatable = debug.getmetatable
 
     --- [SHARED AND MENU]
     ---
-    --- Returns `true` if the value is an `Angle3`.
+    --- Returns `true` if the value is an `dreamwork.std.Angle3`.
     ---
     ---@param value any The value.
     ---@return boolean is_angle3 `true` if the value is an `Angle3`, `false` otherwise.
@@ -100,8 +96,8 @@ end
 ---
 ---@class dreamwork.std.Angle3Class : dreamwork.std.Angle3
 ---@field __base dreamwork.std.Angle3
----@overload fun( pitch: number?, yaw: number?, roll: number? ): Angle3
-local Angle3Class = class.create( Angle3 )
+---@overload fun( pitch: number?, yaw: number?, roll: number? ): dreamwork.std.Angle3
+local Angle3Class = class.create( dreamwork.std.Angle3 )
 Angle3Class.zero = setmetatable( { 0, 0, 0 }, Angle3 )
 std.Angle3 = Angle3Class
 
@@ -277,7 +273,7 @@ do
             self[ 2 ] = self[ 2 ] * angle
             self[ 3 ] = self[ 3 ] * angle
         else
-            ---@cast angle Angle3
+            ---@cast angle dreamwork.std.Angle3
             self[ 1 ] = self[ 1 ] * angle[ 1 ]
             self[ 2 ] = self[ 2 ] * angle[ 2 ]
             self[ 3 ] = self[ 3 ] * angle[ 3 ]
@@ -286,7 +282,7 @@ do
         return self
     end
 
-    Angle3.mul = Angle3_mul
+    dreamwork.std.Angle3.mul = Angle3_mul
 
     ---@protected
     ---@param angle dreamwork.std.Angle3
@@ -313,7 +309,7 @@ do
             self[ 2 ] = self[ 2 ] / angle
             self[ 3 ] = self[ 3 ] / angle
         else
-            ---@cast angle Angle3
+            ---@cast angle dreamwork.std.Angle3
             self[ 1 ] = self[ 1 ] / angle[ 1 ]
             self[ 2 ] = self[ 2 ] / angle[ 2 ]
             self[ 3 ] = self[ 3 ] / angle[ 3 ]
@@ -322,7 +318,7 @@ do
         return self
     end
 
-    Angle3.div = Angle3_div
+    dreamwork.std.Angle3.div = Angle3_div
 
     ---@protected
     function Angle3:__div( angle )
@@ -367,7 +363,7 @@ function Angle3:lerp( angle, frac )
         self[ 2 ] = math_lerp( frac, self[ 2 ], angle )
         self[ 3 ] = math_lerp( frac, self[ 3 ], angle )
     else
-        ---@cast angle Angle3
+        ---@cast angle dreamwork.std.Angle3
         self[ 1 ] = math_lerp( frac, self[ 1 ], angle[ 1 ] )
         self[ 2 ] = math_lerp( frac, self[ 2 ], angle[ 2 ] )
         self[ 3 ] = math_lerp( frac, self[ 3 ], angle[ 3 ] )

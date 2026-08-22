@@ -16,8 +16,6 @@ local Quaternion = class.base( "Quaternion", false )
 
 ---@alias Quaternion dreamwork.std.Quaternion
 
-std.debug.registermetatable( "Quaternion", Quaternion )
-
 do
 
     local debug_getmetatable = std.debug.getmetatable

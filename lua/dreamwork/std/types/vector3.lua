@@ -38,11 +38,11 @@ local raw_get, raw_set = raw.get, raw.set
 ---
 ---@class dreamwork.std.Vector3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector3Class
----@operator add( Vector3 | number ): Vector3
----@operator sub( Vector3 | number ): Vector3
----@operator mul( Vector3 | number ): Vector3
----@operator div( Vector3 | number ): Vector3
----@operator unm: Vector3
+---@operator add( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
+---@operator sub( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
+---@operator mul( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
+---@operator div( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3
+---@operator unm: dreamwork.std.Vector3
 ---@field x number
 ---@field [1] number
 ---@field y number
@@ -50,10 +50,6 @@ local raw_get, raw_set = raw.get, raw.set
 ---@field z number
 ---@field [3] number
 local Vector3 = class.base( "Vector3" )
-
----@alias Vector3 dreamwork.std.Vector3
-
-std.debug.registermetatable( "Vector3", Vector3 )
 
 do
 
@@ -618,7 +614,7 @@ do
     ---
     --- Returns a copy of the vector rotated by the given angle.
     ---
-    ---@param angle Angle3 The angle to rotate by.
+    ---@param angle dreamwork.std.Angle3 The angle to rotate by.
     ---@return dreamwork.std.Vector3 rotated_vec3 The rotated vector.
     function Vector3:getRotated( angle )
         return Vector3_rotate( Vector3_copy( self ), angle )
