@@ -287,9 +287,7 @@ function debug.iscf( location )
     return not (what == "Lua" or what == "lua")
 end
 
-if std._R == nil then
-    raw.set( std, "_R", (debug.getregistry or debug.fempty)() or {} )
-end
+local registry
 
 --- [SHARED AND MENU]
 ---
@@ -297,8 +295,38 @@ end
 ---
 ---@diagnostic disable-next-line: duplicate-set-field
 function debug.getregistry()
-    return std._R
+    return registry
 end
+
+--- [SHARED AND MENU]
+---
+--- Sets registry table.
+---
+--- **ATTENTION**
+---
+--- This function is extremly dangerous,
+--- only reason why this exists is fact
+--- that `getregistry` originally broken by cockpunch
+--- and i cannot set locals over debug,
+--- so only way to implement 3rd party moudles support
+--- is implement this function :c
+---
+---@param tbl table
+function debug.setregistry( tbl )
+    if registry ~= nil then
+        for key, value in raw.pairs( registry ) do
+            local existing_value = raw_get( tbl, key )
+            if existing_value == nil or existing_value ~= value then
+                tbl[ key ] = value
+            end
+        end
+    end
+
+    registry = tbl
+    raw.set( std, "_R", tbl ) -- global _R alias support
+end
+
+debug.setregistry( (debug.getregistry or debug.fempty)() or std._R or {} )
 
 do
 
@@ -308,7 +336,7 @@ do
     if FindMetaTable == nil then
 
         function debug.findmetatable( name )
-            return std._R[ name ]
+            return registry[ name ]
         end
 
     else
@@ -320,14 +348,14 @@ do
         ---@param name string The name of the metatable.
         ---@return dreamwork.Metatable | nil meta The metatable.
         function debug.findmetatable( name )
-            local cached = std._R[ name ]
+            local cached = registry[ name ]
             if cached ~= nil then
                 return cached
             end
 
             local metatable = FindMetaTable( name )
             if metatable ~= nil then
-                std._R[ name ] = metatable
+                registry[ name ] = metatable
                 return metatable
             end
 
@@ -353,8 +381,8 @@ do
     ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
-        tbl = std._R[ name ] or tbl
-        std._R[ name ] = tbl
+        tbl = registry[ name ] or tbl
+        registry[ name ] = tbl
 
         if do_full_register then
             RegisterMetaTable( name, tbl )
@@ -399,7 +427,7 @@ if debug_getmetatable( fempty ) == nil then
     ---@return dreamwork.Metatable | nil metatable The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
-        return debug_getmetatable( value ) or std._R[ raw_type( value ) ]
+        return debug_getmetatable( value ) or registry[ raw_type( value ) ]
     end
 
     raw.print( "at any cost, but we'll build it once again..." )
