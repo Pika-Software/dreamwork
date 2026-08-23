@@ -178,11 +178,11 @@ if std.LUA_CLIENT_MENU then
             local input_StartKeyTrapping = glua_input.StartKeyTrapping
             local input_CheckKeyTrapping = glua_input.CheckKeyTrapping
             local input_IsKeyTrapping = glua_input.IsKeyTrapping
-            local futures_Future = std.futures.Future
+            local Future = std.Future
 
             local captures = std.Stack()
 
-            dreamwork.engine.hookCatch( "Tick", function()
+            dreamwork.engine.hookCatch( "Tick", "input.keyboard.capture", function()
                 if captures:isEmpty() then return end
 
                 if not input_IsKeyTrapping() then
@@ -204,7 +204,7 @@ if std.LUA_CLIENT_MENU then
             ---@return integer key_code The key code of the key that was pressed.
             ---@async
             function key.capture()
-                local f = futures_Future()
+                local f = Future()
                 captures:push( f )
                 return f:await()
             end

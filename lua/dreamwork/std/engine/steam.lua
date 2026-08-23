@@ -5,9 +5,9 @@ local glua_system = system
 local std = dreamwork.std
 local string = std.string
 
-local futures_Future = std.futures.Future
 local setTimeout = std.setTimeout
 local isString = std.isString
+local Future = std.Future
 
 -- TODO: https://wiki.facepunch.com/gmod/resource.AddWorkshop
 
@@ -273,7 +273,7 @@ if std.LUA_CLIENT_MENU then
     ---@return string name The name of the player.
     ---@async
     function steam.getUserName( id, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         glua_steamworks.RequestPlayerInfo( id:to64(), function( name )
             if name == nil then
@@ -559,7 +559,7 @@ do
         ---@return dreamwork.std.steam.workshop.ItemInfo info The details of the item/collection.
         ---@async
         function workshop.fetchInfo( wsid, timeout )
-            local f = futures_Future()
+            local f = Future()
 
             glua_steamworks.FileInfo( wsid, function( item )
                 if item == nil then
@@ -682,7 +682,7 @@ if std.LUA_CLIENT_MENU then
     ---@return string file_path The absolute path to the icon file.
     ---@async
     function workshop.downloadIcon( wsid, uncompress, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         -- TODO: re-write function with
         -- https://wiki.facepunch.com/gmod/Global.AddonMaterial
@@ -828,7 +828,7 @@ do
     ---@return string file_path The absolute path to the downloaded addon `.gma`.
     ---@async
     function workshop.download( wsid, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         local fn = glua_steamworks.DownloadUGC
         if fn == nil then
@@ -880,7 +880,7 @@ do
     ---@return integer total The total number of found publications.
     ---@async
     function workshop.search( params, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         glua_steamworks.GetList( type2type[ params.type or "latest" ], params.tags, math_max( 0, params.offset or 0 ), math_clamp( params.count or 50, 1, 50 ), math_clamp( params.days or 365, 1, 365 ), params.owned and "1" or (params.steamid64 or "0"), function( data )
             f:setResult( data )
@@ -916,7 +916,7 @@ do
     ---@return integer total The total number of publications found.
     ---@async
     function workshop.qickSearch( wtype, wtags, woffset, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         ---@diagnostic disable-next-line: param-type-mismatch
         glua_steamworks.GetList( type2type[ wtype or "latest" ], wtags, math_max( 0, woffset or 0 ), 50, 365, "0", function( data )
@@ -953,7 +953,7 @@ do
     ---@return integer total The total number of publications found.
     ---@async
     function workshop.getPublished( wtype, wtags, woffset, timeout )
-        local f = futures_Future()
+        local f = Future()
 
         ---@diagnostic disable-next-line: param-type-mismatch
         glua_steamworks.GetList( type2type[ wtype or "latest" ], wtags, math_max( 0, woffset or 0 ), 50, 365, "1", function( data )
@@ -999,7 +999,7 @@ if std.LUA_MENU then
     ---@async
     function workshop.publishItem( filePath, imagePath, title, description, tags, changeLog, timeout )
         -- TODO: make table structure instead arguments
-        local f = futures_Future()
+        local f = Future()
 
         if string_byte( filePath, 1 ) == 0x2F --[[ / ]] then
             filePath = string_sub( filePath, 2 )
@@ -1042,7 +1042,7 @@ if std.LUA_MENU then
     ---@async
     function workshop.updateItem( filePath, imagePath, title, description, tags, wsid, changeLog, timeout )
         -- TODO: make table structure instead arguments
-        local f = futures_Future()
+        local f = Future()
 
         if string_byte( filePath, 1 ) == 0x2F --[[ / ]] then
             filePath = string_sub( filePath, 2 )

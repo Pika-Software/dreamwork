@@ -10,7 +10,8 @@ local std = dreamwork.std
 local class = std.class
 
 local LUA_SERVER = std.LUA_SERVER
-local LUA_CLIENT_SERVER = std.LUA_CLIENT_SERVER
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_MENU = std.LUA_MENU
 
 local math = std.math
 
@@ -21,37 +22,49 @@ local string = std.string
 local string_format = string.format
 
 local table = std.table
+local table_sort = table.sort
 local table_insert = table.insert
+local table_removeByValue = table.removeByValue
 
 local raw = std.raw
 local raw_pairs = raw.pairs
 
 local setmetatable = std.setmetatable
+local is = std.is
 
 local detour = dreamwork.detour
 
----@class Entity : dreamwork.std.Object
-local ENTITY = debug.initmetatable( "Entity" )
+---@class Entity : dreamwork.std.Metatable
+---@field EntIndex fun( self: Entity ): integer
+local EntityMetatable = debug.initmetatable( "Entity" )
 
----@class Player
-local PLAYER = debug.initmetatable( "Player" )
-PLAYER.__parent = ENTITY
+---@class Player : dreamwork.std.Metatable
+---@field AccountID fun( self: Player ): integer | nil
+---@field UserID fun( self: Player ): integer
+---@field IsBot fun( self: Player ): boolean
+---@field Nick fun( self: Player ): string
+---@field Kick fun( self: Player, reason: string )
+---@field ConCommand fun( self: Player, command: string )
+local PlayerMetatable = debug.initmetatable( "Player" )
+PlayerMetatable.__parent = EntityMetatable
 
----@class Weapon
-local WEAPON = debug.initmetatable( "Weapon" )
-WEAPON.__parent = ENTITY
+---@class Weapon : dreamwork.std.Metatable
+local WeaponMetatable = debug.initmetatable( "Weapon" )
+WeaponMetatable.__parent = EntityMetatable
 
----@class Vehicle
-local VEHICLE = debug.initmetatable( "Vehicle" )
-VEHICLE.__parent = ENTITY
+---@class Vehicle : dreamwork.std.Metatable
+local VehicleMetatable = debug.initmetatable( "Vehicle" )
+VehicleMetatable.__parent = EntityMetatable
 
----@class NPC
-local NPC = debug.initmetatable( "NPC" )
-NPC.__parent = ENTITY
+---@class NPCMetatable : dreamwork.std.Metatable
+local NPCMetatable = debug.initmetatable( "NPCMetatable" )
+NPCMetatable.__parent = EntityMetatable
 
----@class NextBot
-local NEXTBOT = debug.initmetatable( "NextBot" )
-NEXTBOT.__parent = ENTITY
+---@class NextBot : dreamwork.std.Metatable
+local NextBotMetatable = debug.initmetatable( "NextBot" )
+NextBotMetatable.__parent = EntityMetatable
+
+---@class IMaterial : dreamwork.std.Metatable
 
 --- [SHARED AND MENU]
 ---
@@ -82,180 +95,550 @@ dreamwork.engine = engine
 ---@type integer
 engine.NetworkHeaderSize = 16 + 1
 
-if engine.hookCatch == nil then
+do
 
-    ---@type table<string, fun( ... ): ...>
-    local custom_handlers = {
-        -- AcceptInput = function( self, entity, input, activator, caller, value )
-        --     local dw_entity, dw_activator, dw_caller = transducers[ entity ], transducers[ activator ], transducers[ caller ]
+    ---@alias dreamwork.engine.hook.Handler
+    ---| fun( ...: any ): ...
+    ---| dreamwork.std.Hook
+    ---| dreamwork.std.Mixin
 
-        --     for i = 1, #self, 1 do
-        --         local allow = self[ i ]( dw_entity, input, dw_activator, dw_caller, value )
-        --         if allow ~= nil then
-        --             return not allow
-        --         end
-        --     end
-        -- end
+    ---@type table<string, dreamwork.engine.hook.Handler[]>
+    local hook_handlers = {}
+
+    setmetatable( hook_handlers, {
+        ---@param event_name string
+        __index = function( self, event_name )
+            local handlers = { [ 0 ] = 0 }
+            self[ event_name ] = handlers
+            return handlers
+        end
+    } )
+
+    ---@see https://wiki.facepunch.com/gmod/gameevent
+    ---@type table<string, boolean>
+    local source_events = {
+        achievement_earned = true,
+        achievement_event = true,
+        break_breakable = true,
+        break_prop = true,
+        client_beginconnect = true,
+        client_connected = true,
+        client_disconnect = true,
+        entity_killed = true,
+        flare_ignite_npc = true,
+        freezecam_started = true,
+        game_newmap = true,
+        hide_freezepanel = true,
+        hltv_cameraman = true,
+        hltv_changed_mode = true,
+        hltv_changed_target = true,
+        hltv_chase = true,
+        hltv_fixed = true,
+        hltv_message = true,
+        hltv_rank_camera = true,
+        hltv_rank_entity = true,
+        hltv_status = true,
+        hltv_title = true,
+        host_quit = true,
+        OnRequestFullUpdate = true,
+        player_activate = true,
+        player_changename = true,
+        player_connect = true,
+        player_connect_client = true,
+        player_disconnect = true,
+        player_hurt = true,
+        player_info = true,
+        player_say = true,
+        player_spawn = true,
+        ragdoll_dissolved = true,
+        server_addban = true,
+        server_cvar = true,
+        server_removeban = true,
+        server_spawn = true,
+        show_freezepanel = true,
+        user_data_downloaded = true,
     }
 
-    ---@type table<string, table<integer, dreamwork.std.Hook | fun( ... ): ...>>
-    local engine_hooks = {}
+    ---@type table<string, boolean>
+    local listen_events = {}
 
     do
 
-        ---@see https://wiki.facepunch.com/gmod/gameevent
-        ---@type table<string, boolean>
-        local source_events = {
-            achievement_earned = true,
-            achievement_event = true,
-            break_breakable = true,
-            break_prop = true,
-            client_beginconnect = true,
-            client_connected = true,
-            client_disconnect = true,
-            entity_killed = true,
-            flare_ignite_npc = true,
-            freezecam_started = true,
-            game_newmap = true,
-            hide_freezepanel = true,
-            hltv_cameraman = true,
-            hltv_changed_mode = true,
-            hltv_changed_target = true,
-            hltv_chase = true,
-            hltv_fixed = true,
-            hltv_message = true,
-            hltv_rank_camera = true,
-            hltv_rank_entity = true,
-            hltv_status = true,
-            hltv_title = true,
-            host_quit = true,
-            OnRequestFullUpdate = true,
-            player_activate = true,
-            player_changename = true,
-            player_connect = true,
-            player_connect_client = true,
-            player_disconnect = true,
-            player_hurt = true,
-            player_info = true,
-            player_say = true,
-            player_spawn = true,
-            ragdoll_dissolved = true,
-            server_addban = true,
-            server_cvar = true,
-            server_removeban = true,
-            server_spawn = true,
-            show_freezepanel = true,
-            user_data_downloaded = true,
-        }
+        local listen_event
 
-        ---@type table<string, boolean>
-        local listen_events = {}
+        ---@class dreamwork.GModGameEventLib
+        ---@field Listen fun( event_name: string )
+        ---@diagnostic disable-next-line: undefined-global
+        local gameevent = gameevent
 
-        do
-
-            ---@overload fun( event_name: string )
-            local listen_event
-            if gameevent ~= nil and gameevent.Listen ~= nil then
-                listen_event = gameevent.Listen
-            else
-                listen_event = debug_fempty
-            end
-
-            ---@type dreamwork.Metatable<string, boolean>
-            local events_metatable = {}
-
-            function events_metatable:__newindex( key )
-                listen_event( key )
-            end
-
-            std.setmetatable( listen_events, events_metatable )
-
+        if gameevent ~= nil and gameevent.Listen ~= nil then
+            listen_event = gameevent.Listen
+        else
+            listen_event = debug_fempty
         end
 
-        local hook_listen_events
-        do
+        ---@cast listen_event fun( event_name: string )
 
-            local select = std.select
+        ---@type dreamwork.std.Metatable<string, boolean>
+        local events_metatable = {}
 
-            --- [SHARED AND MENU]
-            ---
-            --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
-            ---
-            --- Note: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
-            ---
-            --- Note: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
-            ---
-            ---@param ... string The names of the events to listen for.
-            function hook_listen_events( ... )
-                for i = 1, select( "#", ... ), 1 do
-                    listen_events[ select( i, ... ) ] = true
+        function events_metatable:__newindex( key )
+            listen_event( key )
+        end
+
+        std.setmetatable( listen_events, events_metatable )
+
+    end
+
+    local hook_listen_events
+    do
+
+        local select = std.select
+
+        --- [SHARED AND MENU]
+        ---
+        --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
+        ---
+        --- Note: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
+        ---
+        --- Note: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
+        ---
+        ---@param ... string The names of the events to listen for.
+        function hook_listen_events( ... )
+            for i = 1, select( "#", ... ), 1 do
+                listen_events[ select( i, ... ) ] = true
+            end
+        end
+
+        engine.hookListenEvents = hook_listen_events
+
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    local function handler_empty( handlers )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]()
+        end
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param data table
+    local function handler_gameevent( handlers, data )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( data )
+        end
+    end
+
+    ---@type table<string, fun( handlers: dreamwork.engine.hook.Handler[], ...: any ): ...>
+    local event_handlers = {
+        -- engine
+        [ "GameContentChanged" ] = handler_empty,
+        [ "Think" ] = handler_empty,
+        [ "Tick" ] = handler_empty,
+
+        -- gameevents
+        [ "achievement_earned" ] = handler_gameevent,
+        [ "break_breakable" ] = handler_gameevent,
+        [ "break_prop" ] = handler_gameevent,
+        [ "entity_killed" ] = handler_gameevent,
+        [ "flare_ignite_npc" ] = handler_gameevent,
+        [ "hltv_status" ] = handler_gameevent,
+        [ "hltv_title" ] = handler_gameevent,
+        [ "host_quit" ] = handler_gameevent,
+        [ "OnRequestFullUpdate" ] = handler_gameevent,
+        [ "player_activate" ] = handler_gameevent,
+        [ "player_changename" ] = handler_gameevent,
+        [ "player_connect" ] = handler_gameevent,
+        [ "player_connect_client" ] = handler_gameevent,
+        [ "player_disconnect" ] = handler_gameevent,
+        [ "player_hurt" ] = handler_gameevent,
+        [ "player_info" ] = handler_gameevent,
+        [ "player_say" ] = handler_gameevent,
+        [ "player_spawn" ] = handler_gameevent,
+        [ "ragdoll_dissolved" ] = handler_gameevent,
+        [ "server_addban" ] = handler_gameevent,
+        [ "server_cvar" ] = handler_gameevent,
+        [ "server_removeban" ] = handler_gameevent,
+
+        -- dreamwork
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@return integer, integer
+        [ "dreamwork.content.update" ] = function( handlers )
+            ---@type integer
+            local total_game_changes = 0
+
+            ---@type integer
+            local total_addon_changes = 0
+
+            for i = 1, handlers[ 0 ], 1 do
+                local game_changes, addon_changes = handlers[ i ]()
+                if game_changes ~= nil then
+                    total_game_changes = total_game_changes + game_changes
+                end
+
+                if addon_changes ~= nil then
+                    total_addon_changes = total_addon_changes + addon_changes
                 end
             end
 
-            engine.hookListenEvents = hook_listen_events
+            return total_game_changes, total_addon_changes
+        end,
+    }
 
-        end
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param error_message string
+    ---@param stack_level integer
+    event_handlers[ "dreamwork.lua.error" ] = function( handlers, error_message, stack_level )
+        stack_level = stack_level + 1
 
-        ---@param self table<integer, dreamwork.std.Hook | fun( ... ): ...>
-        ---@param ... any
-        ---@return any, any, any, any, any, any
-        local function default_handler( self, ... )
-            for i = 1, #self, 1 do
-                local a, b, c, d, e, f = self[ i ]( ... )
-                if a ~= nil then
-                    return a, b, c, d, e, f
-                end
+        for i = 1, handlers[ 0 ], 1 do
+            local new_error_message = handlers[ i ]( error_message, stack_level )
+            if new_error_message ~= nil then
+                error_message = new_error_message
             end
         end
+
+        return error_message
+    end
+
+    do
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param info dreamwork.engine.GameInfo | dreamwork.engine.AddonInfo
+        ---@param is_mounted boolean
+        local function handler_mount( handlers, info, is_mounted )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( info, is_mounted )
+            end
+        end
+
+        event_handlers[ "dreamwork.game.mount" ] = handler_mount
+        event_handlers[ "dreamwork.addon.mount" ] = handler_mount
+
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param command string
+    ---@param pl Player | nil
+    ---@param args string[]
+    ---@param argument_string string
+    ---@return boolean
+    event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, command, pl, args, argument_string )
+        for i = 1, handlers[ 0 ], 1 do
+            local is_command_found = handlers[ i ]( command, pl, args, argument_string )
+            if is_command_found ~= nil then
+                return is_command_found
+            end
+        end
+
+        return false
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param name string
+    ---@param argument_string string
+    ---@param args string[]
+    ---@return boolean | nil
+    event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers, name, argument_string, args )
+        for i = 1, handlers[ 0 ], 1 do
+            local suggestions = handlers[ i ]( name, argument_string, args )
+            if suggestions ~= nil then
+                return suggestions
+            end
+        end
+
+        return nil
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param name string
+    ---@param old_value string
+    ---@param new_value string
+    event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name, old_value, new_value )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( name, old_value, new_value )
+        end
+    end
+
+    if LUA_SERVER then
+        event_handlers[ "hltv_rank_camera" ] = handler_gameevent
+        event_handlers[ "hltv_rank_entity" ] = handler_gameevent
+    end
+
+    if LUA_MENU then
+        -- permissions
+        event_handlers[ "OnPauseMenuBlockedTooManyTimes" ] = handler_empty
+        event_handlers[ "OnPermissionsChanged" ] = handler_empty
+
+        -- capture
+        event_handlers[ "CaptureVideo" ] = handler_empty
+
+        -- workshop
+        event_handlers[ "WorkshopSubscriptionsChanged" ] = handler_empty
+        event_handlers[ "WorkshopStart" ] = handler_empty
+        event_handlers[ "WorkshopEnd" ] = handler_empty
+
+        -- menu
+        event_handlers[ "MenuStart" ] = handler_empty
+
+        -- gameevents
+        event_handlers[ "client_beginconnect" ] = handler_gameevent
+        event_handlers[ "client_connected" ] = handler_gameevent
+        event_handlers[ "game_newmap" ] = handler_gameevent
+        event_handlers[ "server_spawn" ] = handler_gameevent
+        event_handlers[ "user_data_downloaded" ] = handler_gameevent
+    end
+
+    if LUA_CLIENT then
+        -- 2d render
+        event_handlers[ "RenderScreenspaceEffects" ] = handler_empty
+        event_handlers[ "PostRenderVGUI" ] = handler_empty
+        event_handlers[ "PostDrawHUD" ] = handler_empty
+        event_handlers[ "PreDrawHUD" ] = handler_empty
+        event_handlers[ "HUDPaint" ] = handler_empty
+
+        -- 3d render
+        event_handlers[ "PreDrawViewModels" ] = handler_empty
+        event_handlers[ "PostDrawEffects" ] = handler_empty
+        event_handlers[ "PreDrawEffects" ] = handler_empty
+        event_handlers[ "DrawMonitors" ] = handler_empty
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@return boolean | nil
+        event_handlers[ "PreRender" ] = function( handlers )
+            for i = 1, handlers[ 0 ], 1 do
+                if handlers[ i ]() then
+                    for j = i + 1, handlers[ 0 ], 1 do
+                        handlers[ j ]()
+                    end
+
+                    return true
+                end
+            end
+
+            return nil
+        end
+
+        event_handlers[ "PostRender" ] = handler_empty
+
+        -- skybox (3d render)
+        event_handlers[ "PostDraw2DSkyBox" ] = handler_empty
+        event_handlers[ "PostDrawSkyBox" ] = handler_empty
+
+        -- chat
+        event_handlers[ "FinishChat" ] = handler_empty
+    end
+
+    if LUA_CLIENT or LUA_MENU then
+        -- 2d render
+        event_handlers[ "DrawOverlay" ] = handler_empty
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param old_width integer
+        ---@param old_height integer
+        ---@param new_width integer
+        ---@param new_height integer
+        event_handlers[ "OnScreenSizeChanged" ] = function( handlers, old_width, old_height, new_width, new_height )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( old_width, old_height, new_width, new_height )
+            end
+        end
+
+        -- gameevents
+        event_handlers[ "achievement_event" ] = handler_gameevent
+        event_handlers[ "client_disconnect" ] = handler_gameevent
+        event_handlers[ "freezecam_started" ] = handler_gameevent
+        event_handlers[ "hide_freezepanel" ] = handler_gameevent
+        event_handlers[ "hltv_cameraman" ] = handler_gameevent
+        event_handlers[ "hltv_changed_mode" ] = handler_gameevent
+        event_handlers[ "hltv_changed_target" ] = handler_gameevent
+        event_handlers[ "hltv_chase" ] = handler_gameevent
+        event_handlers[ "hltv_fixed" ] = handler_gameevent
+        event_handlers[ "hltv_message" ] = handler_gameevent
+        event_handlers[ "show_freezepanel" ] = handler_gameevent
+    end
+
+    if LUA_CLIENT or LUA_SERVER then
+        -- gamemode
+        event_handlers[ "PostGamemodeLoaded" ] = handler_empty
+        event_handlers[ "PreGamemodeLoaded" ] = handler_empty
+        event_handlers[ "OnGamemodeLoaded" ] = handler_empty
+        event_handlers[ "OnReloaded" ] = handler_empty
+        event_handlers[ "Initialize" ] = handler_empty
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@return string | nil
+        event_handlers[ "GetGameDescription" ] = function( handlers )
+            for i = 1, handlers[ 0 ], 1 do
+                local name = handlers[ i ]()
+                if name ~= nil then
+                    return name
+                end
+            end
+
+            return nil
+        end
+
+        -- entity
+        event_handlers[ "InitPostEntity" ] = handler_empty
+        event_handlers[ "PostCleanupMap" ] = handler_empty
+        event_handlers[ "PreCleanupMap" ] = handler_empty
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param entity Entity
+        ---@param is_full_update boolean
+        event_handlers[ "EntityRemoved" ] = function( handlers, entity, is_full_update )
+            is_full_update = is_full_update == true
+
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( entity, is_full_update )
+            end
+        end
+
+        -- engine
+        event_handlers[ "ShutDown" ] = handler_empty
+
+        -- save/load system
+        event_handlers[ "Restored" ] = handler_empty
+        event_handlers[ "Saved" ] = handler_empty
+
+        -- dreamwork
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param network_id integer
+        ---@param unreliable boolean
+        ---@param remaining_bits integer
+        ---@param sender Player | nil
+        ---@return boolean
+        event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
+            for i = 1, handlers[ 0 ], 1 do
+                if handlers[ i ]( network_id, unreliable, remaining_bits, sender ) then return true end
+            end
+
+            return false
+        end
+
+    end
+
+    do
+
+        ---@type table<string, table<dreamwork.engine.hook.Handler, integer>>
+        local hook_priorities = {}
+
+        setmetatable( hook_priorities, {
+            __index = function( self, handler )
+                local priorities = {}
+                self[ handler ] = priorities
+                return priorities
+            end
+        } )
+
+        ---@type table<dreamwork.engine.hook.Handler, integer>
+        local priorities
+
+        ---@param a dreamwork.engine.hook.Handler
+        ---@param b dreamwork.engine.hook.Handler
+        local function handlers_sort_fn( a, b )
+            return priorities[ a ] > priorities[ b ]
+        end
+
+        ---@type table<string, table<string, dreamwork.engine.hook.Handler>>
+        local hook_identifiers = {}
+
+        setmetatable( hook_identifiers, {
+            ---@param event_name string
+            __index = function( self, event_name )
+                local identifiers = {}
+                self[ event_name ] = identifiers
+                return identifiers
+            end
+        } )
 
         --- [SHARED AND MENU]
         ---
         --- Adds a callback to the `hookCatch` event.
         ---
         ---@param event_name string The name of the source engine event.
-        ---@param fn dreamwork.std.Hook | fun( ... ): ... The callback function.
-        ---@param index? integer The index to insert the callback at.
-        ---@return integer position The position of the inserted callback.
-        function engine.hookCatch( event_name, fn, index )
+        ---@param identifier string
+        ---@param handler dreamwork.std.Hook | fun( ... ): ... The callback function.
+        ---@param priority? integer The index to insert the callback at.
+        function engine.hookCatch( event_name, identifier, handler, priority )
+            if event_handlers[ event_name ] == nil then
+                error( string.format( "An attempt to catch a '%s' hook from an engine that does not have a handler; before attach, make sure that this hook is supported!", event_name ), 2 )
+            end
+
             if source_events[ event_name ] ~= nil and listen_events[ event_name ] == nil then
                 hook_listen_events( event_name )
             end
 
-            local callbacks = engine_hooks[ event_name ]
-            if callbacks == nil then
-                callbacks = {}
-                engine_hooks[ event_name ] = callbacks
+            local identifiers = hook_identifiers[ event_name ]
+            local handlers = hook_handlers[ event_name ]
+
+            priorities = hook_priorities[ event_name ]
+            priorities[ handler ] = priority or 0
+
+            local existing_handler = identifiers[ identifier ]
+            if existing_handler == nil then
+                table_insert( handlers, handler )
+            elseif existing_handler ~= handler then
+                table_removeByValue( handlers, existing_handler, handlers[ 0 ] )
+                priorities[ existing_handler ] = nil
+                table_insert( handlers, handler )
             end
 
-            if index == nil then
-                ---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
-                return table_insert( callbacks, fn )
-            else
-                ---@diagnostic disable-next-line: return-type-mismatch
-                return table_insert( callbacks, index, fn )
-            end
+            identifiers[ identifier ] = handler
+
+            table_sort( handlers, handlers_sort_fn )
+            handlers[ 0 ] = #handlers -- im a little bit lazy to handle it by myself ;x
         end
 
-        --- [SHARED AND MENU]
-        ---
-        --- Calls a source engine event.
-        ---
-        ---@param event_name string
-        ---@param ... any
-        ---@return any, any, any, any, any, any
-        function engine.hookCall( event_name, ... )
-            local callbacks = engine_hooks[ event_name ]
-            if callbacks ~= nil then
-                return (custom_handlers[ event_name ] or default_handler)( callbacks, ... )
-            end
-        end
+    end
 
+    --- [SHARED AND MENU]
+    ---
+    --- Calls a source engine event.
+    ---
+    ---@param event_name string
+    ---@param ... any
+    ---@return any, any, any, any
+    function engine.hookCall( event_name, ... )
+        local fn = event_handlers[ event_name ]
+        if fn == nil then return end
+
+        return fn( hook_handlers[ event_name ], ... )
     end
 
 end
 
 local engine_hookCatch = engine.hookCatch
 local engine_hookCall = engine.hookCall
+
+do
+
+    local hook = _G.hook
+    if hook == nil then
+        ---@diagnostic disable-next-line: inject-field
+        hook = {}; _G.hook = hook
+    end
+
+    local hook_Call = hook.Call
+    if hook_Call == nil then
+        function hook.Call( event_name, _, ... )
+            return engine_hookCall( event_name, ... )
+        end
+    else
+        function hook.Call( event_name, tbl, ... )
+            local a, b, c, d = engine_hookCall( event_name, ... )
+            if a == nil then
+                return hook_Call( event_name, tbl, ... )
+            else
+                return a, b, c, d
+            end
+        end
+    end
+
+end
 
 do
 
@@ -276,7 +659,7 @@ do
         queue[ queue_size ] = { fn, ... }
     end
 
-    engine_hookCatch( "Tick", function()
+    engine_hookCatch( "Tick", "engine.waitNextTick", function()
         if queue_size == 0 then
             return nil
         end
@@ -290,19 +673,19 @@ do
         queue = {}
 
         return nil
-    end )
+    end, -1000 )
 
 end
 
 do
 
     local entity_metatables = {
-        ENTITY,
-        PLAYER,
-        WEAPON,
-        VEHICLE,
-        NPC,
-        NEXTBOT,
+        EntityMetatable,
+        PlayerMetatable,
+        WeaponMetatable,
+        VehicleMetatable,
+        NPCMetatable,
+        NextBotMetatable,
     }
 
     for i = 1, #entity_metatables, 1 do
@@ -314,7 +697,7 @@ do
 
 end
 
-if LUA_CLIENT_SERVER then
+if LUA_CLIENT or LUA_SERVER then
 
     ---@class dreamwork.std.gc
     local gc = std.gc
@@ -388,64 +771,38 @@ if LUA_CLIENT_SERVER then
 
     do
 
-        local Entity_EntIndex = ENTITY.EntIndex
+        local Player_AccountID = PlayerMetatable.AccountID
+        local Player_UserID = PlayerMetatable.UserID
+        local Player_IsBot = PlayerMetatable.IsBot
 
-        engine_hookCatch( "EntityRemoved", function( entity )
+        local Entity_EntIndex = EntityMetatable.EntIndex
+
+        engine_hookCatch( "EntityRemoved", "gc.setup", function( entity )
             object_destroyed( "Entity", entity )
             object_destroyed( "EntityID", Entity_EntIndex( entity ) )
-        end )
 
-    end
+            if is( entity, PlayerMetatable ) then
+                ---@cast entity Player
 
-    do
+                object_destroyed( "Player", entity )
+                object_destroyed( "UserID", Player_UserID( entity ) )
 
-        local Player_AccountID = PLAYER.AccountID
-        local Player_UserID = PLAYER.UserID
-        local Player_IsBot = PLAYER.IsBot
-
-        engine_hookCatch( "PlayerDisconnected", function( pl )
-            object_destroyed( "Player", pl )
-            object_destroyed( "UserID", Player_UserID( pl ) )
-
-            if not Player_IsBot( pl ) then
-                object_destroyed( "AccountID", Player_AccountID( pl ) )
+                if not Player_IsBot( entity ) then
+                    object_destroyed( "AccountID", Player_AccountID( entity ) )
+                end
             end
-        end )
+        end, -1000 )
 
-    end
-
-end
-
-do
-
-    local hook = _G.hook
-    if hook == nil then
-        ---@diagnostic disable-next-line: inject-field
-        hook = {}; _G.hook = hook
-    end
-
-    local fn = hook.Call
-
-    ---@param event_name string
-    ---@param tbl table
-    ---@param ... any
-    ---@return any, any, any, any, any, any
-    ---@diagnostic disable-next-line: duplicate-set-field
-    function hook.Call( event_name, tbl, ... )
-        local a, b, c, d, e, f = engine_hookCall( event_name, ... )
-        if a == nil then
-            return fn( event_name, tbl, ... )
-        else
-            return a, b, c, d, e, f
-        end
     end
 
 end
 
 if std.LUA_MENU then
 
+    ---@diagnostic disable-next-line: inject-field
     _G.ListAddonPresets = detour.before( function()
-        engine_hookCall( "dreamwork.addon.presets", _G.LoadAddonPresets() )
+        ---@diagnostic disable-next-line: undefined-field
+        engine_hookCall( "dreamwork.addon.presets", (_G.LoadAddonPresets or debug_fempty)() )
     end, _G.ListAddonPresets )
 
     ---@param server_name string
@@ -454,6 +811,7 @@ if std.LUA_MENU then
     ---@param max_players integer
     ---@param player_steamid64 string
     ---@param gamemode_name string
+    ---@diagnostic disable-next-line: inject-field
     _G.GameDetails = detour.before( function( server_name, loading_url, map_name, max_players, player_steamid64, gamemode_name )
         engine_hookCall( "dreamwork.server.details", {
             server_name = server_name,
@@ -484,8 +842,8 @@ do
     ---@param args string[]
     ---@param argument_string string
     concommand.Run = detour.simple( function( ply, cmd, args, argument_string )
-        local success_execution = engine_hookCall( "dreamwork.console.command.execute", ply, cmd, args, argument_string ) == true
-        if not success_execution then
+        local is_command_found = engine_hookCall( "dreamwork.console.command.execute", ply, cmd, args, argument_string ) == true
+        if not is_command_found then
             if fallback_exists then
                 return nil
             end
@@ -493,7 +851,7 @@ do
             dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", ply )
         end
 
-        return success_execution
+        return is_command_found
     end, concommand.Run )
 
     ---@param cmd string
@@ -516,7 +874,7 @@ do
     ---@diagnostic disable-next-line: undefined-field
     local ConVarExists = _G.ConVarExists or debug_fempty
 
-    ---@type fun(name: string, value: string, flags: number): dreamwork.GModConVar
+    ---@type fun( name: string, value: string, flags: ( integer | nil ), description: ( string | nil ), min_value: ( number | nil ), max_value: ( number | nil ) ): dreamwork.GModConVar
     ---@diagnostic disable-next-line: undefined-field
     local CreateConVar = _G.CreateConVar or debug_fempty
 
@@ -527,7 +885,7 @@ do
     ---@type table<string, dreamwork.GModConVar>
     local console_variables = {}
 
-    ---@type dreamwork.Metatable<string, dreamwork.GModConVar>
+    ---@type dreamwork.std.Metatable<string, dreamwork.GModConVar>
     local metatable = {
         __mode = "v"
     }
@@ -617,7 +975,9 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
         return exists_commands[ name ] ~= nil
     end
 
-    local AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
+    ---@type fun( name: string, description: string, flags: integer )
+    ---@diagnostic disable-next-line: undefined-field
+    local glua_AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
 
     --- [SHARED AND MENU]
     ---
@@ -631,7 +991,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil th
     function engine.consoleCommandRegister( name, description, flags )
         if exists_commands[ name ] == nil then
             exists_commands[ name ] = true
-            AddConsoleCommand( name, description, flags )
+            glua_AddConsoleCommand( name, description, flags )
         end
     end
 
@@ -645,6 +1005,7 @@ if engine.consoleCommandRun == nil then
     ---
     ---@param name string The name of the console command.
     ---@param ... string? The arguments of the console command.
+    ---@diagnostic disable-next-line: undefined-field
     engine.consoleCommandRun = _G.RunConsoleCommand or function( name, ... )
         raw.print( "dreamwork.engine.consoleCommandRun", name, ... )
     end
@@ -711,33 +1072,43 @@ do
 
 end
 
-if Matrix ~= nil then
+do
 
-    ---@class dreamwork.engine.VMatrixProxy : dreamwork.std.Object
-    local VMatrixProxy = class.base( "dreamwork.engine.VMatrixProxy", true )
+    ---@type fun( data: integer[][] ) | nil
+    ---@diagnostic disable-next-line: undefined-field
+    local Matrix = _G.Matrix
+    if Matrix ~= nil then
 
-    function VMatrixProxy:update()
+        -- ---@class dreamwork.engine.VMatrixProxy : dreamwork.std.Object
+        -- local VMatrixProxy = class.base( "dreamwork.engine.VMatrixProxy", true )
 
-    end
+        -- function VMatrixProxy:update()
 
-    ---@class dreamwork.engine.VMatrixProxyClass : dreamwork.engine.VMatrixProxy
-    ---@overload fun(): dreamwork.engine.VMatrixProxy
-    local VMatrixProxyClass = class.create( VMatrixProxy )
+        -- end
 
-    local VMatrix = Matrix
+        -- ---@class dreamwork.engine.VMatrixProxyClass : dreamwork.engine.VMatrixProxy
+        -- ---@overload fun(): dreamwork.engine.VMatrixProxy
+        -- local VMatrixProxyClass = class.create( VMatrixProxy )
 
-    function VMatrixProxyClass:__new()
-        return VMatrix()
+        -- local VMatrix = Matrix
+
+        -- function VMatrixProxyClass:__new()
+        --     return VMatrix()
+        -- end
+
+        -- TODO: VMatrixProxy
+
     end
 
 end
+
 
 do
 
     ---@type table<string, string>
     local values = {}
 
-    engine_hookCatch( "server_cvar", function( data )
+    engine_hookCatch( "server_cvar", "dreamwork.console.variable.change", function( data )
         local name, new_value = data.cvarname, data.cvarvalue
         local old_value = values[ name ]
 
@@ -753,13 +1124,15 @@ do
         end
 
         engine_hookCall( "dreamwork.console.variable.change", name, old_value, new_value )
-    end, 1 )
+    end, -1000 )
 
 end
 
 do
 
-    local Msg = _G.Msg or std.print
+    ---@type fun( msg: string )
+    ---@diagnostic disable-next-line: undefined-field
+    local Msg = _G.Msg or _G.print
     local math_min = math.min
 
     local utf8 = std.utf8
@@ -783,8 +1156,9 @@ do
         end
     end
 
+    ---@type fun( color: { r: integer, g: integer, b: integer, a: integer }, msg: string )
+    ---@diagnostic disable-next-line: undefined-field
     local MsgC = _G.MsgC
-
     if MsgC == nil then
 
         engine.consoleMessageColored = engine.consoleMessage
@@ -900,10 +1274,15 @@ end
 
 -- TODO: effects | particles?
 
-do
+if LUA_CLIENT or LUA_SERVER then
+
+    ---@class dreamwork.GModEntsLib
+    ---@field GetAll fun(): Entity[]
+    ---@diagnostic disable-next-line: undefined-field
+    local glua_ents = _G.ents
 
     ---@type table<integer, Entity>
-    local entity_list = ents.GetAll()
+    local entity_list = glua_ents.GetAll()
 
     ---@type integer
     local entity_count = #entity_list
@@ -915,8 +1294,9 @@ do
         entity_map[ entity_list[ i ] ] = i
     end
 
+    ---@diagnostic disable-next-line: inject-field
     _G.InvalidateInternalEntityCache = detour.before( function( is_player )
-        local new_entities = ents.GetAll()
+        local new_entities = glua_ents.GetAll()
         local new_count = #new_entities
 
         ---@type table<Entity, integer>
@@ -1015,10 +1395,6 @@ end
 
 do
 
-    local glua_engine = _G.engine or {}
-    local getGames = glua_engine.GetGames or debug_fempty
-    local getAddons = glua_engine.GetAddons or debug_fempty
-
     ---@class dreamwork.engine.GameInfo
     ---@field depot integer The game's Steam Depot ID.
     ---@field folder string The game's mount folder name.
@@ -1042,26 +1418,47 @@ do
     ---@field index integer The addon's index in the addon list.
     ---@field folder string The addon's folder name.
 
+    ---@class dreamwork.GModEngineLib
+    ---@field GetGames fun(): dreamwork.engine.GameInfo[]
+    ---@field GetAddons fun(): dreamwork.engine.AddonInfo[]
+    ---@diagnostic disable-next-line: undefined-field
+    local glua_engine = _G.engine or {}
+
+    local engine_GetGames = glua_engine.GetGames or function() return {} end
+    local engine_GetAddons = glua_engine.GetAddons or function() return {} end
+
     ---@type table<integer, dreamwork.engine.GameInfo>
     local supported_games = {}
     engine.SupportedGames = supported_games
 
-    ---@type dreamwork.engine.GameInfo[], integer, table<integer, dreamwork.engine.GameInfo>
-    local actual_game_list, actual_game_count, actual_game_hash = {}, 0, {}
+    ---@type dreamwork.engine.GameInfo[]
+    local actual_game_list = {}
 
-    ---@type dreamwork.engine.AddonInfo[], integer, table<string, dreamwork.engine.AddonInfo>
-    local actual_addon_list, actual_addon_count, actual_addon_hash = {}, 0, {}
+    ---@type integer
+    local actual_game_count = 0
+
+    ---@type table<integer, dreamwork.engine.GameInfo>
+    local actual_game_hash = {}
+
+    ---@type dreamwork.engine.AddonInfo[]
+    local actual_addon_list = {}
+
+    ---@type integer
+    local actual_addon_count = 0
+
+    ---@type table<string, dreamwork.engine.AddonInfo>
+    local actual_addon_hash = {}
 
     engine.GameList, engine.GameCount, engine.GameHash = actual_game_list, actual_game_count, actual_game_hash
     engine.AddonList, engine.AddonCount, engine.AddonHash = actual_addon_list, actual_addon_count, actual_addon_hash
 
-    engine_hookCatch( "GameContentUpdate", function()
+    engine_hookCatch( "dreamwork.content.update", "dreamwork.content.mount", function()
         for app_id in raw_pairs( supported_games ) do
             supported_games[ app_id ] = nil
         end
 
         ---@type dreamwork.engine.GameInfo[]
-        local engine_games = getGames() or {}
+        local engine_games = engine_GetGames()
 
         ---@type table<integer, dreamwork.engine.GameInfo>
         local games_hash = {}
@@ -1124,7 +1521,7 @@ do
         engine.GameCount = game_count
 
         ---@type dreamwork.engine.AddonInfo[]
-        local engine_addons = getAddons() or {}
+        local engine_addons = engine_GetAddons()
 
         ---@type table<integer, dreamwork.engine.AddonInfo>
         local addons_hash = {}
@@ -1192,12 +1589,21 @@ end
 
 do
 
+    ---@class dreamwork.GModUtilLib
+    ---@field CRC fun( data: string ): string
+    ---@field MD5 fun( data: string ): string
+    ---@field SHA1 fun( data: string ): string
+    ---@field SHA256 fun( data: string ): string
+    ---@field AddNetworkString fun( network_name: string )
+    ---@field NetworkIDToString fun( network_id: integer ): string | nil
+    ---@field NetworkStringToID fun( network_name: string ): integer | nil
+    ---@diagnostic disable-next-line: undefined-field
     local glua_util = _G.util or {}
 
-    if LUA_CLIENT_SERVER then
+    if LUA_CLIENT or LUA_SERVER then
 
-        engine.MD5 = glua_util.MD5
         engine.CRC32 = glua_util.CRC
+        engine.MD5 = glua_util.MD5
         engine.SHA1 = glua_util.SHA1
         engine.SHA256 = glua_util.SHA256
 
@@ -1337,6 +1743,11 @@ do
             return network_id
         end
 
+        ---@class dreamwork.GModNetLib
+        ---@field ReadBool fun(): boolean
+        ---@field WriteBool fun( value: boolean )
+        ---@field ReadUInt fun( bit_count: integer )
+        ---@diagnostic disable-next-line: undefined-field
         local glua_net = _G.net
         if glua_net ~= nil then
 
@@ -1359,8 +1770,8 @@ do
 
                 remaining_bits = remaining_bits - full_header_size
 
-                local complete, block_size = engine_hookCall( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
-                if complete == true then return end
+                local is_complete, block_size = engine_hookCall( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
+                if is_complete == true then return end
 
                 if block_size ~= nil then
                     remaining_bits = remaining_bits - block_size
@@ -1436,12 +1847,14 @@ if engine.loadMaterial == nil then
     local bitpack_toString = bitpack.toString
     local bitpack_writeUInt = bitpack.writeUInt
 
-    local material_fn = _G.Material
+    ---@type fun( file_path: string, params: ( string | nil ) ): IMaterial, number
+    ---@diagnostic disable-next-line: undefined-field
+    local glua_Material = _G.Material
 
     ---@diagnostic disable-next-line: param-type-mismatch
-    local upvalues = debug.getupvalues( material_fn )
+    local upvalues = debug.getupvalues( glua_Material )
 
-    ---@type fun( string, string? ): IMaterial, number
+    ---@type fun( file_path: string, garry_flags: ( string | nil ) ): IMaterial, number
     local c_material_fn = upvalues.C_Material
 
     if c_material_fn == nil then
@@ -1471,7 +1884,7 @@ if engine.loadMaterial == nil then
         ---@return number time_taken The time taken to load the material.
         function engine.loadMaterial( file_path, parameters )
             if parameters == nil then
-                return material_fn( file_path )
+                return glua_Material( file_path )
             end
 
             local params, param_count = {}, 0
@@ -1485,11 +1898,11 @@ if engine.loadMaterial == nil then
             end
 
             if param_count == 0 then
-                return material_fn( file_path )
+                return glua_Material( file_path )
             elseif param_count == 1 then
-                return material_fn( file_path, params[ 1 ] )
+                return glua_Material( file_path, params[ 1 ] )
             else
-                return material_fn( file_path, table_concat( params, " ", 1, param_count ) )
+                return glua_Material( file_path, table_concat( params, " ", 1, param_count ) )
             end
         end
 
@@ -1515,7 +1928,7 @@ if engine.loadMaterial == nil then
 
 end
 
-if std.LUA_CLIENT then
+if LUA_CLIENT then
 
     local matproxy = _G.matproxy
     if matproxy == nil then

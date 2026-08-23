@@ -341,7 +341,7 @@ if LUA_SERVER then
         __mode = "k"
     } )
 
-    engine.hookCatch( "Think", function()
+    engine.hookCatch( "Think", "network.writer", function()
         local time_used = UnPredictedCurTime()
 
         for i = outgoing_activity[ 0 ], 1, -1 do
@@ -550,9 +550,9 @@ if LUA_SERVER then
 
     ---@param network_id integer
     ---@param unreliable boolean
-    ---@param message_length integer
+    ---@param remaining_bits integer
     ---@param sender Player | nil
-    engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length, sender )
+    engine.hookCatch( "dreamwork.network.message.incoming", "network.server.handler", function( network_id, unreliable, remaining_bits, sender )
         local networks = outgoing_transmissions[ sender ]
         if networks ~= nil and unreliable then
             local outgoing_thread = networks[ network_id ]
@@ -567,7 +567,7 @@ if LUA_SERVER then
         end
 
         return false
-    end, 2 )
+    end, -1000 )
 
 end
 
@@ -584,7 +584,7 @@ if LUA_CLIENT then
     ---@type dreamwork.std.Network.Thread[]
     local incoming_activity = { [ 0 ] = 0 }
 
-    engine.hookCatch( "Think", function()
+    engine.hookCatch( "Think", "network.reader", function()
         local time_used = UnPredictedCurTime()
 
         for i = 1, incoming_activity[ 0 ], 1 do
@@ -712,7 +712,7 @@ if LUA_CLIENT then
     ---@param network_id integer
     ---@param unreliable boolean
     ---@param message_length integer
-    engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length )
+    engine.hookCatch( "dreamwork.network.message.incoming", "network.client.handler", function( network_id, unreliable, message_length )
         local network = index_to_network[ network_id ]
         if network == nil then return false end
 
@@ -794,7 +794,7 @@ if LUA_CLIENT then
         perform_callbacks( network, { [ 0 ] = 1, net.ReadData( math_ceil( message_length / 8 ) ) }, 1, 1 )
 
         return true
-    end, 2 )
+    end, -1000 )
 
 end
 
@@ -891,6 +891,6 @@ else
 
 end
 
--- engine.hookCatch( "dreamwork.network.message.incoming", function( network_id, unreliable, message_length )
+-- engine.hookCatch( "dreamwork.network.message.incoming", "logs", function( network_id, unreliable, message_length )
 --     dreamwork.Logger:debug( "Received message, id: %d, unreliable: %s, message_length: %d", network_id, unreliable and "true" or "false", message_length )
 -- end, 1 )

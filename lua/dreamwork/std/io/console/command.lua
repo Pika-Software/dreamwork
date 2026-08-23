@@ -1,22 +1,32 @@
 local std = dreamwork.std
 
-local string = std.string
-local string_sub = string.sub
-local string_byte = string.byte
-
-local bit_band = std.bit.band
-local raw_index = std.raw.index
-local debug_fempty = std.debug.fempty
-local futures_Future = std.futures.Future
-local gc_setTableRules = std.gc.setTableRules
-local table_removeByRange = std.table.removeByRange
+---@class dreamwork.std.console
+local console = std.console
 
 local engine = dreamwork.engine
 local engine_consoleCommandRun = engine.consoleCommandRun
 local engine_consoleCommandRegister = engine.consoleCommandRegister
 
----@class dreamwork.std.console
-local console = std.console
+local raw = std.raw
+local raw_index = raw.index
+
+local debug = std.debug
+local debug_fempty = debug.fempty
+
+local gc = std.gc
+local gc_setTableRules = gc.setTableRules
+
+local table = std.table
+local table_removeByRange = table.removeByRange
+
+local string = std.string
+local string_sub = string.sub
+local string_byte = string.byte
+
+local bit = std.bit
+local bit_band = bit.band
+
+local Future = std.Future
 
 ---@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, string>
 local names = {}
@@ -308,7 +318,7 @@ end
 ---
 ---@async
 function Command:wait()
-    local future = futures_Future()
+    local future = Future()
 
     self:attach( function( ... )
         return future:setResult( { ... } )
@@ -317,7 +327,7 @@ function Command:wait()
     return future:await()
 end
 
-engine.hookCatch( "ConsoleCommandExecuted", function( ply, name, args, argument_string )
+engine.hookCatch( "dreamwork.console.command.execute", "console.handle", function( ply, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
         return nil
@@ -364,7 +374,7 @@ engine.hookCatch( "ConsoleCommandExecuted", function( ply, name, args, argument_
     end
 
     return true
-end, 1 )
+end, -500 )
 
 ---@type table<dreamwork.std.console.Command, function>
 local auto_complete = {}
@@ -402,7 +412,7 @@ function Command:setAutoComplete( fn )
     auto_complete[ self ] = fn
 end
 
-engine.hookCatch( "ConsoleCommandAutocomplete", function( name, argument_string, args )
+engine.hookCatch( "dreamwork.console.command.autocomplete", "console.auto_complete", function( name, argument_string, args )
     local command = commands[ name ]
     if command == nil then
         return
@@ -445,4 +455,4 @@ engine.hookCatch( "ConsoleCommandAutocomplete", function( name, argument_string,
     end
 
     return suggestions
-end, 1 )
+end, -1000 )

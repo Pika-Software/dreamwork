@@ -87,7 +87,7 @@ end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getmetatable)
 ---
----@type fun(object: any): dreamwork.Metatable | nil
+---@type fun(object: any): dreamwork.std.Metatable | nil
 std.getmetatable = getmetatable
 
 --- [SHARED AND MENU]
@@ -105,7 +105,7 @@ std.getmetatable = getmetatable
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-setmetatable)
 ---
 ---@generic K, V
----@type fun(tbl: table<K,V>, metatable: dreamwork.Metatable<K,V>): table<K,V>
+---@type fun(tbl: table<K,V>, metatable: dreamwork.std.Metatable<K,V>): table<K,V>
 std.setmetatable = setmetatable
 
 std.xpcall = xpcall
@@ -1283,7 +1283,7 @@ do
     -- nil ( 0 )
     do
 
-        ---@class dreamwork.NilMetatable : dreamwork.Metatable
+        ---@class dreamwork.Nil : dreamwork.std.Metatable
         local Nil = debug_getmetatable( nil )
 
         if Nil == nil then
@@ -1324,7 +1324,7 @@ do
     -- boolean ( 1 )
     do
 
-        ---@class dreamwork.BooleanMetatable : dreamwork.Metatable
+        ---@class dreamwork.Boolean : dreamwork.std.Metatable
         local Boolean = debug_getmetatable( false )
 
         if Boolean == nil then
@@ -1376,7 +1376,7 @@ do
     -- number ( 3 )
     do
 
-        ---@class dreamwork.NumberMetatable : dreamwork.Metatable
+        ---@class dreamwork.Number : dreamwork.std.Metatable
         local Number = debug_getmetatable( 0 )
 
         if Number == nil then
@@ -1488,7 +1488,7 @@ do
     -- function ( 6 )
     do
 
-        ---@class dreamwork.FunctionMetatable : dreamwork.Metatable
+        ---@class dreamwork.Function : dreamwork.std.Metatable
         local Function = debug_getmetatable( debug_fempty )
 
         if Function == nil then
@@ -1530,7 +1530,7 @@ do
 
         local object = std.coroutine.create( debug_fempty )
 
-        ---@class dreamwork.std.ThreadMetatable : dreamwork.Metatable
+        ---@class dreamwork.Thread : dreamwork.std.Metatable
         local Thread = debug_getmetatable( object )
 
         if Thread == nil then
@@ -1554,37 +1554,6 @@ do
 
         std.Thread = Thread
 
-    end
-
-end
-
--- futures library
-dofile( "dreamwork/std/futures.lua" )
-sendfile( "dreamwork/std/futures.lua" )
-
-do
-
-    local futures = std.futures
-    local futures_sleep = futures.sleep
-    local futures_running = futures.running
-
-    --- [SHARED AND MENU]
-    ---
-    --- Puts current thread to sleep for given amount of seconds.
-    ---
-    --- **CAUTION**: This function could pause the main thread.
-    ---
-    ---@see dreamwork.std.futures.sleep
-    ---@param seconds number
-    function std.sleep( seconds )
-        if futures_running() == nil then -- main thread
-            local deadline = SysTime() + seconds
-            while SysTime() < deadline do end
-
-            return
-        end
-
-        futures_sleep( seconds ) -- second thread
     end
 
 end
@@ -1987,7 +1956,6 @@ do
 
     local loadstring = std.loadstring
     local math_floor = math.floor
-    local math_max = math.max
     local arg = std.arg
 
     local empty_env = {}
@@ -2367,6 +2335,37 @@ do
 
 end
 
+-- futures library
+dofile( "dreamwork/std/futures.lua" )
+sendfile( "dreamwork/std/futures.lua" )
+
+do
+
+    local futures = std.futures
+    local futures_sleep = futures.sleep
+    local futures_running = futures.running
+
+    --- [SHARED AND MENU]
+    ---
+    --- Puts current thread to sleep for given amount of seconds.
+    ---
+    --- **CAUTION**: This function could pause the main thread.
+    ---
+    ---@see dreamwork.std.futures.sleep
+    ---@param seconds number
+    function std.sleep( seconds )
+        if futures_running() == nil then -- main thread
+            local deadline = SysTime() + seconds
+            while SysTime() < deadline do end
+
+            return
+        end
+
+        futures_sleep( seconds ) -- second thread
+    end
+
+end
+
 -- crc checksum clases
 dofile( "dreamwork/std/checksum/crc.lua" )
 sendfile( "dreamwork/std/checksum/crc.lua" )
@@ -2458,6 +2457,10 @@ sendfile( "dreamwork/std/crypto/pbkdf2.lua" )
 -- uuid library
 dofile( "dreamwork/std/uuid.lua" )
 sendfile( "dreamwork/std/uuid.lua" )
+
+-- mixin
+dofile( "dreamwork/std/types/mixin.lua" )
+sendfile( "dreamwork/std/types/mixin.lua" )
 
 -- hook class
 dofile( "dreamwork/std/types/hook.lua" )
@@ -2788,7 +2791,7 @@ end
 
 -- https://github.com/wrefgtzweve/gm_getregistry
 if std.loadbinary( "getregistry" ) and getregistry ~= nil then
-    raw.set( std, "_R", (getregistry.Get or debug.getregistry)() )
+    debug.setregistry( (getregistry.Get or debug.getregistry)() )
     logger:info( "'gm_getregistry' was loaded & connected, enjoy full access to `debug.getregistry`." )
 end
 
@@ -2837,15 +2840,15 @@ end
 
 ---@param game_info dreamwork.engine.GameInfo
 ---@param is_mounted boolean
-engine.hookCatch( "dreamwork.game.mount", function( game_info, is_mounted )
+engine.hookCatch( "dreamwork.game.mount", "logs", function( game_info, is_mounted )
     logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
-end, 1 )
+end )
 
 ---@param addon_info dreamwork.engine.AddonInfo
 ---@param is_mounted boolean
-engine.hookCatch( "dreamwork.addon.mount", function( addon_info, is_mounted )
+engine.hookCatch( "dreamwork.addon.mount", "logs", function( addon_info, is_mounted )
     logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
-end, 1 )
+end )
 
 do
 
@@ -2855,7 +2858,7 @@ do
         logger:debug( "Game content change triggered, synchronization..." )
         time.tick( "ms", false )
 
-        local game_changes, addon_changes = engine.hookCall( "GameContentUpdate" )
+        local game_changes, addon_changes = engine.hookCall( "dreamwork.content.update" )
 
         if game_changes == 0 and addon_changes == 0 then
             logger:debug( "No changes found, skipped." )
@@ -2867,9 +2870,9 @@ do
     changes_timeout:attach( perform_synchronization )
     perform_synchronization()
 
-    engine.hookCatch( "GameContentChanged", function()
+    engine.hookCatch( "GameContentChanged", "dreamwork.content.update", function()
         changes_timeout:start()
-    end, 1 )
+    end, -1000 )
 
 end
 
@@ -2886,7 +2889,7 @@ if LUA_CLIENT and CurTime ~= nil then
 
     local last_call = CurTime()
 
-    engine.hookCatch( "PreRender", function()
+    engine.hookCatch( "PreRender", "dreamwork.frame_counter", function()
         local elapsed_time = CurTime()
 
         local frame_time = elapsed_time - last_call
@@ -2894,7 +2897,7 @@ if LUA_CLIENT and CurTime ~= nil then
 
         std.FRAME_TIME = frame_time
         std.FPS = 1 / frame_time
-    end, 1 )
+    end, 1000 )
 
 end
 

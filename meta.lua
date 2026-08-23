@@ -6,7 +6,7 @@
 ---
 --- Dreamwork powered metatables.
 ---
----@class dreamwork.Metatable<K, V>
+---@class dreamwork.std.Metatable<K, V>
 local metatable = {}
 
 ---

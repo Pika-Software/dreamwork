@@ -27,7 +27,7 @@ std.Entity = EntityClass
 
 -- do
 
---     ---@type dreamwork.Metatable<Entity, integer>
+--     ---@type dreamwork.std.Metatable<Entity, integer>
 --     local metatable = {}
 
 --     local Entity_EntIndex = ENTITY.EntIndex

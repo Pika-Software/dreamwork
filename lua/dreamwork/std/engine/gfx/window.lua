@@ -23,7 +23,7 @@ if window.SizeChanged == nil then
     local SizeChanged = std.Hook( "window.SizeChanged" )
     window.SizeChanged = SizeChanged
 
-    dreamwork.engine.hookCatch( "OnScreenSizeChanged", function( old_width, old_height, new_width, new_height )
+    dreamwork.engine.hookCatch( "OnScreenSizeChanged", "screen.size.change", function( old_width, old_height, new_width, new_height )
         width, height = new_width, new_height
         window.width, window.height = new_width, new_height
         SizeChanged( new_width, new_height, old_width, old_height )
@@ -31,6 +31,8 @@ if window.SizeChanged == nil then
 
 end
 
+---@class dreamwork.GModSystemLib
+---@diagnostic disable-next-line: undefined-field
 local glua_system = _G.system
 if glua_system ~= nil then
 

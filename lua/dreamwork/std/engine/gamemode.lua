@@ -22,12 +22,12 @@ std.Gamemode = GamemodeClass
 
 -- TODO: make gamemode class and gamemode handler
 
-dreamwork.engine.hookCatch( "dreamwork.GamemodeLoaded", function()
-    -- -- https://github.com/Facepunch/garrysmod-requests/issues/2793
-    -- local sv_defaultdeployspeed = console_Variable.get( "sv_defaultdeployspeed", "number" )
-    -- if sv_defaultdeployspeed ~= nil and sv_defaultdeployspeed.value == 4 then
-    --     sv_defaultdeployspeed.value = 1
-    -- end
+-- dreamwork.engine.hookCatch( "GamemodeLoaded", function()
+--     -- -- https://github.com/Facepunch/garrysmod-requests/issues/2793
+--     -- local sv_defaultdeployspeed = console_Variable.get( "sv_defaultdeployspeed", "number" )
+--     -- if sv_defaultdeployspeed ~= nil and sv_defaultdeployspeed.value == 4 then
+--     --     sv_defaultdeployspeed.value = 1
+--     -- end
 
     -- -- draw everything manually, don't use this crap
     -- local mp_show_voice_icons = console_Variable.get( "mp_show_voice_icons", "boolean" )

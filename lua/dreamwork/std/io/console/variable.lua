@@ -16,9 +16,6 @@ local LUA_SERVER = std.LUA_SERVER
 local debug = std.debug
 local debug_fempty = debug.fempty
 
-local bit = std.bit
-local bit_band = bit.band
-
 local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
@@ -28,10 +25,14 @@ local table_removeByRange = table.removeByRange
 local string = std.string
 local string_format = string.format
 
-local futures_Future = std.Future
+local bit = std.bit
+local bit_band = bit.band
+
 local toboolean = std.toboolean
 local tostring = std.tostring
 local arg = std.arg
+
+local Future = std.Future
 
 ---@diagnostic disable-next-line: undefined-doc-class
 ---@class dreamwork.GModConVar : ConVar
@@ -882,7 +883,7 @@ end
 ---@return T new_value
 ---@async
 function Variable:wait()
-    local future = futures_Future()
+    local future = Future()
 
     self:attach( function( _, value )
         future:setResult( value )
@@ -891,11 +892,9 @@ function Variable:wait()
     return future:await()
 end
 
-engine.hookCatch( "dreamwork.console.variable.change", function( str_name, str_old, str_new )
+engine.hookCatch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
-    if variable == nil then
-        return
-    end
+    if variable == nil then return end
 
     local cvar_type = variable.type
     local old_value, new_value
@@ -945,4 +944,4 @@ engine.hookCatch( "dreamwork.console.variable.change", function( str_name, str_o
             end
         end
     end
-end )
+end, -1000 )

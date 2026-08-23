@@ -24,7 +24,7 @@ local time = std.time
 local time_now = time.now
 local time_tick = time.tick
 
-local raw_tonumber = std.raw.tonumber
+local tonumber = std.tonumber
 
 --- [SHARED AND MENU]
 ---
@@ -136,8 +136,8 @@ do
         if result ~= nil then
             return {
                 path = result.path,
-                size = raw_tonumber( result.size, 10 ) or -1,
-                time = raw_tonumber( result.os_time, 10 ) or 0
+                size = tonumber( result.size, 10 ) or -1,
+                time = tonumber( result.os_time, 10 ) or 0
             }
         end
 
@@ -511,7 +511,7 @@ function storage.init()
 
     local pragma_values = pragma_read( "foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint" )
     if pragma_values ~= nil then
-        if (raw_tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma foreign_keys = 1" )
         end
 
@@ -519,21 +519,21 @@ function storage.init()
             sqlite_rawQuery( "pragma journal_mode = wal" )
         end
 
-        if (raw_tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma synchronous = normal" )
         end
 
-        if (raw_tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
+        if (tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
             sqlite_rawQuery( "pragma wal_autocheckpoint = 100" )
         end
     end
 
     -- truncate WAL journal on shutdown
-    dreamwork.engine.hookCatch( "ShutDown", function()
+    dreamwork.engine.hookCatch( "ShutDown", "dreamwork.sqlite", function()
         if sqlite.query( "pragma wal_checkpoint(TRUNCATE)" ) == false then
             dreamwork.Logger:error( "Failed to truncate WAL journal: %s", sqlite.getLastError() )
         end
-    end, 1 )
+    end, -1000 )
 
     sqlite_rawQuery( "CREATE TABLE IF NOT EXISTS 'dreamwork.storage.migrations' (name TEXT, timestamp INTEGER)" )
 

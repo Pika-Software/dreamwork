@@ -1,4 +1,16 @@
+---@class dreamwork.GModEngineLib
+---@field ActiveGamemode fun(): string
+---@field ServerFrameTime fun(): number
+---@field GetIPAddress fun(): string
+---@diagnostic disable-next-line: undefined-global
 local glua_engine = engine or {}
+
+---@class dreamwork.GModGameLib
+---@field SinglePlayer fun(): boolean
+---@field IsDedicated fun(): boolean
+---@field GetTimeScale fun(): number
+---@field SetTimeScale fun(scale: number)
+---@diagnostic disable-next-line: undefined-global
 local glua_game = game or {}
 
 local engine = dreamwork.engine
@@ -23,9 +35,10 @@ local console_Variable = console.Variable
 ---@field singleplayer boolean `true` if server is running in singleplayer mode, `false` otherwise. **READ-ONLY**
 ---@field dedicated boolean `true` if server is running as a dedicated server, `false` otherwise. **READ-ONLY**
 ---@field tickrate number The tickrate of the server in seconds. **READ-ONLY**
-local server = std.server or {}
+local server = {}
 std.server = server
 
+---@diagnostic disable-next-line: undefined-global
 server.tickrate = 1 / (FrameTime or debug_fempty)()
 
 server.singleplayer = (glua_game.SinglePlayer or debug_fempty)() == true
@@ -101,7 +114,15 @@ if server.getGamemodeName == nil then
             end
         } )
 
-        local gmod_GetGamemode = gmod ~= nil and gmod.GetGamemode or debug_fempty
+        ---@class dreamwork.GModGModLib
+        ---@field GetGamemode fun(): table
+        ---@diagnostic disable-next-line: undefined-global
+        local glua_gmod = gmod
+
+        ---@class dreamwork.GModGamemodeLib
+        ---@field Get fun(name: string): table
+        ---@diagnostic disable-next-line: undefined-global
+        local glua_gamemode = gamemode
 
         --- [SHARED]
         ---
@@ -111,8 +132,8 @@ if server.getGamemodeName == nil then
         ---@return table | dreamwork.std.Gamemode gamemode The active gamemode object.
         function server.getGamemode()
             if gamemode_value == nil then
-                ---@diagnostic disable-next-line: param-type-mismatch
-                return true, (gmod_GetGamemode() or GAMEMODE or gamemode.Get( gamemode_name ))
+                ---@diagnostic disable-next-line: undefined-global
+                return true, ((glua_gmod.GetGamemode or debug_fempty)() or GAMEMODE or (glua_gamemode.Get or debug_fempty)( gamemode_name ))
             else
                 return false, gamemode_value
             end
@@ -133,13 +154,13 @@ if server.getGamemodeName == nil then
             end
         end
 
-        engine.hookCatch( "GamemodeSelected", function( name )
+        engine_hookCatch( "dreamwork.gamemode.select", "gamemode.translator", function( name )
             if gamemode_value == nil then
                 return nil
             else
                 return translator
             end
-        end, 1 )
+        end, -1000 )
 
     end
 
@@ -151,7 +172,7 @@ if server.getGamemodeName == nil then
         ---
         ---@return string title The title of the gamemode.
         function server.getGamemodeTitle()
-            ---@diagnostic disable-next-line: undefined-field
+            ---@diagnostic disable-next-line: undefined-field, undefined-global
             return hook.Call( "GetGameDescription" ) or (GM or GAMEMODE or {}).Title or "unknown"
         end
 
@@ -159,6 +180,8 @@ if server.getGamemodeName == nil then
 
 end
 
+---@type fun(): number
+---@diagnostic disable-next-line: undefined-global
 server.getUptime = UnPredictedCurTime
 -- server.getPredictedUptime = CurTime
 
@@ -173,7 +196,7 @@ if std.LUA_CLIENT and server.Tick == nil then
     --- Called once every processed server frame during lag.
     ---
     local Tick = Hook( "server.Tick" )
-    engine_hookCatch( "Think", Tick, 1 )
+    engine_hookCatch( "Think", "server.Tick", Tick )
     server.Tick = Tick
 
 end
@@ -182,6 +205,12 @@ if std.LUA_CLIENT_MENU then
 
     server.getFrameTime = glua_engine.ServerFrameTime or function() return 0, 0 end
 
+    ---@class dreamwork.GModPermissionsLib
+    ---@field Grant fun()
+    ---@field Revoke fun()
+    ---@field IsGranted fun()
+    ---@field GetAll fun()
+    ---@diagnostic disable-next-line: undefined-global
     local glua_permissions = permissions or {}
 
     server.grantPermission = glua_permissions.Grant or debug_fempty
@@ -198,7 +227,7 @@ if std.LUA_MENU then
     --- Called when the server details are received from the server.
     ---
     local server_Details = std.Hook( "server.GameDetails" )
-    engine_hookCatch( "server.Details", server_Details, 1 )
+    engine_hookCatch( "dreamwork.server.details", "server.Details", server_Details )
     server.Details = server_Details
 
 end
@@ -349,6 +378,8 @@ if std.LUA_SERVER then
 
     if server.message == nil then
 
+        ---@type fun( message_type: ( 1 | 2 | 3 | 4 ), message: string )
+        ---@diagnostic disable-next-line: undefined-global
         local PrintMessage = PrintMessage or debug_fempty
 
         --- [SERVER]
@@ -374,6 +405,8 @@ if std.LUA_SERVER then
 
     end
 
+    ---@type fun( message: string )
+    ---@diagnostic disable-next-line: undefined-global
     server.log = ServerLog
 
     --- [SERVER]
@@ -534,9 +567,9 @@ if std.LUA_SERVER then
 
         local title = nil
 
-        engine_hookCatch( "GetGameDescription", function()
+        engine_hookCatch( "GetGameDescription", "gamemode.title", function()
             return title
-        end, 1 )
+        end, 1000 )
 
         --- [SERVER]
         ---
@@ -553,9 +586,19 @@ end
 
 if std.LUA_MENU then
 
-    local futures_Future = std.futures.Future
+    ---@class dreamwork.GModServerListLib
+    ---@field PingServer fun( ip: string, callback: fun( server_ping: number, server_name: string, gamemode_title: string, level_name: string, player_count: number, player_limit: number, bot_count: number, has_password: boolean, last_played_time: number, server_address: string, gamemode_name: string, gamemode_workshopid: number, is_anonymous_server: boolean, gmod_version: string, server_localization: string, gamemode_category: string ) )
+    ---@field PlayerList fun( ip: string, callback: fun( players: { time: number, name: string, score: string }[] ) )
+    ---@field AddCurrentServerToFavorites fun()
+    ---@field IsCurrentServerFavorite fun(): boolean
+    ---@field AddServerToFavorites fun( ip: string )
+    ---@field RemoveServerFromFavorites fun( ip: string )
+    ---@field IsServerFavorite fun( ip: string ): boolean
+    ---@field Query fun( data: { GameDir: string, Type: string, AppID: integer, Callback: fun( server_ping: number, server_name: string, gamemode_title: string, level_name: string, player_count: number, player_limit: number, bot_count: number, has_password: boolean, last_played_time: number, server_address: string, gamemode_name: string, gamemode_workshopid: number, is_anonymous_server: boolean, gmod_version: string, server_localization: string, gamemode_category: string ), CallbackFailed: fun( reason: string ), Finished: fun() } )
+    ---@diagnostic disable-next-line: undefined-global
     local glua_serverlist = serverlist
     local setTimeout = std.setTimeout
+    local Future = std.Future
 
     do
 
@@ -570,7 +613,7 @@ if std.LUA_MENU then
         ---@return dreamwork.std.server.Info info The server information.
         ---@async
         function server.ping( address, timeout )
-            local f = futures_Future()
+            local f = Future()
 
             serverlist_PingServer( address, function( server_ping, server_name, gamemode_title, level_name, player_count, player_limit, bot_count, has_password, last_played_time, server_address, gamemode_name, gamemode_workshopid, is_anonymous_server, gmod_version, server_localization, gamemode_category )
                 f:setResult( {
@@ -619,7 +662,7 @@ if std.LUA_MENU then
         ---@param timeout number? The timeout in seconds. Set to `false` to disable the timeout.
         ---@async
         function server.getPlayers( address, timeout )
-            local f = futures_Future()
+            local f = Future()
 
             serverlist_PlayerList( address, function( data )
                 if data == nil then
@@ -648,33 +691,18 @@ if std.LUA_MENU then
     ---
     ---@param data dreamwork.std.server.QueryData The query data to send to the master server.
     function server.getAll( data )
-        ---@diagnostic disable-next-line: inject-field
-        data.GameDir = data.directory
-        data.directory = nil
-
-        ---@diagnostic disable-next-line: inject-field
-        data.Type = data.type
-        data.type = nil
-
-        ---@diagnostic disable-next-line: inject-field
-        data.AppID = data.appid
-        data.appid = nil
-
-        ---@diagnostic disable-next-line: inject-field
-        data.Callback = data.server_queried
-        data.server_queried = nil
-
-        ---@diagnostic disable-next-line: inject-field
-        data.CallbackFailed = data.query_failed
-        data.query_failed = nil
-
-        ---@diagnostic disable-next-line: inject-field
-        data.Finished = data.finished
-        data.finished = nil
-
-        glua_serverlist.Query( data )
+        glua_serverlist.Query( {
+            GameDir = data.directory,
+            Type = data.type,
+            AppID = data.appid,
+            Callback = data.server_queried,
+            CallbackFailed = data.query_failed,
+            Finished = data.finished
+        } )
     end
 
+    ---@type fun( ip: string ): boolean
+    ---@diagnostic disable-next-line: undefined-global
     server.isInBlacklist = IsServerBlacklisted
 
     do

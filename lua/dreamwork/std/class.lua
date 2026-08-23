@@ -33,7 +33,7 @@ std.class = class
 ---
 --- A base for objects were created by `class` library.
 ---
----@class dreamwork.std.Object : dreamwork.Metatable
+---@class dreamwork.std.Object : dreamwork.std.Metatable
 ---@field __type string The name of object type. **READ ONLY**
 ---@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
 ---@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**

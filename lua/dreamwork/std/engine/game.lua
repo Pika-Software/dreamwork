@@ -51,7 +51,7 @@ do
 
     -- TODO: attempt to implement manual tick counter, to stop calling engine fn
 
-    engine.hookCatch( "Tick", function()
+    engine.hookCatch( "Tick", "dreamwork.tick_counter", function()
         local ticks_elapsed = engine_TickCount()
         if ticks_elapsed ~= tick_id then
             tick_id = ticks_elapsed
@@ -64,7 +64,7 @@ do
             game.TickTime = last_call
             game.TickCount = tick_id
         end
-    end, 1 )
+    end, 1000 )
 
 end
 

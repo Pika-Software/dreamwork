@@ -97,7 +97,7 @@ end
 ---@class dreamwork.std.Angle3Class : dreamwork.std.Angle3
 ---@field __base dreamwork.std.Angle3
 ---@overload fun( pitch: number?, yaw: number?, roll: number? ): dreamwork.std.Angle3
-local Angle3Class = class.create( dreamwork.std.Angle3 )
+local Angle3Class = class.create( Angle3 )
 Angle3Class.zero = setmetatable( { 0, 0, 0 }, Angle3 )
 std.Angle3 = Angle3Class
 

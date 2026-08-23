@@ -42,8 +42,6 @@
 --     end
 -- } )
 
--- -- engine.hookCatch( "" )
-
 local _G = _G
 local dreamwork = _G.dreamwork
 
@@ -61,7 +59,7 @@ local Instance = std.class.base( "client.Instance", true )
 ---@type table<Player, dreamwork.std.Client>
 local registry = {}
 
----@type dreamwork.Metatable<Player, dreamwork.std.Client>
+---@type dreamwork.std.Metatable<Player, dreamwork.std.Client>
 local metatable = {
     __mode = "k"
 }

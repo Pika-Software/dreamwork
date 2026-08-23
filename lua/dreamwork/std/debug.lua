@@ -26,7 +26,7 @@ local raw_get = raw.get
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
 ---
----@field setmetatable fun( object: any, metatable: ( dreamwork.Metatable | nil ) )
+---@field setmetatable fun( object: any, metatable: ( dreamwork.std.Metatable | nil ) )
 local debug = std.debug or {
     -- LuaJIT
     ---@diagnostic disable-next-line: deprecated
@@ -125,7 +125,7 @@ if debug.newproxy == nil then
         local fake_userdata = {}
 
         if add_metatable then
-            ---@type dreamwork.Metatable | nil
+            ---@type dreamwork.std.Metatable | nil
             local metatable
 
             if add_metatable == true then
@@ -346,7 +346,7 @@ do
         --- Returns the metatable of the given name or `nil` if not found.
         ---
         ---@param name string The name of the metatable.
-        ---@return dreamwork.Metatable | nil meta The metatable.
+        ---@return dreamwork.std.Metatable | nil meta The metatable.
         function debug.findmetatable( name )
             local cached = registry[ name ]
             if cached ~= nil then
@@ -368,7 +368,7 @@ end
 
 do
 
-    ---@type fun(name: string, tbl: dreamwork.Metatable)
+    ---@type fun(name: string, tbl: dreamwork.std.Metatable)
     ---@diagnostic disable-next-line: undefined-global
     local RegisterMetaTable = RegisterMetaTable or debug.fempty
 
@@ -377,7 +377,7 @@ do
     --- Registers the metatable of the given name and table.
     ---
     ---@param name string The name of the metatable.
-    ---@param tbl dreamwork.Metatable The metatable to register.
+    ---@param tbl dreamwork.std.Metatable The metatable to register.
     ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
@@ -397,7 +397,7 @@ end
 ---
 ---
 ---@param name string The name of the metatable.
----@return dreamwork.Metatable metatable The metatable.
+---@return dreamwork.std.Metatable metatable The metatable.
 function debug.initmetatable( name )
     local metatable = debug.findmetatable( name )
     if metatable == nil then
@@ -424,7 +424,7 @@ if debug_getmetatable( fempty ) == nil then
     --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
     ---
     ---@param value any The value.
-    ---@return dreamwork.Metatable | nil metatable The metatable.
+    ---@return dreamwork.std.Metatable | nil metatable The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
         return debug_getmetatable( value ) or registry[ raw_type( value ) ]
@@ -445,7 +445,7 @@ end
 ---@param tail_skip? integer Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
 ---@return dreamwork.std.debug.Info[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
-function debug.getstackinfo( stack_level, what, head_skip, tail_skip )
+function debug.getstack( stack_level, what, head_skip, tail_skip )
     if what == nil then
         what = "Snluf"
     end

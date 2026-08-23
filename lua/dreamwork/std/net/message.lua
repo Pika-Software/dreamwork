@@ -49,24 +49,25 @@ function Message:__init( name )
 
 end
 
-dreamwork.engine.hookCatch( "dreamwork.console.command.execute", function( sender, name, args )
+dreamwork.engine.hookCatch( "dreamwork.console.command.execute", "usermessage.handler", function( sender, name, args )
     local message = messages[ name ]
-    if message ~= nil then
-
-        if not LUA_SERVER then
-            sender = nil
-        end
-
-        local reader = std.buffer.Reader()
-        reader:open( std.encoding.base64.decode( args[ 1 ] ) )
-        for _, fn in pairs( message.fns ) do
-            reader:seek( 0 )
-            fn( message, sender, reader )
-        end
-
-        return true
+    if message == nil then
+        return nil
     end
-end, 1 )
+
+    if not LUA_SERVER then
+        sender = nil
+    end
+
+    local reader = std.buffer.Reader()
+    reader:open( std.base64.decode( args[ 1 ] ) )
+    for _, fn in pairs( message.fns ) do
+        reader:seek( 0 )
+        fn( message, sender, reader )
+    end
+
+    return true
+end, -1000 )
 
 ---
 ---@param fn fun( message: dreamwork.std.Message, sender: any, reader: dreamwork.std.buffer.Reader )
@@ -82,7 +83,7 @@ function Message:send( data, pl, realm )
         return
     end
 
-    local hex_data = std.encoding.base64.encode( data )
+    local hex_data = std.base64.encode( data )
 
     if LUA_SERVER then
         pl:ConCommand( "dreamwork.inet." .. (realm or "client") .. "." .. self.name .. " " .. hex_data )
