@@ -23,7 +23,6 @@ local string_format = string.format
 
 local table = std.table
 local table_sort = table.sort
-local table_insert = table.insert
 local table_removeByValue = table.removeByValue
 
 local raw = std.raw
@@ -580,17 +579,24 @@ do
 
             local existing_handler = identifiers[ identifier ]
             if existing_handler == nil then
-                table_insert( handlers, handler )
+                local handler_count = handlers[ 0 ] + 1
+                handlers[ handler_count ] = handler
+                handlers[ 0 ] = handler_count
             elseif existing_handler ~= handler then
-                table_removeByValue( handlers, existing_handler, handlers[ 0 ] )
                 priorities[ existing_handler ] = nil
-                table_insert( handlers, handler )
+
+                local handler_count = handlers[ 0 ]
+
+                if table_removeByValue( handlers, existing_handler, handler_count ) == nil then
+                    handler_count = handler_count + 1
+                end
+
+                handlers[ handler_count ] = handler
+                handlers[ 0 ] = handler_count
             end
 
             identifiers[ identifier ] = handler
-
             table_sort( handlers, handlers_sort_fn )
-            handlers[ 0 ] = #handlers -- im a little bit lazy to handle it by myself ;x
         end
 
     end
