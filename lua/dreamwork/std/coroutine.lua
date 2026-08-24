@@ -19,7 +19,10 @@ local std = dreamwork.std
 local coroutine = {
     create = glua_coroutine.create,
     resume = glua_coroutine.resume,
+
+    ---@type fun(): running: thread | nil
     running = coroutine_running,
+
     status = coroutine_status,
     wrap = glua_coroutine.wrap,
     yield = coroutine_yield,
