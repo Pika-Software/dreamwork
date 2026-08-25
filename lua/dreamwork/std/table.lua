@@ -5,11 +5,11 @@ local std = dreamwork.std
 
 local len = std.len
 local next = std.next
-local select = std.select
 local isTable = std.isTable
 
 local raw = std.raw
 local raw_pairs = raw.pairs
+local raw_select = raw.select
 
 local debug = std.debug
 local debug_iscf = debug.iscf
@@ -49,7 +49,7 @@ if table.pack == nil then
     ---@return V[]
     ---@diagnostic disable-next-line: duplicate-set-field
     function table.pack( ... )
-        return { n = select( "#", ... ), ... }
+        return { n = raw_select( "#", ... ), ... }
     end
 end
 

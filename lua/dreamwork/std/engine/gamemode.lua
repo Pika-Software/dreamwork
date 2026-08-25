@@ -29,9 +29,9 @@ std.Gamemode = GamemodeClass
 --     --     sv_defaultdeployspeed.value = 1
 --     -- end
 
-    -- -- draw everything manually, don't use this crap
-    -- local mp_show_voice_icons = console_Variable.get( "mp_show_voice_icons", "boolean" )
-    -- if mp_show_voice_icons ~= nil and mp_show_voice_icons.value then
-    --     mp_show_voice_icons.value = false
-    -- end
-end )
+--     -- -- draw everything manually, don't use this crap
+--     -- local mp_show_voice_icons = console_Variable.get( "mp_show_voice_icons", "boolean" )
+--     -- if mp_show_voice_icons ~= nil and mp_show_voice_icons.value then
+--     --     mp_show_voice_icons.value = false
+--     -- end
+-- end )

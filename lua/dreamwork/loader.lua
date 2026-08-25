@@ -2022,7 +2022,7 @@ do
     ---
     --- Throws an error with the specified message and level.
     ---
-    ---@param message? string The error message to throw.
+    ---@param message? any The error message to throw.
     ---@param stack_level? integer The stack level to throw the error.
     ---@param dont_break? boolean If `true`, the error will not break the current stack.
     local function std_error( message, stack_level, dont_break )
