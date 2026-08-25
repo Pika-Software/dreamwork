@@ -120,48 +120,7 @@ dofile( "dreamwork/std/raw.lua" )
 local raw = std.raw
 local raw_get = raw.get
 local raw_pairs = raw.pairs
-
 local raw_select = raw.select
-
---- [SHARED AND MENU]
----
---- If `index` is a number, returns all arguments after argument number `index`;
----
---- a negative number indexes from the end (`-1` is the last argument).
----
---- Otherwise, `index` must be the string `"#"`, and `select` returns the total number of extra arguments it received.
----
---- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-select)
----
----@overload fun( parameter: "#", ...: any ): integer
----@overload fun( parameter: integer, ...: any ): ...: any
-std.select = raw_select
-
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Replaces the value at `index` with `value` in the argument list `...`.
-    ---
-    --- If `index` is out of bounds, `...` is returned unchanged.
-    ---
-    ---@param index integer The index of the value to replace.
-    ---@param value any The value to replace at `index`.
-    ---@param ... any The argument list to replace values in.
-    ---@return any ... The updated argument list with `value` at `index`.
-    local function replace( index, value, ... )
-        if ... == nil then
-            return nil
-        elseif index == 1 then
-            return value, raw_select( 2, ... )
-        else
-            return (...), replace( index - 1, value, raw_select( 2, ... ) )
-        end
-    end
-
-    std.replace = replace
-
-end
 
 -- debug library
 dofile( "dreamwork/std/debug.lua" )
@@ -658,6 +617,10 @@ sendfile( "dreamwork/detour.lua" )
 -- table library
 dofile( "dreamwork/std/table.lua" )
 sendfile( "dreamwork/std/table.lua" )
+
+-- vararg library
+dofile( "dreamwork/std/vararg.lua" )
+sendfile( "dreamwork/std/vararg.lua" )
 
 ---@class dreamwork.std.table
 local table = std.table
