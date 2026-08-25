@@ -7,6 +7,9 @@ local std = dreamwork.std
 local raw = std.raw
 local raw_get = raw.get
 
+local pcall = std.pcall
+local xpcall = std.xpcall
+
 --- [SHARED AND MENU]
 ---
 --- The debug library is intended to help you debug your scripts,
@@ -97,6 +100,7 @@ std.debug = debug
 ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
 ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
 ---@overload fun( thread: thread, location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
+---@overload fun( thread: thread, location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
 debug.getinfo = glua_debug.getinfo
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
@@ -390,6 +394,37 @@ function debug.iscf( location )
 
     local what = dbg_info.what
     return not (what == "Lua" or what == "lua")
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks whether the call at the given stack level was made through
+--- `pcall` or `xpcall`, by walking up the stack from that level until it
+--- finds a frame whose function is `pcall`/`xpcall`, or runs out of frames.
+---
+---@param stack_level? integer The stack level to start checking from (same meaning as the `level` argument of `debug.getinfo`). Defaults to `2`, i.e. the function calling `ispcall`.
+---@return boolean ispcall `true` if the call is (directly or indirectly) inside a `pcall`/`xpcall`, `false` otherwise.
+function debug.ispcall( stack_level )
+    if stack_level == nil then
+        stack_level = 2
+    else
+        stack_level = stack_level + 1
+    end
+
+    ::debug_ispcall_loop::
+
+    local info = debug_getinfo( stack_level, "f" )
+    if info ~= nil then
+        local func = info.func
+        if func == pcall or func == xpcall then
+            return true
+        end
+
+        stack_level = stack_level + 1
+        goto debug_ispcall_loop
+    end
+
+    return false
 end
 
 local registry
