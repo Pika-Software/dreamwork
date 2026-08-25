@@ -1,10 +1,11 @@
 ---@class dreamwork.std
 local std = dreamwork.std
-local class = std.class
 
 local string = std.string
 local string_len = string.len
 local string_byte = string.byte
+
+local class = std.class
 
 --- [SHARED AND MENU]
 ---

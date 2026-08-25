@@ -641,7 +641,6 @@ local string_format = string.format
 local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
 
-
 do
 
     local string_toNumber = string.toNumber
@@ -812,8 +811,16 @@ dofile( "dreamwork/std/bit.lua" )
 sendfile( "dreamwork/std/bit.lua" )
 
 -- fnv hash functions
-dofile( "dreamwork/std/fnv.lua" )
-sendfile( "dreamwork/std/fnv.lua" )
+dofile( "dreamwork/std/string.fnv.lua" )
+sendfile( "dreamwork/std/string.fnv.lua" )
+
+-- symbols
+dofile( "dreamwork/std/types/symbol.lua" )
+sendfile( "dreamwork/std/types/symbol.lua" )
+
+-- class library
+dofile( "dreamwork/std/class.lua" )
+sendfile( "dreamwork/std/class.lua" )
 
 -- bytepack library
 dofile( "dreamwork/std/codec/bytepack.lua" )
@@ -824,6 +831,30 @@ local bytepack = std.bytepack
 -- bitpack library
 dofile( "dreamwork/std/codec/bitpack.lua" )
 sendfile( "dreamwork/std/codec/bitpack.lua" )
+
+-- crc checksum clases
+dofile( "dreamwork/std/checksum/crc.lua" )
+sendfile( "dreamwork/std/checksum/crc.lua" )
+
+-- adler checksum classes
+dofile( "dreamwork/std/checksum/adler.lua" )
+sendfile( "dreamwork/std/checksum/adler.lua" )
+
+-- fletcher checksum library
+dofile( "dreamwork/std/checksum/fletcher.lua" )
+sendfile( "dreamwork/std/checksum/fletcher.lua" )
+
+-- base16 encoding library
+dofile( "dreamwork/std/codec/base16.lua" )
+sendfile( "dreamwork/std/codec/base16.lua" )
+
+-- base32 encoding library
+dofile( "dreamwork/std/codec/base32.lua" )
+sendfile( "dreamwork/std/codec/base32.lua" )
+
+-- base64 encoding library
+dofile( "dreamwork/std/codec/base64.lua" )
+sendfile( "dreamwork/std/codec/base64.lua" )
 
 -- utf8 encoding library
 dofile( "dreamwork/std/codec/utf8.lua" )
@@ -841,13 +872,13 @@ sendfile( "dreamwork/std/codec/utf32.lua" )
 dofile( "dreamwork/std/codec/unicode.lua" )
 sendfile( "dreamwork/std/codec/unicode.lua" )
 
--- symbols
-dofile( "dreamwork/std/types/symbol.lua" )
-sendfile( "dreamwork/std/types/symbol.lua" )
+-- percent encoding library
+dofile( "dreamwork/std/codec/percent.lua" )
+sendfile( "dreamwork/std/codec/percent.lua" )
 
--- class library
-dofile( "dreamwork/std/class.lua" )
-sendfile( "dreamwork/std/class.lua" )
+-- punycode encoding library
+dofile( "dreamwork/std/codec/punycode.lua" )
+sendfile( "dreamwork/std/codec/punycode.lua" )
 
 do
 
@@ -2328,38 +2359,6 @@ do
     end
 
 end
-
--- crc checksum clases
-dofile( "dreamwork/std/checksum/crc.lua" )
-sendfile( "dreamwork/std/checksum/crc.lua" )
-
--- adler checksum classes
-dofile( "dreamwork/std/checksum/adler.lua" )
-sendfile( "dreamwork/std/checksum/adler.lua" )
-
--- fletcher checksum library
-dofile( "dreamwork/std/checksum/fletcher.lua" )
-sendfile( "dreamwork/std/checksum/fletcher.lua" )
-
--- base16 encoding library
-dofile( "dreamwork/std/codec/base16.lua" )
-sendfile( "dreamwork/std/codec/base16.lua" )
-
--- base32 encoding library
-dofile( "dreamwork/std/codec/base32.lua" )
-sendfile( "dreamwork/std/codec/base32.lua" )
-
--- base64 encoding library
-dofile( "dreamwork/std/codec/base64.lua" )
-sendfile( "dreamwork/std/codec/base64.lua" )
-
--- percent encoding library
-dofile( "dreamwork/std/codec/percent.lua" )
-sendfile( "dreamwork/std/codec/percent.lua" )
-
--- punycode encoding library
-dofile( "dreamwork/std/codec/punycode.lua" )
-sendfile( "dreamwork/std/codec/punycode.lua" )
 
 -- json encoding library
 dofile( "dreamwork/std/codec/json.lua" )

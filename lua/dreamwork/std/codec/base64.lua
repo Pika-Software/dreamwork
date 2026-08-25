@@ -1,38 +1,42 @@
---[[
-
-    Sources:
-
-        https://github.com/iskolbin/lbase64
-        https://github.com/ErnieE5/ee5_base64
-        http://lua-users.org/wiki/BaseSixtyFour
-
-    Thank you all for your work!
-
---]]
+---@class dreamwork.GModUtilLib
+---@field Base64Encode fun( input_str: string, inline: true ): string
+---@field Base64Decode fun( input_str: string ): string
+---@diagnostic disable-next-line: undefined-global
+local glua_util = util
+local glue_encode = glua_util ~= nil and glua_util.Base64Encode
+local glue_decode = glua_util ~= nil and glua_util.Base64Decode
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local math = std.math
+local math_floor = math.floor
+
+local table = std.table
+local table_remove = table.remove
+local table_concat = table.concat
+
 local string = std.string
 local string_len = string.len
 local string_sub = string.sub
-local string_byte, string_char = string.byte, string.char
+local string_char = string.char
+local string_byte = string.byte
 
-local table_concat = std.table.concat
-local bit_extract = std.bit.extract
-
-local glua_util = _G.util
-local glue_encode = glua_util ~= nil and glua_util.Base64Encode
-local glue_decode = glua_util ~= nil and glua_util.Base64Decode
+local bit = std.bit
+local bit_extract = bit.extract
 
 --- [SHARED AND MENU]
 ---
 --- Base64 encoding/decoding library.
 ---
---- See https://en.wikipedia.org/wiki/Base64
+--- Library references:
+--- - [iskolbin/lbase64](https://github.com/iskolbin/lbase64)
+--- - [ErnieE5/ee5_base64](https://github.com/ErnieE5/ee5_base64)
+--- - [BaseSixtyFour](http://lua-users.org/wiki/BaseSixtyFour)
 ---
+---@see https://en.wikipedia.org/wiki/Base64
 ---@class dreamwork.std.base64
-local base64 = std.base64 or {}
+local base64 = {}
 std.base64 = base64
 
 --- [SHARED AND MENU]
@@ -43,40 +47,34 @@ std.base64 = base64
 ---@field [1] table<integer, integer> The encoding map.
 ---@field [2] table<integer, integer> The decoding map.
 
-do
-
-    local table_remove = std.table.remove
-
-    --- [SHARED AND MENU]
-    ---
-    --- Creates a base64 alphabet with encoding and decoding maps.
-    ---
-    ---@param alphabet_str string The alphabet string.
-    ---@return dreamwork.std.base64.Alphabet alphabet The alphabet.
-    function base64.alphabet( alphabet_str )
-        if string_len( alphabet_str ) ~= 64 then
-            error( "alphabet must be 64 characters long", 2 )
-        end
-
-        local encode_map = { string_byte( alphabet_str, 1, 64 ) }
-        encode_map[ 0 ] = table_remove( encode_map, 1 )
-
-        local decode_map = {}
-
-        for i = 0, 63, 1 do
-            local uint8 = encode_map[ i ]
-            if decode_map[ uint8 ] == nil then
-                decode_map[ uint8 ] = i
-            elseif uint8 > 32 and uint8 < 127 then
-                error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. (i + 1) .. "]", 2 )
-            else
-                error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. (i + 1) .. "]", 2 )
-            end
-        end
-
-        return { encode_map, decode_map }
+--- [SHARED AND MENU]
+---
+--- Creates a base64 alphabet with encoding and decoding maps.
+---
+---@param alphabet_str string The alphabet string.
+---@return dreamwork.std.base64.Alphabet alphabet The alphabet.
+function base64.alphabet( alphabet_str )
+    if string_len( alphabet_str ) ~= 64 then
+        error( "alphabet must be 64 characters long", 2 )
     end
 
+    local encode_map = { string_byte( alphabet_str, 1, 64 ) }
+    encode_map[ 0 ] = table_remove( encode_map, 1 )
+
+    local decode_map = {}
+
+    for i = 0, 63, 1 do
+        local uint8 = encode_map[ i ]
+        if decode_map[ uint8 ] == nil then
+            decode_map[ uint8 ] = i
+        elseif uint8 > 32 and uint8 < 127 then
+            error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. (i + 1) .. "]", 2 )
+        else
+            error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. (i + 1) .. "]", 2 )
+        end
+    end
+
+    return { encode_map, decode_map }
 end
 
 local standard = base64.alphabet( "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" )
@@ -307,55 +305,34 @@ function base64.encode( raw_str, options )
 end
 
 ---@param decode_map table<integer, integer>
----@param do_cache boolean
 ---@param cache_map table<integer, string> | nil
 ---@param uint8_1 integer
 ---@param uint8_2 integer
 ---@param uint8_3 integer | nil
 ---@param uint8_4 integer | nil
 ---@return string
-local function block_decode( decode_map, do_cache, cache_map, uint8_1, uint8_2, uint8_3, uint8_4 )
-    if do_cache then
-        local cache_key
-
-        if uint8_1 == nil then
-            error( "block must have at least one byte", 2 )
-        elseif uint8_3 == nil then
-            cache_key = uint8_1 * 0x1000000 + uint8_2 * 0x10000
-        elseif uint8_4 == nil then
-            cache_key = uint8_1 * 0x1000000 + uint8_2 * 0x10000 + uint8_3 * 0x100
-        else
-            cache_key = uint8_1 * 0x1000000 + uint8_2 * 0x10000 + uint8_3 * 0x100 + uint8_4
+local function block_decode( decode_map, cache_map, uint8_1, uint8_2, uint8_3, uint8_4 )
+    if cache_map == nil then
+        if uint8_3 == nil then
+            return string_char(
+                bit_extract(
+                    (decode_map[ uint8_1 ] * 0x40000) +
+                    (decode_map[ uint8_2 ] * 0x1000),
+                    16, 8 )
+            )
         end
 
-        ---@diagnostic disable-next-line: need-check-nil
-        local str_block = cache_map[ cache_key ]
-        if str_block ~= nil then
-            return str_block
+        if uint8_4 == nil then
+            local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
+                (decode_map[ uint8_2 ] * 0x1000) +
+                (decode_map[ uint8_3 ] * 0x40)
+
+            return string_char(
+                bit_extract( bit_sum, 16, 8 ),
+                bit_extract( bit_sum, 8, 8 )
+            )
         end
 
-        str_block = block_decode( decode_map, false, nil, uint8_1, uint8_2, uint8_3, uint8_4 )
-
-        cache_map[ cache_key ] = str_block
-
-        return str_block
-    elseif uint8_3 == nil then
-        local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
-            (decode_map[ uint8_2 ] * 0x1000)
-
-        return string_char(
-            bit_extract( bit_sum, 16, 8 )
-        )
-    elseif uint8_4 == nil then
-        local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
-            (decode_map[ uint8_2 ] * 0x1000) +
-            (decode_map[ uint8_3 ] * 0x40)
-
-        return string_char(
-            bit_extract( bit_sum, 16, 8 ),
-            bit_extract( bit_sum, 8, 8 )
-        )
-    else
         local bit_sum = (decode_map[ uint8_1 ] * 0x40000) +
             (decode_map[ uint8_2 ] * 0x1000) +
             (decode_map[ uint8_3 ] * 0x40) +
@@ -367,6 +344,27 @@ local function block_decode( decode_map, do_cache, cache_map, uint8_1, uint8_2, 
             bit_extract( bit_sum, 0, 8 )
         )
     end
+
+    local cache_key
+
+    if uint8_1 == nil then
+        error( "block must have at least one byte", 2 )
+    elseif uint8_3 == nil then
+        cache_key = (uint8_1 * 0x1000000) + (uint8_2 * 0x10000)
+    elseif uint8_4 == nil then
+        cache_key = (uint8_1 * 0x1000000) + (uint8_2 * 0x10000) + (uint8_3 * 0x100)
+    else
+        cache_key = (uint8_1 * 0x1000000) + (uint8_2 * 0x10000) + (uint8_3 * 0x100) + uint8_4
+    end
+
+    local str_block = cache_map[ cache_key ]
+    if str_block ~= nil then
+        return str_block
+    end
+
+    str_block = block_decode( decode_map, nil, uint8_1, uint8_2, uint8_3, uint8_4 )
+    cache_map[ cache_key ] = str_block
+    return str_block
 end
 
 --- [SHARED AND MENU]
@@ -389,11 +387,9 @@ function base64.decode( base64_str, options )
         perform_options( options )
     end
 
-    local decode_map = options.alphabet[ 2 ]
-    local do_cache = not options.ignore_cache
-
     local base_str_length = string_len( base64_str )
 
+    ---@type integer
     local remainder
 
     local str_pad = options.pad
@@ -416,112 +412,109 @@ function base64.decode( base64_str, options )
 
     end
 
-    local blocks, block_count = {}, 0
+    ---@type string[]
+    local blocks = {}
 
+    ---@type integer
+    local block_count = 0
+
+    local decode_map = options.alphabet[ 2 ]
     local cache_map
 
-    if do_cache then
+    if not options.ignore_cache then
         cache_map = options.decode_cache or {}
-    else
-        cache_map = nil
     end
 
     for i = 1, base_str_length, 4 do
         block_count = block_count + 1
-        blocks[ block_count ] = block_decode( decode_map, do_cache, cache_map, string_byte( base64_str, i, i + 3 ) )
+        blocks[ block_count ] = block_decode( decode_map, cache_map, string_byte( base64_str, i, i + 3 ) )
     end
 
     if remainder ~= 0 then
         block_count = block_count + 1
-        blocks[ block_count ] = block_decode( decode_map, do_cache, cache_map, string_byte( base64_str, base_str_length - 3, base_str_length - remainder ) )
+        blocks[ block_count ] = block_decode( decode_map, cache_map, string_byte( base64_str, base_str_length - 3, base_str_length - remainder ) )
     end
 
     return table_concat( blocks, "", 1, block_count )
 end
 
-do
-
-    local math_floor = std.math.floor
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the specified base64 encoded string is valid.
-    ---
-    ---@param base64_str string The base64 encoded string to check.
-    ---@param options? dreamwork.std.base64.Options The base64 encoding options.
-    ---@return boolean is_valid `true` if the base64 string is valid, `false` otherwise
-    ---@return nil | string err_msg The error message.
-    function base64.validate( base64_str, options )
-        if options == nil then
-            ---@diagnostic disable-next-line: cast-local-type
-            options = variants.standard
-        else
-            perform_options( options )
-        end
-
-        local base_str_length = string_len( base64_str )
-
-        local alphabet = options.alphabet[ 2 ]
-
-        local wrap = options.wrap
-        if wrap and wrap > 0 then
-            local eol = options.eol
-            if eol ~= nil then
-                local eol_length = string_len( eol )
-
-                local buffer_str = base64_str
-                base64_str = ""
-
-                local step_size = wrap + eol_length
-
-                for i = wrap, base_str_length, step_size do
-                    if string_sub( buffer_str, i + 1, i + eol_length ) == eol then
-                        local next_cursor = i + step_size
-                        if next_cursor > base_str_length then
-                            base64_str = base64_str .. string_sub( buffer_str, i - wrap + 1, i ) .. string_sub( buffer_str, i + eol_length + 1, base_str_length )
-                        else
-                            base64_str = base64_str .. string_sub( buffer_str, i - wrap + 1, i )
-                        end
-                    else
-                        return false, "invalid string eol"
-                    end
-                end
-
-                base_str_length = base_str_length - step_size * math_floor( base_str_length / step_size )
-            end
-        end
-
-        if base_str_length % 4 ~= 0 then
-            return false, "invalid string length"
-        end
-
-        local pad_byte
-
-        local pad = options.pad
-        if pad == nil then
-            pad_byte = -1
-        else
-            pad_byte = string_byte( pad, 1, 1 )
-        end
-
-        for start_position = 1, base_str_length, 4 do
-            local end_position = start_position + 3
-            local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( base64_str, start_position, end_position )
-
-            if not (alphabet[ uint8_1 ] and alphabet[ uint8_2 ]) then
-                return false, "string contains invalid characters"
-            end
-
-            if end_position == base_str_length then
-                if not ((alphabet[ uint8_3 ] or uint8_3 == pad_byte) and (alphabet[ uint8_4 ] or uint8_4 == pad_byte)) then
-                    return false, "string contains invalid characters"
-                end
-            elseif not (alphabet[ uint8_3 ] and alphabet[ uint8_4 ]) then
-                return false, "string contains invalid characters"
-            end
-        end
-
-        return true
+--- [SHARED AND MENU]
+---
+--- Checks if the specified base64 encoded string is valid.
+---
+---@param base64_str string The base64 encoded string to check.
+---@param options? dreamwork.std.base64.Options The base64 encoding options.
+---@return boolean is_valid `true` if the base64 string is valid, `false` otherwise
+---@return nil | string err_msg The error message.
+function base64.validate( base64_str, options )
+    if options == nil then
+        ---@diagnostic disable-next-line: cast-local-type
+        options = variants.standard
+    else
+        perform_options( options )
     end
 
+    local base_str_length = string_len( base64_str )
+
+    local wrap = options.wrap
+    if wrap ~= nil and wrap > 0 then
+        local eol = options.eol
+        if eol ~= nil then
+            local eol_length = string_len( eol )
+
+            local buffer_str = base64_str
+            base64_str = ""
+
+            local step_size = wrap + eol_length
+
+            for i = wrap, base_str_length, step_size do
+                if string_sub( buffer_str, i + 1, i + eol_length ) == eol then
+                    local next_cursor = i + step_size
+                    if next_cursor > base_str_length then
+                        base64_str = base64_str .. string_sub( buffer_str, i - wrap + 1, i ) .. string_sub( buffer_str, i + eol_length + 1, base_str_length )
+                    else
+                        base64_str = base64_str .. string_sub( buffer_str, i - wrap + 1, i )
+                    end
+                else
+                    return false, "invalid string eol"
+                end
+            end
+
+            base_str_length = base_str_length - step_size * math_floor( base_str_length / step_size )
+        end
+    end
+
+    if base_str_length % 4 ~= 0 then
+        return false, "invalid string length"
+    end
+
+    local pad_byte
+
+    local pad = options.pad
+    if pad == nil then
+        pad_byte = -1
+    else
+        pad_byte = string_byte( pad, 1, 1 )
+    end
+
+    local alphabet = options.alphabet[ 2 ]
+
+    for start_position = 1, base_str_length, 4 do
+        local end_position = start_position + 3
+        local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( base64_str, start_position, end_position )
+
+        if not (alphabet[ uint8_1 ] and alphabet[ uint8_2 ]) then
+            return false, "string contains invalid characters"
+        end
+
+        if end_position == base_str_length then
+            if not ((alphabet[ uint8_3 ] or uint8_3 == pad_byte) and (alphabet[ uint8_4 ] or uint8_4 == pad_byte)) then
+                return false, "string contains invalid characters"
+            end
+        elseif not (alphabet[ uint8_3 ] and alphabet[ uint8_4 ]) then
+            return false, "string contains invalid characters"
+        end
+    end
+
+    return true
 end

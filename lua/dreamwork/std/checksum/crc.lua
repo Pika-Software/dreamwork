@@ -1,5 +1,13 @@
+---@class dreamwork.GModUtilLib
+---@diagnostic disable-next-line: undefined-global
+local glua_util = util
+local util_CRC = glua_util ~= nil and glua_util.CRC
+
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local raw = std.raw
+local raw_tonumber = raw.tonumber
 
 local bit = std.bit
 local bit_bxor = bit.bxor
@@ -7,11 +15,11 @@ local bit_reverse = bit.reverse
 local bit_band, bit_bor = bit.band, bit.bor
 local bit_lshift, bit_rshift = bit.lshift, bit.rshift
 
-local class = std.class
-
 local string = std.string
 local string_len = string.len
 local string_byte = string.byte
+
+local class = std.class
 
 --- [SHARED AND MENU]
 ---
@@ -29,8 +37,6 @@ local string_byte = string.byte
 local CRC8 = class.base( "CRC8", false )
 
 CRC8.DigestSize = 1
-
----@alias CRC8 dreamwork.std.checksum.CRC8
 
 ---@param poly? integer The polynomial is used to calculate the checksum.
 ---@param init? integer The initial value of checksum.
@@ -213,8 +219,6 @@ end
 local CRC16 = class.base( "CRC16", false, CRC8Class )
 
 CRC16.DigestSize = 2
-
----@alias CRC16 dreamwork.std.checksum.CRC16
 
 ---@param poly? integer The polynomial is used to calculate the CRC-8 checksum.
 ---@param init? integer The initial value of the CRC-8 checksum.
@@ -408,8 +412,6 @@ local CRC32 = class.base( "CRC32", false, CRC16Class )
 
 CRC32.DigestSize = 4
 
----@alias CRC32 dreamwork.std.checksum.CRC32
-
 ---@param poly? integer The polynomial is used to calculate the CRC-8 checksum.
 ---@param init? integer The initial value of the CRC-8 checksum.
 ---@param ref_in? boolean `true` if the input CRC-8 checksum is reversed, otherwise `false`.
@@ -536,51 +538,44 @@ end
 local CRC32Class = class.create( CRC32 )
 std.CRC32 = CRC32Class
 
-do
+--- [SHARED AND MENU]
+---
+--- Calculates the CRC-32 checksum of the specified string.
+---
+---@param raw_str string The string is used to calculate checksum.
+---@param poly? integer The polynomial is used to calculate checksum.
+---@param init? integer The initial value is used to calculate checksum.
+---@param ref_in? boolean Whether to reflect the input data before processing.
+---@param ref_out? boolean Whether to reflect the output data after processing.
+---@param xor_out? integer The XOR value is used to calculate checksum.
+---@return integer checksum The CRC-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
+function CRC32Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
+    ref_in = ref_in ~= false
+    ref_out = ref_out ~= false
 
-    local engine_CRC32 = dreamwork.engine.CRC32
-    local raw_tonumber = std.raw.tonumber
-
-    --- [SHARED AND MENU]
-    ---
-    --- Calculates the CRC-32 checksum of the specified string.
-    ---
-    ---@param raw_str string The string is used to calculate checksum.
-    ---@param poly? integer The polynomial is used to calculate checksum.
-    ---@param init? integer The initial value is used to calculate checksum.
-    ---@param ref_in? boolean Whether to reflect the input data before processing.
-    ---@param ref_out? boolean Whether to reflect the output data after processing.
-    ---@param xor_out? integer The XOR value is used to calculate checksum.
-    ---@return integer checksum The CRC-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
-    function CRC32Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
-        ref_in = ref_in ~= false
-        ref_out = ref_out ~= false
-
-        if init == nil then
-            init = 0xFFFFFFFF
-        else
-            init = init % 0x100000000
-        end
-
-        if poly == nil then
-            poly = 0x04C11DB7
-        else
-            poly = poly % 0x100000000
-        end
-
-        if xor_out == nil then
-            xor_out = 0xFFFFFFFF
-        else
-            xor_out = xor_out % 0x100000000
-        end
-
-        if engine_CRC32 ~= nil and poly == 0x04C11DB7 and init == 0xFFFFFFFF and ref_in and ref_out and xor_out == 0xFFFFFFFF then
-            return raw_tonumber( engine_CRC32( raw_str ) or 0, 10 ) or 0
-        else
-            return CRC32Class( poly, init, ref_in, ref_out, xor_out ):update( raw_str ):digest()
-        end
+    if init == nil then
+        init = 0xFFFFFFFF
+    else
+        init = init % 0x100000000
     end
 
+    if poly == nil then
+        poly = 0x04C11DB7
+    else
+        poly = poly % 0x100000000
+    end
+
+    if xor_out == nil then
+        xor_out = 0xFFFFFFFF
+    else
+        xor_out = xor_out % 0x100000000
+    end
+
+    if util_CRC ~= nil and poly == 0x04C11DB7 and init == 0xFFFFFFFF and ref_in and ref_out and xor_out == 0xFFFFFFFF then
+        return raw_tonumber( util_CRC( raw_str ) or 0, 10 ) or 0
+    else
+        return CRC32Class( poly, init, ref_in, ref_out, xor_out ):update( raw_str ):digest()
+    end
 end
 
 --- [SHARED AND MENU]

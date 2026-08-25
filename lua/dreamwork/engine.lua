@@ -1600,11 +1600,6 @@ do
 
     if LUA_CLIENT or LUA_SERVER then
 
-        engine.CRC32 = glua_util.CRC
-        engine.MD5 = glua_util.MD5
-        engine.SHA1 = glua_util.SHA1
-        engine.SHA256 = glua_util.SHA256
-
         ---@type fun( network_name: string ): integer | nil
         local network_register = glua_util.AddNetworkString or debug_fempty
 
