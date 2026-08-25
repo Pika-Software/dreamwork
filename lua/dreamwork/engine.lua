@@ -27,6 +27,7 @@ local table_removeByValue = table.removeByValue
 
 local raw = std.raw
 local raw_pairs = raw.pairs
+local raw_select = raw.select
 
 local setmetatable = std.setmetatable
 local is = std.is
@@ -189,28 +190,19 @@ do
 
     end
 
-    local hook_listen_events
-    do
-
-        local select = std.select
-
-        --- [SHARED AND MENU]
-        ---
-        --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
-        ---
-        --- Note: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
-        ---
-        --- Note: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
-        ---
-        ---@param ... string The names of the events to listen for.
-        function hook_listen_events( ... )
-            for i = 1, select( "#", ... ), 1 do
-                listen_events[ select( i, ... ) ] = true
-            end
+    --- [SHARED AND MENU]
+    ---
+    --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
+    ---
+    --- Note: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
+    ---
+    --- Note: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
+    ---
+    ---@param ... string The names of the events to listen for.
+    function engine.hookListenEvents( ... )
+        for i = 1, raw_select( "#", ... ), 1 do
+            listen_events[ raw_select( i, ... ) ] = true
         end
-
-        engine.hookListenEvents = hook_listen_events
-
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
@@ -568,7 +560,7 @@ do
             end
 
             if source_events[ event_name ] ~= nil and listen_events[ event_name ] == nil then
-                hook_listen_events( event_name )
+                engine.hookListenEvents( event_name )
             end
 
             local identifiers = hook_identifiers[ event_name ]
