@@ -96,11 +96,16 @@ std.debug = debug
 ---@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
 ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
 ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
+---@overload fun( thread: thread, location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
 debug.getinfo = glua_debug.getinfo
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
 end
+
+local debug_getmetatable = debug.getmetatable
+local debug_getinfo = debug.getinfo
+local debug_fempty = debug.fempty
 
 --- [SHARED AND MENU]
 ---
@@ -112,9 +117,6 @@ end
 function debug.fcall( f, ... )
     return f( ... )
 end
-
-local debug_getmetatable = debug.getmetatable
-local debug_getinfo = debug.getinfo
 
 if debug.newproxy == nil then
 
@@ -142,6 +144,8 @@ if debug.newproxy == nil then
 
         return fake_userdata
     end
+
+    raw.print( "newproxy is missing, fallback created!" )
 
 end
 
@@ -269,169 +273,44 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the given function or stack level is a C function.
+--- Returns the path to the file that the function is defined in.
 ---
----@param location integer | function The function or stack level.
----@return boolean iscf `true` if the function is a C function, `false` otherwise.
-function debug.iscf( location )
-    if raw_type( location ) == "number" then
-        location = location + 1
+---@param f function | integer The function or stack level to get the path from.
+---@return string | nil file_path The file path or `nil` if not found.
+function debug.getfsource( f )
+    local info = debug_getinfo( f, "S" )
+    if info ~= nil then
+        return info.source
     end
 
-    local dbg_info = debug_getinfo( location, "S" )
-    if dbg_info == nil then
-        return false
-    end
-
-    local what = dbg_info.what
-    return not (what == "Lua" or what == "lua")
-end
-
-local registry
-
---- [SHARED AND MENU]
----
---- Returns the registry table.
----
----@diagnostic disable-next-line: duplicate-set-field
-function debug.getregistry()
-    return registry
+    return nil
 end
 
 --- [SHARED AND MENU]
 ---
---- Sets registry table.
+--- Returns the main function of the current stack.
 ---
---- **ATTENTION**
----
---- This function is extremly dangerous,
---- only reason why this exists is fact
---- that `getregistry` originally broken by cockpunch
---- and i cannot set locals over debug,
---- so only way to implement 3rd party moudles support
---- is implement this function :c
----
----@param tbl table
-function debug.setregistry( tbl )
-    if registry ~= nil then
-        for key, value in raw.pairs( registry ) do
-            local existing_value = raw_get( tbl, key )
-            if existing_value == nil or existing_value ~= value then
-                tbl[ key ] = value
-            end
-        end
-    end
-
-    registry = tbl
-    raw.set( std, "_R", tbl ) -- global _R alias support
-end
-
-debug.setregistry( (debug.getregistry or debug.fempty)() or std._R or {} )
-
-do
-
-    ---@diagnostic disable-next-line: undefined-global
-    local FindMetaTable = FindMetaTable
-
-    if FindMetaTable == nil then
-
-        function debug.findmetatable( name )
-            return registry[ name ]
-        end
-
+---@param stack_level? integer The stack `stack_level` to get the main function from.
+---@return function | nil main_fn The main function or `nil` if not found.
+function debug.getfmain( stack_level )
+    if stack_level == nil then
+        stack_level = 2
     else
-
-        --- [SHARED AND MENU]
-        ---
-        --- Returns the metatable of the given name or `nil` if not found.
-        ---
-        ---@param name string The name of the metatable.
-        ---@return dreamwork.std.Metatable | nil meta The metatable.
-        function debug.findmetatable( name )
-            local cached = registry[ name ]
-            if cached ~= nil then
-                return cached
-            end
-
-            local metatable = FindMetaTable( name )
-            if metatable ~= nil then
-                registry[ name ] = metatable
-                return metatable
-            end
-
-            return nil
-        end
-
+        stack_level = stack_level + 1
     end
 
-end
+    ::getfmain_loop::
 
-do
+    local info = debug_getinfo( stack_level, "fS" )
 
-    ---@type fun(name: string, tbl: dreamwork.std.Metatable)
-    ---@diagnostic disable-next-line: undefined-global
-    local RegisterMetaTable = RegisterMetaTable or debug.fempty
-
-    --- [SHARED AND MENU]
-    ---
-    --- Registers the metatable of the given name and table.
-    ---
-    ---@param name string The name of the metatable.
-    ---@param tbl dreamwork.std.Metatable The metatable to register.
-    ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
-    ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
-    function debug.registermetatable( name, tbl, do_full_register )
-        tbl = registry[ name ] or tbl
-        registry[ name ] = tbl
-
-        if do_full_register then
-            RegisterMetaTable( name, tbl )
-        end
-
-        return tbl.MetaID or -1
+    if info == nil then
+        return nil
+    elseif info.what == "main" then
+        return info.func
     end
 
-end
-
---- [SHARED AND MENU]
----
----
----@param name string The name of the metatable.
----@return dreamwork.std.Metatable metatable The metatable.
-function debug.initmetatable( name )
-    local metatable = debug.findmetatable( name )
-    if metatable == nil then
-        metatable = {}
-        debug.registermetatable( name, metatable, true )
-    end
-
-    return metatable
-end
-
-local fempty = debug.fempty
-
--- gmod developer/s sanity check
-if debug_getmetatable( fempty ) == nil then
-    debug.setmetatable( fempty, {} )
-end
-
-if debug_getmetatable( fempty ) == nil then
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the metatable of the given value or `nil` if not found.
-    ---
-    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
-    ---
-    ---@param value any The value.
-    ---@return dreamwork.std.Metatable | nil metatable The metatable.
-    ---@diagnostic disable-next-line: duplicate-set-field
-    function debug.getmetatable( value )
-        return debug_getmetatable( value ) or registry[ raw_type( value ) ]
-    end
-
-    raw.print( "at any cost, but we'll build it once again..." )
-
+    stack_level = stack_level + 1
+    goto getfmain_loop
 end
 
 --- [SHARED AND MENU]
@@ -495,52 +374,165 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the main function of the current stack.
+--- Checks if the given function or stack level is a C function.
 ---
----@param stack_level? integer The stack `stack_level` to get the main function from.
----@return function | nil main_fn The main function or `nil` if not found.
-function debug.getfmain( stack_level )
-    if stack_level == nil then
-        stack_level = 2
+---@param location integer | function The function or stack level.
+---@return boolean iscf `true` if the function is a C function, `false` otherwise.
+function debug.iscf( location )
+    if raw_type( location ) == "number" then
+        location = location + 1
+    end
+
+    local dbg_info = debug_getinfo( location, "S" )
+    if dbg_info == nil then
+        return false
+    end
+
+    local what = dbg_info.what
+    return not (what == "Lua" or what == "lua")
+end
+
+local registry
+
+--- [SHARED AND MENU]
+---
+--- Returns the registry table.
+---
+---@diagnostic disable-next-line: duplicate-set-field
+function debug.getregistry()
+    return registry
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets registry table.
+---
+--- **ATTENTION**
+---
+--- This function is extremly dangerous,
+--- only reason why this exists is fact
+--- that `getregistry` originally broken by cockpunch
+--- and i cannot set locals over debug,
+--- so only way to implement 3rd party moudles support
+--- is implement this function :c
+---
+---@param tbl table
+function debug.setregistry( tbl )
+    if registry ~= nil then
+        for key, value in raw.pairs( registry ) do
+            local existing_value = raw_get( tbl, key )
+            if existing_value == nil or existing_value ~= value then
+                tbl[ key ] = value
+            end
+        end
+    end
+
+    registry = tbl
+    raw.set( std, "_R", tbl ) -- global _R alias support
+end
+
+debug.setregistry( (debug.getregistry or debug_fempty)() or std._R or {} )
+
+do
+
+    ---@diagnostic disable-next-line: undefined-global
+    local FindMetaTable = FindMetaTable
+
+    if FindMetaTable == nil then
+
+        function debug.findmetatable( name )
+            return registry[ name ]
+        end
+
     else
-        stack_level = stack_level + 1
+
+        --- [SHARED AND MENU]
+        ---
+        --- Returns the metatable of the given name or `nil` if not found.
+        ---
+        ---@param name string The name of the metatable.
+        ---@return dreamwork.std.Metatable | nil meta The metatable.
+        function debug.findmetatable( name )
+            local cached = registry[ name ]
+            if cached ~= nil then
+                return cached
+            end
+
+            local metatable = FindMetaTable( name )
+            if metatable ~= nil then
+                registry[ name ] = metatable
+                return metatable
+            end
+
+            return nil
+        end
+
     end
 
-    ::getfmain_loop::
-
-    local info = debug_getinfo( stack_level, "fS" )
-
-    if info == nil then
-        return nil
-    elseif info.what == "main" then
-        return info.func
-    end
-
-    stack_level = stack_level + 1
-    goto getfmain_loop
 end
 
 do
 
-    local string_match = string.match
+    ---@type fun(name: string, tbl: dreamwork.std.Metatable)
+    ---@diagnostic disable-next-line: undefined-global
+    local RegisterMetaTable = RegisterMetaTable or debug_fempty
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the path to the file that the function is defined in.
+    --- Registers the metatable of the given name and table.
     ---
-    ---@param f function | integer The function or stack level to get the path from.
-    ---@return string | nil file_path The file path or `nil` if not found.
-    function debug.getfpath( f )
-        local info = debug_getinfo( f, "S" )
-        if info ~= nil then
-            local source = info.source
-            if source ~= nil then
-                local rel_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-                return "/workspace/" .. (string_match( rel_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or rel_path)
-            end
+    ---@param name string The name of the metatable.
+    ---@param tbl dreamwork.std.Metatable The metatable to register.
+    ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
+    ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
+    function debug.registermetatable( name, tbl, do_full_register )
+        tbl = registry[ name ] or tbl
+        registry[ name ] = tbl
+
+        if do_full_register then
+            RegisterMetaTable( name, tbl )
         end
 
-        return nil
+        return tbl.MetaID or -1
     end
+
+end
+
+--- [SHARED AND MENU]
+---
+---
+---@param name string The name of the metatable.
+---@return dreamwork.std.Metatable metatable The metatable.
+function debug.initmetatable( name )
+    local metatable = debug.findmetatable( name )
+    if metatable == nil then
+        metatable = {}
+        debug.registermetatable( name, metatable, true )
+    end
+
+    return metatable
+end
+
+-- gmod developer/s sanity check
+if debug_getmetatable( debug_fempty ) == nil then
+    debug.setmetatable( debug_fempty, {} )
+end
+
+if debug_getmetatable( debug_fempty ) == nil then
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the metatable of the given value or `nil` if not found.
+    ---
+    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
+    ---
+    ---@param value any The value.
+    ---@return dreamwork.std.Metatable | nil metatable The metatable.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function debug.getmetatable( value )
+        return debug_getmetatable( value ) or registry[ raw_type( value ) ]
+    end
+
+    raw.print( "at any cost, but we'll build it once again..." )
 
 end

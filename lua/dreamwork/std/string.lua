@@ -93,25 +93,25 @@ local string_char, string_byte = string.char, string.byte
 
 local pattern_bytes = string.PatternBytes
 
----@class dreamwork.std.string.byteMapRange
----@field [1] string The start byte of the range.
----@field [2] string The end byte of the range.
----@field [3] integer? The step size for the range.
+---@class dreamwork.std.string.ByteMapRange
+---@field leading_byte string The start byte of the range.
+---@field trailing_byte string The end byte of the range.
+---@field step_size integer? The step size for the range.
 
 --- [SHARED AND MENU]
 ---
 --- Creates a byte map from the given strings or byte ranges.
 ---
----@param ... string | dreamwork.std.string.byteMapRange A list of bytes or byte ranges to include in the map.
+---@param ... string | dreamwork.std.string.ByteMapRange A list of bytes or byte ranges to include in the map.
 ---@return table<integer, boolean> The byte map.
 function string.byteMap( ... )
     ---@type table<integer, boolean>
     local byte_map = {}
 
-    for i = 1, select( "#", ... ) do
+    for i = 1, select( "#", ... ), 1 do
         local value = select( i, ... )
         if isTable( value ) then
-            for j = string_byte( value[ 1 ] ), string_byte( value[ 2 ] ), (value[ 3 ] or 1) do
+            for j = string_byte( value.leading_byte ), string_byte( value.trailing_byte ), (value.step_size or 1) do
                 byte_map[ j ] = true
             end
         else

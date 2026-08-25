@@ -156,7 +156,8 @@ local FORBIDDEN_HOST_CODE_POINTS = string.byteMap(
 
 local FORBIDDEN_DOMAIN_CODE_POINTS = string.byteMap(
     "\0", "\t", "\n", "\r", " ", "#", "/", ":", "<", ">",
-    "?", "@", "[", "\\", "]", "^", "|", { "\0", "\x1F" },
+    "?", "@", "[", "\\", "]", "^", "|",
+    { leading_byte = "\0", trailing_byte = "\x1F" },
     "%", "\x7F"
 )
 
