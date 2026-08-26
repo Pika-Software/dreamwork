@@ -514,20 +514,20 @@ metatable.__sizeof = nil
 --- [SHARED AND MENU]
 ---
 --- Specifies what information to retrieve from `debug.getinfo`.
+---
 --- Each letter selects a group of fields to populate on the returned
---- `debuginfo` table; unrequested fields are left `nil`. Multiple
---- letters can be combined in a single string (e.g. `"nSl"`).
+--- `debuginfo` table; unrequested fields are left `nil`.
+---
+--- Multiple letters can be combined in a single string (e.g. `"nSl"`).
 ---
 ---@alias dreamwork.std.debug.InfoWhat string
+---|+"f" # Function value. Fills `func`.
+---|+"l" # Current line. Fills `currentline`.
+---|+"L" # Active lines. Fills `activelines`.
 ---|+"n" # Name info. Fills `name` and `namewhat`.
 ---|+"S" # Source info. Fills `source`, `short_src`, `linedefined`, `lastlinedefined`, and `what`.
----|+"l" # Current line. Fills `currentline`.
----|+"t" # Tail call flag. Fills `istailcall`.
 ---|+"u" # Upvalue/parameter info. Fills `nups`, `nparams`, and `isvararg`.
----|+"f" # Function value. Fills `func`.
----|+"r" # Transfer info (line/count hooks only). Fills `ftransfer` and `ntransfer`.
----|+"L" # Active lines. Fills `activelines`.
----|+">" # LuaJIT extension. Causes this function to use the last argument to get the data from, instead of treating it as a stack level; the function value is popped/consumed in the process. No fields of its own — combine with other letters (e.g. `">S"`).
+---|+">" # LuaJIT extension; causes this function to use the last argument to get the data from, instead of treating it as a stack level; the function value is popped/consumed in the process. No fields of its own — combine with other letters (e.g. `">S"`).
 
 --- [SHARED AND MENU]
 ---
@@ -544,13 +544,10 @@ metatable.__sizeof = nil
 ---@field lastlinedefined  integer | nil The line number where the definition of the function ends.
 ---@field what             string | nil  The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
 ---@field currentline      integer | nil The current line where the given function is executing. -1 when no line information is available.
----@field istailcall       boolean | nil `true` if this function invocation was called by a tail call. In this case, the caller of this level is not in the stack.
 ---@field nups             integer | nil The number of upvalues of the function.
 ---@field nparams          integer | nil The number of fixed parameters of the function (always 0 for C functions).
 ---@field isvararg         boolean | nil `true` if the function is a vararg function (always `true` for C functions).
 ---@field func             function | nil The function itself. Only valid when `what` includes `"f"`.
----@field ftransfer        integer | nil  The index of the first value transferred to the function (calls) or the first value returned from it (returns). Only valid for line and count events.
----@field ntransfer        integer | nil  The number of values transferred, as described in `ftransfer`. Only valid for line and count events.
 ---@field activelines      table<integer, ( true | nil )> | nil A set whose keys are the line numbers with associated code (i.e. valid lines for breakpoints); each present key maps to `true`. Only valid when `what` includes `"L"`.
 
 ---@class getregistry

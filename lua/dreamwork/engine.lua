@@ -362,7 +362,7 @@ do
         event_handlers[ "OnPauseMenuBlockedTooManyTimes" ] = handler_empty
         event_handlers[ "OnPermissionsChanged" ] = handler_empty
 
-        -- capture
+        -- video/audio capture
         event_handlers[ "CaptureVideo" ] = handler_empty
 
         -- workshop
