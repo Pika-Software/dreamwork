@@ -13,9 +13,12 @@ local string_match = string.match
 
 local class = std.class
 
+local coroutine = std.coroutine
+local coroutine_running = coroutine.running
+
 --- [SHARED AND MENU]
 ---
---- A specialized `dreamwork.std.Stack` that holds `dreamwork.std.debug.Info`
+--- A specialized `dreamwork.std.Stack` that holds `dreamwork.std.debug.StackLevel`
 --- call-stack frames captured via `debug.getstack`.
 ---
 --- Unlike a plain stack, `capture` is coalescing: instead of blindly
@@ -29,11 +32,11 @@ local class = std.class
 ---@class dreamwork.std.debug.Stack : dreamwork.std.Stack
 ---@field __class dreamwork.std.debug.StackClass
 ---@field __parent dreamwork.std.Stack
----@field push fun( self: dreamwork.std.debug.Stack, info: dreamwork.std.debug.Info ): integer
----@field pop fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.Info | nil
----@field peek fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.Info | nil
+---@field push fun( self: dreamwork.std.debug.Stack, info: dreamwork.std.debug.StackLevel ): integer
+---@field pop fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.StackLevel | nil
+---@field peek fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.StackLevel | nil
 ---@field size integer The size of the stack. **Read-only**
----@field private start integer The index of the first frame belonging to the most recent `capture` call, i.e. the "hop start". Used to bound how far back coalescing needs to compare.
+---@field protected start integer The index of the first frame belonging to the most recent `capture` call, i.e. the "hop start". Used to bound how far back coalescing needs to compare.
 local Stack = class.base( "debug.Stack", false, std.Stack )
 
 --- [SHARED AND MENU]
@@ -46,6 +49,9 @@ function Stack:__init()
     self.size = 0
 end
 
+---@class dreamwork.std.debug.StackLevel : dreamwork.std.debug.Info
+---@field thread thread | nil Thread of call, available only when called inside a coroutine.
+
 --- [SHARED AND MENU]
 ---
 --- Rewrites a captured frame's `source` field into a normalized,
@@ -56,8 +62,9 @@ end
 --- untouched.
 ---
 ---@param stack_level dreamwork.std.debug.Info The captured frame whose `source` field should be normalized.
----@return dreamwork.std.debug.Info stack_level The same frame that was passed in, mutated in place and returned for convenience.
+---@return dreamwork.std.debug.StackLevel stack_level The same frame that was passed in, mutated in place and returned for convenience.
 local function update_source( stack_level )
+    ---@cast stack_level dreamwork.std.debug.StackLevel
     local source = stack_level.source
 
     if source ~= nil and source ~= "=[C]" then
@@ -66,6 +73,7 @@ local function update_source( stack_level )
         stack_level.source = "/workspace/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
     end
 
+    stack_level.thread = coroutine_running()
     return stack_level
 end
 
@@ -88,8 +96,9 @@ end
 ---@param stack_level? integer  How many levels to skip to reach the caller (same meaning as the `level` argument of `debug.getstack`/`debug.getinfo`). Defaults to `2`, i.e. the function calling `capture`.
 ---@param head_skip? integer    Constant number of frames to drop from the innermost end of the capture (e.g. `1` to drop the bare `error` C frame).
 ---@param tail_skip? integer    Constant number of frames to drop from the outermost end of the capture (e.g. to drop your own `xpcall`/wrapper frames).
-function Stack:capture( stack_level, head_skip, tail_skip )
-    local levels, level_count = debug_getstack( (stack_level or 2) + 1, "Slnf", head_skip, tail_skip )
+---@param max_levels? integer   Maximum number of stack frames to read, counted from the innermost frame (after `head_skip` is applied). Stack walking stops as soon as this many frames have been captured, so frames further up (older/outer) are never read at all. `nil`/omitted means no limit.
+function Stack:capture( stack_level, head_skip, tail_skip, max_levels )
+    local levels, level_count = debug_getstack( (stack_level or 2) + 1, "Slnf", head_skip, tail_skip, max_levels )
     local stack_size = self.size
 
     if stack_size == 0 then

@@ -326,9 +326,10 @@ end
 ---@param what? dreamwork.std.debug.InfoWhat A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
 ---@param head_skip? integer Number of extra frames to skip from the top ( nearest the caller ) before capturing begins. Default is `0`.
 ---@param tail_skip? integer Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
+---@param max_levels? integer Maximum number of frames to read (after `head_skip` is applied). Stack walking stops as soon as this many frames have been collected, so no `debug.getinfo` call is made beyond that point. `tail_skip` is still applied afterward to this (already capped) set. `nil`/`0` means no limit.
 ---@return dreamwork.std.debug.Info[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
-function debug.getstack( stack_level, what, head_skip, tail_skip )
+function debug.getstack( stack_level, what, head_skip, tail_skip, max_levels )
     if what == nil then
         what = "Snluf"
     end
@@ -356,8 +357,10 @@ function debug.getstack( stack_level, what, head_skip, tail_skip )
         stack_length = stack_length + 1
         stack[ stack_length ] = info
 
-        stack_level = stack_level + 1
-        goto debug_getstack_loop
+        if max_levels == nil or stack_length < max_levels then
+            stack_level = stack_level + 1
+            goto debug_getstack_loop
+        end
     end
 
     if tail_skip ~= nil and tail_skip > 0 then
