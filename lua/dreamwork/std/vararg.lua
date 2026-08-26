@@ -11,6 +11,8 @@ local math_min, math_max = math.min, math.max
 local table = std.table
 local table_unpack = table.unpack
 
+local tostring = std.tostring
+
 --- [SHARED AND MENU]
 ---
 --- Provides utility functions for selecting, accessing, modifying, slicing,
@@ -207,4 +209,28 @@ function vararg.unpack( tbl )
     end
 
     return table_unpack( tbl, 1, size )
+end
+
+--- [SHARED AND MENU]
+---
+--- Concatenates all given values into a single string, separated by `sep`.
+---
+--- Each value is converted to a string using `tostring` before being joined.
+---
+---@param sep string The separator to insert between each concatenated value.
+---@param ... any The values to concatenate (converted via `tostring`).
+---@return string str The resulting concatenated string.
+function vararg.concat( sep, ... )
+    local str
+
+    for i = 1, raw_select( "#", ... ), 1 do
+        local value = tostring( raw_select( i, ... ) )
+        if i == 1 then
+            str = value
+        else
+            str = str .. sep .. value
+        end
+    end
+
+    return str
 end
