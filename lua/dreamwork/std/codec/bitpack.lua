@@ -17,7 +17,7 @@ local len = std.len
 --- Library that packs/unpacks types as bit sequences.
 ---
 ---@class dreamwork.std.bits
-local bitpack = std.bitpack or {}
+local bitpack = {}
 std.bitpack = bitpack
 
 ---@alias dreamwork.std.bitpack.Sequence boolean[] The sequence of bits (booleans).
@@ -255,5 +255,3 @@ do
     end
 
 end
-
--- TODO: Reader/Writer like https://github.com/Nak2/NikNaks/blob/main/lua/niknaks/modules/sh_bitbuffer.lua
