@@ -2,6 +2,8 @@
 local std = dreamwork.std
 
 local string = std.string
+local string_format = string.format
+
 local class = std.class
 
 --- [SHARED AND MENU]
@@ -23,7 +25,7 @@ local Stack = class.base( "Stack", false, nil )
 ---@return string
 ---@protected
 function Stack:__represent()
-    return string.format( "%s: %p [%d]", self.__type, self, self.size )
+    return string_format( "%s: %p [%d]", self.__type, self, self.size )
 end
 
 ---@return boolean

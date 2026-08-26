@@ -15,8 +15,8 @@ local class = std.class
 ---@field __class dreamwork.std.Adler32Class
 ---@field DigestSize integer The size of the checksum in bytes.
 ---@field BlockSize integer The block size in bytes.
----@field private a integer The first part of the checksum.
----@field private b integer The second part of the checksum.
+---@field protected a integer The first part of the checksum.
+---@field protected b integer The second part of the checksum.
 local Adler32 = class.base( "Adler32", false )
 
 Adler32.DigestSize = 4

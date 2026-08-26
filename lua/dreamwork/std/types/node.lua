@@ -5,6 +5,8 @@ local table = std.table
 local table_remove = table.remove
 
 local string = std.string
+local string_format = string.format
+
 local class = std.class
 
 --- [SHARED AND MENU]
@@ -30,7 +32,7 @@ local Node = class.base( "Node", false, nil )
 ---@return string
 ---@protected
 function Node:__represent()
-    return string.format( "Node: %p [%s][%d]", self, self.value, self.depth )
+    return string_format( "Node: %p [%s][%d]", self, self.value, self.depth )
 end
 
 ---@return boolean

@@ -193,7 +193,7 @@ do
     ---
     ---@generic T : dreamwork.std.Object
     ---@param base T The base object, aka metatable.
-    ---@return T object The new object.
+    ---@return T obj The new object.
     local function class_new( base )
         if raw_get( base, "__private" ) then
             ---@diagnostic disable-next-line: return-type-mismatch
@@ -208,7 +208,7 @@ do
     class.new = class_new
 
     ---@param self dreamwork.std.Class The class.
-    ---@return dreamwork.std.Object object The new object.
+    ---@return dreamwork.std.Object obj The new object.
     function class__call( self, ... )
         ---@type dreamwork.std.Object | nil
         local obj
@@ -287,23 +287,19 @@ end
 ---
 --- Checks if the value is an instance of the given class.
 ---
----@param object dreamwork.std.Object The object to check for being an instance of the given class.
+---@param obj dreamwork.std.Object The object to check for being an instance of the given class.
 ---@param cls dreamwork.std.Class | dreamwork.std.Object The class to check against.
----@return boolean is_instance `true` if `object` is an instance of the given class, `false` otherwise.
-function class.isInherited( object, cls )
-    local metatable = debug_getmetatable( object )
-    if metatable == nil then
-        return false
-    end
+---@return boolean is_instance `true` if `obj` is an instance of the given class, `false` otherwise.
+function class.isInherited( obj, cls )
+    local obj_base = debug_getmetatable( obj )
+    local cls_base = raw_get( cls, "__base" )
 
-    local base = raw_get( cls, "__base" )
-
-    while base ~= nil do
-        if metatable == base then
+    while obj_base ~= nil do
+        if obj_base == cls_base then
             return true
         end
 
-        base = debug_getmetatable( base )
+        obj_base = raw_get( obj_base, "__parent" )
     end
 
     return false

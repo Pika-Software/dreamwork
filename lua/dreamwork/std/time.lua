@@ -4,23 +4,25 @@
 ---@field DST boolean `true` if the current date is in DST, `false` if not. **READ ONLY**
 local std = dreamwork.std
 
-local os = std.os
-
-local os_time = os.time
-local os_date = os.date
+local raw = std.raw
+local raw_tonumber = raw.tonumber
 
 local math = std.math
 local math_min = math.min
 local math_floor = math.floor
 
-local string = std.string
+local os = std.os
+local os_time = os.time
+local os_date = os.date
 
+local table = std.table
+local table_concat = table.concat
+
+local string = std.string
 local string_format = string.format
 local string_len, string_sub = string.len, string.sub
 local string_byte, string_char = string.byte, string.char
 
-local table_concat = std.table.concat
-local raw_tonumber = std.raw.tonumber
 
 --- [SHARED AND MENU]
 ---

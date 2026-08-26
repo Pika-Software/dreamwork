@@ -1,11 +1,14 @@
 local glua_coroutine = coroutine
 
-local coroutine_yield = coroutine.yield
-local coroutine_status = coroutine.status
-local coroutine_running = coroutine.running
+local coroutine_yield = glua_coroutine.yield
+local coroutine_status = glua_coroutine.status
+local coroutine_running = glua_coroutine.running
 
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local time = std.time
+local time_elapsed = time.elapsed
 
 --- [SHARED AND MENU]
 ---
@@ -26,6 +29,7 @@ local coroutine = {
     status = coroutine_status,
     wrap = glua_coroutine.wrap,
     yield = coroutine_yield,
+
     ---@diagnostic disable-next-line: deprecated
     isyieldable = glua_coroutine.isyieldable,
 }
@@ -50,8 +54,6 @@ if glua_coroutine.isyieldable == nil then
     end
 
 end
-
-local time_elapsed = std.time.elapsed
 
 --- [SHARED AND MENU]
 ---

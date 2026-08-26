@@ -2,6 +2,8 @@
 local std = dreamwork.std
 
 local string = std.string
+local string_format = string.format
+
 local class = std.class
 
 --- [SHARED AND MENU]
@@ -28,7 +30,7 @@ local Queue = class.base( "Queue", false, nil )
 ---@return string
 ---@protected
 function Queue:__represent()
-    return string.format( "%s: %p [%d]", self.__type, self, self.front - self.back )
+    return string_format( "%s: %p [%d]", self.__type, self, self.front - self.back )
 end
 
 ---@return boolean
