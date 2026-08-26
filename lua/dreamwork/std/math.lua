@@ -221,62 +221,11 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if a number is a byte (8-bit).
----
----@param x number The number to check.
----@param signed boolean `true` if the number is signed, otherwise `false`.
----@return boolean is_byte `true` if the number is an integer, otherwise `false`.
-function math.isByte( x, signed )
-    if (x % 1) ~= 0 then
-        return false
-    elseif signed then
-        return x >= -128 and x <= 127
-    else
-        return x >= 0 and x <= 255
-    end
-end
-
---- [SHARED AND MENU]
----
---- Checks if a number is a short integer (16-bit).
----
----@param x number The number to check.
----@param signed boolean `true` if the number is signed, otherwise `false`.
----@return boolean is_short `true` if the number is an integer, otherwise `false`.
-function math.isShort( x, signed )
-    if (x % 1) ~= 0 then
-        return false
-    elseif signed then
-        return x >= -32768 and x <= 32767
-    else
-        return x >= 0 and x <= 65535
-    end
-end
-
---- [SHARED AND MENU]
----
---- Checks if a number is a long integer (32-bit).
----
----@param x number The number to check.
----@param signed boolean `true` if the number is signed, otherwise `false`.
----@return boolean is_long `true` if the number is an integer, otherwise `false`.
-function math.isLong( x, signed )
-    if (x % 1) ~= 0 then
-        return false
-    elseif signed then
-        return x >= -2147483648 and x <= 2147483647
-    else
-        return x >= 0 and x <= 4294967295
-    end
-end
-
---- [SHARED AND MENU]
----
 --- Checks if a number is an unsigned integer.
 ---
 ---@param x number The number to check.
 ---@return boolean is_uint `true` if the number is an integer, otherwise `false`.
-function math.isUInt( x )
+function math.isUnsignedInteger( x )
     return x >= 0 and (x % 1) == 0
 end
 
@@ -286,28 +235,18 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_int `true` if the number is an integer, otherwise `false`.
-function math.isInt( x )
+function math.isInteger( x )
     return (x % 1) == 0
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if a number is a float (32-bit).
+--- Checks if a number is a float point number.
 ---
 ---@param x number The number to check.
 ---@return boolean is_float `true` if the number is a float, otherwise `false`.
 function math.isFloat( x )
-    return (x % 1) ~= 0 and x >= 1.175494351E-38 and x <= 3.402823466E+38
-end
-
---- [SHARED AND MENU]
----
---- Checks if a number is a double.
----
----@param x number The number to check.
----@return boolean is_double `true` if the number is a double, otherwise `false`.
-function math.isDouble( x )
-    return (x % 1) ~= 0 and (x < 1.175494351E-38 or x > 3.402823466E+38)
+    return (x % 1) ~= 0
 end
 
 --- [SHARED AND MENU]
