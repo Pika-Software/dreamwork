@@ -42,7 +42,6 @@ local debug = std.debug or {
     getregistry = glua_debug.getregistry,
     traceback = glua_debug.traceback,
 
-    getlocal = glua_debug.getlocal,
     setlocal = glua_debug.setlocal,
 
     getmetatable = glua_debug.getmetatable or std.getmetatable,
@@ -102,6 +101,10 @@ std.debug = debug
 ---@overload fun( thread: thread, location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
 ---@overload fun( thread: thread, location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
 debug.getinfo = glua_debug.getinfo
+
+---@overload fun( stack_level: integer, index: integer ): string, any
+---@overload fun( thread: thread, stack_level: integer, index: integer ): string, any
+debug.getlocal = glua_debug.getlocal
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
@@ -330,10 +333,6 @@ end
 ---@return dreamwork.std.debug.Info[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
 function debug.getstack( stack_level, what, head_skip, tail_skip, max_levels )
-    if what == nil then
-        what = "Snluf"
-    end
-
     if stack_level == nil then
         stack_level = 2
     else
