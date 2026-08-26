@@ -1621,17 +1621,17 @@ end
 dofile( "dreamwork/std/types/big_integer.lua" )
 sendfile( "dreamwork/std/types/big_integer.lua" )
 
--- BigFixed class
-dofile( "dreamwork/std/types/big_fixed.lua" )
-sendfile( "dreamwork/std/types/big_fixed.lua" )
+-- -- BigFixed class
+-- dofile( "dreamwork/std/types/big_fixed.lua" )
+-- sendfile( "dreamwork/std/types/big_fixed.lua" )
 
--- ByteReader class
-dofile( "dreamwork/std/types/binary_reader.lua" )
-sendfile( "dreamwork/std/types/binary_reader.lua" )
+-- -- ByteReader class
+-- dofile( "dreamwork/std/types/binary_reader.lua" )
+-- sendfile( "dreamwork/std/types/binary_reader.lua" )
 
--- ByteWriter class
-dofile( "dreamwork/std/types/binary_writer.lua" )
-sendfile( "dreamwork/std/types/binary_writer.lua" )
+-- -- ByteWriter class
+-- dofile( "dreamwork/std/types/binary_writer.lua" )
+-- sendfile( "dreamwork/std/types/binary_writer.lua" )
 
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
@@ -2426,28 +2426,28 @@ do
 
     end
 
-    -- if LUA_CLIENT_MENU then
+    if LUA_CLIENT_MENU then
 
-    --     local system_HasFocus = glua_system.HasFocus
-    --     if system_HasFocus ~= nil then
+        local system_HasFocus = glua_system.HasFocus
+        if system_HasFocus ~= nil then
 
-    --         ---@class dreamwork.std.window
-    --         ---@field focus boolean `true` if the game's window has focus, `false` otherwise.
-    --         local window = std.window
+            ---@class dreamwork.std.window
+            ---@field focus boolean `true` if the game's window has focus, `false` otherwise.
+            local window = std.window
 
-    --         local has_focus = system_HasFocus()
-    --         window.focus = has_focus
+            local has_focus = system_HasFocus()
+            window.focus = has_focus
 
-    --         dreamwork.TickTimer0_05:attach( function()
-    --             if has_focus ~= system_HasFocus() then
-    --                 has_focus = not has_focus
-    --                 window.focus = has_focus
-    --             end
-    --         end, "dreamwork::window_focus" )
+            dreamwork.TickTimer0_05:attach( function()
+                if has_focus ~= system_HasFocus() then
+                    has_focus = not has_focus
+                    window.focus = has_focus
+                end
+            end, "dreamwork::window_focus" )
 
-    --     end
+        end
 
-    -- end
+    end
 
 end
 
