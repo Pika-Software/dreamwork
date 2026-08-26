@@ -374,7 +374,7 @@ end
 ---
 ---@param value any The value to get the string representation of.
 ---@return string str The string representation of the given value.
-local function represent( value )
+function std.represent( value )
     ---@type fun( value: any ): string
     local fn = debug_getmetavalue( value, "__represent" )
     if fn == nil then
@@ -383,8 +383,6 @@ local function represent( value )
         return fn( value )
     end
 end
-
-std.represent = represent
 
 --- [SHARED AND MENU]
 ---
@@ -588,8 +586,8 @@ sendfile( "dreamwork/std/math.lua" )
 
 ---@class dreamwork.std.math
 local math = std.math
-local math_min = math.min
 local math_relative = math.relative
+local math_min, math_max = math.min, math.max
 
 --- [SHARED AND MENU]
 ---
@@ -810,10 +808,6 @@ end
 dofile( "dreamwork/std/bit.lua" )
 sendfile( "dreamwork/std/bit.lua" )
 
--- fnv hash functions
-dofile( "dreamwork/std/string.fnv.lua" )
-sendfile( "dreamwork/std/string.fnv.lua" )
-
 -- symbols
 dofile( "dreamwork/std/types/symbol.lua" )
 sendfile( "dreamwork/std/types/symbol.lua" )
@@ -821,64 +815,6 @@ sendfile( "dreamwork/std/types/symbol.lua" )
 -- class library
 dofile( "dreamwork/std/class.lua" )
 sendfile( "dreamwork/std/class.lua" )
-
--- bytepack library
-dofile( "dreamwork/std/codec/bytepack.lua" )
-sendfile( "dreamwork/std/codec/bytepack.lua" )
-
-local bytepack = std.bytepack
-
--- bitpack library
-dofile( "dreamwork/std/codec/bitpack.lua" )
-sendfile( "dreamwork/std/codec/bitpack.lua" )
-
--- crc checksum clases
-dofile( "dreamwork/std/checksum/crc.lua" )
-sendfile( "dreamwork/std/checksum/crc.lua" )
-
--- adler checksum classes
-dofile( "dreamwork/std/checksum/adler.lua" )
-sendfile( "dreamwork/std/checksum/adler.lua" )
-
--- fletcher checksum library
-dofile( "dreamwork/std/checksum/fletcher.lua" )
-sendfile( "dreamwork/std/checksum/fletcher.lua" )
-
--- base16 encoding library
-dofile( "dreamwork/std/codec/base16.lua" )
-sendfile( "dreamwork/std/codec/base16.lua" )
-
--- base32 encoding library
-dofile( "dreamwork/std/codec/base32.lua" )
-sendfile( "dreamwork/std/codec/base32.lua" )
-
--- base64 encoding library
-dofile( "dreamwork/std/codec/base64.lua" )
-sendfile( "dreamwork/std/codec/base64.lua" )
-
--- utf8 encoding library
-dofile( "dreamwork/std/codec/utf8.lua" )
-sendfile( "dreamwork/std/codec/utf8.lua" )
-
--- utf16 encoding library
-dofile( "dreamwork/std/codec/utf16.lua" )
-sendfile( "dreamwork/std/codec/utf16.lua" )
-
--- utf32 encoding library
-dofile( "dreamwork/std/codec/utf32.lua" )
-sendfile( "dreamwork/std/codec/utf32.lua" )
-
--- unicode encoding library
-dofile( "dreamwork/std/codec/unicode.lua" )
-sendfile( "dreamwork/std/codec/unicode.lua" )
-
--- percent encoding library
-dofile( "dreamwork/std/codec/percent.lua" )
-sendfile( "dreamwork/std/codec/percent.lua" )
-
--- punycode encoding library
-dofile( "dreamwork/std/codec/punycode.lua" )
-sendfile( "dreamwork/std/codec/punycode.lua" )
 
 do
 
@@ -931,13 +867,33 @@ do
 
 end
 
--- queue class
-dofile( "dreamwork/std/types/queue.lua" )
-sendfile( "dreamwork/std/types/queue.lua" )
+-- bitpack library
+dofile( "dreamwork/std/codec/bitpack.lua" )
+sendfile( "dreamwork/std/codec/bitpack.lua" )
+
+-- bytepack library
+dofile( "dreamwork/std/codec/bytepack.lua" )
+sendfile( "dreamwork/std/codec/bytepack.lua" )
+
+-- string library ( extension )
+dofile( "dreamwork/std/string.ext.lua" )
+sendfile( "dreamwork/std/string.ext.lua" )
+
+-- ipv4 library
+dofile( "dreamwork/std/ipv4.lua" )
+sendfile( "dreamwork/std/ipv4.lua" )
+
+-- ipv6 class
+dofile( "dreamwork/std/ipv6.lua" )
+sendfile( "dreamwork/std/ipv6.lua" )
 
 -- stack class
 dofile( "dreamwork/std/types/stack.lua" )
 sendfile( "dreamwork/std/types/stack.lua" )
+
+-- queue class
+dofile( "dreamwork/std/types/queue.lua" )
+sendfile( "dreamwork/std/types/queue.lua" )
 
 -- node class
 dofile( "dreamwork/std/types/node.lua" )
@@ -946,6 +902,54 @@ sendfile( "dreamwork/std/types/node.lua" )
 -- version class
 dofile( "dreamwork/std/types/version.lua" )
 sendfile( "dreamwork/std/types/version.lua" )
+
+-- crc checksum clases
+dofile( "dreamwork/std/checksum/crc.lua" )
+sendfile( "dreamwork/std/checksum/crc.lua" )
+
+-- adler checksum classes
+dofile( "dreamwork/std/checksum/adler.lua" )
+sendfile( "dreamwork/std/checksum/adler.lua" )
+
+-- fletcher checksum library
+dofile( "dreamwork/std/checksum/fletcher.lua" )
+sendfile( "dreamwork/std/checksum/fletcher.lua" )
+
+-- base16 encoding library
+dofile( "dreamwork/std/codec/base16.lua" )
+sendfile( "dreamwork/std/codec/base16.lua" )
+
+-- base32 encoding library
+dofile( "dreamwork/std/codec/base32.lua" )
+sendfile( "dreamwork/std/codec/base32.lua" )
+
+-- base64 encoding library
+dofile( "dreamwork/std/codec/base64.lua" )
+sendfile( "dreamwork/std/codec/base64.lua" )
+
+-- utf8 encoding library
+dofile( "dreamwork/std/codec/utf8.lua" )
+sendfile( "dreamwork/std/codec/utf8.lua" )
+
+-- utf16 encoding library
+dofile( "dreamwork/std/codec/utf16.lua" )
+sendfile( "dreamwork/std/codec/utf16.lua" )
+
+-- utf32 encoding library
+dofile( "dreamwork/std/codec/utf32.lua" )
+sendfile( "dreamwork/std/codec/utf32.lua" )
+
+-- unicode encoding library
+dofile( "dreamwork/std/codec/unicode.lua" )
+sendfile( "dreamwork/std/codec/unicode.lua" )
+
+-- percent encoding library
+dofile( "dreamwork/std/codec/percent.lua" )
+sendfile( "dreamwork/std/codec/percent.lua" )
+
+-- punycode encoding library
+dofile( "dreamwork/std/codec/punycode.lua" )
+sendfile( "dreamwork/std/codec/punycode.lua" )
 
 -- time library
 dofile( "dreamwork/std/time.lua" )
@@ -960,6 +964,10 @@ end
 -- coroutine library
 dofile( "dreamwork/std/coroutine.lua" )
 sendfile( "dreamwork/std/coroutine.lua" )
+
+-- debug stack class
+dofile( "dreamwork/std/types/debug_stack.lua" )
+sendfile( "dreamwork/std/types/debug_stack.lua" )
 
 -- buffer library
 dofile( "dreamwork/std/codec/buffer.lua" )
@@ -998,201 +1006,6 @@ do
         end
 
         timer_Simple( delay or 0, fn )
-    end
-
-end
-
-do
-
-    local bytepack_writeHex8 = bytepack.writeHex8
-
-    ---@type table<integer, string>
-    local escape_sequences = {
-        [ 0x5C ] = "\\\\",
-        [ 0x07 ] = "\\a",
-        [ 0x08 ] = "\\b",
-        [ 0x0C ] = "\\f",
-        [ 0x0A ] = "\\n",
-        [ 0x0D ] = "\\r",
-        [ 0x09 ] = "\\t",
-        [ 0x0B ] = "\\v",
-        [ 0x22 ] = "\\\"",
-        [ 0x27 ] = "\\\'"
-    }
-
-    --- [SHARED AND MENU]
-    ---
-    --- Escapes special characters in a string.
-    ---
-    ---@param str string The string to escape.
-    ---@param start_position? integer The start index.
-    ---@param end_position? integer The end index.
-    ---@param encode_spaces? boolean Whether to encode spaces.
-    ---@return string escaped_str The escaped string.
-    function string.escape( str, start_position, end_position, encode_spaces )
-        ---@type integer
-        local str_length = string_len( str )
-
-        if str_length == 0 then
-            return str
-        end
-
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
-
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        local sequence_position = start_position
-        local segments, segment_count = {}, 0
-
-        local in_range = encode_spaces and 0x21 or 0x20
-
-        for index = start_position, end_position, 1 do
-            local uint8 = string_byte( str, index, index )
-            local escape_sequence = escape_sequences[ uint8 ]
-            if escape_sequence ~= nil then
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_sub( str, sequence_position, index - 1 ) .. escape_sequence
-                sequence_position = index + 1
-            elseif uint8 < in_range or uint8 > 0x7F then
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_sub( str, sequence_position, index - 1 ) .. string_char( 0x5C, 0x78, bytepack_writeHex8( uint8 ) )
-                sequence_position = index + 1
-            end
-        end
-
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, sequence_position, end_position )
-
-        return table_concat( segments, "", 1, segment_count )
-    end
-
-end
-
-do
-
-    local bytepack_readHex8 = bytepack.readHex8
-
-    ---@type table<integer, string>
-    local unescape_sequences = {
-        [ 0x5C ] = "\\",
-        [ 0x61 ] = "\a",
-        [ 0x62 ] = "\b",
-        [ 0x66 ] = "\f",
-        [ 0x6E ] = "\n",
-        [ 0x72 ] = "\r",
-        [ 0x74 ] = "\t",
-        [ 0x76 ] = "\v",
-        [ 0x22 ] = "\"",
-        [ 0x27 ] = "\'"
-    }
-
-    --- [SHARED AND MENU]
-    ---
-    --- Unescapes special characters in a string.
-    ---
-    ---@param escaped_str string The string to unescape.
-    ---@param start_position? integer The start index.
-    ---@param end_position? integer The end index.
-    ---@return string str The unescaped string.
-    function string.unescape( escaped_str, start_position, end_position )
-        ---@type integer
-        local str_length = string_len( escaped_str )
-
-        if str_length == 0 then
-            return escaped_str
-        end
-
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
-
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        local segments, segment_count = {}, 0
-
-        while true do
-            local uint8_1 = string_byte( escaped_str, start_position, start_position )
-            if uint8_1 == nil then
-                break
-            end
-
-            segment_count = segment_count + 1
-
-            if uint8_1 == 0x5C --[[ "\" ]] then
-                start_position = start_position + 1
-
-                local uint8_2 = string_byte( escaped_str, start_position, start_position )
-                if uint8_2 == nil then
-                    segments[ segment_count ] = string_char( uint8_1 )
-                    break
-                elseif uint8_2 == 0x78 --[[ "x" ]] then
-                    start_position = start_position + 1
-
-                    local uint8_3, uint8_4 = string_byte( escaped_str, start_position, start_position + 1 )
-                    if uint8_3 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2 )
-                        break
-                    elseif uint8_4 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3 )
-                        break
-                    end
-
-                    start_position = start_position + 1
-
-                    local decoded_uint8 = bytepack_readHex8( uint8_3, uint8_4 )
-                    if decoded_uint8 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3, uint8_4 )
-                    else
-                        segments[ segment_count ] = string_char( decoded_uint8 )
-                    end
-                else
-                    local unescape_sequence = unescape_sequences[ uint8_2 ]
-                    if unescape_sequence == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2 )
-                    else
-                        segments[ segment_count ] = unescape_sequence
-                    end
-                end
-            else
-                segments[ segment_count ] = string_char( uint8_1 )
-            end
-
-            if start_position == end_position then
-                break
-            else
-                start_position = start_position + 1
-            end
-        end
-
-        if segment_count == 0 then
-            return ""
-        elseif segment_count == 1 then
-            return segments[ 1 ]
-        else
-            return table_concat( segments, "", 1, segment_count )
-        end
     end
 
 end
@@ -1270,14 +1083,13 @@ end
 do
 
     local debug_registermetatable = debug.registermetatable
-
     local debug_getmetatable = debug.getmetatable
     local debug_setmetatable = debug.setmetatable
 
     -- nil ( 0 )
     do
 
-        ---@class dreamwork.Nil : dreamwork.std.Metatable
+        ---@class dreamwork.std.Nil : dreamwork.std.Metatable
         local Nil = debug_getmetatable( nil )
 
         if Nil == nil then
@@ -1288,6 +1100,7 @@ do
         debug_registermetatable( "nil", Nil )
 
         Nil.__type = "nil"
+        std.Nil = Nil
 
         ---@private
         function Nil.__toboolean()
@@ -1311,14 +1124,12 @@ do
             return value == nil
         end
 
-        std.Nil = Nil
-
     end
 
     -- boolean ( 1 )
     do
 
-        ---@class dreamwork.Boolean : dreamwork.std.Metatable
+        ---@class dreamwork.std.Boolean : dreamwork.std.Metatable
         local Boolean = debug_getmetatable( false )
 
         if Boolean == nil then
@@ -1329,6 +1140,7 @@ do
         debug_registermetatable( "boolean", Boolean )
 
         Boolean.__type = "boolean"
+        std.Boolean = Boolean
 
         ---@param value boolean
         ---@private
@@ -1363,14 +1175,12 @@ do
             return value == true or value == false
         end
 
-        std.Boolean = Boolean
-
     end
 
     -- number ( 3 )
     do
 
-        ---@class dreamwork.Number : dreamwork.std.Metatable
+        ---@class dreamwork.std.Number : dreamwork.std.Metatable
         local Number = debug_getmetatable( 0 )
 
         if Number == nil then
@@ -1381,6 +1191,7 @@ do
         debug_registermetatable( "number", Number )
 
         Number.__type = "number"
+        std.Number = Number
 
         ---@param value number
         ---@private
@@ -1400,6 +1211,16 @@ do
             return value
         end
 
+        ---@return string
+        ---@private
+        function Number:__represent()
+            if (self % 1) == 0 then
+                return string_format( "integer: %p [%d]", self, self )
+            end
+
+            return string_format( "number: %p [%d]", self, self )
+        end
+
         do
 
             local math_ceil, math_log, math_isFinite = math.ceil, math.log, math.isFinite
@@ -1410,15 +1231,18 @@ do
             function Number.__len( value )
                 if math_isFinite( value ) then
                     if (value % 1) == 0 then
-                        return math_ceil( math_log( value + 1 ) / math_ln2 ) + (value < 0 and 1 or 0)
+                        return math_ceil( (
+                            math_ceil( math_log( value + 1 ) / math_ln2 ) +
+                            (((1 / value) > 0) and 1 or 0)
+                        ) / 8 )
                     elseif value >= 1.175494351E-38 and value <= 3.402823466E+38 then
-                        return 32
-                    else
-                        return 64
+                        return 4
                     end
-                else
-                    return 0
+
+                    return 8
                 end
+
+                return 0
             end
 
         end
@@ -1433,13 +1257,34 @@ do
             return debug_getmetatable( value ) == Number
         end
 
-        std.Number = Number
+        ---@class dreamwork.std.Integer : dreamwork.std.Metatable
+        local Integer = debug.initmetatable( "Integer" )
+        Integer.__type = "integer"
+        std.Integer = Integer
+
+        std.setmetatable( Integer, {
+            ---@param value number
+            __eq = function( _, value )
+                return (value % 1) == 0
+            end
+        } )
+
+        --- [SHARED AND MENU]
+        ---
+        --- Checks whether the value type is a `integer`.
+        ---
+        ---@param value any
+        ---@return boolean is_integer
+        function std.isInteger( value )
+            return debug_getmetatable( value ) == Number and (value % 1) == 0
+        end
 
     end
 
     -- string ( 4 )
     do
 
+        ---@class dreamwork.std.String : dreamwork.std.Metatable
         local String = debug_getmetatable( "" )
 
         if String == nil then
@@ -1450,6 +1295,7 @@ do
         debug_registermetatable( "string", String )
 
         String.__type = "string"
+        std.String = String
 
         ---@private
         function String:__toboolean()
@@ -1473,8 +1319,6 @@ do
             return debug_getmetatable( value ) == String
         end
 
-        std.String = String
-
     end
 
     -- table ( 5 )
@@ -1482,7 +1326,7 @@ do
     -- function ( 6 )
     do
 
-        ---@class dreamwork.Function : dreamwork.std.Metatable
+        ---@class dreamwork.std.Function : dreamwork.std.Metatable
         local Function = debug_getmetatable( debug_fempty )
 
         if Function == nil then
@@ -1493,6 +1337,7 @@ do
         debug_registermetatable( "function", Function )
 
         Function.__type = "function"
+        std.Function = Function
 
         --- [SHARED AND MENU]
         ---
@@ -1515,8 +1360,6 @@ do
             return metatable ~= nil and (metatable == Function or debug_getmetatable( metatable.__call ) == Function)
         end
 
-        std.Function = Function
-
     end
 
     -- thread ( 8 )
@@ -1524,7 +1367,7 @@ do
 
         local object = std.coroutine.create( debug_fempty )
 
-        ---@class dreamwork.Thread : dreamwork.std.Metatable
+        ---@class dreamwork.std.Thread : dreamwork.std.Metatable
         local Thread = debug_getmetatable( object )
 
         if Thread == nil then
@@ -1535,6 +1378,7 @@ do
         debug_registermetatable( "thread", Thread )
 
         Thread.__type = "thread"
+        std.Thread = Thread
 
         --- [SHARED AND MENU]
         ---
@@ -1546,14 +1390,38 @@ do
             return debug_getmetatable( value ) == Thread
         end
 
-        std.Thread = Thread
-
     end
 
 end
 
 local isString = std.isString
 local isNumber = std.isNumber
+
+do
+
+    local raw_type = raw.type
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a string representing the name of the type of the passed object.
+    ---
+    ---@param value any The value to get the type of.
+    ---@return string type_name The type name of the given value.
+    function std.type( value )
+        if isNumber( value ) and (value % 1) == 0 then
+            return "integer"
+        end
+
+        return debug_getmetavalue( value, "__type" ) or
+            debug_getmetavalue( value, "MetaName" ) or
+            raw_type( value )
+    end
+
+end
+
+local represent = std.represent
+local type = std.type
+local len = std.len
 
 -- path library
 dofile( "dreamwork/std/path.lua" )
@@ -1595,7 +1463,7 @@ do
         end
 
         ---@diagnostic disable-next-line: undefined-global
-        local NamedColor = NamedColor or std.debug.fempty
+        local NamedColor = NamedColor or debug_fempty
 
         local tmp = { r = 255, g = 255, b = 255, a = 255 }
 
@@ -1613,7 +1481,7 @@ do
                 ---@cast name integer
                 color = color_fromRGB( name, name, name )
             else
-                error( "color name must be string or integer to resolve color.", 3 )
+                std.error( "color name must be string or integer to resolve color.", 3 )
             end
 
             self[ name ] = color
@@ -1718,202 +1586,6 @@ end
 
 do
 
-    local debug_getinfo = debug.getinfo
-    local raw_type = raw.type
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns a string representing the name of the type of the passed object.
-    ---
-    ---@param value any The value to get the type of.
-    ---@return string type_name The type name of the given value.
-    local function type( value )
-        return debug_getmetavalue( value, "__type" ) or
-            debug_getmetavalue( value, "MetaName" ) or
-            raw_type( value )
-    end
-
-    std.type = type
-
-    --- [SHARED AND MENU]
-    ---
-    --- Validates the type of the argument and returns a boolean and an error message.
-    ---
-    ---@param value any The argument value.
-    ---@param arg_num any The argument number/key.
-    ---@param expected_type "string" | "number" | "boolean" | "table" | "function" | "thread" | "any" | string The expected type name.
-    ---@return boolean ok `true` if the argument is of the expected type; otherwise, `false`.
-    ---@return string? msg The error message if the argument type does not match the expected type, otherwise `nil`.
-    function std.arg( value, arg_num, expected_type )
-        local got = type( value )
-        if got == expected_type or expected_type == "any" then
-            return true, nil
-        else
-            return false, string_format( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", arg_num, debug_getinfo( 2, "n" ).name or "unknown", expected_type, got )
-        end
-    end
-
-    local len = std.len
-
-    do
-
-        ---@generic F: function
-        ---@class dreamwork.OverloadInput<F>
-        ---@field match string[] | string
-        ---@field fn F
-
-        ---@generic F: function
-        ---@param inputs dreamwork.OverloadInput[]
-        ---@param ... any
-        ---@return function | nil
-        local function input_select( inputs, ... )
-            ---@type integer
-            local arg_count = raw_select( "#", ... )
-
-            ---@type string[]
-            local arg_types = {}
-
-            for i = 1, arg_count, 1 do
-                arg_types[ i ] = type( raw_select( i, ... ) )
-            end
-
-            for i = 1, inputs[ 0 ], 1 do
-                local input = inputs[ i ]
-                local match = input.match
-
-                if arg_count == match[ 0 ] then
-                    for j = 1, arg_count, 1 do
-                        if match[ j ] ~= arg_types[ j ] then
-                            break
-                        end
-
-                        if j == arg_count then
-                            return input.fn
-                        end
-                    end
-                end
-            end
-
-            return nil
-        end
-
-        --- [SHARED AND MENU]
-        ---
-        --- Overloads the given function with the given inputs.
-        ---
-        ---@generic F: function
-        ---@param inputs dreamwork.OverloadInput<F>[]
-        ---@param fallback_fn? F
-        ---@return F fn_over
-        function std.dispatch( inputs, fallback_fn )
-            local input_count = len( inputs )
-            inputs[ 0 ] = input_count
-
-            for i = 1, input_count, 1 do
-                local input = inputs[ i ]
-
-                if not std.isFunction( input.fn ) then
-                    error( "overload: input " .. i .. " is not a function", 2 )
-                end
-
-                local input_match = input.match
-                if input_match == nil then
-                    error( "overload: input " .. i .. " has no match", 2 )
-                elseif std.isString( input_match ) then
-                    ---@cast input_match string
-                    input.match = { [ 0 ] = 1, input_match }
-                else
-                    input_match[ 0 ] = len( input_match )
-                end
-            end
-
-            return function( ... )
-                local fn = input_select( inputs, ... )
-                if fn == nil then
-                    if fallback_fn == nil then
-                        error( "dispatch: no input matches and no fallback function", 2 )
-                    end
-
-                    return fallback_fn( ... )
-                end
-
-                return fn( ... )
-            end
-        end
-
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Overloads the given function with the given inputs.
-    ---
-    ---@generic F: function
-    ---@param main_fn function
-    ---@param match string[] | string
-    ---@param overload_fn function
-    ---@return function
-    function std.overload( main_fn, match, overload_fn )
-        ---@type integer
-        local required_args = 0
-
-        if isString( match ) then
-            ---@cast match string
-            required_args = 1
-        else
-
-            ---@cast match string[]
-
-            required_args = len( match )
-
-            if required_args == 1 then
-                match = match[ 1 ]
-            end
-
-        end
-
-        if required_args == 0 then
-            return main_fn
-        elseif required_args == 1 then
-            ---@cast match string
-
-            return function( ... )
-                ---@type integer
-                local arg_count = raw_select( "#", ... )
-                if arg_count ~= 1 then
-                    return main_fn( ... )
-                end
-
-                if match == type( raw_select( 1, ... ) ) then
-                    return overload_fn( ... )
-                else
-                    return main_fn( ... )
-                end
-            end
-        end
-
-        return function( ... )
-            ---@type integer
-            local arg_count = raw_select( "#", ... )
-            if arg_count == required_args then
-                for i = 1, arg_count, 1 do
-                    if match[ i ] == type( raw_select( i, ... ) ) then
-                        if i == arg_count then
-                            return overload_fn( ... )
-                        end
-                    else
-                        break
-                    end
-                end
-            end
-
-            return main_fn( ... )
-        end
-    end
-
-end
-
-do
-
     ---@diagnostic disable-next-line: undefined-field
     local CompileString = _G.CompileString
     local getfenv, setfenv = std.getfenv, std.setfenv
@@ -1945,155 +1617,131 @@ do
 
 end
 
+-- BigInteger class
+dofile( "dreamwork/std/types/big_integer.lua" )
+sendfile( "dreamwork/std/types/big_integer.lua" )
 
-do
+-- BigFixed class
+dofile( "dreamwork/std/types/big_fixed.lua" )
+sendfile( "dreamwork/std/types/big_fixed.lua" )
 
-    local loadstring = std.loadstring
-    local math_floor = math.floor
-    local arg = std.arg
+-- ByteReader class
+dofile( "dreamwork/std/types/binary_reader.lua" )
+sendfile( "dreamwork/std/types/binary_reader.lua" )
 
-    local empty_env = {}
-
-    --- [SHARED AND MENU]
-    ---
-    --- Creates a function that accepts a variable
-    --- number of arguments and returns them in
-    --- the order of the specified indices.
-    ---
-    --- | `junction(...)` call | `fjn(...)` call | result `...` |
-    --- | ---------------------|-----------------|--------------|
-    --- | `junction(1)`        | `(A, B, C)`     | `A`          |
-    --- | `junction(2)`        | `(A, B, C)`     | `B`          |
-    --- | `junction(3)`        | `(A, B, C)`     | `C`          |
-    --- | `junction(2, 1)`     | `(A, B, C)`     | `B, A`       |
-    --- | `junction(3, 1, 2)`  | `(X, Y, Z)`     | `Z, X, Y`    |
-    ---
-    ---@param ... integer The indices of arguments to return.
-    ---@return function fjn The created junction function.
-    function std.junction( ... )
-        local out_arg_count = raw_select( '#', ... )
-        local out_args = { ... }
-
-        local in_arg_count = 0
-
-        for i = 1, out_arg_count, 1 do
-            local value = out_args[ i ]
-            local valid, err_msg = arg( value, i, "number" )
-
-            if valid then
-                out_args[ i ] = math_floor( value )
-                in_arg_count = math_max( in_arg_count, value )
-            else
-                error( err_msg, 2 )
-            end
-        end
-
-        local locals, local_count = {}, 0
-
-        for i = 1, in_arg_count, 1 do
-            local_count = local_count + 1
-            locals[ local_count ] = "a" .. i
-        end
-
-        local returns, return_count = {}, 0
-
-        for i = 1, out_arg_count, 1 do
-            return_count = return_count + 1
-            returns[ return_count ] = "a" .. out_args[ i ]
-        end
-
-        local fn, err_msg = loadstring( "local " .. table_concat( locals, ",", 1, local_count ) .. " = ...\r\nreturn " .. table_concat( returns, ",", 1, return_count ), "junction", empty_env )
-        if fn == nil then
-            error( err_msg, 2 )
-        end
-
-        return fn
-    end
-
-end
-
--- bigint class
-dofile( "dreamwork/std/types/bigint.lua" )
-sendfile( "dreamwork/std/types/bigint.lua" )
-
--- ipv4 library
-dofile( "dreamwork/std/ipv4.lua" )
-sendfile( "dreamwork/std/ipv4.lua" )
-
--- ipv6 class
-dofile( "dreamwork/std/ipv6.lua" )
-sendfile( "dreamwork/std/ipv6.lua" )
+-- ByteWriter class
+dofile( "dreamwork/std/types/binary_writer.lua" )
+sendfile( "dreamwork/std/types/binary_writer.lua" )
 
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 sendfile( "dreamwork/engine.lua" )
 
+-- error class
+dofile( "dreamwork/std/types/error.lua" )
+sendfile( "dreamwork/std/types/error.lua" )
+
 local engine = dreamwork.engine
 
 do
 
-    ---@diagnostic disable-next-line: undefined-global
-    local ErrorNoHalt = ErrorNoHalt
+    ---@type integer | nil
+    local required_stack_level
 
-    if ErrorNoHalt == nil then
-        local engine_consoleMessageColored = engine.consoleMessageColored
-        local error_color = color_scheme.error
+    std._R[ 1 ] = function( error_value )
+        local stack_level = math_max( 1, required_stack_level or 1 )
+        required_stack_level = nil
 
-        function ErrorNoHalt( str )
-            return engine_consoleMessageColored( str, error_color )
-        end
+        return engine.hookCall( "dreamwork.lua.error", error_value, stack_level + 1 ) or error_value
     end
 
-    local debug_getinfo = debug.getinfo
+    local debug_ispcall = debug.ispcall
+    local isError = std.isError
 
-    local string_match = string.match
-    local string_rep = string.rep
+    local runtime_error = std.RuntimeError()
+    local runtime_stack = debug.Stack()
+    runtime_error.stack = runtime_stack
+
+    do
+
+        local string_match = string.match
+
+        engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
+            if isError( error_value ) then
+                ---@cast error_value dreamwork.std.Error
+
+                for i = stack_level + 2, 2, -1 do
+                    error_value:capture( i )
+                    if not error_value:isEmpty() then break end
+                end
+
+                error_value:display()
+            else
+                error_value = tostring( error_value )
+                ---@cast error_value string
+
+                for i = stack_level + 2, 2, -1 do
+                    runtime_stack:capture( i )
+                    if not runtime_stack:isEmpty() then break end
+                end
+
+                runtime_error.message = string_match( error_value, "^[^:]+:%d+: ([^\n]+)" ) or error_value
+                runtime_error:display()
+                runtime_stack:clear()
+            end
+
+            return "The original error message was caught by dreamwork, see above for details about the error.", 2
+        end, 1000 )
+
+    end
 
     --- [SHARED AND MENU]
     ---
     --- Throws an error with the specified message and level.
     ---
-    ---@param message? any The error message to throw.
+    ---@param value? any The error value to throw.
     ---@param stack_level? integer The stack level to throw the error.
     ---@param dont_break? boolean If `true`, the error will not break the current stack.
-    local function std_error( message, stack_level, dont_break )
-        if message == nil then
-            message = "unknown"
-        else
-            message = tostring( message )
-        end
+    local function std_error( value, stack_level, dont_break )
+        if value == nil then
+            value = "unknown error"
+        elseif isError( value ) then
+            ---@cast value dreamwork.std.Error
 
-        if stack_level == nil then
-            stack_level = 1
+            for i = math_max( 1, stack_level or 1 ) + 1, 2, -1 do
+                value:capture( i )
+                if not value:isEmpty() then break end
+            end
+
+            if dont_break then
+                value:display()
+                return
+            end
+
+            required_stack_level = stack_level
+            return error( value, stack_level )
         end
 
         if dont_break then
-            local title
-
-            local level_info = debug_getinfo( stack_level, "S" )
-            if level_info ~= nil then
-                title = string_match( level_info.source, "^@?addons/([^/]+)" )
+            for i = math_max( 1, stack_level or 1 ) + 1, 2, -1 do
+                runtime_stack:capture( i )
+                if not runtime_stack:isEmpty() then break end
             end
 
-            local stack, size = { "\n[" .. (title or "LUA ERROR") .. "] " .. message }, 1
-
-            while true do
-                local info = debug_getinfo( size + stack_level, "Sln" )
-                if info == nil then
-                    break
-                end
-
-                size = size + 1
-                stack[ size ] = table_concat( { string_rep( " ", size ), (size - 1), ". ", info.name or "unknown", " - ", info.short_src or "unknown", ":", info.currentline or -1 } )
-            end
-
-            size = size + 1
-            stack[ size ] = "\n"
-
-            return ErrorNoHalt( table_concat( stack, "\n", 1, size ) )
+            runtime_error.message = tostring( value )
+            runtime_error:display()
+            runtime_stack:clear()
+            return
         end
 
-        return error( message, stack_level + 1 )
+        if not (isString( value ) or debug_ispcall( 2 )) then
+            value = tostring( value )
+        end
+
+        ---@cast value string
+
+        required_stack_level = stack_level
+        return error( value, stack_level )
     end
 
     std.error = std_error
@@ -2120,7 +1768,294 @@ do
     function std.assert( expression, fmt, ... )
         if expression then return end
 
-        std.errorf( 4, false, fmt, ... )
+        return std_error( string_format( fmt, ... ), 2, false )
+    end
+
+end
+
+local TypeError = std.TypeError
+local error = std.error
+
+do
+
+    local debug_getlocal = debug.getlocal
+    local debug_getinfo = debug.getinfo
+
+    local is = std.is
+    local eq = std.eq
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks that the local variable at the given stack `index` (in the calling function)
+    --- matches one of the expected types/classes given in `...`. If the value's type/instance
+    --- does not match any of the expected types, a `TypeError` is raised, otherwise the
+    --- function returns without doing anything.
+    ---
+    ---@param index integer The stack index of the local variable to check (as used by `debug.getlocal`).
+    ---@param ... any The expected type names (strings) or class/type tables (with an optional `__type` field) to check the value against.
+    function std.checktype( index, ... )
+        local value_name, value = debug_getlocal( 2, index )
+        local value_type = type( value )
+
+        local count = raw_select( "#", ... )
+
+        for i = 1, count, 1 do
+            local expected = raw_select( i, ... )
+            if isString( expected ) then
+                if expected == value_type then return end
+            elseif eq( expected, value ) then
+                return
+            elseif is( value, expected ) then
+                return
+            end
+        end
+
+        ---@type string
+        local expected_names
+
+        for i = 1, count, 1 do
+            local expected = raw_select( i, ... )
+            if isString( expected ) then
+                expected_name = expected
+            elseif isTable( expected ) then
+                expected_name = expected.__type or represent( expected )
+            else
+                expected_name = represent( expected )
+            end
+
+            if i == 1 then
+                expected_names = expected_name
+            else
+                expected_names = expected_names .. ", " .. expected_name
+            end
+        end
+
+        return error( TypeError( index, value, expected_names, value_name, debug_getinfo( 2, "n" ).name ), 2 )
+    end
+
+end
+
+do
+
+    local isFunction = std.isFunction
+
+    ---@generic F: function
+    ---@class dreamwork.OverloadInput<F>
+    ---@field match string[] | string
+    ---@field fn F
+
+    ---@generic F: function
+    ---@param inputs dreamwork.OverloadInput[]
+    ---@param ... any
+    ---@return function | nil
+    local function input_select( inputs, ... )
+        ---@type integer
+        local arg_count = raw_select( "#", ... )
+
+        ---@type string[]
+        local arg_types = {}
+
+        for i = 1, arg_count, 1 do
+            arg_types[ i ] = type( raw_select( i, ... ) )
+        end
+
+        for i = 1, inputs[ 0 ], 1 do
+            local input = inputs[ i ]
+            local match = input.match
+
+            if arg_count == match[ 0 ] then
+                for j = 1, arg_count, 1 do
+                    if match[ j ] ~= arg_types[ j ] then
+                        break
+                    end
+
+                    if j == arg_count then
+                        return input.fn
+                    end
+                end
+            end
+        end
+
+        return nil
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Overloads the given function with the given inputs.
+    ---
+    ---@generic F: function
+    ---@param inputs dreamwork.OverloadInput<F>[]
+    ---@param fallback_fn? F
+    ---@return F fn_over
+    function std.dispatch( inputs, fallback_fn )
+        local input_count = len( inputs )
+        inputs[ 0 ] = input_count
+
+        for i = 1, input_count, 1 do
+            local input = inputs[ i ]
+            if not isFunction( input.fn ) then
+                error( TypeError( i, input.fn, "function", "fn", "dispatch" ), 2 )
+            end
+
+            local input_match = input.match
+            if input_match == nil then
+                error( TypeError( i, input.fn, "string, string[]", "match", "dispatch" ), 2 )
+            elseif isString( input_match ) then
+                ---@cast input_match string
+                input.match = { [ 0 ] = 1, input_match }
+            else
+                input_match[ 0 ] = len( input_match )
+            end
+        end
+
+        return function( ... )
+            local fn = input_select( inputs, ... )
+            if fn == nil then
+                if fallback_fn == nil then
+                    error( "dispatch: no input matches and no fallback function", 2 )
+                    return
+                end
+
+                return fallback_fn( ... )
+            end
+
+            return fn( ... )
+        end
+    end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Overloads the given function with the given inputs.
+---
+---@generic F: function
+---@param main_fn function
+---@param match string[] | string
+---@param overload_fn function
+---@return function
+function std.overload( main_fn, match, overload_fn )
+    ---@type integer
+    local required_args = 0
+
+    if isString( match ) then
+        ---@cast match string
+        required_args = 1
+    else
+
+        ---@cast match string[]
+
+        required_args = len( match )
+
+        if required_args == 1 then
+            match = match[ 1 ]
+        end
+
+    end
+
+    if required_args == 0 then
+        return main_fn
+    elseif required_args == 1 then
+        ---@cast match string
+
+        return function( ... )
+            ---@type integer
+            local arg_count = raw_select( "#", ... )
+            if arg_count ~= 1 then
+                return main_fn( ... )
+            end
+
+            if match == type( raw_select( 1, ... ) ) then
+                return overload_fn( ... )
+            else
+                return main_fn( ... )
+            end
+        end
+    end
+
+    return function( ... )
+        ---@type integer
+        local arg_count = raw_select( "#", ... )
+        if arg_count == required_args then
+            for i = 1, arg_count, 1 do
+                if match[ i ] ~= type( raw_select( i, ... ) ) then
+                    break
+                end
+
+                if i == arg_count then
+                    return overload_fn( ... )
+                end
+            end
+        end
+
+        return main_fn( ... )
+    end
+end
+
+do
+
+    local loadstring = std.loadstring
+    local math_floor = math.floor
+
+    local empty_env = {}
+
+    std.setmetatable( empty_env, {
+        __index = debug_fempty,
+        __newindex = debug_fempty
+    } )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Creates a function that accepts a variable
+    --- number of arguments and returns them in
+    --- the order of the specified indices.
+    ---
+    --- | `junction(...)` call | `fjn(...)` call | result `...` |
+    --- | ---------------------|-----------------|--------------|
+    --- | `junction(1)`        | `(A, B, C)`     | `A`          |
+    --- | `junction(2)`        | `(A, B, C)`     | `B`          |
+    --- | `junction(3)`        | `(A, B, C)`     | `C`          |
+    --- | `junction(2, 1)`     | `(A, B, C)`     | `B, A`       |
+    --- | `junction(3, 1, 2)`  | `(X, Y, Z)`     | `Z, X, Y`    |
+    ---
+    ---@param ... integer The indices of arguments to return.
+    ---@return function fjn The created junction function.
+    function std.junction( ... )
+        local out_arg_count = raw_select( '#', ... )
+        local out_args = { ... }
+
+        local in_arg_count = 0
+
+        for i = 1, out_arg_count, 1 do
+            local value = out_args[ i ]
+            if isNumber( value ) and (value % 1) == 0 then
+                out_args[ i ] = math_floor( value )
+                in_arg_count = math_max( in_arg_count, value )
+            else
+                std.error( TypeError( i, value, "integer", "1", "junction" ), 2 )
+            end
+        end
+
+        local locals, local_count = {}, 0
+
+        for i = 1, in_arg_count, 1 do
+            local_count = local_count + 1
+            locals[ local_count ] = "a" .. i
+        end
+
+        local returns, return_count = {}, 0
+
+        for i = 1, out_arg_count, 1 do
+            return_count = return_count + 1
+            returns[ return_count ] = "a" .. out_args[ i ]
+        end
+
+        local fn, err_msg = loadstring( "local " .. table_concat( locals, ",", 1, local_count ) .. " = ...\r\nreturn " .. table_concat( returns, ",", 1, return_count ), "junction", empty_env )
+        if fn == nil then
+            error( err_msg, 2 )
+        end
+
+        return fn
     end
 
 end

@@ -58,7 +58,6 @@ local GModConVar_getMin, GModConVar_getMax = GModConVar.GetMin, GModConVar.GetMa
 
 local math = std.math
 local math_floor = math.floor
-local math_isInt = math.isInt
 
 local raw = std.raw
 local raw_type = raw.type
@@ -686,7 +685,7 @@ do
         elseif cvar_type == "number" then
             ---@cast value number | integer
 
-            if math_isInt( value ) then
+            if (value % 1) == 0 then
                 ---@cast value integer
                 engine_consoleCommandRun( name, string_format( "%d", value ) )
             else
