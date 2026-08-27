@@ -465,9 +465,9 @@ local TypeError = class.base( "TypeError", false, ErrorClass )
 
 ---@param index integer
 ---@param value any
----@param expected_type string
 ---@param value_name string | nil
----@param function_name string | nil
+---@param expected_type string
+---@param function_name string
 ---@protected
 function TypeError:__init( index, value, expected_type, value_name, function_name )
     self.index = index
@@ -475,7 +475,8 @@ function TypeError:__init( index, value, expected_type, value_name, function_nam
     self.expected_type = expected_type
 
     self.value_name = value_name
-    self.function_name = function_name
+    self.function_name = function_name or "<unknown>"
+
     self.received_type = type( value )
 end
 
@@ -489,12 +490,12 @@ function TypeError:__head()
     engine_consoleMessageColored( "    type: ", COLOR_SUVA_GRAY )
     engine_consoleMessageColored( "\"" .. self.received_type .. "\"\n", COLOR_SANDSTONE )
 
+    engine_consoleMessageColored( "    name: ", COLOR_SUVA_GRAY )
+
     local value_name = self.value_name
     if value_name == nil then
-        engine_consoleMessageColored( "    name: ", COLOR_SUVA_GRAY )
-        engine_consoleMessageColored( "<unknown>" .. "\n", COLOR_LIGHT_GRAY )
+        engine_consoleMessageColored( "<unknown>\n", COLOR_LIGHT_GRAY )
     else
-        engine_consoleMessageColored( "    name: ", COLOR_SUVA_GRAY )
         engine_consoleMessageColored( "\"" .. value_name .. "\"\n", COLOR_SANDSTONE )
     end
 
@@ -508,7 +509,7 @@ function TypeError:__message()
     return string_format(
         "bad argument #%d to `%s` (`%s` expected, got `%s`)",
         self.index or 0,
-        self.function_name or "unknown",
+        self.function_name,
         self.expected_type,
         self.received_type
     )
