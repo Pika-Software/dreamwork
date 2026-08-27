@@ -542,7 +542,7 @@ metatable.__sizeof = nil
 ---@field short_src        string | nil  A "printable" version of `source`, to be used in error messages.
 ---@field linedefined      integer | nil The line number where the definition of the function starts.
 ---@field lastlinedefined  integer | nil The line number where the definition of the function ends.
----@field what             string | nil  The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
+---@field what             "Lua" | "C" | nil  The type of the function: `"Lua"` if it's a normal Lua function, `"C"` if it's a C function, `"main"` if it's the main part of a chunk.
 ---@field currentline      integer | nil The current line where the given function is executing. -1 when no line information is available.
 ---@field nups             integer | nil The number of upvalues of the function.
 ---@field nparams          integer | nil The number of fixed parameters of the function (always 0 for C functions).
