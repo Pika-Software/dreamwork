@@ -377,7 +377,7 @@ local function now( unit, as_float )
         timestamp = timestamp + (current_timezone - basic_timezone) * 3600
     end
 
-    if unit == nil or unit == "s" and not as_float then
+    if not as_float and (unit == nil or unit == "s") then
         return timestamp
     end
 
@@ -858,12 +858,12 @@ do
     ---@param fmt string The format string.
     ---@param timestamp? integer The timestamp to format.
     ---@param unit? dreamwork.std.time.Unit The timestamp unit, 's' by default.
-    ---@param in_utc? boolean Whether the timestamp is in UTC, `false` by default.
+    ---@param in_utc? boolean Use UTC instead of local timezone, `false` by default.
     ---@return string str The formatted string.
     function time.format( fmt, timestamp, unit, in_utc )
         local seconds, milliseconds, microseconds, nanoseconds = split( timestamp or now( unit, true ), unit, 2 )
 
-        -- string.interpolate( fmt, {} )
+        -- TODO: string.interpolate( fmt, {} )
 
         ---@type string[]
         local segments = {}
