@@ -10,6 +10,7 @@
         https://wiki.facepunch.com/gmod/Player:SetVoiceVolumeScale
         https://wiki.facepunch.com/gmod/Player:VoiceVolume
         https://wiki.facepunch.com/gmod/Player:IsSpeaking
+        https://wiki.facepunch.com/gmod/IsPlayerSpeaking
 
     client events:
         https://wiki.facepunch.com/gmod/GM:PlayerStartVoice

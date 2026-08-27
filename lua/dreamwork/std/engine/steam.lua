@@ -796,7 +796,7 @@ do
     local futures_run = std.futures.run
     local uuid_v7 = std.uuid.v7
 
-    ---@param f dreamwork.std.futures.Future
+    ---@param f dreamwork.std.Future
     ---@param wsid string
     ---@param file_path string?
     ---@param file_class File?

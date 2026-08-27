@@ -210,7 +210,7 @@ do
 end
 
 ---@class dreamwork.std.http.Request.session_cache
----@field future dreamwork.std.futures.Future
+---@field future dreamwork.std.Future
 ---@field start number
 ---@field age number
 

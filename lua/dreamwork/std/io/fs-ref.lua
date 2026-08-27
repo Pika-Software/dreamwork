@@ -1,9 +1,13 @@
 local _G = _G
 local dreamwork = _G.dreamwork
 
+local engine = dreamwork.engine
+
 ---@class dreamwork.std
 local std = dreamwork.std
-local engine = dreamwork.engine
+
+local futures = std.futures
+
 local dreamwork_logger = dreamwork.Logger
 
 local engine_hookCatch = engine.hookCatch
@@ -13,8 +17,7 @@ local LUA_CLIENT, LUA_SERVER, LUA_MENU = std.LUA_CLIENT, std.LUA_SERVER, std.LUA
 local setmetatable = std.setmetatable
 local tostring = std.tostring
 
-local futures = std.futures
-local Future = futures.Future
+local Future = std.Future
 
 local glua_file = _G.file
 local file_Time = glua_file.Time
@@ -116,7 +119,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
 
         ---@param file_path string
         ---@param game_path string
-        ---@return dreamwork.std.futures.Future future
+        ---@return dreamwork.std.Future future
         ---@async
         function async_read( file_path, game_path )
             local f = Future()
@@ -150,7 +153,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
         ---@param file_path string
         ---@param game_path string
         ---@param data string
-        ---@return dreamwork.std.futures.Future future
+        ---@return dreamwork.std.Future future
         ---@async
         function async_write( file_path, game_path, data )
             local f = Future()
@@ -183,7 +186,7 @@ if std.lookupbinary( "asyncio" ) and file.AsyncRead ~= nil and file.AsyncWrite ~
         ---@param file_path string
         ---@param game_path string
         ---@param data string
-        ---@return dreamwork.std.futures.Future future
+        ---@return dreamwork.std.Future future
         ---@async
         function async_append( file_path, game_path, data )
             local f = Future()
@@ -235,7 +238,7 @@ if (async_write == nil or async_append == nil) and std.loadbinary( "async_write"
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_write( file_path, game_path, data )
         local f = Future()
@@ -268,7 +271,7 @@ if (async_write == nil or async_append == nil) and std.loadbinary( "async_write"
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_append( file_path, game_path, data )
         local f = Future()
@@ -309,7 +312,7 @@ if async_read == nil and not LUA_MENU and file.AsyncRead ~= nil then
 
     ---@param file_path string
     ---@param game_path string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_read( file_path, game_path )
         local f = Future()
@@ -346,7 +349,7 @@ if async_read == nil then
 
     ---@param file_path string
     ---@param game_path string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_read( file_path, game_path )
         ---@type dreamwork.std.fs.ReadRespond
@@ -376,7 +379,7 @@ if async_write == nil then
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_write( file_path, game_path, data )
         ---@type dreamwork.std.fs.WriteRespond
@@ -406,7 +409,7 @@ if async_append == nil then
     ---@param file_path string
     ---@param game_path string
     ---@param data string
-    ---@return dreamwork.std.futures.Future future
+    ---@return dreamwork.std.Future future
     ---@async
     function async_append( file_path, game_path, data )
         ---@type dreamwork.std.fs.WriteRespond
@@ -685,7 +688,7 @@ setmetatable( modified_times, {
     __mode = "k"
 } )
 
----@type table<dreamwork.std.fs.Object, dreamwork.std.futures.Future[]>
+---@type table<dreamwork.std.fs.Object, dreamwork.std.Future[]>
 local async_jobs = {}
 gc_setTableRules( async_jobs, true, false )
 
@@ -704,7 +707,7 @@ setmetatable( async_job_counts, {
 --- Registers a file or directory for asynchronous monitoring.
 ---
 ---@param fs_object dreamwork.std.fs.Object
----@param future dreamwork.std.futures.Future
+---@param future dreamwork.std.Future
 ---@return boolean is_registered
 local function async_job_register( fs_object, future )
     if future:isFinished() then
@@ -735,7 +738,7 @@ end
 --- Unregisters a file or directory from asynchronous monitoring.
 ---
 ---@param fs_object dreamwork.std.fs.Object
----@param future dreamwork.std.futures.Future
+---@param future dreamwork.std.Future
 ---@return boolean is_unregistered
 local function async_job_unregister( fs_object, future )
     local job_count = async_job_counts[ fs_object ]
@@ -3302,7 +3305,7 @@ end
 
 do
 
-    local futures_yield = std.futures.yield
+    local futures_yield = futures.yield
 
     ---@param file_object dreamwork.std.fs.File
     ---@async

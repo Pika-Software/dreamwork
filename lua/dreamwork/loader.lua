@@ -261,7 +261,9 @@ if std.setfenv == nil then
         if location == nil or raw_type( location ) == "number" then
             func = debug_getf( (location or 1) + 1 )
             if func == nil then
-                error( "environment was corrupted; setfenv failed", 2 )
+                std.error( "environment was corrupted; setfenv failed", 2 )
+                ---@diagnostic disable-next-line: missing-return-value
+                return
             end
         end
 
@@ -1654,6 +1656,15 @@ do
 
         return engine.hookCall( "dreamwork.lua.error", error_value, stack_level + 1 ) or error_value
     end
+
+    ---@param value any
+    ---@param stack_level integer | nil
+    _G.error = dreamwork.detour.attach( function( fn, value, stack_level )
+        required_stack_level = stack_level
+
+        ---@diagnostic disable-next-line: need-check-nil
+        return fn( value, stack_level )
+    end, error )
 
     local debug_ispcall = debug.ispcall
     local isError = std.isError

@@ -248,13 +248,13 @@ do
     ---@param self dreamwork.std.Vector2 The vector to subtract from.
     ---@param other dreamwork.std.Vector2 The other vector.
     ---@return dreamwork.std.Vector2 vec2 The difference of the two vectors.
-    local function Vector2_subtract( self, other )
+    local function Vector2_sub( self, other )
         self[ 1 ] = math_toFloat32( self[ 1 ] - other[ 1 ] )
         self[ 2 ] = math_toFloat32( self[ 2 ] - other[ 2 ] )
         return self
     end
 
-    Vector2.subtract = Vector2_subtract
+    Vector2.sub = Vector2_sub
 
     ---@param value dreamwork.std.Vector2 | number
     ---@return dreamwork.std.Vector2
@@ -268,7 +268,7 @@ do
             }, Vector2 )
         else
             ---@cast value dreamwork.std.Vector2
-            return Vector2_subtract( Vector2_copy( self ), value )
+            return Vector2_sub( Vector2_copy( self ), value )
         end
     end
 

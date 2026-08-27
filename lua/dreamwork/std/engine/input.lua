@@ -180,6 +180,7 @@ if std.LUA_CLIENT_MENU then
             local input_IsKeyTrapping = glua_input.IsKeyTrapping
             local Future = std.Future
 
+            ---@type dreamwork.std.Stack<dreamwork.std.Future>
             local captures = std.Stack()
 
             dreamwork.engine.hookCatch( "Tick", "input.keyboard.capture", function()
