@@ -95,6 +95,8 @@ std.debug = debug
 --- object being inspected is taken from the end of the argument list. See
 --- the `">"` entry in `InfoWhat` for details.
 ---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getinfo)
+---
 ---@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
 ---@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
 ---@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
@@ -102,6 +104,12 @@ std.debug = debug
 ---@overload fun( thread: thread, location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
 debug.getinfo = glua_debug.getinfo
 
+--- [SHARED AND MENU]
+---
+--- Returns the name and the value of the local variable with index `local` of the function at level `stack_level` of the stack.
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getlocal)
+---
 ---@overload fun( stack_level: integer, index: integer ): string, any
 ---@overload fun( thread: thread, stack_level: integer, index: integer ): string, any
 debug.getlocal = glua_debug.getlocal
@@ -182,31 +190,84 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Returns all upvalues of the given function.
+    --- Returns all upvalues of the given function as a table, keyed by upvalue name.
+    ---
+    --- If the function is a C function (or otherwise has no debug info), an empty
+    --- table and a count of `0` are returned.
     ---
     ---@param fn function The function to get upvalues from.
-    ---@param position? integer The start position of the upvalues, default is `0`.
-    ---@return table<string, any> values A table with the upvalues.
-    ---@return integer value_count The count of upvalues.
-    function debug.getupvalues( fn, position )
-        if position == nil then
-            position = 1
-        end
-
-        local index = position
+    ---@return table<string, any> values A table mapping each upvalue's name to its current value.
+    ---@return integer value_count The number of upvalues found.
+    function debug.getupvalues( fn )
+        ---@type table<string, any>
         local values = {}
 
-        ::getupvalues_loop::
-
-        local name, value = debug_getupvalue( fn, index )
-
-        if name ~= nil then
-            index = index + 1
-            values[ name ] = value
-            goto getupvalues_loop
+        local info = debug_getinfo( fn, "Su" )
+        if info == nil or info.what == "C" then
+            return values, 0
         end
 
-        return values, index - position
+        ---@type integer
+        local count = info.nups or 0
+
+        for i = 1, count, 1 do
+            local key, value = debug_getupvalue( fn, i )
+            if key == nil then
+                count = count - 1
+            else
+                values[ key ] = value
+            end
+        end
+
+        return values, count
+    end
+
+end
+
+do
+
+    local debug_getlocal = debug.getlocal
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns all available local variables at the given stack level (and, optionally,
+    --- in the given thread/coroutine) as a table keyed by variable name.
+    ---
+    ---@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
+    ---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
+    ---@return table<string, any> values A table mapping each local variable's name to its current value.
+    ---@return integer value_count The number of locals found.
+    function debug.getlocals( stack_level, thread )
+        if stack_level == nil then
+            stack_level = 2
+        elseif stack_level >= 0 then
+            stack_level = stack_level + 1
+        else
+            error( "stack level cannot be less than zero", 2 )
+        end
+
+        ---@type table<string, any>
+        local values = {}
+
+        ---@type integer
+        local index = 1
+
+        ::getlocals_loop::
+
+        local key, value
+        if thread == nil then
+            key, value = debug_getlocal( stack_level, index )
+        else
+            key, value = debug_getlocal( thread, stack_level, index )
+        end
+
+        if key ~= nil then
+            values[ key ] = value
+            index = index + 1
+            goto getlocals_loop
+        end
+
+        return values, index - 1
     end
 
 end
@@ -302,8 +363,10 @@ end
 function debug.getfmain( stack_level )
     if stack_level == nil then
         stack_level = 2
-    else
+    elseif stack_level >= 0 then
         stack_level = stack_level + 1
+    else
+        error( "stack level cannot be less than zero", 2 )
     end
 
     ::getfmain_loop::
@@ -335,8 +398,10 @@ end
 function debug.getstack( stack_level, what, head_skip, tail_skip, max_levels )
     if stack_level == nil then
         stack_level = 2
-    else
+    elseif stack_level >= 0 then
         stack_level = stack_level + 1
+    else
+        error( "stack level cannot be less than zero", 2 )
     end
 
     if head_skip ~= nil and head_skip > 0 then
@@ -409,8 +474,10 @@ end
 function debug.ispcall( stack_level )
     if stack_level == nil then
         stack_level = 2
-    else
+    elseif stack_level >= 0 then
         stack_level = stack_level + 1
+    else
+        error( "stack level cannot be less than zero", 2 )
     end
 
     ::debug_ispcall_loop::
