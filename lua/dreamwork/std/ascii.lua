@@ -59,6 +59,16 @@ ascii.isDigit = isDigit
 
 --- [SHARED AND MENU]
 ---
+--- Checks if the byte is an ASCII alphanumeric character (A–Z, a–z, or 0–9).
+---
+---@param uint8 integer The byte to check.
+---@return boolean is_alnum `true` if the byte is an ASCII letter or decimal digit.
+function ascii.isAlnum( uint8 )
+    return isAlpha( uint8 ) or isDigit( uint8 )
+end
+
+--- [SHARED AND MENU]
+---
 --- Checks if the byte is a valid hexadecimal digit (0–9, A–F, a–f).
 ---
 ---@param uint8 integer The byte to check.
