@@ -22,8 +22,8 @@ local color_Scheme = color.Scheme
 
 local class = std.class
 
-local tostring = std.tostring
 local represent = std.represent
+local tostring = std.tostring
 local type = std.type
 local is = std.is
 
@@ -54,6 +54,7 @@ local COLOR_ERROR       = color_Scheme.error
 ---@field protected __head fun( self: dreamwork.std.Error, frame: ( dreamwork.std.debug.StackLevel | nil ) )
 ---@field protected __frame fun( self: dreamwork.std.Error, frame: dreamwork.std.debug.StackLevel )
 ---@field protected __tail fun( self: dreamwork.std.Error )
+---@operator concat( any ): string
 local Error = class.base( "Error", false, nil )
 
 ---@param message string | nil
@@ -71,6 +72,27 @@ function Error:__len()
     end
 
     return stack.size
+end
+
+---@return string
+---@protected
+function Error:__tostring()
+    local error_message = self.message
+
+    local message_fn = self.__message
+    if message_fn ~= nil then
+        return message_fn( self, error_message )
+    elseif error_message == nil then
+        return "unknown error"
+    end
+
+    return error_message
+end
+
+---@return string
+---@protected
+function Error:__concat( other )
+    return tostring( self ) .. tostring( other )
 end
 
 --- [SHARED AND MENU]
@@ -119,57 +141,6 @@ function Error:capture( stack_level, head_skip, tail_skip )
     stack:capture( stack_level, head_skip, tail_skip )
 end
 
---- [SHARED AND MENU]
----
---- Formats the error and its captured stack as a plain-text, multi-line
---- string, suitable for logging or `tostring( error_object )` (this
---- function is also assigned as `__tostring`).
----
---- Each captured frame is rendered on its own line as
---- `"<index>. <name> - <source>:<line>"`, indented by its depth.
----
----@return string formatted The formatted string, or `"no error"` if the stack has no frames.
-function Error:toString()
-    local error_message = self.message
-
-    local message_fn = self.__message
-    if message_fn ~= nil then
-        error_message = message_fn( self, error_message )
-    elseif error_message == nil then
-        error_message = "unknown error"
-    end
-
-    local stack = self.stack
-    if stack == nil then
-        return string_format( "[%s] %s:%d: %s\n", type( self ), "unknown", -1, error_message )
-    end
-
-    local top_frame = stack:peek()
-    if top_frame == nil then
-        return string_format( "[%s] %s:%d: %s\n", type( self ), "unknown", -1, error_message )
-    end
-
-    ---@type string[]
-    local lines = {}
-
-    ---@type integer
-    local stack_size = stack.size
-
-    for index = 1, stack_size, 1 do
-        ---@type dreamwork.std.debug.StackLevel
-        local frame = stack[ (stack_size - index) + 1 ]
-
-        lines[ index ] = string_indent(
-            string_format( "%d. %s - %s:%d ", index, frame.name or "unknown", frame.short_src, frame.currentline or -1 ),
-            index + 1 )
-    end
-
-    return string_format( "[%s] %s:%d: %s\n%s", type( self ), top_frame.short_src or "=[C]", top_frame.currentline or -1,
-        error_message, table_concat( lines, "\n", 1, stack_size ) )
-end
-
-Error.__tostring = Error.toString
-
 do
 
     local realm_name = utf8.capitalize( std.LUA_REALM )
@@ -190,16 +161,7 @@ do
         engine_consoleMessageColored( type( self ), COLOR_MONA_LISA )
         engine_consoleMessageColored( "] ", COLOR_WHITE_SMOKE )
 
-        local error_message = self.message
-
-        local message_fn = self.__message
-        if message_fn ~= nil then
-            error_message = message_fn( self, error_message )
-        elseif error_message == nil then
-            error_message = "unknown error"
-        end
-
-        engine_consoleMessageColored( error_message .. "\n", COLOR_MONA_LISA )
+        engine_consoleMessageColored( tostring( self ) .. "\n", COLOR_MONA_LISA )
 
         local stack = self.stack
         if stack == nil then
