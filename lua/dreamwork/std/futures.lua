@@ -27,18 +27,22 @@ local coroutine_resume = coroutine.resume
 local coroutine_status = coroutine.status
 local coroutine_running = coroutine.running
 
-local isFunction = std.isFunction
+local class = std.class
+
 local setTimeout = std.setTimeout
 local tostring = std.tostring
 local xpcall = std.xpcall
 local error = std.error
 local pcall = std.pcall
+local copy = std.copy
 local len = std.len
+
+local isFunction = std.isFunction
+local isError = std.isError
 
 local AsyncError = std.AsyncError
 local Queue = std.Queue
 
-local class = std.class
 
 --- [SHARED AND MENU]
 ---
@@ -139,17 +143,72 @@ local error_object = AsyncError()
 ---@param co thread
 ---@param ok boolean
 local function async_thread_result( co, ok, ... )
+    local value = (...)
+
     local fn = Listeners[ co ]
     if isFunction( fn ) then
-        fn( ok, ... )
-    elseif not ok then
-        if (...) ~= ACTION_CANCEL then
-            local error_str = tostring( ... )
-            error_object.stack = Stacks[ co ]
-            error_object.message = string_match( error_str, "^[^:]+:%d+: ([^\n]+)" ) or error_str
-            error_object:display()
+        if value == ACTION_CANCEL then
+            fn( nil )
+            return
         end
+
+        if ok then
+            fn( true, ... )
+            return
+        end
+
+        if isError( value ) then
+            ---@cast value dreamwork.std.Error
+
+            local fstack = copy( Stacks[ co ] )
+
+            local stack = value.stack
+            if stack ~= nil then
+                fstack:merge( stack )
+            end
+
+            value.stack = fstack
+
+            fn( false, value )
+            return
+        end
+
+        ---@cast value any
+
+        local error_str = tostring( value )
+
+        local error_obj = AsyncError( string_match( error_str, "^[^:]+:%d+: ([^\n]+)" ) or error_str )
+        error_obj.stack = Stacks[ co ]
+        error( error_obj, 2 )
+        return
     end
+
+    if ok or value == ACTION_CANCEL then
+        return
+    end
+
+    if isError( value ) then
+        ---@cast value dreamwork.std.Error
+
+        local fstack = copy( Stacks[ co ] )
+
+        local stack = value.stack
+        if stack ~= nil then
+            fstack:merge( stack )
+        end
+
+        value.stack = fstack
+        value:display()
+        return
+    end
+
+    ---@cast value any
+
+    local error_str = tostring( value )
+
+    error_object.message = string_match( error_str, "^[^:]+:%d+: ([^\n]+)" ) or error_str
+    error_object.stack = Stacks[ co ]
+    error_object:display()
 end
 
 ---@generic T
@@ -631,7 +690,7 @@ do
         for i = 1, callbacks[ 0 ], 1 do
             local success, error_message = pcall( callbacks[ i ], self )
             if not success then
-                engine_hookCall( "dreamwork.lua.error", error_message, 3 )
+                error( error_message, 2, true )
             end
         end
     end
@@ -648,11 +707,7 @@ do
     ---@param fn fun( fut: dreamwork.std.Future<T> ) The callback to invoke with the future once it's done.
     function Future:addCallback( fn )
         if self.state ~= 0 then
-            local success, error_message = pcall( fn, self )
-            if not success then
-                engine_hookCall( "dreamwork.lua.error", error_message, 3 )
-            end
-
+            fn( self )
             return
         end
 
@@ -1139,6 +1194,7 @@ function futures.any( futureList )
         error( "`futures.any` cannot be called outside async context.", 2, false )
     end
 
+    ---@type boolean
     local finished = false
 
     local function callback( fut )
@@ -1175,7 +1231,7 @@ function futures.sleep( seconds )
 
     ---@cast co thread
     setTimeout( function()
-        coroutine_resume( co )
+        return coroutine_resume( co )
     end, seconds )
 
     futures_pending()
