@@ -89,6 +89,12 @@ end
 
 ---@return string
 ---@protected
+function Error:__represent()
+    return string_format( "%s: %p [%s]", type( self ), self, self.message )
+end
+
+---@return string
+---@protected
 function Error:__concat( other )
     return tostring( self ) .. tostring( other )
 end
