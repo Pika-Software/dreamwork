@@ -446,22 +446,6 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns a string representation of the given value.
----
----@param value any The value to get the string representation of.
----@return string str The string representation of the given value.
-function std.represent( value )
-    ---@type fun( value: any ): string
-    local fn = debug_getmetavalue( value, "__represent" )
-    if fn == nil then
-        return tostring( value )
-    else
-        return fn( value )
-    end
-end
-
---- [SHARED AND MENU]
----
 --- Returns the copy of the `value`.
 ---
 ---@generic T
@@ -1548,9 +1532,27 @@ sendfile( "dreamwork/std/types/debug_stack.lua" )
 dofile( "dreamwork/std/codec/buffer.lua" )
 sendfile( "dreamwork/std/codec/buffer.lua" )
 
-local represent = std.represent
 local type = std.type
 local len = std.len
+
+--- [SHARED AND MENU]
+---
+--- Returns a string representation of the given value.
+---
+---@param value any The value to get the string representation of.
+---@return string str The string representation of the given value.
+function std.represent( value )
+    ---@type fun( value: any ): string
+    local fn = debug_getmetavalue( value, "__represent" )
+    if fn == nil then
+        -- return tostring( value )
+        return string_format( "%s: %p", type( value ), value )
+    end
+
+    return fn( value )
+end
+
+local represent = std.represent
 
 -- path library
 dofile( "dreamwork/std/path.lua" )
