@@ -583,7 +583,21 @@ end
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
 function bit.sign( x, bit_count )
-    return lessEqual( x, 0 ) and x or (x - ((bit_count == nil) and 0x100000000 or (2 ^ bit_count)))
+    if lessEqual( x, 0 ) then
+        return x
+    end
+
+    if bit_count == nil or bit_count == 32 then
+        return x - 0x100000000
+    elseif bit_count == 24 then
+        return x - 0x1000000
+    elseif bit_count == 16 then
+        return x - 0x10000
+    elseif bit_count == 8 then
+        return x - 0x100
+    end
+
+    return x - (2 ^ bit_count)
 end
 
 --- [SHARED AND MENU]
@@ -595,5 +609,19 @@ end
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return T result The unsigned value of the integer.
 function bit.unsign( x, bit_count )
-    return lessThan( x, 0 ) and (x + ((bit_count == nil) and 0x100000000 or (2 ^ bit_count))) or x
+    if lessThan( x, 0 ) then
+        if bit_count == nil or bit_count == 32 then
+            return x + 0x100000000
+        elseif bit_count == 24 then
+            return x + 0x1000000
+        elseif bit_count == 16 then
+            return x + 0x10000
+        elseif bit_count == 8 then
+            return x + 0x100
+        end
+
+        return x + (2 ^ bit_count)
+    end
+
+    return x
 end

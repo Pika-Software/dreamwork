@@ -1,7 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local setmetatable = std.setmetatable
+local raw = std.raw
+local raw_pairs = raw.pairs
 
 local math = std.math
 local math_isPositive = math.isPositive
@@ -9,15 +10,18 @@ local math_clamp, math_floor = math.clamp, math.floor
 local math_frexp, math_ldexp = math.frexp, math.ldexp
 local math_huge, math_tiny, math_nan = math.huge, math.tiny, math.nan
 
-local bit = std.bit
-local bit_band, bit_bor = bit.band, bit.bor
-local bit_sign, bit_unsign = bit.sign, bit.unsign
-local bit_lshift, bit_rshift = bit.lshift, bit.rshift
+local rbit = raw.bit
+local rbit_unsign = rbit.unsign
+local rbit_band, rbit_bor = rbit.band, rbit.bor
+local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
 
+local setmetatable = std.setmetatable
 local error = std.error
 
 
 -- TODO: ffi/holylib support?
+
+---@alias dreamwork.std.bytepack.Sequence integer[] # The sequence of bytes (integers<0-255>).
 
 --- [SHARED AND MENU]
 ---
@@ -26,9 +30,6 @@ local error = std.error
 ---@class dreamwork.std.bytepack
 local bytepack = {}
 std.bytepack = bytepack
-
----@alias dreamwork.std.bytepack.Sequence integer[] # The sequence of bytes (integers<0-255>).
-
 
 --- [SHARED AND MENU]
 ---
@@ -67,8 +68,8 @@ do
     ---@param uint8_2 integer The second byte.
     ---@return integer value The signed 2-byte integer.
     local function bytepack_readInt16BE( uint8_1, uint8_2 )
-        return bit_bor(
-            bit_lshift( uint8_1, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_1, 8 ),
             uint8_2
         )
     end
@@ -85,7 +86,7 @@ do
     ---@param uint8_2 integer The second byte.
     ---@return integer value The unsigned 2-byte integer.
     function bytepack.readUInt16BE( uint8_1, uint8_2 )
-        return bit_unsign( bytepack_readInt16BE( uint8_1, uint8_2 ), 16 )
+        return rbit_unsign( bytepack_readInt16BE( uint8_1, uint8_2 ), 16 )
     end
 
 end
@@ -103,8 +104,8 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     local function bytepack_writeInt16BE( value )
-        return bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
+        return rbit_band( rbit_rshift( value, 8 ), 0xFF ),
+            rbit_band( value, 0xFF )
     end
 
     bytepack.writeInt16BE = bytepack_writeInt16BE
@@ -119,7 +120,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     function bytepack.writeUInt16BE( value )
-        return bytepack_writeInt16BE( bit_unsign( value, 16 ) )
+        return bytepack_writeInt16BE( rbit_unsign( value, 16 ) )
     end
 
 end
@@ -137,8 +138,8 @@ do
     ---@param uint8_2 integer The second byte.
     ---@return integer value The signed 2-byte integer.
     local function bytepack_readInt16LE( uint8_1, uint8_2 )
-        return bit_bor(
-            bit_lshift( uint8_2, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_2, 8 ),
             uint8_1
         )
     end
@@ -155,7 +156,7 @@ do
     ---@param uint8_2 integer The second byte.
     ---@return integer value The unsigned 2-byte integer.
     function bytepack.readUInt16LE( uint8_1, uint8_2 )
-        return bit_unsign( bytepack_readInt16LE( uint8_1, uint8_2 ), 16 )
+        return rbit_unsign( bytepack_readInt16LE( uint8_1, uint8_2 ), 16 )
     end
 
 end
@@ -173,8 +174,8 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     local function bytepack_writeInt16LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF )
+        return rbit_band( value, 0xFF ),
+            rbit_band( rbit_rshift( value, 8 ), 0xFF )
     end
 
     bytepack.writeInt16LE = bytepack_writeInt16LE
@@ -189,7 +190,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     function bytepack.writeUInt16LE( value )
-        return bytepack_writeInt16LE( bit_unsign( value, 16 ) )
+        return bytepack_writeInt16LE( rbit_unsign( value, 16 ) )
     end
 
 end
@@ -208,9 +209,9 @@ do
     ---@param uint8_3 integer The third byte.
     ---@return integer value The signed 3-byte integer.
     local function bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 )
-        return bit_bor(
-            bit_lshift( uint8_1, 16 ),
-            bit_lshift( uint8_2, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_1, 16 ),
+            rbit_lshift( uint8_2, 8 ),
             uint8_3
         )
     end
@@ -228,7 +229,7 @@ do
     ---@param uint8_3 integer The third byte.
     ---@return integer value The unsigned 3-byte integer.
     function bytepack.readUInt24BE( uint8_1, uint8_2, uint8_3 )
-        return bit_unsign( bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 ), 24 )
+        return rbit_unsign( bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 ), 24 )
     end
 
 end
@@ -247,9 +248,9 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     local function bytepack_writeInt24BE( value )
-        return bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
+        return rbit_band( rbit_rshift( value, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 8 ), 0xFF ),
+            rbit_band( value, 0xFF )
     end
 
     bytepack.writeInt24BE = bytepack_writeInt24BE
@@ -265,7 +266,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     function bytepack.writeUInt24BE( value )
-        return bytepack_writeInt24BE( bit_unsign( value, 24 ) )
+        return bytepack_writeInt24BE( rbit_unsign( value, 24 ) )
     end
 
 end
@@ -284,9 +285,9 @@ do
     ---@param uint8_3 integer The third byte.
     ---@return integer value The signed 3-byte integer.
     local function bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 )
-        return bit_bor(
-            bit_lshift( uint8_3, 16 ),
-            bit_lshift( uint8_2, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_3, 16 ),
+            rbit_lshift( uint8_2, 8 ),
             uint8_1
         )
     end
@@ -304,7 +305,7 @@ do
     ---@param uint8_3 integer The third byte.
     ---@return integer value The unsigned 3-byte integer.
     function bytepack.readUInt24LE( uint8_1, uint8_2, uint8_3 )
-        return bit_unsign( bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 ), 24 )
+        return rbit_unsign( bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 ), 24 )
     end
 
 end
@@ -323,9 +324,9 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     local function bytepack_writeInt24LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF )
+        return rbit_band( value, 0xFF ),
+            rbit_band( rbit_rshift( value, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 16 ), 0xFF )
     end
 
     bytepack.writeInt24LE = bytepack_writeInt24LE
@@ -341,7 +342,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     function bytepack.writeUInt24LE( value )
-        return bytepack.writeInt24LE( bit_unsign( value, 24 ) )
+        return bytepack.writeInt24LE( rbit_unsign( value, 24 ) )
     end
 
 end
@@ -361,10 +362,10 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The signed 4-byte integer.
     local function bytepack_readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_bor(
-            bit_lshift( uint8_1, 24 ),
-            bit_lshift( uint8_2, 16 ),
-            bit_lshift( uint8_3, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_1, 24 ),
+            rbit_lshift( uint8_2, 16 ),
+            rbit_lshift( uint8_3, 8 ),
             uint8_4
         )
     end
@@ -383,7 +384,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The unsigned 4-byte integer.
     function bytepack.readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_unsign( bytepack_readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
+        return rbit_unsign( bytepack_readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
     end
 
 end
@@ -403,10 +404,10 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     local function bytepack_writeInt32BE( value )
-        return bit_band( bit_rshift( value, 24 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( value, 0xFF )
+        return rbit_band( rbit_rshift( value, 24 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 8 ), 0xFF ),
+            rbit_band( value, 0xFF )
     end
 
     bytepack.writeInt32BE = bytepack_writeInt32BE
@@ -423,7 +424,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     function bytepack.writeUInt32BE( value )
-        return bytepack_writeInt32BE( bit_unsign( value ) )
+        return bytepack_writeInt32BE( rbit_unsign( value ) )
     end
 
 end
@@ -443,10 +444,10 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The signed 4-byte integer.
     local function bytepack_readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_bor(
-            bit_lshift( uint8_4, 24 ),
-            bit_lshift( uint8_3, 16 ),
-            bit_lshift( uint8_2, 8 ),
+        return rbit_bor(
+            rbit_lshift( uint8_4, 24 ),
+            rbit_lshift( uint8_3, 16 ),
+            rbit_lshift( uint8_2, 8 ),
             uint8_1
         )
     end
@@ -465,7 +466,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The unsigned 4-byte integer.
     function bytepack.readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_unsign( bytepack_readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
+        return rbit_unsign( bytepack_readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 ) )
     end
 
 end
@@ -485,10 +486,10 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     local function bytepack_writeInt32LE( value )
-        return bit_band( value, 0xFF ),
-            bit_band( bit_rshift( value, 8 ), 0xFF ),
-            bit_band( bit_rshift( value, 16 ), 0xFF ),
-            bit_band( bit_rshift( value, 24 ), 0xFF )
+        return rbit_band( value, 0xFF ),
+            rbit_band( rbit_rshift( value, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( value, 24 ), 0xFF )
     end
 
     bytepack.writeInt32LE = bytepack_writeInt32LE
@@ -505,7 +506,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     function bytepack.writeUInt32LE( value )
-        return bytepack_writeInt32LE( bit_unsign( value ) )
+        return bytepack_writeInt32LE( rbit_unsign( value ) )
     end
 
 end
@@ -1555,9 +1556,9 @@ end
 ---@return integer minutes The number of minutes.
 ---@return integer seconds The number of seconds, **will be rounded**.
 function bytepack.readTime( uint16 )
-    return bit_rshift( bit_band( uint16, 0xF800 ), 11 ),
-        bit_rshift( bit_band( uint16, 0x7E0 ), 5 ),
-        bit_band( uint16, 0x1F ) * 2
+    return rbit_rshift( rbit_band( uint16, 0xF800 ), 11 ),
+        rbit_rshift( rbit_band( uint16, 0x7E0 ), 5 ),
+        rbit_band( uint16, 0x1F ) * 2
 end
 
 --- [SHARED AND MENU]
@@ -1587,9 +1588,9 @@ function bytepack.writeTime( hours, minutes, seconds )
         seconds = math_floor( math_clamp( seconds, 0, 60 ) * 0.5 )
     end
 
-    return bit_bor(
-        bit_lshift( hours, 11 ),
-        bit_lshift( minutes, 5 ),
+    return rbit_bor(
+        rbit_lshift( hours, 11 ),
+        rbit_lshift( minutes, 5 ),
         seconds
     )
 end
@@ -1603,9 +1604,9 @@ end
 ---@return integer month The month.
 ---@return integer year The year.
 function bytepack.readDate( uint16 )
-    return bit_band( uint16, 0x1F ),
-        bit_rshift( bit_band( uint16, 0x1E0 ), 5 ),
-        bit_rshift( bit_band( uint16, 0xFE00 ), 9 ) + 1980
+    return rbit_band( uint16, 0x1F ),
+        rbit_rshift( rbit_band( uint16, 0x1E0 ), 5 ),
+        rbit_rshift( rbit_band( uint16, 0xFE00 ), 9 ) + 1980
 end
 
 --- [SHARED AND MENU]
@@ -1635,9 +1636,9 @@ function bytepack.writeDate( day, month, year )
         year = math_clamp( year, 1980, 2107 ) - 1980
     end
 
-    return bit_bor( day,
-        bit_lshift( month, 5 ),
-        bit_lshift( year, 9 )
+    return rbit_bor( day,
+        rbit_lshift( month, 5 ),
+        rbit_lshift( year, 9 )
     )
 end
 
@@ -1749,12 +1750,11 @@ do
 
     do
 
-        local raw_pairs = std.raw.pairs
         local uint8_cache = {}
 
         for i in raw_pairs( decode_map ) do
             for j in raw_pairs( decode_map ) do
-                uint8_cache[ bit_lshift( i, 8 ) + j ] = bit_lshift( decode_map[ i ], 4 ) + decode_map[ j ]
+                uint8_cache[ rbit_lshift( i, 8 ) + j ] = rbit_lshift( decode_map[ i ], 4 ) + decode_map[ j ]
             end
         end
 
@@ -1766,7 +1766,7 @@ do
         ---@param uint8_2 integer The second byte.
         ---@return integer | nil value The unsigned 1-byte integer or `nil` if bytes do not match the allowed ones.
         function bytepack.readHex8( uint8_1, uint8_2 )
-            return uint8_cache[ bit_lshift( uint8_1, 8 ) + uint8_2 ]
+            return uint8_cache[ rbit_lshift( uint8_1, 8 ) + uint8_2 ]
         end
 
     end
@@ -1781,10 +1781,10 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@return integer value The unsigned 2-byte integer.
     function bytepack.readHex16BE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bit_bor(
-            bit_lshift( decode_map[ uint8_1 ], 12 ),
-            bit_lshift( decode_map[ uint8_2 ], 8 ),
-            bit_lshift( decode_map[ uint8_3 ], 4 ),
+        return rbit_bor(
+            rbit_lshift( decode_map[ uint8_1 ], 12 ),
+            rbit_lshift( decode_map[ uint8_2 ], 8 ),
+            rbit_lshift( decode_map[ uint8_3 ], 4 ),
             decode_map[ uint8_4 ]
         )
     end
@@ -1801,12 +1801,12 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The unsigned 3-byte integer.
     function bytepack.readHex24BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-        return bit_bor(
-            bit_lshift( decode_map[ uint8_1 ], 20 ),
-            bit_lshift( decode_map[ uint8_2 ], 16 ),
-            bit_lshift( decode_map[ uint8_3 ], 12 ),
-            bit_lshift( decode_map[ uint8_4 ], 8 ),
-            bit_lshift( decode_map[ uint8_5 ], 4 ),
+        return rbit_bor(
+            rbit_lshift( decode_map[ uint8_1 ], 20 ),
+            rbit_lshift( decode_map[ uint8_2 ], 16 ),
+            rbit_lshift( decode_map[ uint8_3 ], 12 ),
+            rbit_lshift( decode_map[ uint8_4 ], 8 ),
+            rbit_lshift( decode_map[ uint8_5 ], 4 ),
             decode_map[ uint8_6 ]
         )
     end
@@ -1825,14 +1825,14 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 4-byte integer.
     function bytepack.readHex32BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        return bit_bor(
-            bit_lshift( decode_map[ uint8_1 ], 28 ),
-            bit_lshift( decode_map[ uint8_2 ], 24 ),
-            bit_lshift( decode_map[ uint8_3 ], 20 ),
-            bit_lshift( decode_map[ uint8_4 ], 16 ),
-            bit_lshift( decode_map[ uint8_5 ], 12 ),
-            bit_lshift( decode_map[ uint8_6 ], 8 ),
-            bit_lshift( decode_map[ uint8_7 ], 4 ),
+        return rbit_bor(
+            rbit_lshift( decode_map[ uint8_1 ], 28 ),
+            rbit_lshift( decode_map[ uint8_2 ], 24 ),
+            rbit_lshift( decode_map[ uint8_3 ], 20 ),
+            rbit_lshift( decode_map[ uint8_4 ], 16 ),
+            rbit_lshift( decode_map[ uint8_5 ], 12 ),
+            rbit_lshift( decode_map[ uint8_6 ], 8 ),
+            rbit_lshift( decode_map[ uint8_7 ], 4 ),
             decode_map[ uint8_8 ]
         ) % 0xFFFFFFFF
     end
@@ -1870,7 +1870,7 @@ do
 
     setmetatable( hex_cache_1, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( uint, 0x0F ) ]
+            local value = encode_map[ rbit_band( uint, 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -1882,7 +1882,7 @@ do
 
     setmetatable( hex_cache_2, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 4 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 4 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -1907,7 +1907,7 @@ do
 
     setmetatable( hex_cache_3, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 8 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 8 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -1919,7 +1919,7 @@ do
 
     setmetatable( hex_cache_4, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 12 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 12 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -1963,7 +1963,7 @@ do
 
     setmetatable( hex_cache_5, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 16 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 16 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -1975,7 +1975,7 @@ do
 
     setmetatable( hex_cache_6, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 20 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 20 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -2025,7 +2025,7 @@ do
 
     setmetatable( hex_cache_7, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 24 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 24 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,
@@ -2037,7 +2037,7 @@ do
 
     setmetatable( hex_cache_8, {
         __index = function( self, uint )
-            local value = encode_map[ bit_band( bit_rshift( uint, 28 ), 0x0F ) ]
+            local value = encode_map[ rbit_band( rbit_rshift( uint, 28 ), 0x0F ) ]
             self[ uint ] = value
             return value
         end,

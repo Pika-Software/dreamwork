@@ -13,6 +13,7 @@ local string_format = string.format
 local loadstring = std.loadstring
 local pcall = std.pcall
 
+
 --- [SHARED AND MENU]
 ---
 --- Native **32-bit integer only** bit library.
@@ -450,6 +451,7 @@ if rbit.rrotate == nil then
         function rbit.rrotate( x, disp )
             return rbit_bor( rbit_rshift( x, disp ), rbit_lshift( x, 32 - disp ) )
         end
+
     else
 
         --- [SHARED AND MENU]
@@ -463,6 +465,7 @@ if rbit.rrotate == nil then
         function rbit.rrotate( x, disp )
             return rbit_brotate( x, -disp )
         end
+
     end
 
 end
@@ -561,4 +564,81 @@ if rbit.bswap == nil then
         )
     end
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Reverses the order of the lowest `bit_count` bits of `x`, so the least significant bit
+--- becomes the most significant bit (within that range) and vice versa.
+---
+--- ```
+--- reverse( 0b1011000, 7 ) --> 0b0001101
+--- ```
+---
+---@param x integer The value whose bits are to be reversed.
+---@param bit_count integer? The number of low-order bits to reverse. Defaults to `32`.
+---@return integer result The value of `x` with its bits reversed.
+function rbit.reverse( x, bit_count )
+    ---@type integer
+    local result = rbit_band( x, 1 )
+    x = rbit_rshift( x, 1 )
+
+    for i = 2, (bit_count or 32), 1 do
+        result = rbit_bor( rbit_lshift( result, 1 ), rbit_band( x, 1 ) )
+        x = rbit_rshift( x, 1 )
+    end
+
+    return result
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the sign of an integer.
+---
+---@generic T: integer | { __le: function, __sub: function }
+---@param x T The integer to get the sign of.
+---@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+function rbit.sign( x, bit_count )
+    if x > 0 then
+        if bit_count == nil or bit_count == 32 then
+            return x - 0x100000000
+        elseif bit_count == 24 then
+            return x - 0x1000000
+        elseif bit_count == 16 then
+            return x - 0x10000
+        elseif bit_count == 8 then
+            return x - 0x100
+        end
+
+        return x - (2 ^ bit_count)
+    end
+
+    return x
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the unsigned value of an integer.
+---
+---@generic T: integer | { __lt: function, __add: function }
+---@param x T The integer to get the unsigned value of.
+---@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@return T result The unsigned value of the integer.
+function rbit.unsign( x, bit_count )
+    if x < 0 then
+        if bit_count == nil or bit_count == 32 then
+            return x + 0x100000000
+        elseif bit_count == 24 then
+            return x + 0x1000000
+        elseif bit_count == 16 then
+            return x + 0x10000
+        elseif bit_count == 8 then
+            return x + 0x100
+        end
+
+        return x + (2 ^ bit_count)
+    end
+
+    return x
 end
