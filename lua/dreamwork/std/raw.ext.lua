@@ -595,8 +595,7 @@ end
 ---
 --- Returns the sign of an integer.
 ---
----@generic T: integer | { __le: function, __sub: function }
----@param x T The integer to get the sign of.
+---@param x integer The integer to get the sign of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
 function rbit.sign( x, bit_count )
@@ -621,10 +620,9 @@ end
 ---
 --- Returns the unsigned value of an integer.
 ---
----@generic T: integer | { __lt: function, __add: function }
----@param x T The integer to get the unsigned value of.
+---@param x integer The integer to get the unsigned value of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
----@return T result The unsigned value of the integer.
+---@return integer result The unsigned value of the integer.
 function rbit.unsign( x, bit_count )
     if x < 0 then
         if bit_count == nil or bit_count == 32 then

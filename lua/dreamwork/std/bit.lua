@@ -581,7 +581,7 @@ end
 ---@generic T: integer | { __le: function, __sub: function }
 ---@param x T The integer to get the sign of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
----@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+---@return T result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
 function bit.sign( x, bit_count )
     if lessEqual( x, 0 ) then
         return x
