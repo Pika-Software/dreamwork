@@ -4,6 +4,7 @@ local std = dreamwork.std
 ---@class dreamwork.std.debug
 local debug = std.debug
 local debug_getstack = debug.getstack
+local debug_getmetatable = debug.getmetatable
 
 local math = std.math
 local math_min = math.min
@@ -11,10 +12,15 @@ local math_min = math.min
 local string = std.string
 local string_match = string.match
 
-local class = std.class
+local table = std.table
+local table_reversed = table.reversed
 
 local coroutine = std.coroutine
 local coroutine_running = coroutine.running
+
+local class = std.class
+local class_new = class.new
+
 
 --- [SHARED AND MENU]
 ---
@@ -36,13 +42,30 @@ local coroutine_running = coroutine.running
 ---@field pop fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.StackLevel | nil
 ---@field peek fun( self: dreamwork.std.debug.Stack ): dreamwork.std.debug.StackLevel | nil
 ---@field size integer The size of the stack. **Read-only**
----@field protected start integer The index of the first frame belonging to the most recent `capture` call, i.e. the "hop start". Used to bound how far back coalescing needs to compare.
+---@field start integer The index of the first frame belonging to the most recent `capture` call, i.e. the "hop start". Used to bound how far back coalescing needs to compare.
 local Stack = class.base( "debug.Stack", false, std.Stack )
 
 ---@protected
 function Stack:__init()
     self.start = 1 -- hop start
     self.size = 0
+end
+
+---@return dreamwork.std.debug.Stack
+---@protected
+function Stack:__copy()
+    ---@type dreamwork.std.debug.Stack
+    ---@diagnostic disable-next-line: param-type-mismatch, assign-type-mismatch
+    local object = class_new( debug_getmetatable( self ) )
+
+    for i = 1, self.size, 1 do
+        object[ i ] = self[ i ]
+    end
+
+    object.start = self.start
+    object.size = self.size
+
+    return object
 end
 
 --- [SHARED AND MENU]
@@ -53,9 +76,9 @@ end
 ---@field thread thread | nil Thread of call, available only when called inside a coroutine.
 
 ---@param stack_level dreamwork.std.debug.Info
----@param ignore_thread boolean
+---@param current_thread thread | nil
 ---@return dreamwork.std.debug.StackLevel stack_level
-local function update_source( stack_level, ignore_thread )
+local function update_source( stack_level, current_thread )
     ---@cast stack_level dreamwork.std.debug.StackLevel
     local source = stack_level.source
 
@@ -65,11 +88,63 @@ local function update_source( stack_level, ignore_thread )
         stack_level.source = "/workspace/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
     end
 
-    if not ignore_thread then
-        stack_level.thread = coroutine_running()
+    stack_level.thread = current_thread
+    return stack_level
+end
+
+---@param self dreamwork.std.debug.Stack
+---@param levels dreamwork.std.debug.Info[]
+---@param level_count integer
+local function merge( self, levels, level_count )
+    local stack_size = self.size
+
+    if stack_size == 0 then
+        for i = 1, level_count, 1 do
+            self[ i ] = levels[ (level_count - i) + 1 ]
+        end
+
+        self.start = 1 -- hop start
+        self.size = level_count
+        return
     end
 
-    return stack_level
+    for d = 0, math_min( (stack_size - self.start) + 1, level_count ) - 1, 1 do
+        local old_info = self[ stack_size - d ]
+        local new_info = levels[ d + 1 ]
+
+        if old_info.currentline == new_info.currentline
+            and old_info.source == new_info.source
+            and old_info.name == new_info.name then
+
+            -- matched frame and everything behind it is already correct;
+            -- just append the part of the new capture that's genuinely new
+            for i = 1, d, 1 do
+                self[ (stack_size - d) + i ] = levels[ (d - i) + 1 ]
+            end
+
+            self.size = stack_size            -- unchanged depth
+            self.start = (stack_size - d) + 1 -- optional but correct: bound future search to just the newly-written frames
+            return
+        end
+    end
+
+    local start = stack_size + 1
+
+    for i = 1, level_count, 1 do
+        self[ (start + i) - 1 ] = levels[ (level_count - i) + 1 ]
+    end
+
+    self.size = (start + level_count) - 1
+    self.start = start
+end
+
+--- [SHARED AND MENU]
+---
+--- Merges the given `other` stack into this one, with the `other` stack's frames reversed before merging.
+---
+---@param other dreamwork.std.debug.Stack The stack to merge into this one.
+function Stack:merge( other )
+    return merge( self, table_reversed( other, other.size ) )
 end
 
 --- [SHARED AND MENU]
@@ -94,45 +169,13 @@ end
 ---@param max_levels? integer   Maximum number of stack frames to read, counted from the innermost frame (after `head_skip` is applied). Stack walking stops as soon as this many frames have been captured, so frames further up (older/outer) are never read at all. `nil`/omitted means no limit.
 function Stack:capture( stack_level, head_skip, tail_skip, max_levels )
     local levels, level_count = debug_getstack( (stack_level or 2) + 1, "Slnf", head_skip, tail_skip, max_levels )
-    local stack_size = self.size
-
-    if stack_size == 0 then
-        for i = 1, level_count, 1 do
-            self[ i ] = update_source( levels[ (level_count - i) + 1 ], false )
-        end
-
-        self.start = 1 -- hop start
-        self.size = level_count
-        return
-    end
-
-    for d = 0, math_min( (stack_size - self.start) + 1, level_count ) - 1, 1 do
-        local old_info = self[ stack_size - d ]
-        local new_info = update_source( levels[ d + 1 ], true )
-
-        if old_info.currentline == new_info.currentline
-            and old_info.source == new_info.source
-            and old_info.name == new_info.name then
-
-            -- matched frame and everything behind it is already correct;
-            -- just append the part of the new capture that's genuinely new
-            for i = 1, d, 1 do
-                self[ (stack_size - d) + i ] = update_source( levels[ (d - i) + 1 ], false )
-            end
-
-            self.size = stack_size + d
-            return
-        end
-    end
-
-    local start = stack_size + 1
+    local current_thread = coroutine_running()
 
     for i = 1, level_count, 1 do
-        self[ (start + i) - 1 ] = update_source( levels[ (level_count - i) + 1 ], false )
+        levels[ i ] = update_source( levels[ i ], current_thread )
     end
 
-    self.size = (start + level_count) - 1
-    self.start = start
+    merge( self, levels, level_count )
 end
 
 --- [SHARED AND MENU]
