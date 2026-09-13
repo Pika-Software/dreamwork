@@ -121,6 +121,7 @@ if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == ni
 end
 
 local debug_getmetatable = debug.getmetatable
+local debug_getlocal = debug.getlocal
 local debug_getinfo = debug.getinfo
 local debug_fempty = debug.fempty
 
@@ -226,52 +227,46 @@ do
 
 end
 
-do
-
-    local debug_getlocal = debug.getlocal
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns all available local variables at the given stack level (and, optionally,
-    --- in the given thread/coroutine) as a table keyed by variable name.
-    ---
-    ---@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
-    ---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
-    ---@return table<string, any> values A table mapping each local variable's name to its current value.
-    ---@return integer value_count The number of locals found.
-    function debug.getlocals( stack_level, thread )
-        if stack_level == nil then
-            stack_level = 2
-        elseif stack_level >= 0 then
-            stack_level = stack_level + 1
-        else
-            error( "stack level cannot be less than zero", 2 )
-        end
-
-        ---@type table<string, any>
-        local values = {}
-
-        ---@type integer
-        local index = 1
-
-        ::getlocals_loop::
-
-        local key, value
-        if thread == nil then
-            key, value = debug_getlocal( stack_level, index )
-        else
-            key, value = debug_getlocal( thread, stack_level, index )
-        end
-
-        if key ~= nil then
-            values[ key ] = value
-            index = index + 1
-            goto getlocals_loop
-        end
-
-        return values, index - 1
+--- [SHARED AND MENU]
+---
+--- Returns all available local variables at the given stack level (and, optionally,
+--- in the given thread/coroutine) as a table keyed by variable name.
+---
+---@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
+---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
+---@return table<string, any> values A table mapping each local variable's name to its current value.
+---@return integer value_count The number of locals found.
+function debug.getlocals( stack_level, thread )
+    if stack_level == nil then
+        stack_level = 2
+    elseif stack_level >= 0 then
+        stack_level = stack_level + 1
+    else
+        error( "stack level cannot be less than zero", 2 )
     end
 
+    ---@type table<string, any>
+    local values = {}
+
+    ---@type integer
+    local index = 1
+
+    ::getlocals_loop::
+
+    local key, value
+    if thread == nil then
+        key, value = debug_getlocal( stack_level, index )
+    else
+        key, value = debug_getlocal( thread, stack_level, index )
+    end
+
+    if key ~= nil then
+        values[ key ] = value
+        index = index + 1
+        goto getlocals_loop
+    end
+
+    return values, index - 1
 end
 
 --- [SHARED AND MENU]
@@ -318,13 +313,13 @@ local raw_type = raw.type
 --- a table field, a method, or an upvalue - and can fail to find anything,
 --- in which case both results are `nil`.
 ---
----@param location? integer | function The function or stack level.
+---@param location? integer The function or stack level.
 ---@return string | nil name The name of the function, or `nil` if unknown.
 ---@return "global" | "local" | "method" | "field" | "upvalue" | nil name_what The kind of the function, or `nil` if unknown.
 function debug.getfname( location )
     if location == nil then
         location = 2
-    elseif raw_type( location ) == "number" then
+    else
         location = location + 1
     end
 
@@ -345,10 +340,16 @@ end
 ---
 --- Returns the path to the file that the function is defined in.
 ---
----@param f function | integer The function or stack level to get the path from.
+---@param location function | integer The function or stack level to get the path from.
 ---@return string | nil file_path The file path or `nil` if not found.
-function debug.getfsource( f )
-    local info = debug_getinfo( f, "S" )
+function debug.getfsource( location )
+    if location == nil then
+        location = 2
+    elseif raw_type( location ) == "number" then
+        location = location + 1
+    end
+
+    local info = debug_getinfo( location, "S" )
     if info ~= nil then
         return info.source
     end
