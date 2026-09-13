@@ -985,40 +985,47 @@ do
 
 end
 
---- [SHARED AND MENU]
----
---- Converts the big integer into a hex string.
----
----@return string hex_str The hex string representation of the big integer.
-function BigInteger:toHexString()
-    local bytes = self.bytes
+do
 
-    ---@type integer
-    local byte_count = bytes[ 0 ]
-    if byte_count == 0 then
-        if self.sign then
-            return "-0x0"
+    ---@param self dreamwork.std.BigInteger
+    ---@return string
+    ---@protected
+    local function toHex( self )
+        local bytes = self.bytes
+
+        ---@type integer
+        local byte_count = bytes[ 0 ]
+        if byte_count == 0 then
+            return "0"
         end
 
-        return "0x0"
+        ---@type string[]
+        local result = {
+            string_format( "%X", bytes[ byte_count ] ) -- MSB, unpadded
+        }
+
+        for i = 2, byte_count, 1 do
+            result[ i ] = string_format( "%02X", bytes[ (byte_count - i) + 1 ] )
+        end
+
+        return table_concat( result )
     end
 
-    ---@type string[]
-    local result = {}
+    BigInteger.__tohex = toHex
 
-    result[ 1 ] = string_format( "%X", bytes[ byte_count ] ) -- MSB, unpadded
+    --- [SHARED AND MENU]
+    ---
+    --- Converts the big integer into a hex string.
+    ---
+    ---@return string hex_str The hex string representation of the big integer.
+    function BigInteger:toHexString()
+        if self.sign then
+            return "-0x" .. toHex( self )
+        end
 
-    for i = 2, byte_count, 1 do
-        result[ i ] = string_format( "%02X", bytes[ (byte_count - i) + 1 ] )
+        return "0x" .. toHex( self )
     end
 
-    local str = table_concat( result )
-
-    if self.sign then
-        return "-0x" .. str
-    end
-
-    return "0x" .. str
 end
 
 --- [SHARED AND MENU]
