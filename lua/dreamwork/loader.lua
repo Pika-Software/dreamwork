@@ -1,12 +1,13 @@
 local error = error
 
 ---@diagnostic disable-next-line: undefined-global
-local dofile = dofile or include
+local dofile = include or dofile
 if dofile == nil then
     error( "`dofile` not found, dreamwork cannot be loaded!" )
 end
 
 if dreamwork == nil then
+
     --- [SHARED AND MENU]
     ---
     --- Lua runtime and package manager.
@@ -19,6 +20,7 @@ if dreamwork == nil then
     dreamwork = { std = {} }
     dreamwork.Version = "0.1.0"
     dreamwork.Prefix = "dreamwork@" .. dreamwork.Version
+
 end
 
 dreamwork.dofile = dofile
@@ -469,9 +471,9 @@ function std.copy( value )
     local fn = debug_getmetavalue( value, "__copy" )
     if fn == nil then
         return nil
-    else
-        return fn( value )
     end
+
+    return fn( value )
 end
 
 --- [SHARED AND MENU]
@@ -814,17 +816,23 @@ do
     --- that length, or truncated from the left if it's already longer.
     ---
     ---@param value any The value to get a hexadecimal identifier for.
-    ---@param desired_length integer? The exact length the returned string should be. If omitted, the natural length is used.
+    ---@param desired_length? integer The exact length the returned string should be. If omitted, the natural length is used.
     ---@return string hex_str The hexadecimal identifier of `value`, optionally padded or truncated to `desired_length`.
     function std.tohex( value, desired_length )
         local hex_str
 
-        ---@type fun( value: any ): integer
-        local fn = debug_getmetavalue( value, "__hash" )
-        if fn == nil then
-            hex_str = string_sub( string_format( "%p", value ), 3 )
+        ---@type fun( value: any ): string
+        local tohex_fn = debug_getmetavalue( value, "__tohex" )
+        if tohex_fn == nil then
+            ---@type fun( value: any ): integer
+            local hash_fn = debug_getmetavalue( value, "__hash" )
+            if hash_fn == nil then
+                hex_str = string_sub( string_format( "%p", value ), 3 )
+            else
+                hex_str = string_format( "%x", hash_fn( value ) )
+            end
         else
-            hex_str = string_format( "%x", fn( value ) )
+            hex_str = tohex_fn( value )
         end
 
         if desired_length ~= nil then
@@ -1019,6 +1027,13 @@ do
 
         Nil.__len = Nil.__tonumber
 
+        ---@param value nil
+        ---@return string
+        ---@private
+        function Nil.__represent( value )
+            return string_format( "nil: %p", value )
+        end
+
         --- [SHARED AND MENU]
         ---
         --- Checks whether the value type is `nil`.
@@ -1068,6 +1083,13 @@ do
         ---@private
         function Boolean.__len()
             return 1
+        end
+
+        ---@param value boolean
+        ---@return string
+        ---@private
+        function Boolean.__represent( value )
+            return string_format( "boolean: %p [%s]", value, value )
         end
 
         --- [SHARED AND MENU]
@@ -1202,13 +1224,18 @@ do
         String.__type = "string"
         std.String = String
 
+        ---@param value string
+        ---@return boolean
         ---@private
-        function String:__toboolean()
-            return self ~= "" and self ~= "0" and self ~= "false"
+        function String.__toboolean( value )
+            return value ~= "" and value ~= "0" and value ~= "false"
         end
 
-        function String:__represent()
-            return string_format( "string: %p [%s]", self, self )
+        ---@param value string
+        ---@return string
+        ---@private
+        function String.__represent( value )
+            return string_format( "string: %p [%s]", value, value )
         end
 
         String.__tonumber = raw.tonumber
@@ -1244,6 +1271,13 @@ do
 
         Function.__type = "function"
         std.Function = Function
+
+        ---@param value function
+        ---@return string
+        ---@private
+        function Function.__represent( value )
+            return string_format( "function: %p", value )
+        end
 
         --- [SHARED AND MENU]
         ---
@@ -1285,6 +1319,13 @@ do
 
         Thread.__type = "thread"
         std.Thread = Thread
+
+        ---@param value thread
+        ---@return string
+        ---@private
+        function Thread.__represent( value )
+            return string_format( "thread: %p", value )
+        end
 
         --- [SHARED AND MENU]
         ---

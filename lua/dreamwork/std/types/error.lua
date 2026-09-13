@@ -224,14 +224,8 @@ do
 
             ---@type function | nil
             local func = frame.func
-            if func ~= nil then
-                if name == nil then
-                    name = debug.getfname( func )
-                end
-
-                if file_path == nil then
-                    file_path = debug.getfsource( func )
-                end
+            if func ~= nil and file_path == nil then
+                file_path = debug.getfsource( func )
             end
 
             engine_consoleMessageColored( ". ", COLOR_SUVA_GRAY )
@@ -334,10 +328,6 @@ function NotImplementedError:__message( error_message )
         if top_frame ~= nil then
             ---@type string | nil
             local name = top_frame.name
-            if name == nil and top_frame.func ~= nil then
-                name = debug.getfname( top_frame.func )
-            end
-
             if name ~= nil then
                 if error_message == nil then
                     return string_format( "`%s` is not implemented.", name )

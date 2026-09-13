@@ -1,6 +1,8 @@
 ---@meta
 
+
 ---@alias bool boolean
+
 
 --- [SHARED AND MENU]
 ---
@@ -80,9 +82,43 @@ metatable.__name = nil
 --- Otherwise, if the metatable of `v` has a `__name` field with a string value,
 --- tostring may use that string in its final result.
 ---
----@generic K, V
----@type fun(self: table<K, V>): string
+---@type fun( self: any ): string
 metatable.__tostring = nil
+
+---
+--- Converts the object into a number.
+---
+---@type fun( self: any, base: integer ): number | integer
+metatable.__tonumber = nil
+
+---
+--- Converts the object into a boolean value.
+---
+---@type fun( self: any ): boolean
+metatable.__toboolean = nil
+
+---
+--- Converts the object into a color.
+---
+---@type fun( self: any ): dreamwork.std.Color
+metatable.__tocolor = nil
+
+---
+--- Converts the object into a hexadecimal string.
+---
+---
+---@type fun( self: any ): string
+metatable.__tohex = nil
+
+---
+--- Returns a developer-oriented representation of the object.
+---
+--- This is used by the `represent( value )` function and in the debugger.
+---
+--- Also this affects `print`-like functions.
+---
+---@type fun( self: any ): string
+metatable.__represent = nil
 
 ---
 --- Called when the the garbage collector detects that the corresponding table or userdata is dead.
@@ -91,8 +127,7 @@ metatable.__tostring = nil
 ---
 --- See [§2.5.3](https://www.lua.org/manual/5.4/manual.html#2.5.3)
 ---
----@generic K, V
----@type fun(self: table<K, V>)
+---@type fun( self: any )
 metatable.__gc = nil
 
 ---
@@ -100,8 +135,7 @@ metatable.__gc = nil
 ---
 --- See [§3.3.8](https://www.lua.org/manual/5.4/manual.html#3.3.8)
 ---
----@generic K, V
----@type fun(self: table<K, V>, errobj: any): any
+---@type fun( self: any, errobj: any ): any
 metatable.__close = nil
 
 ---
@@ -109,8 +143,8 @@ metatable.__close = nil
 ---
 --- `a + b = result`
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__add = nil
 
 ---
@@ -118,8 +152,8 @@ metatable.__add = nil
 ---
 --- `a - b = result`
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__sub = nil
 
 ---
@@ -127,8 +161,8 @@ metatable.__sub = nil
 ---
 --- `a * b = result`
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__mul = nil
 
 ---
@@ -136,8 +170,8 @@ metatable.__mul = nil
 ---
 --- `a / b = result`
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__div = nil
 
 ---
@@ -147,8 +181,8 @@ metatable.__div = nil
 ---
 --- This is equivalent to `a * -1`.
 ---
----@generic K, V
----@type fun(self: table<K, V>): table<K, V>
+---@generic T
+---@type fun( self: T ): T
 metatable.__unm = nil
 
 ---
@@ -160,8 +194,8 @@ metatable.__unm = nil
 ---
 --- Note that this is different from `math.modf( a )`, which returns the remainder and fractional part of a number.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__mod = nil
 
 ---
@@ -171,8 +205,8 @@ metatable.__mod = nil
 ---
 --- This is equivalent to `math.pow( a, b )`.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__pow = nil
 
 ---
@@ -180,8 +214,8 @@ metatable.__pow = nil
 ---
 --- Used by `math.fdiv( a, b )` function.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): table<K, V>
+---@generic T
+---@type fun( self: T, other: any ): T
 metatable.__idiv = nil
 
 ---
@@ -189,8 +223,8 @@ metatable.__idiv = nil
 ---
 --- Used by `bit.band( a, b )` function.
 ---
----@generic K, V
----@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
+---@generic T
+---@type fun( self: T, ...: any ): T
 metatable.__band = nil
 
 ---
@@ -198,8 +232,8 @@ metatable.__band = nil
 ---
 --- Used by `bit.bor( a, b )` function.
 ---
----@generic K, V
----@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
+---@generic T
+---@type fun( self: T, ...: any ): T
 metatable.__bor = nil
 
 ---
@@ -207,8 +241,8 @@ metatable.__bor = nil
 ---
 --- Used by `bit.bxor( a, b )` function.
 ---
----@generic K, V
----@type fun(self: table<K, V>, ...: table<K, V>?): table<K, V>
+---@generic T
+---@type fun( self: T, ...: any ): T
 metatable.__bxor = nil
 
 ---
@@ -216,8 +250,8 @@ metatable.__bxor = nil
 ---
 --- Used by `bit.bnot( a )` function.
 ---
----@generic K, V
----@type fun(self: table<K, V>): table<K, V>
+---@generic T
+---@type fun( self: T ): T
 metatable.__bnot = nil
 
 ---
@@ -294,8 +328,7 @@ metatable.__bswp = nil
 --- any operand is neither a string nor a number
 --- (which is always coercible to a string).
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): string | table<K, V>
+---@type fun( self: any, other: any ): string
 metatable.__concat = nil
 
 ---
@@ -316,8 +349,7 @@ metatable.__concat = nil
 ---
 --- See [§3.4.7](https://www.lua.org/manual/5.4/manual.html#3.4.7)
 ---
----@generic K, V
----@type fun(self: table<K, V>): integer
+---@type fun( self: any ): integer
 metatable.__len = nil
 
 ---
@@ -331,8 +363,7 @@ metatable.__len = nil
 ---
 --- The result of the call is always converted to a `boolean`.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): boolean
+---@type fun( self: any, other: any ): boolean
 metatable.__eq = nil
 
 ---
@@ -345,8 +376,7 @@ metatable.__eq = nil
 ---
 --- Moreover, the result of the call is always converted to a boolean.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): boolean
+---@type fun( self: any, other: any ): boolean
 metatable.__lt = nil
 
 ---
@@ -354,8 +384,7 @@ metatable.__lt = nil
 ---
 --- Behavior similar to the less than operation.
 ---
----@generic K, V
----@type fun(self: table<K, V>, other: any): boolean
+---@type fun( self: any, other: any ): boolean
 metatable.__le = nil
 
 ---
@@ -395,7 +424,7 @@ metatable.__le = nil
 --- ```
 ---
 ---@generic K, V
----@type table<K, V> | (fun(self: table<K, V>, key: K): V?)
+---@type table<K, V> | ( fun( self: table<K, V>, key: K ): ( V | nil ) )
 metatable.__index = nil
 
 ---
@@ -439,7 +468,7 @@ metatable.__index = nil
 --- ```
 ---
 ---@generic K, V
----@type table<K, V> | (fun(self: table<K, V>, key: K, value: V))
+---@type table<K, V> | ( fun( self: table<K, V>, key: K, value: V ) )
 metatable.__newindex = nil
 
 ---
@@ -469,15 +498,14 @@ metatable.__newindex = nil
 --- t(1, 2, 3) --> 'Called with: 1 2 3'
 --- ```
 ---
----@generic K, V
----@type fun(self: table<K, V>, ...: any ): any
+---@type fun( self: any, ...: any ): any
 metatable.__call = nil
 
 ---
 --- Affects iteration when using the `pairs()` function, letting you define a custom iterator function (see [`pairs()`](https://www.lua.org/manual/5.4/manual.html#pdf-pairs), [`next()`](https://www.lua.org/manual/5.4/manual.html#pdf-next)).
 ---
 ---@generic K, V
----@type fun(self: table<K, V>): fun(tbl: table<K, V>, key: K?): K?, V?
+---@type fun( self: table<K, V> ): fun( tbl: table<K, V>, key: ( K | nil ) ): ( K | nil ), ( V | nil )
 metatable.__pairs = nil
 
 ---
@@ -488,76 +516,40 @@ metatable.__pairs = nil
 ---
 --- If you want to create a deep copy, you will need to implement this metamethod yourself.
 ---
----@generic K, V
----@type fun(self: table<K, V>): table<K, V>
+---@generic T
+---@type fun( self: T ): T
 metatable.__copy = nil
 
 ---
 --- Serializes the object into a writer.
 ---
----@generic K, V
----@type fun(self: table<K, V>, writer: dreamwork.std.BinaryWriter, ...: any?)
+---@type fun( self: any, writer: dreamwork.std.BinaryWriter, ...: any? )
 metatable.__serialize = nil
 
 ---
 --- Deserializes the object from a reader.
 ---
----@generic K, V
----@type fun(self: table<K, V>, reader: dreamwork.std.BinaryReader, ...: any?)
+---@type fun( self: any, reader: dreamwork.std.BinaryReader, ...: any? )
 metatable.__deserialize = nil
-
----
---- Converts the object into a number.
----
----@generic K, V
----@type fun(self: table<K, V>, base: integer): number | integer
-metatable.__tonumber = nil
-
----
---- Converts the object into a boolean value.
----
----@generic K, V
----@type fun(self: table<K, V>): boolean
-metatable.__toboolean = nil
-
----
---- Converts the object into a color.
----
----@generic K, V
----@type fun(self: table<K, V>): dreamwork.std.Color
-metatable.__tocolor = nil
-
----
---- Returns a developer-oriented representation of the object.
----
---- This is used by the `represent( value )` function and in the debugger.
----
---- Also this affects `print`-like functions.
----
----@generic K, V
----@type fun(self: table<K, V>): string
-metatable.__represent = nil
 
 ---
 --- Checks whether the object is valid.
 ---
----@generic K, V
----@type fun(self: table<K, V>): boolean
+---@type fun( self: any ): boolean
 metatable.__isvalid = nil
 
 ---
 --- Returns a stable hash value for the object.
 ---
----@generic K, V
----@type fun(self: table<K, V>): integer
+---@type fun( self: any ): integer
 metatable.__hash = nil
 
 ---
 --- Returns binary size of the `object` as integer of bit/bytes.
 ---
----@generic K, V
----@type fun(self: table<K, V>, as_bytes: boolean): integer
+---@type fun( self: any, as_bytes: boolean ): integer
 metatable.__sizeof = nil
+
 
 --- [SHARED AND MENU]
 ---
@@ -576,6 +568,7 @@ metatable.__sizeof = nil
 ---|+"S" # Source info. Fills `source`, `short_src`, `linedefined`, `lastlinedefined`, and `what`.
 ---|+"u" # Upvalue/parameter info. Fills `nups`, `nparams`, and `isvararg`.
 ---|+">" # LuaJIT extension; causes this function to use the last argument to get the data from, instead of treating it as a stack level; the function value is popped/consumed in the process. No fields of its own — combine with other letters (e.g. `">S"`).
+
 
 --- [SHARED AND MENU]
 ---
@@ -597,6 +590,7 @@ metatable.__sizeof = nil
 ---@field isvararg         boolean | nil `true` if the function is a vararg function (always `true` for C functions).
 ---@field func             function | nil The function itself. Only valid when `what` includes `"f"`.
 ---@field activelines      table<integer, ( true | nil )> | nil A set whose keys are the line numbers with associated code (i.e. valid lines for breakpoints); each present key maps to `true`. Only valid when `what` includes `"L"`.
+
 
 ---@class getregistry
 getregistry = {}
@@ -624,6 +618,7 @@ function getregistry.Get() end
 ---| "DELETE" # Remove a resource from the server.
 ---| "OPTIONS" # Describe communication options for the target resource.
 
+
 --- [SHARED AND MENU]
 ---
 --- HTTP request URL.
@@ -633,6 +628,7 @@ function getregistry.Get() end
 ---| dreamwork.std.URL # Absolute URL object.
 ---| "http://" # Default protocol.
 ---| "https://" # Default secure protocol.
+
 
 --- [SHARED AND MENU]
 ---
@@ -664,17 +660,20 @@ function getregistry.Get() end
 ---| "video/mp4"
 ---| "video/webm"
 
+
 --- [SHARED AND MENU]
 ---
 --- HTTP request headers.
 ---
 ---@alias dreamwork.std.http.Request.headers table<string, string>
 
+
 --- [SHARED AND MENU]
 ---
 --- HTTP request parameters.
 ---
 ---@alias dreamwork.std.http.Request.parameters dreamwork.std.URL.SearchParams | table | nil
+
 
 do
 
@@ -745,6 +744,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -770,6 +770,7 @@ do
     response.headers = nil
 
 end
+
 
 do
 
@@ -871,6 +872,7 @@ do
 
 end
 
+
 do
 
     --- [MENU]
@@ -925,6 +927,7 @@ do
     query_data.finished = nil
 
 end
+
 
 do
 
@@ -1189,6 +1192,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1392,6 +1396,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1422,6 +1427,7 @@ do
     options.max = nil
 
 end
+
 
 do
 
@@ -1463,6 +1469,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1493,6 +1500,7 @@ do
     options.debug = nil
 
 end
+
 
 do
 
@@ -1543,6 +1551,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1560,6 +1569,7 @@ do
     local URLState = {}
 
 end
+
 
 do
 
@@ -1651,6 +1661,7 @@ do
     tree.url = nil
 
 end
+
 
 do
 
@@ -1777,6 +1788,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1830,6 +1842,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -1865,6 +1878,7 @@ do
     license.node_id = nil
 
 end
+
 
 do
 
@@ -2272,6 +2286,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -2316,6 +2331,7 @@ do
     blob.node_id = nil
 
 end
+
 
 do
 
@@ -2367,6 +2383,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -2407,6 +2424,7 @@ do
     game.owned = nil
 
 end
+
 
 --- [SHARED AND MENU]
 ---
@@ -2501,6 +2519,7 @@ end
 --- Visibility of a Steam Workshop item.
 ---
 ---@alias dreamwork.std.steam.workshop.Visibility "public" | "friends-only" | "private" | "unlisted" | "developer-only" | "unknown"
+
 
 do
 
@@ -2631,6 +2650,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -2648,6 +2668,7 @@ do
     response.reason = nil
 
 end
+
 
 do
 
@@ -2769,12 +2790,14 @@ do
 
 end
 
+
 --- [SHARED AND MENU]
 ---
 --- The type of a Steam Workshop item.
 ---
 --- Ref: https://partner.steamgames.com/doc/api/ISteamRemoteStorage#EWorkshopFileType
 ---@alias dreamwork.std.steam.EWorkshopFileType "item" | "microtransaction" | "collection" | "artwork" | "video" | "screenshot" | "game" | "software" | "concept" | "web_guide" | "integrated_guide" | "merch" | "controller_binding" | "steamworks_access_invite" | "steam_video" | "game_managed_item"
+
 
 do
 
@@ -2802,6 +2825,7 @@ do
 
 end
 
+
 do
 
     --- [SHARED AND MENU]
@@ -2824,6 +2848,7 @@ do
     details.items = nil
 
 end
+
 
 ---@alias dreamwork.std.Material.Shader.name string
 ---| "accumbuff5sample"
@@ -2955,6 +2980,7 @@ end
 ---| "WriteZ_DX9"
 ---| "YUV"
 
+
 --- [SHARED AND MENU]
 ---
 --- https://developer.valvesoftware.com/wiki/Category:Shader_parameters
@@ -3009,6 +3035,7 @@ shader_parameters[ "$detailtint2" ] = nil
 
 ---@type boolean | nil
 shader_parameters[ "$model" ] = nil
+
 
 ---@class dreamwork.std.Material.Shader
 ---@field name dreamwork.std.Material.Shader.name | nil
