@@ -44,12 +44,21 @@ do
     ---
     --- Escapes special characters in a string.
     ---
+    --- Within the given range, any byte that has a known escape sequence (e.g. newline, tab, quote, backslash etc.) is replaced with that sequence.
+    ---
+    --- Any other byte that is a control character (below `0x20`, or below `0x21` i.e. including the space
+    --- character when `escape_spaces` is `true`) or is outside the printable ASCII range (above `0x7F`) is replaced with a `\xHH` hexadecimal escape.
+    ---
+    --- All other bytes, and anything outside `start_position`/`end_position`, are left untouched.
+    ---
+    ---@see string.unescape
+    ---
     ---@param str string The string to escape.
-    ---@param start_position? integer The start index.
-    ---@param end_position? integer The end index.
-    ---@param encode_spaces? boolean Whether to encode spaces.
-    ---@return string escaped_str The escaped string.
-    function string.escape( str, start_position, end_position, encode_spaces )
+    ---@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+    ---@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+    ---@param escape_spaces? boolean Whether the space character (`0x20`) should also be escaped as `\x20`. Defaults to `false`.
+    ---@return string escaped_str The string with special characters escaped.
+    function string.escape( str, start_position, end_position, escape_spaces )
         ---@type integer
         local str_length = string_len( str )
 
@@ -76,7 +85,7 @@ do
         local sequence_position = start_position
         local segments, segment_count = {}, 0
 
-        local in_range = encode_spaces and 0x21 or 0x20
+        local in_range = escape_spaces and 0x21 or 0x20
 
         for index = start_position, end_position, 1 do
             local uint8 = string_byte( str, index, index )
@@ -120,9 +129,18 @@ do
     ---
     --- Unescapes special characters in a string.
     ---
+    --- The inverse of `string.escape`.
+    ---
+    --- Within the given range, recognized escape sequences (e.g. `\n`, `\t`, `\"`, `\\` etc.)
+    --- are converted back into their raw byte, and `\xHH` hexadecimal escapes are decoded into the byte they represent.
+    ---
+    --- Any other byte, and anything outside `start_position`/`end_position`, is left untouched.
+    ---
+    ---@see string.escape
+    ---
     ---@param escaped_str string The string to unescape.
-    ---@param start_position? integer The start index.
-    ---@param end_position? integer The end index.
+    ---@param start_position? integer The position to start unescaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+    ---@param end_position? integer The position to stop unescaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string str The unescaped string.
     function string.unescape( escaped_str, start_position, end_position )
         ---@type integer

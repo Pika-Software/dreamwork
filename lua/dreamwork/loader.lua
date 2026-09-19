@@ -123,6 +123,7 @@ dofile( "dreamwork/std/raw.lua" )
 ---@class dreamwork.std.raw
 local raw = std.raw
 local raw_get = raw.get
+local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_select = raw.select
 
@@ -536,30 +537,24 @@ function std.isValid( value )
     end
 end
 
-do
-
-    local raw_next = raw.next
-
-    --- [SHARED AND MENU]
-    ---
-    --- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
-    ---
-    --- Otherwise, returns three values: the [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) function, the table `t`, and `nil`, so that the construction
-    --- ```lua
-    ---     for k,v in pairs(t) do body end
-    --- ```
-    --- will iterate over all key–value pairs of table `t`.
-    ---
-    --- See function [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) for the caveats of modifying the table during its traversal.
-    ---
-    ---@generic K, V
-    ---@param tbl table<K, V>
-    ---@param key K | nil
-    ---@return K, V
-    function std.next( tbl, key )
-        return (debug_getmetavalue( tbl, "__pairs" ) or raw_next)( tbl, key )
-    end
-
+--- [SHARED AND MENU]
+---
+--- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
+---
+--- Otherwise, returns three values: the [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) function, the table `t`, and `nil`, so that the construction
+--- ```lua
+---     for k,v in pairs(t) do body end
+--- ```
+--- will iterate over all key–value pairs of table `t`.
+---
+--- See function [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) for the caveats of modifying the table during its traversal.
+---
+---@generic K, V
+---@param tbl table<K, V>
+---@param key K | nil
+---@return K, V
+function std.next( tbl, key )
+    return (debug_getmetavalue( tbl, "__pairs" ) or raw_next)( tbl, key )
 end
 
 --- [SHARED AND MENU]
@@ -743,6 +738,7 @@ sendfile( "dreamwork/std/vararg.lua" )
 ---@class dreamwork.std.table
 local table = std.table
 local table_concat = table.concat
+local table_unpack = table.unpack
 
 -- ascii library
 dofile( "dreamwork/std/ascii.lua" )
@@ -910,9 +906,11 @@ sendfile( "dreamwork/std/types/node.lua" )
 
 do
 
+    ---@class dreamwork.GModTimerLib
+    ---@field Simple fun( delay: number, fn: fun() )
     ---@diagnostic disable-next-line: undefined-global
-    local timer_Simple = timer.Simple
-    local table_unpack = table.unpack
+    local timer = timer
+    local timer_Simple = timer.Simple or debug_fempty
 
     --- [SHARED AND MENU]
     ---
@@ -1125,11 +1123,7 @@ do
         ---@return string
         ---@private
         function Number:__represent()
-            if (self % 1) == 0 then
-                return string_format( "integer: %p [%d]", self, self )
-            end
-
-            return string_format( "number: %p [%d]", self, self )
+            return string_format( "%s: %p [%g]", (self % 1) == 0 and "integer" or "number", self, self )
         end
 
         do
@@ -1531,6 +1525,22 @@ sendfile( "dreamwork/std/types/debug_stack.lua" )
 -- buffer library
 dofile( "dreamwork/std/codec/buffer.lua" )
 sendfile( "dreamwork/std/codec/buffer.lua" )
+
+do
+
+    local string_escape = string.escape
+
+    ---@class dreamwork.std.String
+    local String = debug.findmetatable( "string" )
+
+    ---@param value string
+    ---@return string
+    ---@private
+    function String.__represent( value )
+        return string_format( "string: %p [%s]", value, string_escape( value ) )
+    end
+
+end
 
 local type = std.type
 local len = std.len
@@ -2163,7 +2173,22 @@ end
 
 do
 
-    local engine_consoleMessage = engine.consoleMessage
+    local engine_consoleMessageColored = engine.consoleMessageColored
+    local engine_consoleMessage        = engine.consoleMessage
+
+
+    local string_gmatch = string.gmatch
+    local string_escape = string.escape
+    local string_indent = string.indent
+    local string_gsub   = string.gsub
+    local string_find   = string.find
+
+    local Stack         = std.Stack
+
+
+    local COLOR_SUVA_GRAY  = color_scheme.suva_gray
+    local COLOR_SANDSTONE  = color_scheme.sandstone
+    local COLOR_LIGHT_GRAY = color_scheme.light_gray
 
     --- [SHARED AND MENU]
     ---
@@ -2202,171 +2227,178 @@ do
     ---@param fmt string The format string.
     ---@param ... any The arguments to format/interpolate.
     function std.printf( fmt, ... )
-        return engine_consoleMessage( string_format( fmt, ... ) .. "\n" )
+        if string_find( fmt, "%%[-+ #0]*%d*%.?%d*r" ) == nil then
+            return engine_consoleMessage( string_format( fmt, ... ) .. "\n" )
+        end
+
+        local arg_count = raw_select( "#", ... )
+        local args = { ... }
+
+        ---@type integer
+        local index = 1
+
+        for key in string_gmatch( fmt, "%%[-+ #0]*%d*%.?%d*(%l)" ) do
+            if index > arg_count then
+                break
+            elseif string_byte( key, 1, 1 ) == 0x72 --[[ r ]] then
+                args[ index ] = represent( args[ index ] )
+            end
+
+            index = index + 1
+        end
+
+        return engine_consoleMessage( string_format( string_gsub( fmt, "%%r", "%%s" ), table_unpack( args, 1, arg_count ) ) .. "\n" )
     end
 
-    do
-
-        local engine_consoleMessageColored = engine.consoleMessageColored
-        local realm_color = color_scheme.realm
-
-        local color_fromHex = std.color.fromHex
-        local tocolor = std.tocolor
-
-        --- [SHARED AND MENU]
-        ---
-        --- Prints the given arguments to the console with colors!
-        ---
-        ---@param ... any The arguments to print.
-        function std.printc( ... )
-            local color = realm_color
-            local args = { ... }
-
-            for ang_num = 1, raw_select( "#", ... ), 1 do
-                local value = args[ ang_num ]
-                if isString( value ) then
-                    ---@cast value string
-
-                    if string_byte( value, 1, 1 ) == 0x23 --[[ # ]] and string_len( value ) < 10 then
-                        color = color_fromHex( value )
-                    else
-                        engine_consoleMessageColored( value, color )
-                    end
-                else
-                    ---@cast value any
-                    engine_consoleMessageColored( represent( value ), tocolor( value ) or color )
-                end
-            end
-
-            engine_consoleMessage( "\n" )
+    --- [SHARED AND MENU]
+    ---
+    --- Prints the contents of a table to the engine console as a colorized, indented,
+    --- pseudo-Lua literal, recursing into any nested tables.
+    ---
+    --- String keys are printed as escaped bare keys, non-string keys are printed as `[key]`,
+    --- and values are rendered with `represent`.
+    ---
+    --- Nested tables are expanded as `{ ... }` blocks and indented one level deeper for each
+    --- level of nesting; if a nested table has already been visited higher up the current
+    --- branch (a cycle back to an ancestor, including `tbl` itself), it is printed inline
+    --- followed by a `-- RECURSION` comment instead of being expanded again.
+    ---
+    --- If expanding a nested table would exceed `max_depth`, it is likewise printed inline
+    --- followed by a `-- TOO DEEP` comment instead of being walked further.
+    ---
+    ---@param tbl table The table to print the contents of.
+    ---@param max_depth integer | nil The maximum depth of nested tables to recurse into. Defaults to `8`.
+    function std.printTable( tbl, max_depth )
+        if max_depth == nil then
+            max_depth = 8
         end
 
-        -- TODO: rewrite function below with goto
+        ---@type ( string | dreamwork.std.Color )[]
+        local output = {}
 
-        --- [SHARED AND MENU]
-        ---
-        --- Prints a formatted string to the console with colors!
-        ---
-        --- Works very similarly to `printf`, but supports an additional `%C` specifier for colors.
-        ---
-        ---@param fmt string The format string.
-        ---@param ... any The arguments to format/interpolate.
-        function std.printfc( fmt, ... )
-            local fmt_length = string_len( fmt )
-            if fmt_length == 0 then
-                return
+        ---@type integer
+        local output_size = 0
+
+        ---@type integer
+        local depth = 1
+
+        ---@type table<table, table>
+        local parents = {}
+
+        --- last key returned by raw_next for each table on the stack
+        ---@type table<table, any>
+        local iter_state = {}
+
+        ---@type dreamwork.std.Stack<table>
+        local stack = Stack()
+
+        ---@type table | nil
+        local current = tbl
+        stack:push( tbl )
+
+        ---@cast current table
+
+        ::print_table_loop::
+
+        local prev_key = iter_state[ current ]
+        local key, value = raw_next( current, prev_key )
+        iter_state[ current ] = key
+
+        if key == nil then
+            -- only strip a trailing comma if this table actually had entries
+            if prev_key ~= nil and output_size > 0 then
+                output[ output_size - 1 ] = string_sub( output[ output_size - 1 ], 1, -3 ) .. "\n"
             end
 
-            fmt = fmt .. "\n"
-            fmt_length = fmt_length + 1
+            parents[ current ] = nil
+            stack:pop()
 
-            local arg_count = raw_select( "#", ... )
-            local arg_index = 0
-            local args = { ... }
+            current = stack:peek()
+            depth = depth - 1
 
-            local color = realm_color
-            local break_point = 1
-            local index = 0
-
-            local buffer, buffer_length = {}, 0
-
-            while index ~= fmt_length do
-                index = index + 1
-
-                local uint8_1 = string_byte( fmt, index, index )
-                if uint8_1 == 0x25 --[[ % ]] then
-                    if (index - break_point) ~= 0 then
-                        buffer_length = buffer_length + 1
-                        buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
-                    end
-
-                    if index == fmt_length then
-                        buffer_length = buffer_length + 1
-                        buffer[ buffer_length ] = "%"
-                        break_point = index
-                        break
-                    end
-
-                    index = index + 1
-                    break_point = index + 1
-
-                    local uint8_2 = string_byte( fmt, index, index )
-
-                    if uint8_2 == 0x25 --[[ % ]] or uint8_2 == 0x7B --[[ { ]] or uint8_2 == 0x7D --[[ } ]] then
-                        buffer_length = buffer_length + 1
-                        buffer[ buffer_length ] = string_char( uint8_2 )
-                    else
-
-                        arg_index = arg_index + 1
-
-                        if arg_index > arg_count then
-                            std.errorf( 2, false, fmt, "Argument #%d [%s] to 'printfc' is missing!", arg_index, string_char( uint8_1, uint8_2 ) )
-                        end
-
-                        if uint8_2 == 0x43 --[[ C ]] then
-                            if buffer_length ~= 0 then
-                                engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
-                                buffer_length = 0
-                            end
-
-                            color = tocolor( args[ arg_index ] ) or color
-                        else
-                            buffer_length = buffer_length + 1
-                            buffer[ buffer_length ] = string_format( string_char( uint8_1, uint8_2 ), args[ arg_index ] )
-                        end
-
-                    end
-                elseif uint8_1 == 0x7B --[[ { ]] then
-                    ---@type integer | nil
-                    local end_index
-
-                    for i = index, fmt_length, 1 do
-                        if string_byte( fmt, i, i ) == 0x7D --[[ } ]] then
-                            end_index = i
-                            break
-                        end
-                    end
-
-                    if end_index ~= nil then
-                        if (index - break_point) ~= 0 then
-                            buffer_length = buffer_length + 1
-                            buffer[ buffer_length ] = string_sub( fmt, break_point, index - 1 )
-                        end
-
-                        if buffer_length ~= 0 then
-                            engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
-                            buffer_length = 0
-                        end
-
-                        index = index + 1
-
-                        if (end_index - index) == 0 then
-                            color = realm_color
-                        else
-                            local color_str = string_sub( fmt, index, end_index - 1 )
-                            if string_byte( color_str, 1, 1 ) == 0x23 --[[ # ]] then
-                                color = color_fromHex( color_str )
-                            else
-                                color = color_scheme[ color_str ] or realm_color
-                            end
-                        end
-
-                        index = end_index
-                        break_point = end_index + 1
-                    end
-                end
+            if current == nil then
+                goto print_table_loop_finish
             end
 
-            if break_point < fmt_length then
-                buffer_length = buffer_length + 1
-                buffer[ buffer_length ] = string_sub( fmt, break_point, fmt_length )
-            end
+            output[ output_size + 1 ] = string_indent( "},\n", depth * 2 )
+            output[ output_size + 2 ] = COLOR_SUVA_GRAY
 
-            if buffer_length ~= 0 then
-                engine_consoleMessageColored( table_concat( buffer, "", 1, buffer_length ), color )
-            end
+            output_size = output_size + 2
+
+            goto print_table_loop
         end
 
+        if isString( key ) then
+            output[ output_size + 1 ] = string_indent( string_escape( key ), depth * 2 )
+        elseif isNumber( key ) then
+            output[ output_size + 1 ] = string_indent( string_format( "[ %g ]", key ), depth * 2 )
+        else
+            output[ output_size + 1 ] = string_indent( string_format( "[ %s ]", represent( key ) ), depth * 2 )
+        end
+
+        output[ output_size + 2 ] = COLOR_LIGHT_GRAY
+
+        output[ output_size + 3 ] = " = "
+        output[ output_size + 4 ] = COLOR_SUVA_GRAY
+
+        output_size = output_size + 4
+
+        if isTable( value ) then
+            if value == tbl or parents[ value ] ~= nil then
+                output[ output_size + 1 ] = represent( value )
+                output[ output_size + 2 ] = COLOR_SANDSTONE
+
+                output[ output_size + 3 ] = ",  "
+                output[ output_size + 4 ] = COLOR_SUVA_GRAY
+
+                output[ output_size + 5 ] = "-- RECURSION\n"
+                output[ output_size + 6 ] = COLOR_SUVA_GRAY
+
+                output_size = output_size + 6
+            elseif (depth + 2) > max_depth then
+                output[ output_size + 1 ] = represent( value )
+                output[ output_size + 2 ] = COLOR_SANDSTONE
+
+                output[ output_size + 3 ] = ",  "
+                output[ output_size + 4 ] = COLOR_SUVA_GRAY
+
+                output[ output_size + 5 ] = "-- TOO DEEP\n"
+                output[ output_size + 6 ] = COLOR_SUVA_GRAY
+
+                output_size = output_size + 6
+            else
+                output[ output_size + 1 ] = "{  -- " .. represent( value ) .. "\n"
+                output[ output_size + 2 ] = COLOR_SUVA_GRAY
+
+                output_size = output_size + 2
+                depth = depth + 1
+
+                parents[ value ] = current
+                stack:push( value )
+                current = value
+            end
+        else
+            output[ output_size + 1 ] = represent( value )
+            output[ output_size + 2 ] = COLOR_SANDSTONE
+
+            output[ output_size + 3 ] = ",\n"
+            output[ output_size + 4 ] = COLOR_SUVA_GRAY
+
+            output_size = output_size + 4
+        end
+
+        goto print_table_loop
+
+        ::print_table_loop_finish::
+
+        engine_consoleMessageColored( "{\n", COLOR_SUVA_GRAY )
+
+        for i = 1, output_size, 2 do
+            ---@diagnostic disable-next-line: param-type-mismatch
+            engine_consoleMessageColored( output[ i ], output[ i + 1 ] )
+        end
+
+        engine_consoleMessageColored( "}\n", COLOR_SUVA_GRAY )
     end
 
 end
@@ -2505,6 +2537,11 @@ do
     ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
     ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
 
+    ---@class dreamwork.GModSystemLib
+    ---@field HasFocus fun(): boolean
+    ---@field GetCountry fun(): string
+    ---@field BatteryPower fun(): integer
+    ---@diagnostic disable-next-line: undefined-global
     local glua_system = system or {}
 
     std.SYSTEM_COUNTRY = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
@@ -2715,7 +2752,8 @@ do
         "Light Up ♪",
         "Majesty ♪",
         "Eat Me ♪",
-        "FLY ♪"
+        "FLY ♪",
+        "𓆤"
     }
 
     local count = #splashes + 1
