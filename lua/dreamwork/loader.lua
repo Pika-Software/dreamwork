@@ -2255,7 +2255,7 @@ do
     --- Prints the contents of a table to the engine console as a colorized, indented,
     --- pseudo-Lua literal, recursing into any nested tables.
     ---
-    --- String keys are printed as escaped bare keys, non-string keys are printed as `[key]`,
+    --- String keys are printed as escaped bare keys, non-string keys are printed as `[ key ]`,
     --- and values are rendered with `represent`.
     ---
     --- Nested tables are expanded as `{ ... }` blocks and indented one level deeper for each
@@ -2823,7 +2823,7 @@ do
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
     local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
 
-    std.printfc( "\n" .. welcome_art .. "\n", string.pad( splash, 50, " ", nil, std.utf8.len( splash ) ) )
+    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", std.utf8.pad( splash, 50, " ", true, true ) ) )
 
 end
 

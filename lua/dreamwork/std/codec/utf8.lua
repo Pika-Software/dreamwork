@@ -5,12 +5,14 @@ local raw = std.raw
 local raw_select = raw.select
 
 local string = std.string
+local string_rep = string.rep
 local string_len, string_sub = string.len, string.sub
 local string_char, string_byte = string.char, string.byte
 
 local math = std.math
-local math_min = math.min
+local math_floor = math.floor
 local math_relative = math.relative
+local math_min, math_max = math.min, math.max
 
 local rbit = raw.bit
 local rbit_band, rbit_bor = rbit.band, rbit.bor
@@ -332,14 +334,10 @@ end
 ---@param start_position? integer
 ---@param end_position? integer
 ---@param lax? boolean
----@param str_length? integer
 ---@return integer | nil
 ---@return nil | integer error_position
-local function len( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+local function len( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return 0
     end
@@ -385,10 +383,9 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return integer sequence_length The length of the string in UTF-8 code units.
-function utf8.len( utf8_string, start_position, end_position, lax, str_length )
-    local sequence_length, error_position = len( utf8_string, start_position, end_position, lax, str_length )
+function utf8.len( utf8_string, start_position, end_position, lax )
+    local sequence_length, error_position = len( utf8_string, start_position, end_position, lax )
     if sequence_length == nil then
         error( string.format( "invalid UTF-8 sequence at position %d", error_position ), 2 )
     end
@@ -404,14 +401,10 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return dreamwork.std.utf8.Sequence utf8_codepoints A table of UTF-8 code points.
 ---@return integer utf8_codepoint_count The length of the string in UTF-8 code units.
-local function unpack( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+local function unpack( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return {}, 0
     end
@@ -459,13 +452,9 @@ utf8.unpack = unpack
 ---@param start_position? integer The position to start from in UTF-8 code units.
 ---@param end_position? integer The position to end at in UTF-8 code units.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string utf8_sub The substring of the string in UTF-8 code units.
-function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+local function sub( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -485,9 +474,9 @@ function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
 
         if (0 - start_position) > sequence_length then
             return ""
-        else
-            start_position = sequence_length + start_position + 1
         end
+
+        start_position = sequence_length + start_position + 1
     end
 
     if end_position ~= nil and end_position < 0 then
@@ -502,9 +491,9 @@ function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
 
         if (0 - end_position) > sequence_length then
             return ""
-        else
-            end_position = sequence_length + end_position + 1
         end
+
+        end_position = sequence_length + end_position + 1
     end
 
     local utf8_start = 0
@@ -543,6 +532,8 @@ function utf8.sub( utf8_string, start_position, end_position, lax, str_length )
 
     return string_sub( utf8_string, utf8_start, str_length )
 end
+
+utf8.sub = sub
 
 --- [SHARED AND MENU]
 ---
@@ -675,13 +666,9 @@ end
 ---@param index integer The code point to search for in the UTF-8 units.
 ---@param offset? integer The position to start from in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
-function utf8.offset( utf8_string, index, offset, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+function utf8.offset( utf8_string, index, offset, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return nil
     end
@@ -766,13 +753,9 @@ do
     ---@param replacement_str? string The string to replace invalid UTF-8 code points with, by default `0xFFFD`.
     ---@param start_position? integer The position to start from in bytes.
     ---@param end_position? integer The position to end at in bytes.
-    ---@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
     ---@return string utf8_normalized The normalized UTF-8 string.
-    function utf8.normalize( utf8_string, replacement_str, start_position, end_position, str_length )
-        if str_length == nil then
-            str_length = string_len( utf8_string )
-        end
-
+    function utf8.normalize( utf8_string, replacement_str, start_position, end_position )
+        local str_length = string_len( utf8_string )
         if str_length == 0 then
             return utf8_string
         end
@@ -2688,13 +2671,9 @@ local codepoint_to_upper = {
 ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
 ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
-function utf8.lower( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+function utf8.lower( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -2781,13 +2760,9 @@ end
 ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
 ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
-function utf8.upper( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+function utf8.upper( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -2872,13 +2847,9 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string capitalized_utf8_str The capitalized UTF-8 string.
-function utf8.capitalize( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+function utf8.capitalize( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -2988,13 +2959,9 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string title_utf8_str The title-cased UTF-8 string.
-function utf8.title( utf8_string, start_position, end_position, lax, str_length )
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+function utf8.title( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -3098,17 +3065,13 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@param str_length? integer The length of the utf8 string. Optionally, it should be used to speed up calculations.
 ---@return string wrapped_string The string with newlines inserted so no line exceeds max_length code units.
-function utf8.wrap( utf8_string, max_length, start_position, end_position, lax, str_length )
+function utf8.wrap( utf8_string, max_length, start_position, end_position, lax )
     if max_length <= 0 then
         return utf8_string
     end
 
-    if str_length == nil then
-        str_length = string_len( utf8_string )
-    end
-
+    local str_length = string_len( utf8_string )
     if str_length == 0 then
         return utf8_string
     end
@@ -3188,4 +3151,88 @@ function utf8.wrap( utf8_string, max_length, start_position, end_position, lax, 
     end
 
     return table_concat( lines, "\n", 1, line_count )
+end
+
+--- [SHARED AND MENU]
+---
+--- Pads a UTF-8 string with a repeated padding string until it reaches `desired_length`
+--- characters, on the left, the right, or both sides evenly.
+---
+--- If neither `left` nor `right` is `true`, or the string is already at least
+--- `desired_length` characters long, `utf8_string` is returned unchanged.
+---
+--- When padding both sides, the missing length is split as evenly as possible between the
+--- left and right; if it doesn't divide evenly by whole copies of `padding`, the shortfall is
+--- made up with a partial copy of `padding`, with any extra leftover character going to the
+--- right side.
+---
+---@param utf8_string string The UTF-8 string to pad.
+---@param desired_length integer The target length, in characters, that the result should reach.
+---@param padding string? The string to pad with, repeated as needed. Defaults to a single space.
+---@param left boolean? Whether to add padding on the left side.
+---@param right boolean? Whether to add padding on the right side.
+---@param lex boolean? Whether to measure lengths using lexical/grapheme units rather than raw codepoints, passed through to `len`.
+---@return string result The padded string, or `utf8_string` unchanged if no padding was needed or requested.
+function utf8.pad( utf8_string, desired_length, padding, left, right, lex )
+    if not (left or right) then
+        return utf8_string
+    end
+
+    local char_length
+    if padding == nil then
+        char_length = 1
+        padding = " "
+    else
+        char_length = len( padding, nil, nil, lex )
+    end
+
+    local missing_length = math_max( 0, desired_length - len( utf8_string, nil, nil, lex ) )
+    if missing_length == 0 then
+        return utf8_string
+    end
+
+    if left and right then
+        local half_reps = math_floor( (missing_length / char_length) * 0.5 )
+        local padding_str = string_rep( padding, half_reps )
+
+        local remainder = missing_length - ((half_reps * 2) * char_length)
+        if remainder == 0 then
+            return padding_str .. utf8_string .. padding_str
+        end
+
+        local half_remainder = math_floor( remainder * 0.5 )
+        padding_str          = padding_str .. sub( padding, 1, half_remainder )
+        remainder            = remainder - (half_remainder * 2)
+
+        if remainder == 0 then
+            return padding_str .. utf8_string .. padding_str
+        end
+
+        return padding_str .. utf8_string .. padding_str .. string_sub( padding, 1, remainder )
+    end
+
+    local full_reps = math_floor( missing_length / char_length )
+    local remainder = missing_length - (full_reps * char_length)
+
+    if left then
+        local result = string_rep( padding, full_reps )
+
+        if remainder ~= 0 then
+            result = result .. string_sub( padding, 1, remainder )
+        end
+
+        return result .. utf8_string
+    end
+
+    if right then
+        local result = utf8_string .. string_rep( padding, full_reps )
+
+        if remainder ~= 0 then
+            result = result .. string_sub( padding, 1, remainder )
+        end
+
+        return result
+    end
+
+    return utf8_string
 end
