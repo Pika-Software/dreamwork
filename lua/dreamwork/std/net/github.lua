@@ -63,7 +63,7 @@ local ratelimit_reset_time = 0
 ---
 --- Sends a request to the Github API.
 ---
----@param method dreamwork.std.http.Request.method The request method.
+---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
 ---@param headers? table The headers to send with the request.
 ---@param body? string The body to send with the request.
@@ -139,7 +139,7 @@ github.request = request
 ---
 --- Makes a request to the Github API.
 ---
----@param method dreamwork.std.http.Request.method The request method.
+---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
 ---@param headers? table The headers to send with the request.
 ---@param body? string The body to send with the request.
@@ -183,7 +183,7 @@ github.template = template
 ---
 --- Replaces all occurrences of `{name}` in `pathname` with `tbl[name]` and makes a request to the Github API.
 ---
----@param method dreamwork.std.http.Request.method The request method.
+---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
 ---@param replaces table<string, any> The table to replace placeholders with.
 ---@return table data The data returned from the API.

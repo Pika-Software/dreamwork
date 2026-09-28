@@ -384,7 +384,7 @@ function Variable:__newindex( str_key, value )
     end
 end
 
----@param options dreamwork.std.console.Variable.Options
+---@param options dreamwork.std.console.VariableOptions
 ---@protected
 function Variable:__init( options )
     local str_name = options.name
@@ -475,7 +475,7 @@ end
 ---
 ---@class dreamwork.std.console.VariableClass : dreamwork.std.console.Variable
 ---@field __base dreamwork.std.console.Variable
----@overload fun( options: dreamwork.std.console.Variable.Options ): dreamwork.std.console.Variable
+---@overload fun( options: dreamwork.std.console.VariableOptions ): dreamwork.std.console.Variable
 local VariableClass = class.create( Variable )
 console.Variable = VariableClass
 

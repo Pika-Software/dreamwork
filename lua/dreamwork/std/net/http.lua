@@ -1,5 +1,3 @@
-local _G = _G
-
 local http_storage = dreamwork.storage.http
 local Logger = dreamwork.Logger
 
@@ -8,6 +6,8 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_tonumber = raw.tonumber
+
+local debug = std.debug
 
 local string = std.string
 local string_gmatch = string.gmatch
@@ -30,7 +30,7 @@ local Future = std.Future
 local http_client, client_name
 if std.loadbinary( "reqwest" ) then
     ---@diagnostic disable-next-line: undefined-field
-    local reqwest = _G.reqwest
+    local reqwest = reqwest
 
     local user_agent = "DreamWork/" .. dreamwork.Version .. " - Garry's Mod/" .. std.GAME_VERSION
     local default_headers = { [ "User-Agent" ] = user_agent }
@@ -49,16 +49,16 @@ if std.loadbinary( "reqwest" ) then
     client_name = "reqwest"
 elseif std.LUA_CLIENT_SERVER and std.loadbinary( "chttp" ) then
     ---@diagnostic disable-next-line: undefined-field
-    http_client = _G.CHTTP
+    http_client = CHTTP
     client_name = "chttp"
 else
-    http_client = _G.HTTP
+    http_client = HTTP
     client_name = "Garry's Mod"
 end
 
 if http_client == nil then
     Logger:error( "HTTP client '%s' loading failed, sending requests is not possible.", client_name )
-    http_client = std.debug.fempty
+    http_client = debug.fempty
 else
     Logger:info( "'%s' was loaded & connected as HTTP client.", client_name )
 end
@@ -159,7 +159,7 @@ end
 local dreamwork_http_timeout, dreamwork_http_cache_ttl
 do
 
-    ---@type dreamwork.std.console.Variable.Options
+    ---@type dreamwork.std.console.VariableOptions
     local cvar_options = {
         name = "dreamwork.http.timeout",
         description = "The default timeout for http requests.",
@@ -305,6 +305,7 @@ local function request( options )
     if options.cache then
         options.cache = nil
 
+        ---@type string
         local identifier = json_serialize( { url, method, options.parameters, options.headers }, false )
 
         local data = session_cache[ identifier ]
@@ -406,7 +407,7 @@ http.request = request
 ---
 --- Sends a GET request.
 ---
----@param url dreamwork.std.http.Request.url The URL to send the request to.
+---@param url dreamwork.std.http.RequestURL The URL to send the request to.
 ---@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return dreamwork.std.http.Response response The response from the request.
@@ -424,7 +425,7 @@ end
 ---
 --- Sends a POST request.
 ---
----@param url dreamwork.std.http.Request.url The URL to send the request to.
+---@param url dreamwork.std.http.RequestURL The URL to send the request to.
 ---@param parameters? dreamwork.std.http.Request.parameters The body to send with the request.
 ---@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
@@ -446,7 +447,7 @@ end
 ---
 --- Sends a HEAD request.
 ---
----@param url dreamwork.std.http.Request.url The URL to send the request to.
+---@param url dreamwork.std.http.RequestURL The URL to send the request to.
 ---@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return dreamwork.std.http.Response response The response from the request.
@@ -462,8 +463,8 @@ end
 
 if std.LUA_MENU then
 
-    local glua_GetAPIManifest = _G.GetAPIManifest
-    local json_deserialize = std.encoding.json.deserialize
+    local glua_GetAPIManifest = GetAPIManifest
+    local json_deserialize = std.json.deserialize
 
     -- TODO: move into separate file http.facepunch.getManifest
 

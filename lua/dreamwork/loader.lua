@@ -2094,7 +2094,6 @@ end
 do
 
     local loadstring = std.loadstring
-    local math_floor = math.floor
 
     local empty_env = {}
 

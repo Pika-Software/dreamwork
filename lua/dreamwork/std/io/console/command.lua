@@ -81,7 +81,7 @@ end
 
 do
 
-    ---@param options dreamwork.std.console.Command.Options
+    ---@param options dreamwork.std.console.CommandOptions
     ---@private
     function Command:__init( options )
         local name = options.name
@@ -112,7 +112,7 @@ end
 ---
 ---@class dreamwork.std.console.CommandClass : dreamwork.std.Class
 ---@field __base dreamwork.std.console.Command
----@overload fun( options: dreamwork.std.console.Command.Options ): dreamwork.std.console.Command
+---@overload fun( options: dreamwork.std.console.CommandOptions ): dreamwork.std.console.Command
 local CommandClass = std.class.create( Command )
 console.Command = CommandClass
 

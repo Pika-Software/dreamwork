@@ -594,7 +594,7 @@ do
     --- Rotates the vector by the given angle.
     ---
     ---@param self dreamwork.std.Vector3 The vector to rotate.
-    ---@param angle Angle3 The angle to rotate by.
+    ---@param angle dreamwork.std.Angle3 The angle to rotate by.
     ---@return dreamwork.std.Vector3 vec3 The rotated vector.
     local function Vector3_rotate( self, angle )
         local pitch, yaw, roll = math_rad( angle[ 1 ] ), math_rad( angle[ 2 ] ), math_rad( angle[ 3 ] )

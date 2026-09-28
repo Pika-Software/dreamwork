@@ -53,7 +53,7 @@ local Logger = class.base( "console.Logger" )
 ---
 ---@class dreamwork.std.console.LoggerClass : dreamwork.std.console.Logger
 ---@field __base dreamwork.std.console.Logger
----@overload fun( options: dreamwork.std.console.Logger.Options? ) : dreamwork.std.console.Logger
+---@overload fun( options: dreamwork.std.console.LoggerOptions? ) : dreamwork.std.console.Logger
 console.Logger = class.create( Logger )
 
 local developer_cvar = console.Variable.get( "developer", "number" )

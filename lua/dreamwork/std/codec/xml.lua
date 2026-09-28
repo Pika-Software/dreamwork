@@ -644,7 +644,7 @@ end
 --- Returns an iterator function for the node at the given key, supporting dot-separated keys for nested values.
 ---
 ---@param key? string The key to iterate over, with dot-separated keys for nested values.
----@return fun(): string, (string | dreamwork.std.XMLNode) fn The iterator function, which returns key-value pairs for the node at the given key.
+---@return fun(): ( ( string | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function, which returns key-value pairs for the node at the given key.
 function XMLNode:iterator( key )
     if key ~= nil then
         local node = self:get( key )
@@ -693,6 +693,7 @@ function XMLNode:iterator( key )
             end
 
             if isString( data_value ) or isNode( data_value ) then
+                ---@cast data_value string
                 return data_key, data_value
             end
 
@@ -915,7 +916,7 @@ do
         {
             "&#(%d+);",
             function( code )
-                local integer = raw_tonumber( code )
+                local integer = raw_tonumber( code, 10 ) or 0
                 if integer >= 0 and integer < 256 then
                     return string_char( integer )
                 end
@@ -926,7 +927,7 @@ do
         {
             "&#x(%x+);",
             function( code )
-                local integer = raw_tonumber( code, 16 )
+                local integer = raw_tonumber( code, 16 ) or 0
                 if integer >= 0 and integer < 256 then
                     return string_char( integer )
                 end
