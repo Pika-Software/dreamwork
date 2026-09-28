@@ -21,6 +21,8 @@ local table_concat = table.concat
 
 local string = std.string
 local string_byte = string.byte
+local string_match = string.match
+local string_lower = string.lower
 local string_format = string.format
 local string_gmatch = string.gmatch
 local string_byteSplit = string.byteSplit
@@ -99,7 +101,7 @@ do
         end
 
         transformation_map = {
-            -- ns -> other
+            -- nanoseconds (ns)
             [ 0x7375736E ] = ts_m1e_3,                                         -- ns to us
             [ 0x736D736E ] = ts_m1e_6,                                         -- ns to ms
             [ 0x73736E ]   = function( ts ) return ts * 1e-9 end,              -- ns to s
@@ -110,7 +112,7 @@ do
             [ 0x6F6D736E ] = function( ts ) return (ts * 1e-9) / 2592000 end,  -- ns to mo
             [ 0x79736E ]   = function( ts ) return (ts * 1e-9) / 31536000 end, -- ns to y
 
-            -- us -> other
+            -- microseconds (us)
             [ 0x736E7375 ] = ts_m1e3,                                          -- us to ns
             [ 0x736D7375 ] = ts_m1e_3,                                         -- us to ms
             [ 0x737375 ]   = ts_m1e_6,                                         -- us to s
@@ -121,7 +123,7 @@ do
             [ 0x6F6D7375 ] = function( ts ) return (ts * 1e-6) / 2592000 end,  -- us to mo
             [ 0x797375 ]   = function( ts ) return (ts * 1e-6) / 31536000 end, -- us to y
 
-            -- ms -> other
+            -- milliseconds (ms)
             [ 0x736E736D ] = ts_m1e6,                                          -- ms to ns
             [ 0x7375736D ] = ts_m1e3,                                          -- ms to us
             [ 0x73736D ]   = ts_m1e_3,                                         -- ms to s
@@ -132,7 +134,7 @@ do
             [ 0x6F6D736D ] = function( ts ) return (ts * 1e-3) / 2592000 end,  -- ms to mo
             [ 0x79736D ]   = function( ts ) return (ts * 1e-3) / 31536000 end, -- ms to y
 
-            -- s -> other
+            -- seconds (s)
             [ 0x736E0073 ] = function( ts ) return ts * 1e9 end,      -- s to ns
             [ 0x73750073 ] = ts_m1e6,                                 -- s to us
             [ 0x736D0073 ] = ts_m1e3,                                 -- s to ms
@@ -143,7 +145,7 @@ do
             [ 0x6F6D0073 ] = function( ts ) return ts / 2592000 end,  -- s to mo
             [ 0x790073 ]   = function( ts ) return ts / 31536000 end, -- s to y
 
-            -- m -> other
+            -- minutes (m)
             [ 0x736E006D ] = function( ts ) return (ts * 60) * 1e9 end, -- m to ns
             [ 0x7375006D ] = function( ts ) return (ts * 60) * 1e6 end, -- m to us
             [ 0x736D006D ] = function( ts ) return (ts * 60) * 1e3 end, -- m to ms
@@ -154,7 +156,7 @@ do
             [ 0x6F6D006D ] = function( ts ) return ts / 43200 end,      -- m to mo
             [ 0x79006D ]   = function( ts ) return ts / 525600 end,     -- m to y
 
-            -- h -> other
+            -- hours (h)
             [ 0x736E0068 ] = function( ts ) return (ts * 3600) * 1e9 end, -- h to ns
             [ 0x73750068 ] = function( ts ) return (ts * 3600) * 1e6 end, -- h to us
             [ 0x736D0068 ] = function( ts ) return (ts * 3600) * 1e3 end, -- h to ms
@@ -165,7 +167,7 @@ do
             [ 0x6F6D0068 ] = function( ts ) return ts / 720 end,          -- h to mo
             [ 0x790068 ]   = function( ts ) return ts / 8760 end,         -- h to y
 
-            -- d -> other
+            -- days (d)
             [ 0x736E0064 ] = function( ts ) return (ts * 86400) * 1e9 end, -- d to ns
             [ 0x73750064 ] = function( ts ) return (ts * 86400) * 1e6 end, -- d to us
             [ 0x736D0064 ] = function( ts ) return (ts * 86400) * 1e3 end, -- d to ms
@@ -176,7 +178,7 @@ do
             [ 0x6F6D0064 ] = function( ts ) return ts / 30 end,            -- d to mo
             [ 0x790064 ]   = function( ts ) return ts / 365 end,           -- d to y
 
-            -- w -> other
+            -- weeks (w)
             [ 0x736E0077 ] = function( ts ) return (ts * 604800) * 1e9 end, -- w to ns
             [ 0x73750077 ] = function( ts ) return (ts * 604800) * 1e6 end, -- w to us
             [ 0x736D0077 ] = function( ts ) return (ts * 604800) * 1e3 end, -- w to ms
@@ -187,7 +189,7 @@ do
             [ 0x6F6D0077 ] = function( ts ) return ts / 4.285714286 end,    -- w to mo
             [ 0x790077 ]   = function( ts ) return ts / 52.142857143 end,   -- w to y
 
-            -- mo -> other
+            -- months (mo)
             [ 0x736E6F6D ] = function( ts ) return (ts * 2592000) * 1e9 end, -- mo to ns
             [ 0x73756F6D ] = function( ts ) return (ts * 2592000) * 1e6 end, -- mo to us
             [ 0x736D6F6D ] = function( ts ) return (ts * 2592000) * 1e3 end, -- mo to ms
@@ -198,7 +200,7 @@ do
             [ 0x776F6D ]   = function( ts ) return ts * 4.285714286 end,     -- mo to w
             [ 0x796F6D ]   = function( ts ) return ts / 12 end,              -- mo to y
 
-            -- y -> other
+            -- years (y)
             [ 0x736E0079 ] = function( ts ) return (ts * 31536000) * 1e9 end, -- y to ns
             [ 0x73750079 ] = function( ts ) return (ts * 31536000) * 1e6 end, -- y to us
             [ 0x736D0079 ] = function( ts ) return (ts * 31536000) * 1e3 end, -- y to ms
@@ -838,6 +840,8 @@ local key_to_index = {
     nanoseconds = 4
 }
 
+---@param key string
+---@protected
 function FormatBuffer:__index( key )
     if key == "milliseconds" or key == "microseconds" or key == "nanoseconds" then
         local value = string_format( "%03d", raw_get( self, key_to_index[ key ] ) or 0 )
@@ -918,4 +922,104 @@ function time.format( fmt, timestamp, unit, in_utc )
     return string_interpolate( fmt, setmetatable( { [ 0 ] = in_utc, split( timestamp or now( unit, true ), unit, 2 ) }, FormatBuffer ) )
 end
 
--- TODO: add JS like data to/from string functions for compability
+--- [SHARED AND MENU]
+---
+--- Converts a timestamp to an RFC 2822 date-time string, for example `Mon, 15 Jan 2024 10:30:00 +0000`.
+---
+--- This is the format used by email headers ( `Date:` ) and HTTP's obsolete `rfc1123-date`,
+--- and is also what JavaScript's `Date.prototype.toString()` timezone-less variants are based on.
+---
+---@param timestamp? integer The timestamp to convert, current time by default.
+---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
+---@param in_utc? boolean Whether to format the string in UTC, `false` by default.
+---@return string str The RFC 2822 date-time string.
+function time.toRFC2822( timestamp, unit, in_utc )
+    if timestamp == nil then
+        timestamp = now( unit, false )
+    end
+
+    ---@type integer
+    local seconds_timestamp
+
+    if unit == "s" then
+        seconds_timestamp = timestamp
+    else
+        seconds_timestamp = transform( timestamp, unit, "s", false, 2 )
+    end
+
+    if in_utc then
+        return os_date( "!%a, %d %b %Y %H:%M:%S +0000", seconds_timestamp )
+    end
+
+    local date_string = os_date( "%a, %d %b %Y %H:%M:%S", seconds_timestamp )
+    local timezone = time.zone
+
+    if timezone < 0 then
+        return date_string .. string_format( " -%02d00", -timezone )
+    end
+
+    return date_string .. string_format( " +%02d00", timezone )
+end
+
+--- [SHARED AND MENU]
+---
+--- Converts a timestamp to a JS-like ( ISO 8601 ) date-time string,
+--- for example `2024-01-15T10:30:00.000Z` or `2024-01-15T10:30:00.000-05:00` with timezone offset.
+---
+--- The output is compatible with JavaScript's `Date.prototype.toISOString()` /
+--- `JSON.stringify( new Date() )`, and can be parsed back with `time.fromISOString`.
+---
+---@param timestamp? integer The timestamp to convert, current time by default.
+---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
+---@param in_utc? boolean Whether to format the string in UTC ( with a `Z` suffix ), `false` by default.
+---@return string str The JS-like date-time string.
+function time.toISOString( timestamp, unit, in_utc )
+    if timestamp == nil then
+        timestamp = now( unit, false )
+    end
+
+    ---@type string
+    local milliseconds_string
+
+    ---@type integer
+    local seconds_timestamp
+    if unit == "s" then
+        seconds_timestamp = timestamp
+    else
+        seconds_timestamp = transform( timestamp, unit, "s", false, 2 )
+
+        if unit == "ns" or unit == "us" or unit == "ms" then
+            milliseconds_string = string_format( ".%03d", math_floor( timestamp ) - (seconds_timestamp * 1e3) )
+        end
+    end
+
+    ---@type string
+    local timezone_string
+
+    ---@type string
+    local date_string
+
+    if in_utc then
+        date_string = os_date( "!%Y-%m-%dT%H:%M:%S", seconds_timestamp )
+        timezone_string = "Z"
+    else
+
+        date_string = os_date( "%Y-%m-%dT%H:%M:%S", seconds_timestamp )
+
+        local timezone = time.zone
+        if timezone < 0 then
+            timezone_string = string_format( "-%02d:00", -timezone )
+        else
+            timezone_string = string_format( "+%02d:00", timezone )
+        end
+
+    end
+
+    if milliseconds_string == nil then
+        return date_string .. timezone_string
+    end
+
+    return date_string .. milliseconds_string .. timezone_string
+end
+
+-- TODO: from functions
