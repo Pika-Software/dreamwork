@@ -641,6 +641,7 @@ sendfile( "dreamwork/std/math.lua" )
 
 ---@class dreamwork.std.math
 local math = std.math
+local math_floor = math.floor
 local math_min, math_max = math.min, math.max
 
 do
@@ -657,26 +658,13 @@ do
         ---@param step_size integer
         ---@return dreamwork.std.RangeIterator
         __index = function( self, step_size )
-            local fn
+            local math_fn = (step_size < 0) and math_max or math_min
 
-            if step_size < 0 then
-                fn = function( break_point, index )
-                    local next_index = math_max( index + step_size, break_point )
-                    if next_index == break_point then
-                        return nil
-                    end
+            local function fn( break_point, index )
+                local next_index = math_fn( index + step_size, break_point )
+                if next_index == break_point then return nil end
 
-                    return next_index
-                end
-            else
-                fn = function( break_point, index )
-                    local next_index = math_min( index + step_size, break_point )
-                    if next_index == break_point then
-                        return nil
-                    end
-
-                    return next_index
-                end
+                return next_index
             end
 
             self[ step_size ] = fn
@@ -2549,49 +2537,42 @@ do
     local system_BatteryPower = glua_system.BatteryPower
     if system_BatteryPower ~= nil then
 
-        local battery_power = 0
+        ---@type number
+        local previous_value
 
-        local function update_battery()
-            if battery_power ~= system_BatteryPower() then
-                battery_power = system_BatteryPower()
+        ---@param value integer
+        local function update_battery( value )
+            if previous_value == value then return end
 
-                if battery_power == 255 then
-                    std.SYSTEM_HAS_BATTERY = false
-                    std.SYSTEM_BATTERY_LEVEL = 100
-                else
-                    std.SYSTEM_HAS_BATTERY = true
-                    std.SYSTEM_BATTERY_LEVEL = battery_power
-                end
+            previous_value = value
+
+            if value == 255 then
+                std.SYSTEM_HAS_BATTERY = false
+                std.SYSTEM_BATTERY_LEVEL = 100
+                return
             end
+
+            if value == 0 then
+                std.SYSTEM_HAS_BATTERY = true
+                std.SYSTEM_BATTERY_LEVEL = 0
+                return
+            end
+
+            std.SYSTEM_HAS_BATTERY = true
+            std.SYSTEM_BATTERY_LEVEL = math_floor( value / 100 )
         end
 
-        dreamwork.TickTimer1:attach( update_battery, "dreamwork::battery" )
-        update_battery()
+        dreamwork.TickTimer1:attach( function()
+            return update_battery( system_BatteryPower() or 255 )
+        end, "dreamwork::battery" )
 
     end
 
     if LUA_CLIENT_MENU then
-
-        local system_HasFocus = glua_system.HasFocus
-        if system_HasFocus ~= nil then
-
-            ---@class dreamwork.std.window
-            ---@field focus boolean `true` if the game's window has focus, `false` otherwise.
-            local window = std.window
-
-            local has_focus = system_HasFocus()
-            window.focus = has_focus
-
-            dreamwork.TickTimer0_05:attach( function()
-                if has_focus ~= system_HasFocus() then
-                    has_focus = not has_focus
-                    window.focus = has_focus
-                end
-            end, "dreamwork::window_focus" )
-
-        end
-
+        dofile( "dreamwork/std/gfx/window.lua" )
     end
+
+    sendfile( "dreamwork/std/gfx/window.lua" )
 
 end
 

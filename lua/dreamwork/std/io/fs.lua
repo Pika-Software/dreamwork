@@ -73,6 +73,12 @@ local file_CreateDir = glua_file.CreateDir
 ---@diagnostic disable-next-line: undefined-global
 local filesystem = filesystem
 
+--- TODO
+---@type fun( path: string )
+---@diagnostic disable-next-line: undefined-global
+local OpenFolder = OpenFolder
+
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
