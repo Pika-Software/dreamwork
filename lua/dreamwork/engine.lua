@@ -19,6 +19,7 @@ local math = std.math
 
 local debug = std.debug
 local debug_fempty = debug.fempty
+local debug_getmetatable = debug.getmetatable
 
 local string = std.string
 local string_format = string.format
@@ -459,10 +460,10 @@ do
     if LUA_CLIENT or LUA_SERVER then
         -- gamemode
         event_handlers[ "PostGamemodeLoaded" ] = handler_empty
-        event_handlers[ "PreGamemodeLoaded" ] = handler_empty
-        event_handlers[ "OnGamemodeLoaded" ] = handler_empty
-        event_handlers[ "OnReloaded" ] = handler_empty
-        event_handlers[ "Initialize" ] = handler_empty
+        event_handlers[ "PreGamemodeLoaded" ]  = handler_empty
+        event_handlers[ "OnGamemodeLoaded" ]   = handler_empty
+        event_handlers[ "OnReloaded" ]         = handler_empty
+        event_handlers[ "Initialize" ]         = handler_empty
 
         ---@param handlers dreamwork.engine.hook.Handler[]
         ---@return string | nil
@@ -477,15 +478,16 @@ do
             return nil
         end
 
+
         -- entity
-        event_handlers[ "InitPostEntity" ] = handler_empty
-        event_handlers[ "PostCleanupMap" ] = handler_empty
-        event_handlers[ "PreCleanupMap" ] = handler_empty
+        event_handlers[ "InitPostEntity" ]            = handler_empty
+        event_handlers[ "PostCleanupMap" ]            = handler_empty
+        event_handlers[ "PreCleanupMap" ]             = handler_empty
 
         ---@param handlers dreamwork.engine.hook.Handler[]
         ---@param entity Entity
         ---@param is_full_update boolean
-        event_handlers[ "EntityRemoved" ] = function( handlers, entity, is_full_update )
+        event_handlers[ "EntityRemoved" ]             = function( handlers, entity, is_full_update )
             is_full_update = is_full_update == true
 
             for i = 1, handlers[ 0 ], 1 do
@@ -493,14 +495,52 @@ do
             end
         end
 
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param entity Entity
+        ---@param is_player boolean
+        event_handlers[ "dreamwork.entity.spawn" ]    = function( handlers, entity, is_player )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( entity, is_player )
+            end
+        end
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param entity Entity
+        ---@param is_player boolean
+        event_handlers[ "dreamwork.entity.destroy" ]  = function( handlers, entity, is_player )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( entity, is_player )
+            end
+        end
+
+        event_handlers[ "dreamwork.entity.gc" ]       = function( handlers, entity )
+            local is_player = debug_getmetatable( entity ) == PlayerMetatable
+
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( entity, is_player )
+            end
+        end
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param entities Entity[]
+        ---@param entity_count integer
+        event_handlers[ "dreamwork.entity.registry" ] = function( handlers, entities, entity_count )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( entities, entity_count )
+            end
+        end
+
+
         -- engine
         event_handlers[ "ShutDown" ] = handler_empty
 
+
         -- save/load system
         event_handlers[ "Restored" ] = handler_empty
-        event_handlers[ "Saved" ] = handler_empty
+        event_handlers[ "Saved" ]    = handler_empty
 
-        -- dreamwork
+
+        -- network
 
         ---@param handlers dreamwork.engine.hook.Handler[]
         ---@param network_id integer
@@ -514,6 +554,23 @@ do
             end
 
             return false
+        end
+
+
+        -- gamemode
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param name string
+        ---@param tbl table
+        event_handlers[ "dreamwork.gamemode.select" ] = function( handlers, name, tbl )
+            for i = 1, handlers[ 0 ], 1 do
+                local result = handlers[ i ]( name, tbl )
+                if result ~= nil then
+                    return result
+                end
+            end
+
+            return tbl
         end
 
     end
@@ -1331,7 +1388,7 @@ if LUA_CLIENT or LUA_SERVER then
         entity_map = new_map
 
         if has_changes then
-            engine_hookCall( "dreamwork.entity.count", entity_list, entity_count, new_entities, new_count )
+            engine_hookCall( "dreamwork.entity.registry", new_entities, new_count )
         end
     end, _G.InvalidateInternalEntityCache )
 
