@@ -499,6 +499,10 @@ do
         ---@param entity Entity
         ---@param is_player boolean
         event_handlers[ "dreamwork.entity.spawn" ]    = function( handlers, entity, is_player )
+            if not is_player and debug_getmetatable( entity ) == PlayerMetatable then
+                is_player = true
+            end
+
             for i = 1, handlers[ 0 ], 1 do
                 handlers[ i ]( entity, is_player )
             end
@@ -508,6 +512,10 @@ do
         ---@param entity Entity
         ---@param is_player boolean
         event_handlers[ "dreamwork.entity.destroy" ]  = function( handlers, entity, is_player )
+            if not is_player and debug_getmetatable( entity ) == PlayerMetatable then
+                is_player = true
+            end
+
             for i = 1, handlers[ 0 ], 1 do
                 handlers[ i ]( entity, is_player )
             end
