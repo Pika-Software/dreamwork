@@ -13,6 +13,7 @@
               "os": "disable",
               "io": "disable",
               "debug": "disable",
+              "string": "disable",
               "package": "disable",
               "utf8": "disable",
             },
