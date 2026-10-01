@@ -17,7 +17,7 @@ os = {}
 ---@nodiscard
 function os.clock() end
 
----@class osdate:osdateparam
+---@class osdate : osdateparam
 ---
 ---four digits
 ---
@@ -73,16 +73,50 @@ function os.clock() end
 ---
 ---@field isdst boolean?
 
+--- [SHARED AND MENU]
 ---
----Returns a string or a table containing date and time, formatted according to the given string `format`.
+--- Returns a string or a table containing date and time, formatted according to the given string format.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.date)
+--- If format starts with '!', then the date is formatted in Coordinated Universal Time.
 ---
----@param format? string
----@param time?   integer
----@return string|osdate
+--- If format is not "*t" or "!*t", then date returns the date as a string,
+--- formatted according to the same rules as the C function strftime.
+---
+--- When called without arguments, date returns a reasonable date and time representation that depends on
+--- the host system and on the current locale (that is, `os.date()` is equivalent to `os.date("%c")`).
+---
+--- | Key  | Description                           | Example                   |
+--- |:-----|:--------------------------------------|:--------------------------|
+--- | `%a` | Abbreviated weekday name              | `Wed`                     |
+--- | `%A` | Full weekday name                     | `Wednesday`               |
+--- | `%b` | Abbreviated month name                | `Sep`                     |
+--- | `%B` | Full month name                       | `September`               |
+--- | `%c` | Locale-appropriate date and time      | **Platform value**        |
+--- | `%d` | Day of the month [01-31]              | `16`                      |
+--- | `%H` | Hour, using a 24-hour clock [00-23]   | `23`                      |
+--- | `%I` | Hour, using a 12-hour clock [01-12]   | `11`                      |
+--- | `%j` | Day of the year [001-365]             | `259`                     |
+--- | `%m` | Month [01-12]                         | `09`                      |
+--- | `%M` | Minute [00-59]                        | `48`                      |
+--- | `%p` | Either `am` or `pm`                   | `pm`                      |
+--- | `%S` | Second [00-60]                        | `10`                      |
+--- | `%w` | Weekday [0-6 = Sunday-Saturday]       | `3`                       |
+--- | `%W` | Week of the year [00-53]              | `37`                      |
+--- | `%x` | Date (Same as %m/%d/%y)               | `09/16/98`                |
+--- | `%X` | Time (Same as %H:%M:%S)               | `23:48:10`                |
+--- | `%y` | Two-digit year [00-99]                | `98`                      |
+--- | `%Y` | Full year                             | `1998`                    |
+--- | `%z` | Timezone                              | `-0300`                   |
+--- | `%%` | A percent sign                        | `%`                       |
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.date)
+---
+---@param fmt? string The format string, if not provided, "%c" is used.
+---@param timestamp? integer The timestamp to format, if not provided, the current time is used.
+---@return string time_str The formatted date and time string.
+---@overload fun( fmt: ( "*t" | "!*t" ), timestamp: integer? ): osdate
 ---@nodiscard
-function os.date(format, time) end
+function os.date( fmt, timestamp ) end
 
 ---
 ---Returns the difference, in seconds, from time `t1` to time `t2`.
@@ -93,7 +127,7 @@ function os.date(format, time) end
 ---@param t1 integer
 ---@return integer
 ---@nodiscard
-function os.difftime(t2, t1) end
+function os.difftime( t2, t1 ) end
 
 ---
 ---Passes `command` to be executed by an operating system shell.
@@ -104,7 +138,7 @@ function os.difftime(t2, t1) end
 ---@return true?     suc
 ---@return exitcode? exitcode
 ---@return integer?  code
-function os.execute(command) end
+function os.execute( command ) end
 
 ---
 ---Calls the ISO C function `exit` to terminate the host program.
@@ -113,7 +147,7 @@ function os.execute(command) end
 ---
 ---@param code?  boolean|integer
 ---@param close? boolean
-function os.exit(code, close) end
+function os.exit( code, close ) end
 
 ---
 ---Returns the value of the process environment variable `varname`.
@@ -123,7 +157,7 @@ function os.exit(code, close) end
 ---@param varname string
 ---@return string?
 ---@nodiscard
-function os.getenv(varname) end
+function os.getenv( varname ) end
 
 ---
 ---Deletes the file with the given name.
@@ -134,7 +168,7 @@ function os.getenv(varname) end
 ---@return true? suc
 ---@return string? errmsg
 ---@return integer? errcode
-function os.remove(filename) end
+function os.remove( filename ) end
 
 ---
 ---Renames the file or directory named `oldname` to `newname`.
@@ -146,7 +180,7 @@ function os.remove(filename) end
 ---@return true? suc
 ---@return string? errmsg
 ---@return integer? errcode
-function os.rename(oldname, newname) end
+function os.rename( oldname, newname ) end
 
 ---@alias localecategory
 ---|>"all"
@@ -164,7 +198,7 @@ function os.rename(oldname, newname) end
 ---@param locale    string|nil
 ---@param category? localecategory
 ---@return string localecategory
-function os.setlocale(locale, category) end
+function os.setlocale( locale, category ) end
 
 ---@class osdateparam
 ---
@@ -230,7 +264,7 @@ function os.setlocale(locale, category) end
 ---@param date? osdateparam
 ---@return integer
 ---@nodiscard
-function os.time(date) end
+function os.time( date ) end
 
 ---
 ---Returns a string with a file name that can be used for a temporary file.

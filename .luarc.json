@@ -1,8 +1,0 @@
-{
-  "$schema": "https://raw.githubusercontent.com/LuaLS/LLS-Addons/main/schemas/addon_config.schema.json",
-  "name": "garrysmod",
-  "words": ["include%s*%(?", "AddCSLuaFile%s*%(?", "hook%.Add%s*%("],
-  "Lua.runtime.version": "LuaJIT",
-  "Lua.diagnostics.disable": ["duplicate-set-field", "lowercase-global"],
-  "format.enable": true
-}

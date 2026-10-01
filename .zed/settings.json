@@ -1,0 +1,31 @@
+{
+  "lsp": {
+    "lua-language-server": {
+      "settings": {
+        "Lua": {
+          "runtime": {
+            "version": "LuaJIT",
+            "builtin": {
+              "bit": "disable",
+              "bit32": "disable",
+              "jit": "disable",
+              "ffi": "disable",
+              "os": "disable",
+              "io": "disable",
+              "debug": "disable",
+              "package": "disable",
+              "utf8": "disable",
+            },
+          },
+          "workspace": {
+            "checkThirdParty": false,
+            "library": [],
+          },
+          "diagnostics": {
+            "disable": ["duplicate-set-field", "lowercase-global"],
+          },
+        },
+      },
+    },
+  },
+}
