@@ -1,17 +1,19 @@
 ---@meta string
 
+--- [SHARED AND MENU]
 ---
 ---
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string)
 ---
 ---@class stringlib
 string = {}
 
+--- [SHARED AND MENU]
 ---
----Returns the internal numeric codes of the characters `s[i], s[i+1], ..., s[j]`.
+--- Returns the internal numeric codes of the characters `s[i], s[i+1], ..., s[j]`.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.byte)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.byte)
 ---
 ---@param s  string|number
 ---@param i? integer
@@ -20,10 +22,11 @@ string = {}
 ---@nodiscard
 function string.byte( s, i, j ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a string with length equal to the number of arguments, in which each character has the internal numeric code equal to its corresponding argument.
+--- Returns a string with length equal to the number of arguments, in which each character has the internal numeric code equal to its corresponding argument.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.char)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.char)
 ---
 ---@param byte integer
 ---@param ... integer
@@ -31,10 +34,11 @@ function string.byte( s, i, j ) end
 ---@nodiscard
 function string.char( byte, ... ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a string containing a binary representation (a *binary chunk*) of the given function.
+--- Returns a string containing a binary representation (a *binary chunk*) of the given function.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.dump)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.dump)
 ---
 ---@param f      async fun(...):...
 ---@param strip? boolean
@@ -42,10 +46,11 @@ function string.char( byte, ... ) end
 ---@nodiscard
 function string.dump( f, strip ) end
 
+--- [SHARED AND MENU]
 ---
----Looks for the first match of `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) in the string.
+--- Looks for the first match of `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) in the string.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.find)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.find)
 ---
 ---@param s       string|number
 ---@param pattern string|number
@@ -57,10 +62,11 @@ function string.dump( f, strip ) end
 ---@nodiscard
 function string.find( s, pattern, init, plain ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a formatted version of its variable number of arguments following the description given in its first argument.
+--- Returns a formatted version of its variable number of arguments following the description given in its first argument.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.format)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.format)
 ---
 ---@param s string|number
 ---@param ... any
@@ -68,20 +74,22 @@ function string.find( s, pattern, init, plain ) end
 ---@nodiscard
 function string.format( s, ... ) end
 
+--- [SHARED AND MENU]
 ---
----Returns an iterator function. Each call to that iterator continues matching `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) over s and returns all captures.
+--- Returns an iterator function. Each call to that iterator continues matching `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) over s and returns all captures.
 ---
----The following example iterates over all words in string s, printing one per line:
----```lua
----    s =
----"hello world from Lua"
+--- The following example iterates over all words in string s, printing one per line:
+---
+--- ```lua
+---    local s = "hello world from Lua"
+---
 ---    for w in string.gmatch(s, "%a+") do
 ---        print(w)
 ---    end
----```
+--- ```
 ---
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gmatch)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gmatch)
 ---
 ---@param s       string|number
 ---@param pattern string|number
@@ -89,10 +97,11 @@ function string.format( s, ... ) end
 ---@nodiscard
 function string.gmatch( s, pattern ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a copy of s where all occurrences of `pattern` (or the first n occurrences if n is given) are replaced by repl (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)).
+--- Returns a copy of s where all occurrences of `pattern` (or the first n occurrences if n is given) are replaced by repl (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)).
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gsub)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gsub)
 ---
 ---@param s       string|number
 ---@param pattern string|number
@@ -102,20 +111,22 @@ function string.gmatch( s, pattern ) end
 ---@return integer count
 function string.gsub( s, pattern, repl, n ) end
 
+--- [SHARED AND MENU]
 ---
----Returns its length.
+--- Returns its length.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.len)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.len)
 ---
 ---@param s string|number
 ---@return integer
 ---@nodiscard
 function string.len( s ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a copy of this string with all uppercase letters changed to lowercase.
+--- Returns a copy of this string with all uppercase letters changed to lowercase.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.lower)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.lower)
 ---
 ---@param s string|number
 ---@return string
@@ -166,9 +177,9 @@ function string.match( str, pattern, start_position ) end
 
 ---@version >5.3
 ---
----Returns a binary string containing the values `v1`, `v2`, etc. packed (that is, serialized in binary form) according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
+--- Returns a binary string containing the values `v1`, `v2`, etc. packed (that is, serialized in binary form) according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.pack)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.pack)
 ---
 ---@param fmt string
 ---@param v1  string|number
@@ -180,19 +191,20 @@ function string.pack( fmt, v1, v2, ... ) end
 
 ---@version >5.3
 ---
----Returns the length of a string resulting from `string.pack` with the given format string `fmt`. The format string cannot contain the variable-length options `s` or `z` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
+--- Returns the length of a string resulting from `string.pack` with the given format string `fmt`. The format string cannot contain the variable-length options `s` or `z` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.packsize)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.packsize)
 ---
 ---@param fmt string
 ---@return integer
 ---@nodiscard
 function string.packsize( fmt ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a string that is the concatenation of `n` copies of the string `s` separated by the string `sep`.
+--- Returns a string that is the concatenation of `n` copies of the string `s` separated by the string `sep`.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.rep)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.rep)
 ---
 ---@param s    string|number
 ---@param n    integer
@@ -201,20 +213,22 @@ function string.packsize( fmt ) end
 ---@nodiscard
 function string.rep( s, n, sep ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a string that is the string `s` reversed.
+--- Returns a string that is the string `s` reversed.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.reverse)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.reverse)
 ---
 ---@param s string|number
 ---@return string
 ---@nodiscard
 function string.reverse( s ) end
 
+--- [SHARED AND MENU]
 ---
----Returns the substring of the string that starts at `i` and continues until `j`.
+--- Returns the substring of the string that starts at `i` and continues until `j`.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.sub)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.sub)
 ---
 ---@param s  string|number
 ---@param i  integer
@@ -225,9 +239,9 @@ function string.sub( s, i, j ) end
 
 ---@version >5.3
 ---
----Returns the values packed in string according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)) .
+--- Returns the values packed in string according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)) .
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.unpack)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.unpack)
 ---
 ---@param fmt  string
 ---@param s    string
@@ -236,10 +250,11 @@ function string.sub( s, i, j ) end
 ---@nodiscard
 function string.unpack( fmt, s, pos ) end
 
+--- [SHARED AND MENU]
 ---
----Returns a copy of this string with all lowercase letters changed to uppercase.
+--- Returns a copy of this string with all lowercase letters changed to uppercase.
 ---
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.upper)
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.upper)
 ---
 ---@param s string|number
 ---@return string

@@ -83,7 +83,7 @@ if not operators then
     ---@field btest fun( ...: integer ): boolean
     ---@field extract fun( x: integer, field: integer, width: integer ): integer
     ---@field replace fun( x: integer, extract: integer, field: integer, width: integer ): integer
-    ---@diagnostic disable-next-line: undefined-global
+    ---@diagnostic disable-next-line: undefined-global, deprecated
     local glua_bit = bit or bit32
 
     rbit.bor = glua_bit.bor
