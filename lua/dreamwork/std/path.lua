@@ -541,7 +541,7 @@ function path.join( segments, segment_count )
     end
 
     for index = 1, segment_count, 1 do
-        local segment = string_trimByte( segments[ index ], 0x2F --[[ / ]] )
+        local segment = string_trimByte( segments[ index ], 0x2F --[[ / ]], true, true )
         if string_byte( segment, 1, 1 ) == nil then
             segments[ index ] = "."
         else
