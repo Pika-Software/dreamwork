@@ -43,7 +43,7 @@ local error = std.error
 --- A library for working with time and date.
 ---
 ---@class dreamwork.std.time
----@field zone integer The timezone offset from UTC.
+---@field zone integer The timezone offset from UTC. Can be changed to change the timezone.
 ---@field dst boolean Whether the timezone is currently in daylight saving time.
 ---@field zone_dst integer The timezone offset from UTC during daylight saving time.
 local time = {}
