@@ -390,16 +390,23 @@ end
 
 time.now = now
 
---- based on Howard Hinnant's "days_from_civil" algorithm
+--- [SHARED AND MENU]
 ---
---- http://howardhinnant.github.io/date_algorithms.html#days_from_civil
+--- Converts a civil (Gregorian) calendar date into a day count relative to the Unix epoch
+--- (`1970-01-01`), i.e. the same scale as `days` in `time.civilFromDays` and
+--- `time.weekdayFromDays` — negative for dates before the epoch, `0` for the epoch date
+--- itself, positive after.
 ---
---- https://gist.github.com/socantre/c9dfcc5bd106a601d395
+--- Based on Howard Hinnant's "days_from_civil" algorithm, which is valid for any year
+--- representable by the host's integer type, correctly accounting for the Gregorian leap
+--- year rule (including the century/400-year exceptions) without needing a lookup table.
 ---
----@param year? integer
----@param month? integer
----@param day? integer
----@return integer
+--- See [howardhinnant date algorithms](http://howardhinnant.github.io/date_algorithms.html#days_from_civil) and  [socantre lua port](https://gist.github.com/socantre/c9dfcc5bd106a601d395).
+---
+---@param year? integer The calendar year. Defaults to the current UTC year (adjusted by `time.zone`).
+---@param month? integer The calendar month (`1`-`12`). Defaults to the current month.
+---@param day? integer The calendar day of the month. Defaults to the current day.
+---@return integer days The number of days since the Unix epoch (`1970-01-01`).
 function time.daysFromCivil( year, month, day )
     if year == nil or month == nil or day == nil then
         local timestamp_data = os_date( "!*t", current_utc_timestamp + (time.zone * 3600) )
@@ -432,10 +439,19 @@ function time.daysFromCivil( year, month, day )
     return (era * 146097) + doe - 719468
 end
 
----@param days? integer
----@return integer year
----@return integer month
----@return integer day
+--- [SHARED AND MENU]
+---
+--- Converts a day count relative to the Unix epoch (`1970-01-01`), as produced by
+--- `time.daysFromCivil`, back into a civil (Gregorian) calendar year, month, and day. The
+--- inverse of `time.daysFromCivil`.
+---
+--- Based on Howard Hinnant's "civil_from_days" algorithm, the counterpart to
+--- `daysFromCivil`'s "days_from_civil".
+---
+---@param days? integer The number of days since the Unix epoch. If omitted, the current UTC date (adjusted by `time.zone`) is returned directly, without going through the day-count math.
+---@return integer year The calendar year.
+---@return integer month The calendar month (`1`-`12`).
+---@return integer day The calendar day of the month.
 function time.civilFromDays( days )
     if days == nil then
         local timestamp_data = os_date( "!*t", current_utc_timestamp + (time.zone * 3600) )
@@ -468,9 +484,10 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if a year is a leap year.
+--- Checks if a year is a leap year, following the Gregorian rule: divisible by `4`, except
+--- century years (divisible by `100`), unless also divisible by `400`.
 ---
----@param year? integer The year to check, the current year by default.
+---@param year? integer The year to check, the current UTC year by default.
 ---@return boolean is_leap_year Returns `true` if the year is a leap year, otherwise `false`.
 local function isLeapYear( year )
     if year == nil then
@@ -523,35 +540,58 @@ end
 
 time.daysInMonth = daysInMonth
 
----@param days integer
----@return integer weekday
+--- [SHARED AND MENU]
+---
+--- Returns the day of the week for a given day count relative to the Unix epoch, as produced
+--- by `time.daysFromCivil`.
+---
+--- The result is a `0`-based weekday index in `[0, 6]`, matching the convention used by
+--- `time.nextWeekday`/`time.prevWeekday`/`time.weekdayDifference`; `1970-01-01` (`days == 0`)
+--- was a Thursday, which is why the calculation offsets by `4` before taking the modulo.
+---
+---@param days integer The number of days since the Unix epoch.
+---@return integer weekday The `0`-based weekday index (`0` = Sunday, `6` = Saturday) for that day.
 function time.weekdayFromDays( days )
     return (days + 4) % 7
 end
 
----@param x integer
----@param y integer
----@return integer difference
+--- [SHARED AND MENU]
+---
+--- Returns the number of days to add to weekday `y` to reach weekday `x`, both given as
+--- `0`-based weekday indices in `[0, 6]` (the same convention as `time.weekdayFromDays`).
+---
+--- The result is always in `[0, 6]`: `0` if `x` and `y` are the same weekday, otherwise the
+--- forward (wrapping) distance from `y` to `x`.
+---
+---@param x integer The target weekday index (`0`-`6`).
+---@param y integer The starting weekday index (`0`-`6`).
+---@return integer difference The number of days forward from `y` to reach `x`, in `[0, 6]`.
 function time.weekdayDifference( x, y )
     return (x - y) % 7
 end
 
----@param weekday integer
----@return integer next_weekday
+--- [SHARED AND MENU]
+---
+--- Returns the next weekday after the given one, wrapping from `6` (Saturday) back to `0`
+--- (Sunday).
+---
+---@param weekday integer The current weekday index (`0`-`6`).
+---@return integer next_weekday The following weekday index (`0`-`6`).
 function time.nextWeekday( weekday )
     return (weekday + 1) % 7
 end
 
----@param weekday integer
----@return integer previous_weekday
+--- [SHARED AND MENU]
+---
+--- Returns the weekday before the given one, wrapping from `0` (Sunday) back to `6`
+--- (Saturday).
+---
+---@param weekday integer The current weekday index (`0`-`6`).
+---@return integer previous_weekday The preceding weekday index (`0`-`6`).
 function time.prevWeekday( weekday )
     return (weekday - 1) % 7
 end
 
---- [SHARED AND MENU]
----
---- Splits a timestamp into seconds, milliseconds, microseconds and nanoseconds.
----
 ---@param timestamp integer
 ---@param unit? dreamwork.std.time.Unit
 ---@param error_level? integer
