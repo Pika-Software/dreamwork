@@ -879,6 +879,16 @@ do
             timestamp_data.year = timestamp_data.year + duration_years
             timestamp_data.month = timestamp_data.month + duration_months
             timestamp_data.day = timestamp_data.day + duration_days
+
+            local duration_hours = math_modf( duration_seconds / 3600 )
+            duration_seconds = duration_seconds - (duration_hours * 3600)
+            timestamp_data.hour = timestamp_data.hour + duration_hours
+
+            local duration_minutes = math_modf( duration_seconds / 60 )
+            duration_seconds = duration_seconds - (duration_minutes * 60)
+            timestamp_data.min = timestamp_data.min + duration_minutes
+
+            timestamp_data.sec = timestamp_data.sec + (duration_seconds % 60)
             timestamp_data.isdst = false
 
             timestamp_seconds = os_time( timestamp_data ) - zone_seconds + (time.zone * 3600)
