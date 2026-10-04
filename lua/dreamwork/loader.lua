@@ -1201,12 +1201,12 @@ do
         ---@return string
         ---@private
         function String.__represent( value )
-            return string_format( "string: %p [%s]", value, value )
+            return string_format( "string: %p [%s][%d]", value, value, string_len( value ) )
         end
 
         String.__tonumber = raw.tonumber
         String.__div = string.divide
-        String.__len = string.len
+        String.__len = string_len
 
         --- [SHARED AND MENU]
         ---
