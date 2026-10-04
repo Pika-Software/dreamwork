@@ -59,14 +59,14 @@ time.zone = zone
 time.dst = ((raw_tonumber( os_date( "%z" ) ) * 0.01) - zone) ~= 0
 time.zone_dst = zone + (time.dst and 1 or 0)
 
+---@type integer
+local zone_seconds = zone * 3600
 
 ---@type integer
-local current_utc_timestamp = os_time() - zone
-local current_timestamp = current_utc_timestamp + (time.zone * 3600)
+local current_utc_timestamp = os_time() - zone_seconds
 
 engine_hookCatch( "Tick", "dreamwork.std.time", function()
-    current_utc_timestamp = os_time() - zone
-    current_timestamp = current_utc_timestamp + (time.zone * 3600)
+    current_utc_timestamp = os_time() - zone_seconds
 end )
 
 
@@ -380,7 +380,7 @@ end
 ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
 ---@return integer | number timestamp The current timestamp in the specified unit.
 local function now( unit, as_float )
-    local timestamp = current_timestamp
+    local timestamp = current_utc_timestamp + (time.zone * 3600)
     if not as_float and (unit == nil or unit == "s") then
         return timestamp
     end
@@ -402,7 +402,7 @@ time.now = now
 ---@return integer
 function time.daysFromCivil( year, month, day )
     if year == nil or month == nil or day == nil then
-        local timestamp_data = os_date( "!*t", current_timestamp )
+        local timestamp_data = os_date( "!*t", current_utc_timestamp + (time.zone * 3600) )
 
         if year == nil then
             year = timestamp_data.year
@@ -438,7 +438,7 @@ end
 ---@return integer day
 function time.civilFromDays( days )
     if days == nil then
-        local timestamp_data = os_date( "!*t", current_timestamp )
+        local timestamp_data = os_date( "!*t", current_utc_timestamp + (time.zone * 3600) )
         return timestamp_data.year, timestamp_data.month, timestamp_data.day
     end
 
@@ -499,7 +499,7 @@ local common_year_month_days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 
 ---@return integer days_in_month The number of days in the month.
 local function daysInMonth( month, year )
     if month == nil or year == nil then
-        local timestamp_data = os_date( "!*t", current_timestamp )
+        local timestamp_data = os_date( "!*t", current_utc_timestamp + (time.zone * 3600) )
 
         if month == nil then
             month = timestamp_data.month
@@ -839,9 +839,9 @@ do
             timestamp_data.year = timestamp_data.year + duration_years
             timestamp_data.month = timestamp_data.month + duration_months
             timestamp_data.day = timestamp_data.day + duration_days
-            timestamp_data.isdst = nil
+            timestamp_data.isdst = false
 
-            timestamp_seconds = os_time( timestamp_data )
+            timestamp_seconds = os_time( timestamp_data ) - zone_seconds + (time.zone * 3600)
         end
 
         return transform( timestamp_seconds + timestamp_remainder + duration_remainder, "s", unit, as_float, 2 )
@@ -956,7 +956,7 @@ do
         date = "%x",
 
         -- %c	Locale-appropriate date and time	Varies by platform and language settings
-        date_time = "%c"
+        datetime = "%c"
     }
 
     ---@class dreamwork.std.time.FormatBuffer : dreamwork.std.Metatable
@@ -991,7 +991,7 @@ do
         if key == "timezone" then
             local timezone
 
-            local value = time.zone * 0x64
+            local value = time.zone * 100
             if value < 0 then
                 timezone = string_format( "-%04d", -value )
             else
@@ -1048,7 +1048,7 @@ do
     --- | `{period}`              | AM or PM                                               | `pm`                       |
     --- | `{date}`                | Localized date (same as `{month}/{day}/{year}`)  | `09/16/98`                 |
     --- | `{time}`                | Localized time (same as `{hours}:{minutes}:{seconds}`) | `23:48:10`                 |
-    --- | `{date_time}`           | Localized full date and time                           | `Wed Sep 16 23:48:10 1998` |
+    --- | `{datetime}`           | Localized full date and time                           | `Wed Sep 16 23:48:10 1998` |
     --- | `{timezone}`            | Timezone offset                                        | `-0300`                    |
     ---
     ---@param fmt string The format string.
@@ -1171,93 +1171,116 @@ end
 --- * `2024-01-15T10:30:00.000Z` - UTC, with milliseconds
 --- * `2024-01-15T10:30:00Z` - UTC, without milliseconds
 --- * `2024-01-15T10:30:00.000+02:00` / `2024-01-15T10:30:00+0200` - explicit offset
---- * `2024-01-15T10:30:00` - no timezone info, interpreted using the library's local timezone ( `std.TZ` )
+--- * `2024-01-15T10:30Z` - without seconds
+--- * `2024-01-15T10:30:00` - no timezone info, interpreted as local time ( DST-aware )
 --- * `2024-01-15` - date only, interpreted as UTC midnight, matching JavaScript's behaviour
+---
+--- A space can be used instead of `T`. Fractions longer than 3 digits are truncated to milliseconds.
 ---
 ---@param str string The JS-like date-time string to parse.
 ---@param unit? dreamwork.std.time.Unit The unit to return the timestamp in, `s` by default.
 ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
 ---@return number timestamp The unix timestamp in the specified unit.
 function time.fromISOString( str, unit, as_float )
-    local year_str, month_str, day_str, rest = string_match( str, "^(%d%d%d%d)%-(%d%d)%-(%d%d)(.*)$" )
-    if year_str == nil or month_str == nil or day_str == nil then
-        error( string_format( "invalid date-time string - '%s'", str ), 2 )
+    local year_str, month_str, day_str, hours_str, minutes_str, seconds_str, dot_str, fraction_str, zone_str =
+        string_match( str, "^(%d%d%d%d)%-(%d%d)%-(%d%d)[T ](%d%d):(%d%d):(%d%d)(%.?)(%d?%d?%d?)%d*(.*)$" )
+
+    if year_str == nil then
+        -- without seconds
+        year_str, month_str, day_str, hours_str, minutes_str, zone_str =
+            string_match( str, "^(%d%d%d%d)%-(%d%d)%-(%d%d)[T ](%d%d):(%d%d)(.*)$" )
+
+        if year_str == nil then
+            -- date only
+            year_str, month_str, day_str = string_match( str, "^(%d%d%d%d)%-(%d%d)%-(%d%d)$" )
+
+            if year_str == nil then
+                error( string_format( "invalid date-time string - '%s'", str ), 2 )
+            end
+        end
     end
 
-    ---@cast rest string
+    ---@cast month_str string
+    ---@cast day_str string
 
     local year = raw_tonumber( year_str, 10 ) or 0
     local month = raw_tonumber( month_str, 10 ) or 0
     local day = raw_tonumber( day_str, 10 ) or 0
 
-    local hours, minutes, seconds, fraction, tz_str = 0, 0, 0, nil, nil
+    if month < 1 or month > 12 or day < 1 or day > daysInMonth( month, year ) then
+        error( string_format( "invalid date-time string - '%s'", str ), 2 )
+    end
 
-    if rest ~= "" then
-        local hours_str, minutes_str, seconds_str, milliseconds_string, tz = string_match( rest, "^[T ](%d%d):(%d%d):?(%d?%d?)%.?(%d*)(.*)$" )
-        if hours_str == nil or minutes_str == nil or seconds_str == nil then
+    local hours = 0
+    local minutes = 0
+    local seconds = 0
+
+    local milliseconds = 0
+    local offset_seconds = 0
+
+    -- date-only strings are interpreted as UTC, matching JavaScript's behaviour
+    if hours_str ~= nil then
+        ---@cast minutes_str string
+        ---@cast zone_str string
+
+        hours = raw_tonumber( hours_str, 10 ) or hours
+        minutes = raw_tonumber( minutes_str, 10 ) or minutes
+
+        if seconds_str ~= nil then
+            seconds = raw_tonumber( seconds_str, 10 ) or seconds
+        end
+
+        if hours > 23 or minutes > 59 or seconds > 59 then
             error( string_format( "invalid date-time string - '%s'", str ), 2 )
         end
 
-        hours, minutes = raw_tonumber( hours_str, 10 ), raw_tonumber( minutes_str, 10 )
-        seconds = s ~= "" and raw_tonumber( seconds_str, 10 ) or 0
-        fraction = milliseconds_string
-        tz_str = tz
-    end
-
-    local offset_seconds
-
-    if rest == "" then
-        -- date-only strings are interpreted as UTC, matching JavaScript's behaviour
-        offset_seconds = 0
-    elseif tz_str == nil or tz_str == "" then
-        -- no timezone info, interpreted using the library's local timezone, matching JavaScript's behaviour
-        offset_seconds = time.zone * 3600
-    elseif tz_str == "Z" or tz_str == "z" then
-        offset_seconds = 0
-    else
-        local sign, offset_hours, offset_minutes = string_match( tz_str, "^([%+%-])(%d%d):?(%d%d)$" )
-        if sign == nil then
-            error( string_format( "invalid timezone offset - '%s'", tz_str ), 2 )
-        end
-
-        offset_seconds = raw_tonumber( offset_hours, 10 ) * 3600 + raw_tonumber( offset_minutes, 10 ) * 60
-
-        if sign == "-" then
-            offset_seconds = -offset_seconds
-        end
-    end
-
-    local milliseconds = 0
-
-    if fraction ~= nil and fraction ~= "" then
-        local digit_count = #fraction
-
-        milliseconds = raw_tonumber( fraction, 10 ) or 0
-
-        if digit_count >= 3 then
-            for _ = 1, digit_count - 3 do
-                milliseconds = math_floor( milliseconds / 10 )
+        if fraction_str ~= nil then
+            -- a dot without digits ( or digits without a dot ) is malformed
+            if (dot_str == "") ~= (fraction_str == "") then
+                error( string_format( "invalid date-time string - '%s'", str ), 2 )
             end
-        else
-            for _ = 1, 3 - digit_count do
-                milliseconds = milliseconds * 10
+
+            if string_byte( fraction_str, 1, 1 ) ~= nil then
+                milliseconds = raw_tonumber( fraction_str, 10 ) or 0
+            end
+        end
+
+        local zone_uint8_1, zone_uint8_2 = string_byte( zone_str, 1, 2 )
+
+        if zone_uint8_1 == nil then
+            offset_seconds = time.zone * 3600
+        elseif not (zone_uint8_2 == nil and (zone_uint8_1 == 0x5A or zone_uint8_1 == 0x7A)) --[[ Z z ]] then
+            local sign, offset_hours, offset_minutes = string_match( zone_str, "^([%+%-]?)(%d%d):?(%d%d)$" )
+            if offset_hours == nil or offset_minutes == nil then
+                error( string_format( "invalid timezone offset - '%s'", zone_str ), 2 )
+            end
+
+            offset_seconds = ((raw_tonumber( offset_hours, 10 ) or 0) * 3600) +
+                ((raw_tonumber( offset_minutes, 10 ) or 0) * 60)
+
+            if sign ~= nil and string_byte( sign, 1, 1 ) == 0x2D --[[ - ]] then
+                offset_seconds = -offset_seconds
             end
         end
     end
 
-    return transform( os_time( {
-        year = year,
-        month = month,
-        day = day,
-        hour = hours,
-        min = minutes,
-        sec = seconds,
-    } ) - offset_seconds, "s", unit, as_float, 2 )
+    return transform(
+        os_time( {
+            day = day,
+            month = month,
+            year = year,
+            hour = hours,
+            min = minutes,
+            sec = seconds,
+            isdst = false,
+        } ) + offset_seconds + (milliseconds / 1e3) - zone_seconds + (time.zone * 3600),
+        "s", unit, as_float, 2
+    )
 end
 
 do
 
-    ---@type table<string, integer>
+    ---@type table<integer, integer>
     local month_map = {
         [ 7233898 ] = 1,
         [ 6448486 ] = 2,
@@ -1273,7 +1296,7 @@ do
         [ 6514020 ] = 12
     }
 
-    ---@type table<string, integer>
+    ---@type table<integer, integer>
     local rfc2822_timezones = {
         [ 66 ] = 7200,
         [ 83 ] = -21600,
@@ -1348,16 +1371,18 @@ do
             error( string_format( "invalid month name - '%s'", month_str ), 2 )
         end
 
-        local day = raw_tonumber( day_str, 10 ) or 0
         local year = raw_tonumber( year_str, 10 ) or 0
-        local hours = raw_tonumber( hours_str, 10 ) or 0
-        local minutes = raw_tonumber( minutes_str, 10 ) or 0
-        local seconds = raw_tonumber( seconds_str, 10 ) or 0
 
         -- obsolete 2-digit year rule
         if year < 100 then
             year = year + (year < 50 and 2000 or 1900)
         end
+
+        local day = raw_tonumber( day_str, 10 ) or 0
+
+        local hours = raw_tonumber( hours_str, 10 ) or 0
+        local minutes = raw_tonumber( minutes_str, 10 ) or 0
+        local seconds = raw_tonumber( seconds_str, 10 ) or 0
 
         local offset_seconds = 0
 
@@ -1390,33 +1415,10 @@ do
                 hour = hours,
                 min = minutes,
                 sec = seconds,
-            } ) - offset_seconds,
-            "s",
-            unit,
-            as_float,
-            2
+                isdst = false,
+            } ) + offset_seconds - zone_seconds + (time.zone * 3600),
+            "s", unit, as_float, 2
         )
     end
 
 end
-
-local tm = time.add( time.now( "s", true ), "s", "1d", true )
-
--- local tm = time.now( "s", true )
-
-std.printTable( time.parse( tm ) )
--- print( "ymd:", td.year, td.month, td.day )
--- print( "time:", td.hours, td.minutes, td.seconds, td.milliseconds )
-
--- local tms = now( "s", true ) - now( "s", false )
--- print( transform( tms, "s", "ms", false ) )
--- print( transform( tms, "s", "us", false ) )
--- print( transform( tms, "s", "ns", false ) )
-
--- print( "days: ", time.transform( tm, "s", "d", true ) )
-
--- print( "cdays: ", days_from_civil( td.year, td.month, td.day ) )
-
-
--- print( "-10: ", days_from_civil( 2026 - 10, 10, 03 ) )
--- print( "26: ", days_from_civil( 2026, 10, 03 ) )

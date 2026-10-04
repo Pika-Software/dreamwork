@@ -1374,54 +1374,6 @@ end
 dofile( "dreamwork/std/raw.ext.lua" )
 sendfile( "dreamwork/std/raw.ext.lua" )
 
--- time library
-dofile( "dreamwork/std/time.lua" )
-sendfile( "dreamwork/std/time.lua" )
-
-local time = std.time
-
-if math.randomseed == 0 then
-    math.randomseed = time.now( "ms", false )
-end
-
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Runs a benchmark on the given function, measuring the time it takes to execute a specified number of iterations.
-    ---
-    ---@param name string The name of the benchmark.
-    ---@param fn function The function to benchmark.
-    ---@param iterations? integer The number of iterations to run.
-    function dreamwork.bench( name, fn, iterations )
-        if iterations == nil then
-            iterations = 1000
-        end
-
-        local warmup = math.min( iterations / 100, 100 )
-
-        for _ = 1, warmup do
-            fn()
-        end
-
-        gc.stop()
-        time.tick()
-
-        for _ = 1, iterations do
-            fn()
-        end
-
-        local time_took = time.tick()
-        gc.restart()
-
-        local avg = time_took / iterations
-        raw.print( string.format( "[DW] Benchmark `%s` - iter: %d / avg: %f / exp: %s / total: %f sec.", name, iterations, avg, time.transform( math.ceil( time.transform( avg, "s", "ms", true ) * iterations ), "ms", "s", true ), time_took ) )
-
-        return time_took
-    end
-
-end
-
 -- bit library
 dofile( "dreamwork/std/bit.lua" )
 sendfile( "dreamwork/std/bit.lua" )
@@ -1441,10 +1393,6 @@ sendfile( "dreamwork/std/string.ext.lua" )
 -- table library ( extension )
 dofile( "dreamwork/std/table.ext.lua" )
 sendfile( "dreamwork/std/table.ext.lua" )
-
--- coroutine library ( extension )
-dofile( "dreamwork/std/coroutine.ext.lua" )
-sendfile( "dreamwork/std/coroutine.ext.lua" )
 
 -- ipv4 library
 dofile( "dreamwork/std/ipv4.lua" )
@@ -1732,6 +1680,58 @@ sendfile( "dreamwork/std/types/big_integer.lua" )
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 sendfile( "dreamwork/engine.lua" )
+
+-- time library
+dofile( "dreamwork/std/time.lua" )
+sendfile( "dreamwork/std/time.lua" )
+
+local time = std.time
+
+if math.randomseed == 0 then
+    math.randomseed = time.now( "ms", false )
+end
+
+-- coroutine library ( extension )
+dofile( "dreamwork/std/coroutine.ext.lua" )
+sendfile( "dreamwork/std/coroutine.ext.lua" )
+
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Runs a benchmark on the given function, measuring the time it takes to execute a specified number of iterations.
+    ---
+    ---@param name string The name of the benchmark.
+    ---@param fn function The function to benchmark.
+    ---@param iterations? integer The number of iterations to run.
+    function dreamwork.bench( name, fn, iterations )
+        if iterations == nil then
+            iterations = 1000
+        end
+
+        local warmup = math.min( iterations / 100, 100 )
+
+        for _ = 1, warmup do
+            fn()
+        end
+
+        gc.stop()
+        time.tick()
+
+        for _ = 1, iterations do
+            fn()
+        end
+
+        local time_took = time.tick()
+        gc.restart()
+
+        local avg = time_took / iterations
+        raw.print( string.format( "[DW] Benchmark `%s` - iter: %d / avg: %f / exp: %s / total: %f sec.", name, iterations, avg, time.transform( math.ceil( time.transform( avg, "s", "ms", true ) * iterations ), "ms", "s", true ), time_took ) )
+
+        return time_took
+    end
+
+end
 
 -- error class
 dofile( "dreamwork/std/types/error.lua" )
