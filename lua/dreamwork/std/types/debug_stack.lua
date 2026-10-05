@@ -85,7 +85,7 @@ local function update_source( stack_level, current_thread )
     if source ~= nil and source ~= "=[C]" then
         ---@type string
         local relative_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-        stack_level.source = "/workspace/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
+        stack_level.source = "/game/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
     end
 
     stack_level.thread = current_thread

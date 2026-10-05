@@ -439,7 +439,7 @@ do
             end
         end
 
-        return "/workspace/lua/unknown.lua"
+        return "/game/lua/unknown.lua"
     end
 
     path.get = get

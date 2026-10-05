@@ -696,7 +696,7 @@ if std.LUA_CLIENT_MENU then
             if file_path == nil then
                 f:setError( "failed to download icon file for '" .. wsid .. "', unknown error." )
             else
-                f:setResult( "/workspace/" .. file_path )
+                f:setResult( "/game/" .. file_path )
             end
         end )
 
@@ -807,7 +807,7 @@ do
     ---@async
     local function perform_response( f, wsid, file_path, file_class )
         if file_path ~= nil and fs_isFile( "/garrysmod/" .. file_path ) then
-            f:setResult( "/workspace/" .. file_path )
+            f:setResult( "/game/" .. file_path )
             return
         end
 
