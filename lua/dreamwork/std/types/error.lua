@@ -199,6 +199,12 @@ do
 
             engine_consoleMessageColored( tostring( top_frame.currentline or -1 ), COLOR_SPRAY )
             engine_consoleMessageColored( "\n", COLOR_SUVA_GRAY )
+
+            -- TODO: Add error source, aka addon/package/folder in basic error throw info
+            -- create std.File.get( path_to_file ).mount / `whereis` alternative
+
+            -- engine_consoleMessageColored( "  thrown by ", COLOR_SUVA_GRAY )
+            -- engine_consoleMessageColored( file_path or "=[C]", COLOR_SANDSTONE )
         end
 
         local head_fn = self.__head
@@ -570,3 +576,78 @@ end
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( position: ( integer | nil ), expected: ( integer | nil ) ): dreamwork.std.EndOfFileError
 std.EndOfFileError = class.create( EndOfFileError )
+
+--- [SHARED AND MENU]
+---
+--- An error that occurs when the compiler encounters an issue.
+---
+---@class dreamwork.std.CompileError : dreamwork.std.Object
+---@field __class dreamwork.std.CompileErrorClass
+---@field __parent dreamwork.std.Error
+local CompileError = class.base( "CompileError" )
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `CompileError` instances.
+---
+---@class dreamwork.std.CompileErrorClass : dreamwork.std.CompileError
+---@field __base dreamwork.std.CompileError
+---@field __parent dreamwork.std.ErrorClass
+---@overload fun(): dreamwork.std.CompileError
+std.CompileError = class.create( CompileError )
+
+-- TODO: CompileError, requires vfs to get file contents
+
+--- [SHARED AND MENU]
+---
+--- An error raised when an asynchronous file system operation fails.
+---
+---@class dreamwork.std.AsyncFileSystemError : dreamwork.std.Error
+---@field __class dreamwork.std.AsyncFileSystemErrorClass
+---@field __parent dreamwork.std.Error
+---@field message string | nil The error message to display.
+---@field Messages table<integer, string> The error message lookup table.
+local AsyncFileSystemError = class.base( "AsyncFileSystemError", false, ErrorClass )
+
+do
+
+    ---@type table<integer, string>
+    local status_messages = {
+        [ -16 ] = "failed, unknown error",
+        [ -8 ]  = "failed, file name is not part of the file system; please try another one",
+        [ -7 ]  = "failed, please retry later. (network problems, etc)",
+        [ -6 ]  = "failed, read parameters are invalid for unbuffered I/O",
+        [ -5 ]  = "failed, hard subsystem failure",
+        [ -4 ]  = "failed, read error on file",
+        [ -3 ]  = "failed, not enough memory",
+        [ -2 ]  = "failed, identifier provided by caller is not recognized",
+        [ -1 ]  = "failed, file could not be opened (bad path, not exist, etc)",
+        [ 0 ]   = "was successfully completed",
+        [ 1 ]   = "has been properly queued and awaiting for service",
+        [ 2 ]   = "is being accessed",
+        [ 3 ]   = "has been interrupted by caller",
+        [ 4 ]   = "has not yet been queued"
+    }
+
+    AsyncFileSystemError.Messages = status_messages
+
+    ---@param error_id integer
+    ---@param is_writing? boolean
+    ---@protected
+    function AsyncFileSystemError:__init( error_id, is_writing )
+        self.message = (is_writing and "writing " or "reading ") .. (status_messages[ error_id ] or status_messages[ -16 ])
+    end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `AsyncFileSystemError` instances.
+---
+---@class dreamwork.std.AsyncFileSystemErrorClass : dreamwork.std.AsyncFileSystemError
+---@field __base dreamwork.std.AsyncFileSystemError
+---@field __parent dreamwork.std.ErrorClass
+---@overload fun( error_id: integer, is_writing: ( boolean | nil ) ): dreamwork.std.AsyncFileSystemError
+std.AsyncFileSystemError = class.create( AsyncFileSystemError )
+
+-- TODO: Error hashing to decrease spam ( __hash? )
