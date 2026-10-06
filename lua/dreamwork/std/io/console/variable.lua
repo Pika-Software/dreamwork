@@ -1,8 +1,5 @@
 local std = dreamwork.std
 
----@alias dreamwork.std.console.VariableType "boolean" | "string" | "integer" | "number"
----@alias dreamwork.std.console.VariableValue boolean | number | string | integer
-
 ---@class dreamwork.std.console
 local console = std.console
 
@@ -15,9 +12,10 @@ local engine_consoleVariableCreate = engine.consoleVariableCreate
 local LUA_SERVER = std.LUA_SERVER
 
 local debug = std.debug
-local debug_fempty = debug.fempty
 
 local raw = std.raw
+local raw_get = raw.get
+local raw_set = raw.set
 local raw_type = raw.type
 local raw_index = raw.index
 local raw_tonumber = raw.tonumber
@@ -31,42 +29,48 @@ local gc_setTableRules = gc.setTableRules
 local string = std.string
 local string_format = string.format
 
-local table = std.table
-local table_removeByRange = table.removeByRange
-
 local rbit = raw.bit
 local rbit_band = rbit.band
 
 local class = std.class
 
-local toboolean = std.toboolean
-local tostring = std.tostring
-local xpcall = std.xpcall
-local error = std.error
 local type = std.type
+local error = std.error
+local xpcall = std.xpcall
+local tostring = std.tostring
+local toboolean = std.toboolean
+local represent = std.represent
+local setmetatable = std.setmetatable
 
-local Future = std.Future
+local Hook = std.Hook
 
 
 ---@diagnostic disable-next-line: undefined-doc-class
 ---@class dreamwork.GModConVar : ConVar
----@field GetInt fun(self: dreamwork.GModConVar): integer
----@field GetBool fun(self: dreamwork.GModConVar): boolean
----@field GetFloat fun(self: dreamwork.GModConVar): number
----@field GetString fun(self: dreamwork.GModConVar): string
----@field GetDefault fun(self: dreamwork.GModConVar): string
----@field GetMin fun(self: dreamwork.GModConVar): number
----@field GetMax fun(self: dreamwork.GModConVar): number
----@field GetName fun(self: dreamwork.GModConVar): string
----@field GetHelpText fun(self: dreamwork.GModConVar): string
----@field GetFlags fun(self: dreamwork.GModConVar): integer
----@field IsFlagSet fun(self: dreamwork.GModConVar, flag: integer): boolean
+---@field GetInt fun( self: dreamwork.GModConVar ): integer
+---@field GetBool fun( self: dreamwork.GModConVar ): boolean
+---@field GetFloat fun( self: dreamwork.GModConVar ): number
+---@field GetString fun( self: dreamwork.GModConVar ): string
+---@field GetDefault fun( self: dreamwork.GModConVar ): string
+---@field GetMin fun( self: dreamwork.GModConVar ): number
+---@field GetMax fun( self: dreamwork.GModConVar ): number
+---@field GetName fun( self: dreamwork.GModConVar ): string
+---@field GetHelpText fun( self: dreamwork.GModConVar ): string
+---@field GetFlags fun( self: dreamwork.GModConVar ): integer
+---@field IsFlagSet fun( self: dreamwork.GModConVar, flag: integer ): boolean
 local GModConVar = debug.findmetatable( "ConVar" ) or {}
 
 local GModConVar_getInt = GModConVar.GetInt
 local GModConVar_getBool = GModConVar.GetBool
 local GModConVar_getFloat = GModConVar.GetFloat
 local GModConVar_getString = GModConVar.GetString
+
+local GModConVar_getName = GModConVar.GetName
+local GModConVar_getDescription = GModConVar.GetHelpText
+
+local GModConVar_getFlags = GModConVar.GetFlags
+local GModConVar_isFlagSet = GModConVar.IsFlagSet
+
 local GModConVar_getDefault = GModConVar.GetDefault
 local GModConVar_getMin, GModConVar_getMax = GModConVar.GetMin, GModConVar.GetMax
 
@@ -77,73 +81,55 @@ local variable_to_gmodconvar = {}
 ---@type table<dreamwork.std.console.Variable, string>
 local gmodconvar_names = {}
 
-do
+setmetatable( gmodconvar_names, {
+    __index = function( self, variable )
+        local cvar = variable_to_gmodconvar[ variable ]
+        if cvar == nil then
+            return "unknown"
+        end
 
-    local GModConVar_getName = GModConVar.GetName
+        local name = GModConVar_getName( cvar )
+        self[ variable ] = name
+        return name
+    end,
+    __mode = "k"
+} )
 
-    setmetatable( gmodconvar_names, {
-        __index = function( _, self )
-            local cvar = variable_to_gmodconvar[ self ]
-            if cvar == nil then
-                return "unknown"
-            end
+setmetatable( variable_to_gmodconvar, {
+    __index = function( self, variable )
+        local name = raw_get( gmodconvar_names, variable )
+        if name == nil then
+            return nil
+        end
 
-            local name = GModConVar_getName( cvar )
-            gmodconvar_names[ self ] = name
-            return name
-        end,
-        __mode = "k"
-    } )
-
-end
-
-do
-
-    local raw_get = raw.get
-
-    setmetatable( variable_to_gmodconvar, {
-        __index = function( _, self )
-            local name = raw_get( gmodconvar_names, self )
-            if name ~= nil then
-                local cvar = engine_consoleVariableGet( name )
-                variable_to_gmodconvar[ self ] = cvar
-                return cvar
-            end
-        end,
-        __mode = "k"
-    } )
-
-end
+        local cvar = engine_consoleVariableGet( name )
+        self[ variable ] = cvar
+        return cvar
+    end,
+    __mode = "k"
+} )
 
 ---@type table<dreamwork.std.console.Variable, string>
 local gmodconvar_descriptions = {}
 
-do
+setmetatable( gmodconvar_descriptions, {
+    __index = function( self, variable )
+        local cvar = variable_to_gmodconvar[ variable ]
+        if cvar == nil then
+            return "unknown"
+        end
 
-    local GModConVar_getDescription = GModConVar.GetHelpText
-
-    setmetatable( gmodconvar_descriptions, {
-        __index = function( _, self )
-            local cvar = variable_to_gmodconvar[ self ]
-            if cvar == nil then
-                return "unknown"
-            end
-
-            local description = GModConVar_getDescription( cvar )
-            gmodconvar_descriptions[ self ] = description
-            return description
-        end,
-        __mode = "k"
-    } )
-
-end
+        local description = GModConVar_getDescription( cvar )
+        self[ variable ] = description
+        return description
+    end,
+    __mode = "k"
+} )
 
 ---@type table<dreamwork.std.console.Variable, dreamwork.std.console.VariableType>
 local types = {}
 
 do
-
-    local raw_set = raw.set
 
     ---@type table<dreamwork.std.console.VariableType, boolean>
     local supported_types = {
@@ -157,9 +143,9 @@ do
         __index = function()
             return "string"
         end,
-        __newindex = function( _, self, name )
+        __newindex = function( self, variable, name )
             if supported_types[ name ] then
-                raw_set( types, self, name )
+                raw_set( self, variable, name )
             end
         end,
         __mode = "k"
@@ -170,31 +156,25 @@ end
 ---@type table<dreamwork.std.console.Variable, integer>
 local gmodconvar_flags = {}
 
-do
+setmetatable( gmodconvar_flags, {
+    __index = function( self, variable )
+        local cvar = variable_to_gmodconvar[ variable ]
+        if cvar == nil then
+            return 0
+        end
 
-    local GModConVar_getFlags = GModConVar.GetFlags
-
-    setmetatable( gmodconvar_flags, {
-        __index = function( _, self )
-            local cvar = variable_to_gmodconvar[ self ]
-            if cvar == nil then
-                return 0
-            end
-
-            local int32_flags = GModConVar_getFlags( cvar )
-            gmodconvar_flags[ self ] = int32_flags
-            return int32_flags
-        end,
-        __mode = "k"
-    } )
-
-end
+        local int32_flags = GModConVar_getFlags( cvar )
+        self[ variable ] = int32_flags
+        return int32_flags
+    end,
+    __mode = "k"
+} )
 
 ---@type table<dreamwork.std.console.Variable, dreamwork.std.console.VariableValue>
 local gmodconvar_defaults = {}
 
 setmetatable( gmodconvar_defaults, {
-    __index = function( _, variable )
+    __index = function( self, variable )
         local cvar_type = types[ variable ]
 
         local cvar = variable_to_gmodconvar[ variable ]
@@ -217,16 +197,16 @@ setmetatable( gmodconvar_defaults, {
                 float_default = math_floor( float_default )
             end
 
-            gmodconvar_defaults[ variable ] = float_default
+            self[ variable ] = float_default
             return float_default
         elseif cvar_type == "boolean" then
             local bool_default = toboolean( str_default )
-            gmodconvar_defaults[ variable ] = bool_default
+            self[ variable ] = bool_default
             return bool_default
-        else
-            gmodconvar_defaults[ variable ] = str_default
-            return str_default
         end
+
+        self[ variable ] = str_default
+        return str_default
     end,
     __mode = "k"
 } )
@@ -235,7 +215,7 @@ setmetatable( gmodconvar_defaults, {
 local values = {}
 
 setmetatable( values, {
-    __index = function( _, variable )
+    __index = function( self, variable )
         local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             return gmodconvar_defaults[ variable ]
@@ -245,55 +225,67 @@ setmetatable( values, {
 
         if type_str == "number" then
             local float_value = GModConVar_getFloat( cvar )
-            values[ variable ] = float_value
+            self[ variable ] = float_value
             return float_value
         elseif type_str == "integer" then
             local integer_value = GModConVar_getInt( cvar )
-            values[ variable ] = integer_value
+            self[ variable ] = integer_value
             return integer_value
         elseif type_str == "boolean" then
             local bool_value = GModConVar_getBool( cvar )
-            values[ variable ] = bool_value
+            self[ variable ] = bool_value
             return bool_value
         end
 
         local str_value = GModConVar_getString( cvar )
-        values[ variable ] = str_value
+        self[ variable ] = str_value
         return str_value
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, (number | nil)>
+---@type table<dreamwork.std.console.Variable, ( number | nil )>
 local mins = {}
 
 setmetatable( mins, {
-    __index = function( _, variable )
+    __index = function( self, variable )
         local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             return nil
         end
 
         local float_min = GModConVar_getMin( cvar )
-        mins[ variable ] = float_min
+        self[ variable ] = float_min
         return float_min
     end,
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, (number | nil)>
+---@type table<dreamwork.std.console.Variable, ( number | nil )>
 local maxs = {}
 
 setmetatable( maxs, {
-    __index = function( _, variable )
+    __index = function( self, variable )
         local cvar = variable_to_gmodconvar[ variable ]
         if cvar == nil then
             return nil
         end
 
         local float_max = GModConVar_getMax( cvar )
-        maxs[ variable ] = float_max
+        self[ variable ] = float_max
         return float_max
+    end,
+    __mode = "k"
+} )
+
+---@type table<dreamwork.std.console.Variable, dreamwork.std.Hook<dreamwork.std.console.VariableValue>>
+local hooks = {}
+
+setmetatable( hooks, {
+    __index = function( self, variable )
+        local hook = Hook( represent( variable ) )
+        self[ variable ] = hook
+        return hook
     end,
     __mode = "k"
 } )
@@ -303,10 +295,6 @@ local variables = {}
 
 gc_setTableRules( variables, false, true )
 
----@type table<dreamwork.std.console.Variable, table>
-local callbacks = {}
-
-gc_setTableRules( callbacks, true, false )
 
 --- [SHARED AND MENU]
 ---
@@ -323,6 +311,12 @@ gc_setTableRules( callbacks, true, false )
 ---@field min T | nil The minimum value of the variable (if applicable).
 ---@field max T | nil The maximum value of the variable (if applicable).
 local Variable = class.base( "console.Variable", true )
+
+---@return string
+---@protected
+function Variable:__represent()
+    return string_format( "%s: %p [%s][%s]", type( self ), self, self.name, self.type )
+end
 
 ---@param str_key string
 ---@return any
@@ -459,7 +453,6 @@ function Variable:__init( options )
         variable_to_gmodconvar[ self ] = cvar
     end
 
-    callbacks[ self ] = {}
     variables[ str_name ] = self
 end
 
@@ -495,16 +488,16 @@ VariableClass.exists = engine_consoleVariableExists
 ---
 ---@param str_name string The name of the console variable.
 ---@param cvar_type dreamwork.std.console.VariableType The type of the console variable.
----@return dreamwork.std.console.Variable | nil variable The `console.Variable` object.
----@overload fun( str_name: string, cvar_type: "boolean"): dreamwork.std.console.Variable<boolean> | nil
----@overload fun( str_name: string, cvar_type: "integer"): dreamwork.std.console.Variable<integer> | nil
----@overload fun( str_name: string, cvar_type: "number"): dreamwork.std.console.Variable<number> | nil
----@overload fun( str_name: string, cvar_type: "string"): dreamwork.std.console.Variable<string> | nil
+---@return dreamwork.std.console.Variable variable The `console.Variable` object.
+---@overload fun( str_name: string, cvar_type: "boolean"): dreamwork.std.console.Variable<boolean>
+---@overload fun( str_name: string, cvar_type: "integer"): dreamwork.std.console.Variable<integer>
+---@overload fun( str_name: string, cvar_type: "number"): dreamwork.std.console.Variable<number>
+---@overload fun( str_name: string, cvar_type: "string"): dreamwork.std.console.Variable<string>
 function VariableClass.get( str_name, cvar_type )
     local variable = variables[ str_name ]
     if variable == nil then
         if not engine_consoleVariableExists( str_name ) then
-            return nil
+            error( "console variable '" .. str_name .. "' does not exist", 2 )
         end
 
         local params = {
@@ -710,26 +703,20 @@ do
 
 end
 
-do
-
-    local GModConVar_isFlagSet = GModConVar.IsFlagSet
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the flag is set on the `console.Variable` object.
-    ---
-    ---@param name string The name of the console variable.
-    ---@param flags integer The flags to check.
-    ---@return boolean is_set `true` if the flag is set on the `console.Variable` object, `false` otherwise.
-    function VariableClass.isFlagSet( name, flags )
-        local object = engine_consoleVariableGet( name )
-        if object == nil then
-            return false
-        end
-
-        return GModConVar_isFlagSet( object, flags )
+--- [SHARED AND MENU]
+---
+--- Checks if the flag is set on the `console.Variable` object.
+---
+---@param name string The name of the console variable.
+---@param flags integer The flags to check.
+---@return boolean is_set `true` if the flag is set on the `console.Variable` object, `false` otherwise.
+function VariableClass.isFlagSet( name, flags )
+    local object = engine_consoleVariableGet( name )
+    if object == nil then
+        return false
     end
 
+    return GModConVar_isFlagSet( object, flags )
 end
 
 --- [SHARED AND MENU]
@@ -778,110 +765,53 @@ function VariableClass.getBounds( name )
     return GModConVar_getMin( object ), GModConVar_getMax( object )
 end
 
----@type table<dreamwork.std.console.Variable, boolean>
-local in_call = {}
-
-gc_setTableRules( in_call, true, false )
-
----@class dreamwork.std.console.Variable.query_data : dreamwork.std.console.Command.query_data
----@field [3] (nil | fun( variable: dreamwork.std.console.Variable, new_value: dreamwork.std.console.VariableValue )) The callback function.
-
----@type table<dreamwork.std.console.Variable, dreamwork.std.console.Variable.query_data[]>
-local queues = {}
-
-gc_setTableRules( queues, true, false )
-
 --- [SHARED AND MENU]
 ---
---- Attaches a callback to the `console.Variable` object.
+--- Attaches a handler function to the given stage of the hook.
+--- If the handler is already attached to that stage, only its priority is
+--- updated (when a new one is supplied); it will not be attached twice.
+---
+--- If the hook is currently running, the change is deferred and applied once
+--- the hook finishes running.
 ---
 ---@generic T
----@param self dreamwork.std.console.Variable<T> The `console.Variable` object.
----@param fn fun( variable: dreamwork.std.console.Variable<T>, new_value: T ) The callback function.
----@param identifier? any The identifier of the callback, default is `unnamed`.
----@param once? boolean `true` to run once, `false` to run forever, default is `false`.
-function Variable:attach( fn, identifier, once )
-    if identifier == nil then
-        identifier = "nil"
-    end
-
-    if in_call[ self ] then
-        local queue = queues[ self ]
-        if queue == nil then
-            queues[ self ] = {
-                { true, identifier, fn, once == true }
-            }
-        else
-            queue[ #queue + 1 ] = { true, identifier, fn, once == true }
-        end
-
-        return
-    end
-
-    local lst = callbacks[ self ]
-    if lst == nil then
-        return
-    end
-
-    local lst_length = #lst
-
-    for i = 1, lst_length, 3 do
-        if lst[ i ] == identifier then
-            lst[ i + 1 ] = fn
-            lst[ i + 2 ] = once == true
-            return
-        end
-    end
-
-    lst[ lst_length + 1 ] = identifier
-    lst[ lst_length + 2 ] = fn
-    lst[ lst_length + 3 ] = once == true
+---@param self dreamwork.std.console.Variable<T>
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+function Variable:attach( handler )
+    hooks[ self ]:attach( "peek", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a callback from the `console.Variable` object.
+--- Attaches a handler function to the hook that automatically detaches
+--- itself right before being invoked, so it only ever runs once.
 ---
----@param identifier any The identifier of the callback to detach.
-function Variable:detach( identifier )
-    if identifier == nil then
-        identifier = "nil"
-    end
-
-    local lst = callbacks[ self ]
-    if lst == nil then
-        return
-    end
-
-    for i = 1, #lst, 3 do
-        if lst[ i ] == identifier then
-            if in_call[ self ] then
-                lst[ i + 1 ] = debug_fempty
-
-                local queue = queues[ self ]
-                if queue == nil then
-                    queues[ self ] = {
-                        { false, identifier }
-                    }
-                else
-                    queue[ #queue + 1 ] = { false, identifier }
-                end
-            else
-                table_removeByRange( lst, i, i + 2 )
-            end
-
-            break
-        end
-    end
+---@generic T
+---@param self dreamwork.std.console.Variable<T>
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+function Variable:once( handler )
+    hooks[ self ]:once( "peek", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Clears all callbacks from the `console.Variable` object.
+--- Detaches a previously attached handler from the given stage of the hook.
+--- If the hook is currently running, the handler is replaced with a no-op and
+--- the actual removal is deferred until the hook finishes running.
+---
+---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+function Variable:detach( handler )
+    hooks[ self ]:detach( "peek", handler )
+end
+
+--- [SHARED AND MENU]
+---
+--- Cancels the hook if it is currently running, and removes every handler
+--- attached to every stage (`peek`, `provide`, `observe`, `mixin`), resetting
+--- their priority tables as well.
 ---
 function Variable:clear()
-    callbacks[ self ] = {}
-    in_call[ self ] = nil
+    hooks[ self ]:clear()
 end
 
 --- [SHARED AND MENU]
@@ -892,14 +822,13 @@ end
 ---@param self dreamwork.std.console.Variable<T>
 ---@return T new_value
 ---@async
-function Variable:wait()
-    local future = Future()
+function Variable:await()
+    return hooks[ self ]:await( "peek" )
+end
 
-    self:attach( function( _, value )
-        future:setResult( value )
-    end, future, true )
-
-    return future:await()
+---@param error_value string | dreamwork.std.Error
+local function error_handler( error_value )
+    return engine_hookCall( "dreamwork.lua.error", error_value, 2 )
 end
 
 engine.hookCatch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
@@ -917,40 +846,10 @@ engine.hookCatch( "dreamwork.console.variable.change", "variable.change", functi
         old_value, new_value = str_old, str_new
     end
 
-    in_call[ variable ] = true
     values[ variable ] = old_value
 
-    local lst = callbacks[ variable ]
-    if lst ~= nil then
-        for i = #lst - 1, 1, -3 do
-            if in_call[ variable ] then
-                xpcall( lst[ i ], function( error_message )
-                    return engine_hookCall( "dreamwork.lua.error", error_message, 2 )
-                end, variable, new_value )
-
-                if lst[ i + 1 ] then
-                    table_removeByRange( lst, i - 1, i + 1 )
-                end
-            else
-                break
-            end
-        end
-    end
+    local hook = hooks[ variable ]
+    xpcall( hook.call, error_handler, hook, new_value )
 
     values[ variable ] = new_value
-    in_call[ variable ] = nil
-
-    local queue = queues[ variable ]
-    if queue ~= nil then
-        queues[ variable ] = nil
-
-        for i = 1, #queue, 1 do
-            local tbl = queue[ i ]
-            if tbl[ 1 ] then
-                variable:attach( tbl[ 2 ], tbl[ 3 ], tbl[ 4 ] )
-            else
-                variable:detach( tbl[ 2 ] )
-            end
-        end
-    end
 end, -1000 )

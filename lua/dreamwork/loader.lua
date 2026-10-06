@@ -2618,9 +2618,9 @@ local developer = console.Variable.get( "developer", "integer" )
 if developer == nil then
     std.DEVELOPER = 1
 else
-    developer:attach( function( _, new_value )
-        std.DEVELOPER = new_value
-    end, "dreamwork.std", false )
+    developer:attach( function( value )
+        std.DEVELOPER = value
+    end )
 
     std.DEVELOPER = developer.value
 end

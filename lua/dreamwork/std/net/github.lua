@@ -38,10 +38,9 @@ do
         hidden = true
     } )
 
-    variable:attach( function( _, value )
-        ---@cast value string
+    variable:attach( function( value )
         api_token = value
-    end, "http.github" )
+    end )
 
     ---@diagnostic disable-next-line: cast-local-type
     api_token = variable.value

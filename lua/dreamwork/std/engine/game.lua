@@ -135,9 +135,9 @@ if std.LUA_CLIENT_SERVER then
 
 end
 
-game.OnTick:attach( function()
+-- game.OnTick:attach( function()
 
-end, "engine" )
+-- end, "engine" )
 
 if game.OnTick == nil then
 

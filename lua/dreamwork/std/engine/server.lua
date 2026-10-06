@@ -285,17 +285,17 @@ if server.getName == nil then
         if hostname ~= nil then
             dreamwork_server_hostname.value = hostname.value
 
-            dreamwork_server_hostname:attach( function( _, value )
+            dreamwork_server_hostname:attach( function( value )
                 if hostname.value ~= value then
                     hostname.value = value
                 end
-            end, hostname.name )
+            end )
 
-            hostname:attach( function( _, value )
+            hostname:attach( function( value )
                 if dreamwork_server_hostname.value ~= value then
                     dreamwork_server_hostname.value = value
                 end
-            end, dreamwork_server_hostname.name )
+            end )
         end
 
         --- [SERVER]
