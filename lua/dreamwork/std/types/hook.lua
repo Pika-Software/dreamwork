@@ -199,11 +199,11 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.Hook<T>
----@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to detach the handler from. Defaults to `"provide"` when `nil`.
+---@param type dreamwork.std.Hook.type The stage to detach the handler from.
 ---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): T The exact handler reference that was previously passed to `attach`.
 ---@return boolean is_detached Returns `true` if the handler was found and detached, otherwise `false`.
 function Hook:detach( type, handler )
-    if type == nil or type == "provide" then
+    if type == "provide" then
         return detach_type( self, self.provide_handlers, self.provide_priorities, handler )
     elseif type == "peek" then
         return detach_type( self, self.peek_handlers, self.peek_priorities, handler )
@@ -276,7 +276,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.Hook<T>
----@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to attach the handler to. Defaults to `"provide"` when `nil`.
+---@param type dreamwork.std.Hook.type The stage to attach the handler to.
 ---@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any )
 ---@param priority integer | nil The priority of the handler within its stage; handlers with a lower value run earlier. Defaults to `0`.
 ---@overload fun( self: dreamwork.std.Hook<T>, type: "peek", handler: ( dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( ...: any ): ( T | nil ) ), priority: ( integer | nil ) )
@@ -289,7 +289,7 @@ function Hook:attach( type, handler, priority )
         error( "attempt to create circular hook reference", 2 )
     end
 
-    if type == nil or type == "provide" then
+    if type == "provide" then
         return attach_type( self, self.provide_handlers, self.provide_priorities, handler, priority )
     elseif type == "peek" then
         return attach_type( self, self.peek_handlers, self.peek_priorities, handler, priority )
@@ -500,7 +500,7 @@ Hook.__call = Hook.call
 ---
 ---@generic T
 ---@param self dreamwork.std.Hook<T>
----@param type "provide" | "peek" | "observe" | "mixin" | nil The stage to attach the handler to. Defaults to `"provide"` when `nil`.
+---@param type dreamwork.std.Hook.type The stage to attach the handler to.
 ---@param handler dreamwork.std.Hook<T> | fun( ...: any )
 ---@param priority integer | nil The priority of the handler within its stage; handlers with a lower value run earlier. Defaults to `0`.
 ---@overload fun( self: dreamwork.std.Hook<T>, type: ( "peek" | nil ), handler: ( dreamwork.std.Hook<T> | fun( ...: any ): ( T | nil ) ), priority: ( integer | nil ) )
@@ -522,7 +522,7 @@ end
 --- next called, then resumes with the arguments that stage's handler
 --- received.
 ---
----@param type "provide" | "peek" | "observe" | "mixin" The stage to wait for.
+---@param type dreamwork.std.Hook.type The stage to wait for.
 ---@return any ... The arguments passed to the handler when the awaited stage fired.
 ---@async
 function Hook:await( type )

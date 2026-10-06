@@ -125,9 +125,9 @@ end
 ---
 --- Returns a function that calls the `new_fn` instead of the `in_fn`.
 ---
----@generic F: function
----@param new_fn ( fun( in_fn: (F | nil), ...: any ): any, any, any, any, any, any ) The new function to call instead of `in_fn`.
----@param in_fn F | nil The original function.
+---@generic F: function | nil
+---@param new_fn ( fun( in_fn: F, ...: any ): any, any, any, any, any, any ) The new function to call instead of `in_fn`.
+---@param in_fn F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
 function detour.attach( new_fn, in_fn )
     if in_fn == nil then

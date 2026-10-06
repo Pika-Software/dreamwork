@@ -29,6 +29,7 @@ local sleep = std.sleep
 local api_token
 do
 
+    ---@type dreamwork.std.console.Variable<string>
     local variable = std.console.Variable( {
         name = "dreamwork.github.token",
         description = "https://github.com/settings/tokens",

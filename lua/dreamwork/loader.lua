@@ -1781,6 +1781,7 @@ do
             error_value:display()
         else
             error_value = tostring( error_value )
+
             ---@cast error_value string
 
             for i = stack_level + 2, 2, -1 do

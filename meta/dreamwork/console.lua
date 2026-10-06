@@ -1,6 +1,10 @@
 ---@meta dreamwork.std.console
 
 
+---@alias dreamwork.std.console.VariableType "boolean" | "string" | "integer" | "number"
+---@alias dreamwork.std.console.VariableValue boolean | number | string | integer
+
+
 ---@class dreamwork.std.console.Command : dreamwork.std.Object
 local Command = {}
 
