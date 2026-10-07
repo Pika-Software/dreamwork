@@ -5,6 +5,11 @@
 ---@alias dreamwork.std.console.VariableValue boolean | number | string | integer
 
 
+---@alias dreamwork.std.console.Command.SimpleAutoComplete fun( command: dreamwork.std.console.Command, argument_string: string, args: string[] ): string[]
+---@alias dreamwork.std.console.Command.FullAutoComplete fun( command: dreamwork.std.console.Command, argument_string: string, args: string[] ): boolean, string[]
+---@alias dreamwork.std.console.Command.AutoComplete dreamwork.std.console.Command.SimpleAutoComplete | dreamwork.std.console.Command.FullAutoComplete
+
+
 ---@class dreamwork.std.console.Command : dreamwork.std.Object
 local Command = {}
 

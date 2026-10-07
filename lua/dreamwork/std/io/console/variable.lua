@@ -310,7 +310,7 @@ gc_setTableRules( variables, false, true )
 ---@field default T The default value of the variable.
 ---@field min T | nil The minimum value of the variable (if applicable).
 ---@field max T | nil The maximum value of the variable (if applicable).
-local Variable = class.base( "console.Variable", true )
+local Variable = class.base( "console.Variable", true, nil )
 
 ---@return string
 ---@protected
@@ -806,9 +806,8 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler
---- attached to every stage (`peek`, `provide`, `observe`, `mixin`), resetting
---- their priority tables as well.
+--- Cancels the hook if it is currently running, and removes every handler,
+--- resetting their priority tables as well.
 ---
 function Variable:clear()
     hooks[ self ]:clear()
