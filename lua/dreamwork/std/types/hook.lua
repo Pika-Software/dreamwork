@@ -1,3 +1,5 @@
+local dreamwork_getErrorLevel = dreamwork.getErrorLevel
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -10,14 +12,19 @@ local table_remove = table.remove
 local table_unpack = table.unpack
 
 local string = std.string
+local string_match = string.match
 local string_format = string.format
 
 local class = std.class
 
-local pcall = std.pcall
+local tostring = std.tostring
+local isString = std.isString
+local isError = std.isError
+local xpcall = std.xpcall
 local error = std.error
 local is = std.is
 
+local RuntimeError = std.RuntimeError
 local Future = std.Future
 
 
@@ -402,6 +409,35 @@ function Hook:clear()
     self.mixin_priorities = {}
 end
 
+---@param error_value any
+---@return dreamwork.std.Error
+local function error_handler( error_value )
+    ---@type dreamwork.std.Error
+    local error_object
+
+    if isError( error_value ) then
+        error_object = error_value
+    else
+
+        ---@type string
+        local error_message
+
+        if isString( error_value ) then
+            error_message = string_match( error_value, "^[^:]+:%d+: ([^\n]+)" ) or error_value
+        else
+            error_message = tostring( error_value )
+        end
+
+        error_object = RuntimeError( error_message )
+
+    end
+
+    -- error_object:capture( 3, 3, 0 )
+    error_object:capture( 2, dreamwork_getErrorLevel() )
+
+    return error_object
+end
+
 --- [SHARED AND MENU]
 ---
 --- Runs the hook, calling its handlers in order across all four stages:
@@ -428,7 +464,7 @@ function Hook:call( ... )
     local peek_value
 
     for i = 1, peeks[ 0 ], 1 do
-        local is_successful_peek, peek_result = pcall( peeks[ i ], ... )
+        local is_successful_peek, peek_result = xpcall( peeks[ i ], error_handler, ... )
         if is_successful_peek then
             if peek_result ~= nil then
                 peek_value = peek_result
@@ -445,7 +481,7 @@ function Hook:call( ... )
 
     if peek_value == nil then
         for i = 1, providers[ 0 ], 1 do
-            local is_successful_provide, provide_result = pcall( providers[ i ], ... )
+            local is_successful_provide, provide_result = xpcall( providers[ i ], error_handler, ... )
             if is_successful_provide then
                 if provide_result ~= nil then
                     provide_value = provide_result
@@ -466,7 +502,7 @@ function Hook:call( ... )
         local mixin_value
 
         for i = 1, mixins[ 0 ], 1 do
-            local is_successful_mixin, mixin_result = pcall( mixins[ i ], mixin_value, provide_value, ... )
+            local is_successful_mixin, mixin_result = xpcall( mixins[ i ], error_handler, mixin_value, provide_value, ... )
             if is_successful_mixin then
                 mixin_value, provide_value = provide_value, mixin_result
             else
@@ -479,7 +515,7 @@ function Hook:call( ... )
     -- observe stage
     local observers = self.observe_handlers
     for i = 1, observers[ 0 ], 1 do
-        local is_successful_observation, error_message = pcall( observers[ i ], provide_value, ... )
+        local is_successful_observation, error_message = xpcall( observers[ i ], error_handler, provide_value, ... )
         if not is_successful_observation then
             hook_cancel( self )
             error( error_message, 2 )

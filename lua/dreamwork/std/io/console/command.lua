@@ -89,12 +89,6 @@ function Command:__represent()
     return string_format( "%s: %p [%s]", type( self ), self, self.name )
 end
 
----@return string
----@protected
-function Command:__tostring()
-    return string_format( "%s: %p [%s]", type( self ), self, names[ self ] )
-end
-
 ---@param options dreamwork.std.console.CommandOptions
 ---@private
 function Command:__init( options )

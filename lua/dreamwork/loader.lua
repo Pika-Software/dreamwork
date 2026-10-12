@@ -1741,12 +1741,21 @@ local engine = dreamwork.engine
 
 do
 
-    ---@type integer | nil
-    local required_stack_level
+    ---@type integer
+    local required_stack_level = 1
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the current error stack level.
+    ---
+    ---@returns integer stack_level
+    function dreamwork.getErrorLevel()
+        return required_stack_level
+    end
 
     std._R[ 1 ] = function( error_value )
         local stack_level = math_max( 1, required_stack_level or 1 )
-        required_stack_level = nil
+        required_stack_level = 1
 
         return engine.hookCall( "dreamwork.lua.error", error_value, stack_level + 1 ) or error_value
     end
@@ -1754,7 +1763,7 @@ do
     ---@param value any
     ---@param stack_level integer | nil
     _G.error = dreamwork.detour.attach( function( fn, value, stack_level )
-        required_stack_level = stack_level
+        required_stack_level = math_max( 1, stack_level or 1 )
 
         ---@diagnostic disable-next-line: need-check-nil
         return fn( value, stack_level )
@@ -1766,34 +1775,35 @@ do
     local isError = std.isError
 
     local runtime_error = std.RuntimeError()
+
     local runtime_stack = debug.Stack()
     runtime_error.stack = runtime_stack
 
-    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
+    ---@param error_value dreamwork.std.Error
+    ---@param stack_level integer
+    local function display_error( error_value, stack_level )
         if isError( error_value ) then
             ---@cast error_value dreamwork.std.Error
-
-            for i = stack_level + 2, 2, -1 do
-                error_value:capture( i )
-                if not error_value:isEmpty() then break end
-            end
-
             error_value:display()
-        else
-            error_value = tostring( error_value )
-
-            ---@cast error_value string
-
-            for i = stack_level + 2, 2, -1 do
-                runtime_stack:capture( i )
-                if not runtime_stack:isEmpty() then break end
-            end
-
-            runtime_error.message = string_match( error_value, "^[^:]+:%d+: ([^\n]+)" ) or error_value
-            runtime_error:display()
-            runtime_stack:clear()
+            return
         end
 
+        for i = stack_level + 2, 2, -1 do
+            runtime_stack:capture( i )
+            if not runtime_stack:isEmpty() then break end
+        end
+
+        ---@type string
+        local error_message = tostring( error_value )
+        runtime_error.message = string_match( error_message, "^[^:]+:%d+: ([^\n]+)" ) or error_message
+
+        runtime_error:display()
+        runtime_stack:clear()
+    end
+
+    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
+        -- std.printf( "dreamwork.lua.error: %r, stack_level: %d\n", error_value, stack_level )
+        display_error( error_value, stack_level )
         return "The original error message was caught by dreamwork, see above for details about the error.", 2
     end, 1000 )
 
@@ -1805,44 +1815,39 @@ do
     ---@param stack_level? integer The stack level to throw the error.
     ---@param dont_break? boolean If `true`, the error will not break the current stack.
     local function std_error( value, stack_level, dont_break )
+        if stack_level == nil then
+            stack_level = 1
+        else
+            stack_level = math_max( 1, stack_level )
+        end
+
+        required_stack_level = stack_level
+
         if value == nil then
             value = "unknown error"
         elseif isError( value ) then
             ---@cast value dreamwork.std.Error
 
-            for i = math_max( 1, stack_level or 1 ) + 1, 2, -1 do
-                value:capture( i )
-                if not value:isEmpty() then break end
-            end
-
             if dont_break then
                 value:display()
                 return
             end
-
-            required_stack_level = stack_level
-            return glua_error( value, stack_level )
-        end
-
-        if dont_break then
-            for i = math_max( 1, stack_level or 1 ) + 1, 2, -1 do
+        elseif dont_break then
+            for i = math_max( 1, stack_level ) + 1, 2, -1 do
                 runtime_stack:capture( i )
                 if not runtime_stack:isEmpty() then break end
             end
 
             runtime_error.message = tostring( value )
             runtime_error:display()
+
             runtime_stack:clear()
             return
-        end
-
-        if not (isString( value ) or debug_ispcall( 2 )) then
+        elseif not (isString( value ) or debug_ispcall( 2 )) then
             value = tostring( value )
+            ---@cast value string
         end
 
-        ---@cast value string
-
-        required_stack_level = stack_level
         return glua_error( value, stack_level )
     end
 

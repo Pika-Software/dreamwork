@@ -456,12 +456,6 @@ function Variable:__init( options )
     variables[ str_name ] = self
 end
 
----@return string
----@protected
-function Variable:__tostring()
-    return string_format( "console.Variable: %p [%s][%s]", self, gmodconvar_names[ self ], values[ self ] )
-end
-
 --- [SHARED AND MENU]
 ---
 --- The console variable class.
