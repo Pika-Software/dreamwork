@@ -423,9 +423,9 @@ function std.lessEqual( a, b )
         end
 
         return not b__lt( b, a )
-    else
-        return a__le( a, b )
     end
+
+    return a__le( a, b )
 end
 
 --- [SHARED AND MENU]
@@ -440,9 +440,9 @@ function std.sizeof( value, as_bytes )
     local fn = debug_getmetavalue( value, "__sizeof" )
     if fn == nil then
         return nil
-    else
-        return fn( value, as_bytes == true )
     end
+
+    return fn( value, as_bytes == true )
 end
 
 --- [SHARED AND MENU]
@@ -479,9 +479,9 @@ function std.tonumber( e, base )
     local fn = debug_getmetavalue( e, "__tonumber" )
     if fn == nil then
         return nil
-    else
-        return fn( e, base or 10 )
     end
+
+    return fn( e, base or 10 )
 end
 
 --- [SHARED AND MENU]
@@ -496,9 +496,9 @@ function std.toboolean( e )
     local fn = debug_getmetavalue( e, "__toboolean" )
     if fn == nil then
         return nil
-    else
-        return fn( e )
     end
+
+    return fn( e )
 end
 
 -- Alias for lazy developers
@@ -517,9 +517,9 @@ function std.tocolor( value )
     local fn = debug_getmetavalue( value, "__tocolor" )
     if fn == nil then
         return nil
-    else
-        return fn( value )
     end
+
+    return fn( value )
 end
 
 --- [SHARED AND MENU]
@@ -532,9 +532,9 @@ function std.isValid( value )
     local fn = debug_getmetavalue( value, "__isvalid" )
     if fn == nil then
         return false
-    else
-        return fn( value )
     end
+
+    return fn( value )
 end
 
 --- [SHARED AND MENU]
@@ -542,9 +542,11 @@ end
 --- If `t` has a metamethod `__pairs`, calls it with t as argument and returns the first three results from the call.
 ---
 --- Otherwise, returns three values: the [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) function, the table `t`, and `nil`, so that the construction
+---
 --- ```lua
 ---     for k,v in pairs(t) do body end
 --- ```
+---
 --- will iterate over all key–value pairs of table `t`.
 ---
 --- See function [next](command:extension.lua.doc?["en-us/54/manual.html/pdf-next"]) for the caveats of modifying the table during its traversal.
@@ -580,9 +582,9 @@ function std.pairs( t )
     local next_fn = debug_getmetavalue( t, "__pairs" )
     if next_fn == nil then
         return raw_pairs( t )
-    else
-        return next_fn( t, nil ), t
     end
+
+    return next_fn( t, nil ), t
 end
 
 do
@@ -600,9 +602,9 @@ do
         local value = tbl[ index ]
         if value == nil then
             return nil, nil
-        else
-            return index, value
         end
+
+        return index, value
     end
 
     std.inext = inext
@@ -628,9 +630,9 @@ do
     function std.ipairs( t )
         if debug_getmetavalue( t, "__index" ) == nil then
             return raw_ipairs( t )
-        else
-            return inext, t, 0
         end
+
+        return inext, t, 0
     end
 
 end
@@ -1343,9 +1345,8 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Loads a string as
-    --- a lua code chunk in the specified environment
-    --- and returns function as a compile result.
+    --- Loads a string as a lua code chunk in the specified
+    --- environment and returns new function as a compile result.
     ---
     ---@param lua_code string The lua code chunk.
     ---@param chunk_name string | nil The lua code chunk name.
@@ -1802,7 +1803,6 @@ do
     end
 
     engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
-        -- std.printf( "dreamwork.lua.error: %r, stack_level: %d\n", error_value, stack_level )
         display_error( error_value, stack_level )
         return "The original error message was caught by dreamwork, see above for details about the error.", 2
     end, 1000 )
@@ -1863,7 +1863,7 @@ do
     ---@param fmt string The error message to throw.
     ---@param ... any The error message arguments to format/interpolate.
     function std.errorf( stack_level, dont_break, fmt, ... )
-        return std_error( string_format( fmt, ... ), (stack_level or 1) + 1, dont_break )
+        return std_error( string_format( fmt, ... ), stack_level, dont_break )
     end
 
     --- [SHARED AND MENU]
@@ -1944,13 +1944,18 @@ end
 
 do
 
+    --- [SHARED AND MENU]
+    ---
+    --- A single signature entry for `dispatch`: a list of argument types paired with the
+    --- function to call when a call's arguments match those types.
+    ---
     ---@generic F: function
-    ---@class dreamwork.OverloadInput<F>
-    ---@field match string[] | string
-    ---@field fn F
+    ---@class dreamwork.std.OverloadInput<F>
+    ---@field match string[] | string The Lua type name (or ordered list of type names, as returned by `type`) that a call's arguments must have for `fn` to be selected.
+    ---@field fn F The function to call when the arguments match.
 
     ---@generic F: function
-    ---@param inputs dreamwork.OverloadInput[]
+    ---@param inputs dreamwork.std.OverloadInput[]
     ---@param ... any
     ---@return function | nil
     local function input_select( inputs, ... )
@@ -1986,12 +1991,43 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Overloads the given function with the given inputs.
+    --- Builds a function that dispatches each call to one of several implementations, chosen by
+    --- the Lua types of the call's arguments. The multi-signature counterpart to `overload`,
+    --- which only supports a single alternative signature.
+    ---
+    --- Each entry in `inputs` pairs a `match` signature (a type name, or an ordered list of type
+    --- names) with a `fn`. On every call, the entries are checked in order, and the first one
+    --- whose signature matches exactly (same argument count, same types in the same order) has
+    --- its `fn` called with the arguments. If nothing matches, `fallback_fn` is called instead;
+    --- if there is no `fallback_fn`, an error is raised at call time.
+    ---
+    --- `inputs` is validated up front: every `fn` must be a function and every `match` must be
+    --- a string or a table, otherwise a `TypeError` is raised at definition time (level 2,
+    --- pointing at the caller of `dispatch`). A bare string `match` is shorthand for a
+    --- single-type list.
+    ---
+    --- **NOTE**: `inputs` is modified in place. The entry count is cached in `inputs[0]`, each
+    --- `match` list gets its own count in `match[0]`, and string `match` values are replaced with
+    --- table equivalents. Don't reuse or edit the table after passing it in.
+    ---
+    --- **NOTE**: a signature with no types can never match. Zero-argument calls always fall
+    --- through to `fallback_fn`.
+    ---
+    --- ```lua
+    --- local describe = std.dispatch( {
+    ---     { match = "string",             fn = function( str ) return "a string" end },
+    ---     { match = { "number", "number" }, fn = function( a, b ) return "two numbers" end },
+    --- }, function( ... ) return "something else" end )
+    ---
+    --- describe( "hi" )     --> "a string"
+    --- describe( 1, 2 )     --> "two numbers"
+    --- describe( 1 )        --> "something else"  (no signature matches: fallback_fn)
+    --- ```
     ---
     ---@generic F: function
-    ---@param inputs dreamwork.OverloadInput<F>[]
-    ---@param fallback_fn? F
-    ---@return F fn_over
+    ---@param inputs dreamwork.std.OverloadInput<F>[] The signatures to dispatch between, checked in order (first match wins).
+    ---@param fallback_fn? F The function called when no input matches. If omitted, a non-matching call raises an error.
+    ---@return F fn_over A function that dispatches to the matching input's `fn`, or to `fallback_fn`.
     function std.dispatch( inputs, fallback_fn )
         local input_count = len( inputs )
         inputs[ 0 ] = input_count
@@ -2018,7 +2054,6 @@ do
             if fn == nil then
                 if fallback_fn == nil then
                     error( "dispatch: no input matches and no fallback function", 2 )
-                    return
                 end
 
                 return fallback_fn( ... )
@@ -2032,13 +2067,36 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Overloads the given function with the given inputs.
+--- Wraps `main_fn` so that calls whose arguments match a specific type signature are routed
+--- to `overload_fn` instead, while every other call falls through to `main_fn` unchanged.
+---
+--- `match` describes the signature to intercept, as the exact list of Lua type names
+--- (as returned by `type`, e.g. `"string"`, `"number"`, `"table"`) the arguments must have,
+--- in order. A call goes to `overload_fn` only if the number of arguments equals the number
+--- of entries in `match` *and* every argument's type matches its entry; any extra or missing
+--- arguments, or any type mismatch, calls `main_fn` instead. Trailing `nil` arguments count
+--- toward the argument total, and are matched as `"nil"`.
+---
+--- A single type may be given as a bare string rather than a one-element array. An empty
+--- `match` array has nothing to intercept, so `main_fn` is returned as-is without wrapping.
+---
+--- ```lua
+--- local describe = std.overload(
+---     function( ... ) return "generic" end,
+---     { "string", "number" },
+---     function( str, num ) return "string + number" end
+--- )
+---
+--- describe( "a", 1 )   --> "string + number"  (types and count match: overload_fn)
+--- describe( "a" )      --> "generic"           (argument count differs: main_fn)
+--- describe( 1, "a" )   --> "generic"           (order matters, types differ: main_fn)
+--- ```
 ---
 ---@generic F: function
----@param main_fn function
----@param match string[] | string
----@param overload_fn function
----@return function
+---@param main_fn F The default function, called for any arguments that don't match `match`.
+---@param match string[] | string The Lua type name (or ordered list of type names) the arguments must have for `overload_fn` to be used.
+---@param overload_fn function The function called instead of `main_fn` when the arguments match `match`.
+---@return F overloaded_fn A function that dispatches to `overload_fn` or `main_fn` depending on its arguments. If `match` is an empty array, this is `main_fn` itself.
 function std.overload( main_fn, match, overload_fn )
     ---@type integer
     local required_args = 0
@@ -2072,9 +2130,9 @@ function std.overload( main_fn, match, overload_fn )
 
             if match == type( raw_select( 1, ... ) ) then
                 return overload_fn( ... )
-            else
-                return main_fn( ... )
             end
+
+            return main_fn( ... )
         end
     end
 
@@ -2083,14 +2141,13 @@ function std.overload( main_fn, match, overload_fn )
         local arg_count = raw_select( "#", ... )
         if arg_count == required_args then
             for i = 1, arg_count, 1 do
-                if match[ i ] ~= type( raw_select( i, ... ) ) then
-                    break
-                end
-
-                if i == arg_count then
-                    return overload_fn( ... )
+                local match_type, value_type = match[ i ], type( raw_select( i, ... ) )
+                if (match_type == "number" and not (value_type == "number" or value_type == "integer")) or match_type ~= value_type then
+                    return main_fn( ... )
                 end
             end
+
+            return overload_fn( ... )
         end
 
         return main_fn( ... )
