@@ -6,6 +6,7 @@ local std = dreamwork.std
 ---@class dreamwork.std.raw
 local raw = std.raw
 local raw_get = raw.get
+local raw_select = raw.select
 
 local xpcall = std.xpcall
 local pcall = std.pcall
@@ -31,7 +32,7 @@ local error = std.error
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
 ---
----@field setmetatable fun( object: any, metatable: ( dreamwork.std.Metatable | nil ) )
+---@field setmetatable fun( object: any, metatable: ( metatable | nil ) )
 local debug = std.debug or {
     -- LuaJIT
     ---@diagnostic disable-next-line: deprecated
@@ -43,7 +44,9 @@ local debug = std.debug or {
 
     getregistry = glua_debug.getregistry,
     traceback = glua_debug.traceback,
+    getinfo = glua_debug.getinfo,
 
+    getlocal = glua_debug.getlocal,
     setlocal = glua_debug.setlocal,
 
     getmetatable = glua_debug.getmetatable or std.getmetatable,
@@ -70,51 +73,6 @@ local debug = std.debug or {
 }
 
 std.debug = debug
-
---- [SHARED AND MENU]
----
---- Returns a table with information about a function. You can give the
---- function directly, or you can give a number as the value of `location`, which
---- means the function running at level `location` of the call stack of the given
---- thread: level 0 is the current function (`getinfo` itself); level 1 is
---- the function that called `getinfo` (except for tail calls, which do not
---- count on the stack); and so on. If `location` is a number larger than the
---- number of active functions, then `getinfo` returns `nil`.
----
---- The parameter `what` (a string) controls which fields of the returned
---- table are filled in — see `dreamwork.std.debug.InfoWhat` for the list
---- of letters and what each one populates. The default (when `what` is
---- omitted) is to get all information, except the table of active lines.
----
---- If the option `"f"` is given, then `func` is set with the function
---- itself. If the option `"L"` is given, then `activelines` is set with
---- the table of active lines.
----
---- If `what` contains the `">"` modifier, `location` is
---- consumed as the value to inspect and treated as if it were passed via
---- the trailing argument rather than as a stack level — this lets you
---- write `debug.getinfo(thread, level, ">S")`-style calls where the
---- object being inspected is taken from the end of the argument list. See
---- the `">"` entry in `InfoWhat` for details.
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getinfo)
----
----@return dreamwork.std.debug.Info info The info for the given location, or `nil` if no info could be retrieved.
----@overload fun( location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
----@overload fun( location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
----@overload fun( thread: thread, location: function, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info
----@overload fun( thread: thread, location: integer, what: dreamwork.std.debug.InfoWhat?, f: function? ): dreamwork.std.debug.Info | nil
-debug.getinfo = glua_debug.getinfo
-
---- [SHARED AND MENU]
----
---- Returns the name and the value of the local variable with index `local` of the function at level `stack_level` of the stack.
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getlocal)
----
----@overload fun( stack_level: integer, index: integer ): string, any
----@overload fun( thread: thread, stack_level: integer, index: integer ): string, any
-debug.getlocal = glua_debug.getlocal
 
 if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == nil then
     error( "execution environment is broken or sandboxed - it's over ;c" )
@@ -145,7 +103,7 @@ if debug.newproxy == nil then
         local fake_userdata = {}
 
         if add_metatable then
-            ---@type dreamwork.std.Metatable | nil
+            ---@type metatable | nil
             local metatable
 
             if add_metatable == true then
@@ -182,9 +140,9 @@ function debug.getmetavalue( value, key, allow_index )
         return nil
     elseif allow_index then
         return metatable[ key ]
-    else
-        return raw_get( metatable, key )
     end
+
+    return raw_get( metatable, key )
 end
 
 do
@@ -237,12 +195,10 @@ end
 ---@return table<string, any> values A table mapping each local variable's name to its current value.
 ---@return integer value_count The number of locals found.
 function debug.getlocals( stack_level, thread )
-    if stack_level == nil then
+    if stack_level == nil or stack_level < 2 then
         stack_level = 2
-    elseif stack_level >= 0 then
-        stack_level = stack_level + 1
     else
-        error( "stack level cannot be less than zero", 2 )
+        stack_level = stack_level + 1
     end
 
     ---@type table<string, any>
@@ -364,12 +320,10 @@ end
 ---@param stack_level? integer The stack `stack_level` to get the main function from.
 ---@return function | nil main_fn The main function or `nil` if not found.
 function debug.getfmain( stack_level )
-    if stack_level == nil then
+    if stack_level == nil or stack_level < 2 then
         stack_level = 2
-    elseif stack_level >= 0 then
-        stack_level = stack_level + 1
     else
-        error( "stack level cannot be less than zero", 2 )
+        stack_level = stack_level + 1
     end
 
     ::getfmain_loop::
@@ -392,26 +346,24 @@ end
 --- of this function, and returns it as a list of debug info tables.
 ---
 ---@param stack_level? integer The level to start capturing from, where `0` is the function that called `getstackinfo`. Default is `0`.
----@param what? dreamwork.std.debug.InfoWhat A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
+---@param what? infowhat A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
 ---@param head_skip? integer Number of extra frames to skip from the top ( nearest the caller ) before capturing begins. Default is `0`.
 ---@param tail_skip? integer Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
 ---@param max_levels? integer Maximum number of frames to read (after `head_skip` is applied). Stack walking stops as soon as this many frames have been collected, so no `debug.getinfo` call is made beyond that point. `tail_skip` is still applied afterward to this (already capped) set. `nil`/`0` means no limit.
----@return dreamwork.std.debug.Info[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
+---@return debuginfo[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
 function debug.getstack( stack_level, what, head_skip, tail_skip, max_levels )
-    if stack_level == nil then
+    if stack_level == nil or stack_level < 2 then
         stack_level = 2
-    elseif stack_level >= 0 then
-        stack_level = stack_level + 1
     else
-        error( "stack level cannot be less than zero", 2 )
+        stack_level = stack_level + 1
     end
 
     if head_skip ~= nil and head_skip > 0 then
         stack_level = stack_level + head_skip
     end
 
-    ---@type dreamwork.std.debug.Info[]
+    ---@type debuginfo[]
     local stack = {}
 
     ---@type integer
@@ -468,32 +420,54 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks whether the call at the given stack level was made through
---- `pcall` or `xpcall`, by walking up the stack from that level until it
---- finds a frame whose function is `pcall`/`xpcall`, or runs out of frames.
+--- Checks whether any of the given functions is on the call stack, starting from
+--- `stack_level` and walking outward all the way to the bottom of the stack.
 ---
----@param stack_level? integer The stack level to start checking from (same meaning as the `level` argument of `debug.getinfo`). Defaults to `2`, i.e. the function calling `ispcall`.
----@return boolean ispcall `true` if the call is (directly or indirectly) inside a `pcall`/`xpcall`, `false` otherwise.
-function debug.ispcall( stack_level )
-    if stack_level == nil then
+--- Levels follow the same convention as `debug.getinfo`, relative to the function that
+--- calls `debug.calledby`: level `1` is that function itself, level `2` is whoever called
+--- it, and so on. Levels below `1` are treated as `1`, so the check always includes at
+--- least the calling function. This function's own stack frame is skipped automatically.
+---
+--- Because the whole remaining stack is scanned, a `true` result means "one of these
+--- functions is somewhere at or above `stack_level`", not that it is exactly at that
+--- level. To test a single level, use `debug.getinfo` directly.
+---
+--- Only functions that are actually on the stack are seen. Tail calls replace their
+--- caller's frame, so a function that was tail-called away won't be found.
+---
+--- Returns `false` if no functions are given.
+---
+--- ```lua
+--- local function guarded()
+---     -- true if `guarded` was reached through `handler` at any depth
+---     return debug.calledby( 1, handler )
+--- end
+--- ```
+---
+---@param stack_level integer The stack level to start checking from (`1` = the function calling `calledby`). Values below `1` are treated as `1`.
+---@param ... function The functions to look for on the call stack.
+---@return boolean result `true` if any of the given functions is on the stack at or above `stack_level`, `false` otherwise.
+function debug.calledby( stack_level, ... )
+    if stack_level < 2 then
         stack_level = 2
-    elseif stack_level >= 0 then
-        stack_level = stack_level + 1
     else
-        error( "stack level cannot be less than zero", 2 )
+        stack_level = stack_level + 1
     end
 
-    ::debug_ispcall_loop::
+    local fn_count = raw_select( "#", ... )
+    ::debug_calledby_loop::
 
     local info = debug_getinfo( stack_level, "f" )
     if info ~= nil then
-        local func = info.func
-        if func == pcall or func == xpcall then
-            return true
+        local fn = info.func
+        for i = 1, fn_count, 1 do
+            if fn == raw_select( i, ... ) then
+                return true
+            end
         end
 
         stack_level = stack_level + 1
-        goto debug_ispcall_loop
+        goto debug_calledby_loop
     end
 
     return false
@@ -558,7 +532,7 @@ do
         --- Returns the metatable of the given name or `nil` if not found.
         ---
         ---@param name string The name of the metatable.
-        ---@return dreamwork.std.Metatable | nil meta The metatable.
+        ---@return metatable | nil meta The metatable.
         function debug.findmetatable( name )
             local cached = registry[ name ]
             if cached ~= nil then
@@ -580,7 +554,7 @@ end
 
 do
 
-    ---@type fun(name: string, tbl: dreamwork.std.Metatable)
+    ---@type fun( name: string, tbl: metatable )
     ---@diagnostic disable-next-line: undefined-global
     local RegisterMetaTable = RegisterMetaTable or debug_fempty
 
@@ -589,7 +563,7 @@ do
     --- Registers the metatable of the given name and table.
     ---
     ---@param name string The name of the metatable.
-    ---@param tbl dreamwork.std.Metatable The metatable to register.
+    ---@param tbl metatable The metatable to register.
     ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
@@ -609,7 +583,7 @@ end
 ---
 ---
 ---@param name string The name of the metatable.
----@return dreamwork.std.Metatable metatable The metatable.
+---@return metatable metatable The metatable.
 function debug.initmetatable( name )
     local metatable = debug.findmetatable( name )
     if metatable == nil then
@@ -634,7 +608,7 @@ if debug_getmetatable( debug_fempty ) == nil then
     --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
     ---
     ---@param value any The value.
-    ---@return dreamwork.std.Metatable | nil metatable The metatable.
+    ---@return metatable | nil metatable The metatable.
     ---@diagnostic disable-next-line: duplicate-set-field
     function debug.getmetatable( value )
         return debug_getmetatable( value ) or registry[ raw_type( value ) ]

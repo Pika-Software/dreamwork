@@ -6,6 +6,7 @@
           "runtime": {
             "version": "LuaJIT",
             "builtin": {
+              "basic": "disable",
               "bit": "disable",
               "bit32": "disable",
               "jit": "disable",

@@ -59,7 +59,7 @@ local Instance = std.class.base( "client.Instance", true )
 ---@type table<Player, dreamwork.std.Client>
 local registry = {}
 
----@type dreamwork.std.Metatable<Player, dreamwork.std.Client>
+---@type metatable<Player, dreamwork.std.Client>
 local metatable = {
     __mode = "k"
 }

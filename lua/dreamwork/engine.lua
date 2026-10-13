@@ -41,11 +41,11 @@ local error = std.error
 local is = std.is
 
 
----@class Entity : dreamwork.std.Metatable
+---@class Entity : metatable
 ---@field EntIndex fun( self: Entity ): integer
 local EntityMetatable = debug.initmetatable( "Entity" )
 
----@class Player : dreamwork.std.Metatable
+---@class Player : metatable
 ---@field AccountID fun( self: Player ): integer | nil
 ---@field UserID fun( self: Player ): integer
 ---@field IsBot fun( self: Player ): boolean
@@ -55,23 +55,23 @@ local EntityMetatable = debug.initmetatable( "Entity" )
 local PlayerMetatable = debug.initmetatable( "Player" )
 PlayerMetatable.__parent = EntityMetatable
 
----@class Weapon : dreamwork.std.Metatable
+---@class Weapon : metatable
 local WeaponMetatable = debug.initmetatable( "Weapon" )
 WeaponMetatable.__parent = EntityMetatable
 
----@class Vehicle : dreamwork.std.Metatable
+---@class Vehicle : metatable
 local VehicleMetatable = debug.initmetatable( "Vehicle" )
 VehicleMetatable.__parent = EntityMetatable
 
----@class NPCMetatable : dreamwork.std.Metatable
+---@class NPCMetatable : metatable
 local NPCMetatable = debug.initmetatable( "NPCMetatable" )
 NPCMetatable.__parent = EntityMetatable
 
----@class NextBot : dreamwork.std.Metatable
+---@class NextBot : metatable
 local NextBotMetatable = debug.initmetatable( "NextBot" )
 NextBotMetatable.__parent = EntityMetatable
 
----@class IMaterial : dreamwork.std.Metatable
+---@class IMaterial : metatable
 
 --- [SHARED AND MENU]
 ---
@@ -186,7 +186,7 @@ do
 
         ---@cast listen_event fun( event_name: string )
 
-        ---@type dreamwork.std.Metatable<string, boolean>
+        ---@type metatable<string, boolean>
         local events_metatable = {}
 
         function events_metatable:__newindex( key )
@@ -954,7 +954,7 @@ do
     ---@type table<string, dreamwork.GModConVar>
     local console_variables = {}
 
-    ---@type dreamwork.std.Metatable<string, dreamwork.GModConVar>
+    ---@type metatable<string, dreamwork.GModConVar>
     local metatable = {
         __mode = "v"
     }

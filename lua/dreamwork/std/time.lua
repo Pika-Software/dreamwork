@@ -1009,7 +1009,7 @@ do
         datetime = "%c"
     }
 
-    ---@class dreamwork.std.time.FormatBuffer : dreamwork.std.Metatable
+    ---@class dreamwork.std.time.FormatBuffer : metatable
     ---@field [ 1 ] integer seconds
     ---@field seconds string
     ---@field [ 2 ] integer milliseconds

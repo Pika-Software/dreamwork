@@ -72,10 +72,10 @@ end
 ---
 --- Contains information about a function with extra fields.
 ---
----@class dreamwork.std.debug.StackLevel : dreamwork.std.debug.Info
+---@class dreamwork.std.debug.StackLevel : debuginfo
 ---@field thread thread | nil Thread of call, available only when called inside a coroutine.
 
----@param stack_level dreamwork.std.debug.Info
+---@param stack_level debuginfo
 ---@param current_thread thread | nil
 ---@return dreamwork.std.debug.StackLevel stack_level
 local function update_source( stack_level, current_thread )
@@ -93,7 +93,7 @@ local function update_source( stack_level, current_thread )
 end
 
 ---@param self dreamwork.std.debug.Stack
----@param levels dreamwork.std.debug.Info[]
+---@param levels debuginfo[]
 ---@param level_count integer
 local function merge( self, levels, level_count )
     local stack_size = self.size

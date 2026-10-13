@@ -653,9 +653,9 @@ utf8.pack = pack
 function utf8.char( a, b, ... )
     if b == nil then
         return encode( a, true, 2 )
-    else
-        return pack( { a, b, ... }, raw_select( "#", a, b, ... ), true )
     end
+
+    return pack( { a, b, ... }, raw_select( "#", a, b, ... ), true )
 end
 
 --- [SHARED AND MENU]

@@ -79,43 +79,15 @@ else
     std.LUA_REALM = "unknown"
 end
 
---- [SHARED AND MENU]
----
---- If object does not have a metatable, returns `nil`.
----
---- Otherwise, if the object's metatable has a `__metatable` field, returns the associated value.
----
---- Otherwise, returns the metatable of the given object.
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getmetatable)
----
----@type fun(object: any): dreamwork.std.Metatable | nil
 std.getmetatable = getmetatable
-
---- [SHARED AND MENU]
----
---- Sets the metatable for the given table.
----
---- If `metatable` is `nil`, removes the metatable of the given table.
----
---- If the original metatable has a `__metatable` field, raises an error.
----
---- This function returns `table`.
----
---- To change the metatable of other types from Lua code, you must use the debug library ([§6.10](http://www.lua.org/manual/5.4/manual.html#6.10)).
----
----[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-setmetatable)
----
----@generic K, V
----@type fun(tbl: table<K,V>, metatable: dreamwork.std.Metatable<K,V>): table<K,V>
 std.setmetatable = setmetatable
 
-local setmetatable = std.setmetatable
-
 std.xpcall = xpcall
-
-local pcall = pcall
 std.pcall = pcall
+
+local setmetatable = std.setmetatable
+local xpcall = std.xpcall
+local pcall = std.pcall
 
 -- raw data library
 dofile( "dreamwork/std/raw.lua" )
@@ -974,7 +946,7 @@ do
     -- nil ( 0 )
     do
 
-        ---@class dreamwork.std.Nil : dreamwork.std.Metatable
+        ---@class dreamwork.std.Nil : metatable
         local Nil = debug_getmetatable( nil )
 
         if Nil == nil then
@@ -1021,7 +993,7 @@ do
     -- boolean ( 1 )
     do
 
-        ---@class dreamwork.std.Boolean : dreamwork.std.Metatable
+        ---@class dreamwork.std.Boolean : metatable
         local Boolean = debug_getmetatable( false )
 
         if Boolean == nil then
@@ -1079,7 +1051,7 @@ do
     -- number ( 3 )
     do
 
-        ---@class dreamwork.std.Number : dreamwork.std.Metatable
+        ---@class dreamwork.std.Number : metatable
         local Number = debug_getmetatable( 0 )
 
         if Number == nil then
@@ -1152,7 +1124,7 @@ do
             return debug_getmetatable( value ) == Number
         end
 
-        ---@class dreamwork.std.Integer : dreamwork.std.Metatable
+        ---@class dreamwork.std.Integer : metatable
         local Integer = debug.initmetatable( "Integer" )
         Integer.__type = "integer"
         std.Integer = Integer
@@ -1179,7 +1151,7 @@ do
     -- string ( 4 )
     do
 
-        ---@class dreamwork.std.String : dreamwork.std.Metatable
+        ---@class dreamwork.std.String : metatable
         local String = debug_getmetatable( "" )
 
         if String == nil then
@@ -1227,7 +1199,7 @@ do
     -- function ( 6 )
     do
 
-        ---@class dreamwork.std.Function : dreamwork.std.Metatable
+        ---@class dreamwork.std.Function : metatable
         local Function = debug_getmetatable( debug_fempty )
 
         if Function == nil then
@@ -1275,7 +1247,7 @@ do
 
         local object = std.coroutine.create( debug_fempty )
 
-        ---@class dreamwork.std.Thread : dreamwork.std.Metatable
+        ---@class dreamwork.std.Thread : metatable
         local Thread = debug_getmetatable( object )
 
         if Thread == nil then
@@ -1742,6 +1714,12 @@ local engine = dreamwork.engine
 
 do
 
+    local coroutine_running = coroutine.running
+    local debug_calledby = debug.calledby
+    local isError = std.isError
+
+    local RuntimeError = std.RuntimeError
+
     ---@type integer
     local required_stack_level = 1
 
@@ -1771,41 +1749,48 @@ do
     end, error )
 
     local glua_error = dreamwork.detour.shadow( error ) or error
+    local in_error = false
 
-    local debug_ispcall = debug.ispcall
-    local isError = std.isError
+    do
 
-    local runtime_error = std.RuntimeError()
+        local runtime_error = RuntimeError()
 
-    local runtime_stack = debug.Stack()
-    runtime_error.stack = runtime_stack
+        local runtime_stack = debug.Stack()
+        runtime_error.stack = runtime_stack
 
-    ---@param error_value dreamwork.std.Error
-    ---@param stack_level integer
-    local function display_error( error_value, stack_level )
-        if isError( error_value ) then
-            ---@cast error_value dreamwork.std.Error
-            error_value:display()
-            return
+        ---@param error_value dreamwork.std.Error
+        ---@param stack_level integer
+        local function display_error( error_value, stack_level )
+            if isError( error_value ) then
+                ---@cast error_value dreamwork.std.Error
+                error_value:display()
+                return
+            end
+
+            for i = stack_level + 2, 2, -1 do
+                runtime_stack:capture( i )
+                if not runtime_stack:isEmpty() then break end
+            end
+
+            ---@type string
+            local error_message = tostring( error_value )
+            runtime_error.message = string_match( error_message, "^[^:]+:%d+: ([^\n]+)" ) or error_message
+
+            runtime_error:display()
+            runtime_stack:clear()
         end
 
-        for i = stack_level + 2, 2, -1 do
-            runtime_stack:capture( i )
-            if not runtime_stack:isEmpty() then break end
-        end
+        engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
+            if in_error then
+                in_error = false
+                return error_value
+            end
 
-        ---@type string
-        local error_message = tostring( error_value )
-        runtime_error.message = string_match( error_message, "^[^:]+:%d+: ([^\n]+)" ) or error_message
+            display_error( error_value, stack_level )
+            return "The original error message was caught by dreamwork, see above for details about the error.", 2
+        end, 1000 )
 
-        runtime_error:display()
-        runtime_stack:clear()
     end
-
-    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
-        display_error( error_value, stack_level )
-        return "The original error message was caught by dreamwork, see above for details about the error.", 2
-    end, 1000 )
 
     --- [SHARED AND MENU]
     ---
@@ -1823,32 +1808,45 @@ do
 
         required_stack_level = stack_level
 
+        ---@type string
+        local error_message
+
+        ---@type dreamwork.std.Error
+        local error_object
+
         if value == nil then
-            value = "unknown error"
+            error_message = "unknown error"
+        elseif isString( value ) then
+            ---@cast value string
+            error_message = value
         elseif isError( value ) then
             ---@cast value dreamwork.std.Error
-
-            if dont_break then
-                value:display()
-                return
-            end
-        elseif dont_break then
-            for i = math_max( 1, stack_level ) + 1, 2, -1 do
-                runtime_stack:capture( i )
-                if not runtime_stack:isEmpty() then break end
-            end
-
-            runtime_error.message = tostring( value )
-            runtime_error:display()
-
-            runtime_stack:clear()
-            return
-        elseif not (isString( value ) or debug_ispcall( 2 )) then
-            value = tostring( value )
-            ---@cast value string
+            error_object = value
+        else
+            error_message = tostring( value )
         end
 
-        return glua_error( value, stack_level )
+        if error_object == nil then
+            error_object = RuntimeError( error_message )
+        end
+
+        if stack_level ~= 0 then
+            for i = math_max( 1, stack_level ) + 1, 2, -1 do
+                error_object:capture( i )
+                if not error_object:isEmpty() then break end
+            end
+        end
+
+        if dont_break then return end
+
+        if debug_calledby( 2, pcall, xpcall ) or coroutine_running() ~= nil then
+            return glua_error( error_object, stack_level )
+        end
+
+        error_object:display()
+
+        in_error = true
+        return glua_error( "The original error message was caught by dreamwork, see above for details about the error.", 0 )
     end
 
     std.error = std_error
@@ -1881,8 +1879,6 @@ do
 
 end
 
-local TypeError = std.TypeError
-
 do
 
     local debug_getlocal = debug.getlocal
@@ -1890,6 +1886,9 @@ do
 
     local equal = std.equal
     local is = std.is
+
+    local ValueError = std.ValueError
+    local TypeError = std.TypeError
 
     --- [SHARED AND MENU]
     ---
@@ -1904,15 +1903,13 @@ do
         local value_name, value = debug_getlocal( 2, index )
         local value_type = type( value )
 
-        local count = raw_select( "#", ... )
+        local type_count = raw_select( "#", ... )
 
-        for i = 1, count, 1 do
+        for i = 1, type_count, 1 do
             local expected = raw_select( i, ... )
             if isString( expected ) then
                 if expected == value_type then return end
-            elseif equal( expected, value ) then
-                return
-            elseif is( value, expected ) then
+            elseif equal( expected, value ) or is( value, expected ) then
                 return
             end
         end
@@ -1920,7 +1917,7 @@ do
         ---@type string
         local expected_names
 
-        for i = 1, count, 1 do
+        for i = 1, type_count, 1 do
             local expected = raw_select( i, ... )
             if isString( expected ) then
                 expected_name = expected
@@ -1940,9 +1937,51 @@ do
         return error( TypeError( index, value, expected_names, value_name, debug_getinfo( 2, "n" ).name ), 2 )
     end
 
-end
+    --- [SHARED AND MENU]
+    ---
+    --- Validates a local variable of the calling function (typically one of its parameters)
+    --- against one or more validator functions, raising a `ValueError` on the first failure.
+    ---
+    --- `index` is the index of the local variable in the function that called `checkvalue`,
+    --- as in `debug.getlocal`. Parameters come first, so `1` is the first parameter, `2` the
+    --- second, and so on. The variable's current value is read at call time, so reassigning
+    --- a parameter before the check changes what gets validated.
+    ---
+    --- Each validator receives the value and must return `true` if it is valid, or `false`
+    --- plus an error message if it isn't. Validators run in the order given and checking stops
+    --- at the first failure. Only a strict `false` counts as a failure, so a validator that
+    --- returns `nil` (or nothing) is treated as passing.
+    ---
+    --- On failure, the error is raised with level `2`, so it points at the function that
+    --- called `checkvalue` rather than at `checkvalue` itself.
+    ---
+    --- ```lua
+    --- local function is_positive( value )
+    ---     if value > 0 then
+    ---         return true
+    ---     end
+    ---
+    ---     return false, "must be positive"
+    --- end
+    ---
+    --- local function set_speed( speed )
+    ---     std.checkvalue( 1, is_positive )
+    ---     -- ...
+    --- end
+    --- ```
+    ---
+    ---@param index integer The index of the calling function's local variable to validate (`1` = its first parameter/argument).
+    ---@param ... ( fun( value: any ): true, nil ) | ( fun( value: any ): false, string ) The validators to run, in order. Each returns `true`, or `false` and an error message.
+    function std.checkvalue( index, ... )
+        local _, value = debug_getlocal( 2, index )
 
-do
+        for i = 1, raw_select( "#", ... ), 1 do
+            local is_valid, error_msg = raw_select( i, ... )( value )
+            if is_valid == false then
+                return error( ValueError( value, error_msg ), 2 )
+            end
+        end
+    end
 
     --- [SHARED AND MENU]
     ---
@@ -1959,7 +1998,6 @@ do
     ---@param ... any
     ---@return function | nil
     local function input_select( inputs, ... )
-        ---@type integer
         local arg_count = raw_select( "#", ... )
 
         ---@type string[]
@@ -2122,7 +2160,6 @@ function std.overload( main_fn, match, overload_fn )
         ---@cast match string
 
         return function( ... )
-            ---@type integer
             local arg_count = raw_select( "#", ... )
             if arg_count ~= 1 then
                 return main_fn( ... )
@@ -2137,7 +2174,6 @@ function std.overload( main_fn, match, overload_fn )
     end
 
     return function( ... )
-        ---@type integer
         local arg_count = raw_select( "#", ... )
         if arg_count == required_args then
             for i = 1, arg_count, 1 do
