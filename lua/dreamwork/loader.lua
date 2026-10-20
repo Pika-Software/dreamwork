@@ -293,6 +293,8 @@ std.isTable = isTable
 dofile( "dreamwork/std/jit.lua" )
 sendfile( "dreamwork/std/jit.lua" )
 
+local jit = std.jit
+
 --- [SHARED AND MENU]
 ---
 --- Returns the length of the given value.
@@ -915,7 +917,6 @@ do
     ---@field SYSTEM_X32 boolean `true` if the game is running on 32-bit architecture.
     ---@field SYSTEM_NAME "osx64" | "osx" | "linux64" | "linux" | "win64" | "win32" The short name of the currently running system with architecture.
 
-    local jit = std.jit
     local jit_os = string.lower( jit.os )
 
     local SYSTEM_OSX = jit_os == "osx"
@@ -975,7 +976,7 @@ do
         ---@return string
         ---@private
         function Nil.__represent( value )
-            return string_format( "nil: %p", value )
+            return "nil: 0x00000000"
         end
 
         --- [SHARED AND MENU]
@@ -1033,7 +1034,7 @@ do
         ---@return string
         ---@private
         function Boolean.__represent( value )
-            return string_format( "boolean: %p [%s]", value, value )
+            return string_format( "boolean: 0x00000000 [%s]", value )
         end
 
         --- [SHARED AND MENU]
@@ -1085,7 +1086,7 @@ do
         ---@return string
         ---@private
         function Number:__represent()
-            return string_format( "%s: %p [%g]", (self % 1) == 0 and "integer" or "number", self, self )
+            return string_format( "%s: 0x00000000 [%g]", (self % 1) == 0 and "integer" or "number", self, self )
         end
 
         do
@@ -2906,22 +2907,39 @@ do
 end
 
 -- https://github.com/wrefgtzweve/gm_getregistry
-if std.loadbinary( "getregistry" ) and getregistry ~= nil then
+if debug.getregistry()._LOADED == nil then
+    logger:debug( "Native `debug.getregistry` is available, skipping custom implementation." )
+elseif std.loadbinary( "getregistry" ) and getregistry ~= nil then
     debug.setregistry( (getregistry.Get or debug.getregistry)() )
     logger:info( "'gm_getregistry' was loaded & connected, enjoy full access to `debug.getregistry`." )
 end
 
--- https://github.com/willox/gmbc
-if std.loadbinary( "gmbc" ) then
-    logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )
-else
-    logger:warn( "'gmbc' is missing, bytecode compilation not available." )
-end
-
 do
 
-    local load_bytecode = gmbc_load_bytecode or function()
-        return error( "bytecode compilation not available.", 1 )
+    ---@type fun( bytecode: string ): function | nil
+    local load_bytecode
+
+    local load = _G.load or _G.loadstring
+    if load ~= nil and jit.isFFI( load ) then
+        function load_bytecode( bytecode )
+            return load( bytecode, "=(load)", "b" )
+        end
+
+        logger:debug( "Native bytecode compilation is available, skipping custom implementation." )
+    end
+
+    -- https://github.com/willox/gmbc
+    if load_bytecode == nil then
+        if std.loadbinary( "gmbc" ) then
+            logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )
+            load_bytecode = gmbc_load_bytecode
+        else
+            function load_bytecode()
+                return error( "bytecode compilation not available.", 1 )
+            end
+
+            logger:warn( "'gmbc' is missing, bytecode compilation not available." )
+        end
     end
 
     --- [SHARED AND MENU]
@@ -2936,7 +2954,7 @@ do
     ---@return string | nil msg The error message.
     function std.loadbytecode( bytecode, env )
         local success, result = pcall( load_bytecode, bytecode )
-        if success or result ~= nil then
+        if success and result ~= nil then
             ---@cast result function
             setfenv( result, env or getfenv( 2 ) )
             return result, nil

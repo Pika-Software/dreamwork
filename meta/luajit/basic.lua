@@ -1,9 +1,6 @@
 ---@meta _
 
 
----@alias bool boolean
-
-
 --- [SHARED AND MENU]
 ---
 --- Command-line arguments of Lua Standalone.

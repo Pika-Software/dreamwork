@@ -1,25 +1,24 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local ffi = std.ffi
+
 local raw = std.raw
 local raw_pairs = raw.pairs
 
 local math = std.math
-local math_isPositive = math.isPositive
 local math_clamp, math_floor = math.clamp, math.floor
 local math_frexp, math_ldexp = math.frexp, math.ldexp
-local math_huge, math_tiny, math_nan = math.huge, math.tiny, math.nan
+local math_huge, math_nan = math.huge, math.nan
 
 local rbit = raw.bit
 local rbit_unsign = rbit.unsign
 local rbit_band, rbit_bor = rbit.band, rbit.bor
-local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
+local rbit_lshift, rbit_rshift, rbit_arshift = rbit.lshift, rbit.rshift, rbit.arshift
 
 local setmetatable = std.setmetatable
 local error = std.error
 
-
--- TODO: ffi/holylib support?
 
 ---@alias dreamwork.std.bytepack.Sequence integer[] # The sequence of bytes (integers<0-255>).
 
@@ -40,7 +39,7 @@ std.bytepack = bytepack
 ---@param uint8_1 integer The byte.
 ---@return integer value The signed 1-byte integer.
 function bytepack.readInt8( uint8_1 )
-    return uint8_1 - 0x80
+    return rbit_arshift( rbit_lshift( uint8_1, 24 ), 24 )
 end
 
 --- [SHARED AND MENU]
@@ -52,7 +51,7 @@ end
 ---@param value integer The signed 1-byte integer.
 ---@return integer uint8_1 The byte.
 function bytepack.writeInt8( value )
-    return value + 0x80
+    return rbit_band( value, 0xFF )
 end
 
 -- U/Int16 Read [BE]
@@ -69,7 +68,7 @@ do
     ---@return integer value The signed 2-byte integer.
     local function bytepack_readInt16BE( uint8_1, uint8_2 )
         return rbit_bor(
-            rbit_lshift( uint8_1, 8 ),
+            rbit_arshift( rbit_lshift( uint8_1, 24 ), 16 ),
             uint8_2
         )
     end
@@ -139,7 +138,7 @@ do
     ---@return integer value The signed 2-byte integer.
     local function bytepack_readInt16LE( uint8_1, uint8_2 )
         return rbit_bor(
-            rbit_lshift( uint8_2, 8 ),
+            rbit_arshift( rbit_lshift( uint8_2, 24 ), 16 ),
             uint8_1
         )
     end
@@ -210,7 +209,7 @@ do
     ---@return integer value The signed 3-byte integer.
     local function bytepack_readInt24BE( uint8_1, uint8_2, uint8_3 )
         return rbit_bor(
-            rbit_lshift( uint8_1, 16 ),
+            rbit_arshift( rbit_lshift( uint8_1, 24 ), 8 ),
             rbit_lshift( uint8_2, 8 ),
             uint8_3
         )
@@ -286,7 +285,7 @@ do
     ---@return integer value The signed 3-byte integer.
     local function bytepack_readInt24LE( uint8_1, uint8_2, uint8_3 )
         return rbit_bor(
-            rbit_lshift( uint8_3, 16 ),
+            rbit_arshift( rbit_lshift( uint8_3, 24 ), 8 ),
             rbit_lshift( uint8_2, 8 ),
             uint8_1
         )
@@ -545,7 +544,12 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The signed 5-byte integer.
     function bytepack.readInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-        return bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) - 0x8000000000
+        local value = bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        if value >= 0x8000000000 then
+            return value - 0x10000000000
+        else
+            return value
+        end
     end
 
 end
@@ -588,7 +592,11 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     function bytepack.writeInt40BE( value )
-        return bytepack_writeUInt40BE( value + 0x8000000000 )
+        if value < 0 then
+            return bytepack_writeUInt40BE( value + 0x10000000000 )
+        else
+            return bytepack_writeUInt40BE( value )
+        end
     end
 
 end
@@ -627,7 +635,12 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The signed 5-byte integer.
     function bytepack.readInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-        return bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 ) - 0x8000000000
+        local value = bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
+        if value >= 0x8000000000 then
+            return value - 0x10000000000
+        else
+            return value
+        end
     end
 
 end
@@ -670,7 +683,11 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     function bytepack.writeInt40LE( value )
-        return bytepack_writeUInt40LE( value + 0x8000000000 )
+        if value < 0 then
+            return bytepack_writeUInt40LE( value + 0x10000000000 )
+        else
+            return bytepack_writeUInt40LE( value )
+        end
     end
 
 end
@@ -711,7 +728,12 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The signed 6-byte integer.
     function bytepack.readInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-        return bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) - 0x800000000000
+        local value = bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        if value >= 0x800000000000 then
+            return value - 0x1000000000000
+        else
+            return value
+        end
     end
 
 end
@@ -757,7 +779,11 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     function bytepack.writeInt48BE( value )
-        return bytepack_writeUInt48BE( value + 0x800000000000 )
+        if value < 0 then
+            return bytepack_writeUInt48BE( value + 0x1000000000000 )
+        else
+            return bytepack_writeUInt48BE( value )
+        end
     end
 
 end
@@ -799,7 +825,12 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The signed 6-byte integer.
     function bytepack.readInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-        return bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 ) - 0x800000000000
+        local value = bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
+        if value >= 0x800000000000 then
+            return value - 0x1000000000000
+        else
+            return value
+        end
     end
 
 end
@@ -845,7 +876,11 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     function bytepack.writeInt48LE( value )
-        return bytepack_writeUInt48LE( value + 0x800000000000 )
+        if value < 0 then
+            return bytepack_writeUInt48LE( value + 0x1000000000000 )
+        else
+            return bytepack_writeUInt48LE( value )
+        end
     end
 
 end
@@ -870,7 +905,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The unsigned 7-byte integer.
     function bytepack.readUInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-        return (((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7
+        return ((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100000000 + (((uint8_4 * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7)
     end
 
     --- [SHARED AND MENU]
@@ -889,9 +924,9 @@ do
     ---@return integer value The signed 7-byte integer.
     function bytepack.readInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         if uint8_1 < 0x80 then
-            return (((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7
+            return ((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100000000 + (((uint8_4 * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7)
         else
-            return (((((((uint8_1 - 0xFF) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_7 - 0xFF)) - 1
+            return -(((0xFF - uint8_1) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_3)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_5)) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_7) + 1)
         end
     end
 
@@ -941,7 +976,19 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     function bytepack.writeInt56BE( value )
-        return math_isPositive( value ) and 0 or 0xFF,
+        if value < 0 then
+            value = -value - 1
+
+            return 0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x100000000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000 ) % 0x100,
+                0xFF - math_floor( value / 0x100 ) % 0x100,
+                0xFF - value % 0x100
+        end
+
+        return math_floor( value / 0x1000000000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
             math_floor( value / 0x100000000 ) % 0x100,
             math_floor( value / 0x1000000 ) % 0x100,
@@ -972,7 +1019,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The unsigned 7-byte integer.
     function bytepack.readUInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-        return (((((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        return ((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
 
     --- [SHARED AND MENU]
@@ -990,10 +1037,10 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The signed 7-byte integer.
     function bytepack.readInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-        if uint8_1 < 0x80 then
-            return (((((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        if uint8_7 < 0x80 then
+            return ((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
         else
-            return (((((((uint8_7 - 0xFF) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
+            return -(((0xFF - uint8_7) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_5)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_1) + 1)
         end
     end
 
@@ -1043,13 +1090,25 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     function bytepack.writeInt56LE( value )
+        if value < 0 then
+            value = -value - 1
+
+            return 0xFF - value % 0x100,
+                0xFF - math_floor( value / 0x100 ) % 0x100,
+                0xFF - math_floor( value / 0x10000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000 ) % 0x100,
+                0xFF - math_floor( value / 0x100000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000000000 ) % 0x100
+        end
+
         return value % 0x100,
             math_floor( value / 0x100 ) % 0x100,
             math_floor( value / 0x10000 ) % 0x100,
             math_floor( value / 0x1000000 ) % 0x100,
             math_floor( value / 0x100000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
-            math_isPositive( value ) and 0 or 0xFF
+            math_floor( value / 0x1000000000000 ) % 0x100
     end
 
 end
@@ -1075,7 +1134,7 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 8-byte integer.
     function bytepack.readUInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        return ((((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+        return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100000000 + (((uint8_5 * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8)
     end
 
     --- [SHARED AND MENU]
@@ -1097,9 +1156,9 @@ do
     ---@return integer value The signed 8-byte integer.
     function bytepack.readInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         if uint8_1 < 0x80 then
-            return ((((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+            return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100000000 + (((uint8_5 * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8)
         else
-            return ((((((((uint8_1 - 0xFF) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_7 - 0xFF)) * 0x100 + (uint8_8 - 0xFF)) - 1
+            return -((((0xFF - uint8_1) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_4)) * 0x100000000 - ((((0xFF - uint8_5) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_7)) * 0x100 + (0xFF - uint8_8) + 1)
         end
     end
 
@@ -1126,7 +1185,7 @@ do
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
     function bytepack.writeUInt64BE( value )
-        return 0, -- skip first byte because luajit cannot handle such huge numbers
+        return math_floor( value / 0x100000000000000 ) % 0x100,
             math_floor( value / 0x1000000000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
             math_floor( value / 0x100000000 ) % 0x100,
@@ -1154,7 +1213,20 @@ do
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
     function bytepack.writeInt64BE( value )
-        return math_isPositive( value ) and 0 or 0xFF,
+        if value < 0 then
+            value = -value - 1
+
+            return 0xFF - math_floor( value / 0x100000000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x100000000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000 ) % 0x100,
+                0xFF - math_floor( value / 0x100 ) % 0x100,
+                0xFF - value % 0x100
+        end
+
+        return math_floor( value / 0x100000000000000 ) % 0x100,
             math_floor( value / 0x1000000000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
             math_floor( value / 0x100000000 ) % 0x100,
@@ -1187,7 +1259,7 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 8-byte integer.
     function bytepack.readUInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        return ((((((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        return (((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
 
     --- [SHARED AND MENU]
@@ -1208,10 +1280,10 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The signed 8-byte integer.
     function bytepack.readInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        if uint8_1 < 0x80 then
-            return ((((((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
+        if uint8_8 < 0x80 then
+            return (((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
         else
-            return ((((((((uint8_8 - 0xFF) * 0x100 + (uint8_7 - 0xFF)) * 0x100 + (uint8_6 - 0xFF)) * 0x100 + (uint8_5 - 0xFF)) * 0x100 + (uint8_4 - 0xFF)) * 0x100 + (uint8_3 - 0xFF)) * 0x100 + (uint8_2 - 0xFF)) * 0x100 + (uint8_1 - 0xFF)) - 1
+            return -((((0xFF - uint8_8) * 0x100 + (0xFF - uint8_7)) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_5)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_1) + 1)
         end
     end
 
@@ -1246,7 +1318,7 @@ do
             math_floor( value / 0x100000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
             math_floor( value / 0x1000000000000 ) % 0x100,
-            0 -- skip last byte because luajit cannot handle such huge numbers
+            math_floor( value / 0x100000000000000 ) % 0x100
     end
 
     --- [SHARED AND MENU]
@@ -1267,6 +1339,19 @@ do
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
     function bytepack.writeInt64LE( value )
+        if value < 0 then
+            value = -value - 1
+
+            return 0xFF - value % 0x100,
+                0xFF - math_floor( value / 0x100 ) % 0x100,
+                0xFF - math_floor( value / 0x10000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000 ) % 0x100,
+                0xFF - math_floor( value / 0x100000000 ) % 0x100,
+                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
+                0xFF - math_floor( value / 0x100000000000000 ) % 0x100
+        end
+
         return value % 0x100,
             math_floor( value / 0x100 ) % 0x100,
             math_floor( value / 0x10000 ) % 0x100,
@@ -1274,275 +1359,453 @@ do
             math_floor( value / 0x100000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
             math_floor( value / 0x1000000000000 ) % 0x100,
-            math_isPositive( value ) and 0 or 0xFF
+            math_floor( value / 0x100000000000000 ) % 0x100
     end
 
 end
 
--- Float Read [BE/LE]
-do
+if ffi == nil then
 
-    --- [SHARED AND MENU]
-    ---
-    --- Reads signed 4-byte (32 bit) float from big endian bytes.
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@return number value The signed 4-byte float.
-    local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        local sign = uint8_1 > 0x7F
-        local expo = (uint8_1 % 0x80) * 0x2 + math_floor( uint8_2 / 0x80 )
-        local mant = ((uint8_2 % 0x80) * 0x100 + uint8_3) * 0x100 + uint8_4
+    -- Float Read [BE/LE]
+    do
 
-        if mant == 0 and expo == 0 then
-            if sign then
-                return -0.0
-            else
-                return 0.0
-            end
-        elseif expo == 0xFF then
-            if mant == 0 then
-                if sign then
-                    return math_tiny
-                else
-                    return math_huge
+        --- [SHARED AND MENU]
+        ---
+        --- Reads signed 4-byte (32 bit) float from big endian bytes.
+        ---
+        ---@param uint8_1 integer The first byte.
+        ---@param uint8_2 integer The second byte.
+        ---@param uint8_3 integer The third byte.
+        ---@param uint8_4 integer The fourth byte.
+        ---@return number value The signed 4-byte float.
+        local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            local sign = uint8_1 > 0x7F
+            local expo = (uint8_1 % 0x80) * 0x2 + math_floor( uint8_2 / 0x80 )
+            local mant = ((uint8_2 % 0x80) * 0x100 + uint8_3) * 0x100 + uint8_4
+
+            local value
+            if expo == 0 then -- zero or subnormal
+                value = math_ldexp( mant, -149 )
+            elseif expo == 0xFF then
+                if mant ~= 0 then
+                    return math_nan
                 end
+
+                value = math_huge
             else
-                return math_nan
+                value = math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
             end
-        end
 
-        if sign then
-            return -math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
-        else
-            return math_ldexp( 1.0 + mant / 0x800000, expo - 0x7F )
-        end
-    end
-
-    bytepack.readFloatBE = bytepack_readFloatBE
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads signed 4-byte (32 bit) float from little endian bytes.
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@return number value The signed 4-byte float.
-    function bytepack.readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
-        return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
-    end
-
-end
-
--- Float Write [BE/LE]
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes signed 4-byte (32 bit) float as big endian bytes.
-    ---
-    ---@param value number The signed 4-byte float.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    local function bytepack_writeFloatBE( value )
-        if value ~= value then
-            return 0, 0, 136, 255
-        end
-
-        local sign = false
-        if value < 0.0 then
-            value = -value
-            sign = true
-        end
-
-        local mant, expo = math_frexp( value )
-        if mant == math_huge or expo > 0x80 then
             if sign then
-                return 0, 0, 128, 255
+                return -value
             else
-                return 0, 0, 128, 127
-            end
-        elseif (mant == 0.0 and expo == 0) or (expo < -0x7E) then
-            if (1 / value) == math_huge then
-                return 0, 0, 0, 0
-            else
-                return 0, 0, 0, 128
+                return value
             end
         end
 
-        mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 24 ) )
-        expo = expo + 0x7E
+        bytepack.readFloatBE = bytepack_readFloatBE
 
-        return (sign and 0x80 or 0) + math_floor( expo / 0x2 ),
-            (expo % 0x2) * 0x80 + math_floor( mant / 0x10000 ),
-            math_floor( mant / 0x100 ) % 0x100,
-            mant % 0x100
+        --- [SHARED AND MENU]
+        ---
+        --- Reads signed 4-byte (32 bit) float from little endian bytes.
+        ---
+        ---@param uint8_1 integer The first byte.
+        ---@param uint8_2 integer The second byte.
+        ---@param uint8_3 integer The third byte.
+        ---@param uint8_4 integer The fourth byte.
+        ---@return number value The signed 4-byte float.
+        function bytepack.readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
+        end
+
     end
 
-    bytepack.writeFloatBE = bytepack_writeFloatBE
+    -- Float Write [BE/LE]
+    do
 
-    --- [SHARED AND MENU]
-    ---
-    --- Writes signed 4-byte (32 bit) float as little endian bytes.
-    ---
-    ---@param value number The signed 4-byte float.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    function bytepack.writeFloatLE( value )
-        local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeFloatBE( value )
-        return uint8_4, uint8_3, uint8_2, uint8_1
-    end
-
-end
-
--- Double Read [BE/LE]
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads signed 8-byte (64 bit) float (double) from big endian bytes.
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@param uint8_5 integer The fifth byte.
-    ---@param uint8_6 integer The sixth byte.
-    ---@param uint8_7 integer The seventh byte.
-    ---@param uint8_8 integer The eighth byte.
-    ---@return number value The signed 8-byte float.
-    local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        local sign = uint8_1 > 0x7F
-        local expo = (uint8_1 % 0x80) * 0x10 + math_floor( uint8_2 / 0x10 )
-        local mant = ((((((uint8_2 % 0x10) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
-
-        if mant == 0 and expo == 0 then
-            if sign then
-                return -0.0
-            else
-                return 0.0
+        --- [SHARED AND MENU]
+        ---
+        --- Writes signed 4-byte (32 bit) float as big endian bytes.
+        ---
+        ---@param value number The signed 4-byte float.
+        ---@return integer uint8_1 The first byte.
+        ---@return integer uint8_2 The second byte.
+        ---@return integer uint8_3 The third byte.
+        ---@return integer uint8_4 The fourth byte.
+        local function bytepack_writeFloatBE( value )
+            if value ~= value then -- NaN
+                return 0xFF, 0xC0, 0, 0
             end
-        elseif expo == 0x7FF then
-            if mant == 0 then
-                if sign then
-                    return math_tiny
-                else
-                    return math_huge
+
+            local sign = 0
+            if value < 0.0 or (value == 0.0 and (1 / value) < 0.0) then
+                value = -value
+                sign = 0x80
+            end
+
+            if value == math_huge then -- inf
+                return sign + 0x7F, 0x80, 0, 0
+            elseif value == 0.0 then   -- zero
+                return sign, 0, 0, 0
+            end
+
+            local mant, expo = math_frexp( value )
+            expo = expo + 0x7E
+
+            if expo > 0 then
+                mant = (mant * 2.0 - 1.0) * 0x800000
+            else -- subnormal
+                mant = math_ldexp( mant, expo + 23 )
+                expo = 0
+            end
+
+            -- round half to even, carry goes into the exponent
+            local fraction = math_floor( mant )
+            local remainder = mant - fraction
+
+            if remainder > 0.5 or (remainder == 0.5 and fraction % 2 == 1) then
+                fraction = fraction + 1
+            end
+
+            local bits = expo * 0x800000 + fraction
+            if bits >= 0x7F800000 then -- overflow to inf
+                return sign + 0x7F, 0x80, 0, 0
+            end
+
+            return sign + math_floor( bits / 0x1000000 ),
+                math_floor( bits / 0x10000 ) % 0x100,
+                math_floor( bits / 0x100 ) % 0x100,
+                bits % 0x100
+        end
+
+        bytepack.writeFloatBE = bytepack_writeFloatBE
+
+        --- [SHARED AND MENU]
+        ---
+        --- Writes signed 4-byte (32 bit) float as little endian bytes.
+        ---
+        ---@param value number The signed 4-byte float.
+        ---@return integer uint8_1 The first byte.
+        ---@return integer uint8_2 The second byte.
+        ---@return integer uint8_3 The third byte.
+        ---@return integer uint8_4 The fourth byte.
+        function bytepack.writeFloatLE( value )
+            local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeFloatBE( value )
+            return uint8_4, uint8_3, uint8_2, uint8_1
+        end
+
+    end
+
+    -- Double Read [BE/LE]
+    do
+
+        --- [SHARED AND MENU]
+        ---
+        --- Reads signed 8-byte (64 bit) float (double) from big endian bytes.
+        ---
+        ---@param uint8_1 integer The first byte.
+        ---@param uint8_2 integer The second byte.
+        ---@param uint8_3 integer The third byte.
+        ---@param uint8_4 integer The fourth byte.
+        ---@param uint8_5 integer The fifth byte.
+        ---@param uint8_6 integer The sixth byte.
+        ---@param uint8_7 integer The seventh byte.
+        ---@param uint8_8 integer The eighth byte.
+        ---@return number value The signed 8-byte float.
+        local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            local sign = uint8_1 > 0x7F
+            local expo = (uint8_1 % 0x80) * 0x10 + math_floor( uint8_2 / 0x10 )
+            local mant = ((((((uint8_2 % 0x10) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8
+
+            local value
+            if expo == 0 then -- zero or subnormal
+                value = math_ldexp( mant, -1074 )
+            elseif expo == 0x7FF then
+                if mant ~= 0 then
+                    return math_nan
                 end
+
+                value = math_huge
             else
-                return math_nan
+                value = math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
             end
-        end
 
-        if sign then
-            return -math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
-        else
-            return math_ldexp( 1.0 + mant / 4503599627370496.0, expo - 0x3FF )
-        end
-    end
-
-    bytepack.readDoubleBE = bytepack_readDoubleBE
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads signed 8-byte (64 bit) float (double) from little endian bytes.
-    ---
-    ---@param uint8_1 integer The first byte.
-    ---@param uint8_2 integer The second byte.
-    ---@param uint8_3 integer The third byte.
-    ---@param uint8_4 integer The fourth byte.
-    ---@param uint8_5 integer The fifth byte.
-    ---@param uint8_6 integer The sixth byte.
-    ---@param uint8_7 integer The seventh byte.
-    ---@param uint8_8 integer The eighth byte.
-    ---@return number value The signed 8-byte float.
-    function bytepack.readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        return bytepack_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
-    end
-
-end
-
--- Double Write [BE/LE]
-do
-
-    --- [SHARED AND MENU]
-    ---
-    --- Writes signed 8-byte (64 bit) float (double) as big endian bytes.
-    ---
-    ---@param value number The signed 8-byte float.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    ---@return integer uint8_5 The fifth byte.
-    ---@return integer uint8_6 The sixth byte.
-    ---@return integer uint8_7 The seventh byte.
-    ---@return integer uint8_8 The eighth byte.
-    local function bytepack_writeDoubleBE( value )
-        if value ~= value then -- NaN
-            return 0, 0, 0, 0, 0, 0, 248, 255
-        end
-
-        local sign = false
-        if value < 0.0 then
-            value = -value
-            sign = true
-        end
-
-        local mant, expo = math_frexp( value )
-        if mant == math_huge or expo > 0x400 then -- inf
             if sign then
-                return 0, 0, 0, 0, 0, 0, 240, 255
+                return -value
             else
-                return 0, 0, 0, 0, 0, 0, 240, 127
-            end
-        elseif (mant == 0.0 and expo == 0) or (expo < -0x3FE) then -- zero
-            if (1 / value) == math_huge then
-                return 0, 0, 0, 0, 0, 0, 0, 0
-            else
-                return 0, 0, 0, 0, 0, 0, 0, 128
+                return value
             end
         end
 
-        mant = math_floor( (mant * 2.0 - 1.0) * math_ldexp( 0.5, 53 ) )
-        expo = expo + 0x3FE
+        bytepack.readDoubleBE = bytepack_readDoubleBE
 
-        return (sign and 0x80 or 0) + math_floor( expo / 0x10 ),
-            (expo % 0x10) * 0x10 + math_floor( mant / 0x1000000000000 ),
-            math_floor( mant / 0x10000000000 ) % 0x100,
-            math_floor( mant / 0x100000000 ) % 0x100,
-            math_floor( mant / 0x1000000 ) % 0x100,
-            math_floor( mant / 0x10000 ) % 0x100,
-            math_floor( mant / 0x100 ) % 0x100,
-            mant % 0x100
+        --- [SHARED AND MENU]
+        ---
+        --- Reads signed 8-byte (64 bit) float (double) from little endian bytes.
+        ---
+        ---@param uint8_1 integer The first byte.
+        ---@param uint8_2 integer The second byte.
+        ---@param uint8_3 integer The third byte.
+        ---@param uint8_4 integer The fourth byte.
+        ---@param uint8_5 integer The fifth byte.
+        ---@param uint8_6 integer The sixth byte.
+        ---@param uint8_7 integer The seventh byte.
+        ---@param uint8_8 integer The eighth byte.
+        ---@return number value The signed 8-byte float.
+        function bytepack.readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            return bytepack_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
+        end
+
     end
 
-    bytepack.writeDoubleBE = bytepack_writeDoubleBE
+    -- Double Write [BE/LE]
+    do
 
-    --- [SHARED AND MENU]
-    ---
-    --- Writes signed 8-byte (64 bit) float (double) as little endian bytes.
-    ---
-    ---@param value number The signed 8-byte float.
-    ---@return integer uint8_1 The first byte.
-    ---@return integer uint8_2 The second byte.
-    ---@return integer uint8_3 The third byte.
-    ---@return integer uint8_4 The fourth byte.
-    ---@return integer uint8_5 The fifth byte.
-    ---@return integer uint8_6 The sixth byte.
-    ---@return integer uint8_7 The seventh byte.
-    ---@return integer uint8_8 The eighth byte.
-    function bytepack.writeDoubleLE( value )
-        local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeDoubleBE( value )
-        return uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1
+        --- [SHARED AND MENU]
+        ---
+        --- Writes signed 8-byte (64 bit) float (double) as big endian bytes.
+        ---
+        ---@param value number The signed 8-byte float.
+        ---@return integer uint8_1 The first byte.
+        ---@return integer uint8_2 The second byte.
+        ---@return integer uint8_3 The third byte.
+        ---@return integer uint8_4 The fourth byte.
+        ---@return integer uint8_5 The fifth byte.
+        ---@return integer uint8_6 The sixth byte.
+        ---@return integer uint8_7 The seventh byte.
+        ---@return integer uint8_8 The eighth byte.
+        local function bytepack_writeDoubleBE( value )
+            if value ~= value then -- NaN
+                return 0xFF, 0xF8, 0, 0, 0, 0, 0, 0
+            end
+
+            local sign = 0
+            if value < 0.0 or (value == 0.0 and (1 / value) < 0.0) then
+                value = -value
+                sign = 0x80
+            end
+
+            if value == math_huge then -- inf
+                return sign + 0x7F, 0xF0, 0, 0, 0, 0, 0, 0
+            elseif value == 0.0 then   -- zero
+                return sign, 0, 0, 0, 0, 0, 0, 0
+            end
+
+            local mant, expo = math_frexp( value )
+            expo = expo + 0x3FE
+
+            if expo > 0 then
+                mant = (mant * 2.0 - 1.0) * 0x10000000000000
+            else -- subnormal
+                mant = math_ldexp( mant, expo + 52 )
+                expo = 0
+            end
+
+            return sign + math_floor( expo / 0x10 ),
+                (expo % 0x10) * 0x10 + math_floor( mant / 0x1000000000000 ),
+                math_floor( mant / 0x10000000000 ) % 0x100,
+                math_floor( mant / 0x100000000 ) % 0x100,
+                math_floor( mant / 0x1000000 ) % 0x100,
+                math_floor( mant / 0x10000 ) % 0x100,
+                math_floor( mant / 0x100 ) % 0x100,
+                mant % 0x100
+        end
+
+        bytepack.writeDoubleBE = bytepack_writeDoubleBE
+
+        --- [SHARED AND MENU]
+        ---
+        --- Writes signed 8-byte (64 bit) float (double) as little endian bytes.
+        ---
+        ---@param value number The signed 8-byte float.
+        ---@return integer uint8_1 The first byte.
+        ---@return integer uint8_2 The second byte.
+        ---@return integer uint8_3 The third byte.
+        ---@return integer uint8_4 The fourth byte.
+        ---@return integer uint8_5 The fifth byte.
+        ---@return integer uint8_6 The sixth byte.
+        ---@return integer uint8_7 The seventh byte.
+        ---@return integer uint8_8 The eighth byte.
+        function bytepack.writeDoubleLE( value )
+            local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeDoubleBE( value )
+            return uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1
+        end
+
+    end
+
+else
+
+    ---@class dreamwork.std.bytepack.FFIUnion : ffi.cdata*
+    ---@field bytes integer[]
+    ---@field u32 integer
+    ---@field f32 number
+    ---@field f64 number
+
+    ---@type dreamwork.std.bytepack.FFIUnion
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    local union = ffi.new( "union { uint8_t bytes[ 8 ]; uint32_t u32; float f32; double f64; }" )
+
+    local is_little_endian = ffi.abi( "le" )
+
+    -- Float Read/Write [BE/LE]
+    do
+
+        local lua_readFloatBE = bytepack.readFloatBE
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@return number
+        local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0x80 then -- inf or NaN
+                return lua_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            end
+
+            -- `u32` is a native integer, so this is endianness independent
+            union.u32 = rbit_bor( rbit_lshift( uint8_1, 24 ), rbit_lshift( uint8_2, 16 ), rbit_lshift( uint8_3, 8 ), uint8_4 )
+            return union.f32
+        end
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@return number
+        local function bytepack_readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
+        end
+
+        ---@param value number
+        ---@return integer, integer, integer, integer
+        local function writeFloat_native( value )
+            union.f32 = value
+
+            local bytes = union.bytes
+            return bytes[ 0 ], bytes[ 1 ], bytes[ 2 ], bytes[ 3 ]
+        end
+
+        ---@param value number
+        ---@return integer, integer, integer, integer
+        local function writeFloat_swapped( value )
+            union.f32 = value
+
+            local bytes = union.bytes
+            return bytes[ 3 ], bytes[ 2 ], bytes[ 1 ], bytes[ 0 ]
+        end
+
+        local bytepack_writeFloatLE, bytepack_writeFloatBE
+
+        if is_little_endian then
+            bytepack_writeFloatLE, bytepack_writeFloatBE = writeFloat_native, writeFloat_swapped
+        else
+            bytepack_writeFloatLE, bytepack_writeFloatBE = writeFloat_swapped, writeFloat_native
+        end
+
+        bytepack.readFloatBE = bytepack_readFloatBE
+        bytepack.readFloatLE = bytepack_readFloatLE
+
+        bytepack.writeFloatBE = bytepack_writeFloatBE
+        bytepack.writeFloatLE = bytepack_writeFloatLE
+
+    end
+
+    -- Double Read/Write [BE/LE]
+    do
+
+        local lua_readDoubleBE = bytepack.readDoubleBE
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@param uint8_5 integer
+        ---@param uint8_6 integer
+        ---@param uint8_7 integer
+        ---@param uint8_8 integer
+        ---@return number
+        local function readDouble_native( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            local bytes = union.bytes
+            bytes[ 0 ], bytes[ 1 ], bytes[ 2 ], bytes[ 3 ], bytes[ 4 ], bytes[ 5 ], bytes[ 6 ], bytes[ 7 ] = uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8
+            return union.f64
+        end
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@param uint8_5 integer
+        ---@param uint8_6 integer
+        ---@param uint8_7 integer
+        ---@param uint8_8 integer
+        ---@return number
+        local function readDouble_swapped( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            local bytes = union.bytes
+            bytes[ 0 ], bytes[ 1 ], bytes[ 2 ], bytes[ 3 ], bytes[ 4 ], bytes[ 5 ], bytes[ 6 ], bytes[ 7 ] = uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1
+            return union.f64
+        end
+
+        local readDoubleBE_unchecked = is_little_endian and readDouble_swapped or readDouble_native
+        local readDoubleLE_unchecked = is_little_endian and readDouble_native or readDouble_swapped
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@param uint8_5 integer
+        ---@param uint8_6 integer
+        ---@param uint8_7 integer
+        ---@param uint8_8 integer
+        ---@return number
+        local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0xF0 then -- inf or NaN
+                return lua_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            end
+
+            return readDoubleBE_unchecked( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        end
+
+        ---@param uint8_1 integer
+        ---@param uint8_2 integer
+        ---@param uint8_3 integer
+        ---@param uint8_4 integer
+        ---@param uint8_5 integer
+        ---@param uint8_6 integer
+        ---@param uint8_7 integer
+        ---@param uint8_8 integer
+        ---@return number
+        local function bytepack_readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            if uint8_8 % 0x80 == 0x7F and uint8_7 >= 0xF0 then -- inf or NaN
+                return lua_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
+            end
+
+            return readDoubleLE_unchecked( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+        end
+
+        ---@param value number
+        ---@return integer, integer, integer, integer, integer, integer, integer, integer
+        local function writeDouble_native( value )
+            union.f64 = value
+
+            local bytes = union.bytes
+            return bytes[ 0 ], bytes[ 1 ], bytes[ 2 ], bytes[ 3 ], bytes[ 4 ], bytes[ 5 ], bytes[ 6 ], bytes[ 7 ]
+        end
+
+        ---@param value number
+        ---@return integer, integer, integer, integer, integer, integer, integer, integer
+        local function writeDouble_swapped( value )
+            union.f64 = value
+
+            local bytes = union.bytes
+            return bytes[ 7 ], bytes[ 6 ], bytes[ 5 ], bytes[ 4 ], bytes[ 3 ], bytes[ 2 ], bytes[ 1 ], bytes[ 0 ]
+        end
+
+        bytepack.readDoubleLE = bytepack_readDoubleLE
+        bytepack.readDoubleBE = bytepack_readDoubleBE
+
+        bytepack.writeDoubleLE = is_little_endian and writeDouble_native or writeDouble_swapped
+        bytepack.writeDoubleBE = is_little_endian and writeDouble_swapped or writeDouble_native
+
     end
 
 end
@@ -1825,7 +2088,7 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 4-byte integer.
     function bytepack.readHex32BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        return rbit_bor(
+        return rbit_unsign( rbit_bor(
             rbit_lshift( decode_map[ uint8_1 ], 28 ),
             rbit_lshift( decode_map[ uint8_2 ], 24 ),
             rbit_lshift( decode_map[ uint8_3 ], 20 ),
@@ -1834,7 +2097,7 @@ do
             rbit_lshift( decode_map[ uint8_6 ], 8 ),
             rbit_lshift( decode_map[ uint8_7 ], 4 ),
             decode_map[ uint8_8 ]
-        ) % 0xFFFFFFFF
+        ) )
     end
 
 end
