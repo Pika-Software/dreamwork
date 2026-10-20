@@ -51,7 +51,7 @@ gc_setTableRules( descriptions, true, false )
 local flags = {}
 gc_setTableRules( flags, true, false )
 
----@type table<dreamwork.std.console.Command, dreamwork.std.Hook<dreamwork.std.console.Command>>
+---@type table<dreamwork.std.console.Command, dreamwork.std.Hook>
 local hooks = {}
 
 setmetatable( hooks, {

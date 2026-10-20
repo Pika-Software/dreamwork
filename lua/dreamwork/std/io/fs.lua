@@ -1,46 +1,3 @@
----@alias dreamwork.std.fs.AsyncStatus
----| -8 # file name is not part of the file system; please try another one
----| -7 # please retry later (network problems, etc)
----| -6 # hard subsystem failure
----| -5 # read parameters are invalid for unbuffered I/O
----| -4 # read error on file
----| -3 # write error on file
----| -2 # write parameters are invalid for unbuffered I/O
----| -1 # file could not be opened (bad path, not exist, etc)
----|  0 # successfully completed
----|  1 # has been properly queued and awaiting for service
----|  2 # is being accessed
----|  3 # has been interrupted by caller
----|  4 # has not yet been queued
-
----@alias dreamwork.GModFile.SortingMode
----| "nameasc"
----| "namedesc"
----| "dateasc"
----| "datedesc"
-
----@alias dreamwork.GModFile.AsyncReadCallback
----| fun( relative_path: string, mount: string, status: dreamwork.std.fs.AsyncStatus, data: ( string | nil ) )
-
----@alias dreamwork.GModFile.Mode
----| "rb" # read-only, binary
----| "wb" # write-only, binary
----| "ab" # append-only, binary
-
----@class dreamwork.GModFile
-
----@class dreamwork.GModFileLib
----@field AsyncRead fun( relative_path: string, mount: string, callback: dreamwork.GModFile.AsyncReadCallback, sync_read: boolean? ): dreamwork.std.fs.AsyncStatus
----@field CreateDir fun( relative_path: string )
----@field Delete fun( relative_path: string, mount: string ): boolean
----@field Exists fun( relative_path: string, mount: string ): boolean
----@field Find fun( wildcard: string, mount: string, sorting_mode: dreamwork.GModFile.SortingMode ): ( string[] | nil ), ( string[] | nil )
----@field IsDir fun( relative_path: string, mount: string ): boolean
----@field Open fun( relative_path: string, mode: dreamwork.GModFile.Mode, mount: string ): dreamwork.GModFile | nil
----@field Rename fun( relative_path: string, new_path: string ): boolean
----@field Size fun( relative_path: string, mount: string ): -1 | integer
----@field Time fun( relative_path: string, mount: string ): 0 | 1 | integer
----@diagnostic disable-next-line: undefined-global
 local glua_file = file
 local file_Time = glua_file.Time
 local file_Find = glua_file.Find
@@ -51,26 +8,6 @@ local file_Exists = glua_file.Exists
 local file_Delete = glua_file.Delete
 local file_CreateDir = glua_file.CreateDir
 
----@class dreamwork.HolyFileSystemLib
----@field AddSearchPath fun( system_path: string, mount: string, backwards: boolean? )
----@field AsyncRead fun( relative_path: string, mount: string, callback: dreamwork.GModFile.AsyncReadCallback ): dreamwork.std.fs.AsyncStatus
----@field CreateDir fun( relative_path: string, mount: string? )
----@field Delete fun( relative_path: string, mount: string? )
----@field Exists fun( relative_path: string, mount: string ): boolean
----@field Find fun( wildcard: string, mount: string, sorting_mode: dreamwork.GModFile.SortingMode ): ( string[] | nil ), ( string[] | nil )
----@field FullPathToRelativePath fun( system_path: string, mount: string? ): string | nil
----@field IsDir fun( relative_path: string, mount: string ): boolean
----@field Open fun( relative_path: string, mode: dreamwork.GModFile.Mode, mount: string ): dreamwork.GModFile | nil
----@field RelativePathToFullPath fun( relative_path: string, mount: string ): string | nil
----@field RemoveAllSearchPaths fun()
----@field RemoveSearchPath fun( system_path: string, mount: string )
----@field RemoveSearchPaths fun( mount: string )
----@field Rename fun( relative_path: string, new_path: string, mount: string? ): boolean
----@field Size fun( relative_path: string, mount: string ): -1 | integer
----@field Time fun( relative_path: string, mount: string ): 0 | 1 | integer
----@field TimeAccessed fun( relative_path: string, mount: string ): 0 | integer
----@field TimeCreated fun( relative_path: string, mount: string ): 0 | integer
----@diagnostic disable-next-line: undefined-global
 local filesystem = filesystem
 
 --- TODO
@@ -236,3 +173,5 @@ local File = class.base( "File", false, nil )
 
 -- TODO: https://github.com/RaphaelIT7/gmod-holylib#filesystem
 -- TODO: file mounted/unmounted event for hooks that tracks game.MountGMA and scan local mounts to track mount points
+
+-- TODO: which for files/dirs

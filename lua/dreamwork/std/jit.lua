@@ -1,6 +1,7 @@
 local glua_jit = jit
 
 ---@class dreamwork.std
+---@field ffi ffilib | nil
 local std = dreamwork.std
 
 local raw = std.raw
@@ -171,6 +172,16 @@ else
     function jit.isFFI( fn )
         local info = util_funcinfo( fn )
         return info ~= nil and info.ffid ~= nil
+    end
+
+end
+
+-- https://holylib.raphaelit7.com/jit.getffi
+do
+
+    local fn = glua_jit.getffi
+    if fn ~= nil then
+        std.ffi = fn()
     end
 
 end

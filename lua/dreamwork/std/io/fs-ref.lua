@@ -1,6 +1,3 @@
-local _G = _G
-local dreamwork = _G.dreamwork
-
 local engine = dreamwork.engine
 
 ---@class dreamwork.std
