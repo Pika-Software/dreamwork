@@ -9,7 +9,7 @@ local raw_pairs = raw.pairs
 local math = std.math
 local math_clamp, math_floor = math.clamp, math.floor
 local math_frexp, math_ldexp = math.frexp, math.ldexp
-local math_huge, math_nan = math.huge, math.nan
+local math_huge, math_tiny, math_nan = math.huge, math.tiny, math.nan
 
 local rbit = raw.bit
 local rbit_unsign = rbit.unsign
@@ -341,7 +341,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     function bytepack.writeUInt24LE( value )
-        return bytepack.writeInt24LE( rbit_unsign( value, 24 ) )
+        return bytepack_writeInt24LE( rbit_unsign( value, 24 ) )
     end
 
 end
@@ -545,11 +545,11 @@ do
     ---@return integer value The signed 5-byte integer.
     function bytepack.readInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         local value = bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-        if value >= 0x8000000000 then
-            return value - 0x10000000000
-        else
+        if value < 0x8000000000 then
             return value
         end
+
+        return value - 0x10000000000
     end
 
 end
@@ -594,9 +594,9 @@ do
     function bytepack.writeInt40BE( value )
         if value < 0 then
             return bytepack_writeUInt40BE( value + 0x10000000000 )
-        else
-            return bytepack_writeUInt40BE( value )
         end
+
+        return bytepack_writeUInt40BE( value )
     end
 
 end
@@ -636,11 +636,11 @@ do
     ---@return integer value The signed 5-byte integer.
     function bytepack.readInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         local value = bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
-        if value >= 0x8000000000 then
-            return value - 0x10000000000
-        else
+        if value < 0x8000000000 then
             return value
         end
+
+        return value - 0x10000000000
     end
 
 end
@@ -685,9 +685,9 @@ do
     function bytepack.writeInt40LE( value )
         if value < 0 then
             return bytepack_writeUInt40LE( value + 0x10000000000 )
-        else
-            return bytepack_writeUInt40LE( value )
         end
+
+        return bytepack_writeUInt40LE( value )
     end
 
 end
@@ -729,11 +729,11 @@ do
     ---@return integer value The signed 6-byte integer.
     function bytepack.readInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         local value = bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-        if value >= 0x800000000000 then
-            return value - 0x1000000000000
-        else
+        if value < 0x800000000000 then
             return value
         end
+
+        return value - 0x1000000000000
     end
 
 end
@@ -781,9 +781,9 @@ do
     function bytepack.writeInt48BE( value )
         if value < 0 then
             return bytepack_writeUInt48BE( value + 0x1000000000000 )
-        else
-            return bytepack_writeUInt48BE( value )
         end
+
+        return bytepack_writeUInt48BE( value )
     end
 
 end
@@ -826,11 +826,11 @@ do
     ---@return integer value The signed 6-byte integer.
     function bytepack.readInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         local value = bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-        if value >= 0x800000000000 then
+        if value < 0x800000000000 then
             return value - 0x1000000000000
-        else
-            return value
         end
+
+        return value
     end
 
 end
@@ -878,9 +878,9 @@ do
     function bytepack.writeInt48LE( value )
         if value < 0 then
             return bytepack_writeUInt48LE( value + 0x1000000000000 )
-        else
-            return bytepack_writeUInt48LE( value )
         end
+
+        return bytepack_writeUInt48LE( value )
     end
 
 end
@@ -923,11 +923,8 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The signed 7-byte integer.
     function bytepack.readInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-        if uint8_1 < 0x80 then
-            return ((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100000000 + (((uint8_4 * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7)
-        else
-            return -(((0xFF - uint8_1) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_3)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_5)) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_7) + 1)
-        end
+        -- signed high half ( sign extended ) * 2^32 + unsigned low half
+        return rbit_bor( rbit_arshift( rbit_lshift( uint8_1, 24 ), 8 ), rbit_lshift( uint8_2, 8 ), uint8_3 ) * 0x100000000 + (((uint8_4 * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7)
     end
 
 end
@@ -976,25 +973,17 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     function bytepack.writeInt56BE( value )
-        if value < 0 then
-            value = -value - 1
+        -- exact split into two's complement halves, `high` is negative for negative values
+        local high = math_floor( value / 0x100000000 )
+        local low = value - high * 0x100000000
 
-            return 0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x100000000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000 ) % 0x100,
-                0xFF - math_floor( value / 0x100 ) % 0x100,
-                0xFF - value % 0x100
-        end
-
-        return math_floor( value / 0x1000000000000 ) % 0x100,
-            math_floor( value / 0x10000000000 ) % 0x100,
-            math_floor( value / 0x100000000 ) % 0x100,
-            math_floor( value / 0x1000000 ) % 0x100,
-            math_floor( value / 0x10000 ) % 0x100,
-            math_floor( value / 0x100 ) % 0x100,
-            value % 0x100
+        return rbit_band( rbit_rshift( high, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 8 ), 0xFF ),
+            rbit_band( high, 0xFF ),
+            rbit_band( rbit_rshift( low, 24 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 8 ), 0xFF ),
+            rbit_band( low, 0xFF )
     end
 
 end
@@ -1037,11 +1026,8 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The signed 7-byte integer.
     function bytepack.readInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
-        if uint8_7 < 0x80 then
-            return ((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
-        else
-            return -(((0xFF - uint8_7) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_5)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_1) + 1)
-        end
+        -- signed high half ( sign extended ) * 2^32 + unsigned low half
+        return rbit_bor( rbit_arshift( rbit_lshift( uint8_7, 24 ), 8 ), rbit_lshift( uint8_6, 8 ), uint8_5 ) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
 
 end
@@ -1090,25 +1076,17 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     function bytepack.writeInt56LE( value )
-        if value < 0 then
-            value = -value - 1
+        -- exact split into two's complement halves, `high` is negative for negative values
+        local high = math_floor( value / 0x100000000 )
+        local low = value - high * 0x100000000
 
-            return 0xFF - value % 0x100,
-                0xFF - math_floor( value / 0x100 ) % 0x100,
-                0xFF - math_floor( value / 0x10000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000 ) % 0x100,
-                0xFF - math_floor( value / 0x100000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000000000 ) % 0x100
-        end
-
-        return value % 0x100,
-            math_floor( value / 0x100 ) % 0x100,
-            math_floor( value / 0x10000 ) % 0x100,
-            math_floor( value / 0x1000000 ) % 0x100,
-            math_floor( value / 0x100000000 ) % 0x100,
-            math_floor( value / 0x10000000000 ) % 0x100,
-            math_floor( value / 0x1000000000000 ) % 0x100
+        return rbit_band( low, 0xFF ),
+            rbit_band( rbit_rshift( low, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 24 ), 0xFF ),
+            rbit_band( high, 0xFF ),
+            rbit_band( rbit_rshift( high, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 16 ), 0xFF )
     end
 
 end
@@ -1155,11 +1133,8 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The signed 8-byte integer.
     function bytepack.readInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        if uint8_1 < 0x80 then
-            return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100000000 + (((uint8_5 * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8)
-        else
-            return -((((0xFF - uint8_1) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_4)) * 0x100000000 - ((((0xFF - uint8_5) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_7)) * 0x100 + (0xFF - uint8_8) + 1)
-        end
+        -- signed high half * 2^32 + unsigned low half
+        return rbit_bor( rbit_lshift( uint8_1, 24 ), rbit_lshift( uint8_2, 16 ), rbit_lshift( uint8_3, 8 ), uint8_4 ) * 0x100000000 + (((uint8_5 * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8)
     end
 
 end
@@ -1213,27 +1188,18 @@ do
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
     function bytepack.writeInt64BE( value )
-        if value < 0 then
-            value = -value - 1
+        -- exact split into two's complement halves, `high` is negative for negative values
+        local high = math_floor( value / 0x100000000 )
+        local low = value - (high * 0x100000000)
 
-            return 0xFF - math_floor( value / 0x100000000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x100000000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000 ) % 0x100,
-                0xFF - math_floor( value / 0x100 ) % 0x100,
-                0xFF - value % 0x100
-        end
-
-        return math_floor( value / 0x100000000000000 ) % 0x100,
-            math_floor( value / 0x1000000000000 ) % 0x100,
-            math_floor( value / 0x10000000000 ) % 0x100,
-            math_floor( value / 0x100000000 ) % 0x100,
-            math_floor( value / 0x1000000 ) % 0x100,
-            math_floor( value / 0x10000 ) % 0x100,
-            math_floor( value / 0x100 ) % 0x100,
-            value % 0x100
+        return rbit_band( rbit_rshift( high, 24 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 8 ), 0xFF ),
+            rbit_band( high, 0xFF ),
+            rbit_band( rbit_rshift( low, 24 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 8 ), 0xFF ),
+            rbit_band( low, 0xFF )
     end
 
 end
@@ -1280,11 +1246,8 @@ do
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The signed 8-byte integer.
     function bytepack.readInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-        if uint8_8 < 0x80 then
-            return (((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
-        else
-            return -((((0xFF - uint8_8) * 0x100 + (0xFF - uint8_7)) * 0x100 + (0xFF - uint8_6)) * 0x100 + (0xFF - uint8_5)) * 0x100000000 - ((((0xFF - uint8_4) * 0x100 + (0xFF - uint8_3)) * 0x100 + (0xFF - uint8_2)) * 0x100 + (0xFF - uint8_1) + 1)
-        end
+        -- signed high half * 2^32 + unsigned low half
+        return rbit_bor( rbit_lshift( uint8_8, 24 ), rbit_lshift( uint8_7, 16 ), rbit_lshift( uint8_6, 8 ), uint8_5 ) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
 
 end
@@ -1339,27 +1302,18 @@ do
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
     function bytepack.writeInt64LE( value )
-        if value < 0 then
-            value = -value - 1
+        -- exact split into two's complement halves, `high` is negative for negative values
+        local high = math_floor( value / 0x100000000 )
+        local low = value - high * 0x100000000
 
-            return 0xFF - value % 0x100,
-                0xFF - math_floor( value / 0x100 ) % 0x100,
-                0xFF - math_floor( value / 0x10000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000 ) % 0x100,
-                0xFF - math_floor( value / 0x100000000 ) % 0x100,
-                0xFF - math_floor( value / 0x10000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x1000000000000 ) % 0x100,
-                0xFF - math_floor( value / 0x100000000000000 ) % 0x100
-        end
-
-        return value % 0x100,
-            math_floor( value / 0x100 ) % 0x100,
-            math_floor( value / 0x10000 ) % 0x100,
-            math_floor( value / 0x1000000 ) % 0x100,
-            math_floor( value / 0x100000000 ) % 0x100,
-            math_floor( value / 0x10000000000 ) % 0x100,
-            math_floor( value / 0x1000000000000 ) % 0x100,
-            math_floor( value / 0x100000000000000 ) % 0x100
+        return rbit_band( low, 0xFF ),
+            rbit_band( rbit_rshift( low, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( low, 24 ), 0xFF ),
+            rbit_band( high, 0xFF ),
+            rbit_band( rbit_rshift( high, 8 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 16 ), 0xFF ),
+            rbit_band( rbit_rshift( high, 24 ), 0xFF )
     end
 
 end
@@ -1398,9 +1352,9 @@ if ffi == nil then
 
             if sign then
                 return -value
-            else
-                return value
             end
+
+            return value
         end
 
         bytepack.readFloatBE = bytepack_readFloatBE
@@ -1532,9 +1486,9 @@ if ffi == nil then
 
             if sign then
                 return -value
-            else
-                return value
             end
+
+            return value
         end
 
         bytepack.readDoubleBE = bytepack_readDoubleBE
@@ -1650,16 +1604,21 @@ else
     -- Float Read/Write [BE/LE]
     do
 
-        local lua_readFloatBE = bytepack.readFloatBE
-
         ---@param uint8_1 integer
         ---@param uint8_2 integer
         ---@param uint8_3 integer
         ---@param uint8_4 integer
         ---@return number
         local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
-            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0x80 then -- inf or NaN
-                return lua_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
+            -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
+            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0x80 then
+                if uint8_2 ~= 0x80 or uint8_3 ~= 0 or uint8_4 ~= 0 then
+                    return math_nan
+                elseif uint8_1 > 0x7F then
+                    return math_tiny
+                end
+
+                return math_huge
             end
 
             -- `u32` is a native integer, so this is endianness independent
@@ -1713,8 +1672,6 @@ else
     -- Double Read/Write [BE/LE]
     do
 
-        local lua_readDoubleBE = bytepack.readDoubleBE
-
         ---@param uint8_1 integer
         ---@param uint8_2 integer
         ---@param uint8_3 integer
@@ -1758,8 +1715,15 @@ else
         ---@param uint8_8 integer
         ---@return number
         local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0xF0 then -- inf or NaN
-                return lua_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
+            -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
+            if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0xF0 then
+                if uint8_2 ~= 0xF0 or uint8_3 ~= 0 or uint8_4 ~= 0 or uint8_5 ~= 0 or uint8_6 ~= 0 or uint8_7 ~= 0 or uint8_8 ~= 0 then
+                    return math_nan
+                elseif uint8_1 > 0x7F then
+                    return math_tiny
+                end
+
+                return math_huge
             end
 
             return readDoubleBE_unchecked( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
@@ -1775,8 +1739,15 @@ else
         ---@param uint8_8 integer
         ---@return number
         local function bytepack_readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
-            if uint8_8 % 0x80 == 0x7F and uint8_7 >= 0xF0 then -- inf or NaN
-                return lua_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
+            -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
+            if uint8_8 % 0x80 == 0x7F and uint8_7 >= 0xF0 then
+                if uint8_7 ~= 0xF0 or uint8_6 ~= 0 or uint8_5 ~= 0 or uint8_4 ~= 0 or uint8_3 ~= 0 or uint8_2 ~= 0 or uint8_1 ~= 0 then
+                    return math_nan
+                elseif uint8_8 > 0x7F then
+                    return math_tiny
+                end
+
+                return math_huge
             end
 
             return readDoubleLE_unchecked( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
