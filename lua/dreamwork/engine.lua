@@ -64,7 +64,7 @@ local VehicleMetatable = debug.initmetatable( "Vehicle" )
 VehicleMetatable.__parent = EntityMetatable
 
 ---@class NPCMetatable : metatable
-local NPCMetatable = debug.initmetatable( "NPCMetatable" )
+local NPCMetatable = debug.initmetatable( "NPC" )
 NPCMetatable.__parent = EntityMetatable
 
 ---@class NextBot : metatable
