@@ -2,16 +2,30 @@
 
 --- [SHARED AND MENU]
 ---
+--- Generic functions for string manipulation: finding and extracting substrings, pattern matching and formatting.
 ---
+--- Strings are indexed from `1`. Negative indices count from the end of the string, so `-1` is the last character, `-2` the one before it, and so on.
 ---
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string)
+--- All functions are also available as methods through the string metatable, so `string.byte( s, i )` can be written as `s:byte( i )`.
+---
+--- Strings are byte sequences: functions operate on bytes, not on UTF-8 characters, and they handle embedded zeros (`\0`).
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#5.4)
 ---
 ---@class stringlib
 string = {}
 
 --- [SHARED AND MENU]
 ---
---- Returns the internal numeric codes of the characters `s[i], s[i+1], ..., s[j]`.
+--- Returns the internal numeric codes (bytes) of the characters `s[i], s[i+1], ..., s[j]`.
+---
+--- `i` defaults to `1` and `j` defaults to `i`, so `s:byte()` returns the code of the first character only. Both can be negative.
+---
+--- ```lua
+--- ("ABC"):byte()       --> 65
+--- ("ABC"):byte( 1, -1 ) --> 65, 66, 67
+--- ("ABC"):byte( -1 )    --> 67
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.byte)
 ---
@@ -26,6 +40,12 @@ function string.byte( s, i, j ) end
 ---
 --- Returns a string with length equal to the number of arguments, in which each character has the internal numeric code equal to its corresponding argument.
 ---
+--- Every argument must be an integer in the range `0-255`.
+---
+--- ```lua
+--- string.char( 72, 105 ) --> "Hi"
+--- ```
+---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.char)
 ---
 ---@param byte integer
@@ -36,7 +56,13 @@ function string.char( byte, ... ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a string containing a binary representation (a *binary chunk*) of the given function.
+--- Returns a string containing a binary representation (a *binary chunk*) of the given function, which can later be loaded back with `loadstring`.
+---
+--- If `strip` is `true`, debug information (line numbers, local and upvalue names) is omitted to produce a smaller chunk.
+---
+--- > **NOTE**: Upvalues are not saved; a loaded function gets fresh `nil` upvalues.
+---
+--- > **NOTE**: LuaJIT bytecode differs from regular Lua bytecode and may differ between LuaJIT versions and architectures.
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.dump)
 ---
@@ -48,23 +74,130 @@ function string.dump( f, strip ) end
 
 --- [SHARED AND MENU]
 ---
---- Looks for the first match of `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) in the string.
+--- Looks for the first match of `pattern` in the string `s`.
+---
+--- If it finds one, `find` returns the indices where the match starts and ends, followed by all captures (if the pattern has any); otherwise it returns `nil`.
+---
+--- `init` specifies where to start the search; it defaults to `1` and can be negative.
+---
+--- If `plain` is `true`, pattern matching is turned off and `pattern` is searched as a plain substring, so magic characters need no escaping. To pass `plain`, `init` must also be given.
+---
+--- ```lua
+--- ("hello world"):find( "wor" )             --> 7, 9
+--- ("hello world"):find( "(o)%s" )           --> 5, 6, "o"
+--- ("1.5"):find( ".", 1, true )              --> 2, 2
+--- ("key=value"):find( "^(%w+)=" )           --> 1, 4, "key"
+--- ```
+---
+--- ---
+---
+--- ## Patterns
+---
+--- ### Character classes
+---
+--- A character class represents a set of characters:
+---
+--- | Class | Matches |
+--- |:------|:--------|
+--- | `x` | The character `x` itself, where `x` is not one of the magic characters `^$()%.[]*+-?`. |
+--- | `.` | Any character. |
+--- | `%a` | Letters. |
+--- | `%c` | Control characters. |
+--- | `%d` | Digits (`0-9`). |
+--- | `%l` | Lowercase letters. |
+--- | `%p` | Punctuation characters. |
+--- | `%s` | Whitespace characters (space, `\t`, `\n`, `\v`, `\f`, `\r`). |
+--- | `%u` | Uppercase letters. |
+--- | `%w` | Alphanumeric characters. |
+--- | `%x` | Hexadecimal digits. |
+--- | `%z` | The character `\0`. |
+--- | `%A`, `%S`, ... | The uppercase version of any class above is its complement, e.g. `%S` is any non-whitespace character. |
+--- | `%.`, `%%`, ... | `%` followed by a non-alphanumeric character represents that character literally. This is the standard way to escape magic characters; any punctuation character may be escaped this way. |
+--- | `[set]` | Any character in `set`. Ranges are written with `-` between the end characters (`a-z`), and `%` classes may be used inside. E.g. `[%w_]` matches alphanumerics and `_`, `[0-7]` octal digits, `[0-7%l%-]` octal digits, lowercase letters and `-`. |
+--- | `[^set]` | Any character **not** in `set`. |
+---
+--- > **NOTE**: Mixing ranges and classes, like `[%a-z]` or `[a-%%]`, is undefined.
+---
+--- > **NOTE**: Letters, whitespace and other classes depend on the current locale, so `[a-z]` is not necessarily equivalent to `%l`.
+---
+--- ### Pattern items
+---
+--- | Item | Matches |
+--- |:-----|:--------|
+--- | `c` | A single character from class `c`. |
+--- | `c*` | 0 or more characters from `c`, as many as possible (greedy). |
+--- | `c+` | 1 or more characters from `c`, as many as possible (greedy). |
+--- | `c-` | 0 or more characters from `c`, as few as possible (lazy). |
+--- | `c?` | 0 or 1 character from `c`. |
+--- | `%1` - `%9` | A substring equal to the n-th captured string. |
+--- | `%bxy` | A balanced substring that starts with `x` and ends with `y`, e.g. `%b()` matches an expression with balanced parentheses. |
+--- | `%f[set]` | A *frontier*: an empty match at a position where the previous character is not in `set` and the next one is. The start and end of the subject count as `\0`. |
+---
+--- Quantifiers only apply to a single character class: there is no grouping like `(ab)*` and no alternation like `a|b`.
+---
+--- ### Anchors
+---
+--- `^` at the beginning of a pattern anchors the match at the start of the subject, and `$` at the end anchors it at the end. Anywhere else they represent themselves.
+---
+--- ### Captures
+---
+--- Parts of a pattern enclosed in parentheses are captures; the substrings they match are returned separately. Captures are numbered by their left parenthesis: in `"(a*(.)%w(%s*))"` capture 1 is the whole match, 2 is the `.` and 3 is the `%s*`.
+---
+--- The empty capture `()` captures the current position (a number) instead of a substring: `("flaaap"):match( "()aa()" )` returns `3, 5`.
+---
+--- A pattern can have at most 32 captures.
+---
+--- ### Examples
+---
+--- ```lua
+--- ("key = value"):match( "^(%w+)%s*=%s*(%w+)$" ) --> "key", "value"
+--- ("  trim me  "):match( "^%s*(.-)%s*$" )        --> "trim me"
+--- ("f(a(b)c)d"):match( "%b()" )                  --> "(a(b)c)"
+--- ("THE (quick) fox"):find( "%f[%a]%a+%f[%A]" )  --> 1, 3
+--- ("1.5"):find( "%." )                           --> 2, 2
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.find)
 ---
----@param s       string|number
----@param pattern string|number
+---@param s       string | number
+---@param pattern string | number
 ---@param init?   integer
 ---@param plain?  boolean
----@return integer|nil start
----@return integer|nil end
----@return any|nil ... captured
+---@return integer | nil start
+---@return integer | nil end
+---@return any | nil ... captured
 ---@nodiscard
 function string.find( s, pattern, init, plain ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a formatted version of its variable number of arguments following the description given in its first argument.
+--- Returns a formatted version of its variable number of arguments following the description given in its first argument, which must be a string.
+---
+--- The format string follows the same rules as the C `printf` family: `%[flags][width][.precision]specifier`.
+---
+--- | Specifier | Output |
+--- |:----------|:-------|
+--- | `%d`, `%i` | Signed integer. |
+--- | `%u` | Unsigned integer. |
+--- | `%c` | Character with the given byte code. |
+--- | `%o` | Octal integer. |
+--- | `%x`, `%X` | Hexadecimal integer (lowercase / uppercase). |
+--- | `%e`, `%E` | Scientific notation (`1.234500e+03`). |
+--- | `%f` | Decimal floating point. |
+--- | `%g`, `%G` | The shorter of `%e` and `%f`. |
+--- | `%a`, `%A` | Hexadecimal floating point (LuaJIT 2.1). |
+--- | `%s` | String. In LuaJIT 2.1, non-string arguments are converted with `tostring`. |
+--- | `%q` | String in a form that can be safely read back by the Lua interpreter (quoted and escaped). |
+--- | `%%` | A literal `%`. |
+---
+--- The options `*`, `l`, `L`, `n`, `p` and `h` are not supported.
+---
+--- ```lua
+--- string.format( "%5.2f", 3.14159 )      --> " 3.14"
+--- string.format( "%-5d|", 42 )           --> "42   |"
+--- string.format( "%02X", 10 )            --> "0A"
+--- string.format( "%q", 'say "hi"\n' )    --> "say \"hi\"\<newline>"
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.format)
 ---
@@ -76,18 +209,92 @@ function string.format( s, ... ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns an iterator function. Each call to that iterator continues matching `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) over s and returns all captures.
+--- Returns an iterator function that, each time it is called, returns the next match of `pattern` over the string `s`.
 ---
---- The following example iterates over all words in string s, printing one per line:
+--- If `pattern` has captures, each call returns the captures; otherwise it returns the whole match.
+---
+--- > **NOTE**: A `^` at the start of the pattern does not work as an anchor here (it would prevent iteration) and is treated as a literal character.
 ---
 --- ```lua
----    local s = "hello world from Lua"
+--- -- Prints every word, one per line.
+--- for word in ( "hello world from Lua" ):gmatch( "%a+" ) do
+---     print( word )
+--- end
 ---
----    for w in string.gmatch(s, "%a+") do
----        print(w)
----    end
+--- -- Collects all `key=value` pairs into a table.
+--- local t = {}
+--- for k, v in ( "from=world, to=Lua" ):gmatch( "(%w+)=(%w+)" ) do
+---     t[ k ] = v
+--- end
 --- ```
 ---
+--- ---
+---
+--- ## Patterns
+---
+--- ### Character classes
+---
+--- A character class represents a set of characters:
+---
+--- | Class | Matches |
+--- |:------|:--------|
+--- | `x` | The character `x` itself, where `x` is not one of the magic characters `^$()%.[]*+-?`. |
+--- | `.` | Any character. |
+--- | `%a` | Letters. |
+--- | `%c` | Control characters. |
+--- | `%d` | Digits (`0-9`). |
+--- | `%l` | Lowercase letters. |
+--- | `%p` | Punctuation characters. |
+--- | `%s` | Whitespace characters (space, `\t`, `\n`, `\v`, `\f`, `\r`). |
+--- | `%u` | Uppercase letters. |
+--- | `%w` | Alphanumeric characters. |
+--- | `%x` | Hexadecimal digits. |
+--- | `%z` | The character `\0`. |
+--- | `%A`, `%S`, ... | The uppercase version of any class above is its complement, e.g. `%S` is any non-whitespace character. |
+--- | `%.`, `%%`, ... | `%` followed by a non-alphanumeric character represents that character literally. This is the standard way to escape magic characters; any punctuation character may be escaped this way. |
+--- | `[set]` | Any character in `set`. Ranges are written with `-` between the end characters (`a-z`), and `%` classes may be used inside. E.g. `[%w_]` matches alphanumerics and `_`, `[0-7]` octal digits, `[0-7%l%-]` octal digits, lowercase letters and `-`. |
+--- | `[^set]` | Any character **not** in `set`. |
+---
+--- > **NOTE**: Mixing ranges and classes, like `[%a-z]` or `[a-%%]`, is undefined.
+---
+--- > **NOTE**: Letters, whitespace and other classes depend on the current locale, so `[a-z]` is not necessarily equivalent to `%l`.
+---
+--- ### Pattern items
+---
+--- | Item | Matches |
+--- |:-----|:--------|
+--- | `c` | A single character from class `c`. |
+--- | `c*` | 0 or more characters from `c`, as many as possible (greedy). |
+--- | `c+` | 1 or more characters from `c`, as many as possible (greedy). |
+--- | `c-` | 0 or more characters from `c`, as few as possible (lazy). |
+--- | `c?` | 0 or 1 character from `c`. |
+--- | `%1` - `%9` | A substring equal to the n-th captured string. |
+--- | `%bxy` | A balanced substring that starts with `x` and ends with `y`, e.g. `%b()` matches an expression with balanced parentheses. |
+--- | `%f[set]` | A *frontier*: an empty match at a position where the previous character is not in `set` and the next one is. The start and end of the subject count as `\0`. |
+---
+--- Quantifiers only apply to a single character class: there is no grouping like `(ab)*` and no alternation like `a|b`.
+---
+--- ### Anchors
+---
+--- `^` at the beginning of a pattern anchors the match at the start of the subject, and `$` at the end anchors it at the end. Anywhere else they represent themselves.
+---
+--- ### Captures
+---
+--- Parts of a pattern enclosed in parentheses are captures; the substrings they match are returned separately. Captures are numbered by their left parenthesis: in `"(a*(.)%w(%s*))"` capture 1 is the whole match, 2 is the `.` and 3 is the `%s*`.
+---
+--- The empty capture `()` captures the current position (a number) instead of a substring: `("flaaap"):match( "()aa()" )` returns `3, 5`.
+---
+--- A pattern can have at most 32 captures.
+---
+--- ### Examples
+---
+--- ```lua
+--- ("key = value"):match( "^(%w+)%s*=%s*(%w+)$" ) --> "key", "value"
+--- ("  trim me  "):match( "^%s*(.-)%s*$" )        --> "trim me"
+--- ("f(a(b)c)d"):match( "%b()" )                  --> "(a(b)c)"
+--- ("THE (quick) fox"):find( "%f[%a]%a+%f[%A]" )  --> 1, 3
+--- ("1.5"):find( "%." )                           --> 2, 2
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gmatch)
 ---
@@ -99,7 +306,94 @@ function string.gmatch( s, pattern ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a copy of s where all occurrences of `pattern` (or the first n occurrences if n is given) are replaced by repl (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)).
+--- Returns a copy of `s` in which all (or the first `n`, if given) occurrences of `pattern` have been replaced by `repl`. The second return value is the total number of substitutions made.
+---
+--- `repl` can be:
+---
+--- | Type | Replacement |
+--- |:-----|:------------|
+--- | `string` | Used as is, except that `%0` stands for the whole match, `%1` - `%9` for the n-th capture, and `%%` for a literal `%`. |
+--- | `table` | Looked up with the first capture (or the whole match if there are no captures) as the key. |
+--- | `function` | Called with all captures (or the whole match) as arguments; its first return value is used. |
+---
+--- If a table lookup or function call returns `false` or `nil`, the original match is kept; any other value must be a string or a number.
+---
+--- ```lua
+--- ("hello world"):gsub( "o", "0" )                    --> "hell0 w0rld", 2
+--- ("hello world"):gsub( "(%w+)", "<%1>" )             --> "<hello> <world>", 2
+--- ("abc"):gsub( "%w", "%0%0", 2 )                     --> "aabbc", 2
+--- ("x = 1, y = 2"):gsub( "(%w+) = (%w+)", "%2 = %1" ) --> "1 = x, 2 = y", 2
+--- ("$name is $age"):gsub( "%$(%w+)", { name = "Bob" } ) --> "Bob is $age", 2
+--- ("1 2 3"):gsub( "%d", function( d ) return d * 2 end ) --> "2 4 6", 3
+--- ```
+---
+--- ---
+---
+--- ## Patterns
+---
+--- ### Character classes
+---
+--- A character class represents a set of characters:
+---
+--- | Class | Matches |
+--- |:------|:--------|
+--- | `x` | The character `x` itself, where `x` is not one of the magic characters `^$()%.[]*+-?`. |
+--- | `.` | Any character. |
+--- | `%a` | Letters. |
+--- | `%c` | Control characters. |
+--- | `%d` | Digits (`0-9`). |
+--- | `%l` | Lowercase letters. |
+--- | `%p` | Punctuation characters. |
+--- | `%s` | Whitespace characters (space, `\t`, `\n`, `\v`, `\f`, `\r`). |
+--- | `%u` | Uppercase letters. |
+--- | `%w` | Alphanumeric characters. |
+--- | `%x` | Hexadecimal digits. |
+--- | `%z` | The character `\0`. |
+--- | `%A`, `%S`, ... | The uppercase version of any class above is its complement, e.g. `%S` is any non-whitespace character. |
+--- | `%.`, `%%`, ... | `%` followed by a non-alphanumeric character represents that character literally. This is the standard way to escape magic characters; any punctuation character may be escaped this way. |
+--- | `[set]` | Any character in `set`. Ranges are written with `-` between the end characters (`a-z`), and `%` classes may be used inside. E.g. `[%w_]` matches alphanumerics and `_`, `[0-7]` octal digits, `[0-7%l%-]` octal digits, lowercase letters and `-`. |
+--- | `[^set]` | Any character **not** in `set`. |
+---
+--- > **NOTE**: Mixing ranges and classes, like `[%a-z]` or `[a-%%]`, is undefined.
+---
+--- > **NOTE**: Letters, whitespace and other classes depend on the current locale, so `[a-z]` is not necessarily equivalent to `%l`.
+---
+--- ### Pattern items
+---
+--- | Item | Matches |
+--- |:-----|:--------|
+--- | `c` | A single character from class `c`. |
+--- | `c*` | 0 or more characters from `c`, as many as possible (greedy). |
+--- | `c+` | 1 or more characters from `c`, as many as possible (greedy). |
+--- | `c-` | 0 or more characters from `c`, as few as possible (lazy). |
+--- | `c?` | 0 or 1 character from `c`. |
+--- | `%1` - `%9` | A substring equal to the n-th captured string. |
+--- | `%bxy` | A balanced substring that starts with `x` and ends with `y`, e.g. `%b()` matches an expression with balanced parentheses. |
+--- | `%f[set]` | A *frontier*: an empty match at a position where the previous character is not in `set` and the next one is. The start and end of the subject count as `\0`. |
+---
+--- Quantifiers only apply to a single character class: there is no grouping like `(ab)*` and no alternation like `a|b`.
+---
+--- ### Anchors
+---
+--- `^` at the beginning of a pattern anchors the match at the start of the subject, and `$` at the end anchors it at the end. Anywhere else they represent themselves.
+---
+--- ### Captures
+---
+--- Parts of a pattern enclosed in parentheses are captures; the substrings they match are returned separately. Captures are numbered by their left parenthesis: in `"(a*(.)%w(%s*))"` capture 1 is the whole match, 2 is the `.` and 3 is the `%s*`.
+---
+--- The empty capture `()` captures the current position (a number) instead of a substring: `("flaaap"):match( "()aa()" )` returns `3, 5`.
+---
+--- A pattern can have at most 32 captures.
+---
+--- ### Examples
+---
+--- ```lua
+--- ("key = value"):match( "^(%w+)%s*=%s*(%w+)$" ) --> "key", "value"
+--- ("  trim me  "):match( "^%s*(.-)%s*$" )        --> "trim me"
+--- ("f(a(b)c)d"):match( "%b()" )                  --> "(a(b)c)"
+--- ("THE (quick) fox"):find( "%f[%a]%a+%f[%A]" )  --> 1, 3
+--- ("1.5"):find( "%." )                           --> 2, 2
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.gsub)
 ---
@@ -113,7 +407,9 @@ function string.gsub( s, pattern, repl, n ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns its length.
+--- Returns the length of the string in bytes. Embedded zeros are counted, so `("a\0b"):len()` is `3`.
+---
+--- > **NOTE**: For UTF-8 text this is the number of bytes, not characters.
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.len)
 ---
@@ -124,7 +420,9 @@ function string.len( s ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a copy of this string with all uppercase letters changed to lowercase.
+--- Returns a copy of the string with all uppercase letters changed to lowercase. All other characters are left unchanged.
+---
+--- > **NOTE**: What counts as an uppercase letter depends on the current locale; non-ASCII UTF-8 characters are not affected.
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.lower)
 ---
@@ -135,36 +433,86 @@ function string.lower( s ) end
 
 --- [SHARED AND MENU]
 ---
---- Looks for the first match of `pattern` (see [§6.4.1](http://www.lua.org/manual/5.1/manual.html#6.4.1)) in the string.
+--- Looks for the first match of `pattern` in the string `str`.
 ---
---- If it finds one, `match` returns the captures; otherwise it returns nil.
+--- If it finds one, `match` returns the captures from the pattern; otherwise it returns `nil`. If `pattern` has no captures, the whole match is returned.
 ---
---- | Key  | Description                             |
---- |:-----|:----------------------------------------|
---- | `x`  | (where x is not one of the magic characters ^$()%.[]*+-?) represents the character x itself. |
---- | `.`  | (a dot) represents all characters.      |
---- | `%a` | Represents all letters.                 |
---- | `%c` | Represents all control characters.      |
---- | `%d` | Represents all digits.                  |
---- | `%l` | Represents all lowercase letters.       |
---- | `%p` | Represents all punctuation characters.  |
---- | `%s` | Represents all space characters.        |
---- | `%S` | Represents all non-space characters.    |
---- | `%u` | Represents all uppercase letters.       |
---- | `%w` | Represents all alphanumeric characters. |
---- | `%x` | Represents all hexadecimal digits.      |
---- | `%z` | Represents the character with representation 0. |
---- | `%x` | (where x is any non-alphanumeric character) represents the character x. This is the standard way to escape the magic characters. Any punctuation character (even the non magic) can be preceded by a '%' when used to represent itself in a pattern. |
---- | `[set]` | Represents the class which is the union of all characters in set. A range of characters can be specified by separating the end characters of the range with a '-'. All classes %x described above can also be used as components in set. All other characters in set represent themselves. For example, [%w_] (or [_%w]) represents all alphanumeric characters plus the underscore, [0-7] represents the octal digits, and [0-7%l%-] represents the octal digits plus the lowercase letters plus the '-' character. |
---- | `[^set]` | Represents the complement of set, where set is interpreted as above. |
+--- `start_position` specifies where to start the search; it defaults to `1` and can be negative.
 ---
---- > The interaction between ranges and classes is not defined. Therefore, patterns like `[%a-z]` or `[a-%%]` have no meaning.
+--- ```lua
+--- ("hello world"):match( "%a+" )              --> "hello"
+--- ("hello world"):match( "%a+", 7 )           --> "world"
+--- ("2024-05-17"):match( "(%d+)-(%d+)-(%d+)" ) --> "2024", "05", "17"
+--- ("hello"):match( "%d" )                     --> nil
+--- ```
 ---
---- For all classes represented by single letters (`%a`, `%c`, etc.), the corresponding uppercase letter represents the complement of the class.
+--- ---
 ---
---- The definitions of letter, space, and other character groups depend on the current locale.
+--- ## Patterns
 ---
---- In particular, the class `[a-z]` may not be equivalent to `%l`.
+--- ### Character classes
+---
+--- A character class represents a set of characters:
+---
+--- | Class | Matches |
+--- |:------|:--------|
+--- | `x` | The character `x` itself, where `x` is not one of the magic characters `^$()%.[]*+-?`. |
+--- | `.` | Any character. |
+--- | `%a` | Letters. |
+--- | `%c` | Control characters. |
+--- | `%d` | Digits (`0-9`). |
+--- | `%l` | Lowercase letters. |
+--- | `%p` | Punctuation characters. |
+--- | `%s` | Whitespace characters (space, `\t`, `\n`, `\v`, `\f`, `\r`). |
+--- | `%u` | Uppercase letters. |
+--- | `%w` | Alphanumeric characters. |
+--- | `%x` | Hexadecimal digits. |
+--- | `%z` | The character `\0`. |
+--- | `%A`, `%S`, ... | The uppercase version of any class above is its complement, e.g. `%S` is any non-whitespace character. |
+--- | `%.`, `%%`, ... | `%` followed by a non-alphanumeric character represents that character literally. This is the standard way to escape magic characters; any punctuation character may be escaped this way. |
+--- | `[set]` | Any character in `set`. Ranges are written with `-` between the end characters (`a-z`), and `%` classes may be used inside. E.g. `[%w_]` matches alphanumerics and `_`, `[0-7]` octal digits, `[0-7%l%-]` octal digits, lowercase letters and `-`. |
+--- | `[^set]` | Any character **not** in `set`. |
+---
+--- > **NOTE**: Mixing ranges and classes, like `[%a-z]` or `[a-%%]`, is undefined.
+---
+--- > **NOTE**: Letters, whitespace and other classes depend on the current locale, so `[a-z]` is not necessarily equivalent to `%l`.
+---
+--- ### Pattern items
+---
+--- | Item | Matches |
+--- |:-----|:--------|
+--- | `c` | A single character from class `c`. |
+--- | `c*` | 0 or more characters from `c`, as many as possible (greedy). |
+--- | `c+` | 1 or more characters from `c`, as many as possible (greedy). |
+--- | `c-` | 0 or more characters from `c`, as few as possible (lazy). |
+--- | `c?` | 0 or 1 character from `c`. |
+--- | `%1` - `%9` | A substring equal to the n-th captured string. |
+--- | `%bxy` | A balanced substring that starts with `x` and ends with `y`, e.g. `%b()` matches an expression with balanced parentheses. |
+--- | `%f[set]` | A *frontier*: an empty match at a position where the previous character is not in `set` and the next one is. The start and end of the subject count as `\0`. |
+---
+--- Quantifiers only apply to a single character class: there is no grouping like `(ab)*` and no alternation like `a|b`.
+---
+--- ### Anchors
+---
+--- `^` at the beginning of a pattern anchors the match at the start of the subject, and `$` at the end anchors it at the end. Anywhere else they represent themselves.
+---
+--- ### Captures
+---
+--- Parts of a pattern enclosed in parentheses are captures; the substrings they match are returned separately. Captures are numbered by their left parenthesis: in `"(a*(.)%w(%s*))"` capture 1 is the whole match, 2 is the `.` and 3 is the `%s*`.
+---
+--- The empty capture `()` captures the current position (a number) instead of a substring: `("flaaap"):match( "()aa()" )` returns `3, 5`.
+---
+--- A pattern can have at most 32 captures.
+---
+--- ### Examples
+---
+--- ```lua
+--- ("key = value"):match( "^(%w+)%s*=%s*(%w+)$" ) --> "key", "value"
+--- ("  trim me  "):match( "^%s*(.-)%s*$" )        --> "trim me"
+--- ("f(a(b)c)d"):match( "%b()" )                  --> "(a(b)c)"
+--- ("THE (quick) fox"):find( "%f[%a]%a+%f[%A]" )  --> 1, 3
+--- ("1.5"):find( "%." )                           --> 2, 2
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.match)
 ---
@@ -177,9 +525,11 @@ function string.match( str, pattern, start_position ) end
 
 ---@version >5.3
 ---
---- Returns a binary string containing the values `v1`, `v2`, etc. packed (that is, serialized in binary form) according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
+--- Returns a binary string containing the values `v1`, `v2`, etc. packed (that is, serialized in binary form) according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.3/manual.html#6.4.2)).
 ---
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.pack)
+--- > **NOTE**: Not available in LuaJIT.
+---
+--- [View documents](http://www.lua.org/manual/5.3/manual.html#pdf-string.pack)
 ---
 ---@param fmt string
 ---@param v1  string|number
@@ -191,9 +541,11 @@ function string.pack( fmt, v1, v2, ... ) end
 
 ---@version >5.3
 ---
---- Returns the length of a string resulting from `string.pack` with the given format string `fmt`. The format string cannot contain the variable-length options `s` or `z` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)).
+--- Returns the length of a string resulting from `string.pack` with the given format string `fmt`. The format string cannot contain the variable-length options `s` or `z` (see [§6.4.2](http://www.lua.org/manual/5.3/manual.html#6.4.2)).
 ---
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.packsize)
+--- > **NOTE**: Not available in LuaJIT.
+---
+--- [View documents](http://www.lua.org/manual/5.3/manual.html#pdf-string.packsize)
 ---
 ---@param fmt string
 ---@return integer
@@ -202,7 +554,14 @@ function string.packsize( fmt ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a string that is the concatenation of `n` copies of the string `s` separated by the string `sep`.
+--- Returns a string that is the concatenation of `n` copies of the string `s`, separated by the string `sep` (if given).
+---
+--- Returns an empty string if `n` is not positive.
+---
+--- ```lua
+--- ("ab"):rep( 3 )      --> "ababab"
+--- ("ab"):rep( 3, ", " ) --> "ab, ab, ab"
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.rep)
 ---
@@ -215,7 +574,9 @@ function string.rep( s, n, sep ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a string that is the string `s` reversed.
+--- Returns the string `s` reversed.
+---
+--- > **NOTE**: Works on bytes, so multi-byte UTF-8 characters will be broken.
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.reverse)
 ---
@@ -226,7 +587,16 @@ function string.reverse( s ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns the substring of the string that starts at `i` and continues until `j`.
+--- Returns the substring of `s` that starts at `i` and continues until `j` (inclusive).
+---
+--- `j` defaults to `-1` (the end of the string). Both `i` and `j` can be negative.
+---
+--- ```lua
+--- ("hello"):sub( 2 )      --> "ello"
+--- ("hello"):sub( 2, 4 )   --> "ell"
+--- ("hello"):sub( -3 )     --> "llo"
+--- ("hello"):sub( 2, -2 )  --> "ell"
+--- ```
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.sub)
 ---
@@ -239,9 +609,13 @@ function string.sub( s, i, j ) end
 
 ---@version >5.3
 ---
---- Returns the values packed in string according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.1/manual.html#6.4.2)) .
+--- Returns the values packed in string `s` according to the format string `fmt` (see [§6.4.2](http://www.lua.org/manual/5.3/manual.html#6.4.2)), followed by the index of the first unread byte in `s`.
 ---
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.unpack)
+--- `pos` specifies where to start reading; it defaults to `1`.
+---
+--- > **NOTE**: Not available in LuaJIT.
+---
+--- [View documents](http://www.lua.org/manual/5.3/manual.html#pdf-string.unpack)
 ---
 ---@param fmt  string
 ---@param s    string
@@ -252,7 +626,9 @@ function string.unpack( fmt, s, pos ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns a copy of this string with all lowercase letters changed to uppercase.
+--- Returns a copy of the string with all lowercase letters changed to uppercase. All other characters are left unchanged.
+---
+--- > **NOTE**: What counts as a lowercase letter depends on the current locale; non-ASCII UTF-8 characters are not affected.
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.upper)
 ---
