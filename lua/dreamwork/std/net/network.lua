@@ -323,13 +323,13 @@ end
 if LUA_SERVER then
 
     ---@class dreamwork.std.Network.Thread
-    ---@field owner Player | nil
+    ---@field owner garrysmod.Player | nil
     ---@field value thread
     ---@field time number
     ---@type dreamwork.std.Network.Thread[]
     local outgoing_activity = { [ 0 ] = 0 }
 
-    ---@type table<Player, table<integer, thread>>
+    ---@type table<garrysmod.Player, table<integer, thread>>
     local outgoing_transmissions = {}
 
     setmetatable( outgoing_transmissions, {
@@ -360,7 +360,7 @@ if LUA_SERVER then
     end )
 
     ---@param network dreamwork.std.Network
-    ---@param client Player
+    ---@param client garrysmod.Player
     local function update_outgoing( network, client )
         local network_id = network_to_index[ network ]
 
@@ -388,7 +388,7 @@ if LUA_SERVER then
         }
     end
 
-    ---@param client Player
+    ---@param client garrysmod.Player
     ---@param network dreamwork.std.Network
     local function kill_outgoing( network, client )
         local network_id = network_to_index[ network ]
@@ -421,7 +421,7 @@ if LUA_SERVER then
     end
 
     ---@param network dreamwork.std.Network
-    ---@param client Player
+    ---@param client garrysmod.Player
     ---@param segments string[]
     ---@param total_segments integer
     ---@async
@@ -497,7 +497,7 @@ if LUA_SERVER then
 
     ---@param network dreamwork.std.Network
     ---@param data string
-    ---@param client Player
+    ---@param client garrysmod.Player
     local function transmit( network, data, client )
         print()
         dreamwork.Logger:info( "Started transmission for %s", client )
@@ -537,7 +537,7 @@ if LUA_SERVER then
     end
 
     ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.buffer.Writer )
-    ---@param client Player
+    ---@param client garrysmod.Player
     ---@return thread | nil
     function Network:transmit( fn, client )
         local writer = std.buffer.Writer()
@@ -551,7 +551,7 @@ if LUA_SERVER then
     ---@param network_id integer
     ---@param unreliable boolean
     ---@param remaining_bits integer
-    ---@param sender Player | nil
+    ---@param sender garrysmod.Player | nil
     engine.hookCatch( "dreamwork.network.message.incoming", "network.server.handler", function( network_id, unreliable, remaining_bits, sender )
         local networks = outgoing_transmissions[ sender ]
         if networks ~= nil and unreliable then

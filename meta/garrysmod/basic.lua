@@ -1,5 +1,6 @@
 ---@meta garrysmod
 
+
 --- [SHARED AND MENU]
 ---
 --- Returns the current synchronous server uptime in seconds (to at least 4 decimal places).

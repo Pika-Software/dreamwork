@@ -8,6 +8,8 @@ local engine_hookCall = engine.hookCall
 local engine_consoleCommandRun = engine.consoleCommandRun
 local engine_consoleVariableGet = engine.consoleVariableGet
 local engine_consoleVariableCreate = engine.consoleVariableCreate
+local engine_consoleVariableRemove = engine.consoleVariableRemove
+local engine_consoleVariableExists = engine.consoleVariableExists
 
 local LUA_SERVER = std.LUA_SERVER
 
@@ -45,20 +47,8 @@ local setmetatable = std.setmetatable
 local Hook = std.Hook
 
 
----@diagnostic disable-next-line: undefined-doc-class
----@class dreamwork.GModConVar : ConVar
----@field GetInt fun( self: dreamwork.GModConVar ): integer
----@field GetBool fun( self: dreamwork.GModConVar ): boolean
----@field GetFloat fun( self: dreamwork.GModConVar ): number
----@field GetString fun( self: dreamwork.GModConVar ): string
----@field GetDefault fun( self: dreamwork.GModConVar ): string
----@field GetMin fun( self: dreamwork.GModConVar ): number
----@field GetMax fun( self: dreamwork.GModConVar ): number
----@field GetName fun( self: dreamwork.GModConVar ): string
----@field GetHelpText fun( self: dreamwork.GModConVar ): string
----@field GetFlags fun( self: dreamwork.GModConVar ): integer
----@field IsFlagSet fun( self: dreamwork.GModConVar, flag: integer ): boolean
-local GModConVar = debug.findmetatable( "ConVar" ) or {}
+---@class garrysmod.console.Variable
+local GModConVar = debug.findmetatable( "ConVar" )
 
 local GModConVar_getInt = GModConVar.GetInt
 local GModConVar_getBool = GModConVar.GetBool
@@ -75,7 +65,7 @@ local GModConVar_getDefault = GModConVar.GetDefault
 local GModConVar_getMin, GModConVar_getMax = GModConVar.GetMin, GModConVar.GetMax
 
 
----@type table<dreamwork.std.console.Variable, dreamwork.GModConVar>
+---@type table<dreamwork.std.console.Variable, garrysmod.console.Variable>
 local variable_to_gmodconvar = {}
 
 ---@type table<dreamwork.std.console.Variable, string>
@@ -378,6 +368,11 @@ function Variable:__newindex( str_key, value )
     end
 end
 
+-- ---@protected
+-- function Variable:__gc()
+--     engine_consoleVariableRemove( gmodconvar_names[ self ] )
+-- end
+
 ---@param options dreamwork.std.console.VariableOptions
 ---@protected
 function Variable:__init( options )
@@ -473,7 +468,6 @@ function VariableClass:__new( str_name )
     return variables[ str_name ]
 end
 
-local engine_consoleVariableExists = engine.consoleVariableExists
 VariableClass.exists = engine_consoleVariableExists
 
 --- [SHARED AND MENU]
@@ -605,25 +599,19 @@ function VariableClass.revert( name )
     engine_consoleCommandRun( name, GModConVar_getDefault( object ) )
 end
 
-do
-
-    local GModConVar_getHelpText = GModConVar.GetHelpText
-
-    --- [SHARED AND MENU]
-    ---
-    --- Gets the help text of the `console.Variable` object.
-    ---
-    ---@param name string The name of the console variable.
-    ---@return string help The help text of the `console.Variable` object.
-    function VariableClass.getDescription( name )
-        local object = engine_consoleVariableGet( name )
-        if object == nil then
-            return ""
-        end
-
-        return GModConVar_getHelpText( object )
+--- [SHARED AND MENU]
+---
+--- Gets the help text of the `console.Variable` object.
+---
+---@param name string The name of the console variable.
+---@return string help The help text of the `console.Variable` object.
+function VariableClass.getDescription( name )
+    local object = engine_consoleVariableGet( name )
+    if object == nil then
+        return ""
     end
 
+    return GModConVar_getDescription( object )
 end
 
 --- [SHARED AND MENU]
@@ -642,8 +630,6 @@ function VariableClass.getDefault( name )
 end
 
 do
-
-    local GModConVar_getFlags = GModConVar.GetFlags
 
     --- [SHARED AND MENU]
     ---

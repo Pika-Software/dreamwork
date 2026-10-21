@@ -33,43 +33,42 @@ local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_select = raw.select
 
+local os = std.os
+
 local rbit = raw.bit
 local rbit_band = rbit.band
 
 local setmetatable = std.setmetatable
 local error = std.error
+local pcall = std.pcall
 local is = std.is
 
 
----@class Entity : metatable
----@field EntIndex fun( self: Entity ): integer
+---@class garrysmod.Entity : metatable
 local EntityMetatable = debug.initmetatable( "Entity" )
 
----@class Player : metatable
----@field AccountID fun( self: Player ): integer | nil
----@field UserID fun( self: Player ): integer
----@field IsBot fun( self: Player ): boolean
----@field Nick fun( self: Player ): string
----@field Kick fun( self: Player, reason: string )
----@field ConCommand fun( self: Player, command: string )
+---@class garrysmod.Player : metatable
 local PlayerMetatable = debug.initmetatable( "Player" )
 PlayerMetatable.__parent = EntityMetatable
 
----@class Weapon : metatable
+---@class garrysmod.Weapon : metatable
 local WeaponMetatable = debug.initmetatable( "Weapon" )
 WeaponMetatable.__parent = EntityMetatable
 
----@class Vehicle : metatable
+---@class garrysmod.Vehicle : metatable
 local VehicleMetatable = debug.initmetatable( "Vehicle" )
 VehicleMetatable.__parent = EntityMetatable
 
----@class NPCMetatable : metatable
+---@class garrysmod.NPC : metatable
 local NPCMetatable = debug.initmetatable( "NPC" )
 NPCMetatable.__parent = EntityMetatable
 
----@class NextBot : metatable
+---@class garrysmod.NextBot : metatable
 local NextBotMetatable = debug.initmetatable( "NextBot" )
 NextBotMetatable.__parent = EntityMetatable
+
+---@class garrysmod.console.Variable : metatable
+local ConVarMetatable = debug.initmetatable( "ConVar" )
 
 ---@class IMaterial : metatable
 
@@ -318,7 +317,7 @@ do
 
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@param command string
-    ---@param pl Player | nil
+    ---@param pl garrysmod.Player | nil
     ---@param args string[]
     ---@param argument_string string
     ---@return boolean
@@ -485,7 +484,7 @@ do
         event_handlers[ "PreCleanupMap" ]             = handler_empty
 
         ---@param handlers dreamwork.engine.hook.Handler[]
-        ---@param entity Entity
+        ---@param entity garrysmod.Entity
         ---@param is_full_update boolean
         event_handlers[ "EntityRemoved" ]             = function( handlers, entity, is_full_update )
             is_full_update = is_full_update == true
@@ -496,7 +495,7 @@ do
         end
 
         ---@param handlers dreamwork.engine.hook.Handler[]
-        ---@param entity Entity
+        ---@param entity garrysmod.Entity
         ---@param is_player boolean
         event_handlers[ "dreamwork.entity.spawn" ]    = function( handlers, entity, is_player )
             if not is_player and debug_getmetatable( entity ) == PlayerMetatable then
@@ -509,7 +508,7 @@ do
         end
 
         ---@param handlers dreamwork.engine.hook.Handler[]
-        ---@param entity Entity
+        ---@param entity garrysmod.Entity
         ---@param is_player boolean
         event_handlers[ "dreamwork.entity.destroy" ]  = function( handlers, entity, is_player )
             if not is_player and debug_getmetatable( entity ) == PlayerMetatable then
@@ -530,7 +529,7 @@ do
         end
 
         ---@param handlers dreamwork.engine.hook.Handler[]
-        ---@param entities Entity[]
+        ---@param entities garrysmod.Entity[]
         ---@param entity_count integer
         event_handlers[ "dreamwork.entity.registry" ] = function( handlers, entities, entity_count )
             for i = 1, handlers[ 0 ], 1 do
@@ -554,7 +553,7 @@ do
         ---@param network_id integer
         ---@param unreliable boolean
         ---@param remaining_bits integer
-        ---@param sender Player | nil
+        ---@param sender garrysmod.Player | nil
         ---@return boolean
         event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
             for i = 1, handlers[ 0 ], 1 do
@@ -851,7 +850,7 @@ if LUA_CLIENT or LUA_SERVER then
             object_destroyed( "EntityID", Entity_EntIndex( entity ) )
 
             if is( entity, PlayerMetatable ) then
-                ---@cast entity Player
+                ---@cast entity garrysmod.Player
 
                 object_destroyed( "Player", entity )
                 object_destroyed( "UserID", Player_UserID( entity ) )
@@ -896,8 +895,6 @@ end
 
 do
 
-    ---@alias dreamwork.engine.consoleCommandCatch_fn fun( ply: Player, cmd: string, args: string[], argument_string: string ): boolean?
-
     local concommand = _G.concommand
     if concommand == nil then
         ---@diagnostic disable-next-line: inject-field
@@ -906,7 +903,7 @@ do
 
     local fallback_exists = concommand.Run ~= nil
 
-    ---@param ply Player
+    ---@param ply garrysmod.Player
     ---@param cmd string
     ---@param args string[]
     ---@param argument_string string
@@ -930,102 +927,6 @@ do
     concommand.AutoComplete = detour.simple( function( cmd, argument_string, args )
         return engine_hookCall( "dreamwork.console.command.autocomplete", cmd, argument_string, args )
     end, concommand.AutoComplete )
-
-end
-
-do
-
-    ---@type fun(name: string): dreamwork.GModConVar | nil
-    ---@diagnostic disable-next-line: undefined-field
-    local GetConVar_Internal = _G.GetConVar_Internal or debug_fempty
-
-    ---@type fun(name: string): boolean
-    ---@diagnostic disable-next-line: undefined-field
-    local ConVarExists = _G.ConVarExists or debug_fempty
-
-    ---@type fun( name: string, value: string, flags: ( integer | nil ), description: ( string | nil ), min_value: ( number | nil ), max_value: ( number | nil ) ): dreamwork.GModConVar
-    ---@diagnostic disable-next-line: undefined-field
-    local CreateConVar = _G.CreateConVar or debug_fempty
-
-    --- [SHARED AND MENU]
-    ---
-    --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
-    ---
-    ---@type table<string, dreamwork.GModConVar>
-    local console_variables = {}
-
-    ---@type metatable<string, dreamwork.GModConVar>
-    local metatable = {
-        __mode = "v"
-    }
-
-    ---@type table<string, boolean>
-    local blacklist = {}
-
-    function metatable:__index( name )
-        if blacklist[ name ] then
-            return nil
-        end
-
-        local console_variable = GetConVar_Internal( name )
-        if console_variable == nil then
-            if ConVarExists( name ) then
-                blacklist[ name ] = true
-            end
-
-            return nil
-        end
-
-        console_variables[ name ] = console_variable
-
-        return console_variable
-    end
-
-    std.setmetatable( console_variables, metatable )
-
-    engine.ConsoleVariables = console_variables
-
-    --- [SHARED AND MENU]
-    ---
-    --- Get console variable C object (userdata).
-    ---
-    ---@param name string The name of the console variable.
-    ---@return dreamwork.GModConVar? cvar The console variable object.
-    function engine.consoleVariableGet( name )
-        return console_variables[ name ]
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Create console variable C object (userdata).
-    ---
-    ---@param name string The name of the console variable.
-    ---@param default string The default value of the console variable.
-    ---@param flags? integer The flags of the console variable.
-    ---@param description? string The description of the console variable.
-    ---@param min? number The minimum value of the console variable.
-    ---@param max? number The maximum value of the console variable.
-    ---@return dreamwork.GModConVar? cvar The console variable object.
-    function engine.consoleVariableCreate( name, default, flags, description, min, max )
-        local variable = console_variables[ name ]
-        if variable == nil then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            variable = CreateConVar( name, default, flags, description, min, max )
-            console_variables[ name ] = variable
-        end
-
-        return variable
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the console variable exists.
-    ---
-    ---@param name string The name of the console variable.
-    ---@return boolean exists `true` if the console variable exists, `false` otherwise.
-    function engine.consoleVariableExists( name )
-        return console_variables[ name ] ~= nil or ConVarExists( name )
-    end
 
 end
 
@@ -1077,6 +978,205 @@ if engine.consoleCommandRun == nil then
     ---@diagnostic disable-next-line: undefined-field
     engine.consoleCommandRun = _G.RunConsoleCommand or function( name, ... )
         raw.print( "dreamwork.engine.consoleCommandRun", name, ... )
+    end
+
+end
+
+do
+
+    local ConVarExists = _G.ConVarExists or debug_fempty
+    local CreateConVar = _G.CreateConVar or debug_fempty
+
+    local GetConVar
+    local RemoveConVar
+    local SetConVar
+
+    local cvar = _G.cvar
+    if cvar ~= nil then
+        GetConVar = cvar.Find
+        RemoveConVar = cvar.Unregister
+        SetConVar = cvar.SetValue
+    end
+
+    if GetConVar == nil then
+        GetConVar = _G.GetConVar_Internal or _G.GetConVar or debug_fempty
+    end
+
+    if RemoveConVar == nil then
+        RemoveConVar = debug_fempty
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- A registry of used console variables, mapped by their names to their ConVar objects (engine `userdata`).
+    ---
+    ---@type table<string, garrysmod.console.Variable>
+    local console_variables = {}
+
+    ---@type table<string, boolean>
+    local blacklist = {}
+
+    if SetConVar == nil then
+
+        local engine_consoleCommandRun = engine.consoleCommandRun
+
+        local ConVar_GetString = ConVarMetatable.GetString
+        local ConVar_SetString = ConVarMetatable.SetString
+
+        blacklist[ "sv_cheats" ] = true
+
+        ---@param name string
+        ---@param value string
+        ---@return boolean success
+        function SetConVar( name, value )
+            local variable = console_variables[ name ]
+            if variable ~= nil then
+                if not pcall( ConVar_SetString, variable, value ) then
+                    engine_consoleCommandRun( name, value )
+                end
+
+                return ConVar_GetString( variable ) == value
+            end
+
+            return false
+        end
+
+    end
+
+    ---@type metatable<string, garrysmod.console.Variable>
+    local metatable = {
+        __mode = "v"
+    }
+
+    function metatable:__index( name )
+        if blacklist[ name ] then
+            return nil
+        end
+
+        local console_variable = GetConVar( name )
+        if console_variable == nil then
+            if ConVarExists( name ) then
+                blacklist[ name ] = true
+            end
+
+            return nil
+        end
+
+        console_variables[ name ] = console_variable
+
+        return console_variable
+    end
+
+    std.setmetatable( console_variables, metatable )
+
+    engine.ConsoleVariables = console_variables
+
+    --- [SHARED AND MENU]
+    ---
+    --- Gets a console variable's C object (userdata) by name.
+    ---
+    --- Existing console variables are loaded from the engine on first use and cached. Returns
+    --- `nil` if no such console variable exists, or if it exists but the engine doesn't hand out
+    --- its object.
+    ---
+    ---@see dreamwork.engine.consoleVariableCreate
+    ---@see dreamwork.engine.consoleVariableRemove
+    ---@see dreamwork.engine.consoleVariableExists
+    ---
+    ---@param name string The name of the console variable.
+    ---@return garrysmod.console.Variable? cvar The console variable object, or `nil`.
+    function engine.consoleVariableGet( name )
+        return console_variables[ name ]
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Creates a console variable and returns its C object (userdata).
+    ---
+    --- If a console variable with this name is already available through the registry, that
+    --- existing object is returned as is and `default`, `flags`, `description`, `min` and `max`
+    --- are ignored. Since the registry loads existing console variables lazily, this also
+    --- covers ones that already exist in the engine.
+    ---
+    --- Raises an error (reported at the caller's level) if the engine has a console variable
+    --- with this name but its object can't be obtained, or if the engine refuses to create it.
+    ---
+    ---@see dreamwork.engine.consoleVariableGet
+    ---@see dreamwork.engine.consoleVariableRemove
+    ---@see dreamwork.engine.consoleVariableExists
+    ---
+    ---@param name string The name of the console variable.
+    ---@param default string The default value of the console variable.
+    ---@param flags? integer The flags of the console variable (a combination of `FCVAR_*` values).
+    ---@param description? string The description of the console variable.
+    ---@param min? number The minimum value of the console variable.
+    ---@param max? number The maximum value of the console variable.
+    ---@return garrysmod.console.Variable cvar The console variable object.
+    function engine.consoleVariableCreate( name, default, flags, description, min, max )
+        ---@type garrysmod.console.Variable | nil
+        local variable = console_variables[ name ]
+        if variable == nil then
+            if ConVarExists( name ) then
+                error( "console variable creation failed, already exists", 2 )
+            end
+
+            variable = CreateConVar( name, default, flags, description, min, max )
+            if variable == nil then
+                error( "console variable creation failed, restricted by the engine", 2 )
+            end
+
+            console_variables[ name ] = variable
+        end
+
+        return variable
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes a console variable that was registered through the engine module.
+    ---
+    --- Only variables tracked in the module's `console_variables` registry can be removed. If
+    --- `name` isn't in it, nothing is touched and `false` is returned, so built-in console
+    --- variables and ones created elsewhere are protected from this function.
+    ---
+    --- Otherwise the variable is removed from the engine, and the result tells you whether
+    --- the removal actually took effect: `true` if the console variable no longer exists
+    --- afterwards, `false` if it is still there.
+    ---
+    ---@see dreamwork.engine.consoleVariableGet
+    ---@see dreamwork.engine.consoleVariableCreate
+    ---@see dreamwork.engine.consoleVariableExists
+    ---
+    ---@param name string The name of the console variable.
+    ---@return boolean success `true` if the console variable no longer exists after the call, `false` if it wasn't registered here or couldn't be removed.
+    function engine.consoleVariableRemove( name )
+        if console_variables[ name ] == nil then
+            return false
+        end
+
+        -- console_variables[ name ] = nil
+        RemoveConVar( name )
+
+        return not ConVarExists( name )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if a console variable with the given name exists, whether it was registered
+    --- through the engine module or comes from the engine itself.
+    ---
+    --- Unlike `engine.consoleVariableRemove`, which only acts on variables in the module's
+    --- `console_variables` registry, this also reports built-in console variables and ones
+    --- created elsewhere, since it falls back to the engine's own `ConVarExists` check.
+    ---
+    ---@see dreamwork.engine.consoleVariableGet
+    ---@see dreamwork.engine.consoleVariableCreate
+    ---@see dreamwork.engine.consoleVariableRemove
+    ---
+    ---@param name string The name of the console variable.
+    ---@return boolean exists `true` if the console variable is registered in the module or exists in the engine, `false` otherwise.
+    function engine.consoleVariableExists( name )
+        return console_variables[ name ] ~= nil or ConVarExists( name )
     end
 
 end
@@ -1346,17 +1446,17 @@ end
 if LUA_CLIENT or LUA_SERVER then
 
     ---@class dreamwork.GModEntsLib
-    ---@field GetAll fun(): Entity[]
+    ---@field GetAll fun(): garrysmod.Entity[]
     ---@diagnostic disable-next-line: undefined-field
     local glua_ents = _G.ents
 
-    ---@type table<integer, Entity>
+    ---@type table<integer, garrysmod.Entity>
     local entity_list = glua_ents.GetAll()
 
     ---@type integer
     local entity_count = #entity_list
 
-    ---@type table<Entity, integer>
+    ---@type table<garrysmod.Entity, integer>
     local entity_map = {}
 
     for i = 1, entity_count, 1 do
@@ -1368,7 +1468,7 @@ if LUA_CLIENT or LUA_SERVER then
         local new_entities = glua_ents.GetAll()
         local new_count = #new_entities
 
-        ---@type table<Entity, integer>
+        ---@type table<garrysmod.Entity, integer>
         local new_map = {}
 
         local has_changes = false
@@ -1400,7 +1500,7 @@ if LUA_CLIENT or LUA_SERVER then
         end
     end, _G.InvalidateInternalEntityCache )
 
-    ---@return Entity[], integer
+    ---@return garrysmod.Entity[], integer
     function engine.getEntities()
         return entity_list, entity_count
     end
@@ -1821,12 +1921,12 @@ do
 
             local string_lower = string.lower
 
-            ---@type table<string, fun( remaining_bits: integer, sender: ( Player | nil ) )>
+            ---@type table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ) )>
             local receivers = glua_net.Receivers or {}
             glua_net.Receivers = receivers
 
             ---@param remaining_bits integer
-            ---@param sender Player
+            ---@param sender garrysmod.Player
             ---@diagnostic disable-next-line: duplicate-set-field
             function glua_net.Incoming( remaining_bits, sender )
                 local network_id = net_ReadUInt( header_size )

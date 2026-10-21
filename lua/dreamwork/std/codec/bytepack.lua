@@ -20,11 +20,9 @@ local setmetatable = std.setmetatable
 local error = std.error
 
 
----@alias dreamwork.std.bytepack.Sequence integer[] # The sequence of bytes (integers<0-255>).
-
 --- [SHARED AND MENU]
 ---
---- Library that packs/unpacks types as bytes.
+--- Library that packs & unpacks types as bytes.
 ---
 ---@class dreamwork.std.bytepack
 local bytepack = {}

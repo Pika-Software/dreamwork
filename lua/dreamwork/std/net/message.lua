@@ -76,7 +76,7 @@ function Message:attach( fn )
 end
 
 ---@param data string
----@param pl Player?
+---@param pl garrysmod.Player?
 function Message:send( data, pl, realm )
     local prefixes = sender2receivers[ receiver_prefix ]
     if prefixes == nil then

@@ -56,10 +56,10 @@ std.client = client
 ---@class dreamwork.std.Client : dreamwork.std.Object
 local Instance = std.class.base( "client.Instance", true )
 
----@type table<Player, dreamwork.std.Client>
+---@type table<garrysmod.Player, dreamwork.std.Client>
 local registry = {}
 
----@type metatable<Player, dreamwork.std.Client>
+---@type metatable<garrysmod.Player, dreamwork.std.Client>
 local metatable = {
     __mode = "k"
 }
@@ -94,7 +94,7 @@ local names = {}
 local gc_setTableRules = std.gc.setTableRules
 local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
 
----@type table<dreamwork.std.Client, Player>
+---@type table<dreamwork.std.Client, garrysmod.Player>
 local entities = {}
 gc_setTableRules( entities, true, true )
 

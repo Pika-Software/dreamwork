@@ -2575,8 +2575,6 @@ sendfile( "dreamwork/std/crypto/hmac.lua" )
 dofile( "dreamwork/std/crypto/pbkdf2.lua" )
 sendfile( "dreamwork/std/crypto/pbkdf2.lua" )
 
--- TODO: crypto.ed25519 & crypto.chacha20/xchacha
-
 -- uuid library
 dofile( "dreamwork/std/uuid.lua" )
 sendfile( "dreamwork/std/uuid.lua" )
@@ -2906,12 +2904,14 @@ do
 
 end
 
--- https://github.com/wrefgtzweve/gm_getregistry
-if debug.getregistry()._LOADED == nil then
-    logger:debug( "Native `debug.getregistry` is available, skipping custom implementation." )
+if HolyLib ~= nil and isFunction( HolyLib.GetRegistry ) then
+    -- https://github.com/RaphaelIT7/gmod-holylib
+    debug.setregistry( HolyLib.GetRegistry() )
+    logger:info( "`holylib` was connected, enjoy full access to `debug.getregistry`." )
 elseif std.loadbinary( "getregistry" ) and getregistry ~= nil then
+    -- https://github.com/wrefgtzweve/gm_getregistry
     debug.setregistry( (getregistry.Get or debug.getregistry)() )
-    logger:info( "'gm_getregistry' was loaded & connected, enjoy full access to `debug.getregistry`." )
+    logger:info( "`gm_getregistry` was loaded & connected, enjoy full access to `debug.getregistry`." )
 end
 
 do
