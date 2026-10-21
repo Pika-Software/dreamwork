@@ -170,6 +170,58 @@ do
 
 end
 
+do
+
+    ---@param index integer
+    ---@param ... any
+    ---@return any ...
+    local function reverse( index, ... )
+        if index == 1 then
+            return (...)
+        else
+            return (raw_select( index, ... )), reverse( index - 1, ... )
+        end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the argument list in reverse order.
+    ---
+    --- `nil` values are preserved.
+    ---
+    ---@param ... any The argument list to reverse.
+    ---@return any ... The reversed argument list.
+    function vararg.reverse( ... )
+        local count = raw_select( "#", ... )
+
+        if count < 2 then
+            return ...
+        elseif count == 2 then
+            local a, b = ...
+            return b, a
+        elseif count == 3 then
+            local a, b, c = ...
+            return c, b, a
+        elseif count == 4 then
+            local a, b, c, d = ...
+            return d, c, b, a
+        elseif count <= 16 then
+            return reverse( count, ... )
+        end
+
+        local tbl = { ... }
+        local i, j = 1, count
+
+        while i < j do
+            tbl[ i ], tbl[ j ] = tbl[ j ], tbl[ i ]
+            i, j = i + 1, j - 1
+        end
+
+        return table_unpack( tbl, 1, count )
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- Packs the argument list into a table.
