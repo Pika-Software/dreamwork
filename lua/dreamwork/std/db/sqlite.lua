@@ -1,9 +1,5 @@
----@class dreamwork.GModSQLLib
----@field Query fun( sql: string ): dreamwork.std.sqlite.QueryRow[] | false | nil
----@field m_strError string | nil
----@diagnostic disable-next-line: undefined-global
-local glua_sql = sql
-local sql_Query = glua_sql.Query
+local sql = sql
+local sql_Query = sql.Query
 
 local dreamwork_Logger = dreamwork.Logger
 
@@ -12,6 +8,8 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_next = raw.next
+local raw_pairs = raw.pairs
+local raw_select = raw.select
 
 local string = std.string
 local string_match = string.match
@@ -28,6 +26,7 @@ local pcall = std.pcall
 local error = std.error
 local type = std.type
 
+
 --- [SHARED AND MENU]
 ---
 --- The local SQLite library wrapper.
@@ -36,32 +35,13 @@ local type = std.type
 local sqlite = std.sqlite or {}
 std.sqlite = sqlite
 
----@alias dreamwork.std.sqlite.Query
----| "SELECT"
----| "INSERT"
----| "UPDATE"
----| "DELETE"
----| "CREATE"
----| "ALTER"
----| "DROP"
----| "BEGIN"
----| "COMMIT"
----| "ROLLBACK"
----| "PRAGMA"
----| "REPLACE"
----| "WITH"
----| string
-
----@alias dreamwork.std.sqlite.QueryValue boolean | integer | number | string
----@alias dreamwork.std.sqlite.QueryRow table<string, dreamwork.std.sqlite.QueryValue>
-
 --- [SHARED AND MENU]
 ---
 --- Returns the last error message from the last query.
 ---
 ---@return string | nil err_msg The last error message.
 function sqlite.getLastError()
-    return glua_sql.m_strError
+    return sql.m_strError
 end
 
 --- [SHARED AND MENU]
@@ -93,15 +73,15 @@ sqlite.escape = escape
 ---
 --- Executes a raw SQL query.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
----@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
+---@param str garrysmod.sql.Query The SQL query to execute.
+---@return garrysmod.sql.QueryRow[] | nil result The result of the query.
 local function query_raw( str )
     dreamwork_Logger:debug( "Executing SQL query: " .. str )
 
-    ---@type dreamwork.std.sqlite.QueryRow[] | false | nil
+    ---@type garrysmod.sql.QueryRow[] | false | nil
     local result = sql_Query( str )
     if result == false then
-        error( glua_sql.m_strError, 2 )
+        error( sql.m_strError, 2 )
     end
 
     return result
@@ -133,15 +113,15 @@ end
 ---
 --- Executes a SQL query with parameters.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
----@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
----@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
+---@param str garrysmod.sql.Query The SQL query to execute.
+---@param ... garrysmod.sql.QueryValue The parameters to use in the query.
+---@return garrysmod.sql.QueryRow[] | nil result The result of the query.
 local function query( str, ... )
     ---@type string[]
     local variables = {}
 
-    for index = 1, select( "#", ... ), 1 do
-        local value = select( index, ... )
+    for index = 1, raw_select( "#", ... ), 1 do
+        local value = raw_select( index, ... )
         if value == nil then
             variables[ index ] = "NULL"
         elseif isString( value ) then
@@ -165,7 +145,7 @@ local function query( str, ... )
 
     for j = 1, #result, 1 do
         local row = result[ j ]
-        for key, value in pairs( row ) do
+        for key, value in raw_pairs( row ) do
             ---@cast value string
             if isString( value ) and string_lower( value ) == "null" then
                 row[ key ] = nil
@@ -182,10 +162,10 @@ sqlite.query = query
 ---
 --- Executes a SQL query and returns a specific row.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
+---@param str garrysmod.sql.Query The SQL query to execute.
 ---@param row integer? The row to return.
----@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
----@return dreamwork.std.sqlite.QueryRow | nil result The selected row of the result.
+---@param ... garrysmod.sql.QueryValue The parameters to use in the query.
+---@return garrysmod.sql.QueryRow | nil result The selected row of the result.
 local function query_row( str, row, ... )
     local result = query( str, ... )
     if result == nil then
@@ -201,9 +181,9 @@ sqlite.queryRow = query_row
 ---
 --- Executes a SQL query and returns the first row.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
----@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
----@return dreamwork.std.sqlite.QueryRow | nil result The first row of the result.
+---@param str garrysmod.sql.Query The SQL query to execute.
+---@param ... garrysmod.sql.QueryValue The parameters to use in the query.
+---@return garrysmod.sql.QueryRow | nil result The first row of the result.
 local function query_first( str, ... )
     return query_row( str, 1, ... )
 end
@@ -214,9 +194,9 @@ sqlite.queryFirst = query_first
 ---
 --- Executes a SQL query and returns the first value of the first row.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
----@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
----@return dreamwork.std.sqlite.QueryValue | nil value The first value of the first row of the result.
+---@param str garrysmod.sql.Query The SQL query to execute.
+---@param ... garrysmod.sql.QueryValue The parameters to use in the query.
+---@return garrysmod.sql.QueryValue | nil value The first value of the first row of the result.
 function sqlite.queryValue( str, ... )
     local result = query_first( str, ... )
     if result ~= nil then
@@ -226,14 +206,12 @@ function sqlite.queryValue( str, ... )
     return nil
 end
 
----@alias dreamwork.std.sqlite.QueryFn fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): dreamwork.std.sqlite.QueryRow[] | nil
-
 --- [SHARED AND MENU]
 ---
 --- Executes a transaction of SQL queries in one block.
 ---
 ---@generic V
----@param fn fun( query_fn: dreamwork.std.sqlite.QueryFn ): V The function to execute all SQL queries in one transaction.
+---@param fn fun( query_fn: ( fun( str: garrysmod.sql.Query, ...: garrysmod.sql.QueryValue ): ( garrysmod.sql.QueryRow[] | nil ) ) ): V The function to execute all SQL queries in one transaction.
 ---@return V value The result of function execution.
 function sqlite.transaction( fn )
     query_raw( "begin" )
