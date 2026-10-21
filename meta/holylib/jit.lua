@@ -1,4 +1,4 @@
----@meta jit
+---@meta holylib.jit
 
 ---@version JIT
 ---@class jitlib
