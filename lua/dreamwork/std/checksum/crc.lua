@@ -1,5 +1,3 @@
----@class dreamwork.GModUtilLib
----@diagnostic disable-next-line: undefined-global
 local glua_util = util
 local util_CRC = glua_util ~= nil and glua_util.CRC
 

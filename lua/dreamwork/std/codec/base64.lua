@@ -1,7 +1,3 @@
----@class dreamwork.GModUtilLib
----@field Base64Encode fun( input_str: string, inline: true ): string
----@field Base64Decode fun( input_str: string ): string
----@diagnostic disable-next-line: undefined-global
 local glua_util = util
 local glue_encode = glua_util ~= nil and glua_util.Base64Encode
 local glue_decode = glua_util ~= nil and glua_util.Base64Decode

@@ -1,7 +1,3 @@
----@class dreamwork.GModUtilLib
----@field JSONToTable fun( json_str: string, ignore_limits: boolean?, ignore_conversions: boolean? ): table | nil
----@field TableToJSON fun( tbl: table, pretty_print: boolean? ): string | nil
----@diagnostic disable-next-line: undefined-global
 local glua_util = util
 local util_JSONToTable = glua_util.JSONToTable
 

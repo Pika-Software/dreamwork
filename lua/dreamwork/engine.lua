@@ -22,6 +22,7 @@ local debug_fempty = debug.fempty
 local debug_getmetatable = debug.getmetatable
 
 local string = std.string
+local string_lower = string.lower
 local string_format = string.format
 
 local table = std.table
@@ -1792,15 +1793,6 @@ end
 
 do
 
-    ---@class dreamwork.GModUtilLib
-    ---@field CRC fun( data: string ): string
-    ---@field MD5 fun( data: string ): string
-    ---@field SHA1 fun( data: string ): string
-    ---@field SHA256 fun( data: string ): string
-    ---@field AddNetworkString fun( network_name: string )
-    ---@field NetworkIDToString fun( network_id: integer ): string | nil
-    ---@field NetworkStringToID fun( network_name: string ): integer | nil
-    ---@diagnostic disable-next-line: undefined-field
     local glua_util = _G.util or {}
 
     if LUA_CLIENT or LUA_SERVER then
@@ -1941,21 +1933,13 @@ do
             return network_id
         end
 
-        ---@class dreamwork.GModNetLib
-        ---@field ReadBool fun(): boolean
-        ---@field WriteBool fun( value: boolean )
-        ---@field ReadUInt fun( bit_count: integer )
-        ---@diagnostic disable-next-line: undefined-field
         local glua_net = _G.net
         if glua_net ~= nil then
 
             local net_WriteBool = glua_net.WriteBool
             local net_ReadUInt = glua_net.ReadUInt
-            local net_ReadBool = glua_net.ReadBool
+            local net_ReadBit = glua_net.ReadBit
 
-            local string_lower = string.lower
-
-            ---@type table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ) )>
             local receivers = glua_net.Receivers or {}
             glua_net.Receivers = receivers
 
@@ -1964,7 +1948,7 @@ do
             ---@diagnostic disable-next-line: duplicate-set-field
             function glua_net.Incoming( remaining_bits, sender )
                 local network_id = net_ReadUInt( header_size )
-                local unreliable = net_ReadBool()
+                local unreliable = net_ReadBit() == 1
 
                 remaining_bits = remaining_bits - full_header_size
 

@@ -1,9 +1,10 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
--- https://holylib.raphaelit7.com/util
-local holylib_CompressLZ4 = util ~= nil and util.CompressLZ4
-local holylib_DecompressLZ4 = util ~= nil and util.DecompressLZ4
+-- TODO: https://holylib.raphaelit7.com/util
+local glua_util = util
+local holylib_CompressLZ4 = glua_util ~= nil and glua_util.CompressLZ4
+local holylib_DecompressLZ4 = glua_util ~= nil and glua_util.DecompressLZ4
 
 --- [SHARED AND MENU]
 ---

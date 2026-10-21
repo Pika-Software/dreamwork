@@ -8,6 +8,7 @@
 --- > NOTE: The major advantages of the net library are the large size limit (64kb/message) and the ability to send data backwards - from the client to the server.
 ---
 ---@class garrysmod.net
+---@field Receivers table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ) )>
 net = {}
 
 --- [SHARED]
