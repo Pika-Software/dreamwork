@@ -1,7 +1,7 @@
 ---@meta garrysmod.player
 
 
----@class garrysmod.Player : userdata
+---@class garrysmod.Player : garrysmod.Entity
 ---@field AccountID fun( self: garrysmod.Player ): integer | nil
 ---@field UserID fun( self: garrysmod.Player ): integer
 ---@field IsBot fun( self: garrysmod.Player ): boolean

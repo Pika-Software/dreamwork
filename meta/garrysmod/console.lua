@@ -7,7 +7,7 @@
 ---
 --- It represents a given console variable.
 ---
----@class garrysmod.console.Variable : userdata
+---@class garrysmod.console.Variable : metatable
 local Variable = {}
 
 --- [SHARED AND MENU]

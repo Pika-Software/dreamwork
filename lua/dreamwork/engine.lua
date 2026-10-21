@@ -44,30 +44,30 @@ local pcall = std.pcall
 local is = std.is
 
 
----@class garrysmod.Entity : metatable
+---@class garrysmod.Entity
 local EntityMetatable = debug.initmetatable( "Entity" )
 
----@class garrysmod.Player : metatable
+---@class garrysmod.Player
 local PlayerMetatable = debug.initmetatable( "Player" )
 PlayerMetatable.__parent = EntityMetatable
 
----@class garrysmod.Weapon : metatable
+---@class garrysmod.Weapon : garrysmod.Entity
 local WeaponMetatable = debug.initmetatable( "Weapon" )
 WeaponMetatable.__parent = EntityMetatable
 
----@class garrysmod.Vehicle : metatable
+---@class garrysmod.Vehicle : garrysmod.Entity
 local VehicleMetatable = debug.initmetatable( "Vehicle" )
 VehicleMetatable.__parent = EntityMetatable
 
----@class garrysmod.NPC : metatable
+---@class garrysmod.NPC : garrysmod.Entity
 local NPCMetatable = debug.initmetatable( "NPC" )
 NPCMetatable.__parent = EntityMetatable
 
----@class garrysmod.NextBot : metatable
+---@class garrysmod.NextBot : garrysmod.Entity
 local NextBotMetatable = debug.initmetatable( "NextBot" )
 NextBotMetatable.__parent = EntityMetatable
 
----@class garrysmod.console.Variable : metatable
+---@class garrysmod.console.Variable
 local ConVarMetatable = debug.initmetatable( "ConVar" )
 
 ---@class IMaterial : metatable
@@ -930,38 +930,69 @@ do
 
 end
 
-if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil then
+if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil or engine.consoleCommandBlocked == nil then
+
+    local IsConCommandBlocked = _G.IsConCommandBlocked or function() return false end
+    local AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
 
     ---@type table<string, boolean>
     local exists_commands = {}
 
+    ---@type table<string, boolean>
+    local blocked_commands = {}
+
+    setmetatable( blocked_commands, {
+        ---@param self table<string, boolean>
+        ---@param name string
+        __index = function( self, name )
+            local is_blocked = IsConCommandBlocked( name ) == true
+            self[ name ] = is_blocked
+            return is_blocked
+        end,
+    } )
+
     --- [SHARED AND MENU]
     ---
-    --- Checks if the console command exists.
+    --- Checks if the console command was registered through `engine.consoleCommandRegister`.
+    ---
+    --- This only knows about commands registered through this module, not commands that are
+    --- built into the engine or were added by other code, so a `false` result doesn't mean the
+    --- command doesn't exist in the engine.
     ---
     ---@param name string The name of the console command.
-    ---@return boolean exists `true` if the console command exists, `false` otherwise.
+    ---@return boolean exists `true` if the console command was registered through this module, `false` otherwise.
     function engine.consoleCommandExists( name )
         return exists_commands[ name ] ~= nil
     end
 
-    ---@type fun( name: string, description: string, flags: integer )
-    ---@diagnostic disable-next-line: undefined-field
-    local glua_AddConsoleCommand = _G.AddConsoleCommand or debug_fempty
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the console command is blocked, as reported by the engine's
+    --- `IsConCommandBlocked` (the engine's list of commands it refuses to run from Lua).
+    ---
+    --- The answer for each name is cached after the first check. Where `IsConCommandBlocked`
+    --- isn't available, nothing is considered blocked.
+    ---
+    ---@param name string The name of the console command.
+    ---@return boolean blocked `true` if the console command is blocked, `false` otherwise.
+    function engine.consoleCommandBlocked( name )
+        return blocked_commands[ name ]
+    end
 
     --- [SHARED AND MENU]
     ---
     --- Tells the engine to register a console command.
     ---
-    --- If the command was ran, the engine calls [_G.concommand.Run](https://wiki.facepunch.com/gmod/concommand.Run).
+    --- Registering is only done once per name: if the command was already registered through
+    --- this function, the call does nothing, and the new `description` and `flags` are ignored.
     ---
     ---@param name string The name of the console command.
     ---@param description string The description of the console command.
-    ---@param flags integer The bit flags of the console command.
+    ---@param flags integer The bit flags of the console command (a combination of `FCVAR_*` values).
     function engine.consoleCommandRegister( name, description, flags )
         if exists_commands[ name ] == nil then
+            AddConsoleCommand( name, description, flags )
             exists_commands[ name ] = true
-            glua_AddConsoleCommand( name, description, flags )
         end
     end
 
@@ -1013,22 +1044,22 @@ do
     ---@type table<string, garrysmod.console.Variable>
     local console_variables = {}
 
-    ---@type table<string, boolean>
-    local blacklist = {}
-
     if SetConVar == nil then
 
+        local engine_consoleCommandBlocked = engine.consoleCommandBlocked
         local engine_consoleCommandRun = engine.consoleCommandRun
 
         local ConVar_GetString = ConVarMetatable.GetString
         local ConVar_SetString = ConVarMetatable.SetString
 
-        blacklist[ "sv_cheats" ] = true
-
         ---@param name string
         ---@param value string
         ---@return boolean success
         function SetConVar( name, value )
+            if engine_consoleCommandBlocked( name ) then
+                return false
+            end
+
             local variable = console_variables[ name ]
             if variable ~= nil then
                 if not pcall( ConVar_SetString, variable, value ) then
@@ -1047,6 +1078,9 @@ do
     local metatable = {
         __mode = "v"
     }
+
+    ---@type table<string, boolean>
+    local blacklist = {}
 
     function metatable:__index( name )
         if blacklist[ name ] then

@@ -1,7 +1,3 @@
----@type fun( name: string ): boolean
----@diagnostic disable-next-line: undefined-global
-local IsConCommandBlocked = IsConCommandBlocked or function( str ) return false end
-
 local std = dreamwork.std
 
 ---@class dreamwork.std.console
@@ -10,6 +6,7 @@ local console = std.console
 local engine = dreamwork.engine
 local engine_hookCall = engine.hookCall
 local engine_consoleCommandRun = engine.consoleCommandRun
+local engine_consoleCommandBlocked = engine.consoleCommandBlocked
 local engine_consoleCommandRegister = engine.consoleCommandRegister
 
 local raw = std.raw
@@ -207,11 +204,9 @@ end
 ---
 ---@param name string The name of the console command.
 ---@return boolean is_blacklisted `true` if the console command is blacklisted, `false` otherwise.
-local function isBlacklisted( name )
-    return IsConCommandBlocked( name )
+function CommandClass.isBlacklisted( name )
+    return engine_consoleCommandBlocked( name )
 end
-
-CommandClass.isBlacklisted = isBlacklisted
 
 --- [SHARED AND MENU]
 ---
@@ -224,7 +219,7 @@ function Command:isBlacklisted()
         return false
     end
 
-    return isBlacklisted( name )
+    return engine_consoleCommandBlocked( name )
 end
 
 --- [SHARED AND MENU]
