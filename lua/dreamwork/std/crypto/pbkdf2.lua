@@ -7,13 +7,15 @@ local table = std.table
 local table_concat, table_unpack = table.concat, table.unpack
 
 local string = std.string
-local string_char, string_byte = string.char, string.byte
+local string_sub = string.sub
+local string_char = string.char
+local string_byte = string.byte
 
 local bit = std.bit
 local bit_bxor = bit.bxor
 
-local buffer = std.buffer
-local buffer_writeUInt32 = buffer.writeUInt32
+local bytepack = std.bytepack
+local bytepack_writeUInt32BE = bytepack.writeUInt32BE
 
 ---@class dreamwork.std.crypto
 local crypto = std.crypto
@@ -30,7 +32,7 @@ local hmac_compute = hmac.compute
 --- See [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2) for the algorithm.
 ---
 ---@param options dreamwork.std.pbkdf2.Options
----@return string pbkdf2_str The derived password as a hex string.
+---@return string pbkdf2_str The derived key as a binary string of `length` bytes.
 function crypto.pbkdf2( options )
     local pbkdf2_iterations = options.iterations or 4096
     local pbkdf2_length = options.length or 16
@@ -47,7 +49,7 @@ function crypto.pbkdf2( options )
     local blocks = {}
 
     for block = 1, block_count, 1 do
-        local u = hmac_compute( digest_fn, hmac_outer, hmac_inner, pbkdf2_salt .. buffer_writeUInt32( block, true ), false )
+        local u = hmac_compute( digest_fn, hmac_outer, hmac_inner, pbkdf2_salt .. string_char( bytepack_writeUInt32BE( block ) ), false )
         local t = { string_byte( u, 1, digest_size ) }
 
         for _ = 2, pbkdf2_iterations, 1 do
@@ -61,5 +63,5 @@ function crypto.pbkdf2( options )
         blocks[ block ] = string_char( table_unpack( t, 1, digest_size ) )
     end
 
-    return table_concat( blocks, "", 1, block_count )
+    return string_sub( table_concat( blocks, "", 1, block_count ), 1, pbkdf2_length )
 end
