@@ -28,14 +28,19 @@ local util_funcuvname = jit_util.funcuvname
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_get = raw.get
 local raw_type = raw.type
 local raw_pairs = raw.pairs
+local raw_tonumber = raw.tonumber
 
+---@class dreamwork.std.debug
 local debug = std.debug
 local debug_fempty = debug.fempty
 local debug_getfmain = debug.getfmain
+local debug_getmetatable = debug.getmetatable
 
 local error = std.error
+local getmetatable = std.getmetatable
 
 local debug_getinfo = debug.getinfo
 
@@ -327,13 +332,79 @@ do
     local fn = glua_jit.getffi
     if fn ~= nil then
         ---@type table
-        local ffi = {}
+        local ffi_copy = {}
 
-        for key, value in raw_pairs( fn() ) do
-            ffi[ key ] = value
+        ---@type ffilib
+        local ffi = fn()
+
+        local ffi_metatype = ffi.metatype
+        local ffi_typeof = ffi.typeof
+
+        for key, value in raw_pairs( ffi ) do
+            ffi_copy[ key ] = value
         end
 
-        std.ffi = ffi
+        ---@type table<integer, metatable>
+        local ctype_metatables = {}
+
+        ---@param ct        ffi.ct*
+        ---@param metatable metatable
+        ---@return ffi.ctype* ctype
+        function ffi_copy.metatype( ct, metatable )
+            local ctype = ffi_metatype( ct, metatable )
+            ctype_metatables[ raw_tonumber( ctype ) ] = metatable
+            return ctype
+        end
+
+        --- [SHARED AND MENU]
+        ---
+        --- Returns the metatable of the given value, or `nil` if it doesn't have one.
+        ---
+        --- Unlike the standard `getmetatable`, this ignores the `__metatable` field, so it can
+        --- reach metatables that are protected from normal code.
+        ---
+        --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
+        ---
+        ---@param object any The value to get the metatable of.
+        ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
+        function debug.getmetatable( object )
+            if raw_type( object ) == "cdata" then
+                return ctype_metatables[ raw_tonumber( ffi_typeof( object ) ) ]
+            end
+
+            return debug_getmetatable( object )
+        end
+
+        --- [SHARED AND MENU]
+        ---
+        --- If object does not have a metatable, returns `nil`.
+        ---
+        --- Otherwise, if the object's metatable has a `__metatable` field, returns the associated value.
+        ---
+        --- Otherwise, returns the metatable of the given object.
+        ---
+        --- Use `debug.getmetatable` to get the real metatable regardless of a `__metatable` field.
+        ---
+        --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getmetatable)
+        ---
+        ---@param object any The value to get the metatable of.
+        ---@return metatable | table | nil metatable The metatable (or its `__metatable` value), or `nil` if there is none.
+        function std.getmetatable( object )
+            local metatable = getmetatable( object )
+            if metatable == "ffi" then
+                local ctype_metatable = ctype_metatables[ raw_tonumber( ffi_typeof( object ) ) ]
+                if ctype_metatable == nil then
+                    return nil
+                end
+
+                return raw_get( ctype_metatable, "__metatable" ) or ctype_metatable
+            end
+
+            ---@cast metatable metatable | table | nil
+            return metatable
+        end
+
+        std.ffi = ffi_copy
     end
 
 end

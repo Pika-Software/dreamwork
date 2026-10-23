@@ -118,7 +118,6 @@ dofile( "dreamwork/std/debug.lua" )
 ---@class dreamwork.std.debug
 local debug = std.debug
 local debug_fempty = debug.fempty
-local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
 do
@@ -147,10 +146,6 @@ do
 end
 
 local tostring = std.tostring
-
--- we need more sugar!!1
-raw.getmetatable = debug.getmetatable
-raw.setmetatable = debug.setmetatable
 
 ---@type fun( lua_path: string )
 ---@diagnostic disable-next-line: undefined-global
@@ -296,7 +291,34 @@ dofile( "dreamwork/std/jit.lua" )
 sendfile( "dreamwork/std/jit.lua" )
 
 local jit = std.jit
+
+---@class dreamwork.std.ffi
 local ffi = std.ffi
+
+-- we need more sugar!!1
+local debug_getmetatable = debug.getmetatable
+raw.getmetatable = debug_getmetatable
+raw.setmetatable = debug.setmetatable
+
+--- [SHARED AND MENU]
+---
+--- Returns the value of the given key in the metatable of the given value.
+---
+--- Returns `nil` if not found.
+---
+---@param value any The value to get the metatable from.
+---@param key string The searchable key.
+---@return any | nil value The value of the given key.
+function debug.getmetavalue( value, key, allow_index )
+    local metatable = debug_getmetatable( value )
+    if metatable == nil then
+        return nil
+    elseif allow_index then
+        return metatable[ key ]
+    end
+
+    return raw_get( metatable, key )
+end
 
 --- [SHARED AND MENU]
 ---
@@ -806,7 +828,6 @@ sendfile( "dreamwork/std/class.lua" )
 
 do
 
-    local debub_getmetatable = debug.getmetatable
     local isInherited = std.class.isInherited
     local isClass = std.isClass
 
@@ -818,7 +839,7 @@ do
     ---@param ... any The parent classes/metatables to check against.
     ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
     function std.isInstance( object, ... )
-        local metatable = debub_getmetatable( object )
+        local metatable = debug_getmetatable( object )
 
         for i = 1, raw_select( "#", ... ) do
             local parent = raw_select( i, ... )
@@ -846,7 +867,7 @@ do
             if isInherited( object, value ) then
                 return true
             end
-        elseif debub_getmetatable( object ) == value then
+        elseif debug_getmetatable( object ) == value then
             return true
         end
 
@@ -1292,20 +1313,44 @@ do
 
     local raw_type = raw.type
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns a string representing the name of the type of the passed object.
-    ---
-    ---@param value any The value to get the type of.
-    ---@return string type_name The type name of the given value.
-    function std.type( value )
-        if isNumber( value ) and (value % 1) == 0 then
-            return "integer"
+    if ffi == nil then
+
+        --- [SHARED AND MENU]
+        ---
+        --- Returns a string representing the name of the type of the passed object.
+        ---
+        ---@param value any The value to get the type of.
+        ---@return type type_name The type name of the given value.
+        function std.type( value )
+            if isNumber( value ) and (value % 1) == 0 then
+                return "integer"
+            end
+
+            return debug_getmetavalue( value, "__type" ) or
+                raw_type( value )
         end
 
-        return debug_getmetavalue( value, "__type" ) or
-            debug_getmetavalue( value, "MetaName" ) or
-            raw_type( value )
+    else
+
+        function std.type( value )
+            local name = raw_type( value )
+            if name == "number" then
+                if value % 1 == 0 then
+                    return "integer"
+                end
+
+                return name
+            end
+
+            ---@type metatable | nil
+            local metatable = debug_getmetatable( value )
+            if metatable == nil then
+                return name
+            end
+
+            return raw_get( metatable, "__type" ) or name
+        end
+
     end
 
 end
@@ -1464,14 +1509,16 @@ local len = std.len
 ---@param value any The value to get the string representation of.
 ---@return string str The string representation of the given value.
 function std.represent( value )
-    ---@type fun( value: any ): string
-    local fn = debug_getmetavalue( value, "__represent" )
-    if fn == nil then
-        -- return tostring( value )
-        return string_format( "%s: %p", type( value ), value )
+    local name = type( value )
+    if name ~= "cdata" then
+        ---@type fun( value: any ): string
+        local fn = debug_getmetavalue( value, "__represent" )
+        if fn ~= nil then
+            return fn( value )
+        end
     end
 
-    return fn( value )
+    return string_format( "%s: %p", name, value )
 end
 
 local represent = std.represent
@@ -2906,9 +2953,9 @@ do
 
 end
 
-if HolyLib ~= nil and isFunction( HolyLib.GetRegistry ) then
+if isFunction( holylib.GetRegistry ) then
     -- https://github.com/RaphaelIT7/gmod-holylib
-    debug.setregistry( HolyLib.GetRegistry() )
+    debug.setregistry( holylib.GetRegistry() )
     logger:info( "`holylib` was connected, enjoy full access to `debug.getregistry`." )
 elseif std.loadbinary( "getregistry" ) and getregistry ~= nil then
     -- https://github.com/wrefgtzweve/gm_getregistry
@@ -3032,14 +3079,20 @@ if LUA_CLIENT and CurTime ~= nil then
 
 end
 
---- [SHARED AND MENU]
----
---- Returns the value of the process environment variable varname or fail if the variable is not defined.
----
----@param key string
----@return string value
-function os.getenv( key )
-    return ""
+if isFunction( holylib.GetEnvironmentValue ) then
+    os.getenv = holylib.GetEnvironmentValue
+else
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the value of the process environment variable varname or fail if the variable is not defined.
+    ---
+    ---@param key string
+    ---@return string | nil value
+    function os.getenv( key )
+        return ""
+    end
+
 end
 
 --- [SHARED AND MENU]

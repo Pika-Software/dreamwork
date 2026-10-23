@@ -114,7 +114,11 @@ function getfenv( f ) end
 
 --- [SHARED AND MENU]
 ---
---- If object does not have a metatable, returns nil. Otherwise, if the object's metatable has a __metatable field, returns the associated value. Otherwise, returns the metatable of the given object.
+--- If object does not have a metatable, returns nil.
+---
+--- Otherwise, if the object's metatable has a `__metatable` field, returns the associated value.
+---
+--- Otherwise, returns the metatable of the given object.
 ---
 --- Use `debug.getmetatable` to get the real metatable regardless of a `__metatable` field.
 ---

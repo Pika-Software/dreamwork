@@ -109,7 +109,7 @@ if debug.newproxy == nil then
             if add_metatable == true then
                 metatable = {}
             else
-                metatable = debug_getmetatable( add_metatable )
+                metatable = debug.getmetatable( add_metatable )
             end
 
             setmetatable( fake_userdata, metatable )
@@ -123,26 +123,6 @@ if debug.newproxy == nil then
 
     raw.print( "newproxy is missing, fallback created!" )
 
-end
-
---- [SHARED AND MENU]
----
---- Returns the value of the given key in the metatable of the given value.
----
---- Returns `nil` if not found.
----
----@param value any The value to get the metatable from.
----@param key string The searchable key.
----@return any | nil value The value of the given key.
-function debug.getmetavalue( value, key, allow_index )
-    local metatable = debug_getmetatable( value )
-    if metatable == nil then
-        return nil
-    elseif allow_index then
-        return metatable[ key ]
-    end
-
-    return raw_get( metatable, key )
 end
 
 do
@@ -603,15 +583,17 @@ if debug_getmetatable( debug_fempty ) == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the metatable of the given value or `nil` if not found.
+    --- Returns the metatable of the given value, or `nil` if it doesn't have one.
+    ---
+    --- Unlike the standard `getmetatable`, this ignores the `__metatable` field, so it can
+    --- reach metatables that are protected from normal code.
     ---
     --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
     ---
-    ---@param value any The value.
-    ---@return metatable | nil metatable The metatable.
-    ---@diagnostic disable-next-line: duplicate-set-field
-    function debug.getmetatable( value )
-        return debug_getmetatable( value ) or registry[ raw_type( value ) ]
+    ---@param object any The value to get the metatable of.
+    ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
+    function debug.getmetatable( object )
+        return debug_getmetatable( object ) or registry[ raw_type( object ) ]
     end
 
     raw.print( "at any cost, but we'll build it once again..." )
