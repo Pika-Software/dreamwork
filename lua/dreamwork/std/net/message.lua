@@ -95,8 +95,6 @@ function Message:send( data, pl, realm )
     end
 end
 
----@alias Message dreamwork.std.Message
-
 ---@class dreamwork.std.MessageClass : dreamwork.std.Message
 ---@field __base dreamwork.std.Message
 ---@overload fun( name: string ): dreamwork.std.Message

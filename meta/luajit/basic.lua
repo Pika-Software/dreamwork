@@ -121,7 +121,7 @@ function getfenv( f ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getmetatable)
 ---
 ---@param object any The value to get the metatable of.
----@return metatable | table | nil metatable The metatable (or its `__metatable` value), or `nil` if there is none.
+---@return metatable | table | "ffi" | nil metatable The metatable (or its `__metatable` value), or `nil` if there is none.
 ---@nodiscard
 function getmetatable( object ) end
 

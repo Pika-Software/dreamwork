@@ -71,8 +71,6 @@ NextBotMetatable.__parent = EntityMetatable
 ---@class garrysmod.console.Variable
 local ConVarMetatable = debug.initmetatable( "ConVar" )
 
----@class IMaterial : metatable
-
 --- [SHARED AND MENU]
 ---
 --- Source engine library.
@@ -2154,14 +2152,14 @@ if engine.loadMaterial == nil then
     local bitpack_toString = bitpack.toString
     local bitpack_writeUInt = bitpack.writeUInt
 
-    ---@type fun( file_path: string, params: ( string | nil ) ): IMaterial, number
+    ---@type fun( file_path: string, params: ( string | nil ) ): garrysmod.Material, number
     ---@diagnostic disable-next-line: undefined-field
     local glua_Material = _G.Material
 
     ---@diagnostic disable-next-line: param-type-mismatch
     local upvalues = debug.getupvalues( glua_Material )
 
-    ---@type fun( file_path: string, garry_flags: ( string | nil ) ): IMaterial, number
+    ---@type fun( file_path: string, garry_flags: ( string | nil ) ): garrysmod.Material, number
     local c_material_fn = upvalues.C_Material
 
     if c_material_fn == nil then
@@ -2185,7 +2183,7 @@ if engine.loadMaterial == nil then
         ---
         ---@param file_path string The path to the file.
         ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
-        ---@return IMaterial material The loaded material.
+        ---@return garrysmod.Material material The loaded material.
         ---@return number time_taken The time taken to load the material.
         function engine.loadMaterial( file_path, parameters )
             if parameters == nil then
@@ -2223,7 +2221,7 @@ if engine.loadMaterial == nil then
         ---
         ---@param file_path string The path to the file.
         ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
-        ---@return IMaterial material The loaded material.
+        ---@return garrysmod.Material material The loaded material.
         ---@return number time_taken The time taken to load the material.
         function engine.loadMaterial( file_path, parameters )
             if parameters == nil then

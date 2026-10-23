@@ -3,11 +3,9 @@
 ### 1. Define base class (basically a metatable for our cars)
 
 ```lua
----@class dreamwork.std.Car : dreamwork.std.Object           <-- do not forget to inherit from dreamwork.std.Object
----@field __class dreamwork.std.CarClass
+---@class my_lib.Car : dreamwork.Object           <-- do not forget to inherit from dreamwork.std.Object
+---@field __class my_lib.CarClass
 local Car = class.base( "Car" )
-
----@alias Car dreamwork.std.Car                        <-- alias Car, so it is easier for us to reference it in params and etc.
 
 ---@protected               <-- do not forget to add protected so __init won't be shown
 function Car:__init()
@@ -23,9 +21,9 @@ end
 ---
 --- The class used to create new `Car` instances.
 ---
----@class dreamwork.std.CarClass : dreamwork.std.Car      <-- do not forget to inherit from base
----@field __base dreamwork.std.Car
----@overload fun(): dreamwork.std.Car
+---@class my_lib.CarClass : my_lib.Car      <-- do not forget to inherit from base
+---@field __base my_lib.Car
+---@overload fun(): my_lib.Car
 local CarClass = class.create( Car )
 std.Car = CarClass
 ```
@@ -42,21 +40,19 @@ print( car.speed ) -- 0
 ### 4. Inherit from the Car class
 
 ```lua
----@class dreamwork.std.Truck : dreamwork.std.Car
----@field __class dreamwork.std.TruckClass
----@field __parent dreamwork.std.Car               <-- now we need to define the parent, so LuaLS can know how to access our parent
+---@class my_lib.Truck : my_lib.Car
+---@field __class my_lib.TruckClass
+---@field __parent my_lib.Car               <-- now we need to define the parent, so LuaLS can know how to access our parent
 local Truck = class.base( "Truck", false, std.Car )
-
----@alias Truck dreamwork.std.Truck
 
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Truck` instances.
 ---
----@class dreamwork.std.TruckClass : dreamwork.std.Truck
----@field __base dreamwork.std.Truck
----@field __parent dreamwork.std.CarClass
----@overload fun(): dreamwork.std.Truck
+---@class my_lib.TruckClass : my_libstd.Truck
+---@field __base my_lib.Truck
+---@field __parent my_lib.CarClass
+---@overload fun(): my_lib.Truck
 local TruckClass = class.create( Truck )
 std.Truck = TruckClass
 ```
@@ -68,8 +64,6 @@ std.Truck = TruckClass
 ---@class dreamwork.std.Template : dreamwork.std.Object
 ---@field __class dreamwork.std.TemplateClass
 local Template = class.base( "Template" )
-
----@alias Template dreamwork.std.Template
 
 ---@protected
 function Template:__init()
@@ -90,8 +84,6 @@ std.Template = TemplateClass
 ---@field __class dreamwork.std.TemplateChildClass
 ---@field __parent dreamwork.std.Template
 local TemplateChild = class.base( "TemplateChild", false, std.Template )
-
----@alias TemplateChild dreamwork.std.TemplateChild
 
 --- [SHARED AND MENU]
 ---
