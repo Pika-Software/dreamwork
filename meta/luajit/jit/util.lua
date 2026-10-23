@@ -8,6 +8,7 @@
 --- Undocumented and not stable LuaJIT API, may change between LuaJIT versions.
 ---
 local util = {}
+jit.util = util
 
 --- [SHARED AND MENU]
 ---
