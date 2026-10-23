@@ -1214,6 +1214,131 @@ do
         return console_variables[ name ] ~= nil or ConVarExists( name )
     end
 
+    local raw_get = raw.get
+
+    --- Names of known Source engine and Garry's Mod console variables.
+    ---@type string[]
+    local engine_variables = {
+        -- server
+        "hostname", "hostport", "hostip", "sv_password", "rcon_password", "sv_lan", "sv_region",
+        "sv_tags", "sv_contact", "sv_visiblemaxplayers", "sv_loadingurl", "sv_downloadurl",
+        "sv_allowupload", "sv_allowdownload", "sv_allowcslua", "sv_cheats", "sv_pausable",
+        "sv_hibernate_think", "sv_timeout", "sv_kickerrornum", "sv_logecho", "sv_logfile",
+        "sv_log_onefile", "sv_logbans", "sv_rcon_banpenalty", "sv_rcon_maxfailures",
+        "sv_rcon_minfailures", "sv_rcon_minfailuretime", "sv_skyname", "gamemode",
+        "skill", "deathmatch", "coop",
+
+        -- networking
+        "sv_minrate", "sv_maxrate", "sv_mincmdrate", "sv_maxcmdrate", "sv_minupdaterate",
+        "sv_maxupdaterate", "sv_client_min_interp_ratio", "sv_client_max_interp_ratio",
+        "sv_unlag", "sv_maxunlag", "net_maxfilesize",
+        "rate", "cl_cmdrate", "cl_updaterate", "cl_interp", "cl_interp_ratio",
+        "cl_predict", "cl_smooth", "cl_timeout", "cl_downloadfilter",
+
+        -- movement & physics
+        "sv_gravity", "sv_friction", "sv_stopspeed", "sv_accelerate", "sv_airaccelerate",
+        "sv_wateraccelerate", "sv_waterfriction", "sv_maxvelocity", "sv_stepsize", "sv_bounce",
+        "sv_rollangle", "sv_rollspeed", "sv_noclipspeed", "sv_noclipaccelerate",
+        "sv_specaccelerate", "sv_specspeed", "sv_specnoclip", "sv_sticktoground",
+        "sv_footsteps", "sv_playerpickupallowed", "sv_defaultdeployspeed",
+        "sv_infinite_aux_power", "sv_robust_explosions",
+        "phys_timescale", "phys_pushscale", "phys_impactforcescale", "phys_upimpactforcescale",
+        "gmod_physiterations", "host_timescale", "host_framerate",
+
+        -- gameplay
+        "mp_falldamage", "mp_flashlight", "mp_footsteps", "mp_friendlyfire", "mp_forcecamera",
+        "mp_timelimit", "mp_fraglimit", "mp_decals", "mp_show_voice_icons",
+        "sv_alltalk", "sv_voiceenable", "sv_voicecodec",
+        "ai_disabled", "ai_ignoreplayers", "ai_serverragdolls", "g_ragdoll_maxcount",
+        "gmod_suit", "gmod_maxammo", "gmod_npcweapon",
+
+        -- physgun
+        "physgun_limited", "physgun_maxrange", "physgun_maxspeed", "physgun_maxangular",
+        "physgun_timetoarrive", "physgun_DampingFactor", "physgun_teleportDistance",
+        "physgun_wheelspeed", "physgun_halo", "physgun_drawbeams",
+
+        -- sandbox
+        "sbox_noclip", "sbox_godmode", "sbox_playershurtplayers", "sbox_weapons", "sbox_persist",
+        "sbox_bonemanip_npc", "sbox_bonemanip_player", "sbox_bonemanip_misc",
+        "sbox_maxprops", "sbox_maxragdolls", "sbox_maxvehicles", "sbox_maxeffects",
+        "sbox_maxballoons", "sbox_maxnpcs", "sbox_maxdynamite", "sbox_maxlamps", "sbox_maxlights",
+        "sbox_maxwheels", "sbox_maxthrusters", "sbox_maxhoverballs", "sbox_maxbuttons",
+        "sbox_maxemitters", "sbox_maxsents", "sbox_maxcameras", "sbox_maxconstraints",
+        "sbox_maxropeconstraints",
+
+        -- player
+        "name", "cl_playermodel", "cl_playercolor", "cl_weaponcolor", "cl_playerskin",
+        "cl_playerbodygroups", "gmod_language", "gmod_toolmode", "gmod_drawhelp",
+        "gmod_drawtooleffects",
+
+        -- input
+        "sensitivity", "m_pitch", "m_yaw", "m_filter", "m_rawinput",
+        "cl_forwardspeed", "cl_sidespeed", "cl_backspeed", "cl_upspeed",
+        "cl_yawspeed", "cl_pitchspeed",
+
+        -- audio & voice
+        "volume", "snd_musicvolume", "voice_enable", "voice_scale", "voice_loopback",
+
+        -- video & rendering
+        "fps_max", "fov_desired", "cl_drawhud", "cl_showfps", "cl_showpos", "net_graph",
+        "cl_new_impact_effects", "mat_fullbright", "mat_wireframe", "mat_monitorgamma",
+        "mat_picmip", "mat_specular", "mat_bloomscale", "mat_hdr_level", "mat_queue_mode",
+        "r_3dsky", "r_drawviewmodel", "r_shadows", "r_decals", "r_drawdetailprops", "r_lod",
+        "r_rootlod", "r_eyes", "r_teeth", "r_flex", "r_dynamic", "r_waterforceexpensive",
+        "r_queued_ropes",
+
+        -- multicore
+        "gmod_mcore_test", "cl_threaded_bone_setup", "cl_threaded_client_leaf_system",
+        "studio_queue_mode",
+
+        -- console
+        "developer", "con_enable", "con_drawnotify", "con_filter_enable",
+        "con_filter_text", "con_filter_text_out"
+    }
+
+    local engine_variable_count = #engine_variables
+
+    --- [SHARED AND MENU]
+    ---
+    --- Gets the names of all console variables known to the engine module.
+    ---
+    --- Lua can't enumerate the engine's console variables, so the result is assembled from
+    --- two sources:
+    ---
+    --- * a built-in list of known Source engine and Garry's Mod console variables, filtered
+    --- to the ones that exist in the current realm;
+    --- * every console variable in the module's `console_variables` registry, that is, ones
+    --- created with `engine.consoleVariableCreate` or loaded through `engine.consoleVariableGet`.
+    ---
+    --- Each name appears at most once. Console variables created elsewhere and never looked up
+    --- through the module (e.g. by other addons via `CreateConVar`) are not included unless
+    --- they're on the built-in list. The order of the names is not specified.
+    ---
+    ---@see dreamwork.engine.consoleVariableGet
+    ---@see dreamwork.engine.consoleVariableExists
+    ---
+    ---@return string[] variables The names of the console variables.
+    ---@return integer variable_count The number of names in `variables`.
+    function engine.consoleVariableGetAll()
+        local variables = {}
+        local variable_count = 0
+
+        for i = 1, engine_variable_count, 1 do
+            local name = engine_variables[ i ]
+            if raw_get( console_variables, name ) == nil and ConVarExists( name ) then
+                variable_count = variable_count + 1
+                variables[ variable_count ] = name
+            end
+        end
+
+        for name in raw_pairs( console_variables ) do
+            variable_count = variable_count + 1
+            variables[ variable_count ] = name
+        end
+
+        return variables, variable_count
+    end
+
 end
 
 do

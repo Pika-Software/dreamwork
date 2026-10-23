@@ -98,6 +98,7 @@ local raw_get = raw.get
 local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_select = raw.select
+local raw_tonumber = raw.tonumber
 
 --- [SHARED AND MENU]
 ---
@@ -117,6 +118,7 @@ dofile( "dreamwork/std/debug.lua" )
 ---@class dreamwork.std.debug
 local debug = std.debug
 local debug_fempty = debug.fempty
+local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
 do
@@ -294,6 +296,7 @@ dofile( "dreamwork/std/jit.lua" )
 sendfile( "dreamwork/std/jit.lua" )
 
 local jit = std.jit
+local ffi = std.ffi
 
 --- [SHARED AND MENU]
 ---
@@ -306,9 +309,9 @@ function std.len( value )
     local fn = debug_getmetavalue( value, "__len" )
     if fn == nil then
         return #value
-    else
-        return fn( value )
     end
+
+    return fn( value )
 end
 
 --
@@ -719,7 +722,7 @@ local string_format = string.format
 local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
 
-std.LUA_VERSION = raw.tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
+std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
 
 do
 
@@ -941,7 +944,6 @@ end
 do
 
     local debug_registermetatable = debug.registermetatable
-    local debug_getmetatable = debug.getmetatable
     local debug_setmetatable = debug.setmetatable
 
     -- nil ( 0 )
@@ -1179,7 +1181,7 @@ do
             return string_format( "string: %p [%s][%d]", value, value, string_len( value ) )
         end
 
-        String.__tonumber = raw.tonumber
+        String.__tonumber = raw_tonumber
         String.__div = string.divide
         String.__len = string_len
 
