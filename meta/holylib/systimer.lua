@@ -1,13 +1,14 @@
 ---@meta holylib.systimer
 
---- [SERVER]
+
+--- [SHARED AND MENU]
 ---
 --- This module is just the timer library, but it doesn't use `CurTime`.
 ---
 ---@class holylib.systimer
 systimer = {}
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Adjusts the timer with the given name with the new values.
 ---
@@ -20,7 +21,7 @@ systimer = {}
 ---@return boolean success Returns whether the adjustment was successful or not.
 function systimer.Adjust( identifier, delay, repetitions, func ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Creates a timer with the given name.
 ---
@@ -30,7 +31,7 @@ function systimer.Adjust( identifier, delay, repetitions, func ) end
 ---@param func fun() The new function. Use nil to keep previous value.
 function systimer.Create( identifier, delay, repetitions, func ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given timer exists.
 ---
@@ -38,14 +39,14 @@ function systimer.Create( identifier, delay, repetitions, func ) end
 ---@return boolean exists Returns whether the timer exists or not.
 function systimer.Exists( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Removes the given timer.
 ---
 ---@param identifier string Identifier of the timer.
 function systimer.Remove( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given timer was successfully started again.
 ---
@@ -53,7 +54,7 @@ function systimer.Remove( identifier ) end
 ---@return boolean success Returns whether the timer was successfully started or not.
 function systimer.Start( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given timer was successfully stopped.
 ---
@@ -61,7 +62,7 @@ function systimer.Start( identifier ) end
 ---@return boolean success Returns whether the timer was successfully stopped or not.
 function systimer.Stop( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns true if the given timer was successfully paused.
 ---
@@ -69,7 +70,7 @@ function systimer.Stop( identifier ) end
 ---@return boolean success Returns whether the timer was successfully paused or not.
 function systimer.Pause( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Unpauses the given timer.
 ---
@@ -81,7 +82,7 @@ function systimer.Pause( identifier ) end
 ---@return boolean success Returns whether the timer was successfully unpaused or not.
 function systimer.UnPause( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns the time left until the given timer is executed again.
 ---
@@ -91,7 +92,7 @@ function systimer.UnPause( identifier ) end
 ---@return number | 0 time_left Returns the time left until the timer is executed again.
 function systimer.TimeLeft( identifier ) end
 
---- [SERVER]
+--- [SHARED AND MENU]
 ---
 --- Returns the number of reps left for the given timer.
 ---

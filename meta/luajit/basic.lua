@@ -1060,12 +1060,16 @@ function tostring( v ) end
 ---@alias type
 ---| "nil"
 ---| "number"
+---| "integer"
 ---| "string"
 ---| "boolean"
 ---| "table"
 ---| "function"
 ---| "thread"
 ---| "userdata"
+---| "cdata"
+---| "ffi"
+---| string
 
 --- [SHARED AND MENU]
 ---

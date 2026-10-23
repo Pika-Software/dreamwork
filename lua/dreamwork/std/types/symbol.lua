@@ -13,8 +13,6 @@ local debug_getmetatable = debug.getmetatable
 ---
 ---@class dreamwork.std.Symbol : userdata
 
----@alias Symbol dreamwork.std.Symbol
-
 ---@type table<string, dreamwork.std.Symbol>
 local symbols = {}
 

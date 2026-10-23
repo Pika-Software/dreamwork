@@ -627,8 +627,6 @@ do
     ---@field protected error_value string The error value of the future.
     local Future = std.Future and std.Future.__base or class.base( "Future" )
 
-    ---@alias Future dreamwork.std.Future
-
     ---@protected
     function Future:__init()
         self.callbacks = { [ 0 ] = 0 }
@@ -904,9 +902,6 @@ do
     ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, error: self )
     ---@field addCallback fun( self: dreamwork.std.futures.Task<T>, callback: fun( task: dreamwork.std.futures.Task<T> ) )
     local Task = std.Task and std.Task.__base or class.base( "Task", false, std.Future )
-
-    ---@diagnostic disable-next-line: duplicate-doc-alias
-    ---@alias Task dreamwork.std.futures.Task
 
     ---@protected
     ---@param fn async fun(...): any
