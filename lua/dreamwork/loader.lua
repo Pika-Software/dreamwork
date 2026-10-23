@@ -1,3 +1,4 @@
+local holylib = HolyLib or {}
 local error = error
 
 ---@diagnostic disable-next-line: undefined-global
