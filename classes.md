@@ -32,8 +32,8 @@ std.Car = CarClass
 
 ```lua
 local car = std.Car()
-print( car.__name ) -- Car
-print( std.Car.__name == car.__name ) -- true
+print( car.__type ) -- Car
+print( std.Car.__type == car.__type ) -- true
 print( car.speed ) -- 0
 ```
 

@@ -145,10 +145,10 @@ shader_parameters[ "$basetexture" ] = nil
 ---@type string | nil
 shader_parameters[ "$basetexture2" ] = nil
 
----@type VMatrix | nil
+---@type garrysmod.VMatrix | nil
 shader_parameters[ "$basetexturetransform" ] = nil
 
----@type VMatrix | nil
+---@type garrysmod.VMatrix | nil
 shader_parameters[ "$basetexturetransform2" ] = nil
 
 ---@type integer | nil

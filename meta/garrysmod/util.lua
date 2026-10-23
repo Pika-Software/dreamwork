@@ -827,7 +827,7 @@ function util.TraceEntity( trace_data, entity ) end
 ---
 --- Runs a trace using the entity's axis-aligned bounding box (`mins` and `maxs` from the trace data are ignored).
 ---
----@param trace_data Trace The trace data to use.
+---@param trace_data garrysmod.Trace The trace data to use.
 ---@param entity garrysmod.Entity The entity to use.
 ---@return garrysmod.Trace.output trace_result Trace result.
 function util.TraceEntityHull( trace_data, entity ) end

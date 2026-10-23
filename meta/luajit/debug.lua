@@ -179,7 +179,7 @@ function debug.getlocal( thread, f, index ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
 ---
 ---@param object any The value to get the metatable of.
----@return table metatable The metatable of `object`, or `nil` if it has none.
+---@return metatable | table | nil metatable The metatable of `object`, or `nil` if it has none.
 ---@nodiscard
 function debug.getmetatable( object ) end
 
