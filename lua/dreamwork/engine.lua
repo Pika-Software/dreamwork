@@ -71,6 +71,7 @@ NextBotMetatable.__parent = EntityMetatable
 ---@class garrysmod.console.Variable
 local ConVarMetatable = debug.initmetatable( "ConVar" )
 
+
 --- [SHARED AND MENU]
 ---
 --- Source engine library.
@@ -86,6 +87,27 @@ local ConVarMetatable = debug.initmetatable( "ConVar" )
 ---@field NetworkHeaderSize integer The size of the network header in bits.
 local engine = {}
 dreamwork.engine = engine
+
+
+---@param name string
+---@return table
+local function glua_library( name )
+    local lib = _G[ name ]
+    if lib == nil then
+        lib = {}
+        _G[ name ] = lib
+    end
+
+    return lib
+end
+
+
+--- [SHARED AND MENU]
+---
+--- Returns a highly accurate amount of seconds since Lua/Engine started.
+---
+---@type fun(): number
+engine.getUpTime = SysTime or os.clock
 
 --- [SHARED]
 ---
@@ -683,11 +705,7 @@ local engine_hookCall = engine.hookCall
 
 do
 
-    local hook = _G.hook
-    if hook == nil then
-        ---@diagnostic disable-next-line: inject-field
-        hook = {}; _G.hook = hook
-    end
+    local hook = glua_library( "hook" )
 
     local hook_Call = hook.Call
     if hook_Call == nil then
@@ -894,11 +912,8 @@ end
 
 do
 
-    local concommand = _G.concommand
-    if concommand == nil then
-        ---@diagnostic disable-next-line: inject-field
-        concommand = {}; _G.concommand = concommand
-    end
+    ---@class garrysmod.concommand
+    local concommand = glua_library( "concommand" )
 
     local fallback_exists = concommand.Run ~= nil
 
@@ -1341,11 +1356,8 @@ end
 
 do
 
-    local cvars = _G.cvars
-    if cvars == nil then
-        ---@diagnostic disable-next-line: inject-field
-        cvars = {}; _G.cvars = cvars
-    end
+    ---@class garrysmod.cvars
+    local cvars = glua_library( "cvars" )
 
     ---@param name string
     ---@param old_value string
@@ -1520,15 +1532,8 @@ end
 
 do
 
-    ---@class dreamwork.GModScriptedEntsLib
-    ---@field GetStored fun( class_name: string ): table | nil
-    ---@field Get fun( name: string, output: table | nil ): table | nil
-    ---@field OnLoaded fun()
-    local scripted_ents = _G.scripted_ents
-    if scripted_ents == nil then
-        ---@diagnostic disable-next-line: inject-field, missing-fields
-        scripted_ents = {}; _G.scripted_ents = scripted_ents
-    end
+    ---@class garrysmod.scripted_ents
+    local scripted_ents = glua_library( "scripted_ents" )
 
     ---@param name string
     ---@param output table | nil
@@ -1550,15 +1555,8 @@ end
 
 do
 
-    ---@class dreamwork.GModWeaponsLib
-    ---@field GetStored fun( class_name: string ): table | nil
-    ---@field Get fun( name: string, output: table | nil ): table | nil
-    ---@field OnLoaded fun()
-    local weapons = _G.weapons
-    if weapons == nil then
-        ---@diagnostic disable-next-line: inject-field, missing-fields
-        weapons = {}; _G.weapons = weapons
-    end
+    ---@class garrysmod.weapons
+    local weapons = glua_library( "weapons" )
 
     ---@param name string
     ---@param output table | nil
@@ -1580,13 +1578,8 @@ end
 
 do
 
-    ---@class dreamwork.GModEffectsLib
-    ---@field Create fun(name: string, output: table | nil): table | nil
-    local effects = _G.effects
-    if effects == nil then
-        ---@diagnostic disable-next-line: inject-field, missing-fields
-        effects = {}; _G.effects = effects
-    end
+    ---@class garrysmod.effects
+    local effects = glua_library( "effects" )
 
     ---@param name string
     ---@param output table | nil
@@ -1603,13 +1596,18 @@ end
 
 if LUA_CLIENT or LUA_SERVER then
 
-    ---@class dreamwork.GModEntsLib
-    ---@field GetAll fun(): garrysmod.Entity[]
-    ---@diagnostic disable-next-line: undefined-field
-    local glua_ents = _G.ents
+    ---@class garrysmod.ents
+    local ents = glua_library( "ents" )
+
+    if ents.GetAll == nil then
+        local woops = {}
+        function ents.GetAll()
+            return woops
+        end
+    end
 
     ---@type table<integer, garrysmod.Entity>
-    local entity_list = glua_ents.GetAll()
+    local entity_list = ents.GetAll()
 
     ---@type integer
     local entity_count = #entity_list
@@ -1623,7 +1621,7 @@ if LUA_CLIENT or LUA_SERVER then
 
     ---@diagnostic disable-next-line: inject-field
     _G.InvalidateInternalEntityCache = detour.before( function( is_player )
-        local new_entities = glua_ents.GetAll()
+        local new_entities = ents.GetAll()
         local new_count = #new_entities
 
         ---@type table<garrysmod.Entity, integer>
@@ -1667,11 +1665,8 @@ end
 
 do
 
-    local gamemode = _G.gamemode
-    if gamemode == nil then
-        ---@diagnostic disable-next-line: inject-field
-        gamemode = {}; _G.gamemode = gamemode
-    end
+    ---@class garrysmod.gamemode
+    local gamemode = glua_library( "gamemode" )
 
     if gamemode.Get == nil then
 
@@ -1745,14 +1740,25 @@ do
     ---@field index integer The addon's index in the addon list.
     ---@field folder string The addon's folder name.
 
-    ---@class dreamwork.GModEngineLib
-    ---@field GetGames fun(): dreamwork.engine.GameInfo[]
-    ---@field GetAddons fun(): dreamwork.engine.AddonInfo[]
-    ---@diagnostic disable-next-line: undefined-field
-    local glua_engine = _G.engine or {}
+    ---@class garrysmod.engine
+    local glua_engine = glua_library( "engine" )
 
-    local engine_GetGames = glua_engine.GetGames or function() return {} end
-    local engine_GetAddons = glua_engine.GetAddons or function() return {} end
+    if glua_engine.GetGame == nil then
+        local woops = {}
+        function glua_engine.GetGame()
+            return woops
+        end
+    end
+
+    if glua_engine.GetAddons == nil then
+        local woops = {}
+        function glua_engine.GetAddons()
+            return woops
+        end
+    end
+
+    local engine_GetGames = glua_engine.GetGames
+    local engine_GetAddons = glua_engine.GetAddons
 
     ---@type table<integer, dreamwork.engine.GameInfo>
     local supported_games = {}
@@ -1916,7 +1922,8 @@ end
 
 do
 
-    local glua_util = _G.util or {}
+    ---@class garrysmod.util
+    local glua_util = glua_library( "util" )
 
     if LUA_CLIENT or LUA_SERVER then
 
@@ -2056,7 +2063,9 @@ do
             return network_id
         end
 
-        local glua_net = _G.net
+        ---@class garrysmod.net
+        local glua_net = glua_library( "net" )
+
         if glua_net ~= nil then
 
             local net_WriteBool = glua_net.WriteBool
@@ -2152,14 +2161,11 @@ if engine.loadMaterial == nil then
     local bitpack_toString = bitpack.toString
     local bitpack_writeUInt = bitpack.writeUInt
 
-    ---@type fun( file_path: string, params: ( string | nil ) ): garrysmod.Material, number
-    ---@diagnostic disable-next-line: undefined-field
     local glua_Material = _G.Material
 
-    ---@diagnostic disable-next-line: param-type-mismatch
     local upvalues = debug.getupvalues( glua_Material )
 
-    ---@type fun( file_path: string, garry_flags: ( string | nil ) ): garrysmod.Material, number
+    ---@type fun( path: string, params: ( string | nil ) ): garrysmod.Material, number
     local c_material_fn = upvalues.C_Material
 
     if c_material_fn == nil then
@@ -2237,17 +2243,14 @@ end
 
 if LUA_CLIENT then
 
-    local matproxy = _G.matproxy
-    if matproxy == nil then
-        ---@diagnostic disable-next-line: inject-field
-        matproxy = {}; _G.matproxy = matproxy
-    end
+    ---@class garrysmod.matproxy
+    local glua_matproxy = glua_library( "matproxy" )
 
-    local proxy_list = matproxy.ProxyList or {}
-    matproxy.ProxyList = proxy_list
+    local proxy_list = glua_matproxy.ProxyList or {}
+    glua_matproxy.ProxyList = proxy_list
 
-    local active_list = matproxy.ActiveList or {}
-    matproxy.ActiveList = active_list
+    local active_list = glua_matproxy.ActiveList or {}
+    glua_matproxy.ActiveList = active_list
 
     -- TODO: matproxy
     --

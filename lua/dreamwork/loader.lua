@@ -119,34 +119,6 @@ dofile( "dreamwork/std/debug.lua" )
 ---@class dreamwork.std.debug
 local debug = std.debug
 local debug_fempty = debug.fempty
-local debug_getmetavalue = debug.getmetavalue
-
-do
-
-    local raw_tostring = raw.tostring
-
-    --- [SHARED AND MENU]
-    ---
-    --- Receives a value of any type and converts it to a string in a human-readable format.
-    ---
-    --- If the metatable of `v` has a `__tostring` field, then `tostring` calls the corresponding value with `v` as argument, and uses the result of the call as its result.
-    ---
-    --- Otherwise, if the metatable of `v` has a `__name` field with a string value, `tostring` may use that string in its final result.
-    ---
-    --- For complete control of how numbers are converted, use [string.format](http://www.lua.org/manual/5.4/manual.html#pdf-string.format).
-    ---
-    ---
-    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-tostring)
-    ---
-    ---@param value any The value to convert to a string.
-    ---@return string str The string representation of `value`.
-    function std.tostring( value )
-        return debug_getmetavalue( value, "__name" ) or raw_tostring( value )
-    end
-
-end
-
-local tostring = std.tostring
 
 ---@type fun( lua_path: string )
 ---@diagnostic disable-next-line: undefined-global
@@ -320,6 +292,35 @@ function debug.getmetavalue( value, key, allow_index )
 
     return raw_get( metatable, key )
 end
+
+local debug_getmetavalue = debug.getmetavalue
+
+do
+
+    local raw_tostring = raw.tostring
+
+    --- [SHARED AND MENU]
+    ---
+    --- Receives a value of any type and converts it to a string in a human-readable format.
+    ---
+    --- If the metatable of `v` has a `__tostring` field, then `tostring` calls the corresponding value with `v` as argument, and uses the result of the call as its result.
+    ---
+    --- Otherwise, if the metatable of `v` has a `__name` field with a string value, `tostring` may use that string in its final result.
+    ---
+    --- For complete control of how numbers are converted, use [string.format](http://www.lua.org/manual/5.4/manual.html#pdf-string.format).
+    ---
+    ---
+    --- [View documents](http://www.lua.org/manual/5.4/manual.html#pdf-tostring)
+    ---
+    ---@param value any The value to convert to a string.
+    ---@return string str The string representation of `value`.
+    function std.tostring( value )
+        return debug_getmetavalue( value, "__name" ) or raw_tostring( value )
+    end
+
+end
+
+local tostring = std.tostring
 
 --- [SHARED AND MENU]
 ---
