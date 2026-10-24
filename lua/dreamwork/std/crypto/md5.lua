@@ -315,9 +315,9 @@ function MD5:digest( as_hex )
     return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 )
 end
 
-local engine_MD5 = dreamwork.engine.MD5
+local util_MD5 = util.MD5
 
-if engine_MD5 == nil then
+if util_MD5 == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -381,12 +381,12 @@ else
     ---@param as_hex? boolean If true, the result will be a hex string.
     ---@return string str_result The MD5 string of the message.
     function MD5Class.digest( message, as_hex )
-        local hex_str = engine_MD5( message )
+        local hex_str = util_MD5( message )
         if as_hex then
             return hex_str
-        else
-            return base16_decode( hex_str )
         end
+
+        return base16_decode( hex_str )
     end
 
 end
