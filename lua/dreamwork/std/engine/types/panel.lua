@@ -21,9 +21,6 @@ local glua_vgui = _G.vgui
 ---@field __class dreamwork.std.PanelClass
 local Panel = std.class.base( "Panel" )
 
--- ---@diagnostic disable-next-line: duplicate-doc-alias
--- ---@alias Panel dreamwork.std.Panel
-
 ---@protected
 function Panel:__init()
 

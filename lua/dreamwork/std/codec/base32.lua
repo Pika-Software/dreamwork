@@ -5,7 +5,8 @@ local ffi = std.ffi
 
 local raw = std.raw
 
-local math_max = std.math.max
+local math = std.math
+local math_max = math.max
 
 local string = std.string
 local string_len = string.len
