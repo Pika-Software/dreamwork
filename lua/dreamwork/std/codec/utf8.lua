@@ -1,28 +1,44 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local raw = std.raw
-local raw_select = raw.select
+local ffi = std.ffi
 
-local string = std.string
-local string_rep = string.rep
-local string_len, string_sub = string.len, string.sub
+local ffi_cast, ffi_copy, ffi_string
+local uint8_ptr_t, uint8_array_t
+
+if ffi ~= nil then
+    ffi_cast, ffi_copy, ffi_string = ffi.cast, ffi.copy, ffi.string
+    uint8_ptr_t, uint8_array_t = ffi.typeof( "const uint8_t *" ), ffi.typeof( "uint8_t[?]" )
+end
+
+local raw                      = std.raw
+local raw_pairs                = raw.pairs
+local raw_select               = raw.select
+
+local string                   = std.string
+local string_rep               = string.rep
+local string_len, string_sub   = string.len, string.sub
 local string_char, string_byte = string.char, string.byte
 
-local math = std.math
-local math_floor = math.floor
-local math_relative = math.relative
-local math_min, math_max = math.min, math.max
+local ascii                    = std.ascii
+local ascii_isDigit            = ascii.isDigit
 
-local rbit = raw.bit
-local rbit_band, rbit_bor = rbit.band, rbit.bor
+local math                     = std.math
+local math_ceil                = math.ceil
+local math_floor               = math.floor
+local math_relative            = math.relative
+local math_range               = math.range
+local math_min, math_max       = math.min, math.max
+
+local rbit                     = raw.bit
+local rbit_band, rbit_bor      = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
 
-local table = std.table
-local table_unpack = table.unpack
-local table_concat = table.concat
+local table                    = std.table
+local table_unpack             = table.unpack
+local table_concat             = table.concat
 
-local error = std.error
+local error                    = std.error
 
 
 --- [SHARED AND MENU]
@@ -38,167 +54,178 @@ std.utf8 = utf8
 
 utf8.charpattern = "[%z\x01-\x7F\xC2-\xF4][\x80-\xBF]*"
 
----@alias dreamwork.std.utf8.Codepoint integer
----@alias dreamwork.std.utf8.Sequence dreamwork.std.utf8.Codepoint[]
+---@alias dreamwork.std.utf8.ErrorCode
+---| 1 # Unexpected end of string.
+---| 2 # Unexpected continuation byte.
+---| 3 # Invalid lead byte.
+---| 4 # Invalid continuation byte.
+---| 5 # Overlong encoding.
+---| 6 # UTF-16 surrogate code point.
+---| 7 # Code point exceeds U+10FFFF.
+---| 8 # Not a valid code point (negative).
 
----@type table<integer, integer | nil>
-local uint8_to_length = {}
+---@type table<dreamwork.std.utf8.ErrorCode, string>
+local error_messages = {
+    [ 1 ] = "unexpected end of string",
+    [ 2 ] = "unexpected continuation byte",
+    [ 3 ] = "invalid lead byte",
+    [ 4 ] = "invalid continuation byte",
+    [ 5 ] = "overlong encoding",
+    [ 6 ] = "UTF-16 surrogate code point",
+    [ 7 ] = "code point exceeds U+10FFFF",
+    [ 8 ] = "not a valid code point"
+}
 
-for uint8 = 0, 255, 1 do
-    if uint8 < 0x80 then
-        uint8_to_length[ uint8 ] = 1
-    elseif rbit_band( uint8, 0xE0 ) == 0xC0 then
-        uint8_to_length[ uint8 ] = 2
-    elseif rbit_band( uint8, 0xF0 ) == 0xE0 then
-        uint8_to_length[ uint8 ] = 3
-    elseif rbit_band( uint8, 0xF8 ) == 0xF0 then
-        uint8_to_length[ uint8 ] = 4
+---@param utf8_string string
+---@param error_position integer
+---@param error_code dreamwork.std.utf8.ErrorCode
+---@param stack_level integer The error level, relative to this function.
+local function invalid_sequence( utf8_string, error_position, error_code, stack_level )
+    local uint8 = string_byte( utf8_string, error_position, error_position )
+    if uint8 == nil or error_code == 1 then
+        error( string.format( "invalid UTF-8 sequence at position %d (%s)", error_position, error_messages[ error_code ] ), stack_level )
     else
-        uint8_to_length[ uint8 ] = 0
+        error( string.format( "invalid UTF-8 byte '0x%02X' at position %d (%s)", uint8, error_position, error_messages[ error_code ] ), stack_level )
     end
 end
 
+---@param utf8_codepoint integer
+---@param stack_level integer The error level, relative to this function.
+local function invalid_codepoint( utf8_codepoint, stack_level )
+    if utf8_codepoint < 0 then
+        error( string.format( "invalid UTF-8 code point '-0x%X' (%s)", -utf8_codepoint, error_messages[ 8 ] ), stack_level )
+    elseif utf8_codepoint > 0x10FFFF then
+        error( string.format( "invalid UTF-8 code point '0x%X' (%s)", utf8_codepoint, error_messages[ 7 ] ), stack_level )
+    else
+        error( string.format( "invalid UTF-8 code point '0x%X' (%s)", utf8_codepoint, error_messages[ 6 ] ), stack_level )
+    end
+end
+
+--- Must be tail-called from `decode`, so `decode`'s frame is gone when the error is raised.
+---
+---@param utf8_string string
+---@param strict boolean | nil
+---@param stack_level integer | nil
+---@param sequence_length integer
+---@param error_position integer
+---@param error_code dreamwork.std.utf8.ErrorCode
+---@return nil utf8_codepoint
+---@return integer sequence_length
+---@return integer error_position
+---@return dreamwork.std.utf8.ErrorCode error_code
+local function invalid( utf8_string, strict, stack_level, sequence_length, error_position, error_code )
+    if strict then
+        invalid_sequence( utf8_string, error_position, error_code, (stack_level or 1) + 2 )
+    end
+
+    return nil, sequence_length, error_position, error_code
+end
+
+--- Validates and decodes one UTF-8 sequence (Unicode Table 3-7).
+---
+--- On an invalid sequence raises an error if `strict` is `true`, otherwise returns
+--- `nil` as code point and the length of its maximal valid prefix (at least `1`)
+--- as sequence length, so callers can always advance by `sequence_length`.
+---
 ---@param utf8_string string
 ---@param index integer
----@param str_length integer
----@param strict boolean
----@param stack_level integer
----@return dreamwork.std.utf8.Codepoint | nil
----@return integer | nil sequence_length
-local function decode( utf8_string, index, str_length, strict, stack_level )
-    if stack_level == nil then
-        stack_level = 1
-    end
+---@param end_index integer The last byte position that belongs to the sequence range.
+---@param strict? boolean
+---@param stack_level? integer The error level, relative to the caller of `decode`.
+---@return integer | nil utf8_codepoint
+---@return integer sequence_length
+---@return integer | nil error_position
+---@return dreamwork.std.utf8.ErrorCode | nil error_code
+local function decode( utf8_string, index, end_index, strict, stack_level )
+    local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( utf8_string, index, math_min( index + 3, end_index ) )
 
-    stack_level = stack_level + 1
-
-    local uint8_1 = string_byte( utf8_string, index, index )
-    if uint8_1 < 0x80 then
-        return uint8_1, 1
+    if uint8_1 == nil then
+        return invalid( utf8_string, strict, stack_level, 1, index, 1 )
+    elseif uint8_1 < 0x80 then
+        return uint8_1, 1, nil, nil
+    elseif uint8_1 < 0xC0 then
+        return invalid( utf8_string, strict, stack_level, 1, index, 2 )
     elseif uint8_1 < 0xC2 then
-        if strict then
-            error( string.format( "invalid continuation byte '0x%02X' at position %d (reserved continuation)", uint8_1, index ), stack_level )
-        end
-
-        return uint8_1, nil
+        return invalid( utf8_string, strict, stack_level, 1, index, 5 )
+    elseif uint8_1 > 0xF4 then
+        return invalid( utf8_string, strict, stack_level, 1, index, 3 )
+    elseif uint8_2 == nil then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 1 )
     end
 
-    local sequence_length = uint8_to_length[ uint8_1 ] or 0
-
-    if sequence_length == 0 then
-        if strict then
-            error( string.format( "invalid continuation byte '0x%02X' at position %d (out of UTF-8 range)", uint8_1, index ), stack_level )
-        end
-
-        return uint8_1, nil
-    end
-
-    str_length = str_length + 1
-    index = index + 1
-
-    if index == str_length then
-        if strict then
-            error( string.format( "invalid continuation byte at position %d (unexpected end of string)", index ), stack_level )
-        end
-
-        return nil, 1
-    end
-
-    local uint8_2 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 2 then
-        if strict and rbit_band( uint8_2, 0xC0 ) ~= 0x80 then
-            error( string.format( "invalid continuation byte '0x%02X' at position %d (out of UTF-8 range)", uint8_2, index ), stack_level )
+    if uint8_1 < 0xE0 then
+        if uint8_2 < 0x80 or uint8_2 > 0xBF then
+            return invalid( utf8_string, strict, stack_level, 1, index + 1, 4 )
         end
 
         return rbit_bor(
             rbit_lshift( rbit_band( uint8_1, 0x1F ), 6 ),
             rbit_band( uint8_2, 0x3F )
-        ), 2
+        ), 2, nil, nil
     end
 
-    index = index + 1
-
-    if index == str_length then
-        if strict then
-            error( string.format( "invalid continuation byte at position %d (unexpected end of string)", index ), stack_level )
-        end
-
-        return nil, 2
+    if uint8_2 < 0x80 or uint8_2 > 0xBF then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 4 )
+    elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 5 )
+    elseif uint8_1 == 0xED and uint8_2 > 0x9F then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 6 )
+    elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 5 )
+    elseif uint8_1 == 0xF4 and uint8_2 > 0x8F then
+        return invalid( utf8_string, strict, stack_level, 1, index + 1, 7 )
+    elseif uint8_3 == nil then
+        return invalid( utf8_string, strict, stack_level, 2, index + 2, 1 )
+    elseif uint8_3 < 0x80 or uint8_3 > 0xBF then
+        return invalid( utf8_string, strict, stack_level, 2, index + 2, 4 )
     end
 
-    local uint8_3 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 3 then
-        if strict then
-            if rbit_band( uint8_3, 0xC0 ) ~= 0x80 then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (out of UTF-8 range)", uint8_3, index ), stack_level )
-            elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (overlong encoding)", uint8_3, index ), stack_level )
-            elseif uint8_1 == 0xED and uint8_2 > 0x9F then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (UTF-16 surrogate code point)", uint8_3, index ), stack_level )
-            end
-        end
-
+    if uint8_1 < 0xF0 then
         return rbit_bor(
             rbit_lshift( rbit_band( uint8_1, 0x0F ), 12 ),
             rbit_lshift( rbit_band( uint8_2, 0x3F ), 6 ),
             rbit_band( uint8_3, 0x3F )
-        ), 3
+        ), 3, nil, nil
     end
 
-    index = index + 1
-
-    if index == str_length then
-        if strict then
-            error( string.format( "invalid continuation byte at position %d (unexpected end of string)", index ), stack_level )
-        end
-
-        return nil, 3
+    if uint8_4 == nil then
+        return invalid( utf8_string, strict, stack_level, 3, index + 3, 1 )
+    elseif uint8_4 < 0x80 or uint8_4 > 0xBF then
+        return invalid( utf8_string, strict, stack_level, 3, index + 3, 4 )
     end
 
-    local uint8_4 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 4 then
-        if strict then
-            if rbit_band( uint8_4, 0xC0 ) ~= 0x80 then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (out of UTF-8 range)", uint8_4, index ), stack_level )
-            elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (overlong encoding)", uint8_4, index ), stack_level )
-            elseif uint8_1 == 0xF4 and uint8_2 > 0x8F then
-                error( string.format( "invalid continuation byte '0x%02X' at position %d (code point exceeds U+10FFFF)", uint8_4, index ), stack_level )
-            end
-        end
-
-        return rbit_bor(
-            rbit_lshift( rbit_band( uint8_1, 0x07 ), 18 ),
-            rbit_lshift( rbit_band( uint8_2, 0x3F ), 12 ),
-            rbit_lshift( rbit_band( uint8_3, 0x3F ), 6 ),
-            rbit_band( uint8_4, 0x3F )
-        ), 4
-    end
-
-    if strict then
-        error( string.format( "invalid continuation byte '0x%02X' at position %d (too large)", uint8_1, index - 3 ), stack_level )
-    end
-
-    return nil, sequence_length
+    return rbit_bor(
+        rbit_lshift( rbit_band( uint8_1, 0x07 ), 18 ),
+        rbit_lshift( rbit_band( uint8_2, 0x3F ), 12 ),
+        rbit_lshift( rbit_band( uint8_3, 0x3F ), 6 ),
+        rbit_band( uint8_4, 0x3F )
+    ), 4, nil, nil
 end
 
 local encode
 do
 
-    ---@type table<dreamwork.std.utf8.Codepoint, string>
+    ---@type table<integer, string>
     local cache = {}
 
-    ---@param utf8_codepoint dreamwork.std.utf8.Codepoint
-    ---@param strict boolean
+    local replacement_sequence = "\xEF\xBF\xBD"
+
+    ---@param utf8_codepoint integer
+    ---@param strict boolean If `false`, invalid code points are encoded as U+FFFD.
     ---@param stack_level? integer
     ---@return string utf8_sequence
     function encode( utf8_codepoint, strict, stack_level )
         local utf8_sequence = cache[ utf8_codepoint ]
         if utf8_sequence ~= nil then
             return utf8_sequence
+        end
+
+        if utf8_codepoint < 0 or utf8_codepoint > 0x10FFFF or (utf8_codepoint >= 0xD800 and utf8_codepoint <= 0xDFFF) then
+            if strict then
+                invalid_codepoint( utf8_codepoint, (stack_level or 1) + 2 )
+            end
+
+            return replacement_sequence
         end
 
         if utf8_codepoint < 0x80 then
@@ -214,28 +241,14 @@ do
                 rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 6 ), 0x3F ) ),
                 rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
             )
-        elseif utf8_codepoint < 0x200000 then
+        else
             utf8_sequence = string_char(
                 rbit_bor( 0xF0, rbit_band( rbit_rshift( utf8_codepoint, 18 ), 0x07 ) ),
                 rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 12 ), 0x3F ) ),
                 rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 6 ), 0x3F ) ),
                 rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
             )
-        elseif utf8_codepoint < 0x4000000 then
-            utf8_sequence = string_char(
-                rbit_bor( 0xF8, rbit_band( rbit_rshift( utf8_codepoint, 24 ), 0x03 ) ),
-                rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 18 ), 0x3F ) ),
-                rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 12 ), 0x3F ) ),
-                rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 6 ), 0x3F ) ),
-                rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
-            )
-        elseif strict then
-            error( string.format( "invalid UTF-8 code point 0x%08X (code point exceeds U+10FFFF)", utf8_codepoint ), stack_level )
-        else
-            utf8_sequence = ""
         end
-
-        ---@cast utf8_sequence string
 
         cache[ utf8_codepoint ] = utf8_sequence
         return utf8_sequence
@@ -244,134 +257,34 @@ do
 end
 
 ---@param utf8_string string
----@param index integer
----@param str_length integer
----@param strict boolean
----@return integer sequence_length
----@return nil | integer error_position
-local function seqlen( utf8_string, index, str_length, strict )
-    local uint8_1 = string_byte( utf8_string, index, index )
-    local sequence_length = uint8_to_length[ uint8_1 ] or 0
-
-    if sequence_length == 0 then
-        if strict then
-            if uint8_1 < 0xC2 then
-                return 0, index
-            else
-                return 0, index
-            end
-        else
-            return 1, nil
-        end
-    elseif not strict then
-        return sequence_length, nil
-    end
-
-    if sequence_length == 1 then
-        return 1, nil
-    end
-
-    if index == str_length then
-        return 0, index
-    end
-
-    index = index + 1
-
-    local uint8_2 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 2 then
-        if rbit_band( uint8_2, 0xC0 ) == 0x80 then
-            return 2, nil
-        else
-            return 0, index
-        end
-    end
-
-    if index == str_length then
-        return 0, index
-    end
-
-    index = index + 1
-
-    local uint8_3 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 3 then
-        if rbit_band( uint8_3, 0xC0 ) ~= 0x80 then
-            return 0, index
-        elseif uint8_1 == 0xE0 and uint8_2 < 0xA0 then
-            return 0, index
-        elseif uint8_1 == 0xED and uint8_2 > 0x9F then
-            return 0, index
-        else
-            return 3, nil
-        end
-    end
-
-    if index == str_length then
-        return 0, index
-    end
-
-    index = index + 1
-
-    local uint8_4 = string_byte( utf8_string, index, index )
-
-    if sequence_length == 4 then
-        if rbit_band( uint8_4, 0xC0 ) ~= 0x80 then
-            return 0, index
-        elseif uint8_1 == 0xF0 and uint8_2 < 0x90 then
-            return 0, index
-        elseif uint8_1 == 0xF4 and uint8_2 > 0x8F then
-            return 0, index
-        else
-            return 4, nil
-        end
-    end
-
-    return 0, index - 3
-end
-
----@param utf8_string string
 ---@param start_position? integer
 ---@param end_position? integer
 ---@param lax? boolean
 ---@return integer | nil
 ---@return nil | integer error_position
+---@return nil | dreamwork.std.utf8.ErrorCode error_code
 local function len( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
         return 0
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
     local utf8_codepoint_count = 0
-    lax = lax ~= true
+    local strict = lax ~= true
 
-    repeat
-        local sequence_length, error_position = seqlen( utf8_string, start_position, end_position, lax )
-        if sequence_length == 0 then
-            return nil, error_position
-        else
-            start_position = start_position + sequence_length
-            utf8_codepoint_count = utf8_codepoint_count + 1
+    while start_index <= end_index do
+        local utf8_codepoint, sequence_length, error_position, error_code = decode( utf8_string, start_index, end_index )
+        if utf8_codepoint == nil and strict then
+            return nil, error_position, error_code
         end
-    until start_position > end_position
 
-    return utf8_codepoint_count, nil
+        start_index = start_index + sequence_length
+        utf8_codepoint_count = utf8_codepoint_count + 1
+    end
+
+    return utf8_codepoint_count, nil, nil
 end
 
 
@@ -385,12 +298,15 @@ end
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer sequence_length The length of the string in UTF-8 code units.
 function utf8.len( utf8_string, start_position, end_position, lax )
-    local sequence_length, error_position = len( utf8_string, start_position, end_position, lax )
+    local sequence_length, error_position, error_code = len( utf8_string, start_position, end_position, lax )
     if sequence_length == nil then
-        error( string.format( "invalid UTF-8 sequence at position %d", error_position ), 2 )
+        ---@cast error_position integer
+        ---@cast error_code dreamwork.std.utf8.ErrorCode
+        invalid_sequence( utf8_string, error_position, error_code, 3 )
     end
 
-    return sequence_length or 0
+    ---@cast sequence_length integer
+    return sequence_length
 end
 
 --- [SHARED AND MENU]
@@ -401,7 +317,7 @@ end
 ---@param start_position? integer The position to start from in bytes.
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@return dreamwork.std.utf8.Sequence utf8_codepoints A table of UTF-8 code points.
+---@return integer[] utf8_codepoints A table of UTF-8 code points.
 ---@return integer utf8_codepoint_count The length of the string in UTF-8 code units.
 local function unpack( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
@@ -409,35 +325,21 @@ local function unpack( utf8_string, start_position, end_position, lax )
         return {}, 0
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
     local utf8_codepoint_count = 0
-    lax = lax ~= true
+    local strict = lax ~= true
 
-    ---@type dreamwork.std.utf8.Sequence
+    ---@type integer[]
     local utf8_codepoints = {}
 
-    repeat
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, lax, 2 )
-        start_position = start_position + (utf8_sequence_length or 1)
+    while start_index <= end_index do
+        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
+        start_index = start_index + utf8_sequence_length
 
         utf8_codepoint_count = utf8_codepoint_count + 1
         utf8_codepoints[ utf8_codepoint_count ] = utf8_codepoint or 0xFFFD
-    until start_position > end_position
+    end
 
     return utf8_codepoints, utf8_codepoint_count
 end
@@ -447,6 +349,8 @@ utf8.unpack = unpack
 --- [SHARED AND MENU]
 ---
 --- Returns a substring of the string in UTF-8 code units.
+---
+--- This functions similarly to `string.sub`, negative positions count from the end of the string.
 ---
 ---@param utf8_string string The UTF-8/16/32 string to get the substring of.
 ---@param start_position? integer The position to start from in UTF-8 code units.
@@ -459,63 +363,47 @@ local function sub( utf8_string, start_position, end_position, lax )
         return utf8_string
     end
 
-    ---@type integer | nil
-    local sequence_length
-
     if start_position == nil then
         start_position = 1
-    elseif start_position < 0 then
-        local error_position
-        sequence_length, error_position = len( utf8_string, 1, str_length, lax )
-
-        if sequence_length == nil then
-            error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
-        end
-
-        if (0 - start_position) > sequence_length then
-            return ""
-        end
-
-        start_position = sequence_length + start_position + 1
     end
 
-    if end_position ~= nil and end_position < 0 then
-        if sequence_length == nil then
-            local error_position
-            sequence_length, error_position = len( utf8_string, 1, str_length, lax )
-
-            if sequence_length == nil then
-                error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
-            end
+    if start_position < 0 or (end_position ~= nil and end_position < 0) then
+        local utf8_codepoint_count, error_position, error_code = len( utf8_string, 1, str_length, lax )
+        if utf8_codepoint_count == nil then
+            ---@cast error_position integer
+            ---@cast error_code dreamwork.std.utf8.ErrorCode
+            invalid_sequence( utf8_string, error_position, error_code, 3 )
         end
 
-        if (0 - end_position) > sequence_length then
-            return ""
+        ---@cast utf8_codepoint_count integer
+
+        if start_position < 0 then
+            start_position = utf8_codepoint_count + start_position + 1
         end
 
-        end_position = sequence_length + end_position + 1
+        if end_position ~= nil and end_position < 0 then
+            end_position = utf8_codepoint_count + end_position + 1
+        end
     end
 
-    local utf8_start = 0
-    lax = lax ~= true
+    if start_position < 1 then
+        start_position = 1
+    end
+
+    if end_position ~= nil and end_position < start_position then
+        return ""
+    end
+
+    local strict = lax ~= true
+
+    ---@type integer | nil
+    local utf8_start
 
     local utf8_codepoint_count = 0
     local index = 1
 
-    repeat
-        local utf8_sequence_length, error_position = seqlen( utf8_string, index, str_length, lax )
-
-        if lax then
-            if utf8_sequence_length == 0 then
-                if error_position == index then
-                    error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, index, index ), index ), 2 )
-                else
-                    error( string.format( "invalid UTF-8 sequence byte '0x%02X' in position %d-%d", string_byte( utf8_string, index, index ), index, error_position ), 2 )
-                end
-            end
-        elseif utf8_sequence_length == 0 then
-            utf8_sequence_length = 1
-        end
+    while index <= str_length do
+        local _, utf8_sequence_length = decode( utf8_string, index, str_length, strict, 2 )
 
         utf8_codepoint_count = utf8_codepoint_count + 1
 
@@ -524,11 +412,15 @@ local function sub( utf8_string, start_position, end_position, lax )
         end
 
         if utf8_codepoint_count == end_position then
-            return string_sub( utf8_string, utf8_start, index + (utf8_sequence_length - 1) )
+            return string_sub( utf8_string, utf8_start or 1, index + (utf8_sequence_length - 1) )
         end
 
         index = index + utf8_sequence_length
-    until index >= str_length
+    end
+
+    if utf8_start == nil then
+        return ""
+    end
 
     return string_sub( utf8_string, utf8_start, str_length )
 end
@@ -537,107 +429,201 @@ utf8.sub = sub
 
 --- [SHARED AND MENU]
 ---
---- Decodes a UTF-8 string into a sequence of code points.
+--- Returns the code points of all characters that start between byte positions
+--- `start_position` and `end_position` (both inclusive).
 ---
---- This functions similarly to `string.byte`
+--- This functions similarly to `string.byte`, use `utf8.unpack` for long strings.
 ---
 ---@param utf8_string string The UTF-8 string to decode.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
+---@param start_position? integer The position to start from in bytes, defaults to `1`.
+---@param end_position? integer The position to end at in bytes, defaults to `start_position`.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
----@return dreamwork.std.utf8.Codepoint ... The code points of the UTF-8 string.
+---@return integer ... The code points of the UTF-8 string.
 function utf8.codepoint( utf8_string, start_position, end_position, lax )
-    local utf8_codepoints, utf8_codepoint_count = unpack( utf8_string, start_position, end_position, lax )
+    local str_length = string_len( utf8_string )
+
+    local start_index, end_index = math_range( str_length, start_position, end_position or start_position or 1 )
+
+    if start_index > end_index then
+        return
+    end
+
+    local strict = lax ~= true
+
+    local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, str_length, strict, 2 )
+    start_index = start_index + utf8_sequence_length
+
+    if start_index > end_index then
+        return utf8_codepoint or 0xFFFD
+    end
+
+    ---@type integer[]
+    local utf8_codepoints = { utf8_codepoint or 0xFFFD }
+    local utf8_codepoint_count = 1
+
+    repeat
+        utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, str_length, strict, 2 )
+        start_index = start_index + utf8_sequence_length
+
+        utf8_codepoint_count = utf8_codepoint_count + 1
+        utf8_codepoints[ utf8_codepoint_count ] = utf8_codepoint or 0xFFFD
+    until start_index > end_index
+
     return table_unpack( utf8_codepoints, 1, utf8_codepoint_count )
 end
 
 do
 
-    ---@type integer
-    local str_length = 0
-
-    ---@type integer
-    local prev_sequence_length = 0
-
+    --- Stateless, so nested and interleaved loops are safe: the next position is
+    --- derived from the control variable by re-scanning the previous sequence.
+    ---
+    --- Must be tail-called by the iterators, so errors point at the `for` loop.
+    ---
     ---@param utf8_string string
-    ---@param index integer
+    ---@param index integer The position of the previous code point, `0` before the first one.
+    ---@param strict boolean
     ---@return integer | nil
-    ---@return dreamwork.std.utf8.Codepoint | nil
-    local function utf8_iterator( utf8_string, index )
-        index = index + (prev_sequence_length or 0)
+    ---@return integer | nil
+    local function iterate( utf8_string, index, strict )
+        local str_length = string_len( utf8_string )
+
+        if index == 0 then
+            index = 1
+        else
+            local _, utf8_sequence_length = decode( utf8_string, index, str_length )
+            index = index + utf8_sequence_length
+        end
+
         if index > str_length then
             return nil, nil
         end
 
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, false, 2 )
-        prev_sequence_length = utf8_sequence_length or 0
-        return index, utf8_codepoint or 0xFFFD
+        local utf8_codepoint = decode( utf8_string, index, str_length, strict, 2 )
+        if utf8_codepoint == nil then
+            utf8_codepoint = 0xFFFD
+        end
+
+        return index, utf8_codepoint
     end
 
     ---@param utf8_string string
     ---@param index integer
     ---@return integer | nil
-    ---@return dreamwork.std.utf8.Codepoint | nil
+    ---@return integer | nil
+    local function utf8_iterator( utf8_string, index )
+        return iterate( utf8_string, index, false )
+    end
+
+    ---@param utf8_string string
+    ---@param index integer
+    ---@return integer | nil
+    ---@return integer | nil
     local function utf8_strict_iterator( utf8_string, index )
-        index = index + (prev_sequence_length or 0)
-        if index > str_length then
-            return nil, nil
-        end
-
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index, str_length, true, 2 )
-
-        if utf8_codepoint == nil or utf8_codepoint > 0x10FFFF then
-            error( string.format( "invalid UTF-8 code point '0x%08X' at position %d", utf8_codepoint, index ), 2 )
-        elseif utf8_sequence_length == nil then
-            error( string.format( "invalid UTF-8 sequence '0x%02X' at position %d", string_byte( utf8_string, index, index ), index ), 2 )
-        end
-
-        prev_sequence_length = utf8_sequence_length or 0
-        return index, utf8_codepoint
+        return iterate( utf8_string, index, true )
     end
 
     --- [SHARED AND MENU]
     ---
     --- Returns an iterator function that iterates over the code points of a UTF-8 string.
     ---
+    --- Invalid sequences raise an error, or yield U+FFFD if `lax` is `true`.
+    ---
     ---@param utf8_string string The UTF-8 string to iterate over.
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
-    ---@return ( fun( utf8_string: string, index: integer ): integer | nil, dreamwork.std.utf8.Codepoint | nil ), string, integer
+    ---@return ( fun( utf8_string: string, index: integer ): integer | nil, integer | nil ), string, integer
     function utf8.codes( utf8_string, lax )
-        str_length = string_len( utf8_string )
-        prev_sequence_length = 0
-
-        return lax ~= true and utf8_strict_iterator or utf8_iterator, utf8_string, 1
+        return lax ~= true and utf8_strict_iterator or utf8_iterator, utf8_string, 0
     end
 
 end
 
---- [SHARED AND MENU]
----
---- Encodes a sequence of code points into a UTF-8 string.
----
----@param utf8_codepoints dreamwork.std.utf8.Sequence The code points to encode.
----@param utf8_codepoint_count? integer The number of code points to encode.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return string utf8_string The UTF-8 string.
-local function pack( utf8_codepoints, utf8_codepoint_count, lax )
-    if utf8_codepoint_count == nil then
-        utf8_codepoint_count = #utf8_codepoints
+local pack
+
+if ffi == nil then
+
+    --- [SHARED AND MENU]
+    ---
+    --- Encodes a sequence of code points into a UTF-8 string.
+    ---
+    ---@param utf8_codepoints integer[] The code points to encode.
+    ---@param utf8_codepoint_count? integer The number of code points to encode.
+    ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid code points are encoded as U+FFFD.
+    ---@return string utf8_string The UTF-8 string.
+    function pack( utf8_codepoints, utf8_codepoint_count, lax )
+        if utf8_codepoint_count == nil then
+            utf8_codepoint_count = #utf8_codepoints
+        end
+
+        if utf8_codepoint_count == 0 then
+            return ""
+        end
+
+        ---@type string[]
+        local utf8_sequences = {}
+        local strict = lax ~= true
+
+        for i = 1, utf8_codepoint_count, 1 do
+            utf8_sequences[ i ] = encode( utf8_codepoints[ i ], strict, 2 )
+        end
+
+        return table_concat( utf8_sequences, "", 1, utf8_codepoint_count )
     end
 
-    if utf8_codepoint_count == 0 then
-        return ""
+else
+
+    ---@param utf8_codepoints integer[]
+    ---@param utf8_codepoint_count? integer
+    ---@param lax? boolean
+    ---@return string utf8_string
+    function pack( utf8_codepoints, utf8_codepoint_count, lax )
+        if utf8_codepoint_count == nil then
+            utf8_codepoint_count = #utf8_codepoints
+        end
+
+        if utf8_codepoint_count == 0 then
+            return ""
+        end
+
+        local strict = lax ~= true
+
+        -- every code point takes at most 4 bytes, U+FFFD takes 3
+        local buffer = uint8_array_t( utf8_codepoint_count * 4 )
+        local length = 0
+
+        for i = 1, utf8_codepoint_count, 1 do
+            local utf8_codepoint = utf8_codepoints[ i ]
+
+            if utf8_codepoint < 0 or utf8_codepoint > 0x10FFFF or (utf8_codepoint >= 0xD800 and utf8_codepoint <= 0xDFFF) then
+                -- raises in strict mode, U+FFFD otherwise
+                local utf8_sequence = encode( utf8_codepoint, strict, 2 )
+                local utf8_sequence_length = string_len( utf8_sequence )
+
+                ffi_copy( buffer + length, utf8_sequence, utf8_sequence_length )
+                length = length + utf8_sequence_length
+            elseif utf8_codepoint < 0x80 then
+                buffer[ length ] = utf8_codepoint
+                length = length + 1
+            elseif utf8_codepoint < 0x800 then
+                buffer[ length ] = rbit_bor( 0xC0, rbit_rshift( utf8_codepoint, 6 ) )
+                buffer[ length + 1 ] = rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
+                length = length + 2
+            elseif utf8_codepoint < 0x10000 then
+                buffer[ length ] = rbit_bor( 0xE0, rbit_rshift( utf8_codepoint, 12 ) )
+                buffer[ length + 1 ] = rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 6 ), 0x3F ) )
+                buffer[ length + 2 ] = rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
+                length = length + 3
+            else
+                buffer[ length ] = rbit_bor( 0xF0, rbit_rshift( utf8_codepoint, 18 ) )
+                buffer[ length + 1 ] = rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 12 ), 0x3F ) )
+                buffer[ length + 2 ] = rbit_bor( 0x80, rbit_band( rbit_rshift( utf8_codepoint, 6 ), 0x3F ) )
+                buffer[ length + 3 ] = rbit_bor( 0x80, rbit_band( utf8_codepoint, 0x3F ) )
+                length = length + 4
+            end
+        end
+
+        return ffi_string( buffer, length )
     end
 
-    ---@type string[]
-    local utf8_sequences = {}
-    lax = lax ~= true
-
-    for i = 1, utf8_codepoint_count, 1 do
-        utf8_sequences[ i ] = encode( utf8_codepoints[ i ], lax, 2 )
-    end
-
-    return table_concat( utf8_sequences, "", 1, utf8_codepoint_count )
 end
 
 utf8.pack = pack
@@ -648,14 +634,18 @@ utf8.pack = pack
 ---
 --- This functions similarly to `string.char`
 ---
----@param ... dreamwork.std.utf8.Codepoint The code points to encode.
+---@param ... integer The code points to encode.
 ---@return string utf8_string The UTF-8 string.
 function utf8.char( a, b, ... )
     if b == nil then
+        if a == nil then
+            return ""
+        end
+
         return encode( a, true, 2 )
     end
 
-    return pack( { a, b, ... }, raw_select( "#", a, b, ... ), true )
+    return pack( { a, b, ... }, raw_select( "#", a, b, ... ), false )
 end
 
 --- [SHARED AND MENU]
@@ -663,7 +653,7 @@ end
 --- Returns the byte position of a code point in UTF-8 string.
 ---
 ---@param utf8_string string The UTF-8 string to search in.
----@param index integer The code point to search for in the UTF-8 units.
+---@param index integer The code point to search for in the UTF-8 units, `0` returns the start of the code point containing byte `offset`.
 ---@param offset? integer The position to start from in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
@@ -678,23 +668,32 @@ function utf8.offset( utf8_string, index, offset, lax )
     elseif offset < 0 then
         offset = math_relative( offset, str_length )
     else
-        offset = math_min( offset, str_length )
+        offset = math_max( 1, math_min( offset, str_length ) )
     end
 
     if index == 0 then
-        local strict = lax ~= true
+        -- step back over continuation bytes, at most 3 of them
+        local limit = math_max( 1, offset - 3 )
 
-        while offset ~= 0 and raw_select( 2, seqlen( utf8_string, offset, str_length, strict ) ) ~= nil do
+        while offset > limit do
+            local uint8 = string_byte( utf8_string, offset, offset )
+            if uint8 < 0x80 or uint8 > 0xBF then
+                break
+            end
+
             offset = offset - 1
         end
 
         return offset
     elseif index < 0 then
-        local sequence_length, error_position = len( utf8_string, offset, str_length, lax )
-
+        local sequence_length, error_position, error_code = len( utf8_string, offset, str_length, lax )
         if sequence_length == nil then
-            error( string.format( "invalid UTF-8 sequence byte '0x%02X' at position %d", string_byte( utf8_string, error_position, error_position ), error_position ), 2 )
+            ---@cast error_position integer
+            ---@cast error_code dreamwork.std.utf8.ErrorCode
+            invalid_sequence( utf8_string, error_position, error_code, 3 )
         end
+
+        ---@cast sequence_length integer
 
         if (0 - index) > sequence_length then
             index = 1
@@ -709,7 +708,8 @@ function utf8.offset( utf8_string, index, offset, lax )
         if utf8_codepoint_count == index then
             return offset
         else
-            offset = offset + seqlen( utf8_string, offset, str_length, false )
+            local _, utf8_sequence_length = decode( utf8_string, offset, str_length )
+            offset = offset + utf8_sequence_length
             utf8_codepoint_count = utf8_codepoint_count + 1
         end
     until offset > str_length
@@ -717,9 +717,7 @@ function utf8.offset( utf8_string, index, offset, lax )
     return nil
 end
 
-do
-
-    local table_reversed = table.reversed
+if ffi == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -730,11 +728,93 @@ do
     ---@param utf8_string string The UTF-8 string to reverse.
     ---@param start_position? integer The position to start from in bytes.
     ---@param end_position? integer The position to end at in bytes.
-    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences are replaced with U+FFFD.
     ---@return string utf8_reversed The reversed UTF-8 string.
     function utf8.reverse( utf8_string, start_position, end_position, lax )
-        local utf8_codepoints, utf8_codepoint_count = unpack( utf8_string, start_position, end_position, lax )
-        return pack( table_reversed( utf8_codepoints, utf8_codepoint_count ), utf8_codepoint_count, lax )
+        local str_length = string_len( utf8_string )
+
+        local start_index, end_index = math_range( str_length, start_position, end_position )
+
+        local strict = lax ~= true
+
+        ---@type string[]
+        local utf8_sequences = {}
+        local utf8_sequence_count = 0
+
+        while start_index <= end_index do
+            local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
+            utf8_sequence_count = utf8_sequence_count + 1
+
+            if utf8_codepoint == nil then
+                utf8_sequences[ utf8_sequence_count ] = "\xEF\xBF\xBD"
+            else
+                utf8_sequences[ utf8_sequence_count ] = string_sub( utf8_string, start_index, start_index + (utf8_sequence_length - 1) )
+            end
+
+            start_index = start_index + utf8_sequence_length
+        end
+
+        local left, right = 1, utf8_sequence_count
+
+        while left < right do
+            utf8_sequences[ left ], utf8_sequences[ right ] = utf8_sequences[ right ], utf8_sequences[ left ]
+            left, right = left + 1, right - 1
+        end
+
+        return table_concat( utf8_sequences, "", 1, utf8_sequence_count )
+    end
+
+else
+
+    ---@param utf8_string string
+    ---@param start_position? integer
+    ---@param end_position? integer
+    ---@param lax? boolean
+    ---@return string utf8_reversed
+    function utf8.reverse( utf8_string, start_position, end_position, lax )
+        local str_length = string_len( utf8_string )
+
+        local start_index, end_index = math_range( str_length, start_position, end_position )
+
+        if start_index > end_index then
+            return ""
+        end
+
+        local strict = lax ~= true
+        local source = ffi_cast( uint8_ptr_t, utf8_string )
+
+        -- in lax mode a single invalid byte can turn into a 3-byte U+FFFD
+        local capacity = end_index - start_index + 1
+        if not strict then
+            capacity = capacity * 3
+        end
+
+        -- filled from the end towards the start
+        local buffer = uint8_array_t( capacity )
+        local length = capacity
+
+        while start_index <= end_index do
+            local uint8 = source[ start_index - 1 ]
+            if uint8 < 0x80 then
+                length = length - 1
+                buffer[ length ] = uint8
+                start_index = start_index + 1
+            else
+                local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
+
+                if utf8_codepoint == nil then
+                    length = length - 3
+                    ffi_copy( buffer + length, "\xEF\xBF\xBD", 3 )
+                else
+                    length = length - utf8_sequence_length
+                    ffi_copy( buffer + length, source + (start_index - 1), utf8_sequence_length )
+                end
+
+                start_index = start_index + utf8_sequence_length
+            end
+        end
+
+        return ffi_string( buffer + length, capacity - length )
     end
 
 end
@@ -760,51 +840,52 @@ do
             return utf8_string
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
-
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
+        local start_index, end_index = math_range( str_length, start_position, end_position )
 
         if replacement_str == nil then
             replacement_str = default_replacement_str
         end
 
-        ---@type integer
-        local utf8_sequence_count = 0
-
         ---@type string[]
-        local utf8_sequences = {}
+        local segments = {}
+        local segment_count = 0
 
-        repeat
-            local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, false, 2 )
-            start_position = start_position + (utf8_sequence_length or 1)
+        -- start of the current run of valid sequences
+        local valid_start = start_index
 
-            utf8_sequence_count = utf8_sequence_count + 1
+        while start_index <= end_index do
+            local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, false, 2 )
 
-            if utf8_codepoint == nil or utf8_sequence_length == nil then
-                utf8_sequences[ utf8_sequence_count ] = replacement_str
-            else
-                utf8_sequences[ utf8_sequence_count ] = encode( utf8_codepoint, false, 2 )
+            if utf8_codepoint == nil then
+                if valid_start < start_index then
+                    segment_count = segment_count + 1
+                    segments[ segment_count ] = string_sub( utf8_string, valid_start, start_index - 1 )
+                end
+
+                segment_count = segment_count + 1
+                segments[ segment_count ] = replacement_str
+
+                valid_start = start_index + utf8_sequence_length
             end
-        until start_position > end_position
 
-        return table_concat( utf8_sequences, "", 1, utf8_sequence_count )
+            start_index = start_index + utf8_sequence_length
+        end
+
+        if segment_count == 0 then
+            return string_sub( utf8_string, valid_start, end_index )
+        end
+
+        if valid_start <= end_index then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( utf8_string, valid_start, end_index )
+        end
+
+        return table_concat( segments, "", 1, segment_count )
     end
 
 end
 
----@type table<dreamwork.std.utf8.Codepoint, string>
+---@type table<integer, string>
 local codepoint_to_lower = {
     [ 0x41 ] = "a",
     [ 0x42 ] = "b",
@@ -1721,7 +1802,7 @@ local codepoint_to_lower = {
     [ 0x10427 ] = "𐑏",
 }
 
----@type table<dreamwork.std.utf8.Codepoint, string>
+---@type table<integer, string>
 local codepoint_to_upper = {
     [ 0x61 ] = "A",
     [ 0x62 ] = "B",
@@ -2656,182 +2737,257 @@ local codepoint_to_upper = {
     [ 0x1044F ] = "𐐧"
 }
 
---- [SHARED AND MENU]
----
---- Converts a UTF-8 string to lowercase within the given byte range.
----
---- Each decoded codepoint that has a known uppercase-to-lowercase mapping is
---- replaced with its lowercase form; any codepoint with no such mapping
---- (already lowercase, digits, symbols, whitespace, or characters outside
---- the known case tables) is left unchanged.
----
---- Bytes outside the given range are always left untouched.
----
----@param utf8_string string The UTF-8 string to convert.
----@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
----@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
-function utf8.lower( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
-    if str_length == 0 then
-        return utf8_string
-    end
+if ffi == nil then
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    ---@type string[]
-    local segments = {}
-
-    ---@type integer
-    local segment_count = 0
-
-    if start_position ~= 1 then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, 1, start_position - 1 )
-    end
-
-    ---@type integer
-    local break_point = start_position
-    lax = lax ~= true
-
-    repeat
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, lax, 2 )
-        if utf8_sequence_length == nil then
-            utf8_sequence_length = 1
+    --- [SHARED AND MENU]
+    ---
+    --- Converts a UTF-8 string to lowercase within the given byte range.
+    ---
+    --- Each decoded codepoint that has a known uppercase-to-lowercase mapping is
+    --- replaced with its lowercase form; any codepoint with no such mapping
+    --- (already lowercase, digits, symbols, whitespace, or characters outside
+    --- the known case tables) is left unchanged.
+    ---
+    --- Bytes outside the given range are always left untouched.
+    ---
+    ---@param utf8_string string The UTF-8 string to convert.
+    ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
+    ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
+    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
+    function utf8.lower( utf8_string, start_position, end_position, lax )
+        local str_length = string_len( utf8_string )
+        if str_length == 0 then
+            return utf8_string
         end
 
-        if utf8_codepoint ~= nil then
-            local replacement = codepoint_to_lower[ utf8_codepoint ]
-            if replacement ~= nil then
-                if break_point < start_position then
+        local start_index, end_index = math_range( str_length, start_position, end_position )
+
+        if start_index > end_index then
+            return utf8_string
+        end
+
+        ---@type string[]
+        local segments = {}
+
+        ---@type integer
+        local segment_count = 0
+
+        if start_index ~= 1 then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( utf8_string, 1, start_index - 1 )
+        end
+
+        ---@type integer
+        local break_point = start_index
+        local strict = lax ~= true
+
+        repeat
+            local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
+
+            if utf8_codepoint ~= nil then
+                local replacement = codepoint_to_lower[ utf8_codepoint ]
+                if replacement ~= nil then
+                    if break_point < start_index then
+                        segment_count = segment_count + 1
+                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
+                    end
+
                     segment_count = segment_count + 1
-                    segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
+                    segments[ segment_count ] = replacement
+
+                    break_point = start_index + utf8_sequence_length
                 end
+            end
 
-                segment_count = segment_count + 1
-                segments[ segment_count ] = replacement
+            start_index = start_index + utf8_sequence_length
+        until start_index > end_index
 
-                break_point = start_position + utf8_sequence_length
+        if segment_count == 0 then
+            return utf8_string
+        end
+
+        if break_point <= str_length then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( utf8_string, break_point, str_length )
+        end
+
+        return table_concat( segments, "", 1, segment_count )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Converts a UTF-8 string to uppercase within the given byte range.
+    ---
+    --- Each decoded codepoint that has a known lowercase-to-uppercase mapping is
+    --- replaced with its uppercase form; any codepoint with no such mapping
+    --- (already uppercase, digits, symbols, whitespace, or characters outside
+    --- the known case tables) is left unchanged.
+    ---
+    --- Bytes outside the given range are always left untouched.
+    ---
+    ---@param utf8_string string The UTF-8 string to convert.
+    ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
+    ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
+    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
+    function utf8.upper( utf8_string, start_position, end_position, lax )
+        local str_length = string_len( utf8_string )
+        if str_length == 0 then
+            return utf8_string
+        end
+
+        local start_index, end_index = math_range( str_length, start_position, end_position )
+
+        if start_index > end_index then
+            return utf8_string
+        end
+
+        ---@type string[]
+        local segments = {}
+
+        ---@type integer
+        local segment_count = 0
+
+        if start_index ~= 1 then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( utf8_string, 1, start_index - 1 )
+        end
+
+        ---@type integer
+        local break_point = start_index
+        local strict = lax ~= true
+
+        repeat
+            local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
+
+            if utf8_codepoint ~= nil then
+                local replacement = codepoint_to_upper[ utf8_codepoint ]
+                if replacement ~= nil then
+                    if break_point < start_index then
+                        segment_count = segment_count + 1
+                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
+                    end
+
+                    segment_count = segment_count + 1
+                    segments[ segment_count ] = replacement
+
+                    break_point = start_index + utf8_sequence_length
+                end
+            end
+
+            start_index = start_index + utf8_sequence_length
+        until start_index > end_index
+
+        if segment_count == 0 then
+            return utf8_string
+        end
+
+        if break_point <= str_length then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( utf8_string, break_point, str_length )
+        end
+
+        return table_concat( segments, "", 1, segment_count )
+    end
+
+else
+
+    --- Builds an FFI `utf8.lower`/`utf8.upper`, writing straight into a byte buffer
+    --- instead of collecting string segments, ~2x faster with JIT.
+    ---
+    ---@param case_map table<integer, string>
+    ---@return fun( utf8_string: string, start_position?: integer, end_position?: integer, lax?: boolean ): string
+    local function ffi_case_mapper( case_map )
+        local ascii_map = uint8_array_t( 128 )
+
+        for uint8 = 0, 127, 1 do
+            local replacement = case_map[ uint8 ]
+            if replacement == nil then
+                ascii_map[ uint8 ] = uint8
+            elseif string_len( replacement ) == 1 then
+                ascii_map[ uint8 ] = string_byte( replacement, 1, 1 )
+            else
+                error( "ascii case mapping must stay ascii" )
             end
         end
 
-        start_position = start_position + utf8_sequence_length
-    until start_position > end_position
+        -- worst output/input byte ratio, e.g. 'Ⱥ' (2 bytes) -> 'ⱥ' (3 bytes)
+        local max_growth = 1
 
-    if segment_count == 0 then
-        return utf8_string
-    end
-
-    if break_point <= str_length then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, break_point, str_length )
-    end
-
-    return table_concat( segments, "", 1, segment_count )
-end
-
---- [SHARED AND MENU]
----
---- Converts a UTF-8 string to uppercase within the given byte range.
----
---- Each decoded codepoint that has a known lowercase-to-uppercase mapping is
---- replaced with its uppercase form; any codepoint with no such mapping
---- (already uppercase, digits, symbols, whitespace, or characters outside
---- the known case tables) is left unchanged.
----
---- Bytes outside the given range are always left untouched.
----
----@param utf8_string string The UTF-8 string to convert.
----@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
----@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
-function utf8.upper( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
-    if str_length == 0 then
-        return utf8_string
-    end
-
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    ---@type string[]
-    local segments = {}
-
-    ---@type integer
-    local segment_count = 0
-
-    if start_position ~= 1 then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, 1, start_position - 1 )
-    end
-
-    ---@type integer
-    local break_point = start_position
-    lax = lax ~= true
-
-    repeat
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, lax, 2 )
-        if utf8_sequence_length == nil then
-            utf8_sequence_length = 1
-        end
-
-        if utf8_codepoint ~= nil then
-            local replacement = codepoint_to_upper[ utf8_codepoint ]
-            if replacement ~= nil then
-                if break_point < start_position then
-                    segment_count = segment_count + 1
-                    segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
-                end
-
-                segment_count = segment_count + 1
-                segments[ segment_count ] = replacement
-
-                break_point = start_position + utf8_sequence_length
+        for utf8_codepoint, replacement in raw_pairs( case_map ) do
+            local growth = string_len( replacement ) / string_len( encode( utf8_codepoint, true ) )
+            if growth > max_growth then
+                max_growth = growth
             end
         end
 
-        start_position = start_position + utf8_sequence_length
-    until start_position > end_position
+        return function( utf8_string, start_position, end_position, lax )
+            local str_length = string_len( utf8_string )
+            if str_length == 0 then
+                return utf8_string
+            end
 
-    if segment_count == 0 then
-        return utf8_string
+            local start_index, end_index = math_range( str_length, start_position, end_position )
+
+            if start_index > end_index then
+                return utf8_string
+            end
+
+            local source = ffi_cast( uint8_ptr_t, utf8_string )
+            local buffer = uint8_array_t( math_ceil( str_length * max_growth ) )
+
+            -- 0-based, `index` walks the source, `length` the buffer
+            local index = start_index - 1
+            local length = index
+
+            ffi_copy( buffer, source, length )
+
+            local strict = lax ~= true
+            local changed = false
+
+            while index < end_index do
+                local uint8 = source[ index ]
+                if uint8 < 0x80 then
+                    local mapped = ascii_map[ uint8 ]
+                    if mapped ~= uint8 then
+                        changed = true
+                    end
+
+                    buffer[ length ] = mapped
+                    length = length + 1
+                    index = index + 1
+                else
+                    local utf8_codepoint, utf8_sequence_length = decode( utf8_string, index + 1, end_index, strict, 2 )
+
+                    local replacement = utf8_codepoint and case_map[ utf8_codepoint ]
+                    if replacement == nil then
+                        ffi_copy( buffer + length, source + index, utf8_sequence_length )
+                        length = length + utf8_sequence_length
+                    else
+                        changed = true
+
+                        local replacement_length = string_len( replacement )
+                        ffi_copy( buffer + length, replacement, replacement_length )
+                        length = length + replacement_length
+                    end
+
+                    index = index + utf8_sequence_length
+                end
+            end
+
+            if changed then
+                ffi_copy( buffer + length, source + index, str_length - index )
+                return ffi_string( buffer, length + (str_length - index) )
+            end
+
+            return utf8_string
+        end
     end
 
-    if break_point <= str_length then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, break_point, str_length )
-    end
+    utf8.lower = ffi_case_mapper( codepoint_to_lower )
+    utf8.upper = ffi_case_mapper( codepoint_to_upper )
 
-    return table_concat( segments, "", 1, segment_count )
 end
 
 --- [SHARED AND MENU]
@@ -2854,20 +3010,10 @@ function utf8.capitalize( utf8_string, start_position, end_position, lax )
         return utf8_string
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
+    if start_index > end_index then
+        return utf8_string
     end
 
     ---@type string[]
@@ -2876,35 +3022,32 @@ function utf8.capitalize( utf8_string, start_position, end_position, lax )
     ---@type integer
     local segment_count = 0
 
-    if start_position ~= 1 then
+    if start_index ~= 1 then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, 1, start_position - 1 )
+        segments[ segment_count ] = string_sub( utf8_string, 1, start_index - 1 )
     end
 
     ---@type integer
-    local break_point = start_position
+    local break_point = start_index
     local first_sequence = false
-    lax = lax ~= true
+    local strict = lax ~= true
 
     repeat
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, lax, 2 )
-        if utf8_sequence_length == nil then
-            utf8_sequence_length = 1
-        end
+        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
 
         if utf8_codepoint ~= nil then
             if first_sequence then
                 local lower_sequence = codepoint_to_lower[ utf8_codepoint ]
                 if lower_sequence ~= nil then
-                    if break_point < start_position then
+                    if break_point < start_index then
                         segment_count = segment_count + 1
-                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
+                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
                     end
 
                     segment_count = segment_count + 1
                     segments[ segment_count ] = lower_sequence
 
-                    break_point = start_position + utf8_sequence_length
+                    break_point = start_index + utf8_sequence_length
                 end
             else
                 if codepoint_to_lower[ utf8_codepoint ] ~= nil then
@@ -2914,22 +3057,22 @@ function utf8.capitalize( utf8_string, start_position, end_position, lax )
                     if upper_sequence ~= nil then
                         first_sequence = true
 
-                        if break_point < start_position then
+                        if break_point < start_index then
                             segment_count = segment_count + 1
-                            segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
+                            segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
                         end
 
                         segment_count = segment_count + 1
                         segments[ segment_count ] = upper_sequence
 
-                        break_point = start_position + utf8_sequence_length
+                        break_point = start_index + utf8_sequence_length
                     end
                 end
             end
         end
 
-        start_position = start_position + utf8_sequence_length
-    until start_position > end_position
+        start_index = start_index + utf8_sequence_length
+    until start_index > end_index
 
     if segment_count == 0 then
         return utf8_string
@@ -2943,6 +3086,44 @@ function utf8.capitalize( utf8_string, start_position, end_position, lax )
     return table_concat( segments, "", 1, segment_count )
 end
 
+--- How a code point without case mapping affects word boundaries in `utf8.title`:
+--- `true` starts a new word, `false` continues the current one, `nil` keeps the current state.
+---
+---@type table<integer, boolean>
+local word_breaks = {}
+
+do
+
+    -- ascii whitespace, controls and punctuation, except the apostrophe
+    for uint8 = 0x00, 0x7F, 1 do
+        if ascii_isDigit( uint8 ) then
+            word_breaks[ uint8 ] = false
+        elseif uint8 ~= 0x27 then
+            word_breaks[ uint8 ] = true
+        end
+    end
+
+    -- no-break space, '¡', '«', '»', '¿'
+    word_breaks[ 0xA0 ] = true
+    word_breaks[ 0xA1 ] = true
+    word_breaks[ 0xAB ] = true
+    word_breaks[ 0xBB ] = true
+    word_breaks[ 0xBF ] = true
+
+    -- general punctuation (spaces, dashes, quotes), except the typographic apostrophe '’'
+    for utf8_codepoint = 0x2000, 0x206F, 1 do
+        if utf8_codepoint ~= 0x2019 then
+            word_breaks[ utf8_codepoint ] = true
+        end
+    end
+
+    -- CJK symbols and punctuation
+    for utf8_codepoint = 0x3000, 0x303F, 1 do
+        word_breaks[ utf8_codepoint ] = true
+    end
+
+end
+
 --- [SHARED AND MENU]
 ---
 --- Converts a UTF-8 string to title case within the given range: the first
@@ -2950,10 +3131,8 @@ end
 --- already uppercase), and every other case-able character in the word is
 --- converted to lowercase.
 ---
---- A word boundary is any character with no case
---- mapping at all (space, digit, punctuation, etc.) — encountering one
---- always starts a fresh word, regardless of whether the boundary character
---- itself needed any change.
+--- Words are separated by whitespace and punctuation, apostrophes (`'` and `’`),
+--- digits and letters without case (`ß`, CJK, etc.) don't break a word.
 ---
 ---@param utf8_string string The UTF-8 string to convert to title case.
 ---@param start_position? integer The position to start from in bytes.
@@ -2966,20 +3145,10 @@ function utf8.title( utf8_string, start_position, end_position, lax )
         return utf8_string
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
+    if start_index > end_index then
+        return utf8_string
     end
 
     ---@type string[]
@@ -2988,57 +3157,57 @@ function utf8.title( utf8_string, start_position, end_position, lax )
     ---@type integer
     local segment_count = 0
 
-    if start_position ~= 1 then
+    if start_index ~= 1 then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( utf8_string, 1, start_position - 1 )
+        segments[ segment_count ] = string_sub( utf8_string, 1, start_index - 1 )
     end
 
     ---@type integer
-    local break_point = start_position
+    local break_point = start_index
     local at_word_start = true
-    lax = lax ~= true
+    local strict = lax ~= true
 
     repeat
-        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_position, end_position, lax, 2 )
-        if utf8_sequence_length == nil then
-            utf8_sequence_length = 1
-        end
+        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
 
         if utf8_codepoint ~= nil then
             local upper_sequence = codepoint_to_upper[ utf8_codepoint ]
             local lower_sequence = codepoint_to_lower[ utf8_codepoint ]
 
             if upper_sequence == nil and lower_sequence == nil then
-                at_word_start = true
+                local word_break = word_breaks[ utf8_codepoint ]
+                if word_break ~= nil then
+                    at_word_start = word_break
+                end
             elseif at_word_start then
                 at_word_start = false
 
                 if upper_sequence ~= nil then
-                    if break_point < start_position then
+                    if break_point < start_index then
                         segment_count = segment_count + 1
-                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
+                        segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
                     end
 
                     segment_count = segment_count + 1
                     segments[ segment_count ] = upper_sequence
 
-                    break_point = start_position + utf8_sequence_length
+                    break_point = start_index + utf8_sequence_length
                 end
             elseif lower_sequence ~= nil then
-                if break_point < start_position then
+                if break_point < start_index then
                     segment_count = segment_count + 1
-                    segments[ segment_count ] = string_sub( utf8_string, break_point, start_position - 1 )
+                    segments[ segment_count ] = string_sub( utf8_string, break_point, start_index - 1 )
                 end
 
                 segment_count = segment_count + 1
                 segments[ segment_count ] = lower_sequence
 
-                break_point = start_position + utf8_sequence_length
+                break_point = start_index + utf8_sequence_length
             end
         end
 
-        start_position = start_position + utf8_sequence_length
-    until start_position > end_position
+        start_index = start_index + utf8_sequence_length
+    until start_index > end_index
 
     if segment_count == 0 then
         return utf8_string
@@ -3056,9 +3225,11 @@ end
 ---
 --- Wraps a UTF-8 string so that no line exceeds max_length UTF-8 code units,
 --- breaking on the last ASCII space before the limit when one is available
---- within the current line, or hard-splitting mid-sequence otherwise.
+--- within the current line, or hard-splitting mid-word otherwise.
 ---
---- Lines are joined with "\n".
+--- Lines are joined with "\n", existing "\n" characters start a new line.
+---
+--- Bytes outside the given range are left untouched and don't count towards the line length.
 ---
 ---@param utf8_string string The UTF-8 string to wrap.
 ---@param max_length integer The maximum length of each line, in UTF-8 code units.
@@ -3076,21 +3247,7 @@ function utf8.wrap( utf8_string, max_length, start_position, end_position, lax )
         return utf8_string
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
     ---@type string[]
     local lines = {}
@@ -3098,59 +3255,88 @@ function utf8.wrap( utf8_string, max_length, start_position, end_position, lax )
     ---@type integer
     local line_count = 0
 
-    if start_position ~= 1 then
-        line_count = line_count + 1
-        lines[ line_count ] = string_sub( utf8_string, 1, start_position - 1 )
-    end
-
-    local line_start = start_position
+    -- bytes before `start_position` stay glued to the first line
+    local line_start = 1
     local line_length = 0
+
+    ---@type integer | nil
     local last_space_index = nil
     local last_space_line_length = 0
 
-    lax = lax ~= true
+    local strict = lax ~= true
 
-    repeat
-        local utf8_sequence_length = seqlen( utf8_string, start_position, end_position, lax )
+    while start_index <= end_index do
+        local utf8_codepoint, utf8_sequence_length = decode( utf8_string, start_index, end_index, strict, 2 )
 
-        -- track break opportunities (ascii space only)
-        if utf8_sequence_length == 1 and string_byte( utf8_string, start_position ) == 0x20 then
-            last_space_index = start_position
-            last_space_line_length = line_length
-        end
-
-        line_length = line_length + 1
-
-        if line_length >= max_length then
-            -- no space to break on: hard-split mid-word at the current codepoint
-            if last_space_index == nil or last_space_index < line_start then
+        if utf8_codepoint == 0x0A then
+            -- existing line break, the line starts over
+            line_length, last_space_index = 0, nil
+        elseif line_length == max_length then
+            -- the line is full, the current code point goes to the next one
+            if utf8_codepoint == 0x20 then
+                -- break right here, dropping the space itself
                 line_count = line_count + 1
-                lines[ line_count ] = string_sub( utf8_string, line_start, start_position + utf8_sequence_length - 1 )
+                lines[ line_count ] = string_sub( utf8_string, line_start, start_index - 1 )
 
-                line_start, line_length = start_position + utf8_sequence_length, 0
-            else -- break at the last space, dropping the space itself
-                line_count = line_count + 1
-                lines[ line_count ] = string_sub( utf8_string, line_start, last_space_index - 1 )
+                line_start, line_length, last_space_index = start_index + 1, 0, nil
+            else
+                if last_space_index == nil then
+                    -- no space to break on: hard-split mid-word before the current code point
+                    line_count = line_count + 1
+                    lines[ line_count ] = string_sub( utf8_string, line_start, start_index - 1 )
 
-                line_start, line_length = last_space_index + 1, line_length - last_space_line_length - 1
+                    line_start, line_length = start_index, 0
+                else
+                    -- break at the last space, dropping the space itself
+                    line_count = line_count + 1
+                    lines[ line_count ] = string_sub( utf8_string, line_start, last_space_index - 1 )
+
+                    line_start, line_length, last_space_index = last_space_index + 1, line_length - last_space_line_length - 1, nil
+                end
+
+                line_length = line_length + 1
+            end
+        else
+            -- track break opportunities (ascii space only)
+            if utf8_codepoint == 0x20 then
+                last_space_index, last_space_line_length = start_index, line_length
             end
 
-            last_space_index = nil
+            line_length = line_length + 1
         end
 
-        start_position = start_position + utf8_sequence_length
-    until start_position > end_position
+        start_index = start_index + utf8_sequence_length
+    end
 
+    if line_count == 0 then
+        return utf8_string
+    end
+
+    -- nothing left when the very last break dropped a trailing space
     if line_start <= str_length then
         line_count = line_count + 1
         lines[ line_count ] = string_sub( utf8_string, line_start, str_length )
     end
 
-    if line_count == 1 then
-        return lines[ 1 ]
+    return table_concat( lines, "\n", 1, line_count )
+end
+
+--- Repeats `padding` up to exactly `length` characters.
+---
+---@param padding string
+---@param padding_length integer The length of `padding` in characters.
+---@param length integer
+---@param lax? boolean
+---@return string
+local function fill( padding, padding_length, length, lax )
+    local repetitions = math_floor( length / padding_length )
+    local remainder = length - repetitions * padding_length
+
+    if remainder == 0 then
+        return string_rep( padding, repetitions )
     end
 
-    return table_concat( lines, "\n", 1, line_count )
+    return string_rep( padding, repetitions ) .. sub( padding, 1, remainder, lax )
 end
 
 --- [SHARED AND MENU]
@@ -3158,8 +3344,8 @@ end
 --- Pads a UTF-8 string with a repeated padding string until it reaches `desired_length`
 --- characters, on the left, the right, or both sides evenly.
 ---
---- If neither `left` nor `right` is `true`, or the string is already at least
---- `desired_length` characters long, `utf8_string` is returned unchanged.
+--- If neither `left` nor `right` is `true`, `padding` is empty, or the string is already
+--- at least `desired_length` characters long, `utf8_string` is returned unchanged.
 ---
 --- When padding both sides, the missing length is split as evenly as possible between the
 --- left and right; if it doesn't divide evenly by whole copies of `padding`, the shortfall is
@@ -3171,68 +3357,52 @@ end
 ---@param padding string? The string to pad with, repeated as needed. Defaults to a single space.
 ---@param left boolean? Whether to add padding on the left side.
 ---@param right boolean? Whether to add padding on the right side.
----@param lex boolean? Whether to measure lengths using lexical/grapheme units rather than raw codepoints, passed through to `len`.
+---@param lax boolean? Whether to lax the UTF-8 validity check.
 ---@return string result The padded string, or `utf8_string` unchanged if no padding was needed or requested.
-function utf8.pad( utf8_string, desired_length, padding, left, right, lex )
+function utf8.pad( utf8_string, desired_length, padding, left, right, lax )
     if not (left or right) then
         return utf8_string
     end
 
-    local char_length
+    ---@type integer | nil
+    local padding_length = 1
+
     if padding == nil then
-        char_length = 1
         padding = " "
     else
-        char_length = len( padding, nil, nil, lex )
+        local error_position, error_code
+        padding_length, error_position, error_code = len( padding, nil, nil, lax )
+
+        if padding_length == nil then
+            ---@cast error_position integer
+            ---@cast error_code dreamwork.std.utf8.ErrorCode
+            invalid_sequence( padding, error_position, error_code, 3 )
+        elseif padding_length == 0 then
+            return utf8_string
+        end
     end
 
-    local missing_length = math_max( 0, desired_length - len( utf8_string, nil, nil, lex ) )
-    if missing_length == 0 then
+    local str_length, error_position, error_code = len( utf8_string, nil, nil, lax )
+    if str_length == nil then
+        ---@cast error_position integer
+        ---@cast error_code dreamwork.std.utf8.ErrorCode
+        invalid_sequence( utf8_string, error_position, error_code, 3 )
+    end
+
+    ---@cast str_length integer
+    ---@cast padding_length integer
+
+    local missing_length = desired_length - str_length
+    if missing_length <= 0 then
         return utf8_string
     end
 
     if left and right then
-        local half_reps = math_floor( (missing_length / char_length) * 0.5 )
-        local padding_str = string_rep( padding, half_reps )
-
-        local remainder = missing_length - ((half_reps * 2) * char_length)
-        if remainder == 0 then
-            return padding_str .. utf8_string .. padding_str
-        end
-
-        local half_remainder = math_floor( remainder * 0.5 )
-        padding_str          = padding_str .. sub( padding, 1, half_remainder )
-        remainder            = remainder - (half_remainder * 2)
-
-        if remainder == 0 then
-            return padding_str .. utf8_string .. padding_str
-        end
-
-        return padding_str .. utf8_string .. padding_str .. string_sub( padding, 1, remainder )
+        local left_length = math_floor( missing_length * 0.5 )
+        return fill( padding, padding_length, left_length, lax ) .. utf8_string .. fill( padding, padding_length, missing_length - left_length, lax )
+    elseif left then
+        return fill( padding, padding_length, missing_length, lax ) .. utf8_string
     end
 
-    local full_reps = math_floor( missing_length / char_length )
-    local remainder = missing_length - (full_reps * char_length)
-
-    if left then
-        local result = string_rep( padding, full_reps )
-
-        if remainder ~= 0 then
-            result = result .. string_sub( padding, 1, remainder )
-        end
-
-        return result .. utf8_string
-    end
-
-    if right then
-        local result = utf8_string .. string_rep( padding, full_reps )
-
-        if remainder ~= 0 then
-            result = result .. string_sub( padding, 1, remainder )
-        end
-
-        return result
-    end
-
-    return utf8_string
+    return utf8_string .. fill( padding, padding_length, missing_length, lax )
 end
