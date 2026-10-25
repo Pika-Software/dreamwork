@@ -5,8 +5,7 @@ local setmetatable      = std.setmetatable
 
 local math              = std.math
 local math_clamp        = math.clamp
-local math_relative     = math.relative
-local math_min          = math.min
+local math_range        = math.range
 
 local string            = std.string
 local string_len        = string.len
@@ -29,20 +28,35 @@ local class             = std.class
 
 --- [SHARED AND MENU]
 ---
---- A object that representing IPv6 address.
+--- An object that represents an Internet Protocol v6 address as eight 16-bit groups.
+---
+--- Groups are stored in the array part of the object, `address[ 1 ]` is the most significant group.
+---
+--- Supports `tostring` (compressed [RFC 5952](https://datatracker.ietf.org/doc/html/rfc5952) form),
+--- comparison operators (`==`, `<`, `<=`), the length operator (`#address` is always `8`)
+--- and unary minus (`-address` is the bitwise NOT of the address).
 ---
 ---@class dreamwork.std.IPv6 : dreamwork.std.Object
 ---@field __class dreamwork.std.IPv6Class
----@field [ 1 ] integer
----@field [ 2 ] integer
----@field [ 3 ] integer
----@field [ 4 ] integer
----@field [ 5 ] integer
----@field [ 6 ] integer
----@field [ 7 ] integer
----@field [ 8 ] integer
+---@field [ 1 ] integer The first group. <0-65535>
+---@field [ 2 ] integer The second group. <0-65535>
+---@field [ 3 ] integer The third group. <0-65535>
+---@field [ 4 ] integer The fourth group. <0-65535>
+---@field [ 5 ] integer The fifth group. <0-65535>
+---@field [ 6 ] integer The sixth group. <0-65535>
+---@field [ 7 ] integer The seventh group. <0-65535>
+---@field [ 8 ] integer The eighth group. <0-65535>
 local IPv6              = class.base( "IPv6", false )
 
+---@param group1? integer The first group. <0-65535>
+---@param group2? integer The second group. <0-65535>
+---@param group3? integer The third group. <0-65535>
+---@param group4? integer The fourth group. <0-65535>
+---@param group5? integer The fifth group. <0-65535>
+---@param group6? integer The sixth group. <0-65535>
+---@param group7? integer The seventh group. <0-65535>
+---@param group8? integer The eighth group. <0-65535>
+---@return dreamwork.std.IPv6
 ---@protected
 function IPv6:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
     return setmetatable( {
@@ -104,7 +118,45 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the string representation of the address in compressed [RFC 5952](https://datatracker.ietf.org/doc/html/rfc5952) form.
+---
+--- Same as `tostring( address )`.
+---
+--- ```lua
+--- std.IPv6( 0x2001, 0xdb8, 0, 0, 0, 0, 0, 1 ):toString() -- "2001:db8::1"
+--- ```
+---
+---@return string str The string representation of the address.
+function IPv6:toString()
+    return IPv6.__tostring( self )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the groups of the address, from the most significant to the least significant.
+---
+---@return integer group1 The first group. <0-65535>
+---@return integer group2 The second group. <0-65535>
+---@return integer group3 The third group. <0-65535>
+---@return integer group4 The fourth group. <0-65535>
+---@return integer group5 The fifth group. <0-65535>
+---@return integer group6 The sixth group. <0-65535>
+---@return integer group7 The seventh group. <0-65535>
+---@return integer group8 The eighth group. <0-65535>
+function IPv6:groups()
+    return self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ], self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ]
+end
+
+--- [SHARED AND MENU]
+---
 --- Class that contains methods and properties for working with Internet Protocol v6 addresses as objects.
+---
+--- Calling the class creates a new address from its groups, missing groups are `0`.
+---
+--- ```lua
+--- local address = std.IPv6( 0x2001, 0xdb8, 0, 0, 0, 0, 0, 1 )
+--- print( address ) -- 2001:db8::1
+--- ```
 ---
 ---@class dreamwork.std.IPv6Class : dreamwork.std.IPv6
 ---@field __base dreamwork.std.IPv6
@@ -170,55 +222,35 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Parses an IPv6 address string (with optional CIDR prefix) into a object
---- and a prefix length.
+--- Parses an IPv6 address string with an optional CIDR prefix length, e.g. `2001:db8::1/32`.
 ---
---- Handles the embedded "::" expansion and an optional trailing "/prefix".
+--- Handles the `::` zero-groups compression.
 ---
----@param ipv6_str string The IPv6 address string, e.g. "2001:db8::1/32".
----@param start_position? integer
----@param end_position? integer
----@param str_length? integer
----@return dreamwork.std.IPv6 address
----@return integer mask Prefix length (0-128).
-function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
-    if str_length == nil then
-        str_length = string_len( ipv6_str )
-    end
-
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    ---@cast start_position integer
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    ---@cast end_position integer
+--- Embedded IPv4 notation (`::ffff:1.2.3.4`) and zone indices (`fe80::1%eth0`) are not supported.
+---
+--- Throws an error if a group contains invalid characters, is out of range or the address has a wrong number of groups.
+---
+---@param ipv6_str string The IPv6 address string to parse.
+---@param start_position? integer The start position in the ipv6 string.
+---@param end_position? integer The end position in the ipv6 string.
+---@return dreamwork.std.IPv6 address The parsed IP address.
+---@return integer prefix_length The CIDR prefix length. <0-128>, `128` if not specified.
+function IPv6Class.parse( ipv6_str, start_position, end_position )
+    local start_index, end_index = math_range( string_len( ipv6_str ), start_position, end_position )
 
     local mask = 128
 
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         if string_byte( ipv6_str, index, index ) == 0x2F --[[ / ]] then
-            mask = math_clamp( string_toNumber( ipv6_str, 16, index + 1, end_position ) or 128, 0, 128 ) or 0
-            end_position = index - 1
+            mask = math_clamp( string_toNumber( ipv6_str, 10, index + 1, end_index ) or 128, 0, 128 )
+            end_index = index - 1
             break
         end
     end
 
     local double_colon_start = 0
 
-    for index = start_position, end_position - 1, 1 do
+    for index = start_index, end_index - 1, 1 do
         local uint8_1, uint8_2 = string_byte( ipv6_str, index, index + 1 )
         if uint8_1 == 0x3A --[[ : ]] and uint8_2 == 0x3A --[[ : ]] then
             double_colon_start = index
@@ -227,7 +259,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
     end
 
     if double_colon_start == 0 then
-        local groups, group_count = parse_group( ipv6_str, start_position, end_position, 2 )
+        local groups, group_count = parse_group( ipv6_str, start_index, end_index, 2 )
         if group_count ~= 8 then
             std.errorf( 2, false, "ipv6 address must have strictly 8 groups, got %d", group_count )
         end
@@ -236,8 +268,8 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
         return groups, mask
     end
 
-    local left_groups, left_group_count   = parse_group( ipv6_str, start_position, double_colon_start - 1, 2 )
-    local right_groups, right_group_count = parse_group( ipv6_str, double_colon_start + 2, end_position, 2 )
+    local left_groups, left_group_count   = parse_group( ipv6_str, start_index, double_colon_start - 1, 2 )
+    local right_groups, right_group_count = parse_group( ipv6_str, double_colon_start + 2, end_index, 2 )
 
     local total_group_count               = left_group_count + right_group_count
     if total_group_count > 8 then
@@ -269,9 +301,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position, str_length )
     return groups, mask
 end
 
---- [SHARED AND MENU]
----
---- Compare two IPv6 addresses (length-8 uint16 arrays).
+--- Compares two IPv6 addresses group by group.
 ---
 ---@param a dreamwork.std.IPv6
 ---@param b dreamwork.std.IPv6
@@ -315,6 +345,8 @@ function IPv6:__len()
     return 8
 end
 
+--- Returns the bitwise NOT of the address.
+---
 ---@return dreamwork.std.IPv6
 ---@protected
 function IPv6:__unm()
@@ -332,20 +364,30 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns whether the address is within a given network.
 ---
+--- ```lua
+--- local network, broadcast = std.IPv6.parse( "2001:db8::" ):cidr( 32 )
+--- std.IPv6.parse( "2001:db8::1" ):inRange( network, broadcast ) -- true
+--- ```
 ---
----@param network dreamwork.std.IPv6
----@param broadcast dreamwork.std.IPv6
+---@param network dreamwork.std.IPv6 The network (first) address.
+---@param broadcast dreamwork.std.IPv6 The last address of the network.
+---@return boolean in_range `true` if the address is within the network, `false` otherwise.
 function IPv6:inRange( network, broadcast )
     return compare( self, network ) >= 0 and compare( self, broadcast ) <= 0
 end
 
 --- [SHARED AND MENU]
 ---
---- Build a length-8 uint16 mask from a prefix length (0-128).
+--- Returns the network mask address for a given CIDR prefix length.
 ---
----@param prefix integer
----@return dreamwork.std.IPv6
+--- ```lua
+--- print( std.IPv6.fromPrefix( 64 ) ) -- ffff:ffff:ffff:ffff::
+--- ```
+---
+---@param prefix integer The CIDR prefix length. <0-128>
+---@return dreamwork.std.IPv6 mask_address The network mask address.
 local function fromPrefix( prefix )
     local mask = {}
 
@@ -372,12 +414,18 @@ IPv6Class.fromPrefix = fromPrefix
 
 --- [SHARED AND MENU]
 ---
---- Returns the network address and broadcast (last) address for a given IPv6
---- address and prefix length.
+--- Returns the network address and the last address of the network for a given CIDR prefix length.
 ---
----@param mask integer Prefix length (0-128).
----@return dreamwork.std.IPv6 network_address
----@return dreamwork.std.IPv6 broadcast_address
+--- IPv6 has no broadcast, the "broadcast" address is just the last address of the network.
+---
+--- ```lua
+--- local address, prefix_length = std.IPv6.parse( "2001:db8::1/32" )
+--- local network, broadcast = address:cidr( prefix_length ) -- 2001:db8::, 2001:db8:ffff:ffff:ffff:ffff:ffff:ffff
+--- ```
+---
+---@param mask integer The CIDR prefix length. <0-128>
+---@return dreamwork.std.IPv6 network_address The network (first) address.
+---@return dreamwork.std.IPv6 broadcast_address The last address of the network.
 function IPv6:cidr( mask )
     local prefix            = fromPrefix( mask )
 
@@ -397,9 +445,14 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the reverse DNS pointer (ip6.arpa) for an IPv6 address.
+--- Returns the reverse DNS pointer (`ip6.arpa`) of the address.
 ---
----@return string ptr
+--- ```lua
+--- std.IPv6.parse( "2001:db8::1" ):reversePointer()
+--- -- "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa"
+--- ```
+---
+---@return string ptr The reverse DNS pointer of the address.
 function IPv6:reversePointer()
     local nibbles = {}
 
@@ -420,9 +473,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is the unspecified address (::).
+--- Returns whether the address is the unspecified address (`::`).
 ---
----@return boolean is_unspecified
+---@return boolean is_unspecified `true` if the address is the unspecified address, `false` otherwise.
 function IPv6:isUnspecified()
     for i = 1, 8 do
         if self[ i ] ~= 0 then
@@ -435,9 +488,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is the loopback address (::1).
+--- Returns whether the address is the loopback address (`::1`).
 ---
----@return boolean is_loopback
+---@return boolean is_loopback `true` if the address is the loopback address, `false` otherwise.
 function IPv6:isLoopback()
     for i = 1, 7 do
         if self[ i ] ~= 0 then return false end
@@ -459,56 +512,65 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a multicast address (ff00::/8).
+--- Returns whether the address is a multicast address (`ff00::/8`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
 IPv6.isMulticast = gen_in_range( "ff00::/8" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a link-local unicast address (fe80::/10).
+--- Returns whether the address is a link-local unicast address (`fe80::/10`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
 IPv6.isLinkLocal = gen_in_range( "fe80::/10" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a site-local unicast address (fec0::/10).
---- Note: deprecated by RFC 3879 but still recognisable.
+--- Returns whether the address is a site-local unicast address (`fec0::/10`).
+---
+--- Site-local addresses are deprecated by [RFC 3879](https://datatracker.ietf.org/doc/html/rfc3879), but still recognized.
 ---
 IPv6.isSiteLocal = gen_in_range( "fec0::/10" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a unique-local address (fc00::/7, RFC 4193).
+--- Returns whether the address is a unique-local address (`fc00::/7`, [RFC 4193](https://datatracker.ietf.org/doc/html/rfc4193)).
 ---
 IPv6.isUniqueLocal = gen_in_range( "fc00::/7" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a documentation / example address
---- (2001:db8::/32, RFC 3849).
+--- Returns whether the address is reserved for documentation and examples (`2001:db8::/32`, [RFC 3849](https://datatracker.ietf.org/doc/html/rfc3849)).
 ---
 IPv6.isDocumentation = gen_in_range( "2001:db8::/32" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a 6to4 address
---- (2002::/16, RFC 3056).
+--- Returns whether the address is reserved for network benchmarking (`2001:2::/48`, [RFC 5180](https://datatracker.ietf.org/doc/html/rfc5180)).
+---
+IPv6.isBenchmarking = gen_in_range( "2001:2::/48" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a discard-only address (`100::/64`, [RFC 6666](https://datatracker.ietf.org/doc/html/rfc6666)).
+---
+IPv6.isDiscard = gen_in_range( "100::/64" )
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the address is a 6to4 address (`2002::/16`, [RFC 3056](https://datatracker.ietf.org/doc/html/rfc3056)).
 ---
 IPv6.is6to4 = gen_in_range( "2002::/16" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is a Teredo address
---- (2001::/32, RFC 4380).
+--- Returns whether the address is a Teredo address (`2001::/32`, [RFC 4380](https://datatracker.ietf.org/doc/html/rfc4380)).
 ---
 IPv6.isTeredo = gen_in_range( "2001::/32" )
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is an IPv4-mapped IPv6 address
---- (::ffff:a.b.c.d).
+--- Returns whether the address is an IPv4-mapped IPv6 address (`::ffff:a.b.c.d`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
----@return boolean
+---@return boolean is_ipv4_mapped `true` if the address is an IPv4-mapped address, `false` otherwise.
 function IPv6:isIPv4Mapped()
     return self[ 1 ] == 0
         and self[ 2 ] == 0
@@ -520,11 +582,13 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is an IPv4-compatible IPv6 address
---- (::a.b.c.d).
---- Note: deprecated by RFC 4291.
+--- Returns whether the address is an IPv4-compatible IPv6 address (`::a.b.c.d`).
 ---
----@return boolean
+--- IPv4-compatible addresses are deprecated by [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291).
+---
+--- The unspecified (`::`) and loopback (`::1`) addresses are not considered IPv4-compatible.
+---
+---@return boolean is_ipv4_compatible `true` if the address is an IPv4-compatible address, `false` otherwise.
 function IPv6:isIPv4Compatible()
     return self[ 1 ] == 0
         and self[ 2 ] == 0
@@ -536,29 +600,32 @@ function IPv6:isIPv4Compatible()
         and not self:isLoopback()
 end
 
-local discard_net, discard_last = IPv6Class.parse( "100::" ):cidr( 64 )
-
 --- [SHARED AND MENU]
 ---
---- Returns whether the address belongs to a private/local-use range.
+--- Returns whether the address belongs to a private or local-use range.
 ---
----@return boolean
+--- Includes the unspecified, loopback, link-local, site-local, unique-local and discard-only addresses.
+---
+---@return boolean is_private `true` if the address is private, `false` otherwise.
 function IPv6:isPrivate()
     return self:isUnspecified()
         or self:isLoopback()
         or self:isLinkLocal()
         or self:isSiteLocal()
         or self:isUniqueLocal()
-        or self:inRange( discard_net, discard_last )
+        or self:isDiscard()
 end
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address belongs to a special-purpose range.
 ---
----@return boolean
+--- Includes the documentation, benchmarking, IPv4-mapped, IPv4-compatible, 6to4 and Teredo addresses.
+---
+---@return boolean is_reserved `true` if the address is reserved, `false` otherwise.
 function IPv6:isReserved()
     return self:isDocumentation()
+        or self:isBenchmarking()
         or self:isIPv4Mapped()
         or self:isIPv4Compatible()
         or self:is6to4()
@@ -569,7 +636,9 @@ end
 ---
 --- Returns whether the address is a global unicast address.
 ---
----@return boolean
+--- Any address that is not multicast, unspecified, loopback, link-local, site-local or unique-local.
+---
+---@return boolean is_global_unicast `true` if the address is a global unicast address, `false` otherwise.
 function IPv6:isGlobalUnicast()
     return not self:isMulticast()
         and not self:isUnspecified()
@@ -581,9 +650,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the address is globally routable.
+--- Returns whether the address is globally routable, i.e. a global unicast address that is not reserved.
 ---
----@return boolean
+---@return boolean is_public `true` if the address is public, `false` otherwise.
 function IPv6:isPublic()
     return self:isGlobalUnicast()
         and not self:isReserved()
@@ -591,28 +660,36 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Extracts the embedded IPv4 address from an IPv4-mapped or
---- IPv4-compatible IPv6 address and returns it as a v4-style uint32.
+--- Extracts the embedded IPv4 address from an IPv4-mapped or IPv4-compatible address.
 ---
---- This function always return IPv4 address even if address is not IPv4-mapped or
---- IPv4-compatible.
+--- The last two groups are always returned as an IPv4 address, even if the address is
+--- not IPv4-mapped or IPv4-compatible, so validate the address before calling this method.
 ---
---- So I recommend to validate address before calling this method.
+--- ```lua
+--- local address = std.IPv6.parse( "::ffff:7f00:1" )
+--- if address:isIPv4Mapped() then
+---     print( std.ipv4.toString( address:toIPv4() ) ) -- 127.0.0.1
+--- end
+--- ```
 ---
----@see IPv6:isIPv4Mapped()
----@see IPv6:isIPv4Compatible()
+---@see dreamwork.std.IPv6.isIPv4Mapped
+---@see dreamwork.std.IPv6.isIPv4Compatible
 ---
----@return dreamwork.std.IPv4 ipv4_address
+---@return dreamwork.std.IPv4 ipv4_address The embedded IPv4 address.
 function IPv6:toIPv4()
     return bit_unsign( bit_bor( bit_lshift( self[ 7 ], 0x10 ), bit_band( self[ 8 ], 0xFFFF ) ) )
 end
 
 --- [SHARED AND MENU]
 ---
---- Constructs an IPv4-mapped IPv6 address (::ffff:a.b.c.d) from a v4 uint32.
+--- Creates an IPv4-mapped IPv6 address (`::ffff:a.b.c.d`) from an IPv4 address.
 ---
----@param ipv4_address dreamwork.std.IPv4
----@return dreamwork.std.IPv6 ipv6_address
+--- ```lua
+--- print( std.IPv6.fromIPv4( 0x7F000001 ) ) -- ::ffff:7f00:1
+--- ```
+---
+---@param ipv4_address dreamwork.std.IPv4 The IPv4 address.
+---@return dreamwork.std.IPv6 ipv6_address The IPv4-mapped IPv6 address.
 function IPv6Class.fromIPv4( ipv4_address )
     return setmetatable( {
         0, 0, 0, 0, 0,
