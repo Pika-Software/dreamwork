@@ -51,22 +51,22 @@ function Stack:__serialize( writer )
     local size = self.size
     writer:writeInt32( size )
 
-    for i = 1, size, 1 do
-        writer:serialize( self[ i ] )
-    end
-end
+--     for i = 1, size, 1 do
+--         writer:serialize( self[ i ] )
+--     end
+-- end
 
----@param reader dreamwork.std.buffer.Reader
----@param fallback dreamwork.std.Object | nil
----@protected
-function Stack:__deserialize( reader, fallback )
-    local size = reader:readInt32() or 0
-    self.size = size
+-- ---@param reader dreamwork.std.buffer.Reader
+-- ---@param fallback dreamwork.std.Object | nil
+-- ---@protected
+-- function Stack:__deserialize( reader, fallback )
+--     local size = reader:readInt32() or 0
+--     self.size = size
 
-    for i = 1, size, 1 do
-        self[ i ] = reader:deserialize( self[ i ] or fallback or Stack, fallback )
-    end
-end
+--     for i = 1, size, 1 do
+--         self[ i ] = reader:deserialize( self[ i ] or fallback or Stack, fallback )
+--     end
+-- end
 
 --- [SHARED AND MENU]
 ---
@@ -132,6 +132,33 @@ function Stack:clear()
     end
 
     self.size = 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Removes every item for which `predicate` returns `true`, keeping the order of the remaining items.
+---
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@param predicate fun( item: T ): boolean The function that decides whether a frame is removed.
+function Stack:filter( predicate )
+    local stack_size = self.size
+    local new_size = 0
+
+    for i = 1, stack_size, 1 do
+        local item = self[ i ]
+        if not predicate( item ) then
+            new_size = new_size + 1
+            self[ new_size ] = item
+        end
+    end
+
+    for i = new_size + 1, stack_size, 1 do
+        self[ i ] = nil
+    end
+
+    self.start = 1 -- hop start
+    self.size = new_size
 end
 
 --- [SHARED AND MENU]
