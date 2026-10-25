@@ -45,11 +45,11 @@ function Stack:__init()
     self.size = 0
 end
 
----@param writer dreamwork.std.buffer.Writer
----@protected
-function Stack:__serialize( writer )
-    local size = self.size
-    writer:writeInt32( size )
+-- ---@param writer dreamwork.std.buffer.Writer
+-- ---@protected
+-- function Stack:__serialize( writer )
+--     local size = self.size
+--     writer:writeInt32( size )
 
 --     for i = 1, size, 1 do
 --         writer:serialize( self[ i ] )

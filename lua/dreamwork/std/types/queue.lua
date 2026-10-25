@@ -51,28 +51,28 @@ function Queue:__init()
     self.back = 0
 end
 
----@param writer dreamwork.std.buffer.Writer
----@protected
-function Queue:__serialize( writer )
-    writer:writeInt32( self.front )
-    writer:writeInt32( self.back )
+-- ---@param writer dreamwork.std.buffer.Writer
+-- ---@protected
+-- function Queue:__serialize( writer )
+--     writer:writeInt32( self.front )
+--     writer:writeInt32( self.back )
 
-    for i = self.back + 1, self.front, 1 do
-        writer:serialize( self[ i ] )
-    end
-end
+--     for i = self.back + 1, self.front, 1 do
+--         writer:serialize( self[ i ] )
+--     end
+-- end
 
----@param reader dreamwork.std.buffer.Reader
----@param fallback dreamwork.std.Object | nil
----@protected
-function Queue:__deserialize( reader, fallback )
-    local front, back = reader:readInt32() or 0, reader:readInt32() or 0
-    self.front, self.back = front, back
+-- ---@param reader dreamwork.std.buffer.Reader
+-- ---@param fallback dreamwork.std.Object | nil
+-- ---@protected
+-- function Queue:__deserialize( reader, fallback )
+--     local front, back = reader:readInt32() or 0, reader:readInt32() or 0
+--     self.front, self.back = front, back
 
-    for i = back + 1, front, 1 do
-        self[ i ] = reader:deserialize( self[ i ] or fallback or Queue, fallback )
-    end
-end
+--     for i = back + 1, front, 1 do
+--         self[ i ] = reader:deserialize( self[ i ] or fallback or Queue, fallback )
+--     end
+-- end
 
 --- [SHARED AND MENU]
 ---
