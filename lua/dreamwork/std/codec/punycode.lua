@@ -1,5 +1,3 @@
--- Based on https://github.com/nmap/nmap/blob/master/nselib/punycode.lua <3
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -12,20 +10,113 @@ local string_byte = string.byte
 local string_char = string.char
 
 local math = std.math
-local math_max = math.max
+local math_min = math.min
 local math_floor = math.floor
+local math_range = math.range
+
+local raw = std.raw
+
+local rbit = raw.bit
+local rbit_rshift = rbit.rshift
 
 local table = std.table
 local table_concat = table.concat
-local table_insert = table.insert
 
 local utf8 = std.utf8
 local utf8_pack = utf8.pack
 local utf8_unpack = utf8.unpack
 
+local ffi = std.ffi
+local ffi_string, uint8_array_t
+
+if ffi ~= nil then
+    ffi_string, uint8_array_t = ffi.string, ffi.typeof( "uint8_t[?]" )
+end
+
+-- output units: bytes for the FFI buffer, one character strings for `table.concat`
+local basic_units, digit_units = {}, {}
+
+for codepoint = 0, 0x7F, 1 do
+    basic_units[ codepoint ] = ffi_string == nil and string_char( codepoint ) or codepoint
+end
+
+for digit = 0, 0x23, 1 do
+    local uint8 = digit < 26 and (digit + 0x61 --[[ "a" ]]) or (digit + 0x16 --[[ "0" - 26 ]])
+    digit_units[ digit ] = ffi_string == nil and string_char( uint8 ) or uint8
+end
+
+-- checks for the case-insensitive `"xn--"` prefix at `position`
+local function has_prefix( str, position )
+    local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, position, position + 3 )
+    return (uint8_1 == 0x78 --[[ "x" ]] or uint8_1 == 0x58 --[[ "X" ]]) and
+        (uint8_2 == 0x6E --[[ "n" ]] or uint8_2 == 0x4E --[[ "N" ]]) and
+        uint8_3 == 0x2D --[[ "-" ]] and uint8_4 == 0x2D --[[ "-" ]]
+end
+
+-- `true` if `str` has no bytes above 0x7F within the range
+local function is_ascii( str, start_position, end_position )
+    for position = start_position, end_position, 1 do
+        if string_byte( str, position, position ) >= 0x80 then
+            return false
+        end
+    end
+
+    return true
+end
+
+-- `true` if `str` is ASCII-only and has no labels with the `"xn--"` prefix within the range
+local function is_plain( str, start_position, end_position )
+    local label_start = start_position
+
+    for position = start_position, end_position, 1 do
+        local uint8 = string_byte( str, position, position )
+        if uint8 >= 0x80 then
+            return false
+        elseif uint8 == 0x2E --[[ "." ]] then
+            label_start = position + 1
+        elseif position == label_start and position + 3 <= end_position and has_prefix( str, position ) then
+            return false
+        end
+    end
+
+    return true
+end
+
+-- digit values of `[0-9A-Za-z]`, `nil` for invalid bytes
+local digit_values = {}
+
+for uint8 = 0x30, 0x39, 1 do
+    digit_values[ uint8 ] = uint8 - 0x16
+end
+
+for uint8 = 0x41, 0x5A, 1 do
+    digit_values[ uint8 ] = uint8 - 0x41
+    digit_values[ uint8 + 0x20 ] = uint8 - 0x41
+end
+
+-- `punycode.pack` scratch space, reused between calls for labels
+-- up to `scratch_limit` code points, so huge inputs are not kept alive
+local scratch_limit = 0x100
+local output_units, extended_codepoints, extended_deltas = {}, {}, {}
+
+if ffi_string ~= nil then
+    -- every delta takes at most 11 digits, the prefix and the delimiter take 5 bytes
+    output_units = uint8_array_t( scratch_limit * 12 + 6 )
+end
+
 --- [SHARED AND MENU]
 ---
 --- Punycode encoding/decoding library.
+---
+--- Punycode represents Unicode text using only the ASCII letters, digits and hyphen
+--- (`[a-z0-9-]`), it is used by IDNA to store internationalized domain names in DNS, where
+--- each encoded label is marked with the ACE prefix `"xn--"`.
+---
+--- * `punycode.pack` / `punycode.unpack` work on a single label given as code points.
+--- * `punycode.encode` / `punycode.decode` work on a whole UTF-8 domain, label by label.
+---
+--- Only the Punycode transform itself is implemented, IDNA mapping and
+--- normalization (lowercasing, NFC, disallowed characters) are left to the caller.
 ---
 --- See https://en.wikipedia.org/wiki/Punycode
 ---
@@ -37,12 +128,23 @@ std.punycode = punycode
 
 --- [SHARED AND MENU]
 ---
---- Encodes a UTF-8 string into Punycode.
+--- Encodes a single label, given as Unicode code points, into Punycode.
 ---
----@param codepoints dreamwork.std.utf8.Sequence The code points to encode.
----@param codepoint_count? integer The number of code points to encode.
----@param ignore_prefix? boolean If `true`, the prefix `"xn--"` will be ignored.
----@param lax? boolean Whether to lax the UTF-8 validity check.
+--- A label made of basic (ASCII) code points only is returned as is, without
+--- the `"xn--"` prefix or the trailing `"-"` delimiter, the way IDNA treats such labels.
+---
+--- Basic code points keep their case, the encoded digits are always lowercase.
+---
+--- ```lua
+--- punycode.pack( { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E } ) -- "xn--mnchen-3ya"
+--- punycode.pack( { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, nil, true ) -- "mnchen-3ya"
+--- punycode.pack( { 0x61, 0x62, 0x63 } ) -- "abc"
+--- ```
+---
+---@param codepoints integer[] The code points of the label to encode.
+---@param codepoint_count? integer The number of code points to encode, defaults to the length of `codepoints`.
+---@param ignore_prefix? boolean If `true`, the `"xn--"` prefix is not prepended to the result.
+---@param lax? boolean If `true`, surrogates (U+D800 - U+DFFF) and code points above U+10FFFF are encoded as well instead of being rejected.
 ---@return string | nil punycode_str The Punycode string, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 local function punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
@@ -50,72 +152,124 @@ local function punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
         codepoint_count = len( codepoints )
     end
 
-    local segments, segment_count = {}, 0
+    local strict = lax ~= true
+
+    local output, extended, deltas = output_units, extended_codepoints, extended_deltas
+
+    if codepoint_count > scratch_limit then
+        if ffi_string == nil then
+            output = {}
+        else
+            output = uint8_array_t( codepoint_count * 12 + 6 )
+        end
+
+        extended, deltas = {}, {}
+    end
+
+    local first = 1
+    local length = 4
+
+    if ignore_prefix then
+        first, length = 5, 4
+    else
+        output[ 1 ], output[ 2 ], output[ 3 ], output[ 4 ] = basic_units[ 0x78 ], basic_units[ 0x6E ], basic_units[ 0x2D ], basic_units[ 0x2D ]
+    end
+
+    -- non-basic code points, scanned for the next code point to insert
+    local extended_count = 0
 
     for index = 1, codepoint_count, 1 do
         local codepoint = codepoints[ index ]
         if codepoint < 0x80 then
-            segment_count = segment_count + 1
-            segments[ segment_count ] = string_char( codepoint )
+            if codepoint < 0 then
+                return nil, "invalid code point exception occurred"
+            end
+
+            length = length + 1
+            output[ length ] = basic_units[ codepoint ]
+        elseif codepoint >= 0x7FFFFFFF or (strict and (codepoint > 0x10FFFF or (codepoint >= 0xD800 and codepoint <= 0xDFFF))) then
+            return nil, "invalid code point exception occurred"
+        else
+            extended_count = extended_count + 1
+            extended[ extended_count ] = codepoint
         end
     end
 
-    if segment_count == codepoint_count then
-        return utf8_pack( codepoints, codepoint_count, lax )
-    end
+    local basic_length = codepoint_count - extended_count
 
-    local basic_length = segment_count
-    if basic_length ~= 0 then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = "-"
-    end
+    if extended_count ~= 0 then
+        if basic_length ~= 0 then
+            length = length + 1
+            output[ length ] = basic_units[ 0x2D ]
+        end
 
-    if not ignore_prefix then
-        table_insert( segments, 1, "xn--" )
-        segment_count = segment_count + 1
-    end
-
-    local lower_cp = 0x80
-    local bias = 0x48
-    local delta = 0
-
-    local handled = basic_length
-
-    while handled < codepoint_count do
+        -- First pass: find the delta of every non-basic code point in insertion order,
+        -- deltas don't depend on the bias, so this loop stays free of inner loops.
+        -- the smallest non-basic code point
         local upper_cp = 0x7FFFFFFF
 
-        for i = 1, codepoint_count, 1 do
-            local codepoint = codepoints[ i ]
-            if codepoint >= lower_cp and codepoint < upper_cp then
-                upper_cp = codepoint
+        for i = 1, extended_count, 1 do
+            upper_cp = math_min( upper_cp, extended[ i ] )
+        end
+
+        local lower_cp = 0x80
+        local delta = 0
+
+        local handled = basic_length
+
+        while true do
+            -- Increase `delta` enough to advance the decoder's <n,i> state to
+            -- <m,0>, but guard against overflow.
+            local handled_plus_one = handled + 1
+            if (upper_cp - lower_cp) > math_floor( (0x7FFFFFFF - delta) / handled_plus_one ) then
+                return nil, "overflow exception occurred"
             end
-        end
 
-        -- Increase `delta` enough to advance the decoder's <n,i> state to
-        -- <m,0>, but guard against overflow.
-        local handled_plus_one = handled + 1
-        if (upper_cp - lower_cp) > math_floor( (0x7FFFFFFF - delta) / handled_plus_one ) then
-            return nil, "overflow exception occurred"
-        end
+            delta = delta + (upper_cp - lower_cp) * handled_plus_one
 
-        delta = delta + (upper_cp - lower_cp) * handled_plus_one
-        lower_cp = upper_cp
+            -- the next code point to insert is searched in the same pass,
+            -- branchless since smaller and larger code points are interleaved randomly
+            local next_cp = 0x7FFFFFFF
 
-        for i = 1, codepoint_count, 1 do
-            local codepoint = codepoints[ i ]
-            if codepoint < lower_cp then
-                delta = delta + 1
+            for i = 1, codepoint_count, 1 do
+                local codepoint = codepoints[ i ]
+                if codepoint == upper_cp then
+                    if delta > 0x7FFFFFFF then
+                        return nil, "overflow exception occurred"
+                    end
 
-                if delta > 0x7FFFFFFF then
-                    return nil, "overflow exception occurred"
+                    handled = handled + 1
+                    deltas[ handled ] = delta
+                    delta = 0
+                else
+                    -- `1` if `codepoint < upper_cp`, `0` otherwise
+                    local is_lower = rbit_rshift( codepoint - upper_cp, 31 )
+                    delta = delta + is_lower
+                    next_cp = math_min( next_cp, codepoint + is_lower * 0x7FFFFFFF )
                 end
-            elseif codepoint == lower_cp then
-                -- Represent delta as a generalized variable-length integer.
-                local q = delta
-                local k = 0x24
+            end
 
-                ::punycode_encode_loop::
+            if handled == codepoint_count then
+                break
+            end
 
+            if delta >= 0x7FFFFFFF then
+                return nil, "overflow exception occurred"
+            end
+
+            delta = delta + 1
+            lower_cp = upper_cp + 1
+            upper_cp = next_cp
+        end
+
+        -- Second pass: write every delta as a generalized variable-length integer.
+        local bias = 0x48
+
+        for index = basic_length + 1, codepoint_count, 1 do
+            local q = deltas[ index ]
+            local k = 0x24
+
+            while true do
                 local t
 
                 if k <= bias then
@@ -126,160 +280,128 @@ local function punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
                     t = k - bias
                 end
 
-                if q >= t then
-                    local q_minus_t = q - t
-                    local base_minus_t = 0x24 - t
-
-                    local digit = t + q_minus_t % base_minus_t
-
-                    if digit < 26 then
-                        digit = digit + 75
-                    end
-
-                    digit = digit + 22
-
-                    segment_count = segment_count + 1
-                    segments[ segment_count ] = string_char( digit )
-
-                    q = math_floor( q_minus_t / base_minus_t )
-                    k = k + 0x24
-
-                    goto punycode_encode_loop
+                if q < t then
+                    break
                 end
 
-                local digit = q
+                local q_minus_t = q - t
+                local base_minus_t = 0x24 - t
 
-                if digit < 26 then
-                    digit = digit + 75
-                end
+                length = length + 1
+                output[ length ] = digit_units[ t + q_minus_t % base_minus_t ]
 
-                digit = digit + 22
-
-                segment_count = segment_count + 1
-                segments[ segment_count ] = string_char( digit )
-
-                if handled == basic_length then
-                    delta = math_floor( delta / 0x2BC )
-                else
-                    delta = math_floor( delta * 0.5 )
-                end
-
-                delta = delta + math_floor( delta / handled_plus_one )
-                k = 0
-
-                while delta > 0x1C7 do
-                    delta = math_floor( delta / 0x23 )
-                    k = k + 0x24
-                end
-
-                bias = k + math_floor( 0x24 * delta / (delta + 0x26) )
-                handled = handled + 1
-                delta = 0
+                q = math_floor( q_minus_t / base_minus_t )
+                k = k + 0x24
             end
-        end
 
-        delta = delta + 1
-        lower_cp = lower_cp + 1
+            length = length + 1
+            output[ length ] = digit_units[ q ]
+
+            -- adapt the bias
+            delta = deltas[ index ]
+
+            if index == basic_length + 1 then
+                delta = math_floor( delta / 0x2BC )
+            else
+                delta = math_floor( delta * 0.5 )
+            end
+
+            delta = delta + math_floor( delta / index )
+            k = 0
+
+            while delta > 0x1C7 do
+                delta = math_floor( delta / 0x23 )
+                k = k + 0x24
+            end
+
+            bias = k + math_floor( 0x24 * delta / (delta + 0x26) )
+        end
+    elseif not ignore_prefix then
+        -- basic labels are returned as is
+        first = 5
     end
 
-    return table_concat( segments, "", 1, segment_count )
+    if ffi_string == nil then
+        return table_concat( output, "", first, length )
+    end
+
+    return ffi_string( output + first, length - first + 1 )
 end
 
 punycode.pack = punycode_pack
 
---- [SHARED AND MENU]
----
---- Unpacks a Punycode string.
----
----@param punycode_str string The Punycode string to unpack.
----@param ignore_prefix? boolean If `true`, the prefix `"xn--"` will be ignored.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return dreamwork.std.utf8.Sequence | nil codepoints The codepoints of the unpacked string, `nil` if an error occurred.
----@return integer | nil codepoint_count The number of codepoints in the string, `nil` if an error occurred.
----@return nil | string err_msg The error message, `nil` if no error occurred.
-local function punycode_unpack( punycode_str, ignore_prefix, lax )
-    if not ignore_prefix then
-        local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( punycode_str, 1, 4 )
-        if uint8_1 == nil then
-            return nil, nil, "punycode string cannot be empty"
-        end
+-- `punycode.unpack` over the bytes from `start_position` to `end_position`
+local function unpack_range( punycode_str, start_position, end_position, ignore_prefix, lax )
+    if start_position > end_position then
+        return {}, 0
+    end
 
-        if uint8_1 == 0x78 --[[ "x" ]] and uint8_2 == 0x6E --[[ "n" ]] and uint8_3 == 0x2D --[[ "-" ]] and uint8_4 == 0x2D --[[ "-" ]] then
-            punycode_str = string_sub( punycode_str, 5 )
+    -- position of the byte before the encoded data
+    local offset = start_position - 1
+
+    if not ignore_prefix then
+        if (end_position - start_position) >= 3 and has_prefix( punycode_str, start_position ) then
+            offset = offset + 4
         else
-            return utf8_unpack( punycode_str, 1, string_len( punycode_str ), lax )
+            return utf8_unpack( punycode_str, start_position, end_position, lax )
         end
     end
 
-    local punycode_str_length = string_len( punycode_str )
+    local str_length = end_position
 
+    local strict = lax ~= true
+
+    -- basic code points are everything before the last delimiter
     local basic = 0
 
-    for j = 1, punycode_str_length do
+    for j = str_length, offset + 1, -1 do
         if string_byte( punycode_str, j, j ) == 0x2D --[[ "-" ]] then
-            basic = j - 1
+            basic = j - offset - 1
+            break
         end
     end
 
-    local codepoint_count = basic
-    local codepoints
+    local codepoints, codepoint_count = {}, basic
 
-    if basic > 8000 then
-        codepoints = { string_byte( punycode_str, 1, 8000 ) }
-
-        for j = 8001, basic, 1 do
-            codepoints[ j ] = string_byte( punycode_str, j, j )
+    for j = 1, basic, 1 do
+        local uint8 = string_byte( punycode_str, offset + j, offset + j )
+        if strict and uint8 >= 0x80 then
+            return nil, nil, "not basic exception occurred"
         end
-    else
-        codepoints = { string_byte( punycode_str, 1, basic ) }
+
+        codepoints[ j ] = uint8
     end
 
-    if not lax then
-        for j = 1, basic, 1 do
-            if codepoints[ j ] >= 0x80 then
-                return nil, nil, "not basic exception occurred"
-            end
-        end
-    end
+    -- position of the last consumed byte
+    local index = offset
 
-    local index
-
-    if basic == 0 then
-        index = 0
-    else
-        index = basic + 1
+    if basic ~= 0 then
+        index = index + basic + 1
     end
 
     local unicode_init = 0x80
     local delta_init = 0
     local bias = 0x48
 
-    while index < punycode_str_length do
+    while index < str_length do
         local oldi = delta_init
         local w = 1
         local k = 0x24
 
         ::punycode_decode_loop::
 
-        if index >= punycode_str_length then
+        if index >= str_length then
             return nil, nil, "invalid input exception occurred"
         end
 
         index = index + 1
 
-        local digit = string_byte( punycode_str, index, index )
-
-        if digit < 0x3A then
-            digit = digit - 0x16
-        elseif digit < 0x5B then
-            digit = digit - 0x41
-        elseif digit < 0x7B then
-            digit = digit - 0x61
-        else
-            digit = 0x24
+        local digit = digit_values[ string_byte( punycode_str, index, index ) ]
+        if digit == nil then
+            return nil, nil, "invalid input exception occurred"
         end
 
-        if digit >= 0x24 or digit > math_floor( (0x7FFFFFFF - delta_init) / w ) then
+        if digit > math_floor( (0x7FFFFFFF - delta_init) / w ) then
             return nil, nil, "overflow exception occurred"
         end
 
@@ -309,8 +431,6 @@ local function punycode_unpack( punycode_str, ignore_prefix, lax )
 
             goto punycode_decode_loop
         end
-
-        codepoint_count = #codepoints
 
         local out = codepoint_count + 1
         local delta = delta_init - oldi
@@ -342,50 +462,113 @@ local function punycode_unpack( punycode_str, ignore_prefix, lax )
         unicode_init = unicode_init + i_div_out
         delta_init = delta_init % out
 
-        for temp = codepoint_count, math_max( 1, delta_init ), -1 do
+        if strict and (unicode_init > 0x10FFFF or (unicode_init >= 0xD800 and unicode_init <= 0xDFFF)) then
+            return nil, nil, "invalid code point exception occurred"
+        end
+
+        -- insert `unicode_init` at the 0-based position `delta_init`
+        for temp = codepoint_count, delta_init + 1, -1 do
             codepoints[ temp + 1 ] = codepoints[ temp ]
         end
 
         delta_init = delta_init + 1
         codepoints[ delta_init ] = unicode_init
+        codepoint_count = out
     end
 
-    return codepoints, #codepoints -- TODO: replace with dynamic re-calc instead of #tbl
+    return codepoints, codepoint_count
 end
-
-punycode.unpack = punycode_unpack
 
 --- [SHARED AND MENU]
 ---
---- Encodes a string into a Punycode string.
+--- Decodes a single Punycode label into Unicode code points.
 ---
----@param str string The string to encode.
----@param ignore_prefix? boolean If `true`, the prefix `"xn--"` will be ignored.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return string | nil punycode_str The Punycode string, `nil` if an error occurred.
+--- Unless `ignore_prefix` is `true`, the label must start with the `"xn--"` prefix
+--- (case-insensitive), a label without it is treated as plain UTF-8 and returned as is.
+---
+--- Encoded digits are case-insensitive, basic code points are copied without case changes.
+---
+--- ```lua
+--- punycode.unpack( "xn--mnchen-3ya" ) -- { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, 7
+--- punycode.unpack( "mnchen-3ya", true ) -- { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, 7
+--- punycode.unpack( "xn--b" ) -- nil, nil, "invalid input exception occurred"
+--- ```
+---
+--- Invalid UTF-8 in a label without the prefix raises an error, unless `lax` is `true`.
+---
+---@param punycode_str string The Punycode label to decode.
+---@param ignore_prefix? boolean If `true`, `punycode_str` is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param lax? boolean If `true`, non-ASCII bytes before the delimiter, surrogates and code points above U+10FFFF are accepted instead of being rejected.
+---@return integer[] | nil codepoints The decoded code points, `nil` if an error occurred.
+---@return integer | nil codepoint_count The number of decoded code points, `nil` if an error occurred.
+---@return nil | string err_msg The error message, `nil` if no error occurred.
+function punycode.unpack( punycode_str, ignore_prefix, lax )
+    return unpack_range( punycode_str, 1, string_len( punycode_str ), ignore_prefix, lax )
+end
+
+--- [SHARED AND MENU]
+---
+--- Encodes a UTF-8 domain name into its ASCII (Punycode) form.
+---
+--- The string is split on `"."` and every label containing non-ASCII characters is
+--- encoded with `punycode.pack`, ASCII-only labels and empty labels are left untouched.
+---
+--- ```lua
+--- punycode.encode( "münchen.de" ) -- "xn--mnchen-3ya.de"
+--- punycode.encode( "bücher.example.рф" ) -- "xn--bcher-kva.example.xn--p1ai"
+--- punycode.encode( "münchen.de", true ) -- "mnchen-3ya.de"
+--- ```
+---
+--- Invalid UTF-8 raises an error, unless `lax` is `true`.
+---
+---@param str string The UTF-8 domain name to encode.
+---@param ignore_prefix? boolean If `true`, encoded labels are not prefixed with `"xn--"`.
+---@param start_position? integer The position to start from in bytes, negative values count from the end.
+---@param end_position? integer The position to end at in bytes, negative values count from the end.
+---@param lax? boolean If `true`, invalid UTF-8 sequences become U+FFFD and surrogates are encoded as well instead of being rejected.
+---@return string | nil punycode_str The encoded domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 function punycode.encode( str, ignore_prefix, start_position, end_position, lax )
-    local labels, label_count = string.byteSplit( str, 0x2E --[[ . ]], start_position, end_position )
-    if label_count == 0 then
+    local start_index, end_index = math_range( string_len( str ), start_position, end_position )
+    if start_index > end_index then
         return "", nil
     end
 
-    for i = 1, label_count, 1 do
-        local codepoints, codepoint_count = utf8_unpack( labels[ i ], nil, nil, lax )
-
-        local punycode_str, err_msg = punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
-        if punycode_str == nil then
-            return nil, err_msg
-        end
-
-        labels[ i ] = punycode_str
+    -- ASCII-only domains are returned as is
+    if is_ascii( str, start_index, end_index ) then
+        return string_sub( str, start_index, end_index ), nil
     end
 
-    if label_count == 1 then
-        return labels[ 1 ], nil
-    elseif label_count == 2 then
+    local labels, label_count = {}, 0
+    local label_start, label_ascii = start_index, true
+
+    for position = start_index, end_index + 1, 1 do
+        local uint8 = position <= end_index and string_byte( str, position, position ) or 0x2E --[[ "." ]]
+
+        if uint8 == 0x2E --[[ "." ]] then
+            label_count = label_count + 1
+
+            -- ASCII-only labels are kept as is
+            if label_ascii then
+                labels[ label_count ] = string_sub( str, label_start, position - 1 )
+            else
+                local codepoints, codepoint_count = utf8_unpack( str, label_start, position - 1, lax )
+
+                local punycode_str, err_msg = punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
+                if punycode_str == nil then
+                    return nil, err_msg
+                end
+
+                labels[ label_count ] = punycode_str
+            end
+
+            label_start, label_ascii = position + 1, true
+        elseif uint8 >= 0x80 then
+            label_ascii = false
+        end
+    end
+
+    if label_count == 2 then
         return labels[ 1 ] .. "." .. labels[ 2 ], nil
     else
         return table_concat( labels, ".", 1, label_count ), nil
@@ -394,35 +577,69 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Decodes a Punycode string into a string.
+--- Decodes an ASCII (Punycode) domain name into UTF-8.
 ---
----@param punycode_str string The Punycode string to decode.
----@param ignore_prefix? boolean If `true`, the prefix `"xn--"` will be ignored.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
----@param lax? boolean Whether to lax the UTF-8 validity check.
----@return string | nil str The decoded string, `nil` if an error occurred.
+--- The string is split on `"."` and every label starting with `"xn--"` (case-insensitive)
+--- is decoded with `punycode.unpack`, other labels are left untouched.
+---
+--- ```lua
+--- punycode.decode( "xn--mnchen-3ya.de" ) -- "münchen.de"
+--- punycode.decode( "mnchen-3ya", true ) -- "münchen"
+--- punycode.decode( "xn--b.de" ) -- nil, "invalid input exception occurred"
+--- ```
+---
+--- Invalid UTF-8 in labels without the prefix raises an error, unless `lax` is `true`.
+---
+---@param punycode_str string The domain name to decode.
+---@param ignore_prefix? boolean If `true`, every label is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param start_position? integer The position to start from in bytes, negative values count from the end.
+---@param end_position? integer The position to end at in bytes, negative values count from the end.
+---@param lax? boolean If `true`, malformed labels are decoded leniently and invalid code points become U+FFFD instead of being rejected.
+---@return string | nil str The decoded UTF-8 domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 function punycode.decode( punycode_str, ignore_prefix, start_position, end_position, lax )
-    local labels, label_count = string.byteSplit( punycode_str, 0x2E --[[ . ]], start_position, end_position )
-    if label_count == 0 then
+    local start_index, end_index = math_range( string_len( punycode_str ), start_position, end_position )
+    if start_index > end_index then
         return "", nil
     end
 
-    for i = 1, label_count, 1 do
-        local codepoints, codepoint_count, err_msg = punycode_unpack( labels[ i ], ignore_prefix, lax )
-        if codepoints == nil then
-            return nil, err_msg
+    -- ASCII-only domains without encoded labels are returned as is
+    if not ignore_prefix and is_plain( punycode_str, start_index, end_index ) then
+        return string_sub( punycode_str, start_index, end_index ), nil
+    end
+
+    local labels, label_count = {}, 0
+    local label_start, label_plain = start_index, not ignore_prefix
+
+    for position = start_index, end_index + 1, 1 do
+        local uint8 = position <= end_index and string_byte( punycode_str, position, position ) or 0x2E --[[ "." ]]
+
+        if uint8 == 0x2E --[[ "." ]] then
+            label_count = label_count + 1
+
+            -- ASCII-only labels without the prefix are kept as is
+            if label_plain then
+                labels[ label_count ] = string_sub( punycode_str, label_start, position - 1 )
+            else
+                local codepoints, codepoint_count, err_msg = unpack_range( punycode_str, label_start, position - 1, ignore_prefix, lax )
+                if codepoints == nil then
+                    return nil, err_msg
+                end
+
+                labels[ label_count ] = utf8_pack( codepoints, codepoint_count, lax )
+            end
+
+            label_start, label_plain = position + 1, not ignore_prefix
+        elseif uint8 >= 0x80 then
+            label_plain = false
+        elseif position == label_start and position + 3 <= end_index and has_prefix( punycode_str, position ) then
+            label_plain = false
         end
-
-        labels[ i ] = utf8_pack( codepoints, codepoint_count, lax )
     end
 
-    if label_count == 1 then
-        return labels[ 1 ], nil
-    elseif label_count == 2 then
+    if label_count == 2 then
         return labels[ 1 ] .. "." .. labels[ 2 ], nil
-    else
-        return table_concat( labels, ".", 1, label_count ), nil
     end
+
+    return table_concat( labels, ".", 1, label_count ), nil
 end
