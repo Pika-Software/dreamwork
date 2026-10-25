@@ -12,6 +12,7 @@ if ffi ~= nil then
 end
 
 local raw = std.raw
+local raw_select = raw.select
 
 local string = std.string
 local string_len, string_sub = string.len, string.sub
@@ -183,6 +184,38 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Encodes a single code point into a UTF-32 sequence of 1 code unit (4 bytes).
+---
+---@param utf32_codepoint integer The code point to encode.
+---@param lax? boolean If `true`, invalid code points (surrogates, negative or above `U+10FFFF`) are encoded as `U+FFFD` instead of raising an error.
+---@param big_endian? boolean Whether to encode as big-endian.
+---@return string utf32_sequence The UTF-32 sequence.
+function utf32.encode( utf32_codepoint, lax, big_endian )
+    return encode( utf32_codepoint, lax ~= true, 1, big_endian )
+end
+
+--- [SHARED AND MENU]
+---
+--- Decodes a single UTF-32 sequence starting at the given byte position.
+---
+--- In lax mode invalid sequences are not raised, `nil` is returned as the code point
+--- together with the number of bytes to skip, the error position and the error code.
+---
+---@param utf32_string string The UTF-32 string to decode from.
+---@param index? integer The position of the sequence in bytes, `1` by default.
+---@param end_index? integer The last byte that can be read, the end of the string by default.
+---@param lax? boolean Whether to lax the UTF-32 validity check.
+---@param big_endian? boolean Whether the string is big-endian.
+---@return integer | nil utf32_codepoint The decoded code point, or `nil` if the sequence is invalid.
+---@return integer sequence_length The length of the sequence in bytes, at least `1`.
+---@return integer | nil error_position The position of the invalid sequence.
+---@return dreamwork.std.utf32.ErrorCode | nil error_code The error code.
+function utf32.decode( utf32_string, index, end_index, lax, big_endian )
+    return decode( utf32_string, index or 1, end_index or string_len( utf32_string ), lax ~= true, 1, big_endian )
+end
+
+--- [SHARED AND MENU]
+---
 --- Returns the number of code points in a UTF-32 string.
 ---
 ---@param utf32_string string The UTF-32 string to get the length of.
@@ -330,6 +363,28 @@ end
 ---@return string utf32_string The UTF-32 string.
 function utf32.pack( utf32_codepoints, utf32_codepoint_count, lax, big_endian )
     return pack( utf32_codepoints, utf32_codepoint_count or #utf32_codepoints, lax ~= true, 1, big_endian )
+end
+
+--- [SHARED AND MENU]
+---
+--- Encodes code points into a little-endian UTF-32 string.
+---
+--- This functions similarly to `string.char`, use `utf32.pack` for big-endian strings.
+---
+---@param a integer The code points to encode.
+---@param b integer The code points to encode.
+---@param ... integer The code points to encode.
+---@return string utf32_string The UTF-32 string.
+function utf32.char( a, b, ... )
+    if b == nil then
+        if a == nil then
+            return ""
+        end
+
+        return encode( a, true, 1 )
+    end
+
+    return pack( { a, b, ... }, raw_select( "#", a, b, ... ), true, 1 )
 end
 
 --- [SHARED AND MENU]
