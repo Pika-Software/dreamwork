@@ -15,7 +15,7 @@ local std = dreamwork.std
 --- See https://en.wikipedia.org/wiki/JSON
 ---
 ---@class dreamwork.std.json
-local json = std.json or {}
+local json = {}
 std.json = json
 
 --- [SHARED AND MENU]

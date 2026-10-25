@@ -474,7 +474,7 @@ end
 --- [View documents](command:extension.lua.doc?["en-us/51/manual.html/pdf-tonumber"])
 ---
 ---@param e any The value to convert to a number.
----@param base? integer The number base, default is `10`.
+---@param base? numberbase The number base, default is `10`.
 ---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
 function std.tonumber( e, base )
     local fn = debug_getmetavalue( e, "__tonumber" )
@@ -1502,7 +1502,7 @@ do
     ---@return string
     ---@private
     function String.__represent( value )
-        return string_format( "string: %p [%s]", value, string_escape( value ) )
+        return string_format( "string: %p [%s]", value, string_escape( value, true ) )
     end
 
 end
@@ -2261,7 +2261,6 @@ end
 ---@param overload_fn function The function called instead of `main_fn` when the arguments match `match`.
 ---@return F overloaded_fn A function that dispatches to `overload_fn` or `main_fn` depending on its arguments. If `match` is an empty array, this is `main_fn` itself.
 function std.overload( main_fn, match, overload_fn )
-    ---@type integer
     local required_args = 0
 
     if isString( match ) then
@@ -2377,8 +2376,6 @@ do
 
         local arg_count = raw_select( "#", ... )
         local args = { ... }
-
-        ---@type integer
         local index = 1
 
         for key in string_gmatch( fmt, "%%[-+ #0]*%d*%.?%d*(%l)" ) do
@@ -2417,14 +2414,11 @@ do
             max_depth = 8
         end
 
+        local output_size = 0
+        local depth = 1
+
         ---@type ( string | dreamwork.std.Color )[]
         local output = {}
-
-        ---@type integer
-        local output_size = 0
-
-        ---@type integer
-        local depth = 1
 
         ---@type table<table, table>
         local parents = {}
@@ -2677,13 +2671,8 @@ do
     ---@class dreamwork.std
     ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
     ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
-    ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
+    ---@field SYSTEM_BATTERY_LEVEL garrysmod.system.BatteryPower The battery level, from `0` to `100`.
 
-    ---@class dreamwork.GModSystemLib
-    ---@field HasFocus fun(): boolean
-    ---@field GetCountry fun(): string
-    ---@field BatteryPower fun(): integer
-    ---@diagnostic disable-next-line: undefined-global
     local glua_system = system or {}
 
     std.SYSTEM_COUNTRY = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
