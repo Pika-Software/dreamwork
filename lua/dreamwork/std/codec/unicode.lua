@@ -29,8 +29,8 @@ local ascii = std.ascii
 local ascii_isPrintable, ascii_isDigit = ascii.isPrintable, ascii.isDigit
 
 local math = std.math
-local math_ceil, math_floor = math.ceil, math.floor
 local math_range = math.range
+local math_ceil, math_floor = math.ceil, math.floor
 
 local table = std.table
 local table_concat = table.concat

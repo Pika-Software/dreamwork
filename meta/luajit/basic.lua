@@ -1042,7 +1042,7 @@ function setmetatable( tbl, metatable ) end
 ---
 ---@param e any The value to convert.
 ---@return number? number The converted number, or `nil` if it can't be converted.
----@overload fun( e: string, base: integer ): integer?
+---@overload fun( e: string, base: numberbase ): integer?
 ---@nodiscard
 function tonumber( e ) end
 

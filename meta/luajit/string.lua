@@ -48,8 +48,8 @@ function string.byte( s, i, j ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.char)
 ---
----@param byte integer
----@param ... integer
+---@param byte byte
+---@param ... byte
 ---@return string
 ---@nodiscard
 function string.char( byte, ... ) end
