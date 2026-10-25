@@ -10,7 +10,7 @@ local debug_Stack = debug.Stack
 local string = std.string
 local string_format = string.format
 
-local utf8 = std.utf8
+local unicode = std.unicode
 
 local time = std.time
 local time_format = time.format
@@ -147,7 +147,7 @@ end
 
 do
 
-    local realm_name = utf8.capitalize( std.LUA_REALM )
+    local realm_name = unicode.capitalize( std.LUA_REALM )
 
     --- [SHARED AND MENU]
     ---

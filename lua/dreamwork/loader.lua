@@ -710,9 +710,15 @@ sendfile( "dreamwork/std/os.lua" )
 ---@class dreamwork.std.os
 local os = std.os
 
----@diagnostic disable-next-line: undefined-global
-local SysTime = SysTime or os.clock
-dreamwork.InitTime = SysTime()
+--- [SHARED AND MENU]
+---
+--- Returns a highly accurate amount of seconds since Lua/Engine started.
+---
+---@type fun(): number
+dreamwork.getUpTime = SysTime or os.clock
+
+local dreamwork_getUpTime = dreamwork.getUpTime
+dreamwork.InitTime = dreamwork_getUpTime()
 
 -- detour library
 dofile( "dreamwork/detour.lua" )
@@ -2467,7 +2473,7 @@ do
         end
 
         if isString( key ) then
-            output[ output_size + 1 ] = string_indent( string_escape( key ), depth * 2 )
+            output[ output_size + 1 ] = string_indent( "[ \"" .. string_escape( key, true ) .. "\" ]", depth * 2 )
         elseif isNumber( key ) then
             output[ output_size + 1 ] = string_indent( string_format( "[ %g ]", key ), depth * 2 )
         else
@@ -2561,8 +2567,8 @@ do
     ---@param seconds number
     function std.sleep( seconds )
         if futures_running() == nil then -- main thread
-            local deadline = SysTime() + seconds
-            while SysTime() < deadline do end
+            local deadline = dreamwork_getUpTime() + seconds
+            while dreamwork_getUpTime() < deadline do end
 
             return
         end
@@ -2731,13 +2737,13 @@ sendfile( "dreamwork/std/types/vector2.lua" )
 dofile( "dreamwork/std/types/vector3.lua" )
 sendfile( "dreamwork/std/types/vector3.lua" )
 
--- quaternion class
-dofile( "dreamwork/std/types/quaternion.lua" )
-sendfile( "dreamwork/std/types/quaternion.lua" )
-
 -- 3d angle class
 dofile( "dreamwork/std/types/angle3.lua" )
 sendfile( "dreamwork/std/types/angle3.lua" )
+
+-- quaternion class
+dofile( "dreamwork/std/types/quaternion.lua" )
+sendfile( "dreamwork/std/types/quaternion.lua" )
 
 -- valve matrix class
 dofile( "dreamwork/std/types/vmatrix.lua" )
@@ -2951,7 +2957,7 @@ do
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
     local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
 
-    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", std.utf8.pad( splash, 50, " ", true, true ) ) )
+    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", std.unicode.pad( splash, 50, " ", true, true ) ) )
 
 end
 
@@ -3139,7 +3145,7 @@ function std.require( modname, ... )
 end
 
 local total_memory = gc.getMemory()
-logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (SysTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )
+logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (dreamwork_getUpTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )
 
 -- Memory clean-up
 time.tick( "ms" )

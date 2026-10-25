@@ -363,8 +363,8 @@ end
 --- made up with a partial copy of `padding`, with any extra leftover character going to the
 --- right side.
 ---
---- This is the byte-length counterpart to `utf8.pad`, which measures and pads by character
---- count instead of raw byte length.
+--- This is the byte-length counterpart to `unicode.pad`, which measures and pads by display
+--- width (columns) instead of raw byte length.
 ---
 ---@param str string The string to pad.
 ---@param desired_length integer The target length, in bytes, that the result should reach.

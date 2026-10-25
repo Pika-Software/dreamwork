@@ -1,8 +1,3 @@
----@class dreamwork.GModUtilLibrary
----@field TableToKeyValues fun( tbl: table, rootKey: string? ): string
----@field KeyValuesToTable fun( keyValues: string, usesEscapeSequences: boolean?, preserveKeyCase: boolean? ): table
----@field KeyValuesToTablePreserveOrder fun( keyValues: string, usesEscapeSequences: boolean?, preserveKeyCase: boolean? ): table
----@diagnostic disable-next-line: undefined-global
 local glua_util = util
 
 ---@class dreamwork.std

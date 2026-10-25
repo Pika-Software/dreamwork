@@ -89,26 +89,6 @@ local engine = {}
 dreamwork.engine = engine
 
 
----@param name string
----@return table
-local function glua_library( name )
-    local lib = _G[ name ]
-    if lib == nil then
-        lib = {}
-        _G[ name ] = lib
-    end
-
-    return lib
-end
-
-
---- [SHARED AND MENU]
----
---- Returns a highly accurate amount of seconds since Lua/Engine started.
----
----@type fun(): number
-engine.getUpTime = SysTime or os.clock
-
 --- [SHARED]
 ---
 --- unsigned short ( 2 byte / 16 bit / 0-65535, 0 is reserved )
@@ -121,6 +101,19 @@ engine.getUpTime = SysTime or os.clock
 ---
 ---@type integer
 engine.NetworkHeaderSize = 16 + 1
+
+---@param name string
+---@return table
+local function glua_library( name )
+    local lib = _G[ name ]
+    if lib == nil then
+        lib = {}
+        _G[ name ] = lib
+    end
+
+    return lib
+end
+
 
 do
 

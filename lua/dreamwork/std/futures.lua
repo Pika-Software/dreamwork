@@ -891,6 +891,8 @@ end
 
 do
 
+    local futures_run = futures.run
+
     --- [SHARED AND MENU]
     ---
     --- Async task object.
@@ -1180,7 +1182,7 @@ end
 ---
 --- Other awaitables will be cancelled after first result or error.
 ---
----@param futureList Future[] The list of futures to race against each other.
+---@param futureList dreamwork.std.Future[] The list of futures to race against each other.
 ---@return any
 ---@async
 function futures.any( futureList )
@@ -1203,7 +1205,7 @@ function futures.any( futureList )
         futureList[ i ]:addCallback( callback )
     end
 
-    ---@type Future
+    ---@type dreamwork.std.Future
     local fut = futures_pending()
     cancelList( futureList )
     return fut:result()

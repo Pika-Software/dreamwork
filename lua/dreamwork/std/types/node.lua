@@ -61,36 +61,36 @@ function Node:__init( value, parent )
     end
 end
 
----@generic T
----@param self dreamwork.std.Node<T>
----@param writer dreamwork.std.buffer.Writer
----@protected
-function Node:__serialize( writer )
-    writer:writeInt32( self.depth )
+-- ---@generic T
+-- ---@param self dreamwork.std.Node<T>
+-- ---@param writer dreamwork.std.buffer.Writer
+-- ---@protected
+-- function Node:__serialize( writer )
+--     writer:writeInt32( self.depth )
 
-    local width = self.width
-    writer:writeInt32( width )
+--     local width = self.width
+--     writer:writeInt32( width )
 
-    for index = 1, width, 1 do
-        writer:serialize( self[ index ] )
-    end
-end
+--     for index = 1, width, 1 do
+--         writer:serialize( self[ index ] )
+--     end
+-- end
 
----@generic T
----@param self dreamwork.std.Node<T>
----@param reader dreamwork.std.buffer.Reader
----@param fallback dreamwork.std.Object | nil
----@protected
-function Node:__deserialize( reader, fallback )
-    self.depth = reader:readInt32() or 0
+-- ---@generic T
+-- ---@param self dreamwork.std.Node<T>
+-- ---@param reader dreamwork.std.buffer.Reader
+-- ---@param fallback dreamwork.std.Object | nil
+-- ---@protected
+-- function Node:__deserialize( reader, fallback )
+--     self.depth = reader:readInt32() or 0
 
-    local width = reader:readInt32() or 0
-    self.width = width
+--     local width = reader:readInt32() or 0
+--     self.width = width
 
-    for index = 1, width, 1 do
-        self[ index ] = reader:deserialize( self[ index ] or fallback or Node, fallback )
-    end
-end
+--     for index = 1, width, 1 do
+--         self[ index ] = reader:deserialize( self[ index ] or fallback or Node, fallback )
+--     end
+-- end
 
 --- [SHARED AND MENU]
 ---

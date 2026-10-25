@@ -26,7 +26,7 @@ local debug_getmetatable = debug.getmetatable
 local math = std.math
 local math_log2 = math.log2
 local math_frexp = math.frexp
-local math_relative = math.relative
+local math_range = math.range
 local math_isNegative = math.isNegative
 local math_min, math_max = math.min, math.max
 local math_floor, math_clamp = math.floor, math.clamp
@@ -577,47 +577,33 @@ do
     function BigInteger:fromString( str, base, start_position, end_position )
         local str_length = string_len( str )
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
+        local start_index, end_index = math_range( str_length, start_position, end_position )
 
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        if string_byte( str, start_position ) == 0x2d then -- "-"
-            start_position = start_position + 1
+        if string_byte( str, start_index ) == 0x2d then -- "-"
+            start_index = start_index + 1
             self.sign = true
         else
             self.sign = false
         end
 
-        if string_byte( str, start_position ) == 0x30 --[[ 0 ]] then
-            start_position = start_position + 1
+        if string_byte( str, start_index ) == 0x30 --[[ 0 ]] then
+            start_index = start_index + 1
 
-            local prefix = string_byte( str, start_position )
+            local prefix = string_byte( str, start_index )
             if (base == nil or base == 16) and prefix == 0x78 --[[ x ]] then
-                start_position = start_position + 1
+                start_index = start_index + 1
                 base = 16
             elseif (base == nil or base == 2) and prefix == 0x62 --[[ b ]] then
-                start_position = start_position + 1
+                start_index = start_index + 1
                 base = 2
             end
         end
 
-        while string_byte( str, start_position ) == 0x30 --[[ 0 ]] do
-            start_position = start_position + 1
+        while string_byte( str, start_index ) == 0x30 --[[ 0 ]] do
+            start_index = start_index + 1
         end
 
-        if start_position > end_position then
+        if start_index > end_index then
             self.bytes[ 0 ] = 0
             self.sign = false
             return self
@@ -636,14 +622,14 @@ do
             -- fast bin/hex parser
             local width = base == 16 and 2 or 8
 
-            for j = end_position, start_position, -width do
+            for j = end_index, start_index, -width do
                 byte_count = byte_count + 1
 
                 local chunk_start = j - width + 1
-                if chunk_start > start_position then
+                if chunk_start > start_index then
                     bytes[ byte_count ] = raw_tonumber( string_sub( str, chunk_start, j ), base )
                 else
-                    bytes[ byte_count ] = raw_tonumber( string_sub( str, start_position, j ), base )
+                    bytes[ byte_count ] = raw_tonumber( string_sub( str, start_index, j ), base )
                 end
             end
 
@@ -652,7 +638,7 @@ do
             return self
         end
 
-        for i = start_position, end_position, 1 do
+        for i = start_index, end_index, 1 do
             local carry = ascii_toInteger( string_byte( str, i ) )
             if carry == nil then
                 break     -- drop floats and not a number parts

@@ -1,7 +1,5 @@
----@diagnostic disable-next-line: undefined-global
-local milliseconds_elapsed = SysTime or os.clock
-
 local engine_hookCatch = dreamwork.engine.hookCatch
+local dreamwork_getUpTime = dreamwork.getUpTime
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -317,28 +315,28 @@ end
 ---@return number timestamp The elapsed time in the specified unit.
 function time.elapsed( unit, as_float )
     if unit == "s" or unit == nil then
-        local float = milliseconds_elapsed()
+        local float = dreamwork_getUpTime()
         if as_float ~= false then
             return float
         end
 
         return math_floor( float )
     elseif unit == "ms" then
-        local float = milliseconds_elapsed() * 1e3
+        local float = dreamwork_getUpTime() * 1e3
         if as_float ~= false then
             return float
         end
 
         return math_floor( float )
     elseif unit == "us" then
-        local float = milliseconds_elapsed() * 1e6
+        local float = dreamwork_getUpTime() * 1e6
         if as_float ~= false then
             return float
         end
 
         return math_floor( float )
     elseif unit == "ns" then
-        local float = milliseconds_elapsed() * 1e9
+        local float = dreamwork_getUpTime() * 1e9
         if as_float ~= false then
             return float
         end
@@ -346,7 +344,7 @@ function time.elapsed( unit, as_float )
         return math_floor( float )
     end
 
-    return transform( milliseconds_elapsed(), "s", unit, as_float ~= false, 2 )
+    return transform( dreamwork_getUpTime(), "s", unit, as_float ~= false, 2 )
 end
 
 do
@@ -362,7 +360,7 @@ do
     ---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
     ---@return number delta The elapsed time in the specified unit.
     function time.tick( unit, as_float )
-        local elapsed = milliseconds_elapsed()
+        local elapsed = dreamwork_getUpTime()
 
         local delta = transform( elapsed - previous_time, nil, unit, as_float ~= false, 2 )
         previous_time = elapsed
@@ -385,7 +383,7 @@ local function now( unit, as_float )
         return timestamp
     end
 
-    return transform( timestamp + (milliseconds_elapsed() % 1), nil, unit, as_float, 2 )
+    return transform( timestamp + (dreamwork_getUpTime() % 1), nil, unit, as_float, 2 )
 end
 
 time.now = now
