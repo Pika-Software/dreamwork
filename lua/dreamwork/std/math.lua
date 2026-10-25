@@ -375,16 +375,18 @@ end
 
 do
 
-    local math_modf = math.modf
+    local math_ceil = math.ceil
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the integer part of the given number.
+    --- Returns the integer part of the given number, rounding towards zero.
+    ---
+    --- > **NOTE**: Same result as `(math.modf( x ))`, but `math.modf` is ~10x slower under JIT.
     ---
     ---@param x number The number to truncate.
     ---@return integer truncated The integer part of the number.
     function math.trunc( x )
-        return (math_modf( x ))
+        return (x > 0 and math_floor or math_ceil)( x )
     end
 
 end
