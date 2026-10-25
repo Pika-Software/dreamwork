@@ -13,6 +13,9 @@ local string_len = string.len
 local string_sub, string_rep = string.sub, string.rep
 local string_byte, string_char = string.byte, string.char
 
+local ascii = std.ascii
+local ascii_isGraphic = ascii.isGraphic
+
 local table = std.table
 local table_concat = table.concat
 
@@ -30,7 +33,7 @@ local error = std.error
 --- See https://en.wikipedia.org/wiki/Base32
 ---
 ---@class dreamwork.std.base32
-local base32 = std.base32 or {}
+local base32 = {}
 std.base32 = base32
 
 --- [SHARED AND MENU]
@@ -70,7 +73,7 @@ function base32.alphabet( alphabet_str )
         if uint8 == 0x3D --[[ "=" ]] then
             error( "alphabet cannot contain padding character '=' [" .. index .. "]", 2 )
         elseif decode_map[ uint8 ] ~= -1 then
-            if uint8 > 32 and uint8 < 127 then
+            if ascii_isGraphic( uint8 ) then
                 error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. index .. "]", 2 )
             else
                 error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. index .. "]", 2 )

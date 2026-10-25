@@ -29,6 +29,10 @@ local string_sub, string_rep = string.sub, string.rep
 local string_byte, string_char = string.byte, string.char
 local string_find, string_gsub = string.find, string.gsub
 
+local ascii = std.ascii
+local ascii_isSpace = ascii.isSpace
+local ascii_isGraphic = ascii.isGraphic
+
 local rbit = raw.bit
 local rbit_band, rbit_bor = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
@@ -84,7 +88,7 @@ function base64.alphabet( alphabet_str )
         local uint8 = string_byte( alphabet_str, index, index )
 
         if decode_map[ uint8 ] ~= -1 then
-            if uint8 > 32 and uint8 < 127 then
+            if ascii_isGraphic( uint8 ) then
                 error( "alphabet characters must be unique, duplicate character: '" .. string_char( uint8 ) .. "' [" .. index .. "]", 2 )
             else
                 error( "alphabet characters must be unique, duplicate character: '\\" .. uint8 .. "' [" .. index .. "]", 2 )
@@ -196,17 +200,12 @@ local function get_options( options )
 end
 
 --- Number of characters in the last incomplete block for each number of remaining bytes.
----
 ---@type table<integer, integer>
 local tail_chars = { [ 0 ] = 0, [ 1 ] = 2, [ 2 ] = 3 }
 
 --- Number of bytes in the last incomplete block for each number of remaining characters, `nil` for impossible lengths.
----
 ---@type table<integer, integer>
 local tail_bytes = { [ 0 ] = 0, [ 2 ] = 1, [ 3 ] = 2 }
-
----@type table<integer, boolean>
-local whitespace_bytes = { [ 0x09 ] = true, [ 0x0A ] = true, [ 0x0B ] = true, [ 0x0C ] = true, [ 0x0D ] = true, [ 0x20 ] = true }
 
 --- Checks the length and padding of a base64 string without whitespace.
 ---
@@ -249,7 +248,7 @@ local function find_invalid( base64_str, decode_map, pad_byte )
 
     while end_position ~= 0 do
         local uint8 = string_byte( base64_str, end_position, end_position )
-        if uint8 ~= pad_byte and not whitespace_bytes[ uint8 ] then
+        if uint8 ~= pad_byte and not ascii_isSpace( uint8 ) then
             break
         end
 
@@ -258,7 +257,7 @@ local function find_invalid( base64_str, decode_map, pad_byte )
 
     for index = 1, end_position, 1 do
         local uint8 = string_byte( base64_str, index, index )
-        if not whitespace_bytes[ uint8 ] and decode_map[ uint8 ] < 0 then
+        if not ascii_isSpace( uint8 ) and decode_map[ uint8 ] < 0 then
             return index
         end
     end
