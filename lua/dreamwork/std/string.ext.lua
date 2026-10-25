@@ -7,8 +7,7 @@ local rbit_bxor = rbit.bxor
 local rbit_lshift = rbit.lshift
 
 local math = std.math
-local math_min = math.min
-local math_relative = math.relative
+local math_range = math.range
 
 local table = std.table
 local table_concat = table.concat
@@ -47,62 +46,51 @@ do
     --- Within the given range, any byte that has a known escape sequence (e.g. newline, tab, quote, backslash etc.) is replaced with that sequence.
     ---
     --- Any other byte that is a control character (below `0x20`, or below `0x21` i.e. including the space
-    --- character when `escape_spaces` is `true`) or is outside the printable ASCII range (above `0x7F`) is replaced with a `\xHH` hexadecimal escape.
+    --- character when `escape_spaces` is `true`) or is outside the printable ASCII range (`0x7F` and above) is replaced with a `\xHH` hexadecimal escape.
     ---
     --- All other bytes, and anything outside `start_position`/`end_position`, are left untouched.
     ---
     ---@see string.unescape
     ---
     ---@param str string The string to escape.
+    ---@param escape_spaces? boolean Whether the space character (`0x20`) should also be escaped as `\x20`. Defaults to `false`.
     ---@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
     ---@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
-    ---@param escape_spaces? boolean Whether the space character (`0x20`) should also be escaped as `\x20`. Defaults to `false`.
     ---@return string escaped_str The string with special characters escaped.
-    function string.escape( str, start_position, end_position, escape_spaces )
-        ---@type integer
+    function string.escape( str, escape_spaces, start_position, end_position )
         local str_length = string_len( str )
-
         if str_length == 0 then
             return str
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
+        local start_index, end_index = math_range( str_length, start_position, end_position )
 
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        local sequence_position = start_position
+        -- first byte not yet copied into `segments`, bytes before `start_position` are copied as is
+        local sequence_position = 1
         local segments, segment_count = {}, 0
 
         local in_range = escape_spaces and 0x21 or 0x20
 
-        for index = start_position, end_position, 1 do
+        for index = start_index, end_index, 1 do
             local uint8 = string_byte( str, index, index )
             local escape_sequence = escape_sequences[ uint8 ]
             if escape_sequence ~= nil then
                 segment_count = segment_count + 1
                 segments[ segment_count ] = string_sub( str, sequence_position, index - 1 ) .. escape_sequence
                 sequence_position = index + 1
-            elseif uint8 < in_range or uint8 > 0x7F then
+            elseif uint8 < in_range or uint8 > 0x7E then
                 segment_count = segment_count + 1
                 segments[ segment_count ] = string_sub( str, sequence_position, index - 1 ) .. string_char( 0x5C, 0x78, bytepack_writeHex8( uint8 ) )
                 sequence_position = index + 1
             end
         end
 
+        if segment_count == 0 then
+            return str
+        end
+
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, sequence_position, end_position )
+        segments[ segment_count ] = string_sub( str, sequence_position, str_length )
 
         return table_concat( segments, "", 1, segment_count )
     end
@@ -143,92 +131,61 @@ do
     ---@param end_position? integer The position to stop unescaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string str The unescaped string.
     function string.unescape( escaped_str, start_position, end_position )
-        ---@type integer
         local str_length = string_len( escaped_str )
-
         if str_length == 0 then
             return escaped_str
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
+        local start_index, end_index = math_range( str_length, start_position, end_position )
 
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
+        -- first byte not yet copied into `segments`, bytes before `start_position` are copied as is
+        local copy_position = 1
         local segments, segment_count = {}, 0
 
-        while true do
-            local uint8_1 = string_byte( escaped_str, start_position, start_position )
-            if uint8_1 == nil then
-                break
-            end
+        -- a sequence is at least 2 bytes long and has to fit into the range, so the last byte can't start one
+        while start_index < end_index do
+            if string_byte( escaped_str, start_index, start_index ) == 0x5C --[[ "\" ]] then
+                local uint8_2 = string_byte( escaped_str, start_index + 1, start_index + 1 )
 
-            segment_count = segment_count + 1
+                ---@type string | nil
+                local unescape_sequence
 
-            if uint8_1 == 0x5C --[[ "\" ]] then
-                start_position = start_position + 1
+                -- unknown sequences are skipped as a whole and left as is
+                local sequence_length = 2
 
-                local uint8_2 = string_byte( escaped_str, start_position, start_position )
-                if uint8_2 == nil then
-                    segments[ segment_count ] = string_char( uint8_1 )
-                    break
-                elseif uint8_2 == 0x78 --[[ "x" ]] then
-                    start_position = start_position + 1
+                if uint8_2 == 0x78 --[[ "x" ]] then
+                    if start_index + 3 <= end_index then
+                        sequence_length = 4
 
-                    local uint8_3, uint8_4 = string_byte( escaped_str, start_position, start_position + 1 )
-                    if uint8_3 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2 )
-                        break
-                    elseif uint8_4 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3 )
-                        break
-                    end
-
-                    start_position = start_position + 1
-
-                    local decoded_uint8 = bytepack_readHex8( uint8_3, uint8_4 )
-                    if decoded_uint8 == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2, uint8_3, uint8_4 )
-                    else
-                        segments[ segment_count ] = string_char( decoded_uint8 )
+                        local decoded_uint8 = bytepack_readHex8( string_byte( escaped_str, start_index + 2, start_index + 3 ) )
+                        if decoded_uint8 ~= nil then
+                            unescape_sequence = string_char( decoded_uint8 )
+                        end
                     end
                 else
-                    local unescape_sequence = unescape_sequences[ uint8_2 ]
-                    if unescape_sequence == nil then
-                        segments[ segment_count ] = string_char( uint8_1, uint8_2 )
-                    else
-                        segments[ segment_count ] = unescape_sequence
-                    end
+                    unescape_sequence = unescape_sequences[ uint8_2 ]
                 end
-            else
-                segments[ segment_count ] = string_char( uint8_1 )
-            end
 
-            if start_position == end_position then
-                break
+                if unescape_sequence ~= nil then
+                    segment_count = segment_count + 1
+                    segments[ segment_count ] = string_sub( escaped_str, copy_position, start_index - 1 ) .. unescape_sequence
+                    copy_position = start_index + sequence_length
+                end
+
+                start_index = start_index + sequence_length
             else
-                start_position = start_position + 1
+                start_index = start_index + 1
             end
         end
 
         if segment_count == 0 then
-            return ""
-        elseif segment_count == 1 then
-            return segments[ 1 ]
-        else
-            return table_concat( segments, "", 1, segment_count )
+            return escaped_str
         end
+
+        segment_count = segment_count + 1
+        segments[ segment_count ] = string_sub( escaped_str, copy_position, str_length )
+
+        return table_concat( segments, "", 1, segment_count )
     end
 
 end

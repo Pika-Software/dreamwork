@@ -18,6 +18,7 @@ local debug_getmetavalue = debug.getmetavalue
 local math = std.math
 local math_min = math.min
 local math_floor = math.floor
+local math_range = math.range
 local math_random = math.random
 local math_relative = math.relative
 
@@ -136,28 +137,14 @@ if table.move == nil then
             source_length = len( source )
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, source_length )
-        else
-            start_position = math_min( start_position, source_length )
-        end
-
-        if end_position == nil then
-            end_position = source_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, source_length )
-        else
-            end_position = math_min( end_position, source_length )
-        end
+        local start_index, end_index = math_range( source_length, start_position, end_position )
 
         if offset == nil then
             offset = 1
         end
 
-        for index = 0, end_position - start_position, 1 do
-            destination[ offset + index ] = source[ start_position + index ]
+        for index = 0, end_index - start_index, 1 do
+            destination[ offset + index ] = source[ start_index + index ]
         end
 
         return destination
@@ -199,23 +186,13 @@ do
             tbl_length = len( tbl )
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, tbl_length )
-        else
-            start_position = math_min( start_position, tbl_length )
+        local start_index, end_index = math_range( tbl_length, start_position, end_position )
+
+        if start_index > end_index then
+            return {}, 0
         end
 
-        if end_position == nil then
-            end_position = tbl_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, tbl_length )
-        else
-            end_position = math_min( end_position, tbl_length )
-        end
-
-        return { table_unpack( tbl, start_position, end_position ) }, end_position - start_position + 1
+        return { table_unpack( tbl, start_index, end_index ) }, end_index - start_index + 1
     end
 
 end
@@ -237,25 +214,11 @@ function table.slice( tbl, start_position, end_position, step, tbl_length )
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
-
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
     local slice, slice_size = {}, 0
 
-    for index = start_position, end_position, step or 1 do
+    for index = start_index, end_index, step or 1 do
         slice_size = slice_size + 1
         slice[ slice_size ] = tbl[ index ]
     end
@@ -344,30 +307,20 @@ function table.inject( destination, source, offset, start_position, end_position
         source_length = len( source )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, source_length )
-    else
-        start_position = math_min( start_position, source_length )
+    local start_index, end_index = math_range( source_length, start_position, end_position )
+
+    if start_index > end_index then
+        return
     end
 
-    if end_position == nil then
-        end_position = source_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, source_length )
-    else
-        end_position = math_min( end_position, source_length )
-    end
-
-    local steps = end_position - start_position
+    local steps = end_index - start_index
 
     for i = destination_length, offset, -1 do
         destination[ steps + i + 1 ] = destination[ i ]
     end
 
     for i = 0, steps, 1 do
-        destination[ offset + i ] = source[ start_position + i ]
+        destination[ offset + i ] = source[ start_index + i ]
     end
 end
 
@@ -387,33 +340,23 @@ function table.eject( tbl, start_position, end_position, tbl_length )
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
+    if start_index > end_index then
+        return {}, 0
     end
 
     local values, values_length = {}, 0
 
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         values_length = values_length + 1
         values[ values_length ] = tbl[ index ]
         tbl[ index ] = nil
     end
 
-    local distance = (end_position - start_position) + 1
+    local distance = (end_index - start_index) + 1
 
-    for index = end_position + 1, tbl_length, 1 do
+    for index = end_index + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 
@@ -847,25 +790,11 @@ function table.extract( tbl, start_position, end_position, step_size, tbl_length
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
-
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
     local extracted, extracted_length = {}, 0
 
-    for index = start_position, end_position, step_size or 1 do
+    for index = start_index, end_index, step_size or 1 do
         extracted_length = extracted_length + 1
         extracted[ extracted_length ] = tbl[ index ]
     end
@@ -989,29 +918,19 @@ function table.removeByRange( tbl, start_position, end_position, tbl_length )
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
+
+    if start_index > end_index then
+        return
     end
 
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
-
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         tbl[ index ] = nil
     end
 
-    local distance = (end_position - start_position) + 1
+    local distance = (end_index - start_index) + 1
 
-    for index = end_position + 1, tbl_length, 1 do
+    for index = end_index + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 end

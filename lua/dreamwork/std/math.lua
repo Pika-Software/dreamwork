@@ -870,6 +870,35 @@ function math.relative( position, length, fallback )
     end
 end
 
+--- [SHARED AND MENU]
+---
+--- Normalizes a `start_position`/`end_position` pair against `length`, same rules as `string.sub`.
+---
+--- Negative positions count back from the end, `start_position` is clamped to `>= 1` and `end_position` to `[0, length]`.
+---
+--- An empty range is returned as `start_position > end_position`.
+---
+---@param length integer The length of the sequence.
+---@param start_position? integer The start position, defaults to `1`.
+---@param end_position? integer The end position, defaults to `length`.
+---@return integer start_position The normalized start position.
+---@return integer end_position The normalized end position.
+function math.range( length, start_position, end_position )
+    if start_position == nil or start_position == 0 then
+        start_position = 1
+    elseif start_position < 0 then
+        start_position = math_max( length + start_position, 0 ) + 1
+    end
+
+    if end_position == nil or end_position > length then
+        end_position = length
+    elseif end_position < 0 then
+        end_position = math_max( length + end_position + 1, 0 )
+    end
+
+    return start_position, end_position
+end
+
 do
 
     local math_log10 = math.log10

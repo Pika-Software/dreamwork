@@ -8,7 +8,6 @@ local ascii_isSpace = ascii.isSpace
 
 local len = std.len
 local isTable = std.isTable
-local represent = std.represent
 
 local raw = std.raw
 local raw_tonumber = raw.tonumber
@@ -18,6 +17,7 @@ local math_abs = math.abs
 local math_floor = math.floor
 local math_random = math.random
 local math_relative = math.relative
+local math_range = math.range
 local math_min, math_max = math.min, math.max
 
 local table = std.table
@@ -116,10 +116,12 @@ function string.byteMap( ... )
         local value = select( i, ... )
 
         if isTable( value ) then
+            ---@cast value dreamwork.std.string.ByteMapRange
             for j = string_byte( value.leading_byte ), string_byte( value.trailing_byte ), (value.step_size or 1) do
                 byte_map[ j ] = true
             end
         else
+            ---@cast value string
             byte_map[ string_byte( value, 1, 1 ) ] = true
         end
     end
@@ -141,25 +143,9 @@ end
 ---@param end_position? integer The position to stop searching at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return integer | nil index The index of the first matching byte within the range, or `nil` if not found.
 function string.findByte( str, searchable_byte, start_position, end_position )
-    local str_length = string_len( str )
+    local start_index, end_index = math_range( string_len( str ), start_position, end_position )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         if string_byte( str, index, index ) == searchable_byte then
             return index
         end
@@ -292,28 +278,17 @@ end
 ---@return string new_string The string with the specified byte interval removed.
 function string.remove( str, start_position, end_position )
     local str_length = string_len( str )
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
+    if start_index > end_index then
+        return str
     end
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    if start_position == 1 and end_position == str_length then
+    if start_index == 1 and end_index == str_length then
         return ""
     end
 
-    return string_sub( str, 1, start_position - 1 ) .. string_sub( str, end_position + 1, str_length )
+    return string_sub( str, 1, start_index - 1 ) .. string_sub( str, end_index + 1, str_length )
 end
 
 --- [SHARED AND MENU]
@@ -501,49 +476,34 @@ do
             return segments, str_length
         end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, str_length )
-        else
-            start_position = math_min( start_position, str_length )
-        end
-
-        if end_position == nil then
-            end_position = str_length
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, str_length )
-        else
-            end_position = math_min( end_position, str_length )
-        end
-
-        with_pattern = with_pattern ~= true
+        local start_index, end_index = math_range( str_length, start_position, end_position )
+        local plain_only = with_pattern ~= true
 
         ---@type integer
         local segment_count = 0
 
         ::split_loop::
 
-        local segment_start, segment_end = string_find( str, searchable, start_position, with_pattern )
+        local segment_start, segment_end = string_find( str, searchable, start_index, plain_only )
         if segment_end == nil then
             segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, start_position, end_position )
+            segments[ segment_count ] = string_sub( str, start_index, end_index )
             return segments, segment_count
         end
 
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, start_position, math_min( segment_start - 1, end_position ) )
+        segments[ segment_count ] = string_sub( str, start_index, math_min( segment_start - 1, end_index ) )
 
         local split_position = segment_end + 1
 
-        if split_position > end_position then
+        if split_position > end_index then
             segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, split_position, end_position )
+            segments[ segment_count ] = string_sub( str, split_position, end_index )
 
             return segments, segment_count
         end
 
-        start_position = split_position
+        start_index = split_position
 
         ---@diagnostic disable-next-line: missing-return
         goto split_loop
@@ -651,55 +611,38 @@ function string.countByte( str, counted_byte, reverse_direction, start_position,
     end
 
     local str_length = string_len( str )
-
-    if start_position == nil then
-        if reverse_direction then
-            start_position = str_length
-        else
-            start_position = 1
-        end
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        if reverse_direction then
-            end_position = 1
-        else
-            end_position = str_length
-        end
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
     local byte_count = 0
 
+    local start_index, end_index
+
     if reverse_direction then
-        if start_position < end_position then
+        end_index, start_index = math_range( str_length, end_position, start_position )
+
+        if start_index < end_index then
             return byte_count
         end
-    elseif start_position > end_position then
-        return byte_count
+    else
+        start_index, end_index = math_range( str_length, start_position, end_position )
+
+        if start_index > end_index then
+            return byte_count
+        end
     end
 
     ::byte_count_loop::
 
-    if string_byte( str, start_position, start_position ) == counted_byte then
+    if string_byte( str, start_index, start_index ) == counted_byte then
         byte_count = byte_count + 1
     end
 
-    if start_position == end_position then
+    if start_index == end_index then
         return byte_count
     end
 
     if reverse_direction then
-        start_position = start_position - 1
+        start_index = start_index - 1
     else
-        start_position = start_position + 1
+        start_index = start_index + 1
     end
 
     ---@diagnostic disable-next-line: missing-return
@@ -730,57 +673,40 @@ function string.countConsecutiveByte( str, counted_byte, reverse_direction, star
     end
 
     local str_length = string_len( str )
-
-    if start_position == nil then
-        if reverse_direction then
-            start_position = str_length
-        else
-            start_position = 1
-        end
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        if reverse_direction then
-            end_position = 1
-        else
-            end_position = str_length
-        end
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
     local byte_count = 0
 
+    local start_index, end_index
+
     if reverse_direction then
-        if start_position < end_position then
+        end_index, start_index = math_range( str_length, end_position, start_position )
+
+        if start_index < end_index then
             return byte_count
         end
-    elseif start_position > end_position then
-        return byte_count
+    else
+        start_index, end_index = math_range( str_length, start_position, end_position )
+
+        if start_index > end_index then
+            return byte_count
+        end
     end
 
     ::byte_count_consecutive_loop::
 
-    if string_byte( str, start_position, start_position ) == counted_byte then
+    if string_byte( str, start_index, start_index ) == counted_byte then
         byte_count = byte_count + 1
     else
         return byte_count
     end
 
-    if start_position == end_position then
+    if start_index == end_index then
         return byte_count
     end
 
     if reverse_direction then
-        start_position = start_position - 1
+        start_index = start_index - 1
     else
-        start_position = start_position + 1
+        start_index = start_index + 1
     end
 
     ---@diagnostic disable-next-line: missing-return
@@ -812,20 +738,10 @@ end
 function string.trimByte( str, trailing_byte, left, right, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
+    if start_index > end_index then
+        return "", 0
     end
 
     if trailing_byte == nil then
@@ -833,28 +749,26 @@ function string.trimByte( str, trailing_byte, left, right, start_position, end_p
     end
 
     if left ~= false then
-        while string_byte( str, start_position, start_position ) == trailing_byte do
-            if start_position == end_position then
-                return string_sub( str, end_position + 1, str_length ), str_length - end_position
+        while string_byte( str, start_index, start_index ) == trailing_byte do
+            if start_index == end_index then
+                return "", 0
             else
-                start_position = start_position + 1
+                start_index = start_index + 1
             end
         end
     end
 
     if right ~= false then
-        while string_byte( str, end_position, end_position ) == trailing_byte do
-            if end_position == 1 then
+        while string_byte( str, end_index, end_index ) == trailing_byte do
+            if end_index == start_index then
                 return "", 0
             else
-                end_position = end_position - 1
+                end_index = end_index - 1
             end
         end
     end
 
-    ---@cast start_position integer
-
-    return string_sub( str, start_position, end_position ), end_position - start_position + 1
+    return string_sub( str, start_index, end_index ), end_index - start_index + 1
 end
 
 --- [SHARED AND MENU]
@@ -881,45 +795,33 @@ end
 function string.trimSpaces( str, left, right, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
+    if start_index > end_index then
+        return "", 0
     end
 
     if left ~= false then
-        while ascii_isSpace( string_byte( str, start_position, start_position ) ) do
-            if start_position == end_position then
-                return string_sub( str, end_position + 1, str_length ), str_length - end_position
+        while ascii_isSpace( string_byte( str, start_index, start_index ) ) do
+            if start_index == end_index then
+                return "", 0
             else
-                start_position = start_position + 1
+                start_index = start_index + 1
             end
         end
     end
 
     if right ~= false then
-        while ascii_isSpace( string_byte( str, end_position, end_position ) ) do
-            if end_position == 1 then
+        while ascii_isSpace( string_byte( str, end_index, end_index ) ) do
+            if end_index == start_index then
                 return "", 0
             else
-                end_position = end_position - 1
+                end_index = end_index - 1
             end
         end
     end
 
-    ---@cast start_position integer
-
-    return string_sub( str, start_position, end_position ), end_position - start_position + 1
+    return string_sub( str, start_index, end_index ), end_index - start_index + 1
 end
 
 --- [SHARED AND MENU]
@@ -944,48 +846,34 @@ local function byte_split( str, searchable_byte, start_position, end_position )
 
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
-
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
     local segments, segment_count = {}, 0
 
-    if start_position > end_position then
+    if start_index > end_index then
         return segments, segment_count
     end
 
-    local split_position = start_position - 1
+    local split_position = start_index - 1
 
     ::byte_split_loop::
 
-    if string_byte( str, start_position, start_position ) == searchable_byte then
-        if split_position ~= start_position then
+    if string_byte( str, start_index, start_index ) == searchable_byte then
+        if split_position ~= start_index then
             segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, split_position + 1, start_position - 1 )
+            segments[ segment_count ] = string_sub( str, split_position + 1, start_index - 1 )
         end
 
-        split_position = start_position
+        split_position = start_index
     end
 
-    if start_position ~= end_position then
-        start_position = start_position + 1
+    if start_index ~= end_index then
+        start_index = start_index + 1
         goto byte_split_loop
     end
 
     segment_count = segment_count + 1
-    segments[ segment_count ] = string_sub( str, split_position + 1, start_position )
+    segments[ segment_count ] = string_sub( str, split_position + 1, start_index )
 
     return segments, segment_count
 end
@@ -1062,25 +950,11 @@ end
 function string.containsByte( str, byte, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
+    local step = (start_index < end_index) and 1 or -1
 
-    local step = (start_position < end_position) and 1 or -1
-
-    for index = start_position, end_position, step do
+    for index = start_index, end_index, step do
         if string_byte( str, index, index ) == byte then return true end
     end
 
@@ -1104,23 +978,9 @@ end
 function string.containsBytes( str, byte_map, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    for index = start_position, end_position, ((start_position < end_position) and 1 or -1) do
+    for index = start_index, end_index, ((start_index < end_index) and 1 or -1) do
         if byte_map[ string_byte( str, index, index ) ] then
             return true
         end
@@ -1285,60 +1145,35 @@ end
 function string.escapePattern( str, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    local escape_position = start_position - 1
+    -- first byte not yet copied into `segments`, bytes before `start_position` are copied as is
+    local copy_position = 1
     local segments, segment_count = {}, 0
 
-    ::escape_pattern_loop::
+    for index = start_index, end_index, 1 do
+        local uint8 = string_byte( str, index, index )
 
-    local uint8_1 = string_byte( str, start_position, start_position )
-    local replacement
-
-    if uint8_1 == 0x0 then
-        replacement = "%z"
-    else
-        replacement = pattern_bytes[ uint8_1 ]
-    end
-
-    if replacement ~= nil then
-        if escape_position ~= start_position then
-            segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, escape_position + 1, start_position - 1 ) .. replacement
+        local replacement
+        if uint8 == 0x0 then
+            replacement = "%z"
+        else
+            replacement = pattern_bytes[ uint8 ]
         end
 
-        escape_position = start_position
-    end
-
-    if start_position ~= end_position then
-        start_position = start_position + 1
-        goto escape_pattern_loop
-    end
-
-    if escape_position ~= start_position then
-        segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, escape_position + 1, start_position )
+        if replacement ~= nil then
+            segment_count = segment_count + 1
+            segments[ segment_count ] = string_sub( str, copy_position, index - 1 ) .. replacement
+            copy_position = index + 1
+        end
     end
 
     if segment_count == 0 then
         return str
-    elseif segment_count == 1 then
-        return segments[ 1 ]
     end
+
+    segment_count = segment_count + 1
+    segments[ segment_count ] = string_sub( str, copy_position, str_length )
 
     return table_concat( segments, "", 1, segment_count )
 end
@@ -1509,24 +1344,14 @@ end
 function string.interpolate( str, variables, start_position, end_position )
     local str_length = string_len( str )
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
+    if start_index > end_index then
+        return str
     end
 
     ---@type integer
-    local break_position = start_position
+    local break_position = start_index
 
     ---@type string[]
     local segments = {}
@@ -1534,19 +1359,19 @@ function string.interpolate( str, variables, start_position, end_position )
     ---@type integer
     local segment_count = 0
 
-    if start_position ~= 1 then
+    if start_index ~= 1 then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, 1, start_position - 1 )
+        segments[ segment_count ] = string_sub( str, 1, start_index - 1 )
     end
 
     repeat
 
-        local uint8_1 = string_byte( str, start_position, start_position )
+        local uint8_1 = string_byte( str, start_index, start_index )
 
         if uint8_1 == 0x7B --[[ { ]] then
             ---@type integer
-            local index_start = start_position + 1
-            if index_start >= end_position then
+            local index_start = start_index + 1
+            if index_start >= end_index then
                 break
             end
 
@@ -1559,7 +1384,7 @@ function string.interpolate( str, variables, start_position, end_position )
 
                 if uint8_2 == 0x7D --[[ } ]] then
                     local index_end = index - 1
-                    start_position = index + 1
+                    start_index = index + 1
 
                     if index_start > index_end then
                         break
@@ -1567,12 +1392,12 @@ function string.interpolate( str, variables, start_position, end_position )
 
                     local arg_value = variables[ string_sub( str, index_start, index_end ) ]
                     if arg_value ~= nil then
-                        if break_position ~= start_position then
+                        if break_position ~= start_index then
                             segment_count = segment_count + 1
                             segments[ segment_count ] = string_sub( str, break_position, index_start - 2 )
                         end
 
-                        break_position = start_position
+                        break_position = start_index
 
                         segment_count = segment_count + 1
                         segments[ segment_count ] = arg_value
@@ -1585,27 +1410,27 @@ function string.interpolate( str, variables, start_position, end_position )
                     index = index + 1
                 end
 
-            until index_start >= end_position
+            until index_start >= end_index
 
-            if start_position <= index_start then
-                start_position = index_start
+            if start_index <= index_start then
+                start_index = index_start
             end
         elseif uint8_1 == 0x5C --[[ \ ]] then
-            start_position = start_position + 2
+            start_index = start_index + 2
         else
-            start_position = start_position + 1
+            start_index = start_index + 1
         end
 
-    until start_position > end_position
+    until start_index > end_index
 
-    if break_position ~= start_position then
+    if break_position ~= start_index then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, break_position, end_position )
+        segments[ segment_count ] = string_sub( str, break_position, end_index )
     end
 
-    if end_position ~= str_length then
+    if end_index ~= str_length then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, end_position + 1, str_length )
+        segments[ segment_count ] = string_sub( str, end_index + 1, str_length )
     end
 
     if segment_count == 0 then
@@ -1645,23 +1470,9 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
         return str
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    if start_position > end_position then
+    if start_index > end_index then
         return str
     end
 
@@ -1679,42 +1490,42 @@ function string.interpolateByte( str, interpolate_byte, variables, variable_coun
     ---@type integer
     local segment_count = 0
 
-    if start_position ~= 1 then
+    if start_index ~= 1 then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, 1, start_position - 1 )
+        segments[ segment_count ] = string_sub( str, 1, start_index - 1 )
     end
 
-    local break_point = start_position - 1
+    local break_point = start_index - 1
     local index = 0
 
     ::byte_interpolate_loop::
 
-    if string_byte( str, start_position, start_position ) == interpolate_byte then
-        if break_point ~= start_position then
+    if string_byte( str, start_index, start_index ) == interpolate_byte then
+        if break_point ~= start_index then
             segment_count = segment_count + 1
-            segments[ segment_count ] = string_sub( str, break_point + 1, start_position - 1 )
+            segments[ segment_count ] = string_sub( str, break_point + 1, start_index - 1 )
         end
 
         index = index + 1
         segment_count = segment_count + 1
         segments[ segment_count ] = variables[ index ]
 
-        break_point = start_position
+        break_point = start_index
     end
 
-    if start_position ~= end_position and index ~= variable_count then
-        start_position = start_position + 1
+    if start_index ~= end_index and index ~= variable_count then
+        start_index = start_index + 1
         goto byte_interpolate_loop
     end
 
-    if break_point ~= end_position then
+    if break_point ~= end_index then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, break_point + 1, end_position )
+        segments[ segment_count ] = string_sub( str, break_point + 1, end_index )
     end
 
-    if end_position ~= str_length then
+    if end_index ~= str_length then
         segment_count = segment_count + 1
-        segments[ segment_count ] = string_sub( str, end_position + 1, str_length )
+        segments[ segment_count ] = string_sub( str, end_index + 1, str_length )
     end
 
     if segment_count == 0 then
@@ -1789,34 +1600,20 @@ function string.unpack( str, start_position, end_position )
         return {}, 0
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, str_length )
-    else
-        start_position = math_min( start_position, str_length )
-    end
+    local start_index, end_index = math_range( str_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = str_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, str_length )
-    else
-        end_position = math_min( end_position, str_length )
-    end
-
-    if start_position > end_position then
+    if start_index > end_index then
         return {}, 0
     end
 
     local segments = {}
 
-    local total = end_position - start_position + 1
+    local total = end_index - start_index + 1
     local remaining = total % 32
 
     local split_position = total - remaining
 
-    for i = start_position, split_position - 1, 32 do
+    for i = start_index, split_position - 1, 32 do
         segments[ i ], segments[ i + 1 ], segments[ i + 2 ], segments[ i + 3 ],
         segments[ i + 4 ], segments[ i + 5 ], segments[ i + 6 ], segments[ i + 7 ],
         segments[ i + 8 ], segments[ i + 9 ], segments[ i + 10 ], segments[ i + 11 ],

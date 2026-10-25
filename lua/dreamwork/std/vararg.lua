@@ -5,8 +5,8 @@ local raw = std.raw
 local raw_select = raw.select
 
 local math = std.math
-local math_relative = math.relative
-local math_min, math_max = math.min, math.max
+local math_max = math.max
+local math_range = math.range
 
 local table = std.table
 local table_unpack = table.unpack
@@ -142,30 +142,16 @@ do
         local count = raw_select( "#", ... )
         if count == 0 then return end
 
-        if start_position == nil then
-            start_position = 1
-        elseif start_position < 0 then
-            start_position = math_relative( start_position, count )
-        else
-            start_position = math_min( start_position, count )
-        end
+        local start_index, end_index = math_range( count, start_position, end_position )
 
-        if end_position == nil then
-            end_position = count
-        elseif end_position < 0 then
-            end_position = math_relative( end_position, count )
-        else
-            end_position = math_min( end_position, count )
-        end
-
-        local length = math_max( 0, (end_position - start_position) + 1 )
+        local length = math_max( 0, (end_index - start_index) + 1 )
         if length == 0 then
             return
         elseif length == 1 then
-            return (raw_select( start_position, ... ))
+            return (raw_select( start_index, ... ))
         end
 
-        return slice( length, raw_select( start_position, ... ) )
+        return slice( length, raw_select( start_index, ... ) )
     end
 
 end
