@@ -286,10 +286,10 @@ end
 ---
 ---@param utf8_codepoint integer The code point to encode.
 ---@param lax? boolean If `true`, invalid code points (surrogates, negative or above `U+10FFFF`) are encoded as `U+FFFD` instead of raising an error.
+---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return string utf8_sequence The UTF-8 sequence, 1 to 4 bytes long.
-function utf8.encode( utf8_codepoint, lax )
-    -- tail call, so level 1 already is the caller of `utf8.encode`
-    return encode( utf8_codepoint, lax ~= true, 1 )
+function utf8.encode( utf8_codepoint, lax, stack_level )
+    return encode( utf8_codepoint, lax ~= true, stack_level or 1 )
 end
 
 --- [SHARED AND MENU]
@@ -303,12 +303,13 @@ end
 ---@param index? integer The position of the sequence in bytes, `1` by default.
 ---@param end_index? integer The last byte that can be read, the end of the string by default.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return integer | nil utf8_codepoint The decoded code point, or `nil` if the sequence is invalid.
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
 ---@return integer | nil error_position The position of the invalid byte.
 ---@return dreamwork.std.utf8.ErrorCode | nil error_code The error code.
-function utf8.decode( utf8_string, index, end_index, lax )
-    return decode( utf8_string, index or 1, end_index or string_len( utf8_string ), lax ~= true, 1 )
+function utf8.decode( utf8_string, index, end_index, lax, stack_level )
+    return decode( utf8_string, index or 1, end_index or string_len( utf8_string ), lax ~= true, stack_level or 1 )
 end
 
 --- [SHARED AND MENU]

@@ -2292,7 +2292,7 @@ if ffi == nil then
         local break_point = start_index
 
         repeat
-            local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+            local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, 2 )
 
             if utf8_codepoint ~= nil then
                 local replacement = codepoint_to_lower[ utf8_codepoint ]
@@ -2367,7 +2367,7 @@ if ffi == nil then
         local break_point = start_index
 
         repeat
-            local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+            local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, 2 )
 
             if utf8_codepoint ~= nil then
                 local replacement = codepoint_to_upper[ utf8_codepoint ]
@@ -2465,7 +2465,7 @@ else
                     length = length + 1
                     index = index + 1
                 else
-                    local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, index + 1, end_index, lax )
+                    local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, index + 1, end_index, lax, 2 )
 
                     local replacement = utf8_codepoint and case_map[ utf8_codepoint ]
                     if replacement == nil then
@@ -2539,7 +2539,7 @@ function unicode.capitalize( utf8_string, start_position, end_position, lax )
     local first_sequence = false
 
     repeat
-        local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+        local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, 2 )
 
         if utf8_codepoint ~= nil then
             if first_sequence then
@@ -2673,7 +2673,7 @@ function unicode.title( utf8_string, start_position, end_position, lax )
     local at_word_start = true
 
     repeat
-        local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+        local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, 2 )
 
         if utf8_codepoint ~= nil then
             local upper_sequence = codepoint_to_upper[ utf8_codepoint ]
@@ -3359,10 +3359,13 @@ do
     ---@param start_index integer
     ---@param end_index integer
     ---@param lax boolean | nil
+    ---@param stack_level integer
     ---@return integer width
-    local function measure( utf8_string, start_index, end_index, lax )
+    local function measure( utf8_string, start_index, end_index, lax, stack_level )
         local width, cluster_width, regional_open = 0, 0, false
         local previous_codepoint = nil
+
+        stack_level = stack_level + 1
 
         while start_index <= end_index do
             local uint8 = string_byte( utf8_string, start_index, start_index )
@@ -3372,7 +3375,7 @@ do
                 previous_codepoint = uint8
                 start_index = start_index + 1
             else
-                local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+                local utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, stack_level )
                 if utf8_codepoint == nil then
                     utf8_codepoint = 0xFFFD
                 end
@@ -3412,7 +3415,8 @@ do
         end
 
         local start_index, end_index = math_range( str_length, start_position, end_position )
-        return measure( utf8_string, start_index, end_index, lax )
+
+        return measure( utf8_string, start_index, end_index, lax, 1 )
     end
 
     --- [SHARED AND MENU]
@@ -3467,7 +3471,7 @@ do
             ---@type integer | nil
             local utf8_codepoint, utf8_sequence_length = string_byte( utf8_string, start_index, start_index ), 1
             if utf8_codepoint > 0x7F then
-                utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax )
+                utf8_codepoint, utf8_sequence_length = utf8_decode( utf8_string, start_index, end_index, lax, 2 )
                 if utf8_codepoint == nil then
                     utf8_codepoint = 0xFFFD
                 end
@@ -3607,13 +3611,13 @@ do
         if padding == nil then
             padding = " "
         else
-            padding_width = measure( padding, 1, string_len( padding ), lax )
+            padding_width = measure( padding, 1, string_len( padding ), lax, 2 )
             if padding_width == 0 then
                 return utf8_string
             end
         end
 
-        local missing_width = desired_width - measure( utf8_string, 1, string_len( utf8_string ), lax )
+        local missing_width = desired_width - measure( utf8_string, 1, string_len( utf8_string ), lax, 2 )
         if missing_width <= 0 then
             return utf8_string
         end

@@ -221,9 +221,10 @@ end
 ---@param utf16_codepoint integer The code point to encode.
 ---@param lax? boolean If `true`, invalid code points (surrogates, negative or above `U+10FFFF`) are encoded as `U+FFFD` instead of raising an error.
 ---@param big_endian? boolean Whether to encode as big-endian.
+---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return string utf16_sequence The UTF-16 sequence.
-function utf16.encode( utf16_codepoint, lax, big_endian )
-    return encode( utf16_codepoint, lax ~= true, 1, big_endian )
+function utf16.encode( utf16_codepoint, lax, big_endian, stack_level )
+    return encode( utf16_codepoint, lax ~= true, stack_level or 1, big_endian )
 end
 
 --- [SHARED AND MENU]
@@ -238,12 +239,13 @@ end
 ---@param end_index? integer The last byte that can be read, the end of the string by default.
 ---@param lax? boolean Whether to lax the UTF-16 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
+---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return integer | nil utf16_codepoint The decoded code point, or `nil` if the sequence is invalid.
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
 ---@return integer | nil error_position The position of the invalid sequence.
 ---@return dreamwork.std.utf16.ErrorCode | nil error_code The error code.
-function utf16.decode( utf16_string, index, end_index, lax, big_endian )
-    return decode( utf16_string, index or 1, end_index or string_len( utf16_string ), lax ~= true, 1, big_endian )
+function utf16.decode( utf16_string, index, end_index, lax, big_endian, stack_level )
+    return decode( utf16_string, index or 1, end_index or string_len( utf16_string ), lax ~= true, stack_level or 1, big_endian )
 end
 
 --- [SHARED AND MENU]
