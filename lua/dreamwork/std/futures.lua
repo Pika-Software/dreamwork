@@ -2,6 +2,7 @@
 local dreamwork = dreamwork
 
 local dreamwork_toError = dreamwork.toError
+local dreamwork_catchError = dreamwork.catchError
 local dreamwork_errorHandler = dreamwork.errorHandler
 local dreamwork_isErrorFrameHidden = dreamwork.isErrorFrameHidden
 
@@ -33,11 +34,11 @@ local setTimeout = std.setTimeout
 local tostring = std.tostring
 local xpcall = std.xpcall
 local error = std.error
-local pcall = std.pcall
 local copy = std.copy
 local len = std.len
 
 local isFunction = std.isFunction
+local isError = std.isError
 
 local AsyncError = std.AsyncError
 local Queue = std.Queue
@@ -136,65 +137,85 @@ function futures.stack()
     return nil
 end
 
+--- Turns the error into `Error` with the stack of the coroutine where it was raised,
+--- `ACTION_CANCEL` is passed through as is.
+---
+---@param error_value any
+---@return dreamwork.std.Error | dreamwork.std.Symbol
+local function stack_handler( error_value )
+    if error_value == ACTION_CANCEL then
+        return error_value
+    end
+
+    ---@diagnostic disable-next-line: param-type-mismatch
+    return dreamwork_toError( error_value, AsyncError )
+end
+
+dreamwork.hideErrorFrame( stack_handler )
+
 do
+
+    ---@param co thread
+    ---@param error_object dreamwork.std.Error
+    ---@return dreamwork.std.Error error_object
+    local function with_spawn_stack( co, error_object )
+        local fstack = copy( Stacks[ co ] )
+
+        local stack = error_object.stack
+        if stack ~= nil then
+            for i = 1, stack.size, 1 do
+                fstack:push( stack[ i ] )
+            end
+        end
+
+        error_object.stack = fstack
+        return error_object
+    end
+
+    --- Calls the `futures.run` callback of the coroutine, if any.
+    ---
+    --- Nothing above the coroutine can catch errors of the callback (`futures.wakeup` ignores them),
+    --- so they are displayed here, with the stack of the callback itself.
+    ---
+    ---@param co thread
+    ---@return boolean has_listener
+    local function call_listener( co, ... )
+        local fn = Listeners[ co ]
+        if not isFunction( fn ) then
+            return false
+        end
+
+        local ok, error_object = xpcall( fn, dreamwork_toError, ... )
+        if not ok then
+            dreamwork_errorHandler( with_spawn_stack( co, error_object ) )
+        end
+
+        return true
+    end
 
     ---@async
     ---@param co thread
     ---@param ok boolean
     local function async_thread_result( co, ok, ... )
-        local value = (...)
-
         if ok then
-            local fn = Listeners[ co ]
-            if isFunction( fn ) then
-                fn( true, ... )
-            end
-
+            call_listener( co, true, ... )
             return
         end
 
-        if value == ACTION_CANCEL then
-            local fn = Listeners[ co ]
-            if isFunction( fn ) then
-                fn( false, ACTION_CANCEL )
-            end
+        local value = (...)
 
+        if value == ACTION_CANCEL then
+            call_listener( co, false, ACTION_CANCEL )
             return
         end
 
         ---@cast value dreamwork.std.Error
 
-        -- frames that led to `futures.run` go below the frames of the coroutine itself
-        local fstack = copy( Stacks[ co ] )
+        with_spawn_stack( co, value )
 
-        local stack = value.stack
-        if stack ~= nil then
-            fstack:merge( stack )
+        if not call_listener( co, false, value ) then
+            dreamwork_errorHandler( value )
         end
-
-        value.stack = fstack
-
-        local fn = Listeners[ co ]
-        if isFunction( fn ) then
-            fn( false, value )
-            return
-        end
-
-        dreamwork_errorHandler( value )
-    end
-
-    --- Turns the error into `Error` with the stack of the coroutine where it was raised,
-    --- `ACTION_CANCEL` is passed through as is.
-    ---
-    ---@param error_value any
-    ---@return dreamwork.std.Error | dreamwork.std.Symbol
-    local function stack_handler( error_value )
-        if error_value == ACTION_CANCEL then
-            return error_value
-        end
-
-        ---@diagnostic disable-next-line: param-type-mismatch
-        return dreamwork_toError( error_value, AsyncError )
     end
 
     ---@async
@@ -204,7 +225,7 @@ do
     end
 
     dreamwork.hideErrorFrame( async_thread_result )
-    dreamwork.hideErrorFrame( stack_handler )
+    dreamwork.hideErrorFrame( call_listener )
     dreamwork.hideErrorFrame( async_thread )
 
     --- [SHARED AND MENU]
@@ -451,7 +472,8 @@ end
 local function async_iteratable_thread( fn, ... )
     coroutine_yield() -- wait until anext wakes us up
 
-    local ok, err = pcall( fn, ... )
+    -- runtime errors have to keep the stack of the iterator, `handle_anext` rethrows them
+    local ok, err = xpcall( fn, stack_handler, ... )
 
     local listener = AsyncListeners[ coroutine_running() ]
     if listener then
@@ -464,6 +486,8 @@ local function async_iteratable_thread( fn, ... )
         error( err, 2, false )
     end
 end
+
+dreamwork.hideErrorFrame( async_iteratable_thread )
 
 ---@async
 ---@param co thread
@@ -682,11 +706,22 @@ do
         local callbacks = self.callbacks
         self.callbacks = { [ 0 ] = 0 }
 
+        -- first signal (e.g. `ACTION_CANCEL`) thrown by a callback, rethrown once all callbacks ran
+        local signal
+
         for i = 1, callbacks[ 0 ], 1 do
-            local success, error_object = xpcall( callbacks[ i ], dreamwork_toError, self )
+            local success, error_value = xpcall( callbacks[ i ], dreamwork_catchError, self )
             if not success then
-                error( error_object, 2, true )
+                if isError( error_value ) then
+                    error( error_value, 2, true )
+                elseif signal == nil then
+                    signal = error_value
+                end
             end
+        end
+
+        if signal ~= nil then
+            error( signal, 2, false )
         end
     end
 
@@ -1164,7 +1199,8 @@ end
 ---@return any[]
 ---@async
 function futures.all( awaitables )
-    local ok, result = pcall( awaitList, awaitables )
+    -- `stack_handler` keeps the stack of the failed awaitable and lets `ACTION_CANCEL` through
+    local ok, result = xpcall( awaitList, stack_handler, awaitables )
     if ok then
         return result
     end

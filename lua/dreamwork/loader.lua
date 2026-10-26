@@ -1912,6 +1912,26 @@ do
 
     dreamwork.toError = to_error
 
+    --- [SHARED AND MENU]
+    ---
+    --- `xpcall` message handler for errors that are going to be rethrown.
+    ---
+    --- Works like `dreamwork.toError`, but values that are neither errors nor strings
+    --- (signals like `ACTION_CANCEL`) are returned as is, so rethrowing them keeps their identity,
+    --- the same way `std.error` throws them.
+    ---
+    ---@param error_value any The error value to handle.
+    ---@return dreamwork.std.Error | any error_object
+    local function catch_error( error_value )
+        if error_value == nil or isString( error_value ) or isError( error_value ) then
+            return to_error( error_value )
+        end
+
+        return error_value
+    end
+
+    dreamwork.catchError = catch_error
+
     --- Passes the error to the `dreamwork.lua.error` handlers, which display it.
     ---
     ---@param error_object dreamwork.std.Error
@@ -2060,6 +2080,7 @@ do
     hidden_functions[ std.assert ] = true
 
     hidden_functions[ to_error ] = true
+    hidden_functions[ catch_error ] = true
     hidden_functions[ std_error ] = true
     hidden_functions[ error_handler ] = true
 

@@ -18,25 +18,6 @@
 ---@field m_strError string | nil
 sql = {}
 
----@alias garrysmod.sql.Query
----| "SELECT"
----| "INSERT"
----| "UPDATE"
----| "DELETE"
----| "CREATE"
----| "ALTER"
----| "DROP"
----| "BEGIN"
----| "COMMIT"
----| "ROLLBACK"
----| "PRAGMA"
----| "REPLACE"
----| "WITH"
----| string
-
----@alias garrysmod.sql.QueryValue boolean | integer | number | string
----@alias garrysmod.sql.QueryRow table<string, garrysmod.sql.QueryValue>
-
 --- [SHARED AND MENU]
 ---
 --- Performs a query on the local SQLite database, returns a `table` as result set, `nil` if result is empty and `false` on error.
@@ -44,5 +25,5 @@ sql = {}
 --- > NOTE: Every column value in the result set is returned as a string, including numbers, and a SQL NULL is returned as the string "NULL". Use sql.QueryTyped to receive typed values.
 ---
 ---@param sql_query string The query to execute.
----@return garrysmod.sql.QueryRow[] | false | nil `false` is returned if there is an error, `nil` if the query returned no data.
+---@return table<string, ( boolean | integer | number | string )> | false | nil `false` is returned if there is an error, `nil` if the query returned no data.
 function sql.Query( sql_query ) end

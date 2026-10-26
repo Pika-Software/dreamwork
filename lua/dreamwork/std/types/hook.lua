@@ -1,4 +1,4 @@
-local dreamwork_toError = dreamwork.toError
+local dreamwork_catchError = dreamwork.catchError
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -430,7 +430,7 @@ function Hook:call( ... )
     local peek_value
 
     for i = 1, peeks[ 0 ], 1 do
-        local is_successful_peek, peek_result = xpcall( peeks[ i ], dreamwork_toError, ... )
+        local is_successful_peek, peek_result = xpcall( peeks[ i ], dreamwork_catchError, ... )
         if is_successful_peek then
             if peek_result ~= nil then
                 peek_value = peek_result
@@ -447,7 +447,7 @@ function Hook:call( ... )
 
     if peek_value == nil then
         for i = 1, providers[ 0 ], 1 do
-            local is_successful_provide, provide_result = xpcall( providers[ i ], dreamwork_toError, ... )
+            local is_successful_provide, provide_result = xpcall( providers[ i ], dreamwork_catchError, ... )
             if is_successful_provide then
                 if provide_result ~= nil then
                     provide_value = provide_result
@@ -468,7 +468,7 @@ function Hook:call( ... )
         local mixin_value
 
         for i = 1, mixins[ 0 ], 1 do
-            local is_successful_mixin, mixin_result = xpcall( mixins[ i ], dreamwork_toError, mixin_value, provide_value, ... )
+            local is_successful_mixin, mixin_result = xpcall( mixins[ i ], dreamwork_catchError, mixin_value, provide_value, ... )
             if is_successful_mixin then
                 mixin_value, provide_value = provide_value, mixin_result
             else
@@ -481,7 +481,7 @@ function Hook:call( ... )
     -- observe stage
     local observers = self.observe_handlers
     for i = 1, observers[ 0 ], 1 do
-        local is_successful_observation, error_message = xpcall( observers[ i ], dreamwork_toError, provide_value, ... )
+        local is_successful_observation, error_message = xpcall( observers[ i ], dreamwork_catchError, provide_value, ... )
         if not is_successful_observation then
             hook_cancel( self )
             error( error_message, 2 )
