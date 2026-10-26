@@ -1720,38 +1720,117 @@ sendfile( "dreamwork/std/coroutine.ext.lua" )
 
 do
 
+    local time_transform = time.transform
+    local jit_flush = jit.flush
+
+    ---@param seconds number
+    ---@return string
+    local function format_duration( seconds )
+        local unit
+        if seconds < 1e-6 then
+            unit = "ns"
+        elseif seconds < 1e-3 then
+            unit = "us"
+        elseif seconds < 1 then
+            unit = "ms"
+        else
+            unit = "s"
+        end
+
+        return string_format( "%.2f %s", time_transform( seconds, "s", unit, true ), unit )
+    end
+
+    --- keeps results observable, so the JIT can't eliminate pure work
+    local sink = {}
+
+    ---@param fn function
+    ---@param iterations integer
+    ---@return number seconds
+    local function run( fn, iterations )
+        local start = dreamwork_getUpTime()
+
+        for _ = 1, iterations do
+            sink[ 1 ] = fn()
+        end
+
+        return dreamwork_getUpTime() - start
+    end
+
     --- [SHARED AND MENU]
     ---
     --- Runs a benchmark on the given function, measuring the time it takes to execute a specified number of iterations.
     ---
+    --- Flushes all JIT traces before running, so results don't depend on previously benchmarked functions.
+    ---
     ---@param name string The name of the benchmark.
     ---@param fn function The function to benchmark.
-    ---@param iterations? integer The number of iterations to run.
-    function dreamwork.bench( name, fn, iterations )
+    ---@param iterations? integer The number of iterations per round, `1000` by default.
+    ---@param rounds? integer The number of timed rounds, `5` by default.
+    ---@return number best The best time per iteration in seconds.
+    ---@return number mean The mean time per iteration in seconds.
+    ---@return number allocated The bytes allocated per iteration.
+    function dreamwork.bench( name, fn, iterations, rounds )
         if iterations == nil then
             iterations = 1000
         end
 
-        local warmup = math.min( iterations / 100, 100 )
-
-        for _ = 1, warmup do
-            fn()
+        if rounds == nil then
+            rounds = 5
         end
 
+        -- the `run` loop trace is specialized to the function it was recorded with
+        jit_flush()
+
+        -- enough calls for LuaJIT to record and compile the hot loop (hotloop = 56)
+        run( fn, math_max( math_floor( iterations / 10 ), 200 ) )
+
+        -- allocation pass, gc is stopped only for a short bounded run
+        local sample = math_min( iterations, 1000 )
+
+        gc.collect()
         gc.stop()
-        time.tick()
 
-        for _ = 1, iterations do
-            fn()
-        end
+        local memory_before = gc.getMemory()
+        local success, err_msg = pcall( run, fn, sample )
+        local allocated = (gc.getMemory() - memory_before) * 1024 / sample
 
-        local time_took = time.tick()
         gc.restart()
 
-        local avg = time_took / iterations
-        raw.print( string.format( "[DW] Benchmark `%s` - iter: %d / avg: %f / exp: %s / total: %f sec.", name, iterations, avg, time.transform( math.ceil( time.transform( avg, "s", "ms", true ) * iterations ), "ms", "s", true ), time_took ) )
+        if not success then
+            sink[ 1 ] = nil
+            error( err_msg, 2 )
+        end
 
-        return time_took
+        local best, total = math.huge, 0
+
+        for _ = 1, rounds do
+            gc.collect()
+
+            local took = run( fn, iterations )
+            total = total + took
+
+            if took < best then
+                best = took
+            end
+        end
+
+        sink[ 1 ] = nil
+
+        best = best / iterations
+        local mean = total / (iterations * rounds)
+
+        raw.print( string_format(
+            "[DW] Benchmark `%s`\n" ..
+            "    rounds      %d x %d\n" ..
+            "    best        %s/op\n" ..
+            "    mean        %s/op\n" ..
+            "    throughput  %.0f op/s\n" ..
+            "    allocated   %.1f B/op\n" ..
+            "    total       %s",
+            name, rounds, iterations, format_duration( best ), format_duration( mean ), 1 / best, allocated, format_duration( total )
+        ) )
+
+        return best, mean, allocated
     end
 
 end
