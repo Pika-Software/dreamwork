@@ -3026,7 +3026,7 @@ do
 
     local scheme
 
-    if std.SYSTEM_WINDOWS --[[ ha-ha microslop ]] then
+    if std.SYSTEM_WINDOWS --[[ ha-ha microslop ]] and false --[[proton is broken]] then
         scheme = {
             "       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ ",
             "  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   ",

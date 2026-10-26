@@ -25,6 +25,8 @@ local time_now = time.now
 local time_tick = time.tick
 
 local tonumber = std.tonumber
+local error = std.error
+
 
 --- [SHARED AND MENU]
 ---
@@ -421,14 +423,16 @@ do
         assert( isCallable( migration.execute ), "Database migration failed: '%s' does not have an 'execute' function.", migration.name )
         dreamwork.Logger:info( "Running migration '" .. tostring( migration.name ) .. "'..." )
 
-        local success, err_msg = pcall( sqlite_transaction, migration.execute, migration )
+        local success, error_object = pcall( sqlite_transaction, migration.execute, migration )
         if success then
             sqlite_query( "insert into 'dreamwork.storage.migrations' (name, timestamp) values (?, ?)", migration.name, time_now() )
-        else
-            std.errorf( 2, false, "Database migration failed: %s", err_msg )
+            return true
         end
 
-        return success
+        -- rethrown as is, the error already carries the stack of where the migration failed
+        dreamwork.Logger:error( "Database migration '%s' failed.", migration.name )
+        error( error_object, 2 )
+        return false
     end
 
     storage.migrateByTable = migrate_by_table

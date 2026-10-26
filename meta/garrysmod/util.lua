@@ -514,6 +514,9 @@ function util.JSONToTable( json_str, ignore_limits, ignore_conversions ) end
 ---
 --- Due to how tables work in Lua, keys will not preserve their order, nor will repeated keys be preserved.
 ---
+---@see garrysmod.util.TableToKeyValues
+---@see garrysmod.util.KeyValuesToTablePreserveOrder
+---
 ---@param key_values string The KeyValue string to convert.
 ---@param uses_escape_sequences boolean? If set to `true`, will replace `\t`, `\n`, `\"` and `\\` in the input text with their escaped variants.
 ---@param preserve_key_case boolean? Whether we should preserve key case (may fail) or not (always lowercase).
@@ -523,6 +526,8 @@ function util.KeyValuesToTable( key_values, uses_escape_sequences, preserve_key_
 --- [SHARED AND MENU]
 ---
 --- Similar to [util.KeyValuesToTable](https://wiki.facepunch.com/gmod/util.KeyValuesToTable) but it also preserves order of keys and repeated keys.
+---
+---@see garrysmod.util.TableToKeyValues
 ---
 ---@param key_values string The KeyValue string to convert.
 ---@param uses_escape_sequences boolean? If set to `true`, will replace `\t`, `\n`, `\"` and `\\` in the input text with their escaped variants.
@@ -752,6 +757,9 @@ function util.TableToJSON( tbl, pretty_print ) end
 --- [SHARED AND MENU]
 ---
 --- Converts the given table into a Valve KeyValue string.
+---
+---@see garrysmod.util.KeyValuesToTable
+---@see garrysmod.util.KeyValuesToTablePreserveOrder
 ---
 ---@param tbl table The table to convert.
 ---@param root_key string? The root key name for the output KV table.

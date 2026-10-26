@@ -34,8 +34,6 @@ local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_select = raw.select
 
-local os = std.os
-
 local rbit = raw.bit
 local rbit_band = rbit.band
 

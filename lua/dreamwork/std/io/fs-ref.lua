@@ -3552,7 +3552,7 @@ do
         local fs_object = watchdog_info.object
         modified_times[ fs_object ] = watchdog_info.modified_time
 
-        dreamwork_logger:debug( "%s '%s' has been created. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{date_time}", watchdog_info.modified_time ) )
+        dreamwork_logger:debug( "%s '%s' has been created. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{datetime}", watchdog_info.modified_time ) )
 
         if watchdog_isWatched( fs_object ) then
             Created:call( fs_object, watchdog_info.is_directory )
@@ -3571,7 +3571,7 @@ do
         local fs_object = watchdog_info.object
         local was_watched = watchdog.unwatch( fs_object )
 
-        dreamwork_logger:debug( "%s '%s' has been deleted. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{date_time}", watchdog_info.modified_time ) )
+        dreamwork_logger:debug( "%s '%s' has been deleted. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{datetime}", watchdog_info.modified_time ) )
         eject( watchdog_info.parent, watchdog_info.name )
 
         if was_watched then
@@ -3591,7 +3591,7 @@ do
         local fs_object = watchdog_info.object
         modified_times[ fs_object ] = watchdog_info.modified_time
 
-        dreamwork_logger:debug( "%s '%s' has been modified. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{date_time}", watchdog_info.modified_time ) )
+        dreamwork_logger:debug( "%s '%s' has been modified. (%s)", is_directory_object[ fs_object ] and "Directory" or "File", paths[ fs_object ], time.format( "{datetime}", watchdog_info.modified_time ) )
 
         if watchdog_isWatched( fs_object ) then
             Modified:call( fs_object, watchdog_info.is_directory )

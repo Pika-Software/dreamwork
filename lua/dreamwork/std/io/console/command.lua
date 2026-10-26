@@ -288,7 +288,7 @@ engine.hookCatch( "dreamwork.console.command.execute", "console.handle", functio
     -- TODO: review this after client class will be created
 
     local hook = hooks[ command ]
-    xpcall( hook.call, dreamwork_errorHandler, hook, client, args, argument_string )
+    xpcall( hook.call, dreamwork_errorHandler, hook, command, client, args, argument_string )
 
     return true
 end, -500 )
