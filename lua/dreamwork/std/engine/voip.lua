@@ -4,6 +4,12 @@
 
     TODO:
 
+    https://holylib.raphaelit7.com/voicechat
+
+    https://holylib.raphaelit7.com/HolyLib:OnPlayerStartTalking
+    https://holylib.raphaelit7.com/HolyLib:OnPlayerStoppedTalking
+    https://holylib.raphaelit7.com/HolyLib:PreProcessVoiceChat
+
     player functions:
         https://wiki.facepunch.com/gmod/Player:GetVoiceVolumeScale
         https://wiki.facepunch.com/gmod/Player:IsVoiceAudible

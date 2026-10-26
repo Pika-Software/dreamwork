@@ -770,4 +770,9 @@ if std.LUA_MENU then
 
 end
 
--- TODO: put https://wiki.facepunch.com/gmod/Global.SuppressHostEvents somewhere
+-- TODO: put
+-- https://wiki.facepunch.com/gmod/Global.SuppressHostEvents somewhere
+-- https://github.com/WilliamVenner/gmsv_serverstat
+-- https://holylib.raphaelit7.com/gameserver
+--
+-- https://holylib.raphaelit7.com/HolyLib.HideServer

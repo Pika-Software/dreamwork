@@ -1,4 +1,5 @@
-local _G = _G
+-- TODO: https://holylib.raphaelit7.com/HolyLib.IsMapValid
+
 local glua_game, glua_engine, glua_util = _G.game, _G.engine, _G.util
 local file_Exists = _G.file.Exists
 local dreamwork = _G.dreamwork

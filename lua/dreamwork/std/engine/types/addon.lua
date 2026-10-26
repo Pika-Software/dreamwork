@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+-- https://holylib.raphaelit7.com/addonsystem
+
 local engine = dreamwork.engine
 
 ---@class dreamwork.std.Addon: dreamwork.std.Object

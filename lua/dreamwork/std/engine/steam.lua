@@ -14,6 +14,11 @@ local Future = std.Future
 
 -- TODO: https://wiki.facepunch.com/gmod/resource.AddWorkshop
 -- TODO: https://holylib.raphaelit7.com/addonsystem
+-- http://holylib.raphaelit7.com/steamworks
+--
+-- https://holylib.raphaelit7.com/HolyLib:OnSteamConnect
+-- https://holylib.raphaelit7.com/HolyLib:OnSteamDisconnect
+--
 
 --- [SHARED AND MENU]
 ---

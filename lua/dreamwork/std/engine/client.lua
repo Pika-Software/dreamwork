@@ -1,3 +1,23 @@
+-- TODO:
+-- https://holylib.raphaelit7.com/HolyLib:GetFreeClient
+-- https://holylib.raphaelit7.com/HolyLib:OnClientDisconnect
+-- https://holylib.raphaelit7.com/HolyLib:OnClientExecuteStringCommand
+-- https://holylib.raphaelit7.com/HolyLib:OnClientTimeout
+-- https://holylib.raphaelit7.com/HolyLib:OnPlayerChangedSlot
+-- https://holylib.raphaelit7.com/HolyLib:OnSetSignonState
+-- https://holylib.raphaelit7.com/HolyLib:ProcessConnectionlessPacket
+--
+--
+--
+-- https://holylib.raphaelit7.com/HolyLib:OnNotifyClientConnect
+--
+--
+-- https://holylib.raphaelit7.com/HolyLib.Disconnect
+-- https://holylib.raphaelit7.com/HolyLib.Reconnect
+--
+-- ? https://holylib.raphaelit7.com/HolyLib.ExitLadder
+--
+
 -- local player = _G.player
 
 -- local player_getByConnectionID = player.GetByID

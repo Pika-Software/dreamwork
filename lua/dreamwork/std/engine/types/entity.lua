@@ -1,3 +1,5 @@
+-- TODO: https://holylib.raphaelit7.com/HolyLib.InvalidateBoneCache
+
 ---@type dreamwork
 local dreamwork = dreamwork
 

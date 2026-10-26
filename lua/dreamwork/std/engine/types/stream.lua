@@ -38,3 +38,5 @@ do
 end
 
 -- TODO: https://github.com/thegrb93/StarfallEx/blob/master/lua/starfall/libs_cl/bass.lua
+
+-- TODO: https://holylib.raphaelit7.com/bass
