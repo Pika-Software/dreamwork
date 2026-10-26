@@ -1203,13 +1203,6 @@ do
             return value ~= "" and value ~= "0" and value ~= "false"
         end
 
-        ---@param value string
-        ---@return string
-        ---@private
-        function String.__represent( value )
-            return string_format( "string: %p [%s][%d]", value, value, string_len( value ) )
-        end
-
         String.__tonumber = raw_tonumber
         String.__div = string.divide
         String.__len = string_len
@@ -1365,8 +1358,7 @@ end
 
 do
 
-    ---@diagnostic disable-next-line: undefined-field
-    local CompileString = _G.CompileString
+    local CompileString = CompileString
 
     local getfenv = std.getfenv
     local setfenv = std.setfenv
@@ -1379,19 +1371,19 @@ do
     ---@param lua_code string The lua code chunk.
     ---@param chunk_name string | nil The lua code chunk name.
     ---@param env table | nil The environment of compiled function.
-    ---@return function | nil fn The compiled function.
-    ---@return string | nil msg The error message.
+    ---@return function fn The compiled function.
     function std.loadstring( lua_code, chunk_name, env )
         local fn = CompileString( lua_code, chunk_name or "=(loadstring)", false )
         if fn == nil then
-            return nil, "lua code compilation failed"
+            error( "lua code compilation failed", 2 )
         end
 
         if isString( fn ) then
-            ---@diagnostic disable-next-line: cast-type-mismatch
             ---@cast fn string
-            return nil, fn
+            error( fn, 2 )
         end
+
+        ---@cast fn function
 
         setfenv( fn, env or getfenv( 2 ) )
         return fn
@@ -1502,7 +1494,7 @@ do
     ---@return string
     ---@private
     function String.__represent( value )
-        return string_format( "string: %p [%s]", value, string_escape( value, true ) )
+        return string_format( "string: %p [%s][%d]", value, string_escape( value, false ), string_len( value ) )
     end
 
 end
@@ -1774,137 +1766,266 @@ do
 
     local coroutine_running = coroutine.running
     local debug_calledby = debug.calledby
+    local debug_getinfo = debug.getinfo
+    local debug_Stack = debug.Stack
     local isError = std.isError
 
     local RuntimeError = std.RuntimeError
 
-    ---@type integer
-    local required_stack_level = 1
+    --- Message handed back to the engine once dreamwork has displayed the error itself.
+    local ERROR_SENTINEL = "The original error message was caught by dreamwork, see above for details about the error."
+
+    --- Functions whose frames never appear in an error call stack.
+    ---
+    ---@type table<function, boolean>
+    local hidden_functions = {}
+    gc.setTableRules( hidden_functions, true, false )
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the current error stack level.
+    --- Hides the given function from error call stacks.
     ---
-    ---@returns integer stack_level
-    function dreamwork.getErrorLevel()
-        return required_stack_level
+    --- Use it for internal dispatchers and wrappers (hook runners, timer callers, ...)
+    --- whose frames carry no useful information for whoever reads the error.
+    ---
+    ---@param fn function The function to hide.
+    function dreamwork.hideErrorFrame( fn )
+        hidden_functions[ fn ] = true
     end
 
-    std._R[ 1 ] = function( error_value )
-        local stack_level = math_max( 1, required_stack_level or 1 )
-        required_stack_level = 1
-
-        return engine.hookCall( "dreamwork.lua.error", error_value, stack_level + 1 ) or error_value
-    end
+    --- Level passed to the last `_G.error` call, read by `capture_stack` only when
+    --- the original `error` is the frame that raised the error.
+    ---
+    ---@type integer
+    local pending_level = 1
 
     ---@param value any
     ---@param stack_level integer | nil
     _G.error = dreamwork.detour.attach( function( fn, value, stack_level )
-        required_stack_level = math_max( 1, stack_level or 1 )
-
-        ---@diagnostic disable-next-line: need-check-nil
+        pending_level = stack_level or 1
         return fn( value, stack_level )
     end, error )
 
     local glua_error = dreamwork.detour.shadow( error ) or error
-    local in_error = false
 
-    do
+    --- [SHARED AND MENU]
+    ---
+    --- Checks whether the frame belongs to a hidden function and is left out of error call stacks.
+    ---
+    --- Pass it to `debug.Stack:filter` to clean up a stack captured by hand.
+    ---
+    ---@param frame dreamwork.std.debug.StackLevel The frame to check.
+    ---@return boolean is_hidden
+    local function is_hidden_frame( frame )
+        return hidden_functions[ frame.func ] ~= nil
+    end
 
-        local runtime_error = RuntimeError()
+    dreamwork.isErrorFrameHidden = is_hidden_frame
 
-        local runtime_stack = debug.Stack()
-        runtime_error.stack = runtime_stack
+    --- Captures the call stack of an error into `stack`.
+    ---
+    --- The walk starts at the caller of `capture_stack` and skips leading C frames
+    --- (the C function that raised the error: `error`, `assert`, `string.rep`, ...) and
+    --- hidden frames (`std.error`, error handlers, ...), so the innermost frame is always
+    --- the Lua code that raised the error, no matter how many handlers or tail calls sit in between.
+    ---
+    --- Then `skip` more frames are skipped to honour the error level, and everything from there
+    --- to the bottom of the current thread is captured, except hidden frames (`pcall`, `xpcall`, ...),
+    --- other C frames such as `table.sort` stay in the stack.
+    ---
+    ---@param stack dreamwork.std.debug.Stack
+    ---@param skip integer
+    local function capture_stack( stack, skip )
+        local level = 2
 
-        ---@param error_value dreamwork.std.Error
-        ---@param stack_level integer
-        local function display_error( error_value, stack_level )
-            if isError( error_value ) then
-                ---@cast error_value dreamwork.std.Error
-                error_value:display()
-                return
+        while true do
+            local info = debug_getinfo( level, "Sf" )
+            if info == nil then return end
+
+            local fn = info.func
+            if fn == glua_error then
+                -- raised by a plain `error( value, level )`, so honour its level
+                skip = math_max( 0, pending_level - 1 )
+                pending_level = 1
+            elseif info.what ~= "C" and hidden_functions[ fn ] == nil then
+                break
             end
 
-            for i = stack_level + 2, 2, -1 do
-                runtime_stack:capture( i )
-                if not runtime_stack:isEmpty() then break end
-            end
-
-            ---@type string
-            local error_message = tostring( error_value )
-            runtime_error.message = string_match( error_message, "^[^:]+:%d+: ([^\n]+)" ) or error_message
-
-            runtime_error:display()
-            runtime_stack:clear()
+            level = level + 1
         end
 
-        engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value, stack_level )
-            if in_error then
-                in_error = false
-                return error_value
+        while skip > 0 do
+            local info = debug_getinfo( level + 1, "Sf" )
+            if info == nil then break end
+
+            level = level + 1
+
+            if hidden_functions[ info.func ] == nil then
+                skip = skip - 1
             end
+        end
 
-            display_error( error_value, stack_level )
-            return "The original error message was caught by dreamwork, see above for details about the error.", 2
-        end, 1000 )
-
+        stack:capture( level )
+        stack:filter( is_hidden_frame )
     end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Converts any error value into an `Error` and captures its call stack if it has none yet.
+    ---
+    --- Can be passed to `xpcall` directly as a message handler.
+    ---
+    ---@param error_value any The error value to convert.
+    ---@param error_class? dreamwork.std.ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+    ---@return dreamwork.std.Error error_object
+    local function to_error( error_value, error_class )
+        ---@type dreamwork.std.Error
+        local error_object
+
+        if error_class == nil then
+            ---@diagnostic disable-next-line: cast-local-type
+            error_class = RuntimeError
+        end
+
+        if isError( error_value ) then
+            ---@cast error_value dreamwork.std.Error
+            error_object = error_value
+
+            if not error_object:isEmpty() then
+                return error_object
+            end
+        elseif error_value == nil then
+            error_object = error_class( "unknown error" )
+        elseif isString( error_value ) then
+            ---@cast error_value string
+            error_object = error_class( string_match( error_value, "^[^\n]-:%d+: (.*)$" ) or error_value )
+        else
+            error_object = error_class( tostring( error_value ) )
+        end
+
+        local stack = debug_Stack()
+        error_object.stack = stack
+        capture_stack( stack, 0 )
+
+        return error_object
+    end
+
+    dreamwork.toError = to_error
+
+    --- Passes the error to the `dreamwork.lua.error` handlers, which display it.
+    ---
+    ---@param error_object dreamwork.std.Error
+    ---@return any result
+    local function report( error_object )
+        return engine.hookCall( "dreamwork.lua.error", error_object )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- `xpcall` message handler that converts the error into an `Error`, displays it and returns it.
+    ---
+    ---@param error_value any The error value to handle.
+    ---@return dreamwork.std.Error error_object
+    local function error_handler( error_value )
+        local error_object = to_error( error_value )
+        report( error_object )
+        return error_object
+    end
+
+    dreamwork.errorHandler = error_handler
+
+    -- below gmod specific error output function, that get message/value from engine and return new message (possibly can be string only)
+    local function engine_error_handler( error_value )
+        if error_value == ERROR_SENTINEL then
+            return error_value
+        end
+
+        local result = report( to_error( error_value ) )
+        if isString( result ) then
+            return result
+        end
+
+        return tostring( error_value )
+    end
+
+    std._R[ 1 ] = engine_error_handler
+    hidden_functions[ engine_error_handler ] = true
+
+    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value )
+        if not isError( error_value ) then
+            error_value = to_error( error_value )
+        end
+
+        -- this runs inside error handlers, where a second error would replace the original one
+        local success, display_error = pcall( error_value.display, error_value )
+        if not success then
+            raw.print( "[dreamwork] failed to display an error: " .. raw.tostring( display_error ) )
+            raw.print( "[dreamwork] original error: " .. raw.tostring( error_value.message ) )
+        end
+
+        return ERROR_SENTINEL
+    end, 1000 )
 
     --- [SHARED AND MENU]
     ---
     --- Throws an error with the specified message and level.
     ---
+    --- An `Error` that already has a call stack is rethrown as is; if it was captured in another
+    --- thread (e.g. inside a resumed coroutine) the frames leading here are added below it.
+    --- Call `Error:reset` before throwing the same object again to capture a fresh stack.
+    ---
     ---@param value? any The error value to throw.
     ---@param stack_level? integer The stack level to throw the error.
-    ---@param dont_break? boolean If `true`, the error will not break the current stack.
+    ---@param dont_break? boolean If `true`, the error is displayed without breaking the current stack.
     local function std_error( value, stack_level, dont_break )
-        if stack_level == nil then
-            stack_level = 1
-        else
-            stack_level = math_max( 1, stack_level )
-        end
-
-        required_stack_level = stack_level
-
-        ---@type string
-        local error_message
-
         ---@type dreamwork.std.Error
         local error_object
 
-        if value == nil then
-            error_message = "unknown error"
-        elseif isString( value ) then
-            ---@cast value string
-            error_message = value
-        elseif isError( value ) then
+        if isError( value ) then
             ---@cast value dreamwork.std.Error
             error_object = value
+        elseif value == nil then
+            error_object = RuntimeError( "unknown error" )
+        elseif isString( value ) then
+            ---@cast value string
+            error_object = RuntimeError( value )
+        elseif not dont_break and (coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall )) then
+            return glua_error( value, 0 )
         else
-            error_message = tostring( value )
+            error_object = RuntimeError( tostring( value ) )
         end
 
-        if error_object == nil then
-            error_object = RuntimeError( error_message )
-        end
+        local skip = math_max( 0, (stack_level or 1) - 1 )
 
-        if stack_level ~= 0 then
-            for i = math_max( 1, stack_level ) + 1, 2, -1 do
-                error_object:capture( i )
-                if not error_object:isEmpty() then break end
+        local stack = error_object.stack
+        if stack == nil then
+            stack = debug_Stack()
+            error_object.stack = stack
+            capture_stack( stack, skip )
+        elseif stack.size == 0 then
+            capture_stack( stack, skip )
+        elseif stack[ 1 ].thread ~= coroutine_running() then
+            local outer_stack = debug_Stack()
+            capture_stack( outer_stack, skip )
+
+            for i = 1, stack.size, 1 do
+                outer_stack:push( stack[ i ] )
             end
+
+            error_object.stack = outer_stack
         end
 
-        if dont_break then return end
-
-        if debug_calledby( 2, pcall, xpcall ) or coroutine_running() ~= nil then
-            return glua_error( error_object, stack_level )
+        if dont_break then
+            report( error_object )
+            return
         end
 
-        error_object:display()
+        if coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall ) then
+            return glua_error( error_object, 0 )
+        end
 
-        in_error = true
-        return glua_error( "The original error message was caught by dreamwork, see above for details about the error.", 0 )
+        report( error_object )
+        return glua_error( ERROR_SENTINEL, 0 )
     end
 
     std.error = std_error
@@ -1932,8 +2053,29 @@ do
     function std.assert( expression, fmt, ... )
         if expression then return end
 
-        return std_error( string_format( fmt, ... ), 2, false )
+        return std_error( string_format( fmt, ... ), 1, false )
     end
+
+    hidden_functions[ std.errorf ] = true
+    hidden_functions[ std.assert ] = true
+
+    hidden_functions[ to_error ] = true
+    hidden_functions[ std_error ] = true
+    hidden_functions[ error_handler ] = true
+
+    -- protected calls sit between two Lua frames and carry nothing useful
+    hidden_functions[ pcall ] = true
+    hidden_functions[ xpcall ] = true
+
+    ---@diagnostic disable-next-line: undefined-global
+    local glua_ProtectedCall = ProtectedCall
+    if glua_ProtectedCall ~= nil then
+        hidden_functions[ glua_ProtectedCall ] = true
+    end
+
+    -- raisers are already skipped at the top of the stack, listed so they never show up anywhere else
+    hidden_functions[ glua_error ] = true
+    hidden_functions[ raw.assert ] = true
 
 end
 
@@ -2965,7 +3107,7 @@ do
     ---@type fun( bytecode: string ): function | nil
     local load_bytecode
 
-    local load = _G.load or _G.loadstring
+    local load = load or loadstring
     if load ~= nil and jit.isFFI( load ) then
         function load_bytecode( bytecode )
             return load( bytecode, "=(load)", "b" )

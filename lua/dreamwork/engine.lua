@@ -298,19 +298,16 @@ do
     }
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param error_message string
-    ---@param stack_level integer
-    event_handlers[ "dreamwork.lua.error" ] = function( handlers, error_message, stack_level )
-        stack_level = stack_level + 1
-
+    ---@param error_value dreamwork.std.Error | any
+    event_handlers[ "dreamwork.lua.error" ] = function( handlers, error_value )
         for i = 1, handlers[ 0 ], 1 do
-            local new_error_message = handlers[ i ]( error_message, stack_level )
-            if new_error_message ~= nil then
-                error_message = new_error_message
+            local new_value = handlers[ i ]( error_value )
+            if new_value ~= nil then
+                error_value = new_value
             end
         end
 
-        return error_message
+        return error_value
     end
 
     do

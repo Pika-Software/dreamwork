@@ -1,10 +1,10 @@
+local dreamwork_errorHandler = dreamwork.errorHandler
 local std = dreamwork.std
 
 ---@class dreamwork.std.console
 local console = std.console
 
 local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
 local engine_consoleCommandRun = engine.consoleCommandRun
 local engine_consoleCommandBlocked = engine.consoleCommandBlocked
 local engine_consoleCommandRegister = engine.consoleCommandRegister
@@ -275,11 +275,6 @@ function Command:await()
     return hooks[ self ]:await( "peek" )
 end
 
----@param error_value string | dreamwork.std.Error
-local function error_handler( error_value )
-    return engine_hookCall( "dreamwork.lua.error", error_value, 2 )
-end
-
 engine.hookCatch( "dreamwork.console.command.execute", "console.handle", function( client, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
@@ -291,8 +286,9 @@ engine.hookCatch( "dreamwork.console.command.execute", "console.handle", functio
     end
 
     -- TODO: review this after client class will be created
+
     local hook = hooks[ command ]
-    xpcall( hook.call, error_handler, hook, client, args, argument_string )
+    xpcall( hook.call, dreamwork_errorHandler, hook, client, args, argument_string )
 
     return true
 end, -500 )
@@ -304,7 +300,7 @@ engine.hookCatch( "dreamwork.console.command.autocomplete", "console.autocomplet
     local fn = autocomplete[ command ]
     if fn == nil then return end
 
-    local success, value1, value2 = xpcall( fn, error_handler, command, argument_string, args )
+    local success, value1, value2 = xpcall( fn, dreamwork_errorHandler, command, argument_string, args )
     if not success or value1 == nil then return end
 
     if value1 == false then

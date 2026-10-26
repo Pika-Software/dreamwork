@@ -5,6 +5,7 @@
 --- The timer library is a very useful set of functions which allow you to run a function periodically or after a given delay.
 ---
 ---@class garrysmod.timer
+---@field IsRunning nil | fun( identifier: string ): boolean
 timer = {}
 
 --- [SHARED AND MENU]

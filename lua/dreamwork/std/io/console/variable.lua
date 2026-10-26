@@ -1,10 +1,10 @@
+local dreamwork_errorHandler = dreamwork.errorHandler
 local std = dreamwork.std
 
 ---@class dreamwork.std.console
 local console = std.console
 
 local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
 local engine_consoleCommandRun = engine.consoleCommandRun
 local engine_consoleVariableGet = engine.consoleVariableGet
 local engine_consoleVariableCreate = engine.consoleVariableCreate
@@ -805,11 +805,6 @@ function Variable:await()
     return hooks[ self ]:await( "peek" )
 end
 
----@param error_value string | dreamwork.std.Error
-local function error_handler( error_value )
-    return engine_hookCall( "dreamwork.lua.error", error_value, 2 )
-end
-
 engine.hookCatch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
     if variable == nil then return end
@@ -828,7 +823,7 @@ engine.hookCatch( "dreamwork.console.variable.change", "variable.change", functi
     values[ variable ] = old_value
 
     local hook = hooks[ variable ]
-    xpcall( hook.call, error_handler, hook, new_value )
+    xpcall( hook.call, dreamwork_errorHandler, hook, new_value )
 
     values[ variable ] = new_value
 end, -1000 )

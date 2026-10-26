@@ -23,7 +23,7 @@ local pcall = std.pcall
 local rbit = raw.bit or {}
 raw.bit = rbit
 
-local operators = loadstring( "return ~0xFF", "bitwise.test", {} ) ~= nil
+local operators = pcall( loadstring, "return ~0xFF", "bitwise.test", {} )
 if operators then
 
     local fn = loadstring( [[

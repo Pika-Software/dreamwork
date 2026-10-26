@@ -1,8 +1,9 @@
 ---@class dreamwork
 local dreamwork = dreamwork
 
-local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
+local dreamwork_toError = dreamwork.toError
+local dreamwork_errorHandler = dreamwork.errorHandler
+local dreamwork_isErrorFrameHidden = dreamwork.isErrorFrameHidden
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -17,7 +18,6 @@ local table = std.table
 local table_remove = table.remove
 
 local string = std.string
-local string_match = string.match
 local string_format = string.format
 
 local coroutine = std.coroutine
@@ -38,7 +38,6 @@ local copy = std.copy
 local len = std.len
 
 local isFunction = std.isFunction
-local isError = std.isError
 
 local AsyncError = std.AsyncError
 local Queue = std.Queue
@@ -137,59 +136,35 @@ function futures.stack()
     return nil
 end
 
-local error_object = AsyncError()
+do
 
----@async
----@param co thread
----@param ok boolean
-local function async_thread_result( co, ok, ... )
-    local value = (...)
-
-    local fn = Listeners[ co ]
-    if isFunction( fn ) then
-        if value == ACTION_CANCEL then
-            fn( nil )
-            return
-        end
+    ---@async
+    ---@param co thread
+    ---@param ok boolean
+    local function async_thread_result( co, ok, ... )
+        local value = (...)
 
         if ok then
-            fn( true, ... )
-            return
-        end
-
-        if isError( value ) then
-            ---@cast value dreamwork.std.Error
-
-            local fstack = copy( Stacks[ co ] )
-
-            local stack = value.stack
-            if stack ~= nil then
-                fstack:merge( stack )
+            local fn = Listeners[ co ]
+            if isFunction( fn ) then
+                fn( true, ... )
             end
 
-            value.stack = fstack
-
-            fn( false, value )
             return
         end
 
-        ---@cast value any
+        if value == ACTION_CANCEL then
+            local fn = Listeners[ co ]
+            if isFunction( fn ) then
+                fn( false, ACTION_CANCEL )
+            end
 
-        local error_str = tostring( value )
+            return
+        end
 
-        local error_obj = AsyncError( string_match( error_str, "^[^:]+:%d+: ([^\n]+)" ) or error_str )
-        error_obj.stack = Stacks[ co ]
-        error( error_obj, 2 )
-        return
-    end
-
-    if ok or value == ACTION_CANCEL then
-        return
-    end
-
-    if isError( value ) then
         ---@cast value dreamwork.std.Error
 
+        -- frames that led to `futures.run` go below the frames of the coroutine itself
         local fstack = copy( Stacks[ co ] )
 
         local stack = value.stack
@@ -198,89 +173,98 @@ local function async_thread_result( co, ok, ... )
         end
 
         value.stack = fstack
-        value:display()
-        return
+
+        local fn = Listeners[ co ]
+        if isFunction( fn ) then
+            fn( false, value )
+            return
+        end
+
+        dreamwork_errorHandler( value )
     end
 
-    ---@cast value any
+    --- Turns the error into `Error` with the stack of the coroutine where it was raised,
+    --- `ACTION_CANCEL` is passed through as is.
+    ---
+    ---@param error_value any
+    ---@return dreamwork.std.Error | dreamwork.std.Symbol
+    local function stack_handler( error_value )
+        if error_value == ACTION_CANCEL then
+            return error_value
+        end
 
-    local error_str = tostring( value )
-
-    error_object.message = string_match( error_str, "^[^:]+:%d+: ([^\n]+)" ) or error_str
-    error_object.stack = Stacks[ co ]
-    error_object:display()
-end
-
----@generic T
----@param error_value T
----@return T
-local function stack_handler( error_value )
-    Stacks[ coroutine_running() ]:capture( 2, 1, 2 )
-    return error_value
-end
-
----@async
-local function async_thread( fn, ... )
-    ---@diagnostic disable-next-line: param-type-mismatch
-    return async_thread_result( coroutine_running(), xpcall( fn, stack_handler, ... ) )
-end
-
---- [SHARED AND MENU]
----
---- Executes a function in a new coroutine
---- you can use this function to call async functions even in sync code
---- callback will be called when function returned or errored
---- it will be called with these arguments:
---- * ok: boolean - whether the function returned without errors
---- * ... - return values of the function (or error message)
----
---- ## Example
---- ```lua
---- ---@async
---- local function asyncFunction( a, b )
----     sleep( 1 )
----     return
---- end
----
---- futures.run( asyncFunction, function( ok, result )
----     if ok then
----         print( "result:", result ) -- result: 4
----     else
----         print( "error:", result )
----     end
---- end, 2, 2 ) -- 2 and 2 are arguments for asyncFunction
---- ```
----
----@see dreamwork.std.futures.cancel you can cancel returned coroutine from this function
----@param target async fun(...):... The function to execute.
----@param callback fun(ok: boolean, ...)? The callback function.
----@param ... any Arguments to pass into the target function
----@return thread co The created coroutine object.
-local function futures_run( target, callback, ... )
-    local new_co = coroutine_create( async_thread )
-    Listeners[ new_co ] = callback
-
-    local co = coroutine_running()
-    local co_stack
-
-    if co == nil then
-        co_stack = Stacks[ new_co ]
-    else
-        co_stack = Stacks[ co ]
-        Stacks[ new_co ] = co_stack
+        ---@diagnostic disable-next-line: param-type-mismatch
+        return dreamwork_toError( error_value, AsyncError )
     end
 
-    co_stack:capture( 2, 0, 0, 2 )
-
-    local ok, error_value = coroutine_resume( new_co, target, ... )
-    if not ok then
-        error( error_value, 2, false )
+    ---@async
+    local function async_thread( fn, ... )
+        ---@diagnostic disable-next-line: param-type-mismatch
+        return async_thread_result( coroutine_running(), xpcall( fn, stack_handler, ... ) )
     end
 
-    return new_co
-end
+    dreamwork.hideErrorFrame( async_thread_result )
+    dreamwork.hideErrorFrame( stack_handler )
+    dreamwork.hideErrorFrame( async_thread )
 
-futures.run = futures_run
+    --- [SHARED AND MENU]
+    ---
+    --- Executes a function in a new coroutine
+    --- you can use this function to call async functions even in sync code
+    --- callback will be called when function returned or errored
+    --- it will be called with these arguments:
+    --- * ok: boolean - whether the function returned without errors
+    --- * ... - return values of the function (or error message)
+    ---
+    --- ## Example
+    --- ```lua
+    --- ---@async
+    --- local function asyncFunction( a, b )
+    ---     sleep( 1 )
+    ---     return
+    --- end
+    ---
+    --- futures.run( asyncFunction, function( ok, result )
+    ---     if ok then
+    ---         print( "result:", result ) -- result: 4
+    ---     else
+    ---         print( "error:", result )
+    ---     end
+    --- end, 2, 2 ) -- 2 and 2 are arguments for asyncFunction
+    --- ```
+    ---
+    ---@see dreamwork.std.futures.cancel you can cancel returned coroutine from this function
+    ---@param target async fun(...):... The function to execute.
+    ---@param callback fun(ok: boolean, ...)? The callback function.
+    ---@param ... any Arguments to pass into the target function
+    ---@return thread co The created coroutine object.
+    function futures.run( target, callback, ... )
+        local new_co = coroutine_create( async_thread )
+        Listeners[ new_co ] = callback
+
+        local co = coroutine_running()
+        local co_stack
+
+        if co == nil then
+            co_stack = Stacks[ new_co ]
+        else
+            -- own copy, so frames captured for this coroutine never leak into the parent or its siblings
+            co_stack = copy( Stacks[ co ] )
+            Stacks[ new_co ] = co_stack
+        end
+
+        co_stack:capture( 2, 0, 0, 2 )
+        co_stack:filter( dreamwork_isErrorFrameHidden )
+
+        local ok, error_value = coroutine_resume( new_co, target, ... )
+        if not ok then
+            error( error_value, 2, false )
+        end
+
+        return new_co
+    end
+
+end
 
 ---@async
 local function handle_pending( value, ... )
@@ -340,10 +324,11 @@ end
 ---
 --- Cancels execution of passed coroutine.
 ---
---- `CancelError` will be thrown in coroutine.
+--- `ACTION_CANCEL` will be thrown in coroutine.
 ---
 --- NB! pcall inside coroutine can catch this error
---- so coroutine may not be cancelled because of pcall.
+--- so coroutine may not be cancelled because of pcall,
+--- use `futures.isCancel` to detect it and rethrow.
 ---
 --- ## Example
 --- ```lua
@@ -355,11 +340,13 @@ end
 ---     end
 --- end
 ---
---- local co = futures.run( work, function(ok, value )
----     -- because we cancelled coroutine
----     -- ok will be false
----     -- value will be CancelError
---- end)
+--- local co = futures.run( work, function( ok, value )
+---     if futures.isCancel( value ) then
+---         -- because we cancelled coroutine
+---         -- ok will be false
+---         -- value will be `ACTION_CANCEL`
+---     end
+--- end )
 ---
 --- futures.cancel( co ) -- this will stop coroutine from executing
 --- ```
@@ -375,6 +362,16 @@ function futures.cancel( co )
     elseif status == "running" then
         error( ACTION_CANCEL, 2, false )
     end
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks whether the value is the cancellation signal thrown by `futures.cancel`.
+---
+---@param value any The value to check, e.g. an error caught by `pcall` or the `value` of a `futures.run` callback.
+---@return boolean is_cancel `true` if the value is the cancellation signal, otherwise `false`.
+function futures.isCancel( value )
+    return value == ACTION_CANCEL
 end
 
 --- [SHARED AND MENU]
@@ -483,7 +480,7 @@ local function handle_anext( co, ok, value, ... )
     elseif value == RESULT_ERROR then
         return error( ..., 2, false )
     elseif value ~= nil then
-        engine_hookCall( "dreamwork.lua.error", "invalid anext result: " .. tostring( value ), 2 )
+        error( string_format( "invalid anext result: %s", tostring( value ) ), 2 )
     end
 
     -- iterator went sleeping, wait until it wakes us up
@@ -686,9 +683,9 @@ do
         self.callbacks = { [ 0 ] = 0 }
 
         for i = 1, callbacks[ 0 ], 1 do
-            local success, error_message = pcall( callbacks[ i ], self )
+            local success, error_object = xpcall( callbacks[ i ], dreamwork_toError, self )
             if not success then
-                error( error_message, 2, true )
+                error( error_object, 2, true )
             end
         end
     end

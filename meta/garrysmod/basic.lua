@@ -35,3 +35,15 @@ function UnPredictedCurTime() end
 ---
 ---@return number engine_uptime Engine uptime in seconds.
 function SysTime() end
+
+--- [SHARED AND MENU]
+---
+--- This function will compile the code argument as lua code and return a function that will execute that code.
+---
+--- Please note that this function will not automatically execute the given code after compiling it.
+---
+---@param code string The code to compile.
+---@param identifier string An identifier in case an error is thrown.
+---@param handleError boolean If `false` this function will return an error string instead of throwing an error.
+---@return function | string result
+function CompileString( code, identifier, handleError ) end

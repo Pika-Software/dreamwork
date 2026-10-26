@@ -6,6 +6,9 @@
 --- This module is just the timer library, but it doesn't use `CurTime`.
 ---
 ---@class holylib.systimer
+---@field IsPaused nil | fun( identifier: string ): boolean
+---@field IsRunning nil | fun( identifier: string ): boolean
+---@field Simple nil | fun( delay: number, fn: fun() )
 systimer = {}
 
 --- [SHARED AND MENU]
