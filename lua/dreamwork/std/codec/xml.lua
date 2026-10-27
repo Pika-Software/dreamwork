@@ -28,6 +28,8 @@ local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
 local string_gsub, string_match = string.gsub, string.match
 local string_find, string_format = string.find, string.format
+local string_gmatch = string.gmatch
+
 
 --- [SHARED AND MENU]
 ---
@@ -55,6 +57,8 @@ local string_find, string_format = string.find, string.format
 ---@field attributes nil | table<string, (string | nil)> The attributes of the node.
 ---@field parent dreamwork.std.XMLNode | nil The parent node.
 ---@field data nil | string | table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])> The data of the node.
+---@field order nil | (string | integer)[] The document order of the children, element names and indices of `texts`, maintained automatically.
+---@field texts nil | string[] The text chunks in document order, together they are the text slot `[1]`, maintained automatically.
 local XMLNode = class.base( "XMLNode", false )
 
 ---@alias dreamwork.std.XMLNode.Value string | dreamwork.std.XMLNode
@@ -101,6 +105,322 @@ end
 
 std.isXMLNode = isNode
 
+--- Checks whether the value is a list of node values.
+---
+---@param value any
+---@return boolean is_list
+local function isList( value )
+    return isTable( value ) and debug_getmetatable( value ) ~= XMLNode
+end
+
+--- Returns the data table key for the given key, numeric keys fall back to number keys like in `get`, `"1"` is the text slot.
+---
+---@param data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+---@param key string
+---@return string | integer key
+local function data_key( data, key )
+    if data[ key ] ~= nil then
+        return key
+    end
+
+    local number = string_toNumber( key )
+    if number ~= nil and (number == 1 or data[ number ] ~= nil) then
+        return number
+    end
+
+    return key
+end
+
+--- Converts values that are not strings, nodes or lists to strings.
+---
+---@param value any
+---@return dreamwork.std.XMLNode.Value | dreamwork.std.XMLNode.Value[] | nil
+local function to_value( value )
+    if value == nil or isString( value ) or isTable( value ) then
+        return value
+    end
+
+    return tostring( value )
+end
+
+--- Returns the data table of the node, converting empty and text-only data and starting the document order.
+---
+---@param node dreamwork.std.XMLNode
+---@return table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])> data
+local function node_data_table( node )
+    local data = node.data
+    if data == nil then
+        data = {}
+        node.data = data
+        node.order = {}
+    elseif isString( data ) then
+        ---@cast data string
+        node.texts = { data }
+        node.order = { 1 }
+
+        data = { [ 1 ] = data }
+        node.data = data
+    end
+
+    ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+    return data
+end
+
+--- Appends an element entry to the document order of the node.
+---
+---@param node dreamwork.std.XMLNode
+---@param key string | integer
+local function order_append( node, key )
+    local order = node.order
+    if order ~= nil and key ~= 1 then
+        order[ #order + 1 ] = key
+    end
+end
+
+--- Sets the number of entries of the key in the document order of the node, new entries are placed where the first old one was or at the end.
+---
+---@param node dreamwork.std.XMLNode
+---@param key string | integer
+---@param count integer
+local function order_update( node, key, count )
+    local order = node.order
+    if order == nil or key == 1 then
+        -- numbers in the order are text chunks, the text slot has no element entries
+        return
+    end
+
+    local length = #order
+
+    local existing = 0
+    for i = 1, length, 1 do
+        if order[ i ] == key then
+            existing = existing + 1
+        end
+    end
+
+    if existing == count then
+        return
+    end
+
+    local first, write = nil, 0
+    for i = 1, length, 1 do
+        local entry = order[ i ]
+        if entry == key then
+            if first == nil then
+                first = write + 1
+            end
+        else
+            write = write + 1
+            order[ write ] = entry
+        end
+    end
+
+    if first == nil then
+        first = write + 1
+    end
+
+    for i = write, first, -1 do
+        order[ i + count ] = order[ i ]
+    end
+
+    for i = first, first + count - 1, 1 do
+        order[ i ] = key
+    end
+
+    for i = write + count + 1, length, 1 do
+        order[ i ] = nil
+    end
+end
+
+--- Removes the last entry of the key from the document order of the node.
+---
+---@param node dreamwork.std.XMLNode
+---@param key string | integer
+local function order_pop( node, key )
+    local order = node.order
+    if order == nil or key == 1 then
+        return
+    end
+
+    local length = #order
+
+    for i = length, 1, -1 do
+        if order[ i ] == key then
+            for j = i, length - 1, 1 do
+                order[ j ] = order[ j + 1 ]
+            end
+
+            order[ length ] = nil
+            return
+        end
+    end
+end
+
+--- Appends text to the text slot of the node data table, keeping its position in the document order.
+---
+---@param node dreamwork.std.XMLNode
+---@param data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+---@param text string
+local function text_append( node, data, text )
+    local existing = data[ 1 ]
+    if existing == nil then
+        data[ 1 ] = text
+    else
+        data[ 1 ] = existing .. text
+    end
+
+    local order = node.order
+    if order == nil then
+        return
+    end
+
+    local texts = node.texts
+    if texts == nil then
+        texts = {}
+        node.texts = texts
+
+        if existing ~= nil then
+            -- untracked text stays at the start
+            texts[ 1 ] = existing
+
+            for i = #order, 1, -1 do
+                order[ i + 1 ] = order[ i ]
+            end
+
+            order[ 1 ] = 1
+        end
+    end
+
+    local index = #texts + 1
+    texts[ index ] = text
+    order[ #order + 1 ] = index
+end
+
+--- Fills parallel key and value arrays with the children of the node in document order, text has key `false`.
+---
+--- Values that are not in the document order (e.g. written to `data` directly) come last, so nothing is ever lost.
+---
+--- The arrays can be reused, only the first `count` entries are valid. `consumed` must be empty and is left empty.
+---
+---@param node dreamwork.std.XMLNode
+---@param keys (string | integer | false)[]
+---@param values (string | dreamwork.std.XMLNode)[]
+---@param consumed table<string | integer, integer>
+---@return integer count
+local function collect_children( node, keys, values, consumed )
+    local count = 0
+
+    local data = node.data
+    if data == nil then
+        return 0
+    end
+
+    if isString( data ) then
+        keys[ 1 ], values[ 1 ] = false, data
+        return 1
+    end
+
+    ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+
+    local order, texts = node.order, node.texts
+
+    local text = data[ 1 ]
+    if not isString( text ) then
+        text = nil
+    end
+
+    -- text chunks keep their positions only while together they are still the text slot
+    local text_pending, chunks_valid = text ~= nil, false
+    if text_pending then
+        local texts_length = texts == nil and 0 or #texts
+        if order == nil or texts_length == 0 then
+            count = 1
+            keys[ 1 ], values[ 1 ] = false, text
+            text_pending = false
+        elseif texts_length == 1 then
+            ---@cast texts string[]
+            chunks_valid = texts[ 1 ] == text
+        else
+            ---@cast texts string[]
+            chunks_valid = table_concat( texts, "", 1, texts_length ) == text
+        end
+    end
+
+    if order ~= nil then
+        for i = 1, #order, 1 do
+            local entry = order[ i ]
+            if isString( entry ) then
+                local value = data[ entry ]
+                if value ~= nil then
+                    if isList( value ) then
+                        local index = (consumed[ entry ] or 0) + 1
+
+                        local item = value[ index ]
+                        if item ~= nil then
+                            consumed[ entry ] = index
+                            count = count + 1
+                            keys[ count ], values[ count ] = entry, item
+                        end
+                    elseif consumed[ entry ] == nil then
+                        consumed[ entry ] = 1
+                        count = count + 1
+                        keys[ count ], values[ count ] = entry, value
+                    end
+                end
+            elseif text_pending then
+                if chunks_valid then
+                    ---@cast texts string[]
+                    local chunk = texts[ entry ]
+                    if chunk ~= nil and chunk ~= "" then
+                        count = count + 1
+                        keys[ count ], values[ count ] = false, chunk
+                    end
+                else
+                    -- edited text is written where the first chunk was
+                    count = count + 1
+                    keys[ count ], values[ count ] = false, text
+                    text_pending = false
+                end
+            end
+        end
+
+        if chunks_valid then
+            text_pending = false
+        end
+    end
+
+    if text_pending then
+        count = count + 1
+        keys[ count ], values[ count ] = false, text
+    end
+
+    for key, value in raw_pairs( data ) do
+        if key == 1 and text ~= nil then
+            -- text, already collected
+        elseif isList( value ) then
+            ---@cast value dreamwork.std.XMLNode.Value[]
+            for i = (consumed[ key ] or 0) + 1, #value, 1 do
+                count = count + 1
+                keys[ count ], values[ count ] = key, value[ i ]
+            end
+        elseif consumed[ key ] == nil then
+            count = count + 1
+            keys[ count ], values[ count ] = key, value
+        end
+    end
+
+    if order ~= nil then
+        for i = 1, count, 1 do
+            local key = keys[ i ]
+            if key ~= false then
+                consumed[ key ] = nil
+            end
+        end
+    end
+
+    return count
+end
+
 ---@param name string
 ---@param attributes table<string, string> | nil
 ---@param parent dreamwork.std.XMLNode | nil
@@ -114,41 +434,29 @@ function XMLNode:__init( name, attributes, parent )
 
     local parent_data = parent.data
     if parent_data == nil then
-        parent.data = {
-            [ name ] = self -- create new data with self if parent has no data
-        }
-
+        -- first child, the most common case while parsing
+        parent.data = { [ name ] = self }
+        parent.order = { name }
         return
     end
 
-    if isString( parent_data ) then
-        ---@cast parent_data string
-
-        parent.data = {
-            [ name ] = self,
-            [ "" ] = parent_data -- replace string data with map that contains string as text and self
-        }
-
-        return
-    end
-
-    ---@cast parent_data table<string, (dreamwork.std.XMLNode.Value | dreamwork.std.XMLNode.Value[])>
+    parent_data = node_data_table( parent )
 
     local value = parent_data[ name ]
     if value == nil then
         parent_data[ name ] = self -- put self if no value in map
-        return
-    end
-
-    if isString( value ) or isNode( value ) then
+    elseif isList( value ) then
+        ---@cast value dreamwork.std.XMLNode.Value[]
+        value[ #value + 1 ] = self -- append self to existing array
+    else
         ---@cast value string | dreamwork.std.XMLNode
-        parent_data[ name ] = { value, self } -- only way is replace string value with `dreamwork.std.XMLNode.Value[]`
-        return
+        parent_data[ name ] = { value, self } -- only way is replace single value with `dreamwork.std.XMLNode.Value[]`
     end
 
-    ---@cast value table<string, dreamwork.std.XMLNode.Value[]>
-
-    value[ #value + 1 ] = self -- append self to existing array
+    local order = parent.order
+    if order ~= nil then
+        order[ #order + 1 ] = name
+    end
 end
 
 --- [SHARED AND MENU]
@@ -198,13 +506,13 @@ end
 ---
 --- Returns the value of the node at the given key or `nil` if not found.
 ---
---- Each key segment can be indexed with `[n]`, e.g. `child[2].title`, and an empty key `""` returns the node's text.
+--- Each key segment can be indexed with `[n]`, e.g. `child[2].title`, key `"1"` returns the text next to child nodes and an empty key `""` returns the text of a text-only node.
 ---
 ---@param key string The key to look up in the node's data, with dot-separated keys for nested values.
 ---@return nil | string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[] value The value of the node at the given key, or `nil` if not found.
 function XMLNode:get( key )
-    local node = self
     local position = 1
+    local node = self
 
     ::get_loop::
 
@@ -262,14 +570,12 @@ function XMLNode:get( key )
     end
 
     if index ~= nil then
-        if isString( data_value ) or isNode( data_value ) then
-            -- a single value is a list of one
-            if index ~= 1 then
-                return nil
-            end
-        else
+        if isList( data_value ) then
             ---@cast data_value dreamwork.std.XMLNode.Value[]
             data_value = data_value[ index ]
+        elseif index ~= 1 then
+            -- a single value is a list of one
+            return nil
         end
     end
 
@@ -300,14 +606,7 @@ function XMLNode:set( key, value )
 
     ::set_loop::
 
-    local data = node.data
-    if data == nil or isString( data ) then
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        data = { [ "" ] = data }
-        node.data = data
-    end
-
-    ---@cast data table<string, (dreamwork.std.XMLNode.Value | dreamwork.std.XMLNode.Value[])>
+    local data = node_data_table( node )
 
     local key_start = string_find( key, ".", 1, true )
     if key_start == nil or key_start == string_len( key ) then
@@ -315,12 +614,24 @@ function XMLNode:set( key, value )
             key = string_sub( key, 1, key_start - 1 )
         end
 
+        value = to_value( value )
+
         if isNode( value ) then
             ---@cast value dreamwork.std.XMLNode
             value.parent = node
         end
 
-        data[ key ] = value
+        local value_key = data_key( data, key )
+        data[ value_key ] = value
+
+        if value == nil then
+            order_update( node, value_key, 0 )
+        elseif isList( value ) then
+            order_update( node, value_key, #value )
+        else
+            order_update( node, value_key, 1 )
+        end
+
         return
     end
 
@@ -337,6 +648,7 @@ function XMLNode:set( key, value )
     local child = XMLNodeClass( name, nil, nil )
     child.parent = node
     data[ name ] = child
+    order_update( node, name, 1 )
 
     node = child
     goto set_loop
@@ -368,21 +680,22 @@ end
 ---@param node dreamwork.std.XMLNode
 ---@param key string
 ---@return table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])> | nil data
----@return string key_name
+---@return string | integer key_name
+---@return dreamwork.std.XMLNode | nil owner
 local function resolve_data( node, key )
     local owner, key_name = resolve( node, key )
     if owner == nil then
-        return nil, key_name
+        return nil, key_name, nil
     end
 
     local data = owner.data
     if data == nil or isString( data ) then
-        return nil, key_name
+        return nil, key_name, nil
     end
 
     ---@cast data table<string, string|dreamwork.std.XMLNode|string|dreamwork.std.XMLNode[]>
 
-    return data, key_name
+    return data, data_key( data, key_name ), owner
 end
 
 --- [SHARED AND MENU]
@@ -408,8 +721,7 @@ function XMLNode:containsList( key )
         return false
     end
 
-    local value = data[ key_name ]
-    return not (value == nil or isString( value ) or isNode( value ))
+    return isList( data[ key_name ] )
 end
 
 --- [SHARED AND MENU]
@@ -447,17 +759,19 @@ function XMLNode:getLength( key )
     end
 
     local value = data[ key_name ]
-    if value == nil or isString( value ) or isNode( value ) then
-        return 0
+    if isList( value ) then
+        ---@cast value dreamwork.std.XMLNode.Value[]
+        return #value
     end
 
-    ---@cast value dreamwork.std.XMLNode.Value[]
-    return #value
+    return 0
 end
 
 --- [SHARED AND MENU]
 ---
 --- Pushes a value to the list at the given key, supporting dot-separated keys for nested values.
+---
+--- Pushing a string to the text slot `"1"` appends it to the text.
 ---
 ---@param key string The key to push the value to, with dot-separated keys for nested values.
 ---@param value string | dreamwork.std.XMLNode The value to push to the list.
@@ -467,34 +781,36 @@ function XMLNode:push( key, value )
         return
     end
 
-    local data = node.data
-    if data == nil or isString( data ) then
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        data = { [ "" ] = data }
-        node.data = data
+    local data = node_data_table( node )
+
+    local inner_value = to_value( value )
+
+    if isNode( inner_value ) then
+        ---@cast inner_value dreamwork.std.XMLNode
+        inner_value.parent = node
     end
 
-    ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
+    local value_key = data_key( data, key_name )
 
-    if isNode( value ) then
-        ---@cast value dreamwork.std.XMLNode
-        value.parent = node
+    local data_value = data[ value_key ]
+
+    if value_key == 1 and isString( inner_value ) and (data_value == nil or isString( data_value )) then
+        ---@cast inner_value string
+        text_append( node, data, inner_value )
+        return
     end
 
-    local data_value = data[ key_name ]
     if data_value == nil then
-        data[ key_name ] = value
-        return
-    end
-
-    if isString( data_value ) or isNode( data_value ) then
+        data[ value_key ] = value
+    elseif isList( data_value ) then
+        ---@cast data_value dreamwork.std.XMLNode.Value[]
+        data_value[ #data_value + 1 ] = inner_value
+    else
         ---@cast data_value string | dreamwork.std.XMLNode
-        data[ key_name ] = { data_value, value }
-        return
+        data[ value_key ] = { data_value, inner_value }
     end
 
-    ---@cast data_value dreamwork.std.XMLNode.Value[]
-    data_value[ #data_value + 1 ] = value
+    order_append( node, value_key )
 end
 
 --- [SHARED AND MENU]
@@ -504,17 +820,21 @@ end
 ---@param key string The key to pop the value from, with dot-separated keys for nested values.
 ---@return nil | string | dreamwork.std.XMLNode The popped value, or `nil` if the key does not exist or the value is not a node.
 function XMLNode:pop( key )
-    local data, key_name = resolve_data( self, key )
+    local data, key_name, owner = resolve_data( self, key )
     if data == nil then
         return nil
     end
+
+    ---@cast owner dreamwork.std.XMLNode
 
     local data_value = data[ key_name ]
     if data_value == nil then
         return nil
     end
 
-    if isString( data_value ) or isNode( data_value ) then
+    order_pop( owner, key_name )
+
+    if not isList( data_value ) then
         ---@cast data_value string | dreamwork.std.XMLNode
         data[ key_name ] = nil
         return data_value
@@ -542,12 +862,15 @@ end
 ---@param key string The key to remove, with dot-separated keys for nested values.
 ---@return boolean success Returns `true` if the value was removed, `false` otherwise (e.g. key not found).
 function XMLNode:remove( key )
-    local data, key_name = resolve_data( self, key )
+    local data, key_name, owner = resolve_data( self, key )
     if data == nil or data[ key_name ] == nil then
         return false
     end
 
+    ---@cast owner dreamwork.std.XMLNode
+
     data[ key_name ] = nil
+    order_update( owner, key_name, 0 )
     return true
 end
 
@@ -555,7 +878,9 @@ end
 ---
 --- Returns an iterator function for the node at the given key, supporting dot-separated keys for nested values.
 ---
---- Text content is returned with an empty key `""`, list items are returned one by one with the list key.
+--- Values are returned in map order, use `:children()` for document order.
+---
+--- Text of a text-only node is returned with an empty key `""`, text next to child nodes with key `1`, list items are returned one by one with the list key.
 ---
 ---@param key? string The key to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function, which returns key-value pairs for the node at the given key.
@@ -592,7 +917,7 @@ function XMLNode:iterator( key )
 
     ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
 
-    local data_key, data_value
+    local entry_key, data_value
 
     local index = 0
     local size = 0
@@ -602,19 +927,19 @@ function XMLNode:iterator( key )
 
         if index < size then
             index = index + 1
-            return data_key, data_value[ index ]
+            return entry_key, data_value[ index ]
         end
 
-        data_key, data_value = raw_next( data, data_key )
-        if data_key == nil then
+        entry_key, data_value = raw_next( data, entry_key )
+        if entry_key == nil then
             ---@diagnostic disable-next-line: return-type-mismatch
             return nil, nil
         end
 
-        if isString( data_value ) or isNode( data_value ) then
+        if not isList( data_value ) then
             ---@cast data_value string
             index, size = 0, 0
-            return data_key, data_value
+            return entry_key, data_value
         end
 
         -- lists are flattened, empty ones are skipped
@@ -625,7 +950,57 @@ function XMLNode:iterator( key )
     end
 end
 
-local escape_text, decode_entities
+--- [SHARED AND MENU]
+---
+--- Returns an iterator over the children of the node at the given key in document order, supporting dot-separated keys for nested values.
+---
+--- Text is returned with key `1` and elements with their name, values are strings or nodes.
+---
+--- Usage:
+---
+--- ```lua
+--- local root = XMLNode.fromString( "<p>Hello <b>big</b> world</p>" )
+---
+--- for name, value in root:children() do
+---     print( name, value ) -- 1 "Hello ", b "big", 1 " world"
+--- end
+--- ```
+---
+---@param key? string The key of the node to iterate over, with dot-separated keys for nested values.
+---@return fun(): ( ( string | integer | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function.
+function XMLNode:children( key )
+    ---@type any
+    local node = self
+    if key ~= nil then
+        node = self:get( key )
+        if not isNode( node ) then
+            return debug_fempty
+        end
+    end
+
+    ---@cast node dreamwork.std.XMLNode
+
+    local keys, values = {}, {}
+    local count = collect_children( node, keys, values, {} )
+    local index = 0
+
+    return function()
+        index = index + 1
+        if index > count then
+            ---@diagnostic disable-next-line: return-type-mismatch
+            return nil, nil
+        end
+
+        local name = keys[ index ]
+        if name == false then
+            name = 1
+        end
+
+        return name, values[ index ]
+    end
+end
+
+local escape_text, decode_entities, make_decoder
 do
 
     local text_escapes = {
@@ -696,10 +1071,19 @@ do
             return nil
         end
 
+        -- `tonumber` also accepts `nan`, `inf`, `1e2` and `0x41`, so digits are validated first
         local code_point
         if uint8_2 == 0x78 --[[ x ]] or uint8_2 == 0x58 --[[ X ]] then
+            if string_find( name, "^#[xX]%x+$" ) == nil then
+                return nil
+            end
+
             code_point = raw_tonumber( string_sub( name, 3 ), 16 )
         else
+            if string_find( name, "^#%d+$" ) == nil then
+                return nil
+            end
+
             code_point = raw_tonumber( string_sub( name, 2 ), 10 )
         end
 
@@ -710,16 +1094,32 @@ do
         return utf8_encode( code_point )
     end
 
+    --- Returns an entity decoder that also knows the given entities, predefined entities can not be redefined.
+    ---
+    ---@param entities table<string, string>
+    ---@return fun( name: string ): string | nil
+    function make_decoder( entities )
+        return function( name )
+            local replacement = named_entities[ name ] or entities[ name ]
+            if replacement ~= nil then
+                return replacement
+            end
+
+            return decode_entity( name )
+        end
+    end
+
     --- Decodes named and numeric character references in one pass, unknown ones are kept as is.
     ---
     ---@param str string
+    ---@param decoder? fun( name: string ): string | nil
     ---@return string
-    function decode_entities( str )
+    function decode_entities( str, decoder )
         if string_find( str, "&", 1, true ) == nil then
             return str
         end
 
-        return (string_gsub( str, "&(#?%w+);", decode_entity ))
+        return (string_gsub( str, "&(#?[%w_:%.%-\128-\255]+);", decoder or decode_entity ))
     end
 
 end
@@ -759,8 +1159,10 @@ do
     ---@param name string
     ---@param indent string
     ---@param pretty boolean
+    ---@param buffers table[] Reused child arrays per depth, `buffers[0]` is the shared `consumed` table.
+    ---@param depth integer
     ---@return integer line_count
-    local function node_to_string( lines, line_count, object, name, indent, pretty )
+    local function node_to_string( lines, line_count, object, name, indent, pretty, buffers, depth )
         local attributes = object.attributes
 
         local open_tag
@@ -784,44 +1186,36 @@ do
             return line_count
         end
 
-        ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
-
         line_count = line_count + 1
         lines[ line_count ] = open_tag .. ">"
 
         local child_indent = pretty and (indent .. "  ") or ""
 
-        local text = data[ "" ]
-        if isString( text ) then
-            ---@cast text string
-            line_count = line_count + 1
-            lines[ line_count ] = child_indent .. escape_text( text )
+        local keys, values = buffers[ depth * 2 - 1 ], buffers[ depth * 2 ]
+        if keys == nil then
+            keys, values = {}, {}
+            buffers[ depth * 2 - 1 ], buffers[ depth * 2 ] = keys, values
         end
 
-        for key, value in raw_pairs( data ) do
-            if key == "" then
-                -- text content, already written above
+        -- children of this node stay in its arrays while deeper nodes use their own
+        local count = collect_children( object, keys, values, buffers[ 0 ] )
+
+        for i = 1, count, 1 do
+            local key, value = keys[ i ], values[ i ]
+            if key == false then
+                ---@cast value string
+                line_count = line_count + 1
+                lines[ line_count ] = child_indent .. escape_text( value )
             elseif isNode( value ) then
                 ---@cast value dreamwork.std.XMLNode
-                line_count = node_to_string( lines, line_count, value, key, child_indent, pretty )
+                line_count = node_to_string( lines, line_count, value, key, child_indent, pretty, buffers, depth + 1 )
             elseif isString( value ) then
                 ---@cast value string
                 line_count = line_count + 1
                 lines[ line_count ] = child_indent .. "<" .. key .. ">" .. escape_text( value ) .. "</" .. key .. ">"
             else
-                ---@cast value dreamwork.std.XMLNode.Value[]
-
-                for i = 1, #value, 1 do
-                    local sub_value = value[ i ]
-                    if isNode( sub_value ) then
-                        ---@cast sub_value dreamwork.std.XMLNode
-                        line_count = node_to_string( lines, line_count, sub_value, key, child_indent, pretty )
-                    elseif isString( sub_value ) then
-                        ---@cast sub_value string
-                        line_count = line_count + 1
-                        lines[ line_count ] = child_indent .. "<" .. key .. ">" .. escape_text( sub_value ) .. "</" .. key .. ">"
-                    end
-                end
+                line_count = line_count + 1
+                lines[ line_count ] = child_indent .. "<" .. key .. ">" .. escape_text( tostring( value ) ) .. "</" .. key .. ">"
             end
         end
 
@@ -834,6 +1228,8 @@ do
     --- [SHARED AND MENU]
     ---
     --- Returns the XML string representation of this node.
+    ---
+    --- Children are written in document order, pretty formatting adds whitespace to the text, so use compact output for exact data.
     ---
     ---@param pretty? boolean Whether to use pretty formatting (indentation and newlines).
     ---@param name? string The name of the node.
@@ -849,7 +1245,7 @@ do
 
         local lines = {}
 
-        local line_count = node_to_string( lines, 0, self, name or self.name, indent, pretty )
+        local line_count = node_to_string( lines, 0, self, name or self.name, indent, pretty, { [ 0 ] = {} }, 1 )
         if line_count == 1 then
             return lines[ 1 ]
         end
@@ -861,7 +1257,7 @@ do
     ---
     --- Converts XML node structure to a Lua table.
     ---
-    --- Text content is stored with an empty key `""`, attributes are not included.
+    --- Text content is stored in slot `[1]`, attributes and document order are not included.
     ---
     ---@return table
     function XMLNode:toTable()
@@ -872,7 +1268,7 @@ do
 
         if isString( data ) then
             ---@cast data string
-            return { [ "" ] = data }
+            return { [ 1 ] = data }
         end
 
         ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
@@ -883,7 +1279,7 @@ do
             if isNode( value ) then
                 ---@cast value dreamwork.std.XMLNode
                 result[ key ] = value:toTable()
-            elseif isString( value ) then
+            elseif not isList( value ) then
                 result[ key ] = value
             else
                 ---@cast value dreamwork.std.XMLNode.Value[]
@@ -938,6 +1334,18 @@ do
         [ 0x20 ] = true  -- space
     }
 
+    --- Converts `\r\n` and `\r` line breaks to `\n`, as XML requires.
+    ---
+    ---@param str string
+    ---@return string
+    local function normalize_newlines( str )
+        if string_find( str, "\r", 1, true ) == nil then
+            return str
+        end
+
+        return (string_gsub( str, "\r\n?", "\n" ))
+    end
+
     --- Collapses a node without attributes and children into a plain string in its parent.
     ---
     ---@param node dreamwork.std.XMLNode
@@ -968,7 +1376,7 @@ do
             return
         end
 
-        if parent_value == nil or isString( parent_value ) or isNode( parent_value ) then
+        if not isList( parent_value ) then
             return
         end
 
@@ -982,7 +1390,7 @@ do
         end
     end
 
-    --- Appends text to the node, text next to child nodes is stored with an empty key `""`.
+    --- Appends text to the node, text next to child nodes is stored in slot `[1]`.
     ---
     ---@param node dreamwork.std.XMLNode
     ---@param text string
@@ -995,12 +1403,7 @@ do
             node.data = data .. text
         else
             ---@cast data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
-            local existing = data[ "" ]
-            if existing == nil then
-                data[ "" ] = text
-            else
-                data[ "" ] = existing .. text
-            end
+            text_append( node, data, text )
         end
     end
 
@@ -1014,12 +1417,26 @@ do
     function XMLNodeClass.fromTable( tbl, name )
         local node = XMLNodeClass( name or "root", nil, nil )
 
+        -- text slot from `toTable` has no position, so it goes first like in the serializer
+        local text = tbl[ 1 ]
+        if isString( text ) then
+            ---@cast text string
+            tree_text( node, text )
+        end
+
         for key, value in pairs( tbl ) do
+            if key == 1 and text ~= nil and value == text then
+                goto skip_entry
+            end
+
             if not isString( key ) then
                 key = tostring( key )
             end
 
-            if isNode( value ) then
+            if key == "1" and isString( value ) then
+                ---@cast value string
+                tree_text( node, value )
+            elseif isNode( value ) then
                 ---@cast value dreamwork.std.XMLNode
                 node:push( key, value )
             elseif isTable( value ) then
@@ -1032,53 +1449,204 @@ do
                 ---@cast value any
                 node:push( key, tostring( value ) )
             end
+
+            ::skip_entry::
         end
 
         return node
+    end
+
+    -- parse helpers take all state as arguments: closures over parser locals make the
+    -- backward `goto` of the parse loop close upvalues, which LuaJIT can not compile (NYI: UCLO)
+
+    ---@param xml_str string
+    ---@param from integer
+    ---@param to integer
+    ---@return boolean
+    local function has_newline( xml_str, from, to )
+        local newline = string_find( xml_str, "\n", from, true )
+        if newline ~= nil and newline <= to then
+            return true
+        end
+
+        local carriage = string_find( xml_str, "\r", from, true )
+        return carriage ~= nil and carriage <= to
+    end
+
+    ---@param xml_str string
+    ---@param from integer
+    ---@param to integer
+    ---@param is_cdata boolean
+    ---@param decoder nil | fun( name: string ): string | nil
+    ---@return string
+    local function segment_text( xml_str, from, to, is_cdata, decoder )
+        local text = normalize_newlines( string_sub( xml_str, from, to ) )
+        if is_cdata then
+            return text
+        end
+
+        return decode_entities( text, decoder )
+    end
+
+    --- Adds the collected text segments to the node.
+    ---
+    ---@param xml_str string
+    ---@param node dreamwork.std.XMLNode
+    ---@param preserve boolean Whether the text is kept as is.
+    ---@param decoder nil | fun( name: string ): string | nil
+    ---@param closing boolean Whether the next tag is the end tag of the node.
+    ---@param segment_start integer[]
+    ---@param segment_end integer[]
+    ---@param segment_first (integer | boolean)[] Position of the first non-space character, `false` for whitespace-only text and `true` for CDATA.
+    ---@param count integer
+    local function flush_text( xml_str, node, preserve, decoder, closing, segment_start, segment_end, segment_first, count )
+        local first_start, last_end = segment_start[ 1 ], segment_end[ count ]
+
+        if not preserve then
+            local has_content = false
+            for i = 1, count, 1 do
+                if segment_first[ i ] ~= false then
+                    has_content = true
+                    break
+                end
+            end
+
+            if not has_content then
+                return
+            end
+
+            -- the start of the element text is trimmed fully, later text only loses indentation
+            local first = segment_first[ 1 ]
+            if first ~= true then
+                local text_start = first or (segment_end[ 1 ] + 1)
+                ---@cast text_start integer
+
+                if text_start > first_start and (node.data == nil or has_newline( xml_str, first_start, text_start - 1 )) then
+                    first_start = text_start
+                end
+            end
+
+            -- the end of the element text is trimmed fully, text before a child only loses indentation
+            if segment_first[ count ] ~= true then
+                local lower = count == 1 and first_start or segment_start[ count ]
+
+                local text_end = last_end
+                while text_end >= lower and is_space[ string_byte( xml_str, text_end ) ] do
+                    text_end = text_end - 1
+                end
+
+                if text_end < last_end and (closing or has_newline( xml_str, text_end + 1, last_end )) then
+                    last_end = text_end
+                end
+            end
+        end
+
+        local text
+        if count == 1 then
+            if last_end < first_start then
+                return
+            end
+
+            text = segment_text( xml_str, first_start, last_end, segment_first[ 1 ] == true, decoder )
+        else
+            local pieces, piece_count = {}, 0
+
+            for i = 1, count, 1 do
+                local from = i == 1 and first_start or segment_start[ i ]
+                local to = i == count and last_end or segment_end[ i ]
+
+                if to >= from then
+                    piece_count = piece_count + 1
+                    pieces[ piece_count ] = segment_text( xml_str, from, to, segment_first[ i ] == true, decoder )
+                end
+            end
+
+            text = table_concat( pieces, "", 1, piece_count )
+        end
+
+        if text ~= "" then
+            tree_text( node, text )
+        end
     end
 
     --- [SHARED AND MENU]
     ---
     --- Converts an XML string to an XML node structure.
     ---
-    ---@param xml_str string
-    ---@return dreamwork.std.XMLNode | nil
-    function XMLNodeClass.fromString( xml_str )
+    --- By default the text of text-only elements is trimmed, in mixed content only indentation (whitespace with line breaks) is removed and whitespace-only text is skipped.
+    ---
+    --- With `keep_whitespace` or `xml:space="preserve"` all text is kept exactly as written.
+    ---
+    --- Line breaks are normalized to `\n`, attribute values are normalized as XML requires, character references and entities declared in the internal DOCTYPE subset are decoded.
+    ---
+    ---@param xml_str string The XML string to parse.
+    ---@param keep_whitespace? boolean Whether to keep all whitespace in text, defaults to `false`.
+    ---@return dreamwork.std.XMLNode | nil root_node The root node, or `nil` if the string has no elements.
+    function XMLNodeClass.fromString( xml_str, keep_whitespace )
+        keep_whitespace = keep_whitespace == true
+
+        local xml_length = string_len( xml_str )
+
         ---@type dreamwork.std.XMLNode | nil
         local active_node
 
         ---@type dreamwork.std.XMLNode | nil
         local root_node
 
-        -- text chunks of the active node, joined once the next tag starts
-        ---@type string[]
-        local text_buffer = {}
+        -- whether the text of the active node is kept as is
+        local preserve = keep_whitespace
+
+        ---@type table<dreamwork.std.XMLNode, boolean>
+        local preserving = {}
+
+        ---@type nil | fun( name: string ): string | nil
+        local decoder
+
+        -- text segments of the active node, flushed when the next element tag starts
+        ---@type integer[]
+        local segment_start = {}
+
+        ---@type integer[]
+        local segment_end = {}
+
+        -- position of the first non-space character, `false` for whitespace-only text and `true` for CDATA
+        ---@type (integer | boolean)[]
+        local segment_first = {}
 
         ---@type integer
-        local text_count = 0
+        local segment_count = 0
 
         ---@type integer
         local position = 1
+
+        -- UTF-8 BOM
+        local bom_1, bom_2, bom_3 = string_byte( xml_str, 1, 3 )
+        if bom_1 == 0xEF and bom_2 == 0xBB and bom_3 == 0xBF then
+            position = 4
+        end
 
         ::analyze_loop::
 
         local tag_start = string_find( xml_str, "<", position, true )
 
-        -- text before the next tag, trimmed
-        local text_start = string_find( xml_str, "%S", position )
-        if text_start ~= nil and (tag_start == nil or text_start < tag_start) then
+        local text_end = (tag_start or (xml_length + 1)) - 1
+        if text_end >= position then
+            local text_first = string_find( xml_str, "%S", position )
+            if text_first ~= nil and text_first > text_end then
+                text_first = nil
+            end
+
             if active_node == nil then
-                std.errorf( 2, false, "XML parsing failed, text outside of the root element at position %d", text_start )
-                return nil
+                if text_first ~= nil then
+                    std.errorf( 2, false, "XML parsing failed, text outside of the root element at position %d", text_first )
+                    return nil
+                end
+            else
+                segment_count = segment_count + 1
+                segment_start[ segment_count ] = position
+                segment_end[ segment_count ] = text_end
+                segment_first[ segment_count ] = text_first or false
             end
-
-            local text_end = (tag_start or (string_len( xml_str ) + 1)) - 1
-            while is_space[ string_byte( xml_str, text_end ) ] do
-                text_end = text_end - 1
-            end
-
-            text_count = text_count + 1
-            text_buffer[ text_count ] = decode_entities( string_sub( xml_str, text_start, text_end ) )
         end
 
         if tag_start == nil then
@@ -1132,8 +1700,12 @@ do
                     return nil
                 end
 
-                text_count = text_count + 1
-                text_buffer[ text_count ] = string_sub( xml_str, tag_start + 9, cdata_start - 1 )
+                if cdata_start > tag_start + 9 then
+                    segment_count = segment_count + 1
+                    segment_start[ segment_count ] = tag_start + 9
+                    segment_end[ segment_count ] = cdata_start - 1
+                    segment_first[ segment_count ] = true
+                end
 
                 position = cdata_end + 1
                 goto analyze_loop
@@ -1143,7 +1715,7 @@ do
             if b2 == 0x44 --[[ D ]] and b3 == 0x4F --[[ O ]] and b4 == 0x43 --[[ C ]] and b5 == 0x54 --[[ T ]] and
                 b6 == 0x59 --[[ Y ]] and b7 == 0x50 --[[ P ]] and b8 == 0x45 --[[ E ]] then
 
-                local _, doctype_end = string_find( xml_str, "^<!DOCTYPE[^%[>]*%b[]%s*>", tag_start )
+                local _, doctype_end, subset = string_find( xml_str, "^<!DOCTYPE[^%[>]*(%b[])%s*>", tag_start )
                 if doctype_end == nil then
                     _, doctype_end = string_find( xml_str, ">", tag_start, true )
                 end
@@ -1151,6 +1723,19 @@ do
                 if doctype_end == nil then
                     std.errorf( 2, false, "XML parsing failed, DOCTYPE is not closed at position %d", tag_start )
                     return nil
+                end
+
+                if subset ~= nil then
+                    -- internal entities, the first declaration wins, replacement text is plain text
+                    ---@type table<string, string>
+                    local entities = {}
+                    decoder = make_decoder( entities )
+
+                    for entity_name, _, entity_value in string_gmatch( subset, "<!ENTITY%s+([%w_:%.%-\128-\255]+)%s+([\"\'])(.-)%2%s*>" ) do
+                        if entities[ entity_name ] == nil then
+                            entities[ entity_name ] = decode_entities( normalize_newlines( entity_value ), decoder )
+                        end
+                    end
                 end
 
                 position = doctype_end + 1
@@ -1163,16 +1748,20 @@ do
 
         do
 
-            local _, name_end, closing, tag_name = string_find( xml_str, "^(/?)([%w_:%.%-]+)", tag_start + 1 )
+            local _, name_end, closing, tag_name = string_find( xml_str, "^(/?)([%w_:%.%-\128-\255]+)", tag_start + 1 )
             if name_end == nil then
                 std.errorf( 2, false, "XML parsing failed, invalid tag name at position %d", tag_start )
                 return nil
             end
 
-            if text_count ~= 0 then
-                ---@cast active_node dreamwork.std.XMLNode
-                tree_text( active_node, text_count == 1 and text_buffer[ 1 ] or table_concat( text_buffer, "", 1, text_count ) )
-                text_count = 0
+            if segment_count ~= 0 then
+                -- a single whitespace-only segment is indentation, nothing to add
+                if segment_count ~= 1 or segment_first[ 1 ] ~= false or preserve then
+                    ---@cast active_node dreamwork.std.XMLNode
+                    flush_text( xml_str, active_node, preserve, decoder, closing == "/", segment_start, segment_end, segment_first, segment_count )
+                end
+
+                segment_count = 0
             end
 
             ---@type table<string, string> | nil
@@ -1182,7 +1771,7 @@ do
 
             ::attribute_loop::
 
-            local _, attribute_end, attribute_key, quote = string_find( xml_str, "^%s*([%w_:%.%-]+)%s*=%s*([\"\'])", cursor )
+            local _, attribute_end, attribute_key, quote = string_find( xml_str, "^%s*([%w_:%.%-\128-\255]+)%s*=%s*([\"\'])", cursor )
             if attribute_end ~= nil then
                 local value_end = string_find( xml_str, quote, attribute_end + 1, true )
                 if value_end == nil then
@@ -1192,9 +1781,19 @@ do
 
                 if tag_attributes == nil then
                     tag_attributes = {}
+                elseif tag_attributes[ attribute_key ] ~= nil then
+                    std.errorf( 2, false, "XML parsing failed, duplicate attribute '%s' at position %d", attribute_key, attribute_end )
+                    return nil
                 end
 
-                tag_attributes[ attribute_key ] = decode_entities( string_sub( xml_str, attribute_end + 1, value_end - 1 ) )
+                local attribute_value = string_sub( xml_str, attribute_end + 1, value_end - 1 )
+
+                -- line breaks and tabs become spaces, character references are decoded afterwards so they stay
+                if string_find( attribute_value, "\n", 1, true ) ~= nil or string_find( attribute_value, "\r", 1, true ) ~= nil or string_find( attribute_value, "\t", 1, true ) ~= nil then
+                    attribute_value = string_gsub( normalize_newlines( attribute_value ), "[\t\n]", " " )
+                end
+
+                tag_attributes[ attribute_key ] = decode_entities( attribute_value, decoder )
 
                 cursor = value_end + 1
                 goto attribute_loop
@@ -1217,6 +1816,7 @@ do
 
                 tree_endtag( active_node, tag_name )
                 active_node = active_node.parent
+                preserve = keep_whitespace or (active_node ~= nil and preserving[ active_node ] == true)
             else
                 if active_node == nil and root_node ~= nil then
                     std.errorf( 2, false, "XML parsing failed, multiple root elements, '%s' at position %d", tag_name, tag_start )
@@ -1229,10 +1829,24 @@ do
                     root_node = active_node
                 end
 
+                if not keep_whitespace and tag_attributes ~= nil then
+                    local space = tag_attributes[ "xml:space" ]
+                    if space == "preserve" then
+                        preserve = true
+                    elseif space == "default" then
+                        preserve = false
+                    end
+                end
+
+                if preserve then
+                    preserving[ active_node ] = true
+                end
+
                 -- />
                 if self_closing == "/" then
                     tree_endtag( active_node, tag_name )
                     active_node = active_node.parent
+                    preserve = keep_whitespace or (active_node ~= nil and preserving[ active_node ] == true)
                 end
             end
 
