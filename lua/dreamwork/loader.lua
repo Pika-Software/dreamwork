@@ -1457,8 +1457,8 @@ dofile( "dreamwork/std/ipv6.lua" )
 sendfile( "dreamwork/std/ipv6.lua" )
 
 -- version class
--- dofile( "dreamwork/std/types/version.lua" )
--- sendfile( "dreamwork/std/types/version.lua" )
+dofile( "dreamwork/std/types/version.lua" )
+sendfile( "dreamwork/std/types/version.lua" )
 
 -- crc checksum clases
 dofile( "dreamwork/std/checksum/crc.lua" )
