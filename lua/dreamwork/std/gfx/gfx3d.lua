@@ -11,6 +11,8 @@ local glua_render = render or {}
 ---@diagnostic disable-next-line: undefined-global
 local glua_cam = cam or {}
 
+-- TODO: engine proxy for vectors, angles and etc
+
 --- [CLIENT]
 ---
 --- The library with powerful set of functions that let you control how the world and its contents are rendered.
@@ -74,8 +76,8 @@ do
     ---@field top number Where the top edge ends, natural value is equal to `h` (the height of the viewport).
 
     ---@class dreamwork.std.gfx3d.RenderView
-    ---@field origin Vector3 | nil The position to render from.
-    ---@field angles Angle3 | nil The angles to render from.
+    ---@field origin dreamwork.std.Vector3 | nil The position to render from.
+    ---@field angles dreamwork.std.Angle3 | nil The angles to render from.
     ---@field fov integer | nil The field of view of the view port.
     ---@field x integer | nil The x position of the view port
     ---@field y integer | nil The y position of the view port
@@ -108,8 +110,8 @@ do
     ---
     ---
     ---
-    ---@param origin Vector3
-    ---@param angles Angle3
+    ---@param origin dreamwork.std.Vector3
+    ---@param angles dreamwork.std.Angle3
     ---@param scale number
     function gfx3d.start2d( origin, angles, scale )
         cam_Start3D2D( origin, angles, scale )
@@ -150,8 +152,8 @@ do
     ---
     ---
     ---
-    ---@param start_position Vector3
-    ---@param end_position Vector3
+    ---@param start_position dreamwork.std.Vector3
+    ---@param end_position dreamwork.std.Vector3
     ---@param width number
     ---@param texture_end number
     ---@param color dreamwork.std.Color
@@ -191,7 +193,7 @@ do
     local render_EndBeam = glua_render.EndBeam
 
     ---@class dreamwork.std.gfx3d.ComplexBeamSegment
-    ---@field origin Vector3
+    ---@field origin dreamwork.std.Vector3
     ---@field width number
     ---@field texture_end number
     ---@field color dreamwork.std.Color

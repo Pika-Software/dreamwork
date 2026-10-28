@@ -40,12 +40,12 @@ do
 
             if is_bytecode then
                 return loadbytecode( content, env )
-            else
-                return loadstring( content, file_path, env )
             end
-        else
-            return nil, content
+
+            return loadstring( content, file_path, env )
         end
+
+        return nil, content
     end
 
 end

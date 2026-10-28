@@ -546,6 +546,8 @@ do
             end
         end
 
+        -- TODO: NetworkEntityCreated
+
 
         -- engine
         event_handlers[ "ShutDown" ] = handler_empty
