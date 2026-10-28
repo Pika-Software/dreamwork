@@ -1688,9 +1688,9 @@ end
 dofile( "dreamwork/std/types/big_integer.lua" )
 sendfile( "dreamwork/std/types/big_integer.lua" )
 
--- -- BigFixed class
--- dofile( "dreamwork/std/types/big_fixed.lua" )
--- sendfile( "dreamwork/std/types/big_fixed.lua" )
+-- BigFixed class
+dofile( "dreamwork/std/types/big_fixed.lua" )
+sendfile( "dreamwork/std/types/big_fixed.lua" )
 
 -- -- ByteReader class
 -- dofile( "dreamwork/std/types/binary_reader.lua" )
