@@ -8,8 +8,6 @@ local raw = std.raw
 local raw_get = raw.get
 local raw_select = raw.select
 
-local xpcall = std.xpcall
-local pcall = std.pcall
 local error = std.error
 
 
@@ -33,9 +31,8 @@ local error = std.error
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
 ---
 ---@field setmetatable fun( object: any, metatable: ( metatable | nil ) )
-local debug = std.debug or {
+local debug = {
     -- LuaJIT
-    ---@diagnostic disable-next-line: deprecated
     newproxy = newproxy,
     fempty = function() end, -- yep, it's literally empty function
 
@@ -78,8 +75,6 @@ if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == ni
     error( "execution environment is broken or sandboxed - it's over ;c" )
 end
 
-local debug_getmetatable = debug.getmetatable
-local debug_getlocal = debug.getlocal
 local debug_getinfo = debug.getinfo
 local debug_fempty = debug.fempty
 
@@ -165,44 +160,50 @@ do
 
 end
 
---- [SHARED AND MENU]
----
---- Returns all available local variables at the given stack level (and, optionally,
---- in the given thread/coroutine) as a table keyed by variable name.
----
----@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
----@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
----@return table<string, any> values A table mapping each local variable's name to its current value.
----@return integer value_count The number of locals found.
-function debug.getlocals( stack_level, thread )
-    if stack_level == nil or stack_level < 2 then
-        stack_level = 2
-    else
-        stack_level = stack_level + 1
+do
+
+    local debug_getlocal = debug.getlocal
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns all available local variables at the given stack level (and, optionally,
+    --- in the given thread/coroutine) as a table keyed by variable name.
+    ---
+    ---@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
+    ---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
+    ---@return table<string, any> values A table mapping each local variable's name to its current value.
+    ---@return integer value_count The number of locals found.
+    function debug.getlocals( stack_level, thread )
+        if stack_level == nil or stack_level < 2 then
+            stack_level = 2
+        else
+            stack_level = stack_level + 1
+        end
+
+        ---@type table<string, any>
+        local values = {}
+
+        ---@type integer
+        local index = 1
+
+        ::getlocals_loop::
+
+        local key, value
+        if thread == nil then
+            key, value = debug_getlocal( stack_level, index )
+        else
+            key, value = debug_getlocal( thread, stack_level, index )
+        end
+
+        if key ~= nil then
+            values[ key ] = value
+            index = index + 1
+            goto getlocals_loop
+        end
+
+        return values, index - 1
     end
 
-    ---@type table<string, any>
-    local values = {}
-
-    ---@type integer
-    local index = 1
-
-    ::getlocals_loop::
-
-    local key, value
-    if thread == nil then
-        key, value = debug_getlocal( stack_level, index )
-    else
-        key, value = debug_getlocal( thread, stack_level, index )
-    end
-
-    if key ~= nil then
-        values[ key ] = value
-        index = index + 1
-        goto getlocals_loop
-    end
-
-    return values, index - 1
 end
 
 --- [SHARED AND MENU]
@@ -574,28 +575,34 @@ function debug.initmetatable( name )
     return metatable
 end
 
--- gmod developer/s sanity check
-if debug_getmetatable( debug_fempty ) == nil then
-    debug.setmetatable( debug_fempty, {} )
-end
+do
 
-if debug_getmetatable( debug_fempty ) == nil then
+    local debug_getmetatable = debug.getmetatable
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the metatable of the given value, or `nil` if it doesn't have one.
-    ---
-    --- Unlike the standard `getmetatable`, this ignores the `__metatable` field, so it can
-    --- reach metatables that are protected from normal code.
-    ---
-    --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
-    ---
-    ---@param object any The value to get the metatable of.
-    ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
-    function debug.getmetatable( object )
-        return debug_getmetatable( object ) or registry[ raw_type( object ) ]
+    -- gmod developer/s sanity check
+    if debug_getmetatable( debug_fempty ) == nil then
+        debug.setmetatable( debug_fempty, {} )
     end
 
-    raw.print( "at any cost, but we'll build it once again..." )
+    if debug_getmetatable( debug_fempty ) == nil then
+
+        --- [SHARED AND MENU]
+        ---
+        --- Returns the metatable of the given value, or `nil` if it doesn't have one.
+        ---
+        --- Unlike the standard `getmetatable`, this ignores the `__metatable` field, so it can
+        --- reach metatables that are protected from normal code.
+        ---
+        --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.getmetatable)
+        ---
+        ---@param object any The value to get the metatable of.
+        ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
+        function debug.getmetatable( object )
+            return debug_getmetatable( object ) or registry[ raw_type( object ) ]
+        end
+
+        raw.print( "at any cost, but we'll build it once again..." )
+
+    end
 
 end
