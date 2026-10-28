@@ -574,6 +574,7 @@ do
     --- Calculates the Adler-32 checksum of the specified string.
     ---
     ---@param raw_str string The string is used to calculate checksum.
+    ---@return integer checksum The checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
     function Adler32Class.digest( raw_str )
         return adler32:reset():update( raw_str ):digest()
     end

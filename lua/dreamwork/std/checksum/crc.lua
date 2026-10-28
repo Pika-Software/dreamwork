@@ -1,5 +1,8 @@
-local glua_util = util
-local util_CRC = glua_util ~= nil and glua_util.CRC
+local util_CRC
+
+if util ~= nil then
+    util_CRC = util.CRC
+end
 
 ---@class dreamwork.std
 local std = dreamwork.std

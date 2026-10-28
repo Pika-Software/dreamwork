@@ -103,6 +103,7 @@ do
     ---@type table<string, boolean>
     local non_inheritable = {
         __private = true,
+        __parent = true,
         __class = true,
         __base = true,
         __type = true,
