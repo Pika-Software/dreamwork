@@ -48,6 +48,7 @@ if table.pack == nil then
     ---@generic V
     ---@param ... V
     ---@return V[]
+    ---@nodiscard
     ---@diagnostic disable-next-line: duplicate-set-field
     function table.pack( ... )
         return { n = raw_select( "#", ... ), ... }
@@ -166,6 +167,7 @@ do
     ---@generic V
     ---@param tbl V[] The table to copy.
     ---@return V[] The copied table.
+    ---@nodiscard
     function table.shallowCopy( tbl )
         return { table_unpack( tbl ) }
     end
@@ -181,6 +183,7 @@ do
     ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
     ---@return V[] range_values The values of the range.
     ---@return integer range_length The length of the range.
+    ---@nodiscard
     function table.range( tbl, start_position, end_position, tbl_length )
         if tbl_length == nil then
             tbl_length = len( tbl )
@@ -209,6 +212,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] slice The slice of the table.
 ---@return integer length The length of the sliced table.
+---@nodiscard
 function table.slice( tbl, start_position, end_position, step, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -258,6 +262,7 @@ end
 ---@param tbl V[] The table to truncate.
 ---@param tbl_length? integer The length of the truncated table. Optionally, it should be used to speed up calculations.
 ---@return V[] truncated The truncated table.
+---@nodiscard
 function table.truncated( tbl, tbl_length )
     local truncated = {}
 
@@ -369,6 +374,7 @@ end
 ---
 ---@param tbl table The table to check.
 ---@return boolean result `true` if the table is empty, `false` otherwise.
+---@nodiscard
 function table.isEmpty( tbl )
     return next( tbl ) == nil
 end
@@ -384,6 +390,7 @@ end
 ---@param searchable V The value to search for.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The index of the value.
+---@nodiscard
 function table.getIndex( tbl, searchable, tbl_length )
     for index = 1, tbl_length or len( tbl ), 1 do
         if tbl[ index ] == searchable then
@@ -404,6 +411,7 @@ end
 ---@param tbl table<K, V> The table to search.
 ---@param searchable V The value to search for.
 ---@return K | nil key The key of the value.
+---@nodiscard
 function table.getKey( tbl, searchable )
     local key, value = next( tbl, nil )
 
@@ -426,6 +434,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return K[] key_lst The list of keys.
 ---@return integer key_count The length of the list.
+---@nodiscard
 function table.keys( tbl )
     local key = next( tbl, nil )
     local keys, key_count = {}, 0
@@ -447,6 +456,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return V[] value_lst The list of values.
 ---@return integer value_count The length of the list.
+---@nodiscard
 function table.values( tbl )
     local key, value = next( tbl, nil )
     local values, value_count = {}, 0
@@ -467,6 +477,7 @@ end
 ---@generic K, V
 ---@param tbl table<K, V> The table.
 ---@return integer key_count The count of keys.
+---@nodiscard
 function table.count( tbl )
     local key, key_count = next( tbl, nil ), 0
 
@@ -511,6 +522,7 @@ end
 ---@generic K, V
 ---@param tbl table<K, V> The table to flip.
 ---@return table<V, K> result The flipped table.
+---@nodiscard
 function table.flipped( tbl )
     local key, value = next( tbl, nil )
     local result = {}
@@ -535,6 +547,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return dreamwork.std.table.Pair<K, V>[] result The list of key/value pairs ( sequential table ).
 ---@return integer result_length The length of the list.
+---@nodiscard
 function table.pairs( tbl )
     local result, result_length = {}, 0
     local key, value = next( tbl, nil )
@@ -554,6 +567,7 @@ end
 ---
 ---@param tbl table The table to check.
 ---@return boolean is_sequential `true` if the table is sequential, `false` otherwise.
+---@nodiscard
 function table.isSequential( tbl )
     local key, index = next( tbl, nil ), 1
 
@@ -626,6 +640,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V value The random value.
 ---@return integer | nil index The index of the value.
+---@nodiscard
 function table.randomVI( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -649,6 +664,7 @@ end
 ---@param tbl table<K, V> The key-value table.
 ---@return V value The random value.
 ---@return K key The key of the value.
+---@nodiscard
 function table.randomVK( tbl )
     local key, key_count = next( tbl, nil ), 0
     while key ~= nil do
@@ -730,6 +746,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] reversed The reversed table.
 ---@return integer length The length of the reversed table.
+---@nodiscard
 function table.reversed( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -756,6 +773,7 @@ do
     ---@param value V The value to fill the table with.
     ---@param ... integer The sizes of the table.
     ---@return V[] tbl The created table.
+    ---@nodiscard
     local function create( value, size, ... )
         if size == nil then
             return value
@@ -785,6 +803,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] values The extracted values.
 ---@return integer length The length of the extracted values.
+---@nodiscard
 function table.extract( tbl, start_position, end_position, step_size, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -816,6 +835,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
 ---@return V[] mapped The new mapped sequential table.
 ---@return integer mapped_length The length of the new mapped sequential table.
+---@nodiscard
 function table.map( tbl, fn, tbl_length )
     local mapped, mapped_length = {}, 0
 
@@ -850,6 +870,7 @@ do
     ---@param tbl table<K, V> The key/value table.
     ---@param fn fun( key: K, value: V ): V | nil The function to apply.
     ---@return table<K, V> transformed The new transformed key/value table.
+    ---@nodiscard
     function table.transform( tbl, fn )
         local transformed = {}
 
@@ -948,6 +969,7 @@ do
     ---@generic T
     ---@param tbl T The table to copy.
     ---@return T copy The copied table.
+    ---@nodiscard
     local function copy_fn( tbl )
         local fn = debug_getmetavalue( tbl, "__copy" )
         if fn ~= nil then

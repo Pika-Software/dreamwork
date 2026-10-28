@@ -105,6 +105,7 @@ if ffi == nil then
 
     ---@param value any
     ---@return boolean is_vector2
+    ---@nodiscard
     function isVector2( value )
         return debug_getmetatable( value ) == Vector2
     end
@@ -125,6 +126,7 @@ else
 
     ---@param value any
     ---@return boolean is_vector2
+    ---@nodiscard
     function isVector2( value )
         return ffi_istype( Vector2_ctype, value )
     end
@@ -192,6 +194,7 @@ end
 ---
 ---@return number x The x coordinate of the vector.
 ---@return number y The y coordinate of the vector.
+---@nodiscard
 function Vector2:unpack()
     return self.x, self.y
 end
@@ -225,6 +228,7 @@ end
 ---
 ---@param self dreamwork.std.Vector2 The vector.
 ---@return dreamwork.std.Vector2 copy The new vector.
+---@nodiscard
 local function Vector2_copy( self )
     return Vector2_create( self.x, self.y )
 end
@@ -236,6 +240,7 @@ Vector2.copy = Vector2_copy
 --- Checks if all coordinates of the vector are exactly zero.
 ---
 ---@return boolean is_zero `true` if the vector is zero, `false` otherwise.
+---@nodiscard
 function Vector2:isZero()
     return self.x == 0 and self.y == 0
 end
@@ -259,6 +264,7 @@ end
 ---@param vector dreamwork.std.Vector2 The vector to check.
 ---@param tolerance number The maximum allowed difference per coordinate.
 ---@return boolean is_near `true` if the vectors are equal within the tolerance, otherwise `false`.
+---@nodiscard
 function Vector2:isNear( vector, tolerance )
     return math_abs( self.x - vector.x ) <= tolerance and math_abs( self.y - vector.y ) <= tolerance
 end
@@ -301,6 +307,7 @@ Vector2.scale = Vector2_scale
 ---
 ---@param scale number The scale factor.
 ---@return dreamwork.std.Vector2 scaled_vec2 The new vector.
+---@nodiscard
 function Vector2:getScaled( scale )
     return Vector2_create( self.x * scale, self.y * scale )
 end
@@ -433,21 +440,24 @@ function Vector2:div( value )
     return self
 end
 
---- `vec2 / number` and `vec2 / vec2` ( component-wise ), `number / vec2` is not supported.
+--- `vec2 / number`, `vec2 / vec2` and `number / vec2` ( component-wise ).
 ---
 --- e.g. `position / screen_size` converts pixels into the [0, 1] range.
 ---
----@param value dreamwork.std.Vector2 | number The divisor vector or number.
+---@param a dreamwork.std.Vector2 | number
+---@param b dreamwork.std.Vector2 | number
 ---@return dreamwork.std.Vector2 quotient The new vector.
 ---@protected
-function Vector2:__div( value )
-    if isNumber( value ) then
-        ---@cast value number
-        return Vector2_create( self.x / value, self.y / value )
+function Vector2.__div( a, b )
+    if isNumber( a ) then
+        ---@cast a number
+        return Vector2_create( a / b.x, a / b.y )
+    elseif isNumber( b ) then
+        ---@cast b number
+        return Vector2_create( a.x / b, a.y / b )
     end
 
-    ---@cast value dreamwork.std.Vector2
-    return Vector2_create( self.x / value.x, self.y / value.y )
+    return Vector2_create( a.x / b.x, a.y / b.y )
 end
 
 --- [SHARED AND MENU]
@@ -456,6 +466,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector2 The other vector.
 ---@return number dot_product The dot product of two vectors.
+---@nodiscard
 function Vector2:dot( vector )
     return self.x * vector.x + self.y * vector.y
 end
@@ -468,6 +479,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector2 The other vector.
 ---@return number cross_product The cross product of two vectors.
+---@nodiscard
 function Vector2:cross( vector )
     return self.x * vector.y - self.y * vector.x
 end
@@ -480,6 +492,7 @@ end
 ---
 ---@param self dreamwork.std.Vector2 The vector.
 ---@return number length The squared length of the vector.
+---@nodiscard
 local function Vector2_getLengthSqr( self )
     local x, y = self.x, self.y
     return x * x + y * y
@@ -493,6 +506,7 @@ Vector2.getLengthSqr = Vector2_getLengthSqr
 ---
 ---@param self dreamwork.std.Vector2 The vector.
 ---@return number length The length of the vector.
+---@nodiscard
 local function Vector2_getLength( self )
     return math_sqrt( Vector2_getLengthSqr( self ) )
 end
@@ -507,6 +521,7 @@ Vector2.getLength = Vector2_getLength
 ---
 ---@param vector dreamwork.std.Vector2 The other vector.
 ---@return number distance The squared distance between the two vectors.
+---@nodiscard
 function Vector2:getDistanceSqr( vector )
     local x, y = vector.x - self.x, vector.y - self.y
     return x * x + y * y
@@ -518,6 +533,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector2 The other vector.
 ---@return number distance The distance between the two vectors.
+---@nodiscard
 function Vector2:getDistance( vector )
     local x, y = vector.x - self.x, vector.y - self.y
     return math_sqrt( x * x + y * y )
@@ -549,6 +565,7 @@ Vector2.normalize = Vector2_normalize
 --- Zero vector returns a zero copy.
 ---
 ---@return dreamwork.std.Vector2 normalized_vec2 The new vector.
+---@nodiscard
 function Vector2:getNormalized()
     return Vector2_normalize( Vector2_copy( self ) )
 end
@@ -562,6 +579,7 @@ end
 ---@param self dreamwork.std.Vector2 The vector.
 ---@param up? dreamwork.std.Vector2 The direction of the angle.
 ---@return number degrees The angle of the vector.
+---@nodiscard
 local function Vector2_getAngle( self, up )
     if up == nil then
         return 360 - math_deg( math_atan2( self.x, self.y ) )
@@ -596,6 +614,7 @@ Vector2.rotate = Vector2_rotate
 ---
 ---@param degrees number The rotation angle.
 ---@return dreamwork.std.Vector2 rotated_vec2 The new vector.
+---@nodiscard
 function Vector2:getRotated( degrees )
     return Vector2_rotate( Vector2_copy( self ), degrees )
 end
@@ -634,6 +653,7 @@ Vector2.lerp = Vector2_lerp
 ---@param target dreamwork.std.Vector2 | number The target vector or a number ( used for every coordinate ).
 ---@param frac number The interpolation factor.
 ---@return dreamwork.std.Vector2 lerped_vec2 The new vector.
+---@nodiscard
 local function Vector2_getLerped( self, target, frac )
     return Vector2_lerp( Vector2_copy( self ), target, frac )
 end

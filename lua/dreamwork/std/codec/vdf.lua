@@ -140,6 +140,7 @@ if glua_util.TableToKeyValues == nil then
     ---@param tbl table The table to convert.
     ---@param root_key string? The root key name, defaults to `TableToKeyValues`.
     ---@return string key_values The KeyValues string.
+    ---@nodiscard
     function vdf.serialize( tbl, root_key )
         local buffer = {
             "\"",
@@ -406,6 +407,7 @@ end
 ---@param uses_escape_sequences boolean? If set to `true`, will replace `\t`, `\n`, `\"` and `\\` with their escaped variants.
 ---@param preserve_key_case boolean? Whether to preserve key case or not (always lowercase).
 ---@return table result The converted table.
+---@nodiscard
 function vdf.deserialize( key_values, uses_escape_sequences, preserve_key_case )
     if not isString( key_values ) then
         error( "bad argument #1 to 'decode' (string expected)", 2 )

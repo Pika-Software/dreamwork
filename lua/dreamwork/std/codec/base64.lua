@@ -63,6 +63,7 @@ std.base64 = base64
 ---
 ---@param alphabet_str string The alphabet string, 64 unique non-whitespace characters.
 ---@return dreamwork.std.base64.Alphabet alphabet The alphabet.
+---@nodiscard
 function base64.alphabet( alphabet_str )
     if string_len( alphabet_str ) ~= 64 then
         error( "alphabet must be 64 characters long", 2 )
@@ -533,6 +534,7 @@ end
 ---@param raw_str string The string to encode.
 ---@param options? dreamwork.std.base64.Options The base64 encoding options, default is the standard variant.
 ---@return string base64_str The encoded string.
+---@nodiscard
 function base64.encode( raw_str, options )
     local alphabet, pad_byte, wrap, eol
 
@@ -573,6 +575,7 @@ end
 ---@param base64_str string The base64 encoded string to decode.
 ---@param options? dreamwork.std.base64.Options The base64 encoding options, default is the standard variant.
 ---@return string raw_str The decoded string.
+---@nodiscard
 function base64.decode( base64_str, options )
     local alphabet, pad_byte
 
@@ -606,6 +609,7 @@ end
 ---@param options? dreamwork.std.base64.Options The base64 encoding options, default is the standard variant.
 ---@return boolean is_valid `true` if the base64 string is valid, `false` otherwise
 ---@return nil | string err_msg The error message.
+---@nodiscard
 function base64.validate( base64_str, options )
     local alphabet, pad_byte
 

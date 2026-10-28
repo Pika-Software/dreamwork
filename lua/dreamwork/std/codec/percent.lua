@@ -44,6 +44,7 @@ std.percent = percent
 ---@param pattern_str string The pattern.
 ---@param base? table The base table, optional.
 ---@return table<integer, boolean> whitelist The character whitelist.
+---@nodiscard
 function percent.whitelist( pattern_str, base )
     local whitelist = {}
 
@@ -324,6 +325,7 @@ end
 ---@param whitelist? table<integer, boolean> The character whitelist, bytes in it are left as is, optional.
 ---@param ignore_spaces? boolean If `true`, spaces are encoded as `"%20"` instead of `"+"`, optional.
 ---@return string percent_str The encoded string.
+---@nodiscard
 function percent.encode( raw_str, whitelist, ignore_spaces )
     return encode( raw_str, whitelist or default_whitelist, ignore_spaces ~= true )
 end
@@ -342,6 +344,7 @@ end
 ---@param percent_str string The string to decode.
 ---@param ignore_spaces? boolean If `true`, `"+"` is kept as is instead of being decoded as a space, optional.
 ---@return string raw_str The decoded string.
+---@nodiscard
 function percent.decode( percent_str, ignore_spaces )
     return decode( percent_str, ignore_spaces ~= true )
 end
@@ -358,6 +361,7 @@ end
 ---@param ignore_spaces? boolean If `true`, `"+"` is not allowed unless whitelisted, optional.
 ---@return boolean is_valid `true` if the percent string is valid, otherwise `false`.
 ---@return nil | string err_msg The error message.
+---@nodiscard
 function percent.validate( percent_str, whitelist, ignore_spaces )
     if whitelist == nil then
         whitelist = default_whitelist

@@ -80,6 +80,7 @@ BigFixedClass.DEFAULT_SCALE = 18
 ---
 ---@param value any The value to check.
 ---@return boolean is_bigfixed `true` if the value is a `BigFixed`, `false` otherwise.
+---@nodiscard
 local function isBigFixed( value )
     return debug_getmetatable( value ) == BigFixed
 end
@@ -135,6 +136,7 @@ end
 --- Returns the current scale ( number of fractional digits ) of the object.
 ---
 ---@return integer scale
+---@nodiscard
 function BigFixed:getScale()
     return self.scale
 end
@@ -275,6 +277,7 @@ do
     ---@param value any The value to convert to a `BigFixed`.
     ---@param scale? integer The number of fractional digits to keep. Defaults to `BigFixed.DEFAULT_SCALE`.
     ---@return dreamwork.std.BigFixed obj
+    ---@nodiscard
     function std.toBigFixed( value, scale )
         if isBigFixed( value ) and (scale == nil or scale == value.scale) then
             ---@cast value dreamwork.std.BigFixed
@@ -340,6 +343,7 @@ end
 --- Checks if a big fixed object is zero.
 ---
 ---@return boolean is_zero
+---@nodiscard
 function BigFixed:isZero()
     return self.mantissa:isZero()
 end
@@ -349,6 +353,7 @@ end
 --- Checks if a big fixed object is negative.
 ---
 ---@return boolean is_negative
+---@nodiscard
 function BigFixed:isNegative()
     return self.mantissa.sign
 end
@@ -363,6 +368,7 @@ end
 --- Makes a copy of the `BigFixed` object.
 ---
 ---@return dreamwork.std.BigFixed new_obj
+---@nodiscard
 function BigFixed:copy()
     return setmetatable( {
         mantissa = self.mantissa:copy(),
@@ -422,6 +428,7 @@ end
 ---
 ---@param value any The value to compare with ( converted into `BigFixed` ).
 ---@return `-1` | `0` | `1` result `-1` if `self < value`, `0` if equal, `1` if `self > value`.
+---@nodiscard
 function BigFixed:compare( value )
     return compare( self, toOperand( value, BigFixedClass.DEFAULT_SCALE ) )
 end
@@ -593,6 +600,7 @@ BigFixed.__idiv = BigFixed.__div
 --- Converts a `BigFixed` object to a `BigInteger`, truncating the fractional part.
 ---
 ---@return dreamwork.std.BigInteger obj
+---@nodiscard
 function BigFixed:toBigInteger()
     if self.scale == 0 then
         return self.mantissa:copy()
@@ -606,6 +614,7 @@ end
 --- Converts a `BigFixed` object to a decimal string.
 ---
 ---@return string str
+---@nodiscard
 function BigFixed:toString()
     local mantissa = self.mantissa
     local scale = self.scale
@@ -668,6 +677,7 @@ end
 --- for values that don't fit in a double ).
 ---
 ---@return number value
+---@nodiscard
 function BigFixed:toNumber()
     return tonumber( BigFixed_toString( self ) ) or 0
 end

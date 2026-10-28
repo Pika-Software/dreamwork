@@ -134,6 +134,7 @@ do
     ---@param fn function The function to get upvalues from.
     ---@return table<string, any> values A table mapping each upvalue's name to its current value.
     ---@return integer value_count The number of upvalues found.
+    ---@nodiscard
     function debug.getupvalues( fn )
         ---@type table<string, any>
         local values = {}
@@ -173,6 +174,7 @@ do
     ---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
     ---@return table<string, any> values A table mapping each local variable's name to its current value.
     ---@return integer value_count The number of locals found.
+    ---@nodiscard
     function debug.getlocals( stack_level, thread )
         if stack_level == nil or stack_level < 2 then
             stack_level = 2
@@ -212,6 +214,7 @@ end
 ---
 ---@param level integer The stack level.
 ---@return function | nil The function at the given level, or `nil` if the level is invalid.
+---@nodiscard
 function debug.getf( level )
     local info = debug_getinfo( level + 1, "f" )
     if info == nil then
@@ -253,6 +256,7 @@ local raw_type = raw.type
 ---@param location? integer The function or stack level.
 ---@return string | nil name The name of the function, or `nil` if unknown.
 ---@return "global" | "local" | "method" | "field" | "upvalue" | nil name_what The kind of the function, or `nil` if unknown.
+---@nodiscard
 function debug.getfname( location )
     if location == nil then
         location = 2
@@ -279,6 +283,7 @@ end
 ---
 ---@param location function | integer The function or stack level to get the path from.
 ---@return string | nil file_path The file path or `nil` if not found.
+---@nodiscard
 function debug.getfsource( location )
     if location == nil then
         location = 2
@@ -300,6 +305,7 @@ end
 ---
 ---@param stack_level? integer The stack `stack_level` to get the main function from.
 ---@return function | nil main_fn The main function or `nil` if not found.
+---@nodiscard
 function debug.getfmain( stack_level )
     if stack_level == nil or stack_level < 2 then
         stack_level = 2
@@ -333,6 +339,7 @@ end
 ---@param max_levels? integer Maximum number of frames to read (after `head_skip` is applied). Stack walking stops as soon as this many frames have been collected, so no `debug.getinfo` call is made beyond that point. `tail_skip` is still applied afterward to this (already capped) set. `nil`/`0` means no limit.
 ---@return debuginfo[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
+---@nodiscard
 function debug.getstack( stack_level, what, head_skip, tail_skip, max_levels )
     if stack_level == nil or stack_level < 2 then
         stack_level = 2
@@ -385,6 +392,7 @@ end
 ---
 ---@param location integer | function The function or stack level.
 ---@return boolean iscf `true` if the function is a C function, `false` otherwise.
+---@nodiscard
 function debug.iscf( location )
     if raw_type( location ) == "number" then
         location = location + 1
@@ -428,6 +436,7 @@ end
 ---@param stack_level integer The stack level to start checking from (`1` = the function calling `calledby`). Values below `1` are treated as `1`.
 ---@param ... function The functions to look for on the call stack.
 ---@return boolean result `true` if any of the given functions is on the stack at or above `stack_level`, `false` otherwise.
+---@nodiscard
 function debug.calledby( stack_level, ... )
     if stack_level < 2 then
         stack_level = 2
@@ -514,6 +523,7 @@ do
         ---
         ---@param name string The name of the metatable.
         ---@return metatable | nil meta The metatable.
+        ---@nodiscard
         function debug.findmetatable( name )
             local cached = registry[ name ]
             if cached ~= nil then
@@ -597,6 +607,7 @@ do
         ---
         ---@param object any The value to get the metatable of.
         ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
+        ---@nodiscard
         function debug.getmetatable( object )
             return debug_getmetatable( object ) or registry[ raw_type( object ) ]
         end

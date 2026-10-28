@@ -62,6 +62,7 @@ std.class = class
 ---
 ---@param value any The value to check for being a class.
 ---@return boolean is_class `true` if `value` is a class, `false` otherwise.
+---@nodiscard
 function std.isClass( value )
     if not isTable( value ) then return false end
 
@@ -77,6 +78,7 @@ end
 ---
 ---@param value any The value to check for being a object.
 ---@return boolean is_object `true` is `value` is a object created by class, `false` otherwise.
+---@nodiscard
 function std.isObject( value )
     local base = debug_getmetatable( value )
     if base == nil then return false end
@@ -94,6 +96,7 @@ std.gc.setTableRules( templates, true, false )
 
 ---@param obj dreamwork.std.Object The object to convert to a string.
 ---@return string str The string representation of the object.
+---@nodiscard
 local function __tostring( obj )
     return string_format( "%s: %p", debug_getmetavalue( obj, "__type" ) or "unknown", obj )
 end
@@ -117,6 +120,7 @@ do
     ---@param private? boolean If the class is private.
     ---@param parent? dreamwork.std.Class | unknown The parent of the class.
     ---@return dreamwork.std.Object base The base of the class.
+    ---@nodiscard
     function class.base( name, private, parent )
         local base
 
@@ -180,6 +184,7 @@ do
     ---@param obj dreamwork.std.Object The object to initialize.
     ---@param ... any? Arguments to pass to the constructor.
     ---@return dreamwork.std.Object object The initialized object.
+    ---@nodiscard
     local function class_init( base, obj, ... )
         local init_fn = raw_get( base, "__init" )
         if init_fn ~= nil then
@@ -198,6 +203,7 @@ do
     ---@generic T : dreamwork.std.Object
     ---@param base T The base object, aka metatable.
     ---@return T obj The new object.
+    ---@nodiscard
     local function class_new( base )
         if raw_get( base, "__private" ) then
             ---@diagnostic disable-next-line: return-type-mismatch
@@ -213,6 +219,7 @@ do
 
     ---@param self dreamwork.std.Class The class.
     ---@return dreamwork.std.Object obj The new object.
+    ---@nodiscard
     function class__call( self, ... )
         ---@type dreamwork.std.Object | nil
         local obj
@@ -294,6 +301,7 @@ end
 ---@param obj dreamwork.std.Object The object to check for being an instance of the given class.
 ---@param cls dreamwork.std.Class | dreamwork.std.Object The class to check against.
 ---@return boolean is_instance `true` if `obj` is an instance of the given class, `false` otherwise.
+---@nodiscard
 function class.isInherited( obj, cls )
     local obj_base = debug_getmetatable( obj )
     local cls_base = raw_get( cls, "__base" )

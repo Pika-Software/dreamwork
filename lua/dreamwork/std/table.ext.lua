@@ -31,6 +31,7 @@ local table = std.table
 ---@param path string The key path to get.
 ---@param separator? integer The separator of the key path, default is `0x2E`.
 ---@return any value The value of the key path.
+---@nodiscard
 function table.get( tbl, path, separator )
     if separator == nil then
         separator = 0x2E --[[ "." ]]

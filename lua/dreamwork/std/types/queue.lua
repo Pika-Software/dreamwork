@@ -81,6 +81,7 @@ end
 ---@generic T
 ---@param self dreamwork.std.Queue<T>
 ---@return boolean is_empty Returns `true` if the queue has no values, otherwise `false`.
+---@nodiscard
 function Queue:isEmpty()
     return self.front == self.back
 end
@@ -108,6 +109,7 @@ end
 ---@param self dreamwork.std.Queue<T>
 ---@param from_tail? boolean If `true`, returns the value at the back of the queue.
 ---@return T | nil value The value at the front of the queue, or `nil` if the queue is empty.
+---@nodiscard
 function Queue:peek( from_tail )
     return self[ from_tail and self.front or (self.back + 1) ]
 end
@@ -183,6 +185,7 @@ end
 ---@return fun( queue: dreamwork.std.Queue<T>, from_tail: boolean ): T iterator The iterator function.
 ---@return dreamwork.std.Queue<T> queue The queue being iterated over.
 ---@return boolean from_tail `true` if the iterator is for the back of the queue.
+---@nodiscard
 function Queue:iterator( from_tail )
     return self.pop, self, from_tail == true
 end

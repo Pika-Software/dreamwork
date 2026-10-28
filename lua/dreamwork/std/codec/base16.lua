@@ -205,6 +205,7 @@ end
 ---
 ---@param raw_str string The string to encode.
 ---@return string base16_str The encoded string.
+---@nodiscard
 function base16.encode( raw_str )
     if string_byte( raw_str, 1 ) == nil then
         return raw_str
@@ -223,6 +224,7 @@ end
 ---@param start_position? integer The start position of the base16 string, default is `1`.
 ---@param end_position? integer The end position of the base16 string, default is the length of the base16 string.
 ---@return string raw_str The decoded string.
+---@nodiscard
 function base16.decode( base16_str, start_position, end_position )
     if string_byte( base16_str, 1 ) == nil then
         return base16_str
@@ -238,6 +240,7 @@ end
 ---@param base16_str string The base16 string to validate.
 ---@return boolean is_valid `true` if the base16 string is valid, otherwise `false`.
 ---@return nil | string err_msg The error message.
+---@nodiscard
 function base16.validate( base16_str )
     local str_length = string_len( base16_str )
 
@@ -264,6 +267,7 @@ end
 ---
 ---@param base16_str string The base16 string to escape.
 ---@return string base16_escape_str The escaped base16 string.
+---@nodiscard
 function base16.escape( base16_str )
     if string_byte( base16_str, 1 ) == nil then
         return base16_str
@@ -280,6 +284,7 @@ end
 ---
 ---@param base16_escape_str string The base16 string to unescape.
 ---@return string base16_str The unescaped base16 string.
+---@nodiscard
 function base16.unescape( base16_escape_str )
     if string_byte( base16_escape_str, 1 ) == nil then
         return base16_escape_str

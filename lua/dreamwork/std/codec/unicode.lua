@@ -74,6 +74,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_valid `true` if the code point is a unicode scalar value, `false` otherwise.
+---@nodiscard
 function unicode.isValid( utf8_codepoint )
     return is_codepoint( utf8_codepoint ) and (utf8_codepoint < 0xD800 or utf8_codepoint > 0xDFFF)
 end
@@ -84,6 +85,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_surrogate `true` if the code point is a surrogate, `false` otherwise.
+---@nodiscard
 function unicode.isSurrogate( utf8_codepoint )
     return utf8_codepoint >= 0xD800 and utf8_codepoint <= 0xDFFF
 end
@@ -94,6 +96,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_high_surrogate `true` if the code point is a high surrogate, `false` otherwise.
+---@nodiscard
 function unicode.isHighSurrogate( utf8_codepoint )
     return utf8_codepoint >= 0xD800 and utf8_codepoint <= 0xDBFF
 end
@@ -104,6 +107,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_low_surrogate `true` if the code point is a low surrogate, `false` otherwise.
+---@nodiscard
 function unicode.isLowSurrogate( utf8_codepoint )
     return utf8_codepoint >= 0xDC00 and utf8_codepoint <= 0xDFFF
 end
@@ -114,6 +118,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_noncharacter `true` if the code point is a noncharacter, `false` otherwise.
+---@nodiscard
 function unicode.isNoncharacter( utf8_codepoint )
     if not is_codepoint( utf8_codepoint ) then
         return false
@@ -128,6 +133,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point to check.
 ---@return boolean is_private_use `true` if the code point is a private use code point, `false` otherwise.
+---@nodiscard
 function unicode.isPrivateUse( utf8_codepoint )
     if utf8_codepoint < 0xE000 then
         return false
@@ -146,6 +152,7 @@ end
 ---
 ---@param utf8_codepoint integer The code point.
 ---@return integer plane The plane number.
+---@nodiscard
 function unicode.plane( utf8_codepoint )
     if not is_codepoint( utf8_codepoint ) then
         error( string_format( "invalid unicode code point '%s'", utf8_codepoint ), 2 )
@@ -161,6 +168,7 @@ end
 ---@param utf8_codepoint integer The supplementary code point.
 ---@return integer high_surrogate The high (leading) surrogate.
 ---@return integer low_surrogate The low (trailing) surrogate.
+---@nodiscard
 function unicode.toSurrogates( utf8_codepoint )
     if not (is_codepoint( utf8_codepoint ) and utf8_codepoint > 0xFFFF) then
         error( string_format( "code point '%s' is not in range U+10000 - U+10FFFF", utf8_codepoint ), 2 )
@@ -184,6 +192,7 @@ end
 ---@param high_surrogate integer The high (leading) surrogate, `U+D800` - `U+DBFF`.
 ---@param low_surrogate integer The low (trailing) surrogate, `U+DC00` - `U+DFFF`.
 ---@return integer utf8_codepoint The code point in range `U+10000` - `U+10FFFF`.
+---@nodiscard
 function unicode.fromSurrogates( high_surrogate, low_surrogate )
     if not (high_surrogate >= 0xD800 and high_surrogate <= 0xDBFF) then
         error( string_format( "invalid high surrogate '%s'", high_surrogate ), 2 )
@@ -200,6 +209,7 @@ end
 ---
 ---@param utf8_codepoint integer The unicode code point to represent.
 ---@return string utf8_tag The string representation of the code point, in the format `U+XXXX` - `U+XXXXXX`.
+---@nodiscard
 function unicode.tag( utf8_codepoint )
     if not is_codepoint( utf8_codepoint ) then
         error( string_format( "invalid unicode code point '%s'", utf8_codepoint ), 2 )
@@ -214,6 +224,7 @@ end
 ---
 ---@param utf8_tag string The string representation of a unicode code point, in the format `U+XXXX` - `U+XXXXXX`.
 ---@return integer | nil utf8_codepoint The unicode code point represented by the string, or `nil` if the string is not a valid tag.
+---@nodiscard
 function unicode.untag( utf8_tag )
     local hex_str = string_match( utf8_tag, "^[Uu]%+(%x%x%x%x%x?%x?)$" )
     if hex_str == nil then
@@ -245,6 +256,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences are escaped as `U+FFFD`.
 ---@return string escaped_str A string where each character is replaced with its unicode escape sequence.
+---@nodiscard
 function unicode.escape( utf8_str, style, keep_ascii, start_position, end_position, lax )
     local bmp_format, supplementary_format, surrogates
 
@@ -296,6 +308,7 @@ end
 ---@param escaped_str string A string containing unicode escape sequences.
 ---@param lax? boolean If `true`, lone surrogates and code points above `U+10FFFF` are replaced with `U+FFFD` instead of raising an error.
 ---@return string utf8_str A string with the escape sequences converted to real unicode characters.
+---@nodiscard
 function unicode.unescape( escaped_str, lax )
     local position = string_find( escaped_str, "\\", 1, true )
     if position == nil then
@@ -2265,6 +2278,7 @@ if ffi == nil then
     ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
     ---@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
+    ---@nodiscard
     function unicode.lower( utf8_string, start_position, end_position, lax )
         local str_length = string_len( utf8_string )
         if str_length == 0 then
@@ -2340,6 +2354,7 @@ if ffi == nil then
     ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
     ---@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
+    ---@nodiscard
     function unicode.upper( utf8_string, start_position, end_position, lax )
         local str_length = string_len( utf8_string )
         if str_length == 0 then
@@ -2511,6 +2526,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return string capitalized_utf8_str The capitalized UTF-8 string.
+---@nodiscard
 function unicode.capitalize( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
@@ -2645,6 +2661,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return string title_utf8_str The title-cased UTF-8 string.
+---@nodiscard
 function unicode.title( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
@@ -3293,6 +3310,7 @@ do
     ---
     ---@param utf8_codepoint integer The code point.
     ---@return integer width The width of the code point in columns, `0`, `1` or `2`.
+    ---@nodiscard
     function unicode.width( utf8_codepoint )
         if not is_codepoint( utf8_codepoint ) then
             error( string_format( "invalid unicode code point '%s'", utf8_codepoint ), 2 )
@@ -3408,6 +3426,7 @@ do
     ---@param end_position? integer The position to end at in bytes.
     ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences count as `U+FFFD`.
     ---@return integer width The width of the string in columns.
+    ---@nodiscard
     function unicode.displayWidth( utf8_string, start_position, end_position, lax )
         local str_length = string_len( utf8_string )
         if str_length == 0 then
@@ -3438,6 +3457,7 @@ do
     ---@param end_position? integer The position to end at in bytes.
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
     ---@return string wrapped_string The string with newlines inserted so no line is wider than `max_width` columns.
+    ---@nodiscard
     function unicode.wrap( utf8_string, max_width, start_position, end_position, lax )
         if max_width <= 0 then
             return utf8_string
@@ -3601,6 +3621,7 @@ do
     ---@param right boolean? Whether to add padding on the right side.
     ---@param lax boolean? Whether to lax the UTF-8 validity check.
     ---@return string result The padded string, or `utf8_string` unchanged if no padding was needed or requested.
+    ---@nodiscard
     function unicode.pad( utf8_string, desired_width, padding, left, right, lax )
         if not (left or right) then
             return utf8_string
@@ -3991,6 +4012,7 @@ do
     ---@return string | nil block_name The name of the block, e.g. `"Basic Latin"` or `"CJK Unified Ideographs"`.
     ---@return integer | nil first_codepoint The first code point of the block.
     ---@return integer | nil last_codepoint The last code point of the block.
+    ---@nodiscard
     function unicode.block( utf8_codepoint )
         if not is_codepoint( utf8_codepoint ) then
             error( string_format( "invalid unicode code point '%s'", utf8_codepoint ), 2 )
@@ -4030,6 +4052,7 @@ do
     --- ```
     ---
     ---@return fun(): string, integer, integer iterator The iterator function, returns the name, the first and the last code point of each block.
+    ---@nodiscard
     function unicode.blocks()
         local index = -2
 

@@ -127,6 +127,7 @@ end
 --- ```
 ---
 ---@return string str The string representation of the address.
+---@nodiscard
 function IPv6:toString()
     return IPv6.__tostring( self )
 end
@@ -143,6 +144,7 @@ end
 ---@return integer group6 The sixth group. <0-65535>
 ---@return integer group7 The seventh group. <0-65535>
 ---@return integer group8 The eighth group. <0-65535>
+---@nodiscard
 function IPv6:groups()
     return self[ 1 ], self[ 2 ], self[ 3 ], self[ 4 ], self[ 5 ], self[ 6 ], self[ 7 ], self[ 8 ]
 end
@@ -235,6 +237,7 @@ end
 ---@param end_position? integer The end position in the ipv6 string.
 ---@return dreamwork.std.IPv6 address The parsed IP address.
 ---@return integer prefix_length The CIDR prefix length. <0-128>, `128` if not specified.
+---@nodiscard
 function IPv6Class.parse( ipv6_str, start_position, end_position )
     local start_index, end_index = math_range( string_len( ipv6_str ), start_position, end_position )
 
@@ -374,6 +377,7 @@ end
 ---@param network dreamwork.std.IPv6 The network (first) address.
 ---@param broadcast dreamwork.std.IPv6 The last address of the network.
 ---@return boolean in_range `true` if the address is within the network, `false` otherwise.
+---@nodiscard
 function IPv6:inRange( network, broadcast )
     return compare( self, network ) >= 0 and compare( self, broadcast ) <= 0
 end
@@ -388,6 +392,7 @@ end
 ---
 ---@param prefix integer The CIDR prefix length. <0-128>
 ---@return dreamwork.std.IPv6 mask_address The network mask address.
+---@nodiscard
 local function fromPrefix( prefix )
     local mask = {}
 
@@ -426,6 +431,7 @@ IPv6Class.fromPrefix = fromPrefix
 ---@param mask integer The CIDR prefix length. <0-128>
 ---@return dreamwork.std.IPv6 network_address The network (first) address.
 ---@return dreamwork.std.IPv6 broadcast_address The last address of the network.
+---@nodiscard
 function IPv6:cidr( mask )
     local prefix            = fromPrefix( mask )
 
@@ -453,6 +459,7 @@ end
 --- ```
 ---
 ---@return string ptr The reverse DNS pointer of the address.
+---@nodiscard
 function IPv6:reversePointer()
     local nibbles = {}
 
@@ -476,6 +483,7 @@ end
 --- Returns whether the address is the unspecified address (`::`).
 ---
 ---@return boolean is_unspecified `true` if the address is the unspecified address, `false` otherwise.
+---@nodiscard
 function IPv6:isUnspecified()
     for i = 1, 8 do
         if self[ i ] ~= 0 then
@@ -491,6 +499,7 @@ end
 --- Returns whether the address is the loopback address (`::1`).
 ---
 ---@return boolean is_loopback `true` if the address is the loopback address, `false` otherwise.
+---@nodiscard
 function IPv6:isLoopback()
     for i = 1, 7 do
         if self[ i ] ~= 0 then return false end
@@ -571,6 +580,7 @@ IPv6.isTeredo = gen_in_range( "2001::/32" )
 --- Returns whether the address is an IPv4-mapped IPv6 address (`::ffff:a.b.c.d`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
 ---@return boolean is_ipv4_mapped `true` if the address is an IPv4-mapped address, `false` otherwise.
+---@nodiscard
 function IPv6:isIPv4Mapped()
     return self[ 1 ] == 0
         and self[ 2 ] == 0
@@ -589,6 +599,7 @@ end
 --- The unspecified (`::`) and loopback (`::1`) addresses are not considered IPv4-compatible.
 ---
 ---@return boolean is_ipv4_compatible `true` if the address is an IPv4-compatible address, `false` otherwise.
+---@nodiscard
 function IPv6:isIPv4Compatible()
     return self[ 1 ] == 0
         and self[ 2 ] == 0
@@ -607,6 +618,7 @@ end
 --- Includes the unspecified, loopback, link-local, site-local, unique-local and discard-only addresses.
 ---
 ---@return boolean is_private `true` if the address is private, `false` otherwise.
+---@nodiscard
 function IPv6:isPrivate()
     return self:isUnspecified()
         or self:isLoopback()
@@ -623,6 +635,7 @@ end
 --- Includes the documentation, benchmarking, IPv4-mapped, IPv4-compatible, 6to4 and Teredo addresses.
 ---
 ---@return boolean is_reserved `true` if the address is reserved, `false` otherwise.
+---@nodiscard
 function IPv6:isReserved()
     return self:isDocumentation()
         or self:isBenchmarking()
@@ -639,6 +652,7 @@ end
 --- Any address that is not multicast, unspecified, loopback, link-local, site-local or unique-local.
 ---
 ---@return boolean is_global_unicast `true` if the address is a global unicast address, `false` otherwise.
+---@nodiscard
 function IPv6:isGlobalUnicast()
     return not self:isMulticast()
         and not self:isUnspecified()
@@ -653,6 +667,7 @@ end
 --- Returns whether the address is globally routable, i.e. a global unicast address that is not reserved.
 ---
 ---@return boolean is_public `true` if the address is public, `false` otherwise.
+---@nodiscard
 function IPv6:isPublic()
     return self:isGlobalUnicast()
         and not self:isReserved()
@@ -676,6 +691,7 @@ end
 ---@see dreamwork.std.IPv6.isIPv4Compatible
 ---
 ---@return dreamwork.std.IPv4 ipv4_address The embedded IPv4 address.
+---@nodiscard
 function IPv6:toIPv4()
     return bit_unsign( bit_bor( bit_lshift( self[ 7 ], 0x10 ), bit_band( self[ 8 ], 0xFFFF ) ) )
 end
@@ -690,6 +706,7 @@ end
 ---
 ---@param ipv4_address dreamwork.std.IPv4 The IPv4 address.
 ---@return dreamwork.std.IPv6 ipv6_address The IPv4-mapped IPv6 address.
+---@nodiscard
 function IPv6Class.fromIPv4( ipv4_address )
     return setmetatable( {
         0, 0, 0, 0, 0,

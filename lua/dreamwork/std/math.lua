@@ -105,6 +105,7 @@ do
     ---
     ---@param x number The angle in radians.
     ---@return number cotangent The cotangent of the given angle.
+    ---@nodiscard
     function math.cot( x )
         return 1 / math_atan51( x )
     end
@@ -122,6 +123,7 @@ if math.atan == nil then
     ---@param y number The y coordinate.
     ---@param x number The x coordinate.
     ---@return number arc_tan The arc tangent of y/x.
+    ---@nodiscard
     function math.atan( y, x )
         if x == nil then
             return math_atan51( y )
@@ -153,6 +155,7 @@ if math.frexp == nil then
     ---@param x number The number to split.
     ---@return number m The normalized fraction.
     ---@return number e The exponent.
+    ---@nodiscard
     ---@diagnostic disable-next-line: duplicate-set-field
     function math.frexp( x )
         if x == 0 then
@@ -187,6 +190,7 @@ if math.ldexp == nil then
     ---@param x number The base value.
     ---@param exponent number The exponent.
     ---@return number float The floating point representation.
+    ---@nodiscard
     ---@diagnostic disable-next-line: duplicate-set-field
     function math.ldexp( x, exponent )
         return x * 2.0 ^ exponent
@@ -225,6 +229,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_uint `true` if the number is an integer, otherwise `false`.
+---@nodiscard
 function math.isUnsignedInteger( x )
     return x >= 0 and (x % 1) == 0
 end
@@ -235,6 +240,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_int `true` if the number is an integer, otherwise `false`.
+---@nodiscard
 function math.isInteger( x )
     return (x % 1) == 0
 end
@@ -245,6 +251,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_float `true` if the number is a float, otherwise `false`.
+---@nodiscard
 function math.isFloat( x )
     return (x % 1) ~= 0
 end
@@ -255,6 +262,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_inf `true` if the number is positive or negative infinity, otherwise `false`.
+---@nodiscard
 function math.isInf( x )
     return x == math_huge or x == math_tiny
 end
@@ -265,6 +273,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_nan `true` if the number is NaN, otherwise `false`.
+---@nodiscard
 function math.isNaN( x )
     return x ~= x
 end
@@ -275,6 +284,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_finite `true` if the number is finite, otherwise `false`.
+---@nodiscard
 function math.isFinite( x )
     return x ~= math_huge and x ~= math_tiny and x == x
 end
@@ -286,6 +296,7 @@ end
 ---@param a number The first number to check.
 ---@param b number The second number to check.
 ---@return boolean is_divideable `true` if the first number is divisible by the second number, otherwise `false`.
+---@nodiscard
 function math.isDivideable( a, b )
     return (a % b) == 0
 end
@@ -296,6 +307,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_even `true` if the number is even, otherwise `false`.
+---@nodiscard
 function math.isEven( x )
     return x == 0 or (x % 2) == 0
 end
@@ -306,6 +318,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_odd `true` if the number is odd, otherwise `false`.
+---@nodiscard
 function math.isOdd( x )
     return x ~= 0 and (x % 2) ~= 0
 end
@@ -316,6 +329,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_positive `true` if the number is positive, otherwise `false`.
+---@nodiscard
 function math.isPositive( x )
     return (1 / x) > 0
 end
@@ -326,6 +340,7 @@ end
 ---
 ---@param x number The number to check.
 ---@return boolean is_negative `true` if the number is negative, otherwise `false`.
+---@nodiscard
 function math.isNegative( x )
     return (1 / x) < 0
 end
@@ -340,6 +355,7 @@ do
     ---
     ---@param x number The number to check.
     ---@return boolean is_pot `true` if a number is a valid power-of-two, otherwise `false`.
+    ---@nodiscard
     function math.isPowerOfTwo( x )
         return math_frexp( x ) == 0.5
     end
@@ -353,6 +369,7 @@ end
 ---@param number number The number to round.
 ---@param decimals? integer The number of decimal places to round to.
 ---@return number rounded The rounded number.
+---@nodiscard
 function math.round( number, decimals )
     if decimals == nil then
         return math_floor( number + 0.5 )
@@ -369,6 +386,7 @@ end
 ---@param number number The number to round.
 ---@param step number The step size to round to.
 ---@return number snapped The rounded number.
+---@nodiscard
 function math.snap( number, step )
     return math_floor( (number / step) + 0.5 ) * step
 end
@@ -385,6 +403,7 @@ do
     ---
     ---@param x number The number to truncate.
     ---@return integer truncated The integer part of the number.
+    ---@nodiscard
     function math.trunc( x )
         return (x > 0 and math_floor or math_ceil)( x )
     end
@@ -399,6 +418,7 @@ end
 ---@param min number The lower limit of the wrap range.
 ---@param max number The upper limit of the wrap range.
 ---@return number wrapped The number wrapped within [min, max).
+---@nodiscard
 function math.wrap( value, min, max )
     return ((value - min) % (max - min)) + min
 end
@@ -409,6 +429,7 @@ end
 ---
 ---@param x number The number to calculate the logarithm of.
 ---@return number log The natural logarithm of the number.
+---@nodiscard
 function math.log1p( x )
     return math_log( x + 1 )
 end
@@ -423,6 +444,7 @@ do
     ---
     ---@param x number The number to calculate the logarithm of.
     ---@return number log2 The base 2 logarithm of the number.
+    ---@nodiscard
     function math.log2( x )
         return math_log( x ) / math_ln2
     end
@@ -440,6 +462,7 @@ do
     ---@param a number The minimum value.
     ---@param b number The maximum value.
     ---@return number float The random floating point number.
+    ---@nodiscard
     function math.randomf( a, b )
         return a + (b - a) * math_random()
     end
@@ -455,6 +478,7 @@ do
     ---@param numbers number[] The numbers to calculate the square root of.
     ---@param number_count integer? The number of numbers to calculate the square root of.
     ---@return number value The square root of the sum of squares of its arguments.
+    ---@nodiscard
     function math.hypot( numbers, number_count )
         local number = 0
         for index = 1, (number_count or len( numbers )), 1 do
@@ -476,6 +500,7 @@ do
     ---
     ---@param x number The number to calculate the cube root of.
     ---@return number cube The cube root of the number.
+    ---@nodiscard
     function math.cbrt( x )
         return x ^ one_third
     end
@@ -489,6 +514,7 @@ end
 ---@param a number The number to calculate the root of.
 ---@param b number The base of the root.
 ---@return number root The root of the number.
+---@nodiscard
 function math.root( a, b )
     return a ^ (1 / b)
 end
@@ -501,6 +527,7 @@ end
 ---@param target number The target value.
 ---@param change number The amount that the current value is allowed to change by to approach the target.
 ---@return number approached The approached value.
+---@nodiscard
 function math.approach( current, target, change )
     local diff = target - current
     if diff < 0 then
@@ -518,6 +545,7 @@ end
 ---@param min number The minimum value.
 ---@param max number The maximum value.
 ---@return number clamped The clamped number.
+---@nodiscard
 function math.clamp( number, min, max )
     return math_min( math_max( number, min ), max )
 end
@@ -530,6 +558,7 @@ end
 ---@param from number The start number.
 ---@param to number The end number.
 ---@return number lerped The interpolated value.
+---@nodiscard
 function math.lerp( fraction, from, to )
     return from + (to - from) * fraction
 end
@@ -542,6 +571,7 @@ end
 ---@param from number The start number.
 ---@param to number The end number.
 ---@return number lerped The fraction of the way between the start and end numbers.
+---@nodiscard
 function math.ilerp( result, from, to )
     return (result - from) / (to - from)
 end
@@ -554,6 +584,7 @@ end
 ---@param next number The next value.
 ---@param alpha number The amount of smoothing.
 ---@return number value The interpolated value.
+---@nodiscard
 function math.smooth( previous, next, alpha )
     return alpha * next + (1 - alpha) * previous
 end
@@ -568,6 +599,7 @@ end
 ---@param outMin number The minimum value of the output range.
 ---@param outMax number The maximum value of the output range.
 ---@return number value The remapped value.
+---@nodiscard
 function math.remap( number, inMin, inMax, outMin, outMax )
     return outMin + (outMax - outMin) * (number - inMin) / (inMax - inMin)
 end
@@ -580,6 +612,7 @@ end
 ---@param from number The minimum value of the range.
 ---@param to number The maximum value of the range.
 ---@return boolean in_range `true` if the number is in the range, otherwise `false`.
+---@nodiscard
 function math.inRange( number, from, to )
     return number >= from and number <= to
 end
@@ -598,6 +631,7 @@ do
     ---@param x2 number The x coordinate of the second point.
     ---@param y2 number The y coordinate of the second point.
     ---@return number angle The angle between the two points.
+    ---@nodiscard
     function math.angle( x1, y1, x2, y2 )
         return math_deg( math_atan( y2 - y1, x2 - x1 ) )
     end
@@ -610,6 +644,7 @@ end
 ---
 ---@param angle number The angle to normalise.
 ---@return number normalised The normalised angle.
+---@nodiscard
 local function angleNormalize( angle )
     return ((angle + 180) % 360) - 180
 end
@@ -623,6 +658,7 @@ math.angleNormalize = angleNormalize
 ---@param a number The first angle.
 ---@param b number The second angle.
 ---@return number diff The difference between the angles.
+---@nodiscard
 function math.angleDifference( a, b )
     local diff = angleNormalize( a - b )
     if diff < 180 then
@@ -641,6 +677,7 @@ end
 ---@param x2 number The x coordinate of the second point.
 ---@param y2 number The y coordinate of the second point.
 ---@return number magnitude The magnitude between the two points.
+---@nodiscard
 local function magnitude( x1, y1, x2, y2 )
     return math_sqrt( ((x2 - x1) ^ 2) + ((y2 - y1) ^ 2) )
 end
@@ -657,6 +694,7 @@ math.magnitude = magnitude
 ---@param y2 number The y coordinate of the second point.
 ---@return number x The x coordinate of the direction.
 ---@return number y The y coordinate of the direction.
+---@nodiscard
 function math.direction( x1, y1, x2, y2 )
     local diff = magnitude( x1, y1, x2, y2 )
     if diff == 0 then
@@ -673,6 +711,7 @@ end
 ---@param numerator number The numerator.
 ---@param denominator number The denominator.
 ---@return number mod The euclidean modulus.
+---@nodiscard
 function math.euclideanMod( numerator, denominator )
     local result = numerator % denominator
     if result < 0 then
@@ -705,6 +744,7 @@ end
 ---@param x number The number to check.
 ---@param threshold number? The maximum difference between numbers at which they are considered equal; by default `1e-8`.
 ---@return boolean is_greater_equal `true` if the numbers are equal or greater, otherwise `false`.
+---@nodiscard
 function math.threshold( x, threshold )
     return math_abs( x ) >= (threshold or 1e-8)
 end
@@ -732,6 +772,7 @@ end
 ---@param x number The number to check.
 ---@param threshold number? The maximum difference between numbers at which they are considered equal; by default `1e-8`.
 ---@return boolean is_nearly_equal `true` if the numbers are equal or less, otherwise `false`.
+---@nodiscard
 function math.tolerance( x, threshold )
     return math_abs( x ) <= (threshold or 1e-8)
 end
@@ -743,6 +784,7 @@ end
 ---@param x number The number to check.
 ---@param size number The minimum allowed absolute value before snapping to 0.
 ---@return number result The original number, or 0.
+---@nodiscard
 function math.lower( x, size )
     return (math_abs( x ) < size) and 0 or x
 end
@@ -756,6 +798,7 @@ end
 ---@param x number The number to check.
 ---@param size number The maximum allowed absolute value before snapping to 0.
 ---@return number result The original number, or 0.
+---@nodiscard
 function math.upper( x, size )
     return (math_abs( x ) > size) and 0 or x
 end
@@ -768,6 +811,7 @@ end
 ---@param x T The number to copy the sign of.
 ---@param y number The number to get the sign from.
 ---@return T number The number with the sign of y.
+---@nodiscard
 function math.copySign( x, y )
     -- return ( ( x > 0 and y > 0 ) or ( x < 0 and y < 0 ) ) and x or -x -- x2 faster but miss -0 cases
     return ((1 / x) > 0) == ((1 / y) > 0) and x or -x
@@ -781,6 +825,7 @@ end
 ---@param x T The number to convert.
 ---@param bit_count integer The bit count of the unsigned integer.
 ---@return T unsigned The unsigned integer.
+---@nodiscard
 function math.toUInt( x, bit_count )
     return x % (2 ^ bit_count)
 end
@@ -793,6 +838,7 @@ end
 ---@param x T The number to convert.
 ---@param bit_count integer The bit count of the signed integer.
 ---@return T signed The integer with a sign.
+---@nodiscard
 function math.toInt( x, bit_count )
     local uint_limit = 2 ^ bit_count
     x = x % uint_limit
@@ -811,6 +857,7 @@ end
 ---@generic T : number | integer
 ---@param x T The number to convert.
 ---@return T unsigned The 32-bit unsigned integer.
+---@nodiscard
 function math.toUInt32( x )
     return x % 0x100000000
 end
@@ -822,6 +869,7 @@ end
 ---@generic T : number | integer
 ---@param x T The number to convert.
 ---@return T signed The 32-bit signed integer.
+---@nodiscard
 function math.toInt32( x )
     x = x % 0x100000000
 
@@ -838,6 +886,7 @@ end
 ---
 ---@param number number The number to convert.
 ---@return number float The float32 number.
+---@nodiscard
 function math.toFloat32( number )
     return math_floor( (number * 1e+06) + 0.5 ) * 1e-06
 end
@@ -849,6 +898,7 @@ end
 ---@generic T : number | integer
 ---@param y T The bucket size.
 ---@return fun( x: number ): T bucketizer The bucketizer function.
+---@nodiscard
 function math.bucketize( y )
     local div = 1 / y
     return function( x )
@@ -864,6 +914,7 @@ end
 ---@param length integer The length to check.
 ---@param fallback? integer The fallback position.
 ---@return integer relative The relative position.
+---@nodiscard
 function math.relative( position, length, fallback )
     if (0 - position) > length then
         return fallback or 1
@@ -885,6 +936,7 @@ end
 ---@param end_position? integer The end position, defaults to `length`.
 ---@return integer start_position The normalized start position.
 ---@return integer end_position The normalized end position.
+---@nodiscard
 function math.range( length, start_position, end_position )
     if start_position == nil or start_position == 0 then
         start_position = 1
@@ -911,6 +963,7 @@ do
     ---
     ---@param x integer The integer to check.
     ---@return integer length The length of the integer.
+    ---@nodiscard
     function math.len( x )
         if x == 0 then
             return 1
@@ -929,6 +982,7 @@ end
 ---@param a T The first number.
 ---@param b T The second number.
 ---@return T x The floor division of the two numbers.
+---@nodiscard
 function math.fdiv( a, b )
     local fn = debug_getmetavalue( a, "__idiv" )
     if fn == nil then
@@ -970,6 +1024,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.sineIn( fraction )
         return 1 - math_cos( (fraction * math_pi) * 0.5 )
     end
@@ -980,6 +1035,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.sineOut( fraction )
         return math_sin( (fraction * math_pi) * 0.5 )
     end
@@ -990,6 +1046,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.sineInOut( fraction )
         return -(math_cos( math_pi * fraction ) - 1) * 0.5
     end
@@ -1000,6 +1057,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quadIn( fraction )
         return fraction ^ 2
     end
@@ -1010,6 +1068,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quadOut( fraction )
         return 1 - (1 - fraction) * (1 - fraction)
     end
@@ -1020,6 +1079,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quadInOut( fraction )
         return fraction < 0.5 and 2 * fraction ^ 2
             or 1 - ((-2 * fraction + 2) ^ 2) * 0.5
@@ -1031,6 +1091,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.cubicIn( fraction )
         return fraction ^ 3
     end
@@ -1041,6 +1102,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.cubicOut( fraction )
         return 1 - ((1 - fraction) ^ 3)
     end
@@ -1051,6 +1113,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.cubicInOut( fraction )
         return fraction < 0.5 and 4 * fraction ^ 3
             or 1 - ((-2 * fraction + 2) ^ 3) * 0.5
@@ -1062,6 +1125,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quartIn( fraction )
         return fraction ^ 4
     end
@@ -1072,6 +1136,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quartOut( fraction )
         return 1 - ((1 - fraction) ^ 4)
     end
@@ -1082,6 +1147,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quartInOut( fraction )
         return fraction < 0.5 and 8 * fraction ^ 4
             or 1 - ((-2 * fraction + 2) ^ 4) * 0.5
@@ -1093,6 +1159,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quintIn( fraction )
         return fraction ^ 5
     end
@@ -1103,6 +1170,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quintOut( fraction )
         return 1 - ((1 - fraction) ^ 5)
     end
@@ -1113,6 +1181,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.quintInOut( fraction )
         return fraction < 0.5 and 16 * fraction ^ 5
             or 1 - ((-2 * fraction + 2) ^ 5) * 0.5
@@ -1124,6 +1193,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.expoIn( fraction )
         return fraction == 0 and 0 or (2 ^ (10 * fraction - 10))
     end
@@ -1134,6 +1204,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.expoOut( fraction )
         return fraction == 1 and 1 or 1 - (2 ^ (-10 * fraction))
     end
@@ -1144,6 +1215,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.expoInOut( fraction )
         return fraction == 0 and 0
             or fraction == 1 and 1
@@ -1156,6 +1228,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.circIn( fraction )
         return 1 - math_sqrt( 1 - (fraction ^ 2) )
     end
@@ -1166,6 +1239,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.circOut( fraction )
         return math_sqrt( 1 - ((fraction - 1) ^ 2) )
     end
@@ -1176,6 +1250,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.circInOut( fraction )
         return fraction < 0.5 and (1 - math_sqrt( 1 - ((2 * fraction) ^ 2) )) * 0.5
             or (math_sqrt( 1 - ((-2 * fraction + 2) ^ 2) ) + 1) * 0.5
@@ -1187,6 +1262,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.backIn( fraction )
         return c3 * fraction ^ 3 - c1 * fraction ^ 2
     end
@@ -1197,6 +1273,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.backOut( fraction )
         return 1 + c3 * ((fraction - 1) ^ 3) + c1 * ((fraction - 1) ^ 2)
     end
@@ -1207,6 +1284,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.backInOut( fraction )
         return fraction < 0.5 and (((2 * fraction) ^ 2) * ((c2 + 1) * 2 * fraction - c2)) * 0.5
             or (((2 * fraction - 2) ^ 2) * ((c2 + 1) * (fraction * 2 - 2) + c2) + 2) * 0.5
@@ -1218,6 +1296,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.elasticIn( fraction )
         return fraction == 0 and 0
             or fraction == 1 and 1
@@ -1230,6 +1309,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.elasticOut( fraction )
         return fraction == 0 and 0 or fraction == 1 and 1
             or (2 ^ (-10 * fraction)) * math_sin( (fraction * 10 - 0.75) * c4 ) + 1
@@ -1241,6 +1321,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.elasticInOut( fraction )
         return fraction == 0 and 0 or fraction == 1 and 1
             or fraction < 0.5 and -((2 ^ (20 * fraction - 10)) * math_sin( (20 * fraction - 11.125) * c5 )) * 0.5
@@ -1253,6 +1334,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     local function ease_bounceOut( fraction )
         if (fraction < 1 / d1) then
             return n1 * fraction ^ 2
@@ -1274,6 +1356,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.bounceIn( fraction )
         return 1 - ease_bounceOut( 1 - fraction )
     end
@@ -1286,6 +1369,7 @@ do
     ---
     ---@param fraction number Fraction of the progress to ease, from 0 to 1.
     ---@return number eased The eased number.
+    ---@nodiscard
     function ease.bounceInOut( fraction )
         return fraction < 0.5 and (1 - ease_bounceOut( 1 - 2 * fraction )) * 0.5
             or (1 + ease_bounceOut( 2 * fraction - 1 )) * 0.5

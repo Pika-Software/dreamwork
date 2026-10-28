@@ -34,6 +34,7 @@ std.bytepack = bytepack
 ---
 ---@param uint8_1 integer The byte.
 ---@return integer value The unsigned 1-byte integer.
+---@nodiscard
 function bytepack.readUInt8( uint8_1 )
     return uint8_1
 end
@@ -46,6 +47,7 @@ end
 ---
 ---@param value integer The unsigned 1-byte integer.
 ---@return integer uint8_1 The byte.
+---@nodiscard
 function bytepack.writeUInt8( value )
     return rbit_band( value, 0xFF )
 end
@@ -58,6 +60,7 @@ end
 ---
 ---@param uint8_1 integer The byte.
 ---@return integer value The signed 1-byte integer.
+---@nodiscard
 function bytepack.readInt8( uint8_1 )
     return rbit_arshift( rbit_lshift( uint8_1, 24 ), 24 )
 end
@@ -70,6 +73,7 @@ end
 ---
 ---@param value integer The signed 1-byte integer.
 ---@return integer uint8_1 The byte.
+---@nodiscard
 function bytepack.writeInt8( value )
     return rbit_band( value, 0xFF )
 end
@@ -83,6 +87,7 @@ end
 ---@param uint8_1 integer The first byte.
 ---@param uint8_2 integer The second byte.
 ---@return integer value The signed 2-byte integer.
+---@nodiscard
 function bytepack.readInt16BE( uint8_1, uint8_2 )
     return rbit_bor(
         rbit_arshift( rbit_lshift( uint8_1, 24 ), 16 ),
@@ -99,6 +104,7 @@ end
 ---@param uint8_1 integer The first byte.
 ---@param uint8_2 integer The second byte.
 ---@return integer value The unsigned 2-byte integer.
+---@nodiscard
 function bytepack.readUInt16BE( uint8_1, uint8_2 )
     return rbit_bor( rbit_lshift( uint8_1, 8 ), uint8_2 )
 end
@@ -115,6 +121,7 @@ do
     ---@param value integer The signed 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
+    ---@nodiscard
     local function bytepack_writeInt16BE( value )
         return rbit_band( rbit_rshift( value, 8 ), 0xFF ),
             rbit_band( value, 0xFF )
@@ -131,6 +138,7 @@ do
     ---@param value integer The unsigned 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
+    ---@nodiscard
     function bytepack.writeUInt16BE( value )
         return bytepack_writeInt16BE( value )
     end
@@ -146,6 +154,7 @@ end
 ---@param uint8_1 integer The first byte.
 ---@param uint8_2 integer The second byte.
 ---@return integer value The signed 2-byte integer.
+---@nodiscard
 function bytepack.readInt16LE( uint8_1, uint8_2 )
     return rbit_bor(
         rbit_arshift( rbit_lshift( uint8_2, 24 ), 16 ),
@@ -162,6 +171,7 @@ end
 ---@param uint8_1 integer The first byte.
 ---@param uint8_2 integer The second byte.
 ---@return integer value The unsigned 2-byte integer.
+---@nodiscard
 function bytepack.readUInt16LE( uint8_1, uint8_2 )
     return rbit_bor(
         rbit_lshift( uint8_2, 8 ),
@@ -181,6 +191,7 @@ do
     ---@param value integer The signed 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
+    ---@nodiscard
     local function bytepack_writeInt16LE( value )
         return rbit_band( value, 0xFF ),
             rbit_band( rbit_rshift( value, 8 ), 0xFF )
@@ -197,6 +208,7 @@ do
     ---@param value integer The unsigned 2-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
+    ---@nodiscard
     function bytepack.writeUInt16LE( value )
         return bytepack_writeInt16LE( value )
     end
@@ -213,6 +225,7 @@ end
 ---@param uint8_2 integer The second byte.
 ---@param uint8_3 integer The third byte.
 ---@return integer value The signed 3-byte integer.
+---@nodiscard
 function bytepack.readInt24BE( uint8_1, uint8_2, uint8_3 )
     return rbit_bor(
         rbit_arshift( rbit_lshift( uint8_1, 24 ), 8 ),
@@ -231,6 +244,7 @@ end
 ---@param uint8_2 integer The second byte.
 ---@param uint8_3 integer The third byte.
 ---@return integer value The unsigned 3-byte integer.
+---@nodiscard
 function bytepack.readUInt24BE( uint8_1, uint8_2, uint8_3 )
     return rbit_bor(
         rbit_lshift( uint8_1, 16 ),
@@ -252,6 +266,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
+    ---@nodiscard
     local function bytepack_writeInt24BE( value )
         return rbit_band( rbit_rshift( value, 16 ), 0xFF ),
             rbit_band( rbit_rshift( value, 8 ), 0xFF ),
@@ -270,6 +285,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
+    ---@nodiscard
     function bytepack.writeUInt24BE( value )
         return bytepack_writeInt24BE( value )
     end
@@ -286,6 +302,7 @@ end
 ---@param uint8_2 integer The second byte.
 ---@param uint8_3 integer The third byte.
 ---@return integer value The signed 3-byte integer.
+---@nodiscard
 function bytepack.readInt24LE( uint8_1, uint8_2, uint8_3 )
     return rbit_bor(
         rbit_arshift( rbit_lshift( uint8_3, 24 ), 8 ),
@@ -304,6 +321,7 @@ end
 ---@param uint8_2 integer The second byte.
 ---@param uint8_3 integer The third byte.
 ---@return integer value The unsigned 3-byte integer.
+---@nodiscard
 function bytepack.readUInt24LE( uint8_1, uint8_2, uint8_3 )
     return rbit_bor(
         rbit_lshift( uint8_3, 16 ),
@@ -325,6 +343,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
+    ---@nodiscard
     local function bytepack_writeInt24LE( value )
         return rbit_band( value, 0xFF ),
             rbit_band( rbit_rshift( value, 8 ), 0xFF ),
@@ -343,6 +362,7 @@ do
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
+    ---@nodiscard
     function bytepack.writeUInt24LE( value )
         return bytepack_writeInt24LE( value )
     end
@@ -360,6 +380,7 @@ end
 ---@param uint8_3 integer The third byte.
 ---@param uint8_4 integer The fourth byte.
 ---@return integer value The signed 4-byte integer.
+---@nodiscard
 function bytepack.readInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
     return rbit_bor(
         rbit_lshift( uint8_1, 24 ),
@@ -380,6 +401,7 @@ end
 ---@param uint8_3 integer The third byte.
 ---@param uint8_4 integer The fourth byte.
 ---@return integer value The unsigned 4-byte integer.
+---@nodiscard
 function bytepack.readUInt32BE( uint8_1, uint8_2, uint8_3, uint8_4 )
     return ((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4
 end
@@ -398,6 +420,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     local function bytepack_writeInt32BE( value )
         return rbit_band( rbit_rshift( value, 24 ), 0xFF ),
             rbit_band( rbit_rshift( value, 16 ), 0xFF ),
@@ -418,6 +441,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     function bytepack.writeUInt32BE( value )
         return bytepack_writeInt32BE( value )
     end
@@ -435,6 +459,7 @@ end
 ---@param uint8_3 integer The third byte.
 ---@param uint8_4 integer The fourth byte.
 ---@return integer value The signed 4-byte integer.
+---@nodiscard
 function bytepack.readInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
     return rbit_bor(
         rbit_lshift( uint8_4, 24 ),
@@ -455,6 +480,7 @@ end
 ---@param uint8_3 integer The third byte.
 ---@param uint8_4 integer The fourth byte.
 ---@return integer value The unsigned 4-byte integer.
+---@nodiscard
 function bytepack.readUInt32LE( uint8_1, uint8_2, uint8_3, uint8_4 )
     return ((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
 end
@@ -473,6 +499,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     local function bytepack_writeInt32LE( value )
         return rbit_band( value, 0xFF ),
             rbit_band( rbit_rshift( value, 8 ), 0xFF ),
@@ -493,6 +520,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     function bytepack.writeUInt32LE( value )
         return bytepack_writeInt32LE( value )
     end
@@ -514,6 +542,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The unsigned 5-byte integer.
+    ---@nodiscard
     local function bytepack_readUInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5
     end
@@ -532,6 +561,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The signed 5-byte integer.
+    ---@nodiscard
     function bytepack.readInt40BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         -- signed high byte ( sign extended ) * 2^32 + unsigned low half
         return rbit_arshift( rbit_lshift( uint8_1, 24 ), 24 ) * 0x100000000 + (((uint8_2 * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5)
@@ -554,6 +584,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
+    ---@nodiscard
     local function bytepack_writeUInt40BE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -580,6 +611,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
+    ---@nodiscard
     function bytepack.writeInt40BE( value )
         return bytepack_writeUInt40BE( value )
     end
@@ -601,6 +633,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The unsigned 5-byte integer.
+    ---@nodiscard
     local function bytepack_readUInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         return (((uint8_5 * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
     end
@@ -619,6 +652,7 @@ do
     ---@param uint8_4 integer The fourth byte.
     ---@param uint8_5 integer The fifth byte.
     ---@return integer value The signed 5-byte integer.
+    ---@nodiscard
     function bytepack.readInt40LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5 )
         -- signed high byte ( sign extended ) * 2^32 + unsigned low half
         return rbit_arshift( rbit_lshift( uint8_5, 24 ), 24 ) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
@@ -641,6 +675,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
+    ---@nodiscard
     local function bytepack_writeUInt40LE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -667,6 +702,7 @@ do
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
+    ---@nodiscard
     function bytepack.writeInt40LE( value )
         return bytepack_writeUInt40LE( value )
     end
@@ -689,6 +725,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The unsigned 6-byte integer.
+    ---@nodiscard
     local function bytepack_readUInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         return ((((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100 + uint8_5) * 0x100 + uint8_6
     end
@@ -708,6 +745,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The signed 6-byte integer.
+    ---@nodiscard
     function bytepack.readInt48BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         -- signed high half ( sign extended ) * 2^32 + unsigned low half
         return rbit_bor(
@@ -734,6 +772,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     local function bytepack_writeUInt48BE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -762,6 +801,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     function bytepack.writeInt48BE( value )
         return bytepack_writeUInt48BE( value )
     end
@@ -785,6 +825,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The unsigned 6-byte integer.
+    ---@nodiscard
     local function bytepack_readUInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         return ((((uint8_6 * 0x100 + uint8_5) * 0x100 + uint8_4) * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1
     end
@@ -804,6 +845,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer value The signed 6-byte integer.
+    ---@nodiscard
     function bytepack.readInt48LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         -- signed high half ( sign extended ) * 2^32 + unsigned low half
         return rbit_bor(
@@ -830,6 +872,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     local function bytepack_writeUInt48LE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -858,6 +901,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     function bytepack.writeInt48LE( value )
         return bytepack_writeUInt48LE( value )
     end
@@ -883,6 +927,7 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The unsigned 7-byte integer.
+    ---@nodiscard
     function bytepack.readUInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         return ((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100000000 + (((uint8_4 * 0x100 + uint8_5) * 0x100 + uint8_6) * 0x100 + uint8_7)
     end
@@ -901,6 +946,7 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The signed 7-byte integer.
+    ---@nodiscard
     function bytepack.readInt56BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         -- signed high half ( sign extended ) * 2^32 + unsigned low half
         return rbit_bor(
@@ -931,6 +977,7 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
+    ---@nodiscard
     function bytepack.writeUInt56BE( value )
         return math_floor( value / 0x1000000000000 ) % 0x100,
             math_floor( value / 0x10000000000 ) % 0x100,
@@ -955,6 +1002,7 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
+    ---@nodiscard
     function bytepack.writeInt56BE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -990,6 +1038,7 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The unsigned 7-byte integer.
+    ---@nodiscard
     function bytepack.readUInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         return ((uint8_7 * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
@@ -1008,6 +1057,7 @@ do
     ---@param uint8_6 integer The sixth byte.
     ---@param uint8_7 integer The seventh byte.
     ---@return integer value The signed 7-byte integer.
+    ---@nodiscard
     function bytepack.readInt56LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7 )
         -- signed high half ( sign extended ) * 2^32 + unsigned low half
         return rbit_bor(
@@ -1038,6 +1088,7 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
+    ---@nodiscard
     function bytepack.writeUInt56LE( value )
         return value % 0x100,
             math_floor( value / 0x100 ) % 0x100,
@@ -1062,6 +1113,7 @@ do
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
+    ---@nodiscard
     function bytepack.writeInt56LE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -1098,6 +1150,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 8-byte integer.
+    ---@nodiscard
     function bytepack.readUInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         return (((uint8_1 * 0x100 + uint8_2) * 0x100 + uint8_3) * 0x100 + uint8_4) * 0x100000000 + (((uint8_5 * 0x100 + uint8_6) * 0x100 + uint8_7) * 0x100 + uint8_8)
     end
@@ -1119,6 +1172,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The signed 8-byte integer.
+    ---@nodiscard
     function bytepack.readInt64BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         -- signed high half * 2^32 + unsigned low half
         return rbit_bor(
@@ -1151,6 +1205,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeUInt64BE( value )
         return math_floor( value / 0x100000000000000 ) % 0x100,
             math_floor( value / 0x1000000000000 ) % 0x100,
@@ -1179,6 +1234,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeInt64BE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -1216,6 +1272,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The unsigned 8-byte integer.
+    ---@nodiscard
     function bytepack.readUInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         return (((uint8_8 * 0x100 + uint8_7) * 0x100 + uint8_6) * 0x100 + uint8_5) * 0x100000000 + (((uint8_4 * 0x100 + uint8_3) * 0x100 + uint8_2) * 0x100 + uint8_1)
     end
@@ -1237,6 +1294,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer value The signed 8-byte integer.
+    ---@nodiscard
     function bytepack.readInt64LE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         -- signed high half * 2^32 + unsigned low half
         return rbit_bor(
@@ -1270,6 +1328,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeUInt64LE( value )
         return value % 0x100,
             math_floor( value / 0x100 ) % 0x100,
@@ -1298,6 +1357,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeInt64LE( value )
         -- exact split into two's complement halves, `high` is negative for negative values
         local high = math_floor( value / 0x100000000 )
@@ -1329,6 +1389,7 @@ if ffi == nil then
         ---@param uint8_3 integer The third byte.
         ---@param uint8_4 integer The fourth byte.
         ---@return number value The signed 4-byte float.
+        ---@nodiscard
         local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
             local sign = uint8_1 > 0x7F
             local expo = (uint8_1 % 0x80) * 0x2 + math_floor( uint8_2 / 0x80 )
@@ -1365,6 +1426,7 @@ if ffi == nil then
         ---@param uint8_3 integer The third byte.
         ---@param uint8_4 integer The fourth byte.
         ---@return number value The signed 4-byte float.
+        ---@nodiscard
         function bytepack.readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
             return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
         end
@@ -1383,6 +1445,7 @@ if ffi == nil then
         ---@return integer uint8_2 The second byte.
         ---@return integer uint8_3 The third byte.
         ---@return integer uint8_4 The fourth byte.
+        ---@nodiscard
         local function bytepack_writeFloatBE( value )
             if value ~= value then -- NaN
                 return 0xFF, 0xC0, 0, 0
@@ -1440,6 +1503,7 @@ if ffi == nil then
         ---@return integer uint8_2 The second byte.
         ---@return integer uint8_3 The third byte.
         ---@return integer uint8_4 The fourth byte.
+        ---@nodiscard
         function bytepack.writeFloatLE( value )
             local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeFloatBE( value )
             return uint8_4, uint8_3, uint8_2, uint8_1
@@ -1463,6 +1527,7 @@ if ffi == nil then
         ---@param uint8_7 integer The seventh byte.
         ---@param uint8_8 integer The eighth byte.
         ---@return number value The signed 8-byte float.
+        ---@nodiscard
         local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
             local sign = uint8_1 > 0x7F
             local expo = (uint8_1 % 0x80) * 0x10 + math_floor( uint8_2 / 0x10 )
@@ -1503,6 +1568,7 @@ if ffi == nil then
         ---@param uint8_7 integer The seventh byte.
         ---@param uint8_8 integer The eighth byte.
         ---@return number value The signed 8-byte float.
+        ---@nodiscard
         function bytepack.readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
             return bytepack_readDoubleBE( uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1 )
         end
@@ -1525,6 +1591,7 @@ if ffi == nil then
         ---@return integer uint8_6 The sixth byte.
         ---@return integer uint8_7 The seventh byte.
         ---@return integer uint8_8 The eighth byte.
+        ---@nodiscard
         local function bytepack_writeDoubleBE( value )
             if value ~= value then -- NaN
                 return 0xFF, 0xF8, 0, 0, 0, 0, 0, 0
@@ -1577,6 +1644,7 @@ if ffi == nil then
         ---@return integer uint8_6 The sixth byte.
         ---@return integer uint8_7 The seventh byte.
         ---@return integer uint8_8 The eighth byte.
+        ---@nodiscard
         function bytepack.writeDoubleLE( value )
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeDoubleBE( value )
             return uint8_8, uint8_7, uint8_6, uint8_5, uint8_4, uint8_3, uint8_2, uint8_1
@@ -1606,6 +1674,7 @@ else
         ---@param uint8_3 integer
         ---@param uint8_4 integer
         ---@return number
+        ---@nodiscard
         local function bytepack_readFloatBE( uint8_1, uint8_2, uint8_3, uint8_4 )
             -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
             if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0x80 then
@@ -1628,6 +1697,7 @@ else
         ---@param uint8_3 integer
         ---@param uint8_4 integer
         ---@return number
+        ---@nodiscard
         local function bytepack_readFloatLE( uint8_1, uint8_2, uint8_3, uint8_4 )
             return bytepack_readFloatBE( uint8_4, uint8_3, uint8_2, uint8_1 )
         end
@@ -1711,6 +1781,7 @@ else
         ---@param uint8_7 integer
         ---@param uint8_8 integer
         ---@return number
+        ---@nodiscard
         local function bytepack_readDoubleBE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
             -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
             if uint8_1 % 0x80 == 0x7F and uint8_2 >= 0xF0 then
@@ -1735,6 +1806,7 @@ else
         ---@param uint8_7 integer
         ---@param uint8_8 integer
         ---@return number
+        ---@nodiscard
         local function bytepack_readDoubleLE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
             -- never load inf/NaN bit patterns from cdata, NaN payloads are not canonicalized
             if uint8_8 % 0x80 == 0x7F and uint8_7 >= 0xF0 then
@@ -1786,6 +1858,7 @@ end
 ---@return integer hours The number of hours.
 ---@return integer minutes The number of minutes.
 ---@return integer seconds The number of seconds, **will be rounded**.
+---@nodiscard
 function bytepack.readTime( uint16 )
     return rbit_rshift( rbit_band( uint16, 0xF800 ), 11 ),
         rbit_rshift( rbit_band( uint16, 0x7E0 ), 5 ),
@@ -1802,6 +1875,7 @@ end
 ---@param minutes? integer The number of minutes.
 ---@param seconds? integer The number of seconds, **will be rounded**.
 ---@return integer uint16 The uint16 to read from.
+---@nodiscard
 function bytepack.writeTime( hours, minutes, seconds )
     if hours == nil then
         hours = 0
@@ -1836,6 +1910,7 @@ end
 ---@return integer day The day.
 ---@return integer month The month.
 ---@return integer year The year.
+---@nodiscard
 function bytepack.readDate( uint16 )
     return rbit_band( uint16, 0x1F ),
         rbit_rshift( rbit_band( uint16, 0x1E0 ), 5 ),
@@ -1850,6 +1925,7 @@ end
 ---@param month? integer The month.
 ---@param year? integer The year.
 ---@return integer uint16 The uint16 to read from.
+---@nodiscard
 function bytepack.writeDate( day, month, year )
     if day == nil then
         day = 1
@@ -1902,6 +1978,7 @@ end
 ---@param n integer Number of fractional bits.
 ---@param integer integer The integer number to read from.
 ---@return number value The unsigned fixed-point number.
+---@nodiscard
 function bytepack.readFixedPoint( n, integer )
     return math_ldexp( integer, -n )
 end
@@ -1936,6 +2013,7 @@ end
 ---@param m integer Number of integer bits (including sign bit).
 ---@param n integer Number of fractional bits.
 ---@return integer integer The integer number to read from.
+---@nodiscard
 function bytepack.writeFixedPoint( value, m, n )
     local byte_count = (m + n) * 0.125
     if byte_count % 1 ~= 0 then
@@ -1997,6 +2075,7 @@ do
     ---@param uint8_1 integer The first byte.
     ---@param uint8_2 integer The second byte.
     ---@return integer | nil value The unsigned 1-byte integer or `nil` if bytes do not match the allowed ones.
+    ---@nodiscard
     function bytepack.readHex8( uint8_1, uint8_2 )
         return uint8_cache[ rbit_lshift( uint8_1, 8 ) + uint8_2 ]
     end
@@ -2010,6 +2089,7 @@ do
     ---@param uint8_3 integer The third byte.
     ---@param uint8_4 integer The fourth byte.
     ---@return integer | nil value The unsigned 2-byte integer or `nil` if bytes do not match the allowed ones.
+    ---@nodiscard
     function bytepack.readHex16BE( uint8_1, uint8_2, uint8_3, uint8_4 )
         local byte_1 = uint8_cache[ rbit_lshift( uint8_1, 8 ) + uint8_2 ]
         local byte_2 = uint8_cache[ rbit_lshift( uint8_3, 8 ) + uint8_4 ]
@@ -2032,6 +2112,7 @@ do
     ---@param uint8_5 integer The fifth byte.
     ---@param uint8_6 integer The sixth byte.
     ---@return integer | nil value The unsigned 3-byte integer or `nil` if bytes do not match the allowed ones.
+    ---@nodiscard
     function bytepack.readHex24BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
         local byte_1 = uint8_cache[ rbit_lshift( uint8_1, 8 ) + uint8_2 ]
         local byte_2 = uint8_cache[ rbit_lshift( uint8_3, 8 ) + uint8_4 ]
@@ -2057,6 +2138,7 @@ do
     ---@param uint8_7 integer The seventh byte.
     ---@param uint8_8 integer The eighth byte.
     ---@return integer | nil value The unsigned 4-byte integer or `nil` if bytes do not match the allowed ones.
+    ---@nodiscard
     function bytepack.readHex32BE( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
         local byte_1 = uint8_cache[ rbit_lshift( uint8_1, 8 ) + uint8_2 ]
         local byte_2 = uint8_cache[ rbit_lshift( uint8_3, 8 ) + uint8_4 ]
@@ -2108,6 +2190,7 @@ do
     ---@param uint8 integer The unsigned 1-byte integer.
     ---@return integer uint8_1 The first byte.
     ---@return integer uint8_2 The second byte.
+    ---@nodiscard
     function bytepack.writeHex8( uint8 )
         return encode_map[ rbit_band( rbit_rshift( uint8, 4 ), 0x0F ) ],
             encode_map[ rbit_band( uint8, 0x0F ) ]
@@ -2124,6 +2207,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     function bytepack.writeHex16BE( uint16 )
         return encode_map[ rbit_band( rbit_rshift( uint16, 12 ), 0x0F ) ],
             encode_map[ rbit_band( rbit_rshift( uint16, 8 ), 0x0F ) ],
@@ -2142,6 +2226,7 @@ do
     ---@return integer uint8_2 The second byte.
     ---@return integer uint8_3 The third byte.
     ---@return integer uint8_4 The fourth byte.
+    ---@nodiscard
     function bytepack.writeHex16LE( uint16 )
         return encode_map[ rbit_band( rbit_rshift( uint16, 4 ), 0x0F ) ],
             encode_map[ rbit_band( uint16, 0x0F ) ],
@@ -2162,6 +2247,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     function bytepack.writeHex24BE( uint24 )
         return encode_map[ rbit_band( rbit_rshift( uint24, 20 ), 0x0F ) ],
             encode_map[ rbit_band( rbit_rshift( uint24, 16 ), 0x0F ) ],
@@ -2184,6 +2270,7 @@ do
     ---@return integer uint8_4 The fourth byte.
     ---@return integer uint8_5 The fifth byte.
     ---@return integer uint8_6 The sixth byte.
+    ---@nodiscard
     function bytepack.writeHex24LE( uint24 )
         return encode_map[ rbit_band( rbit_rshift( uint24, 4 ), 0x0F ) ],
             encode_map[ rbit_band( uint24, 0x0F ) ],
@@ -2208,6 +2295,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeHex32BE( uint32 )
         return encode_map[ rbit_band( rbit_rshift( uint32, 28 ), 0x0F ) ],
             encode_map[ rbit_band( rbit_rshift( uint32, 24 ), 0x0F ) ],
@@ -2234,6 +2322,7 @@ do
     ---@return integer uint8_6 The sixth byte.
     ---@return integer uint8_7 The seventh byte.
     ---@return integer uint8_8 The eighth byte.
+    ---@nodiscard
     function bytepack.writeHex32LE( uint32 )
         return encode_map[ rbit_band( rbit_rshift( uint32, 4 ), 0x0F ) ],
             encode_map[ rbit_band( uint32, 0x0F ) ],

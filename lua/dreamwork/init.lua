@@ -31,6 +31,7 @@ do
     ---@param env table | nil The environment of compiled function.
     ---@return function | nil fn The compiled function.
     ---@return string | nil msg The error message.
+    ---@nodiscard
     function std.loadfile( file_path, is_bytecode, env )
         local success, content = pcall( file_read, file_path )
         if success then

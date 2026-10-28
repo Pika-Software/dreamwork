@@ -122,6 +122,7 @@ if rbit.tobit == nil then
     ---
     ---@param x integer The value to be normalized.
     ---@return integer result The normalized value.
+    ---@nodiscard
     function rbit.tobit( x )
         x = x % 0x100000000
         return (x < 0x80000000) and x or (x - 0x100000000)
@@ -140,6 +141,7 @@ if rbit.tohex == nil then
     ---@param x integer The value to be converted.
     ---@param length integer? The number of digits. Defaults to 8.
     ---@return string str The hexadecimal representation.
+    ---@nodiscard
     function rbit.tohex( x, length )
         return string_format( "%0" .. (length or 8) .. "x", x )
     end
@@ -155,6 +157,7 @@ if rbit.band == nil then
     ---@param x integer The first value.
     ---@param ... integer Additional values to AND together with the first.
     ---@return integer result The bitwise AND of all given values, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.band( x, ... )
         ---@type boolean[]
         local bits = {}
@@ -190,6 +193,7 @@ if rbit.bor == nil then
     ---@param x integer The first value.
     ---@param ... integer Additional values to OR together with the first.
     ---@return integer result The bitwise OR of all given values, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.bor( x, ... )
         ---@type boolean[]
         local bits = {}
@@ -225,6 +229,7 @@ if rbit.bxor == nil then
     ---@param x integer The first value.
     ---@param ... integer Additional values to XOR together with the first.
     ---@return integer result The bitwise XOR of all given values, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.bxor( x, ... )
         ---@type boolean[]
         local bits = {}
@@ -262,6 +267,7 @@ if rbit.bnot == nil then
     ---
     ---@param x integer The value to be inverted.
     ---@return integer result The bitwise complement of the given value, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.bnot( x )
         ---@type integer
         local result = 0
@@ -294,6 +300,7 @@ if rbit.lshift == nil then
         ---@param x integer The value to be shifted.
         ---@param disp integer The number of bits to shift left by.
         ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.lshift( x, disp )
             return rbit_tobit( x * (2 ^ disp) )
         end
@@ -308,6 +315,7 @@ if rbit.lshift == nil then
         ---@param x integer The value to be shifted.
         ---@param disp integer The number of bits to shift left by.
         ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.lshift( x, disp )
             return rbit_bshift( x, disp )
         end
@@ -332,6 +340,7 @@ if rbit.rshift == nil then
         ---@param x integer The value to be shifted.
         ---@param disp integer The number of bits to shift right by.
         ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.rshift( x, disp )
             return rbit_tobit( math_floor( x / (2 ^ disp) ) )
         end
@@ -347,6 +356,7 @@ if rbit.rshift == nil then
         ---@param x integer The value to be shifted.
         ---@param disp integer The number of bits to shift right by.
         ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.rshift( x, disp )
             return rbit_bshift( x, -disp )
         end
@@ -367,6 +377,7 @@ if rbit.bshift == nil then
     ---@param x integer The value to be shifted.
     ---@param disp integer The number of bits to shift by. Positive shifts left, negative shifts right.
     ---@return integer result The shifted value, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.bshift( x, disp )
         if disp > 0 then
             return rbit_lshift( x, disp )
@@ -388,6 +399,7 @@ if rbit.arshift == nil then
     ---@param x integer The value to be shifted.
     ---@param disp integer The number of bits to shift right by.
     ---@return integer result The shifted value, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.arshift( x, disp )
         if x < 0x80000000 then
             return rbit_tobit( math_floor( x / (2 ^ disp) ) )
@@ -411,6 +423,7 @@ if rbit.lrotate == nil then
         ---@param x integer The value to be rotated.
         ---@param disp integer The number of bits to rotate left by.
         ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.lrotate( x, disp )
             return rbit_bor( rbit_lshift( x, disp ), rbit_rshift( x, 32 - disp ) )
         end
@@ -425,6 +438,7 @@ if rbit.lrotate == nil then
         ---@param x integer The value to be rotated.
         ---@param disp integer The number of bits to rotate left by.
         ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.lrotate( x, disp )
             return rbit_brotate( x, disp )
         end
@@ -448,6 +462,7 @@ if rbit.rrotate == nil then
         ---@param x integer The value to be rotated.
         ---@param disp integer The number of bits to rotate right by.
         ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.rrotate( x, disp )
             return rbit_bor( rbit_rshift( x, disp ), rbit_lshift( x, 32 - disp ) )
         end
@@ -462,6 +477,7 @@ if rbit.rrotate == nil then
         ---@param x integer The value to be rotated.
         ---@param disp integer The number of bits to rotate right by.
         ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@nodiscard
         function rbit.rrotate( x, disp )
             return rbit_brotate( x, -disp )
         end
@@ -482,6 +498,7 @@ if rbit.brotate == nil then
     ---@param x integer The value to be rotated.
     ---@param disp integer The number of bits to rotate by. Positive rotates left, negative rotates right.
     ---@return integer result The rotated value, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.brotate( x, disp )
         if disp > 0 then
             return rbit_lrotate( x, disp )
@@ -502,6 +519,7 @@ if rbit.btest == nil then
     ---@param x integer The first value.
     ---@param ... integer Additional values to AND together with the first.
     ---@return boolean result `true` if the bitwise AND of all given values is non-zero, `false` otherwise.
+    ---@nodiscard
     function rbit.btest( x, ... )
         return rbit_band( x, ... ) ~= 0
     end
@@ -519,6 +537,7 @@ if rbit.extract == nil then
     ---@param field integer The starting bit position of the field (0-indexed).
     ---@param width integer? The number of bits in the field. Defaults to 1.
     ---@return integer result The extracted bit field, right-aligned as an unsigned integer.
+    ---@nodiscard
     function rbit.extract( x, field, width )
         return rbit_band( rbit_rshift( x, field ), 2 ^ (width or 1) - 1 )
     end
@@ -538,6 +557,7 @@ if rbit.replace == nil then
     ---@param field integer The starting bit position of the field to replace (0-indexed).
     ---@param width integer? The number of bits in the field. Defaults to 1.
     ---@return integer result The value of `x` with the specified bit field replaced, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.replace( x, extract, field, width )
         local mask = 2 ^ (width or 1) - 1
         return rbit_band( x, rbit_bnot( rbit_lshift( mask, field ) ) ) +
@@ -555,6 +575,7 @@ if rbit.bswap == nil then
     ---
     ---@param x integer The value whose byte order is to be swapped.
     ---@return integer result The byte-swapped value, normalized to a signed 32bit integer.
+    ---@nodiscard
     function rbit.bswap( x )
         return rbit_bor(
             rbit_lshift( rbit_band( x, 0xFF ), 24 ),
@@ -578,6 +599,7 @@ end
 ---@param x integer The value whose bits are to be reversed.
 ---@param bit_count integer? The number of low-order bits to reverse. Defaults to `32`.
 ---@return integer result The value of `x` with its bits reversed.
+---@nodiscard
 function rbit.reverse( x, bit_count )
     ---@type integer
     local result = rbit_band( x, 1 )
@@ -598,6 +620,7 @@ end
 ---@param x integer The integer to get the sign of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+---@nodiscard
 function rbit.sign( x, bit_count )
     if x > 0 then
         if bit_count == nil or bit_count == 32 then
@@ -623,6 +646,7 @@ end
 ---@param x integer The integer to get the unsigned value of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return integer result The unsigned value of the integer.
+---@nodiscard
 function rbit.unsign( x, bit_count )
     if x < 0 then
         if bit_count == nil or bit_count == 32 then

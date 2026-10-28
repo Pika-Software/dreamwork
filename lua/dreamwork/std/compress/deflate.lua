@@ -318,6 +318,7 @@ end
 ---
 --- Empty string and string longer than 32768 bytes are not allowed.
 ---@return table dict The dictionary used for preset dictionary compression and decompression.
+---@nodiscard
 ---@raise error if 'strlen' does not match the length of 'str',
 --- or if 'adler32' does not match the Adler-32 checksum of 'str'.
 function deflate.createDictionary( str )
@@ -1788,6 +1789,7 @@ end
 --- If nil, use the default configuration.
 ---@return string? result The compressed data.
 ---@return number bit_count The number of bits padded at the end of output.
+---@nodiscard
 --- 0 <= bits < 8
 ---
 --- This means the most significant "bits" of the last byte of the returned
@@ -1818,6 +1820,7 @@ end
 ---@param dictionary? table A preset dictionary produced by deflate.createDictionary()
 ---@return string? result The compressed data.
 ---@return number bit_count The number of bits padded at the end of output.
+---@nodiscard
 --- Should always be 0.
 --- Zlib formatted compressed data never has padding bits at the end.
 ---@see compression_configs
@@ -2443,6 +2446,7 @@ end
 --- If the decompression fails, return nil. You should check if this return
 --- value is non-nil to know if the decompression succeeds.
 ---@return number | nil byte_count If the decompression succeeds, return the number of
+---@nodiscard
 --- unprocessed bytes in the input compressed data. This return value is a
 --- positive integer if the input data is a valid compressed data appended by an
 --- arbitary non-empty string. This return value is 0 if the input data does not
@@ -2475,6 +2479,7 @@ end
 --- If the decompression fails, return nil. You should check if this return
 --- value is non-nil to know if the decompression succeeds.
 ---@return number | nil byte_count If the decompression succeeds, return the number of
+---@nodiscard
 --- unprocessed bytes in the input compressed data. This return value is a
 --- positive integer if the input data is a valid compressed data appended by an
 --- arbitary non-empty string. This return value is 0 if the input data does not
@@ -2663,6 +2668,7 @@ end
 ---
 --- t:decode(str) returns the decoded string if succeeds. nil if fails.
 ---@return string? message  If the codec is successfully created, return nil.
+---@nodiscard
 --- If not, return a string that describes the reason why the codec cannot be created.
 ---
 ---@usage
@@ -2832,6 +2838,7 @@ do
     --- The encoded string is guaranteed to contain no NULL ("\000") character.
     ---@param str string The string to be encoded.
     ---@return string result The encoded string.
+    ---@nodiscard
     ---@see deflate.decodeForWoWAddonChannel
     function deflate.encodeForWoWAddonChannel( str )
         if _addon_channel_codec == nil then
@@ -2846,6 +2853,7 @@ do
     --- Decode the string produced by deflate.encodeForWoWAddonChannel
     ---@param str string The string to be decoded.
     ---@return string | nil result The decoded string if succeeds. nil if fails.
+    ---@nodiscard
     ---@see deflate.encodeForWoWAddonChannel
     function deflate.decodeForWoWAddonChannel( str )
         if _addon_channel_codec == nil then
@@ -2898,6 +2906,7 @@ do
     --- See also https://wow.gamepedia.com/ValidChatMessageCharacters
     ---@param str string The string to be encoded.
     ---@return string The encoded string.
+    ---@nodiscard
     ---@see deflate.decodeForWoWChatChannel
     function deflate.encodeForWoWChatChannel( str )
         if _chat_channel_codec == nil then
@@ -2912,6 +2921,7 @@ do
     --- Decode the string produced by deflate.encodeForWoWChatChannel.
     ---@param str string The string to be decoded.
     ---@return string | nil result The decoded string if succeeds. nil if fails.
+    ---@nodiscard
     ---@see deflate.encodeForWoWChatChannel
     function deflate.decodeForWoWChatChannel( str )
         if _chat_channel_codec == nil then
@@ -3083,6 +3093,7 @@ local _6bit_to_byte = {
 --- (26 lowercase letters, 26 uppercase letters, 10 numbers digits, left parenthese, or right parenthese)
 ---@param str string The string to be encoded.
 ---@return string result The encoded string.
+---@nodiscard
 function deflate.encodeForPrint( str )
     local strlen = string_len( str )
     local strlenMinus2 = strlen - 2
@@ -3138,6 +3149,7 @@ end
 --- 10 numbers digits, left parenthese, or right parenthese.
 ---@param str string The string to be decoded
 ---@return string | nil result The decoded string if succeeds. nil if fails.
+---@nodiscard
 function deflate.decodeForPrint( str )
     str = string_gsub( str, "^[%c ]+", "" )
     str = string_gsub( str, "[%c ]+$", "" )

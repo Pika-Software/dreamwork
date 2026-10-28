@@ -104,6 +104,7 @@ end
 --- Checks whether the error's stack has no captured frames.
 ---
 ---@return boolean is_empty Returns `true` if no frames have been captured, otherwise `false`.
+---@nodiscard
 function Error:isEmpty()
     local stack = self.stack
     if stack == nil then
@@ -288,6 +289,7 @@ std.Error = ErrorClass
 ---
 ---@param value any
 ---@return boolean is_error
+---@nodiscard
 function std.isError( value )
     return is( value, ErrorClass )
 end

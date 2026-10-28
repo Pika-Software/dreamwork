@@ -39,6 +39,7 @@ end
 ---
 ---@param name string The name of the symbol.
 ---@return dreamwork.std.Symbol obj The new symbol.
+---@nodiscard
 function std.Symbol( name )
     local symbol = symbols[ name ]
     if symbol == nil then

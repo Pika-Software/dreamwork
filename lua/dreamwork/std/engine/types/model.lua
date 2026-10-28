@@ -1669,6 +1669,7 @@ end
 ---
 ---@param act_name string The name of the activity.
 ---@return integer act_id The ID of the activity.
+---@nodiscard
 function ModelClass.getGlobalActivityID( act_name )
     return activity_ids[ act_name ] or -1
 end
@@ -1683,6 +1684,7 @@ end
 ---
 ---@param act_id integer The ID of the activity.
 ---@return string act_name The name of the activity.
+---@nodiscard
 function ModelClass.getGlobalActivityName( act_id )
     return activity_names[ act_id ] or "ACT_INVALID"
 end

@@ -66,6 +66,7 @@ end
 ---@return integer b The second octet. <0-255>
 ---@return integer c The third octet. <0-255>
 ---@return integer d The fourth octet. <0-255>
+---@nodiscard
 function ipv4.octets( ip_address )
     local d, c, b, a = bytepack_writeUInt32( ip_address )
     return a, b, c, d
@@ -86,6 +87,7 @@ end
 ---@param c integer The third octet. <0-255>
 ---@param d integer The fourth octet. <0-255>
 ---@return dreamwork.std.IPv4 ip_address The IP address.
+---@nodiscard
 local function fromOctets( a, b, c, d )
     return bytepack_readUInt32(
         math_clamp( d, 0, 255 ),
@@ -117,6 +119,7 @@ ipv4.fromOctets = fromOctets
 ---@param end_position? integer The end position in the ipv4 string.
 ---@return dreamwork.std.IPv4 ip_address The parsed IP address.
 ---@return integer prefix_length The CIDR prefix length. <0-32>, `32` if not specified.
+---@nodiscard
 function ipv4.parse( ipv4_str, start_position, end_position )
     local start_index, end_index = math_range( string_len( ipv4_str ), start_position, end_position )
 
@@ -192,6 +195,7 @@ end
 ---
 ---@param ip_address dreamwork.std.IPv4 The IP address.
 ---@return string str The string representation of the IP address.
+---@nodiscard
 function ipv4.toString( ip_address )
     local d, c, b, a = bytepack_writeUInt32( ip_address )
     return string_format( "%d.%d.%d.%d", a, b, c, d )
@@ -207,6 +211,7 @@ end
 ---
 ---@param ip_address dreamwork.std.IPv4 The IP address.
 ---@return string ptr The reverse DNS pointer of the IP address.
+---@nodiscard
 function ipv4.reversePointer( ip_address )
     local d, c, b, a = bytepack_writeUInt32( ip_address )
     return string_format( "%d.%d.%d.%d.in-addr.arpa", d, c, b, a )
@@ -222,6 +227,7 @@ end
 ---
 ---@param prefix_length integer The CIDR prefix length. <0-32>
 ---@return dreamwork.std.IPv4 mask_address The subnet mask address.
+---@nodiscard
 function ipv4.fromPrefix( prefix_length )
     return bit_unsign( bin_masks[ math_clamp( prefix_length, 0, 32 ) ] )
 end
@@ -238,6 +244,7 @@ end
 ---@param prefix_length integer The CIDR prefix length. <0-32>
 ---@return dreamwork.std.IPv4 network_address The network (first) address.
 ---@return dreamwork.std.IPv4 broadcast_address The broadcast (last) address.
+---@nodiscard
 local function cidr( ip_address, prefix_length )
     local network_address   = bit_band( ip_address, bin_masks[ prefix_length ] )
     local broadcast_address = bit_bor( network_address, bin_inverted_masks[ prefix_length ] )
@@ -257,6 +264,7 @@ ipv4.cidr = cidr
 ---@param prefix_length integer The CIDR prefix length. <0-32>
 ---@return dreamwork.std.IPv4 network_address The network (first) address.
 ---@return dreamwork.std.IPv4 broadcast_address The broadcast (last) address.
+---@nodiscard
 function ipv4.cdir( ip_address, prefix_length )
     return cidr( ip_address, prefix_length )
 end
@@ -268,6 +276,7 @@ end
 ---@param network_address dreamwork.std.IPv4 The network address.
 ---@param broadcast_address dreamwork.std.IPv4 The broadcast address.
 ---@return dreamwork.std.IPv4 wildcard_address The wildcard address.
+---@nodiscard
 function ipv4.wildcard( network_address, broadcast_address )
     return bit_unsign( bit_bxor( network_address, broadcast_address ) )
 end
@@ -279,6 +288,7 @@ end
 ---@param network_address dreamwork.std.IPv4 The network address.
 ---@param broadcast_address dreamwork.std.IPv4 The broadcast address.
 ---@return dreamwork.std.IPv4 mask_address The subnet mask address.
+---@nodiscard
 function ipv4.mask( network_address, broadcast_address )
     return bit_unsign( bit_bnot( bit_bxor( network_address, broadcast_address ) ) )
 end
@@ -293,6 +303,7 @@ end
 ---@param broadcast_address dreamwork.std.IPv4 The broadcast address.
 ---@return dreamwork.std.IPv4 first The first usable address in the network.
 ---@return dreamwork.std.IPv4 last The last usable address in the network.
+---@nodiscard
 function ipv4.range( network_address, broadcast_address )
     return network_address + 1, broadcast_address - 1
 end
@@ -305,6 +316,7 @@ end
 ---@param broadcast_address dreamwork.std.IPv4 The broadcast address.
 ---@return integer total_count The total number of addresses in the network.
 ---@return integer usable_count The number of usable host addresses in the network, excluding the network and broadcast addresses.
+---@nodiscard
 function ipv4.count( network_address, broadcast_address )
     local diff = broadcast_address - network_address
     return diff + 1, diff - 1
@@ -320,6 +332,7 @@ do
     ---@param network_address dreamwork.std.IPv4 The network address.
     ---@param broadcast_address dreamwork.std.IPv4 The broadcast address.
     ---@return boolean in_range `true` if the IP address is within the network, `false` otherwise.
+    ---@nodiscard
     local function inRange( ip_address, network_address, broadcast_address )
         return ip_address >= network_address and ip_address <= broadcast_address
     end
@@ -382,6 +395,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address to check.
     ---@return boolean is_documentation `true` if the IP address is a documentation address, `false` otherwise.
+    ---@nodiscard
     function ipv4.isDocumentation( ip_address )
         return test_net_1( ip_address ) or test_net_2( ip_address ) or test_net_3( ip_address )
     end
@@ -392,6 +406,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address to check.
     ---@return boolean is_unspecified `true` if the IP address is the unspecified address, `false` otherwise.
+    ---@nodiscard
     function ipv4.isUnspecified( ip_address )
         return ip_address == 0
     end
@@ -402,6 +417,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address to check.
     ---@return boolean is_broadcast `true` if the IP address is the limited broadcast address, `false` otherwise.
+    ---@nodiscard
     function ipv4.isBroadcast( ip_address )
         return ip_address == 0xFFFFFFFF
     end
@@ -457,6 +473,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address.
     ---@return boolean is_private `true` if the IP address is private, `false` otherwise.
+    ---@nodiscard
     local function isPrivate( ip_address )
         for i = 1, exception_count, 1 do
             local data = private_range_exceptions[ i ]
@@ -485,6 +502,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address.
     ---@return boolean is_public `true` if the IP address is public, `false` otherwise.
+    ---@nodiscard
     function ipv4.isPublic( ip_address )
         return not isPrivate( ip_address )
     end
@@ -509,6 +527,7 @@ do
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address.
     ---@return dreamwork.std.IPv4.Class class The class of the IP address.
+    ---@nodiscard
     function ipv4.class( ip_address )
         for i = 1, 4, 1 do
             local data = classes[ i ]

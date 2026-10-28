@@ -102,6 +102,7 @@ end
 --- Checks if the hook is running currently.
 ---
 ---@return boolean is_running Returns `true` if the hook is running currently, otherwise `false`.
+---@nodiscard
 function Hook:isRunning()
     return self.running
 end

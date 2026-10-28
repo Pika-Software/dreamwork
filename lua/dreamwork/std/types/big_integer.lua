@@ -111,6 +111,7 @@ std.BigInteger = BigIntegerClass
 ---
 ---@param value any The value to check.
 ---@return boolean is_bigint `true` if the value is a `BigInteger`, `false` otherwise.
+---@nodiscard
 local function isBigInteger( value )
     return debug_getmetatable( value ) == BigInteger
 end
@@ -124,6 +125,7 @@ do
     --- Checks if a big integer object is zero/empty.
     ---
     ---@return boolean is_zero `true` if the big integer object is zero/empty, `false` otherwise.
+    ---@nodiscard
     function BigInteger:isZero()
         return self.limbs[ 0 ] == 0
     end
@@ -146,6 +148,7 @@ do
     --- Checks if a big integer object is even.
     ---
     ---@return boolean result `true` if the big integer object is even, `false` otherwise.
+    ---@nodiscard
     function BigInteger:isEven()
         local limbs = self.limbs
         return limbs[ 0 ] == 0 or (limbs[ 1 ] % 2) == 0
@@ -156,6 +159,7 @@ do
     --- Checks if a big integer object is odd.
     ---
     ---@return boolean `true` if the big integer object is odd, `false` otherwise.
+    ---@nodiscard
     function BigInteger:isOdd()
         return not self:isEven()
     end
@@ -743,6 +747,7 @@ do
     ---@param value any The value to convert to a `BigInteger`.
     ---@param base? integer The numeric base used when parsing string values. Must be between `2` and `36` (inclusive). Defaults to `10`.
     ---@return dreamwork.std.BigInteger obj
+    ---@nodiscard
     function std.toBigInteger( value, base )
         if isBigInteger( value ) then
             ---@cast value dreamwork.std.BigInteger
@@ -818,6 +823,7 @@ end
 ---@param signed boolean Whether the byte sequence represents a signed integer.
 ---@param ... integer The bytes of the integer, each in the range `0`–`255`.
 ---@return dreamwork.std.BigInteger new_obj
+---@nodiscard
 function BigIntegerClass.fromBytes( signed, ... )
     ---@type dreamwork.std.BigInteger
     local obj = setmetatable( {
@@ -838,6 +844,7 @@ local toBigInteger = std.toBigInteger
 ---
 ---@param value any The value to compare with (will be converted into `BigInteger`).
 ---@return `-1` | `0` | `1` result `-1` if `self < value`, `0` if equal, `1` if `self > value`.
+---@nodiscard
 function BigInteger:compare( value )
     return compare( self, toBigInteger( value ) )
 end
@@ -870,6 +877,7 @@ end
 --- Makes a copy of the `BigInteger` object.
 ---
 ---@return dreamwork.std.BigInteger new_obj
+---@nodiscard
 function BigInteger:copy()
     return setmetatable( {
         limbs = limbs_copy( self.limbs ),
@@ -882,6 +890,7 @@ end
 --- Converts a big integer object to a lua_number (always an integer).
 ---
 ---@return integer value The number that the big integer object represents.
+---@nodiscard
 function BigInteger:toInteger()
     local limbs = self.limbs
 
@@ -949,6 +958,7 @@ do
     ---
     ---@param base? integer The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
     ---@return string str The string representation of the big integer.
+    ---@nodiscard
     function BigInteger:toString( base )
         if base == nil then
             base = 10
@@ -1064,6 +1074,7 @@ do
 
     ---@param self dreamwork.std.BigInteger
     ---@return string
+    ---@nodiscard
     ---@protected
     local function toHex( self )
         local limbs = self.limbs
@@ -1100,6 +1111,7 @@ do
     --- Converts the big integer into a hex string.
     ---
     ---@return string hex_str The hex string representation of the big integer.
+    ---@nodiscard
     function BigInteger:toHexString()
         if self.sign then
             return "-0x" .. toHex( self )
@@ -1132,6 +1144,7 @@ do
     --- The output is zero-padded to a whole number of bytes.
     ---
     ---@return string str The binary string representation of the big integer.
+    ---@nodiscard
     function BigInteger:toBinaryString()
         local limbs = self.limbs
 
@@ -1398,6 +1411,7 @@ end
 ---
 ---@param value any The second value to be converted into `BigInteger`.
 ---@return dreamwork.std.BigInteger object The result of the operation.
+---@nodiscard
 function BigInteger:add( value )
     local b = toBigInteger( value )
     return add_signed( self, b, b.sign )
@@ -1616,6 +1630,7 @@ end
 --- Checks if `BigInteger` is a power of two.
 ---
 ---@return boolean is_pot `true` if a number is a valid power-of-two, otherwise `false`.
+---@nodiscard
 function BigInteger:isPowerOfTwo()
     return limbs_power_of_two( self.limbs ) ~= nil
 end
@@ -1970,6 +1985,7 @@ do
     ---
     ---@param value any The value to divide by.
     ---@return dreamwork.std.BigInteger remainder The remainder (same sign as self, or zero).
+    ---@nodiscard
     function BigInteger:mod( value )
         return raw_select( 2, BigInteger_div( BigIntegerClass( self ), value ) )
     end
@@ -1988,6 +2004,7 @@ end
 --- Returns the log2 of a big integer object.
 ---
 ---@return number result The base-2 logarithm of the big integer object. NaN for negative values, -inf for zero.
+---@nodiscard
 function BigInteger:log2()
     if self.sign then
         return math.nan

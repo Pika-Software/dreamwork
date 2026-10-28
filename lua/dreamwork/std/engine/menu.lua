@@ -168,6 +168,7 @@ do
     --- Gets the master volume.
     ---
     ---@return number master_volume The volume, from 0 to 1.
+    ---@nodiscard
     function options.getMasterVolume()
         return console_Variable.getNumber( "volume" )
     end
@@ -177,6 +178,7 @@ do
     --- Gets the effects volume.
     ---
     ---@return number sfx_volume The volume, from 0 to 1.
+    ---@nodiscard
     function options.getEffectsVolume()
         return console_Variable.getNumber( "volume_sfx" )
     end
@@ -186,6 +188,7 @@ do
     --- Gets the music volume.
     ---
     ---@return number music_volume The volume, from 0 to 1.
+    ---@nodiscard
     function options.getMusicVolume()
         return console_Variable.getNumber( "snd_musicvolume" )
     end
@@ -195,6 +198,7 @@ do
     --- Gets the HEV suit volume.
     ---
     ---@return number hev_volume The volume, from 0 to 1.
+    ---@nodiscard
     function options.getSuitVolume()
         return console_Variable.getNumber( "suitvolume" )
     end
@@ -204,6 +208,7 @@ do
     --- Gets whether to mute the volume when the game loses focus.
     ---
     ---@return boolean muted Whether to mute the volume.
+    ---@nodiscard
     function options.getMuteVolumeOnLoseFocus()
         return console_Variable.getBoolean( "snd_mute_losefocus" )
     end
@@ -215,6 +220,7 @@ do
     --- All language codes https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes.
     ---
     ---@return string language_code ISO 639-1 language code.
+    ---@nodiscard
     function options.getLanguage()
         return console_Variable.getString( "gmod_language" )
     end
@@ -224,6 +230,7 @@ do
     --- Returns whether the fast weapon switch is enabled.
     ---
     ---@return boolean enabled Whether the fast weapon switch is enabled.
+    ---@nodiscard
     function options.getFastWeaponSwitch()
         return console_Variable.getBoolean( "hud_fastswitch" )
     end
@@ -233,6 +240,7 @@ do
     --- Returns whether the quick info is enabled.
     ---
     ---@return boolean enabled Whether the quick info is enabled.
+    ---@nodiscard
     function options.getQuickInfo()
         return console_Variable.getBoolean( "hud_quickinfo" )
     end
@@ -242,6 +250,7 @@ do
     --- Returns whether the crosshair is enabled.
     ---
     ---@return boolean enabled Whether the crosshair is enabled.
+    ---@nodiscard
     function options.getCrosshair()
         return console_Variable.getBoolean( "crosshair" )
     end
@@ -251,6 +260,7 @@ do
     --- Returns whether the HUD render (health, ammo, etc) is enabled.
     ---
     ---@return boolean enabled Whether the HUD render is enabled.
+    ---@nodiscard
     function options.getDrawHUD()
         return console_Variable.getBoolean( "cl_drawhud" )
     end
@@ -260,6 +270,7 @@ do
     --- Returns client's mouse sensitivity.
     ---
     ---@return number sensitivity The mouse sensitivity.
+    ---@nodiscard
     function options.getMouseSensitivity()
         return console_Variable.getNumber( "sensitivity" )
     end
@@ -269,6 +280,7 @@ do
     --- Returns whether the loading URL is enabled.
     ---
     ---@return boolean allowed Whether the loading URL is enabled.
+    ---@nodiscard
     function options.isCustomLoadingScreenAllowed()
         return console_Variable.getBoolean( "cl_enable_loadingurl" )
     end
@@ -279,6 +291,7 @@ do
     ---
     ---@return number width The width of the game's window (in pixels).
     ---@return number height The height of the game's window (in pixels).
+    ---@nodiscard
     function options.getScreenResolution()
         return window.width, window.height
     end
@@ -290,6 +303,7 @@ do
     --- Returns whether the game is running in VSync mode.
     ---
     ---@return boolean is_on `true` if the game is running in VSync mode, `false` if not.
+    ---@nodiscard
     function options.getVSync()
         return console_Variable.getBoolean( "mat_vsync" )
     end
@@ -299,6 +313,7 @@ do
     --- Checks if close captions are enabled.
     ---
     ---@return boolean is_enabled `true` if close captions are enabled, `false` otherwise.
+    ---@nodiscard
     function options.getCloseCaptions()
         return console_Variable.getBoolean( "closecaption" )
     end

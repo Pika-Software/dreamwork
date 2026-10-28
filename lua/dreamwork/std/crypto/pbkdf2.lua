@@ -33,6 +33,7 @@ local hmac_compute = hmac.compute
 ---
 ---@param options dreamwork.std.pbkdf2.Options
 ---@return string pbkdf2_str The derived key as a binary string of `length` bytes.
+---@nodiscard
 function crypto.pbkdf2( options )
     local pbkdf2_iterations = options.iterations or 4096
     local pbkdf2_length = options.length or 16

@@ -18,6 +18,7 @@ std.ascii = ascii
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_lower `true` if the byte is in the range 0x61–0x7A.
+---@nodiscard
 function ascii.isLower( uint8 )
     return uint8 >= 0x61 and uint8 <= 0x7A
 end
@@ -28,6 +29,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_upper `true` if the byte is in the range 0x41–0x5A.
+---@nodiscard
 function ascii.isUpper( uint8 )
     return uint8 >= 0x41 and uint8 <= 0x5A
 end
@@ -38,6 +40,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_alpha `true` if the byte is a lowercase or uppercase letter.
+---@nodiscard
 function ascii.isAlpha( uint8 )
     return (uint8 >= 0x61 and uint8 <= 0x7A)
         or (uint8 >= 0x41 and uint8 <= 0x5A)
@@ -49,6 +52,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_digit `true` if the byte is in the range 0x30–0x39.
+---@nodiscard
 function ascii.isDigit( uint8 )
     return uint8 >= 0x30 and uint8 <= 0x39
 end
@@ -59,6 +63,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_binary_digit `true` if the byte is `0` or `1`.
+---@nodiscard
 function ascii.isBinaryDigit( uint8 )
     return uint8 == 0x30 or uint8 == 0x31
 end
@@ -69,6 +74,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_octal_digit `true` if the byte is in the range 0x30–0x37.
+---@nodiscard
 function ascii.isOctalDigit( uint8 )
     return uint8 >= 0x30 and uint8 <= 0x37
 end
@@ -79,6 +85,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_hex_digit `true` if the byte is a decimal digit or a hex letter.
+---@nodiscard
 function ascii.isHexDigit( uint8 )
     return (uint8 >= 0x30 and uint8 <= 0x39)
         or (uint8 >= 0x61 and uint8 <= 0x66)
@@ -91,6 +98,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_alnum `true` if the byte is an ASCII letter or decimal digit.
+---@nodiscard
 function ascii.isAlnum( uint8 )
     return (uint8 >= 0x61 and uint8 <= 0x7A)
         or (uint8 >= 0x41 and uint8 <= 0x5A)
@@ -104,6 +112,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_word `true` if the byte is an ASCII letter, decimal digit or underscore.
+---@nodiscard
 function ascii.isWord( uint8 )
     return (uint8 >= 0x61 and uint8 <= 0x7A)
         or (uint8 >= 0x41 and uint8 <= 0x5A)
@@ -119,6 +128,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_space `true` if the byte is a whitespace character, `false` otherwise.
+---@nodiscard
 function ascii.isSpace( uint8 )
     return uint8 == 0x20                     -- space
         or (uint8 >= 0x09 and uint8 <= 0x0D) -- \t \n \v \f \r
@@ -130,6 +140,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_blank `true` if the byte is a space or a horizontal tab.
+---@nodiscard
 function ascii.isBlank( uint8 )
     return uint8 == 0x20 or uint8 == 0x09
 end
@@ -140,6 +151,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_ascii `true` if the byte is not greater than 0x7F.
+---@nodiscard
 function ascii.isASCII( uint8 )
     return uint8 >= 0x00 and uint8 <= 0x7F
 end
@@ -151,6 +163,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_extended `true` if the byte is greater than 0x7F.
+---@nodiscard
 function ascii.isExtended( uint8 )
     return uint8 > 0x7F
 end
@@ -161,6 +174,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_printable `true` if the byte is a printable character.
+---@nodiscard
 function ascii.isPrintable( uint8 )
     return uint8 >= 0x20 and uint8 <= 0x7E
 end
@@ -171,6 +185,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_graphic `true` if the byte has a visible glyph.
+---@nodiscard
 function ascii.isGraphic( uint8 )
     return uint8 >= 0x21 and uint8 <= 0x7E
 end
@@ -183,6 +198,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_control `true` if the byte is a control character.
+---@nodiscard
 function ascii.isControl( uint8 )
     return (uint8 >= 0x00 and uint8 <= 0x1F)
         or uint8 == 0x7F -- DEL
@@ -197,6 +213,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_special `true` if the byte is a punctuation or symbol character.
+---@nodiscard
 function ascii.isSpecial( uint8 )
     return (uint8 >= 0x21 and uint8 <= 0x2F) -- ! – /
         or (uint8 >= 0x3A and uint8 <= 0x40) -- : – @
@@ -213,6 +230,7 @@ end
 ---
 ---@param uint8 byte The byte to check.
 ---@return boolean is_magic `true` if the byte is a Lua pattern magic character.
+---@nodiscard
 function ascii.isMagic( uint8 )
     return uint8 == 0x28 -- (
         or uint8 == 0x29 -- )
@@ -234,6 +252,7 @@ end
 ---
 ---@param uint8 byte The byte to convert.
 ---@return byte lower_uint8 The lowercase byte.
+---@nodiscard
 function ascii.toLower( uint8 )
     if uint8 >= 0x41 and uint8 <= 0x5A then
         return uint8 + 0x20
@@ -248,6 +267,7 @@ end
 ---
 ---@param uint8 byte The byte to convert.
 ---@return byte upper_uint8 The uppercase byte.
+---@nodiscard
 function ascii.toUpper( uint8 )
     if uint8 >= 0x61 and uint8 <= 0x7A then
         return uint8 - 0x20
@@ -290,6 +310,7 @@ do
     ---
     ---@param uint8 byte The byte to convert.
     ---@return dreamwork.std.ascii.integer | nil number The digit value, or `nil` if the byte is not a valid digit.
+    ---@nodiscard
     function ascii.toInteger( uint8 )
         return byte_to_number[ uint8 ]
     end
@@ -319,6 +340,7 @@ do
     ---@param value dreamwork.std.ascii.integer The digit value to convert.
     ---@param uppercase? boolean If `true`, letters are returned in uppercase. Defaults to `false`.
     ---@return byte | nil uint8 The digit byte, or `nil` if the value is out of range.
+    ---@nodiscard
     function ascii.fromInteger( value, uppercase )
         return (uppercase and upper_digits or lower_digits)[ value ]
     end

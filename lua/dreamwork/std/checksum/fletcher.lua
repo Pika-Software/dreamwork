@@ -80,6 +80,7 @@ end
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^16 (0x10000).
+---@nodiscard
 function Fletcher16:digest()
     return (self.b * 0x0100) + self.a
 end
@@ -108,6 +109,7 @@ do
     ---
     ---@param raw_str string The string is used to calculate checksum.
     ---@return integer checksum The checksum value, which is greater or equal to 0, and less than 2^16 (0x10000).
+    ---@nodiscard
     function Fletcher16Class.digest( raw_str )
         return fletcher16:reset():update( raw_str ):digest()
     end
@@ -218,6 +220,7 @@ end
 --- A trailing odd byte is padded with zero.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function Fletcher32:digest()
     local a, b = self.a, self.b
 
@@ -255,6 +258,7 @@ do
     ---
     ---@param raw_str string The string is used to calculate checksum.
     ---@return integer checksum The checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
+    ---@nodiscard
     function Fletcher32Class.digest( raw_str )
         return fletcher32:reset():update( raw_str ):digest()
     end

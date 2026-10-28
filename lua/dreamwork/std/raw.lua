@@ -42,6 +42,7 @@ if raw.len == nil then
     ---
     ---@param value table | string | any
     ---@return integer length
+    ---@nodiscard
     function raw.len( value )
         return #value
     end

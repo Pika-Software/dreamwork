@@ -55,6 +55,7 @@ window.flash = system_FlashWindow
 --- Returns whether the game window is fullscreen.
 ---
 ---@return boolean is_on `true` if the game window is fullscreen, `false` if not.
+---@nodiscard
 function window.isFullscreen()
     return not system_IsWindowed()
 end

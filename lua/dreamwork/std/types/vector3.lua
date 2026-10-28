@@ -114,6 +114,7 @@ if ffi == nil then
 
     ---@param value any
     ---@return boolean is_vector3
+    ---@nodiscard
     function isVector3( value )
         return debug_getmetatable( value ) == Vector3
     end
@@ -135,6 +136,7 @@ else
 
     ---@param value any
     ---@return boolean is_vector3
+    ---@nodiscard
     function isVector3( value )
         return ffi_istype( Vector3_ctype, value )
     end
@@ -230,6 +232,7 @@ end
 ---@return number x The x coordinate of the vector.
 ---@return number y The y coordinate of the vector.
 ---@return number z The z coordinate of the vector.
+---@nodiscard
 function Vector3:unpack()
     return self.x, self.y, self.z
 end
@@ -264,6 +267,7 @@ end
 ---
 ---@param self dreamwork.std.Vector3 The vector.
 ---@return dreamwork.std.Vector3 copy The new vector.
+---@nodiscard
 local function Vector3_copy( self )
     return Vector3_create( self.x, self.y, self.z )
 end
@@ -275,6 +279,7 @@ Vector3.copy = Vector3_copy
 --- Checks if all coordinates of the vector are exactly zero.
 ---
 ---@return boolean is_zero `true` if the vector is zero, `false` otherwise.
+---@nodiscard
 function Vector3:isZero()
     return self.x == 0 and self.y == 0 and self.z == 0
 end
@@ -298,6 +303,7 @@ end
 ---@param vector dreamwork.std.Vector3 The vector to check.
 ---@param tolerance number The maximum allowed difference per coordinate.
 ---@return boolean is_near `true` if the vectors are equal within the tolerance, otherwise `false`.
+---@nodiscard
 function Vector3:isNear( vector, tolerance )
     return math_abs( self.x - vector.x ) <= tolerance and
         math_abs( self.y - vector.y ) <= tolerance and
@@ -342,6 +348,7 @@ Vector3.scale = Vector3_scale
 ---
 ---@param scale number The scale factor.
 ---@return dreamwork.std.Vector3 scaled_vec3 The scaled copy of the vector.
+---@nodiscard
 function Vector3:getScaled( scale )
     return Vector3_create( self.x * scale, self.y * scale, self.z * scale )
 end
@@ -474,19 +481,22 @@ function Vector3:div( value )
     return self
 end
 
---- `vec3 / number` and `vec3 / vec3` ( component-wise ), `number / vec3` is not supported.
+--- `vec3 / number`, `vec3 / vec3` and `number / vec3` ( component-wise ).
 ---
----@param value dreamwork.std.Vector3 | number The divisor vector or number.
+---@param a dreamwork.std.Vector3 | number
+---@param b dreamwork.std.Vector3 | number
 ---@return dreamwork.std.Vector3 quotient The new vector.
 ---@protected
-function Vector3:__div( value )
-    if isNumber( value ) then
-        ---@cast value number
-        return Vector3_create( self.x / value, self.y / value, self.z / value )
+function Vector3.__div( a, b )
+    if isNumber( a ) then
+        ---@cast a number
+        return Vector3_create( a / b.x, a / b.y, a / b.z )
+    elseif isNumber( b ) then
+        ---@cast b number
+        return Vector3_create( a.x / b, a.y / b, a.z / b )
     end
 
-    ---@cast value dreamwork.std.Vector3
-    return Vector3_create( self.x / value.x, self.y / value.y, self.z / value.z )
+    return Vector3_create( a.x / b.x, a.y / b.y, a.z / b.z )
 end
 
 --- [SHARED AND MENU]
@@ -496,6 +506,7 @@ end
 ---@param self dreamwork.std.Vector3 The vector.
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number dot_product The dot product of two vectors.
+---@nodiscard
 local function Vector3_dot( self, vector )
     return self.x * vector.x + self.y * vector.y + self.z * vector.z
 end
@@ -510,6 +521,7 @@ Vector3.dot = Vector3_dot
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return dreamwork.std.Vector3 cross_product The new vector.
+---@nodiscard
 function Vector3:cross( vector )
     local x1, y1, z1 = self.x, self.y, self.z
     local x2, y2, z2 = vector.x, vector.y, vector.z
@@ -524,6 +536,7 @@ end
 ---
 ---@param self dreamwork.std.Vector3 The vector.
 ---@return number length The squared length of the vector.
+---@nodiscard
 local function Vector3_getLengthSqr( self )
     local x, y, z = self.x, self.y, self.z
     return x * x + y * y + z * z
@@ -537,6 +550,7 @@ Vector3.getLengthSqr = Vector3_getLengthSqr
 ---
 ---@param self dreamwork.std.Vector3 The vector.
 ---@return number length The length of the vector.
+---@nodiscard
 local function Vector3_getLength( self )
     return math_sqrt( Vector3_getLengthSqr( self ) )
 end
@@ -548,6 +562,7 @@ Vector3.getLength = Vector3_getLength
 --- Calculates the squared length of the vector in the XY plane ( ignoring Z ).
 ---
 ---@return number length The squared 2D length of the vector.
+---@nodiscard
 function Vector3:getLength2DSqr()
     local x, y = self.x, self.y
     return x * x + y * y
@@ -558,6 +573,7 @@ end
 --- Calculates the length of the vector in the XY plane ( ignoring Z ).
 ---
 ---@return number length The 2D length of the vector.
+---@nodiscard
 function Vector3:getLength2D()
     local x, y = self.x, self.y
     return math_sqrt( x * x + y * y )
@@ -571,6 +587,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number distance The squared distance between the two vectors.
+---@nodiscard
 function Vector3:getDistanceSqr( vector )
     local x, y, z = vector.x - self.x, vector.y - self.y, vector.z - self.z
     return x * x + y * y + z * z
@@ -582,6 +599,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number distance The distance between the two vectors.
+---@nodiscard
 function Vector3:getDistance( vector )
     local x, y, z = vector.x - self.x, vector.y - self.y, vector.z - self.z
     return math_sqrt( x * x + y * y + z * z )
@@ -593,6 +611,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number distance The squared 2D distance between the two vectors.
+---@nodiscard
 function Vector3:getDistance2DSqr( vector )
     local x, y = vector.x - self.x, vector.y - self.y
     return x * x + y * y
@@ -604,6 +623,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number distance The 2D distance between the two vectors.
+---@nodiscard
 function Vector3:getDistance2D( vector )
     local x, y = vector.x - self.x, vector.y - self.y
     return math_sqrt( x * x + y * y )
@@ -635,6 +655,7 @@ Vector3.normalize = Vector3_normalize
 --- Zero vector returns a zero copy.
 ---
 ---@return dreamwork.std.Vector3 normalized_vec3 The new vector.
+---@nodiscard
 function Vector3:getNormalized()
     return Vector3_normalize( Vector3_copy( self ) )
 end
@@ -649,6 +670,7 @@ end
 ---
 ---@param vector dreamwork.std.Vector3 The other vector.
 ---@return number degrees The angle between two vectors.
+---@nodiscard
 function Vector3:getAngle( vector )
     local x1, y1, z1 = self.x, self.y, self.z
     local x2, y2, z2 = vector.x, vector.y, vector.z
@@ -685,6 +707,7 @@ Vector3.project = Vector3_project
 ---
 ---@param vector dreamwork.std.Vector3 The direction to project onto.
 ---@return dreamwork.std.Vector3 projected_vec3 The new vector.
+---@nodiscard
 function Vector3:getProjected( vector )
     return Vector3_project( Vector3_copy( self ), vector )
 end
@@ -712,6 +735,7 @@ Vector3.reflect = Vector3_reflect
 ---
 ---@param normal dreamwork.std.Vector3 The plane normal, must be normalized.
 ---@return dreamwork.std.Vector3 reflected_vec3 The new vector.
+---@nodiscard
 function Vector3:getReflected( normal )
     return Vector3_reflect( Vector3_copy( self ), normal )
 end
@@ -727,6 +751,7 @@ end
 ---@param box_start dreamwork.std.Vector3 The first corner of the box.
 ---@param box_end dreamwork.std.Vector3 The second corner of the box.
 ---@return boolean in_box `true` if the vector is within the box, `false` otherwise.
+---@nodiscard
 function Vector3:withinAABox( box_start, box_end )
     local x, y, z = self.x, self.y, self.z
     local x1, y1, z1 = box_start.x, box_start.y, box_start.z
@@ -765,6 +790,7 @@ Vector3.rotate = Vector3_rotate
 ---
 ---@param angle dreamwork.std.Angle3 The angle to rotate by.
 ---@return dreamwork.std.Vector3 rotated_vec3 The new vector.
+---@nodiscard
 function Vector3:getRotated( angle )
     return Vector3_rotate( Vector3_copy( self ), angle )
 end
@@ -805,6 +831,7 @@ Vector3.lerpToNumber = Vector3_lerp
 ---@param target dreamwork.std.Vector3 | number The target vector or a number ( used for every coordinate ).
 ---@param frac number The interpolation factor.
 ---@return dreamwork.std.Vector3 lerped_vec3 The new vector.
+---@nodiscard
 local function Vector3_getLerped( self, target, frac )
     return Vector3_lerp( Vector3_copy( self ), target, frac )
 end
@@ -826,6 +853,7 @@ Vector3.getLerpedToNumber = Vector3_getLerped
 ---
 ---@param up? dreamwork.std.Vector3 The up direction, used to calculate roll.
 ---@return dreamwork.std.Angle3 ang3 The new angle.
+---@nodiscard
 function Vector3:toAngle3( up )
     local x, y, z = self.x, self.y, self.z
 
@@ -908,6 +936,7 @@ end
 ---@return number x The x position on the screen, `0` is the left edge.
 ---@return number y The y position on the screen, `0` is the top edge.
 ---@return boolean visible `true` if the position is in front of the view, `false` otherwise.
+---@nodiscard
 function Vector3:toScreen( view_origin, view_angle, view_fov, screen_width, screen_height )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( view_angle.pitch, view_angle.yaw, view_angle.roll )
     local dx, dy, dz = self.x - view_origin.x, self.y - view_origin.y, self.z - view_origin.z
@@ -940,6 +969,7 @@ end
 ---@param screen_width number The screen width in pixels.
 ---@param screen_height number The screen height in pixels.
 ---@return dreamwork.std.Vector3 direction The new normalized direction vector.
+---@nodiscard
 function Vector3Class.fromScreen( view_angle, view_fov, x, y, screen_width, screen_height )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( view_angle.pitch, view_angle.yaw, view_angle.roll )
 
@@ -988,6 +1018,7 @@ end
 ---@param world_angle dreamwork.std.Angle3 The angle of the local coordinate system.
 ---@return dreamwork.std.Vector3 vec3 The new local position vector.
 ---@return dreamwork.std.Angle3 ang3 The new local angle.
+---@nodiscard
 function Vector3Class.translateToLocal( position, angle, world_position, world_angle )
     local w11, w12, w13, w21, w22, w23, w31, w32, w33 = angleMatrix( world_angle.pitch, world_angle.yaw, world_angle.roll )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( angle.pitch, angle.yaw, angle.roll )
@@ -1018,6 +1049,7 @@ end
 ---@param world_angle dreamwork.std.Angle3 The angle of the local coordinate system.
 ---@return dreamwork.std.Vector3 vec3 The new world position vector.
 ---@return dreamwork.std.Angle3 ang3 The new world angle.
+---@nodiscard
 function Vector3Class.translateToWorld( local_position, local_angle, world_position, world_angle )
     local w11, w12, w13, w21, w22, w23, w31, w32, w33 = angleMatrix( world_angle.pitch, world_angle.yaw, world_angle.roll )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( local_angle.pitch, local_angle.yaw, local_angle.roll )

@@ -57,6 +57,7 @@ else
     ---@param message string The message to compute SHA256 for.
     ---@param as_hex? boolean If true, the result will be a hex string.
     ---@return string str_result The SHA256 string of the message.
+    ---@nodiscard
     function SHA256Class.digest( message, as_hex )
         local hex_str = engine_SHA256( message )
         if as_hex then

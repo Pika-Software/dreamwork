@@ -153,6 +153,7 @@ if std.getfenv == nil then
     ---
     ---@param location integer | function Can be a Lua `function` or a `number` that specifies the function at that stack level.
     ---@return table fenv Specified function environment.
+    ---@nodiscard
     ---@diagnostic disable-next-line: duplicate-set-field
     function std.getfenv( location )
         ---@type function | nil
@@ -251,6 +252,7 @@ if isTable == nil then
     ---
     ---@param value any The value to check.
     ---@return boolean is_table `true` if the value is a `table`, `false` otherwise.
+    ---@nodiscard
     function isTable( value )
         return raw_type( value ) == "table"
     end
@@ -282,6 +284,7 @@ raw.setmetatable = debug.setmetatable
 ---@param value any The value to get the metatable from.
 ---@param key string The searchable key.
 ---@return any | nil value The value of the given key.
+---@nodiscard
 function debug.getmetavalue( value, key, allow_index )
     local metatable = debug_getmetatable( value )
     if metatable == nil then
@@ -314,6 +317,7 @@ do
     ---
     ---@param value any The value to convert to a string.
     ---@return string str The string representation of `value`.
+    ---@nodiscard
     function std.tostring( value )
         return debug_getmetavalue( value, "__name" ) or raw_tostring( value )
     end
@@ -328,6 +332,7 @@ local tostring = std.tostring
 ---
 ---@param value any The value to get the length of.
 ---@return number length The length of the given value.
+---@nodiscard
 function std.len( value )
     ---@type nil | fun( value: any ): number
     local fn = debug_getmetavalue( value, "__len" )
@@ -359,6 +364,7 @@ end
 ---@param a any The first value to compare.
 ---@param b any The second value to compare.
 ---@return boolean is_equal `true` if the values are considered equal; otherwise `false`.
+---@nodiscard
 function std.equal( a, b )
     ---@type nil | fun( a: any, b: any ): boolean
     local a__eq = debug_getmetavalue( a, "__eq" )
@@ -386,6 +392,7 @@ end
 ---@param a any The first value to compare.
 ---@param b any The second value to compare.
 ---@return boolean is_less_than `true` if `a` is less than `b`; otherwise `false`.
+---@nodiscard
 function std.lessThan( a, b )
     ---@type nil | fun( a: any, b: any ): boolean
     local a__lt = debug_getmetavalue( a, "__lt" )
@@ -413,6 +420,7 @@ end
 ---@param a any The first value to compare.
 ---@param b any The second value to compare.
 ---@return boolean is_less_equal `true` if `a` is less than or equal to `b`; otherwise `false`.
+---@nodiscard
 function std.lessEqual( a, b )
     ---@type nil | fun( a: any, b: any ): boolean
     local a__le = debug_getmetavalue( a, "__le" )
@@ -436,6 +444,7 @@ end
 ---@param value any The value to get the size of.
 ---@param as_bytes? boolean Whether return size as bytes. By default: `false`
 ---@return integer | nil size The size of the `value`.
+---@nodiscard
 function std.sizeof( value, as_bytes )
     ---@type nil | fun( value: any, as_bytes: boolean ): integer
     local fn = debug_getmetavalue( value, "__sizeof" )
@@ -453,6 +462,7 @@ end
 ---@generic T
 ---@param value T The value to copy.
 ---@return T copy The copy of the `value`.
+---@nodiscard
 function std.copy( value )
     local fn = debug_getmetavalue( value, "__copy" )
     if fn == nil then
@@ -476,6 +486,7 @@ end
 ---@param e any The value to convert to a number.
 ---@param base? numberbase The number base, default is `10`.
 ---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
+---@nodiscard
 function std.tonumber( e, base )
     local fn = debug_getmetavalue( e, "__tonumber" )
     if fn == nil then
@@ -493,6 +504,7 @@ end
 ---
 ---@param e any The value to convert to a `boolean`.
 ---@return boolean | nil bool The boolean value of `e`, or `nil` if `e` cannot be converted to a boolean.
+---@nodiscard
 function std.toboolean( e )
     local fn = debug_getmetavalue( e, "__toboolean" )
     if fn == nil then
@@ -513,6 +525,7 @@ std.tobool = std.toboolean
 ---
 ---@param value any The value to convert to a `color`.
 ---@return dreamwork.std.Color | nil clr The color value of `value`, or `nil` if `value` cannot be converted to a color.
+---@nodiscard
 function std.tocolor( value )
     ---@type fun(value: any): dreamwork.std.Color | nil
     local fn = debug_getmetavalue( value, "__tocolor" )
@@ -529,6 +542,7 @@ end
 ---
 ---@param value any The value to check for validity.
 ---@return boolean is_valid `true` if object is still valid and should be kept alive, `false` otherwise.
+---@nodiscard
 function std.isValid( value )
     local fn = debug_getmetavalue( value, "__isvalid" )
     if fn == nil then
@@ -556,6 +570,7 @@ end
 ---@param tbl table<K, V>
 ---@param key K | nil
 ---@return K, V
+---@nodiscard
 function std.next( tbl, key )
     return (debug_getmetavalue( tbl, "__pairs" ) or raw_next)( tbl, key )
 end
@@ -579,6 +594,7 @@ end
 ---@param t table<K, V>
 ---@return fun( table: table<K, V>, index: ( K | nil ) ): K, V
 ---@return table<K, V>
+---@nodiscard
 function std.pairs( t )
     local next_fn = debug_getmetavalue( t, "__pairs" )
     if next_fn == nil then
@@ -597,6 +613,7 @@ do
     ---@param tbl table
     ---@param index integer
     ---@return integer | nil, any
+    ---@nodiscard
     local function inext( tbl, index )
         index = index + 1
 
@@ -628,6 +645,7 @@ do
     ---@return fun( table: V[], i: ( integer | nil ) ): integer, V
     ---@return V[]
     ---@return integer i
+    ---@nodiscard
     function std.ipairs( t )
         if debug_getmetavalue( t, "__index" ) == nil then
             return raw_ipairs( t )
@@ -689,6 +707,7 @@ do
     ---@return dreamwork.std.RangeIterator iterator The iterator function to be used with a generic `for` loop.
     ---@return integer to The final value, passed through as the loop's invariant state.
     ---@return integer start The initial value, passed to the iterator on the first call.
+    ---@nodiscard
     function std.range( from, to, step )
         return range_iterators[ step or 1 ], to, from - (step or 1)
     end
@@ -764,6 +783,7 @@ do
     ---
     ---@param value any The value to get the hash of.
     ---@return integer hash The hash of the given value.
+    ---@nodiscard
     function std.hash( value )
         ---@type fun( value: any ): integer
         local fn = debug_getmetavalue( value, "__hash" )
@@ -795,6 +815,7 @@ do
     ---@param value any The value to get a hexadecimal identifier for.
     ---@param desired_length? integer The exact length the returned string should be. If omitted, the natural length is used.
     ---@return string hex_str The hexadecimal identifier of `value`, optionally padded or truncated to `desired_length`.
+    ---@nodiscard
     function std.tohex( value, desired_length )
         local hex_str
 
@@ -846,6 +867,7 @@ do
     ---@param object any The object to check for being an instance of the given parent.
     ---@param ... any The parent classes/metatables to check against.
     ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
+    ---@nodiscard
     function std.isInstance( object, ... )
         local metatable = debug_getmetatable( object )
 
@@ -870,6 +892,7 @@ do
     ---@param object any The object to check for being an instance of the given parent.
     ---@param value any The parent class/metatable to check against.
     ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+    ---@nodiscard
     function std.is( object, value )
         if isClass( value ) then
             if isInherited( object, value ) then
@@ -1016,6 +1039,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_nil
+        ---@nodiscard
         function std.isNil( value )
             return value == nil
         end
@@ -1074,6 +1098,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_bool
+        ---@nodiscard
         function std.isBoolean( value )
             return value == true or value == false
         end
@@ -1152,6 +1177,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_number
+        ---@nodiscard
         function std.isNumber( value )
             return debug_getmetatable( value ) == Number
         end
@@ -1174,6 +1200,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_integer
+        ---@nodiscard
         function std.isInteger( value )
             return debug_getmetatable( value ) == Number and (value % 1) == 0
         end
@@ -1213,6 +1240,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_string
+        ---@nodiscard
         function std.isString( value )
             return debug_getmetatable( value ) == String
         end
@@ -1250,6 +1278,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_function
+        ---@nodiscard
         function std.isFunction( value )
             return debug_getmetatable( value ) == Function
         end
@@ -1260,6 +1289,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_callable
+        ---@nodiscard
         function std.isCallable( value )
             local metatable = debug_getmetatable( value )
             return metatable ~= nil and (metatable == Function or debug_getmetatable( metatable.__call ) == Function)
@@ -1298,6 +1328,7 @@ do
         ---
         ---@param value any
         ---@return boolean is_thread
+        ---@nodiscard
         function std.isThread( value )
             return debug_getmetatable( value ) == Thread
         end
@@ -1322,6 +1353,7 @@ do
         ---
         ---@param value any The value to get the type of.
         ---@return type type_name The type name of the given value.
+        ---@nodiscard
         function std.type( value )
             if isNumber( value ) and (value % 1) == 0 then
                 return "integer"
@@ -1372,6 +1404,7 @@ do
     ---@param chunk_name string | nil The lua code chunk name.
     ---@param env table | nil The environment of compiled function.
     ---@return function fn The compiled function.
+    ---@nodiscard
     function std.loadstring( lua_code, chunk_name, env )
         local fn = CompileString( lua_code, chunk_name or "=(loadstring)", false )
         if fn == nil then
@@ -1508,6 +1541,7 @@ local len = std.len
 ---
 ---@param value any The value to get the string representation of.
 ---@return string str The string representation of the given value.
+---@nodiscard
 function std.represent( value )
     local name = type( value )
     if name ~= "cdata" then
@@ -1671,6 +1705,7 @@ do
     ---@param tbl table The table.
     ---@param key any The key.
     ---@return any
+    ---@nodiscard
     function raw.index( tbl, key )
         if isString( key ) then
             ---@cast key string
@@ -1895,6 +1930,7 @@ do
     ---
     ---@param frame dreamwork.std.debug.StackLevel The frame to check.
     ---@return boolean is_hidden
+    ---@nodiscard
     local function is_hidden_frame( frame )
         return hidden_functions[ frame.func ] ~= nil
     end
@@ -1957,6 +1993,7 @@ do
     ---@param error_value any The error value to convert.
     ---@param error_class? dreamwork.std.ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
     ---@return dreamwork.std.Error error_object
+    ---@nodiscard
     local function to_error( error_value, error_class )
         ---@type dreamwork.std.Error
         local error_object
@@ -2001,6 +2038,7 @@ do
     ---
     ---@param error_value any The error value to handle.
     ---@return dreamwork.std.Error | any error_object
+    ---@nodiscard
     local function catch_error( error_value )
         if error_value == nil or isString( error_value ) or isError( error_value ) then
             return to_error( error_value )
@@ -2366,6 +2404,7 @@ do
     ---@param inputs dreamwork.std.OverloadInput<F>[] The signatures to dispatch between, checked in order (first match wins).
     ---@param fallback_fn? F The function called when no input matches. If omitted, a non-matching call raises an error.
     ---@return F fn_over A function that dispatches to the matching input's `fn`, or to `fallback_fn`.
+    ---@nodiscard
     function std.dispatch( inputs, fallback_fn )
         local input_count = len( inputs )
         inputs[ 0 ] = input_count
@@ -2428,6 +2467,7 @@ do
         ---
         ---@param ... integer The indices of arguments to return.
         ---@return function fjn The created junction function.
+        ---@nodiscard
         function std.junction( ... )
             local out_arg_count = raw_select( '#', ... )
             local out_args = { ... }
@@ -2502,6 +2542,7 @@ end
 ---@param match string[] | string The Lua type name (or ordered list of type names) the arguments must have for `overload_fn` to be used.
 ---@param overload_fn function The function called instead of `main_fn` when the arguments match `match`.
 ---@return F overloaded_fn A function that dispatches to `overload_fn` or `main_fn` depending on its arguments. If `match` is an empty array, this is `main_fn` itself.
+---@nodiscard
 function std.overload( main_fn, match, overload_fn )
     local required_args = 0
 
@@ -3240,6 +3281,7 @@ do
     ---@param env table | nil The environment of compiled function.
     ---@return function | nil fn The compiled function.
     ---@return string | nil msg The error message.
+    ---@nodiscard
     function std.loadbytecode( bytecode, env )
         local success, result = pcall( load_bytecode, bytecode )
         if success and result ~= nil then
@@ -3328,6 +3370,7 @@ else
     ---
     ---@param key string
     ---@return string | nil value
+    ---@nodiscard
     function os.getenv( key )
         return ""
     end

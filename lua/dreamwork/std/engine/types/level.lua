@@ -61,6 +61,7 @@ end
 ---@param name string The map/level name in maps/*.bsp folder.
 ---@param gamePath? string An optional argument specifying the search location, as an example for addon searches.
 ---@return boolean
+---@nodiscard
 local function exists( name, gamePath )
     return file_Exists( "maps/" .. name .. ".bsp", gamePath or "GAME" )
 end
@@ -86,6 +87,7 @@ if std.LUA_CLIENT_SERVER then
     --- Returns the gravity of the current level.
     ---
     ---@return integer gravity The gravity of the current level.
+    ---@nodiscard
     function level.getGravity()
         return console_Variable.getNumber( "sv_gravity" )
     end
@@ -153,6 +155,7 @@ if std.LUA_SERVER then
         ---@param name string The map/level name in maps/*.nav folder.
         ---@param gamePath? string An optional argument specifying the search location, as an example for addon searches.
         ---@return boolean
+        ---@nodiscard
         function navmesh.exists( name, gamePath )
             return file_Exists( "maps/" .. name .. ".nav", gamePath or "GAME" )
         end

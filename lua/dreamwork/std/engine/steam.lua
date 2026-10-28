@@ -82,6 +82,7 @@ if std.LUA_CLIENT_MENU then
         ---
         ---@param id number
         ---@return boolean exist Returns true if the achievement exists.
+        ---@nodiscard
         function achievement.exists( id )
             return achievements_IsAchieved( id ) ~= nil
         end
@@ -92,6 +93,7 @@ if std.LUA_CLIENT_MENU then
         ---
         ---@return table achievement_list The list of all achievements.
         ---@return number achievement_count The count of achievements.
+        ---@nodiscard
         function achievement.getAll()
             local tbl, count = {}, achievements_Count()
             for index = 0, count - 1 do
@@ -280,6 +282,7 @@ if std.LUA_CLIENT_MENU then
     ---@param id dreamwork.std.steam.Identifier The SteamID of the player.
     ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string name The name of the player.
+    ---@nodiscard
     ---@async
     function steam.getUserName( id, timeout )
         local f = Future()
@@ -323,6 +326,7 @@ do
     ---
     ---@param id? string
     ---@return boolean
+    ---@nodiscard
     function workshop.isValidID( id )
         return id or id ~= "0" and isString( id ) and string_match( id, "^%d+$", 1 )
     end
@@ -364,6 +368,7 @@ do
         ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
         ---@return dreamwork.std.steam.workshop.Collection.Details[] items The details of the Steam Workshop collections.
         ---@return integer item_count The number of Steam Workshop collections.
+        ---@nodiscard
         ---@async
         function workshop.getCollectionDetails( ids, id_count, timeout )
             if id_count == nil then
@@ -454,6 +459,7 @@ do
     ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return dreamwork.std.steam.workshop.Item.Details[] items The details of the Steam Workshop items.
     ---@return integer item_count The number of Steam Workshop items.
+    ---@nodiscard
     ---@async
     function workshop.getItemDetails( ids, id_count, timeout )
         if id_count == nil then
@@ -566,6 +572,7 @@ do
         ---@param wsid string The workshop ID of the item/collection.
         ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
         ---@return dreamwork.std.steam.workshop.ItemInfo info The details of the item/collection.
+        ---@nodiscard
         ---@async
         function workshop.fetchInfo( wsid, timeout )
             local f = Future()
@@ -656,6 +663,7 @@ if std.LUA_CLIENT_MENU then
     ---
     ---@param wsid string The workshop ID of the addon.
     ---@return boolean `true` if the addon is enabled, `false` otherwise.
+    ---@nodiscard
     ---@see dreamwork.std.steam.workshop.setAddonEnabled
     function workshop.isAddonEnabled( wsid )
         return glua_steamworks.ShouldMountAddon( tostring( wsid ) )
@@ -667,6 +675,7 @@ if std.LUA_CLIENT_MENU then
     ---
     ---@param wsid string The workshop ID of the addon.
     ---@return boolean `true` if client has subscribed to the item, `false` otherwise.
+    ---@nodiscard
     ---@see dreamwork.std.steam.workshop.setItemSubscribed
     function workshop.isItemSubscribed( wsid )
         return glua_steamworks.IsSubscribed( wsid )
@@ -887,6 +896,7 @@ do
     ---@return string[] ids The IDs of the found publications.
     ---@return integer id_count The length of the `ids` array (`#ids`).
     ---@return integer total The total number of found publications.
+    ---@nodiscard
     ---@async
     function workshop.search( params, timeout )
         local f = Future()
@@ -923,6 +933,7 @@ do
     ---@return string[] items The found publications.
     ---@return integer item_count The length of the publications found array (`#publications`).
     ---@return integer total The total number of publications found.
+    ---@nodiscard
     ---@async
     function workshop.qickSearch( wtype, wtags, woffset, timeout )
         local f = Future()
@@ -960,6 +971,7 @@ do
     ---@return string[] ids The found publications IDs.
     ---@return integer item_count The length of the publications found array (`#publications`).
     ---@return integer total The total number of publications found.
+    ---@nodiscard
     ---@async
     function workshop.getPublished( wtype, wtags, woffset, timeout )
         local f = Future()

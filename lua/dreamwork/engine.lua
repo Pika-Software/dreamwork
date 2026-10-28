@@ -965,6 +965,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil or
     ---
     ---@param name string The name of the console command.
     ---@return boolean exists `true` if the console command was registered through this module, `false` otherwise.
+    ---@nodiscard
     function engine.consoleCommandExists( name )
         return exists_commands[ name ] ~= nil
     end
@@ -979,6 +980,7 @@ if engine.consoleCommandRegister == nil or engine.consoleCommandExists == nil or
     ---
     ---@param name string The name of the console command.
     ---@return boolean blocked `true` if the console command is blocked, `false` otherwise.
+    ---@nodiscard
     function engine.consoleCommandBlocked( name )
         return blocked_commands[ name ]
     end
@@ -1123,6 +1125,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return garrysmod.console.Variable? cvar The console variable object, or `nil`.
+    ---@nodiscard
     function engine.consoleVariableGet( name )
         return console_variables[ name ]
     end
@@ -1213,6 +1216,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return boolean exists `true` if the console variable is registered in the module or exists in the engine, `false` otherwise.
+    ---@nodiscard
     function engine.consoleVariableExists( name )
         return console_variables[ name ] ~= nil or ConVarExists( name )
     end
@@ -1322,6 +1326,7 @@ do
     ---
     ---@return string[] variables The names of the console variables.
     ---@return integer variable_count The number of names in `variables`.
+    ---@nodiscard
     function engine.consoleVariableGetAll()
         local variables = {}
         local variable_count = 0
@@ -1647,6 +1652,7 @@ if LUA_CLIENT or LUA_SERVER then
     end, _G.InvalidateInternalEntityCache )
 
     ---@return garrysmod.Entity[], integer
+    ---@nodiscard
     function engine.getEntities()
         return entity_list, entity_count
     end
@@ -1665,6 +1671,7 @@ do
 
         ---@param name string
         ---@return table | nil
+        ---@nodiscard
         ---@diagnostic disable-next-line: duplicate-set-field
         function gamemode.Get( name )
             local tbl = gamemodes[ name ]
@@ -1976,6 +1983,7 @@ do
         ---
         ---@return string[] networks The names of the registered networks.
         ---@return integer network_count The number of registered networks.
+        ---@nodiscard
         function engine.getNetworks()
             local networks, network_count = {}, 0
 
@@ -2001,6 +2009,7 @@ do
         --- Checks if the network exists.
         ---
         ---@return boolean exists `true` if the network exists, `false` otherwise.
+        ---@nodiscard
         function engine.networkExists( network_name )
             return network_ids[ network_name ] ~= nil
         end
@@ -2011,6 +2020,7 @@ do
         ---
         ---@param network_name string The name of the network.
         ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
+        ---@nodiscard
         function engine.networkGetID( network_name )
             return network_ids[ network_name ]
         end
@@ -2021,6 +2031,7 @@ do
         ---
         ---@param network_id integer The ID of the network message.
         ---@return string | nil network_name The name of the network message, or `nil` if the network message does not exist.
+        ---@nodiscard
         function engine.networkGetName( network_id )
             return network_names[ network_id ]
         end
@@ -2181,6 +2192,7 @@ if engine.loadMaterial == nil then
         ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
         ---@return garrysmod.Material material The loaded material.
         ---@return number time_taken The time taken to load the material.
+        ---@nodiscard
         function engine.loadMaterial( file_path, parameters )
             if parameters == nil then
                 return glua_Material( file_path )
@@ -2219,6 +2231,7 @@ if engine.loadMaterial == nil then
         ---@param parameters? dreamwork.engine.ImageParameters The parameters to load the image with.
         ---@return garrysmod.Material material The loaded material.
         ---@return number time_taken The time taken to load the material.
+        ---@nodiscard
         function engine.loadMaterial( file_path, parameters )
             if parameters == nil then
                 return c_material_fn( file_path )

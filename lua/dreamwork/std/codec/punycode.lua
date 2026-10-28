@@ -147,6 +147,7 @@ std.punycode = punycode
 ---@param lax? boolean If `true`, surrogates (U+D800 - U+DFFF) and code points above U+10FFFF are encoded as well instead of being rejected.
 ---@return string | nil punycode_str The Punycode string, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
 local function punycode_pack( codepoints, codepoint_count, ignore_prefix, lax )
     if codepoint_count == nil then
         codepoint_count = len( codepoints )
@@ -502,6 +503,7 @@ end
 ---@return integer[] | nil codepoints The decoded code points, `nil` if an error occurred.
 ---@return integer | nil codepoint_count The number of decoded code points, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
 function punycode.unpack( punycode_str, ignore_prefix, lax )
     return unpack_range( punycode_str, 1, string_len( punycode_str ), ignore_prefix, lax )
 end
@@ -528,6 +530,7 @@ end
 ---@param lax? boolean If `true`, invalid UTF-8 sequences become U+FFFD and surrogates are encoded as well instead of being rejected.
 ---@return string | nil punycode_str The encoded domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
 function punycode.encode( str, ignore_prefix, start_position, end_position, lax )
     local start_index, end_index = math_range( string_len( str ), start_position, end_position )
     if start_index > end_index then
@@ -597,6 +600,7 @@ end
 ---@param lax? boolean If `true`, malformed labels are decoded leniently and invalid code points become U+FFFD instead of being rejected.
 ---@return string | nil str The decoded UTF-8 domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
 function punycode.decode( punycode_str, ignore_prefix, start_position, end_position, lax )
     local start_index, end_index = math_range( string_len( punycode_str ), start_position, end_position )
     if start_index > end_index then

@@ -62,6 +62,7 @@ if server.getGamemodeName == nil then
     --- Gets the name of the active gamemode.
     ---
     ---@return string name The name of the active gamemode.
+    ---@nodiscard
     function server.getGamemodeName()
         ---@type string
         ---@diagnostic disable-next-line: assign-type-mismatch
@@ -130,6 +131,7 @@ if server.getGamemodeName == nil then
         ---
         ---@return boolean is_legacy `true` if the gamemode is a legacy gamemode, `false` otherwise.
         ---@return table | dreamwork.std.Gamemode gamemode The active gamemode object.
+        ---@nodiscard
         function server.getGamemode()
             if gamemode_value == nil then
                 ---@diagnostic disable-next-line: undefined-global
@@ -171,6 +173,7 @@ if server.getGamemodeName == nil then
         --- Returns the title of the gamemode in the server browser.
         ---
         ---@return string title The title of the gamemode.
+        ---@nodiscard
         function server.getGamemodeTitle()
             ---@diagnostic disable-next-line: undefined-field, undefined-global
             return hook.Call( "GetGameDescription" ) or (GM or GAMEMODE or {}).Title or "unknown"
@@ -244,6 +247,7 @@ do
     --- Returns the IP of the server.
     ---
     ---@return string ip The IP of the server.
+    ---@nodiscard
     function server.getIP()
         return string_match( game_GetIPAddress(), "(%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?):" ) or "127.0.0.1"
     end
@@ -253,6 +257,7 @@ do
     --- Returns the port of the server.
     ---
     ---@return string port The port of the server.
+    ---@nodiscard
     function server.getPort()
         return string_match( game_GetIPAddress(), ":(%d+)" ) or "27015"
     end
@@ -273,6 +278,7 @@ if server.getName == nil then
     --- Gets the name of the server.
     ---
     ---@return string hostname The name of the server.
+    ---@nodiscard
     function server.getName()
         ---@diagnostic disable-next-line: return-type-mismatch
         return dreamwork_server_hostname.value
@@ -325,6 +331,7 @@ if std.LUA_CLIENT_SERVER then
         --- Gets the time scale of the game.
         ---
         ---@return number timescale The current time scale of the game.
+        ---@nodiscard
         function server.getTimeScale()
             return host_timescale.value * game_GetTimeScale()
         end
@@ -336,6 +343,7 @@ if std.LUA_CLIENT_SERVER then
     --- Checks if cheats are enabled.
     ---
     ---@return boolean enabled `true` if cheats are enabled, `false` if not.
+    ---@nodiscard
     function server.isCheatsEnabled()
         return console_Variable.getBoolean( "sv_cheats" )
     end
@@ -356,6 +364,7 @@ if std.LUA_CLIENT_SERVER then
     --- Checks if the server allows clients to run `lua_openscript_cl` and `lua_run_cl`.
     ---
     ---@return boolean allowed `true` if the server allows clients to run lua_openscript_cl and lua_run_cl, `false` if not.
+    ---@nodiscard
     function server.isUserScriptsAllowed()
         return console_Variable.getBoolean( "sv_allowcslua" )
     end
@@ -414,6 +423,7 @@ if std.LUA_SERVER then
     --- Gets the download URL of the server.
     ---
     ---@return string url The download URL.
+    ---@nodiscard
     function server.getDownloadURL()
         return console_Variable.getString( "sv_downloadurl" )
     end
@@ -434,6 +444,7 @@ if std.LUA_SERVER then
     --- Checks if the server allows downloads.
     ---
     ---@return boolean allowed Whether the server allows downloads.
+    ---@nodiscard
     function server.isDowloadAllowed()
         return console_Variable.getBoolean( "sv_allowdownload" )
     end
@@ -452,6 +463,7 @@ if std.LUA_SERVER then
     --- Checks if the server allows uploads.
     ---
     ---@return boolean allowed Whether the server allows uploads.
+    ---@nodiscard
     function server.isUploadAllowed()
         return console_Variable.getBoolean( "sv_allowupload" )
     end
@@ -482,6 +494,7 @@ if std.LUA_SERVER then
     --- Gets the console_Variable requested by the server browser to determine in which part of the world the server is located.
     ---
     ---@return dreamwork.std.SERVER_REGION region_id The region of the world to report this server in.
+    ---@nodiscard
     function server.getRegion()
         return console_Variable.getNumber( "sv_region" )
     end
@@ -501,6 +514,7 @@ if std.LUA_SERVER then
     ---
     --- Checks if the server is hidden from the master server.
     ---@return boolean hidden `true` if the server is hidden, `false` if not.
+    ---@nodiscard
     function server.isHidden()
         return console_Variable.getBoolean( "hide_server" )
     end
@@ -531,6 +545,7 @@ if std.LUA_SERVER then
     --- Returns whether or not close captions are allowed in multiplayer.
     ---
     ---@return boolean result `true` if close captions are allowed, `false` otherwise.
+    ---@nodiscard
     function server.isCloseCaptionsAllowed()
         return console_Variable.getBoolean( "closecaption_mp" )
     end
@@ -611,6 +626,7 @@ if std.LUA_MENU then
         ---@param address string The address of the server. ( IP:Port like `127.0.0.1:27015` )
         ---@param timeout number? The timeout in seconds. Set to `false` to disable the timeout.
         ---@return dreamwork.std.server.Info info The server information.
+        ---@nodiscard
         ---@async
         function server.ping( address, timeout )
             local f = Future()
@@ -716,6 +732,7 @@ if std.LUA_MENU then
         ---
         ---@param address string? The address of the server, current server if `nil`. ( IP:Port like `127.0.0.1:27015` )
         ---@return boolean is_favorite `true` if the given server is in player favorites, `false` if not.
+        ---@nodiscard
         function server.isInFavorites( address )
             if address == nil then
                 return serverlist_IsCurrentServerFavorite()

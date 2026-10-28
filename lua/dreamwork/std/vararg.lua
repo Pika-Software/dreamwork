@@ -49,6 +49,7 @@ vararg.select = raw_select
 ---@param index integer The index of the value to retrieve.
 ---@param ... any The argument list to retrieve the value from.
 ---@return any value The value at `index`.
+---@nodiscard
 function vararg.get( index, ... )
     return (raw_select( index, ... ))
 end
@@ -85,6 +86,7 @@ do
     ---@param value any The value to set.
     ---@param ... any The argument list to modify.
     ---@return any ... The argument list with the value at `index` replaced.
+    ---@nodiscard
     function vararg.set( index, value, ... )
         local count = raw_select( "#", ... )
 
@@ -138,6 +140,7 @@ do
     ---@param end_position? integer The last position to include.
     ---@param ... any The argument list to slice.
     ---@return any ... The selected portion of the argument list.
+    ---@nodiscard
     function vararg.slice( start_position, end_position, ... )
         local count = raw_select( "#", ... )
         if count == 0 then return end
@@ -177,6 +180,7 @@ do
     ---
     ---@param ... any The argument list to reverse.
     ---@return any ... The reversed argument list.
+    ---@nodiscard
     function vararg.reverse( ... )
         local count = raw_select( "#", ... )
 
@@ -218,6 +222,7 @@ end
 ---@param ... any The values to pack.
 ---@return table packed A table containing the packed values.
 ---@return integer A size of the given table.
+---@nodiscard
 function vararg.pack( ... )
     local count = raw_select( "#", ... )
     return { [ 0 ] = count, ... }, count
@@ -231,6 +236,7 @@ end
 ---
 ---@param tbl table The packed argument table.
 ---@return any ... The values stored in the table.
+---@nodiscard
 function vararg.unpack( tbl )
     local size = tbl[ 0 ]
 
@@ -258,6 +264,7 @@ end
 ---@param sep string The separator to insert between each concatenated value.
 ---@param ... any The values to concatenate (converted via `tostring`).
 ---@return string str The resulting concatenated string.
+---@nodiscard
 function vararg.concat( sep, ... )
     local str
 

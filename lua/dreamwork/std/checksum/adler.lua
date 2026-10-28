@@ -82,6 +82,7 @@ end
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function Adler32:digest()
     return (self.b * 0x10000) + self.a
 end
@@ -110,6 +111,7 @@ do
     ---
     ---@param raw_str string The string is used to calculate checksum.
     ---@return integer checksum The checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
+    ---@nodiscard
     function Adler32Class.digest( raw_str )
         return adler32:reset():update( raw_str ):digest()
     end

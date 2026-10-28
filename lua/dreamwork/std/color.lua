@@ -46,6 +46,7 @@ std.color = color_lib
 ---@param green integer The 8-bit green channel, in the range [0, 255].
 ---@param blue integer The 8-bit blue channel, in the range [0, 255].
 ---@return dreamwork.std.Color color The color value.
+---@nodiscard
 local function fromRGB( red, green, blue )
     return bit_bor(
         bit_lshift( bit_band( red, 0xFF ), 16 ),
@@ -64,6 +65,7 @@ color_lib.fromRGB = fromRGB
 ---@return integer red The 8-bit red channel, in the range [0, 255].
 ---@return integer green The 8-bit green channel, in the range [0, 255].
 ---@return integer blue The 8-bit blue channel, in the range [0, 255].
+---@nodiscard
 local function toRGB( color )
     return bit_band( bit_rshift( color, 16 ), 0xFF ),
         bit_band( bit_rshift( color, 8 ), 0xFF ),
@@ -78,6 +80,7 @@ color_lib.toRGB = toRGB
 ---
 ---@param color dreamwork.std.Color The color value to invert.
 ---@return dreamwork.std.Color The inverted color value.
+---@nodiscard
 function color_lib.invert( color )
     local r, g, b = toRGB( color )
 
@@ -112,6 +115,7 @@ end
 ---@param value1 dreamwork.std.Color The first color to subtract.
 ---@param value2 dreamwork.std.Color The second color to subtract.
 ---@return dreamwork.std.Color new_color The result of the subtraction.
+---@nodiscard
 function color_lib.sub( value1, value2 )
     local r1, g1, b1 = toRGB( value1 )
     local r2, g2, b2 = toRGB( value2 )
@@ -130,6 +134,7 @@ end
 ---@param value1 dreamwork.std.Color The first color to multiply.
 ---@param value2 dreamwork.std.Color The second color to multiply.
 ---@return dreamwork.std.Color new_color The result of the multiplication.
+---@nodiscard
 function color_lib.mul( value1, value2 )
     local r1, g1, b1 = toRGB( value1 )
     local r2, g2, b2 = toRGB( value2 )
@@ -148,6 +153,7 @@ end
 ---@param value1 dreamwork.std.Color The first color to divide.
 ---@param value2 dreamwork.std.Color The second color to divide.
 ---@return dreamwork.std.Color new_color The result of the division.
+---@nodiscard
 function color_lib.div( value1, value2 )
     local r1, g1, b1 = toRGB( value1 )
     local r2, g2, b2 = toRGB( value2 )
@@ -165,6 +171,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string binary_string The color as binary string.
+---@nodiscard
 function color_lib.toString( color )
     return string_char( toRGB( color ) )
 end
@@ -177,6 +184,7 @@ end
 ---@param start_position? integer The starting position in the string.
 ---@param str_length? integer The length of the string to parse.
 ---@return dreamwork.std.Color new_color The parsed color.
+---@nodiscard
 function color_lib.fromString( str, start_position, str_length )
     if start_position == nil then
         start_position = 1
@@ -201,6 +209,7 @@ end
 ---@param color dreamwork.std.Color The starting color.
 ---@param color2 dreamwork.std.Color The ending color.
 ---@return dreamwork.std.Color The interpolated color.
+---@nodiscard
 function color_lib.lerp( frac, color, color2 )
     local r, g, b = toRGB( color )
     local r2, g2, b2 = toRGB( color2 )
@@ -218,6 +227,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string The hexadecimal representation of the color.
+---@nodiscard
 local function toHex( color )
     return string_format( "%02x%02x%02x", toRGB( color ) )
 end
@@ -277,6 +287,7 @@ end
 ---
 ---@param hex_str string The hexadecimal color string to convert.
 ---@return dreamwork.std.Color color The color value.
+---@nodiscard
 local function fromHex( hex_str )
     local uint8_1 = string_byte( hex_str, 1, 1 )
     if uint8_1 == nil then
@@ -311,6 +322,7 @@ color_lib.fromHex = fromHex
 ---@param saturation number The saturation [0, 1].
 ---@param lightness number The lightness [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 local function fromHSL( hue, saturation, lightness )
     hue = hue % 360
 
@@ -350,6 +362,7 @@ color_lib.fromHSL = fromHSL
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number lightness The lightness as fraction [0, 1].
+---@nodiscard
 local function toHSL( color )
     local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
@@ -394,6 +407,7 @@ color_lib.toHSL = toHSL
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 local function fromHSV( hue, saturation, brightness )
     hue = hue % 360
 
@@ -433,6 +447,7 @@ color_lib.fromHSV = fromHSV
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number value The value as fraction [0, 1].
+---@nodiscard
 local function toHSV( color )
     local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
@@ -473,6 +488,7 @@ color_lib.toHSV = toHSV
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 local function fromHWB( hue, saturation, brightness )
     brightness = 1 - brightness
     return fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness )
@@ -488,6 +504,7 @@ color_lib.fromHWB = fromHWB
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number whiteness The whiteness as fraction [0, 1].
 ---@return number blackness The blackness as fraction [0, 1].
+---@nodiscard
 local function toHWB( color )
     local hue, saturation, brightness = toHSL( color )
     return hue, (1 - saturation) * brightness, 1 - brightness
@@ -504,6 +521,7 @@ color_lib.toHWB = toHWB
 ---@param yellow number The yellow as fraction [0, 1].
 ---@param black number The black as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.fromCMYK( cyan, magenta, yellow, black )
     cyan, magenta, yellow, black = cyan * 0.01, magenta * 0.01, yellow * 0.01, black * 0.01
 
@@ -525,6 +543,7 @@ end
 ---@return number magenta The magenta as fraction [0, 1].
 ---@return number yellow The yellow as fraction [0, 1].
 ---@return number black The black as fraction [0, 1].
+---@nodiscard
 function color_lib.toCMYK( color )
     local red, green, blue = toRGB( color )
     local m = math_max( red, green, blue )
@@ -537,6 +556,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the hue of.
 ---@return integer hue The hue in degrees [0, 360].
+---@nodiscard
 function color_lib.getHue( color )
     local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
@@ -569,6 +589,7 @@ end
 ---@param color dreamwork.std.Color The color to set the hue of.
 ---@param hue integer The hue in degrees [0, 360].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setHue( color, hue )
     local _, saturation, lightness = toHSL( color )
     return fromHSL( hue, saturation, lightness )
@@ -580,6 +601,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the saturation of.
 ---@return number saturation The saturation as fraction [0, 1].
+---@nodiscard
 function color_lib.getSaturation( color )
     local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
@@ -595,6 +617,7 @@ end
 ---@param color dreamwork.std.Color The color to set the saturation of.
 ---@param saturation number The saturation as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setSaturation( color, saturation )
     local hue, _, lightness = toHSL( color )
     return fromHSL( hue, saturation, lightness )
@@ -606,6 +629,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the brightness of.
 ---@return number brightness The brightness as fraction [0, 1].
+---@nodiscard
 function color_lib.getBrightness( color )
     local red, green, blue = toRGB( color )
     return math_max( red, green, blue ) * DIV255_CONST
@@ -618,6 +642,7 @@ end
 ---@param color dreamwork.std.Color The color to set the brightness of.
 ---@param brightness number The brightness as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setBrightness( color, brightness )
     local hue, saturation, _ = toHSV( color )
     return fromHSV( hue, saturation, brightness )
@@ -629,6 +654,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the lightness of.
 ---@return number lightness The lightness as fraction [0, 1].
+---@nodiscard
 function color_lib.getLightness( color )
     local red, green, blue = toRGB( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
@@ -643,6 +669,7 @@ end
 ---@param color dreamwork.std.Color The color to set the lightness of.
 ---@param lightness number The lightness as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setLightness( color, lightness )
     local hue, saturation, _ = toHSL( color )
     return fromHSL( hue, saturation, lightness )
@@ -654,6 +681,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the whiteness of.
 ---@return number whiteness The whiteness as fraction [0, 1].
+---@nodiscard
 function color_lib.getWhiteness( color )
     local _, saturation, brightness = toHSL( color )
     return (1 - saturation) * brightness
@@ -666,6 +694,7 @@ end
 ---@param color dreamwork.std.Color The color to set the whiteness of.
 ---@param whiteness number The whiteness as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setWhiteness( color, whiteness )
     local hue, _, blackness = toHWB( color )
     return fromHWB( hue, whiteness, blackness )
@@ -677,6 +706,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the blackness of.
 ---@return number blackness The blackness as fraction [0, 1].
+---@nodiscard
 function color_lib.getBlackness( color )
     local _, __, brightness = toHSL( color )
     return 1 - brightness
@@ -689,6 +719,7 @@ end
 ---@param color dreamwork.std.Color The color to set the blackness of.
 ---@param blackness number The blackness as fraction [0, 1].
 ---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
 function color_lib.setBlackness( color, blackness )
     local hue, saturation, _ = toHSL( color )
     return fromHSL( hue, saturation, blackness )
@@ -700,6 +731,7 @@ end
 ---
 ---@param color dreamwork.std.Color The color to get the luminance of.
 ---@return number luminance The luminance as integer [0, 255].
+---@nodiscard
 function color_lib.getLuminance( color )
     local red, green, blue = toRGB( color )
     return math_ceil( red * 0.2126 + green * 0.7152 + blue * 0.0722 )

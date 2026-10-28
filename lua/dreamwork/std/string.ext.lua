@@ -57,6 +57,7 @@ do
     ---@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
     ---@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string escaped_str The string with special characters escaped.
+    ---@nodiscard
     function string.escape( str, escape_spaces, start_position, end_position )
         local str_length = string_len( str )
         if str_length == 0 then
@@ -130,6 +131,7 @@ do
     ---@param start_position? integer The position to start unescaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
     ---@param end_position? integer The position to stop unescaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string str The unescaped string.
+    ---@nodiscard
     function string.unescape( escaped_str, start_position, end_position )
         local str_length = string_len( escaped_str )
         if str_length == 0 then
@@ -199,6 +201,7 @@ end
 ---
 ---@param str string The string used to calculate the Fowler-Noll-Vo hash.
 ---@return integer hash_int The Fowler-Noll-Vo hash, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function string.fnv0( str )
     local hash_int = 0
 
@@ -218,6 +221,7 @@ end
 ---
 ---@param str string The string used to calculate the Fowler-Noll-Vo hash.
 ---@return integer hash_int The Fowler-Noll-Vo hash, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function string.fnv1( str )
     local hash_int = 0x811c9dc5
 
@@ -237,6 +241,7 @@ end
 ---
 ---@param str string The string used to calculate the Fowler-Noll-Vo hash.
 ---@return integer hash_int The Fowler-Noll-Vo hash, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function string.fnv1a( str )
     local hash_int = 0x811c9dc5
 

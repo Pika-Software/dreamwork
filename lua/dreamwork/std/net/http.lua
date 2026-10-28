@@ -474,6 +474,7 @@ if std.LUA_MENU then
     ---
     ---@param timeout number? The timeout in seconds.
     ---@return table data The data returned from the API.
+    ---@nodiscard
     ---@async
     function http.getFacepunchManifest( timeout )
         local f = Future()

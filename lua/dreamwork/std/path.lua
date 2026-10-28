@@ -51,6 +51,7 @@ path.sep = "/"
 ---
 ---@param file_path string The file path.
 ---@return boolean is_abs `true` if the file path is absolute, `false` otherwise.
+---@nodiscard
 function path.isAbsolute( file_path )
     return string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]]
 end
@@ -68,6 +69,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return boolean is_rel `true` if the file path is relative, `false` otherwise.
+---@nodiscard
 function path.isRelative( file_path )
     return string_byte( file_path, 1, 1 ) ~= 0x2F --[[ / ]]
 end
@@ -107,6 +109,7 @@ if std.SYSTEM_WINDOWS or std.SYSTEM_OSX then
     ---@param file_path1 string The first file path.
     ---@param file_path2 string The second file path.
     ---@return boolean is_equal `true` if the paths are equal, `false` otherwise.
+    ---@nodiscard
     function equals( file_path1, file_path2 )
         return string_lower( file_path1 ) == string_lower( file_path2 )
     end
@@ -116,6 +119,7 @@ else
     ---@param file_path1 string
     ---@param file_path2 string
     ---@return boolean is_equal
+    ---@nodiscard
     function equals( file_path1, file_path2 )
         return file_path1 == file_path2
     end
@@ -142,6 +146,7 @@ path.equals = equals
 ---@param file_path string The file path.
 ---@param keep_extension? boolean `true` to keep the extension, `false` otherwise.
 ---@return string file_name The name of the file.
+---@nodiscard
 function path.getFile( file_path, keep_extension )
     if keep_extension then
         for index = string_len( file_path ), 1, -1 do
@@ -194,6 +199,7 @@ end
 ---@param file_path string The file path.
 ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
 ---@return string | nil directory The directory of the file, or `nil` if the file path has no `/`.
+---@nodiscard
 local function getDirectory( file_path, keep_trailing_slash )
     for index = string_len( file_path ), 1, -1 do
         if string_byte( file_path, index ) == 0x2F --[[ / ]] then
@@ -228,6 +234,7 @@ path.getDirectory = getDirectory
 ---@param file_path string The file path.
 ---@param keep_dot? boolean `true` to keep the dot, `false` otherwise.
 ---@return string extension The extension of the file, or an empty string if there is none.
+---@nodiscard
 function path.getExtension( file_path, keep_dot )
     for index = string_len( file_path ), 1, -1 do
         local uint8 = string_byte( file_path, index )
@@ -267,6 +274,7 @@ end
 ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
 ---@return string directory_path The directory from the file path, or an empty string if the file path has no `/`.
 ---@return string file_name The file name with extension from the file path.
+---@nodiscard
 local function split( file_path, keep_trailing_slash )
     for index = string_len( file_path ), 1, -1 do
         if string_byte( file_path, index ) == 0x2F --[[ / ]] then
@@ -297,6 +305,7 @@ path.split = split
 ---@param keep_dot? boolean `true` to keep the extension dot, `false` otherwise.
 ---@return string file_path_without_extension The file path without the extension.
 ---@return string extension The extension, or an empty string if there is none.
+---@nodiscard
 local function splitExtension( file_path, keep_dot )
     for index = string_len( file_path ), 1, -1 do
         local uint8 = string_byte( file_path, index )
@@ -329,6 +338,7 @@ path.splitExtension = splitExtension
 ---@param file_path string The file path.
 ---@param file_name string The new file name, including its extension.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.replaceName( file_path, file_name )
     return split( file_path, true ) .. file_name
 end
@@ -349,6 +359,7 @@ end
 ---@param file_path string The file path.
 ---@param dir_name string The new directory, with or without a trailing slash.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.replaceDirectory( file_path, dir_name )
     local _, file_name = split( file_path, false )
 
@@ -375,6 +386,7 @@ end
 ---@param file_path string The file path.
 ---@param ext_name string The new extension, without the leading dot.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.replaceExtension( file_path, ext_name )
     return splitExtension( file_path, false ) .. "." .. ext_name
 end
@@ -393,6 +405,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.stripTrailingSlash( file_path )
     local file_path_length = string_len( file_path )
     local index = file_path_length
@@ -425,6 +438,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.ensureTrailingSlash( file_path )
     if string_byte( file_path, string_len( file_path ) ) == 0x2F --[[ / ]] then
         return file_path
@@ -446,6 +460,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.stripLeadingSlash( file_path )
     local index = 1
 
@@ -477,6 +492,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.ensureLeadingSlash( file_path )
     if string_byte( file_path, 1 ) == 0x2F --[[ / ]] then
         return file_path
@@ -499,6 +515,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return string new_file_path The new file path.
+---@nodiscard
 function path.normalizeSlashes( file_path )
     return (string_gsub( file_path, "[/\\]+", "/" ))
 end
@@ -526,6 +543,7 @@ end
 ---
 ---@param file_path string The file path.
 ---@return dreamwork.std.path.ParsedData data The parsed file path data.
+---@nodiscard
 function path.parse( file_path )
     local is_abs = string_byte( file_path, 1 ) == 0x2F --[[ / ]]
     local directory, base = split( file_path, true )
@@ -563,6 +581,7 @@ do
     ---@param file_path string The file path.
     ---@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
     ---@return string new_file_path The normalized file path.
+    ---@nodiscard
     function normalize( file_path, keep_trailing_slash )
         local file_path_length = string_len( file_path )
         if file_path_length == 0 then
@@ -672,6 +691,7 @@ do
     ---
     ---@param f? function | integer The function, or the stack level, where `1` (default) is the function calling `get`.
     ---@return string file_path The absolute path of the file.
+    ---@nodiscard
     local function get( f )
         local fn
         if isFunction( f ) then
@@ -726,6 +746,7 @@ do
     ---@param file_path string The file path.
     ---@param stack_level? integer The stack level of the file to resolve against, where `1` (default) is the function calling `resolve`.
     ---@return string abs_path The resolved file path.
+    ---@nodiscard
     local function resolve( file_path, stack_level )
         if string_byte( file_path, 1, 1 ) == 0x2F --[[ / ]] then
             return normalize( file_path, false )
@@ -766,6 +787,7 @@ do
         ---@param to string The path to get the relative path to.
         ---@param stack_level? integer The stack level of the file to resolve relative paths against, where `1` (default) is the function calling `relative`.
         ---@return string relative_path The relative path.
+        ---@nodiscard
         function path.relative( from, to, stack_level )
             if stack_level == nil then
                 stack_level = 2
@@ -833,6 +855,7 @@ end
 ---@param segments string[] The file paths to join.
 ---@param segment_count? integer The number of file paths to join, defaults to the length of `segments`.
 ---@return string file_path The joined file path.
+---@nodiscard
 function path.join( segments, segment_count )
     if segment_count == nil then
         segment_count = len( segments )
@@ -969,6 +992,7 @@ do
     ---@param wildcard_str string The path wildcard string.
     ---@param anchor_to_slash? boolean If `true`, the pattern can match after any `/` instead of only at the start of the string.
     ---@return string pattern_str The Lua pattern that represents the wildcard string.
+    ---@nodiscard
     function path.wildcard( wildcard_str, anchor_to_slash )
         local str_length = string_len( wildcard_str )
 

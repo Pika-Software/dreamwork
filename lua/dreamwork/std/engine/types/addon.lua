@@ -32,6 +32,7 @@ end
 ---
 ---@return dreamwork.std.game.Addon[] items The subscribed addons.
 ---@return integer item_count The length of the addons found array (`#addons`).
+---@nodiscard
 function AddonClass.getDownloaded()
 
 end
@@ -42,6 +43,7 @@ end
 ---
 ---@return dreamwork.std.steam.workshop.Item[] items The mounted addons.
 ---@return integer item_count The length of the addons found array (`#addons`).
+---@nodiscard
 function AddonClass.getMounted()
     local addons = engine.addons
 

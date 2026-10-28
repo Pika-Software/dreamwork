@@ -80,6 +80,7 @@ do
     ---
     ---@return dreamwork.std.game.Item[] items The list of games.
     ---@return integer item_count The length of the items array (`#items`).
+    ---@nodiscard
     function game.getAll()
 
         return {}, 0
@@ -91,6 +92,7 @@ do
     ---
     ---@param folder_name string The folder name of the game.
     ---@return boolean is_mounted Returns `true` if the game is mounted, `false` otherwise.
+    ---@nodiscard
     function game.isMounted( folder_name )
         if folder_name == "episodic" or folder_name == "ep2" or folder_name == "lostcoast" then
             folder_name = "hl2"

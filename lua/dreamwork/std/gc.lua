@@ -55,6 +55,7 @@ end
 --- The value has a fractional part, so that it multiplied by 1024 gives the exact number of bytes in use by Lua (except for overflows).
 ---
 ---@return number count The total memory in use by Lua in Kbytes.
+---@nodiscard
 function gc.getMemory()
     return collectgarbage( "count" )
 end
@@ -81,6 +82,7 @@ end
 --- Returns a boolean that tells whether the collector is running (i.e., not stopped).
 ---
 ---@return boolean is_running Returns true if the collector is running, false otherwise.
+---@nodiscard
 function gc.isRunning()
     return collectgarbage( "isrunning" )
 end
@@ -133,6 +135,7 @@ do
     ---@param tbl table The table to query.
     ---@return boolean key_mode `true` if key c ollection is allowed, `false` otherwise.
     ---@return boolean value_mode `true` if value collection is allowed, `false` otherwise.
+    ---@nodiscard
     function gc.getTableRules( tbl )
         local metatable = debug_getmetatable( tbl )
         if metatable == nil then

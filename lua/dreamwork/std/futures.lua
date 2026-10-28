@@ -128,6 +128,7 @@ futures.running = coroutine_running
 --- or `nil` if called outside of a coroutine.
 ---
 ---@return dreamwork.std.debug.Stack | nil
+---@nodiscard
 function futures.stack()
     local co = coroutine_running()
     if co ~= nil then
@@ -391,6 +392,7 @@ end
 ---
 ---@param value any The value to check, e.g. an error caught by `pcall` or the `value` of a `futures.run` callback.
 ---@return boolean is_cancel `true` if the value is the cancellation signal, otherwise `false`.
+---@nodiscard
 function futures.isCancel( value )
     return value == ACTION_CANCEL
 end
@@ -523,6 +525,7 @@ end
 ---@param iterator thread The async-iterator coroutine, as returned by `futures.apairs`.
 ---@param ... any Values to resume the iterator with.
 ---@return any ... The next yielded value(s), or nothing if the iterator finished.
+---@nodiscard
 ---@async
 local function futures_anext( iterator, ... )
     return handle_anext( iterator, futures_transfer( iterator, ACTION_RESUME, ... ) )
@@ -561,6 +564,7 @@ futures.anext = futures_anext
 ---@param ... any Arguments to pass to `iterator`.
 ---@return async fun(...): K, V
 ---@return thread
+---@nodiscard
 ---@async
 local function futures_apairs( iterator, ... )
     local co = coroutine_create( async_iteratable_thread )
@@ -581,6 +585,7 @@ std.apairs = futures_apairs
 ---@param ... any Arguments to pass to `iterator`.
 ---@return V[] results
 ---@return number length
+---@nodiscard
 ---@async
 function futures.collect( iterator, ... )
     local results, length = {}, 0
@@ -600,6 +605,7 @@ end
 ---@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<K, V> The async iterator to collect entries from.
 ---@param ... any Arguments to pass to `iterator`.
 ---@return table<K, V> result
+---@nodiscard
 ---@async
 function futures.collectTable( iterator, ... )
     local result = {}
@@ -675,6 +681,7 @@ do
     --- Returns `true` if Future is pending.
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isPending()
         return self.state == 0
     end
@@ -684,6 +691,7 @@ do
     --- Returns `true` if Future is finished (or cancelled).
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isFinished()
         return self.state ~= 0
     end
@@ -693,6 +701,7 @@ do
     --- Returns true if Future was cancelled.
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isCancelled()
         return self.state == 2
     end
@@ -843,6 +852,7 @@ do
     ---
     ---@see dreamwork.std.Future.setError
     ---@return string | nil
+    ---@nodiscard
     function Future:error()
         local state = self.state
         if state == 2 then
@@ -863,6 +873,7 @@ do
     ---@generic T
     ---@param self dreamwork.std.Future<T>
     ---@return T
+    ---@nodiscard
     function Future:result()
         local state = self.state
 
@@ -1021,6 +1032,7 @@ do
     --- Returns `true` if the channel is empty, `false` otherwise.
     ---
     ---@return boolean isEmpty
+    ---@nodiscard
     function Channel:isEmpty()
         return self.queue:isEmpty()
     end
@@ -1030,6 +1042,7 @@ do
     --- Returns `true` if the channel is full, `false` otherwise.
     ---
     ---@return boolean isFull
+    ---@nodiscard
     function Channel:isFull()
         local max_size = self.max_size
         if max_size == 0 then
@@ -1065,6 +1078,7 @@ do
     --- Returns `true` if the channel is closed, `false` otherwise.
     ---
     ---@return boolean isClosed
+    ---@nodiscard
     function Channel:isClosed()
         return self.closed
     end

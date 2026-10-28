@@ -76,6 +76,7 @@ else
     ---@param x T The value to be manipulated.
     ---@param ... T? Values bit or with. Optional.
     ---@return T result The bitwise OR result between all values.
+    ---@nodiscard
     function bit.bor( x, ... )
         ---@generic T
         ---@type fun( self: T, ...: T ): T
@@ -114,6 +115,7 @@ else
     ---@param x T The value to be manipulated.
     ---@param ... T? Values bit XOR with. Optional.
     ---@return T result Result of bitwise XOR` operation.
+    ---@nodiscard
     function bit.bxor( x, ... )
         ---@generic T
         ---@type fun( self: T, ...: T ): T
@@ -150,6 +152,7 @@ else
     ---@param x T The value to be manipulated.
     ---@param ... T? Values bit to perform bitwise AND with. Optional.
     ---@return T result The bitwise AND result between all values.
+    ---@nodiscard
     function bit.band( x, ... )
         ---@generic T
         ---@type fun( self: T, ...: T ): T
@@ -184,6 +187,7 @@ else
     ---@generic T: integer | { __bnot: function }
     ---@param x T The value to be manipulated/inverted.
     ---@return T result The result of bitwise `NOT` (`0101` becomes `1010`).
+    ---@nodiscard
     function bit.bnot( x )
         ---@generic T
         ---@type fun( self: T ): T
@@ -222,6 +226,7 @@ else
     ---@param x T The value to be manipulated.
     ---@param disp integer Amounts of bits to shift left by.
     ---@return T result The left shifted value. Input of `0b1001` will become `0b10010` for one left shift, etc.
+    ---@nodiscard
     function bit.lshift( x, disp )
         ---@generic T
         ---@type fun( self: T, disp: integer ): T
@@ -262,6 +267,7 @@ else
     ---@param x T The value to be manipulated.
     ---@param disp integer Amounts of bits to shift right by.
     ---@return T result The right shifted value.
+    ---@nodiscard
     function bit.rshift( x, disp )
         ---@generic T
         ---@type fun( self: T, disp: integer ): T
@@ -299,6 +305,7 @@ end
 ---@param x T The value to be manipulated.
 ---@param disp integer Amounts of bits to shift.
 ---@return T result The arithmetically shifted value.
+---@nodiscard
 function bit.arshift( x, disp )
     ---@generic T
     ---@type fun( self: T, disp: integer ): T
@@ -326,6 +333,7 @@ end
 ---@param x T The value to be manipulated.
 ---@param disp integer Amounts of bits to rotate left by.
 ---@return T result The left rotated value.
+---@nodiscard
 function bit.rol( x, disp )
     ---@generic T
     ---@type fun( self: T, disp: integer ): T
@@ -355,6 +363,7 @@ end
 ---@param x T The value to be manipulated.
 ---@param disp integer Amounts of bits to rotate right by.
 ---@return T result The right rotated value.
+---@nodiscard
 function bit.ror( x, disp )
     ---@generic T
     ---@type fun( self: T, disp: integer ): T
@@ -373,6 +382,7 @@ end
 ---@generic T: integer | { __bswp: function }
 ---@param x T The 32-bit integer to be byte-swapped.
 ---@return T result The byte-swapped value.
+---@nodiscard
 function bit.bswap( x )
     ---@generic T
     ---@type fun( self: T ): T
@@ -399,6 +409,7 @@ local bit_band, bit_bor = bit.band, bit.bor
 ---@param x T The first value to test.
 ---@param ... integer Additional values to test against the first. Optional.
 ---@return boolean result `true` if any bit is set in every given value, `false` otherwise.
+---@nodiscard
 function bit.btest( x, ... )
     return not equal( bit_band( x, ... ), 0 )
 end
@@ -419,6 +430,7 @@ end
 ---@param field integer The starting bit position of the field (0-indexed).
 ---@param width integer? The number of bits in the field. Defaults to 1.
 ---@return T result The extracted bit field, right-aligned as an unsigned integer.
+---@nodiscard
 function bit.extract( x, field, width )
     return bit_band( bit_rshift( x, field ), 2 ^ (width or 1) - 1 )
 end
@@ -436,6 +448,7 @@ end
 ---@param field integer The starting bit position of the field to replace (0-indexed).
 ---@param width integer? The number of bits in the field. Defaults to 1.
 ---@return T result The value of `x` with the specified bit field replaced.
+---@nodiscard
 function bit.replace( x, extract, field, width )
     local mask = 2 ^ (width or 1) - 1
     return bit_band( x, bit_bnot( bit_lshift( mask, field ) ) ) +
@@ -455,6 +468,7 @@ end
 ---@param x T The value whose bits are to be reversed.
 ---@param bit_count integer? The number of low-order bits to reverse. Defaults to `32`.
 ---@return T result The value of `x` with its bits reversed.
+---@nodiscard
 function bit.reverse( x, bit_count )
     if bit_count == nil then
         bit_count = 32
@@ -482,6 +496,7 @@ end
 ---@param x T The value to count the leading zeros of.
 ---@param bit_count integer? The width, in bits, of the window to inspect. Defaults to `32`.
 ---@return T result The number of leading zero bits.
+---@nodiscard
 function bit.clz( x, bit_count )
     if bit_count == nil then
         bit_count = 32
@@ -518,6 +533,7 @@ end
 ---@param x T The value to count the trailing zeros of.
 ---@param bit_count integer? The width, in bits, of the window to inspect. Defaults to `32`.
 ---@return T result The number of trailing zero bits.
+---@nodiscard
 function bit.ctz( x, bit_count )
     if bit_count == nil then
         bit_count = 32
@@ -553,6 +569,7 @@ end
 ---@param b T The value to select bits from where `a` is `1`.
 ---@param c T The value to select bits from where `a` is `0`.
 ---@return T result The bitwise multiplexed value.
+---@nodiscard
 function bit.mux( a, b, c )
     return bit_bxor( c, bit_band( a, bit_bxor( b, c ) ) )
 end
@@ -570,6 +587,7 @@ end
 ---@param b T The second value.
 ---@param c T The third value.
 ---@return T result The bitwise majority value.
+---@nodiscard
 function bit.maj( a, b, c )
     return bit_bor( bit_band( a, bit_bor( b, c ) ), bit_band( b, c ) )
 end
@@ -582,6 +600,7 @@ end
 ---@param x T The integer to get the sign of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return T result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+---@nodiscard
 function bit.sign( x, bit_count )
     if lessEqual( x, 0 ) then
         return x
@@ -608,6 +627,7 @@ end
 ---@param x T The integer to get the unsigned value of.
 ---@param bit_count? integer The amount of bits to unsign to, `32` by default.
 ---@return T result The unsigned value of the integer.
+---@nodiscard
 function bit.unsign( x, bit_count )
     if lessThan( x, 0 ) then
         if bit_count == nil or bit_count == 32 then

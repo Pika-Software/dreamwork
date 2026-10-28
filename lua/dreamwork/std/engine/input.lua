@@ -89,6 +89,7 @@ if std.LUA_CLIENT_MENU then
         --- Returns the contents of the clipboard.
         ---
         ---@return string
+        ---@nodiscard
         function clipboard.getText()
             return clipboard_text
         end
@@ -203,6 +204,7 @@ if std.LUA_CLIENT_MENU then
             --- The captured key will not be pressed and committed to the game engine.
             ---
             ---@return integer key_code The key code of the key that was pressed.
+            ---@nodiscard
             ---@async
             function key.capture()
                 local f = Future()
@@ -238,6 +240,7 @@ if std.LUA_CLIENT_MENU then
             ---
             ---@param key_code integer The key code of the key.
             ---@return string key_code The name of the key.
+            ---@nodiscard
             function key.getName( key_code )
                 return key2name[ key_code ]
             end
@@ -266,6 +269,7 @@ if std.LUA_CLIENT_MENU then
             ---
             ---@param name string The name of the key.
             ---@return integer key_code The key code of the key.
+            ---@nodiscard
             ---@see key.getName as a reverse lookup
             function key.getCode( name )
                 return name2key[ name ]

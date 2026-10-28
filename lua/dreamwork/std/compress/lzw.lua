@@ -39,6 +39,7 @@ end
 ---@param forced? boolean If `true`, compression will ignore the excess length of compressed data relative to uncompressed data. By default: `true`
 ---@return string | nil compressed_data The compressed string or `nil` if the compression fails.
 ---@return nil | string error_message The error message or `nil` if the compression succeeds.
+---@nodiscard
 function lzw.compress( raw_data, forced )
     local data_length = string_len( raw_data )
     if data_length == 0 then
@@ -138,6 +139,7 @@ end
 ---@param encoded_data string The string to decompress.
 ---@return string | nil decompressed_data The decompressed string or `nil` if the decompression fails.
 ---@return nil | string error_message The error message or `nil` if the decompression succeeds.
+---@nodiscard
 function lzw.decompress( encoded_data )
     if string_byte( encoded_data, 1, 1 ) == nil then
         return nil, "compressed string cannot be empty"

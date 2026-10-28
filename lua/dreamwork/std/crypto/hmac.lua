@@ -32,6 +32,7 @@ crypto.hmac = hmac
 ---@param hash_fn function
 ---@param block_size integer The block size of the hash function.
 ---@return string hmac_key The normalized key.
+---@nodiscard
 local function key_normalize( key, hash_fn, block_size )
     local key_length = string_len( key )
     if key_length > block_size then
@@ -61,6 +62,7 @@ hmac.key = key_normalize
 ---@param inner? string The known inner padding.
 ---@return string outer The outer padding.
 ---@return string inner The inner padding.
+---@nodiscard
 local function key_padding( key, block_size, outer, inner )
     if outer == nil and inner == nil then
         local outer_tbl, inner_tbl = {}, {}
@@ -109,6 +111,7 @@ hmac.padding = key_padding
 ---@param msg string The message to compute hmac for.
 ---@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
 ---@return string hmac_str The binary hmac string of the message.
+---@nodiscard
 function hmac.compute( hash_fn, outer, inner, msg, as_hex )
     return hash_fn( outer .. hash_fn( inner .. msg ) )
 end
@@ -123,6 +126,7 @@ end
 ---@param block_size integer The block size of the hash function.
 ---@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
 ---@return string str_result The hmac string of the message.
+---@nodiscard
 local function hash( msg, key, hash_fn, block_size, as_hex )
     local outer, inner = key_padding( key_normalize( key, hash_fn, block_size ), block_size )
     return hash_fn( outer .. hash_fn( inner .. msg ) )
@@ -137,6 +141,7 @@ hmac.hash = hash
 ---@param digest_fn fun( str: string ): string
 ---@param block_size integer
 ---@return fun( message: string, key: string, as_hex?: boolean ): string
+---@nodiscard
 function hmac.preset( digest_fn, block_size )
     ---@param message string The message to compute hmac for.
     ---@param key string The key to use.

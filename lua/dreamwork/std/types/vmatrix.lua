@@ -148,6 +148,7 @@ if ffi == nil then
 
     ---@param value any
     ---@return boolean is_vmatrix
+    ---@nodiscard
     function isVMatrix( value )
         return debug_getmetatable( value ) == VMatrix
     end
@@ -166,6 +167,7 @@ else
 
     ---@param value any
     ---@return boolean is_vmatrix
+    ---@nodiscard
     function isVMatrix( value )
         return ffi_istype( VMatrix_ctype, value )
     end
@@ -268,6 +270,7 @@ end
 --- Returns all 16 values of the matrix ( row by row ).
 ---
 ---@return number m11, number m12, number m13, number m14, number m21, number m22, number m23, number m24, number m31, number m32, number m33, number m34, number m41, number m42, number m43, number m44
+---@nodiscard
 local function VMatrix_unpack( self )
     return self.m11, self.m12, self.m13, self.m14,
         self.m21, self.m22, self.m23, self.m24,
@@ -330,6 +333,7 @@ end
 ---
 ---@param self dreamwork.std.VMatrix The matrix.
 ---@return dreamwork.std.VMatrix copy The new matrix.
+---@nodiscard
 local function VMatrix_copy( self )
     return VMatrix_create( VMatrix_unpack( self ) )
 end
@@ -351,6 +355,7 @@ end
 --- Checks if the matrix is exactly identity.
 ---
 ---@return boolean is_identity `true` if the matrix is identity, `false` otherwise.
+---@nodiscard
 function VMatrix:isIdentity()
     return self.m11 == 1 and self.m12 == 0 and self.m13 == 0 and self.m14 == 0 and
         self.m21 == 0 and self.m22 == 1 and self.m23 == 0 and self.m24 == 0 and
@@ -372,6 +377,7 @@ end
 --- Checks if all values of the matrix are exactly zero.
 ---
 ---@return boolean is_zero `true` if the matrix is zero, `false` otherwise.
+---@nodiscard
 function VMatrix:isZero()
     return self.m11 == 0 and self.m12 == 0 and self.m13 == 0 and self.m14 == 0 and
         self.m21 == 0 and self.m22 == 0 and self.m23 == 0 and self.m24 == 0 and
@@ -388,6 +394,7 @@ end
 ---@param matrix dreamwork.std.VMatrix The matrix to check.
 ---@param tolerance number The maximum allowed difference per value.
 ---@return boolean is_near `true` if the matrices are equal within the tolerance, otherwise `false`.
+---@nodiscard
 function VMatrix:isNear( matrix, tolerance )
     return math_abs( self.m11 - matrix.m11 ) <= tolerance and math_abs( self.m12 - matrix.m12 ) <= tolerance and
         math_abs( self.m13 - matrix.m13 ) <= tolerance and math_abs( self.m14 - matrix.m14 ) <= tolerance and
@@ -420,6 +427,7 @@ do
     ---@param row integer The row, from 1 to 4.
     ---@param column integer The column, from 1 to 4.
     ---@return number value The value.
+    ---@nodiscard
     function VMatrix:getField( row, column )
         return self[ fields[ (math_clamp( row, 1, 4 ) - 1) * 4 + math_clamp( column, 1, 4 ) ] ]
     end
@@ -508,6 +516,7 @@ end
 ---@param self dreamwork.std.VMatrix The matrix.
 ---@param vector dreamwork.std.Vector3 The point.
 ---@return dreamwork.std.Vector3 vec3 The new transformed point.
+---@nodiscard
 local function VMatrix_transformPoint( self, vector )
     local x, y, z = vector.x, vector.y, vector.z
     return Vector3Class(
@@ -527,6 +536,7 @@ VMatrix.transformPoint = VMatrix_transformPoint
 ---
 ---@param vector dreamwork.std.Vector3 The direction.
 ---@return dreamwork.std.Vector3 vec3 The new transformed direction.
+---@nodiscard
 function VMatrix:transformDirection( vector )
     local x, y, z = vector.x, vector.y, vector.z
     return Vector3Class(
@@ -541,6 +551,7 @@ end
 ---@param a dreamwork.std.VMatrix
 ---@param b dreamwork.std.VMatrix | dreamwork.std.Vector3
 ---@return dreamwork.std.VMatrix | dreamwork.std.Vector3 product The new matrix, or the new vector for `matrix * vec3`.
+---@nodiscard
 ---@protected
 function VMatrix.__mul( a, b )
     if isVector3( b ) then
@@ -602,6 +613,7 @@ VMatrix.transpose = VMatrix_transpose
 --- Returns a transposed copy of the matrix.
 ---
 ---@return dreamwork.std.VMatrix transposed_matrix The new matrix.
+---@nodiscard
 function VMatrix:getTransposed()
     return VMatrix_transpose( VMatrix_copy( self ) )
 end
@@ -623,6 +635,7 @@ do
     --- `1` for rotation matrices, `0` for singular ( non-invertible ) matrices, negative if the matrix mirrors.
     ---
     ---@return number determinant The determinant.
+    ---@nodiscard
     function VMatrix:getDeterminant()
         local s0, s1, s2, s3, s4, s5, c0, c1, c2, c3, c4, c5 = subDeterminants( VMatrix_unpack( self ) )
         return s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0
@@ -683,6 +696,7 @@ do
     --- Same as `VMatrix:GetInverse` in Garry's Mod.
     ---
     ---@return dreamwork.std.VMatrix | nil inverted_matrix The new matrix, or `nil` if the matrix is singular.
+    ---@nodiscard
     function VMatrix:getInverse()
         local matrix = VMatrix_copy( self )
         if VMatrix_invert( matrix ) then
@@ -723,6 +737,7 @@ VMatrix.invertTR = VMatrix_invertTR
 --- Same as `VMatrix:GetInverseTR` in Garry's Mod.
 ---
 ---@return dreamwork.std.VMatrix inverted_matrix The new matrix.
+---@nodiscard
 function VMatrix:getInverseTR()
     return VMatrix_invertTR( VMatrix_copy( self ) )
 end
@@ -734,6 +749,7 @@ end
 --- Same as `VMatrix:GetForward` in Garry's Mod, not normalized if the matrix has scale.
 ---
 ---@return dreamwork.std.Vector3 forward_dir The new vector.
+---@nodiscard
 function VMatrix:getForward()
     return Vector3Class( self.m11, self.m21, self.m31 )
 end
@@ -756,6 +772,7 @@ end
 --- Returns the left direction of the matrix ( second column ).
 ---
 ---@return dreamwork.std.Vector3 left_dir The new vector.
+---@nodiscard
 function VMatrix:getLeft()
     return Vector3Class( self.m12, self.m22, self.m32 )
 end
@@ -778,6 +795,7 @@ end
 --- Same as `VMatrix:GetRight` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 right_dir The new vector.
+---@nodiscard
 function VMatrix:getRight()
     return Vector3Class( -self.m12, -self.m22, -self.m32 )
 end
@@ -802,6 +820,7 @@ end
 --- Same as `VMatrix:GetUp` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 up_dir The new vector.
+---@nodiscard
 function VMatrix:getUp()
     return Vector3Class( self.m13, self.m23, self.m33 )
 end
@@ -826,6 +845,7 @@ end
 --- Same as `VMatrix:GetTranslation` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 translation The new vector.
+---@nodiscard
 function VMatrix:getTranslation()
     return Vector3Class( self.m14, self.m24, self.m34 )
 end
@@ -888,6 +908,7 @@ end
 ---@return number pitch The pitch in degrees.
 ---@return number yaw The yaw in degrees.
 ---@return number roll The roll in degrees.
+---@nodiscard
 local function VMatrix_unpackAngles( self )
     local a11, a21, a31 = self.m11, self.m21, self.m31
 
@@ -908,6 +929,7 @@ VMatrix.unpackAngles = VMatrix_unpackAngles
 --- Same as `VMatrix:GetAngles` in Garry's Mod, values are in range [-180, 180].
 ---
 ---@return dreamwork.std.Angle3 ang3 The new angle.
+---@nodiscard
 function VMatrix:getAngles()
     return Angle3Class( VMatrix_unpackAngles( self ) )
 end
@@ -977,6 +999,7 @@ end
 --- Always positive, mirroring is not detected ( check `getDeterminant` for that ).
 ---
 ---@return dreamwork.std.Vector3 scale The new vector.
+---@nodiscard
 function VMatrix:getScale()
     local m11, m12, m13 = self.m11, self.m12, self.m13
     local m21, m22, m23 = self.m21, self.m22, self.m23
@@ -1031,6 +1054,7 @@ end
 ---
 ---@param tolerance? number The tolerance, defaults to `1e-3`.
 ---@return boolean is_rotation_matrix `true` if the matrix is a rotation matrix, `false` otherwise.
+---@nodiscard
 function VMatrix:isRotationMatrix( tolerance )
     tolerance = tolerance or 1e-3
 
@@ -1051,6 +1075,7 @@ end
 --- Returns the rotation of the matrix as a quaternion, scale and translation are ignored.
 ---
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function VMatrix:toQuaternion()
     return QuaternionClass.fromVMatrix( self )
 end
@@ -1102,6 +1127,7 @@ end
 ---@param angle dreamwork.std.Angle3 The angle.
 ---@param translation? dreamwork.std.Vector3 The translation, defaults to `( 0, 0, 0 )`.
 ---@return dreamwork.std.VMatrix matrix The new matrix.
+---@nodiscard
 function VMatrixClass.fromAngle3( angle, translation )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( angle.pitch, angle.yaw, angle.roll )
 
@@ -1121,6 +1147,7 @@ end
 ---@param quaternion dreamwork.std.Quaternion The quaternion.
 ---@param translation? dreamwork.std.Vector3 The translation, defaults to `( 0, 0, 0 )`.
 ---@return dreamwork.std.VMatrix matrix The new matrix.
+---@nodiscard
 function VMatrixClass.fromQuaternion( quaternion, translation )
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = quaternion:unpackMatrix()
 

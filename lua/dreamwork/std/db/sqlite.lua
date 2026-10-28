@@ -41,6 +41,7 @@ std.sqlite = sqlite
 --- Returns the last error message from the last query.
 ---
 ---@return string | nil err_msg The last error message.
+---@nodiscard
 function sqlite.getLastError()
     return sql.m_strError
 end
@@ -51,6 +52,7 @@ end
 ---
 ---@param str string? The string to convert.
 ---@return string str The safe string.
+---@nodiscard
 local function escape( str, no_quotes )
     if str == nil then
         return "null"
@@ -96,6 +98,7 @@ sqlite.rawQuery = query_raw
 ---
 ---@param name string The name of the table to check.
 ---@return boolean exist `true` if the table exists, `false` otherwise.
+---@nodiscard
 function sqlite.tableExists( name )
     return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='table'" ) ~= nil
 end
@@ -106,6 +109,7 @@ end
 ---
 ---@param name string The name of the index to check.
 ---@return boolean exist `true` if the index exists, `false` otherwise.
+---@nodiscard
 function sqlite.indexExists( name )
     return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='index'" ) ~= nil
 end
@@ -167,6 +171,7 @@ sqlite.query = query
 ---@param row integer? The row to return.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryRow | nil result The selected row of the result.
+---@nodiscard
 local function query_row( str, row, ... )
     local result = query( str, ... )
     if result == nil then
@@ -185,6 +190,7 @@ sqlite.queryRow = query_row
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryRow | nil result The first row of the result.
+---@nodiscard
 local function query_first( str, ... )
     return query_row( str, 1, ... )
 end
@@ -198,6 +204,7 @@ sqlite.queryFirst = query_first
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryValue | nil value The first value of the first row of the result.
+---@nodiscard
 function sqlite.queryValue( str, ... )
     local result = query_first( str, ... )
     if result ~= nil then

@@ -99,6 +99,7 @@ std.XMLNode = XMLNodeClass
 ---
 ---@param value any
 ---@return boolean is_xml_node
+---@nodiscard
 local function isNode( value )
     return debug_getmetatable( value ) == XMLNode
 end
@@ -464,6 +465,7 @@ end
 --- Checks whether the node is empty.
 ---
 ---@return boolean is_empty
+---@nodiscard
 function XMLNode:isEmpty()
     return self.data == nil
 end
@@ -474,6 +476,7 @@ end
 ---
 ---@param name string The name of the attribute to get.
 ---@return nil | string value The value of the attribute or `nil` if not found.
+---@nodiscard
 function XMLNode:getAttribute( name )
     local attributes = self.attributes
     if attributes == nil then
@@ -510,6 +513,7 @@ end
 ---
 ---@param key string The key to look up in the node's data, with dot-separated keys for nested values.
 ---@return nil | string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[] value The value of the node at the given key, or `nil` if not found.
+---@nodiscard
 function XMLNode:get( key )
     local position = 1
     local node = self
@@ -704,6 +708,7 @@ end
 ---
 ---@param key string The key to check, with dot-separated keys for nested values.
 ---@return boolean is_contains Whether the node contains a value at the given key.
+---@nodiscard
 function XMLNode:contains( key )
     local data, key_name = resolve_data( self, key )
     return data ~= nil and data[ key_name ] ~= nil
@@ -715,6 +720,7 @@ end
 ---
 ---@param key string The key to check, with dot-separated keys for nested values.
 ---@return boolean is_contains Whether the node contains a list at the given key.
+---@nodiscard
 function XMLNode:containsList( key )
     local data, key_name = resolve_data( self, key )
     if data == nil then
@@ -730,6 +736,7 @@ end
 ---
 ---@param key string The key to check, with dot-separated keys for nested values.
 ---@return boolean is_contains Whether the node contains a string at the given key.
+---@nodiscard
 function XMLNode:containsString( key )
     local data, key_name = resolve_data( self, key )
     return data ~= nil and isString( data[ key_name ] )
@@ -741,6 +748,7 @@ end
 ---
 ---@param key string The key to check, with dot-separated keys for nested values.
 ---@return boolean is_contains Whether the node contains a node at the given key.
+---@nodiscard
 function XMLNode:containsNode( key )
     local data, key_name = resolve_data( self, key )
     return data ~= nil and isNode( data[ key_name ] )
@@ -752,6 +760,7 @@ end
 ---
 ---@param key string The key to get the length of, with dot-separated keys for nested values.
 ---@return integer length The length of the list at the given key.
+---@nodiscard
 function XMLNode:getLength( key )
     local data, key_name = resolve_data( self, key )
     if data == nil then
@@ -884,6 +893,7 @@ end
 ---
 ---@param key? string The key to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function, which returns key-value pairs for the node at the given key.
+---@nodiscard
 function XMLNode:iterator( key )
     if key ~= nil then
         local node = self:get( key )
@@ -968,6 +978,7 @@ end
 ---
 ---@param key? string The key of the node to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | integer | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function.
+---@nodiscard
 function XMLNode:children( key )
     ---@type any
     local node = self
@@ -1235,6 +1246,7 @@ do
     ---@param name? string The name of the node.
     ---@param level? number The indentation level.
     ---@return string str The XML string representation of this node.
+    ---@nodiscard
     function XMLNode:toString( pretty, name, level )
         pretty = pretty == true
 
@@ -1260,6 +1272,7 @@ do
     --- Text content is stored in slot `[1]`, attributes and document order are not included.
     ---
     ---@return table
+    ---@nodiscard
     function XMLNode:toTable()
         local data = self.data
         if data == nil then
@@ -1414,6 +1427,7 @@ do
     ---@param tbl table The table to convert to an XML node.
     ---@param name? string The name of the root node.
     ---@return dreamwork.std.XMLNode root_node The root node of the XML tree.
+    ---@nodiscard
     function XMLNodeClass.fromTable( tbl, name )
         local node = XMLNodeClass( name or "root", nil, nil )
 
@@ -1582,6 +1596,7 @@ do
     ---@param xml_str string The XML string to parse.
     ---@param keep_whitespace? boolean Whether to keep all whitespace in text, defaults to `false`.
     ---@return dreamwork.std.XMLNode | nil root_node The root node, or `nil` if the string has no elements.
+    ---@nodiscard
     function XMLNodeClass.fromString( xml_str, keep_whitespace )
         keep_whitespace = keep_whitespace == true
 

@@ -21,6 +21,7 @@ local functions = {}
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.simple( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -52,6 +53,7 @@ end
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`, return result of `new_fn` will be ignored.
+---@nodiscard
 function detour.before( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -79,6 +81,7 @@ end
 ---@param new_fn fun( results: any[], ... ): any, any, any, any, any, any The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`, return result of `in_fn` will be ignored.
+---@nodiscard
 function detour.after( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -107,6 +110,7 @@ end
 ---@param in_fn F The original function.
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.replace( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -129,6 +133,7 @@ end
 ---@param new_fn ( fun( in_fn: F, ...: any ): any, any, any, any, any, any ) The new function to call instead of `in_fn`.
 ---@param in_fn F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.attach( new_fn, in_fn )
     if in_fn == nil then
         return function( ... )

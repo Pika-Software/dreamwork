@@ -69,6 +69,7 @@ local ratelimit_reset_time = 0
 ---@param body? string The body to send with the request.
 ---@param do_cache? boolean Whether to cache the response.
 ---@return dreamwork.std.http.Response response The response.
+---@nodiscard
 ---@async
 local function request( method, pathname, headers, body, do_cache )
     if headers == nil then
@@ -145,6 +146,7 @@ github.request = request
 ---@param body? string The body to send with the request.
 ---@param do_cache? boolean Whether to cache the response.
 ---@return table data The data returned from the API.
+---@nodiscard
 ---@async
 local function apiRequest( method, pathname, headers, body, do_cache )
     local result = request( method, pathname, headers, body, do_cache )
@@ -171,6 +173,7 @@ github.apiRequest = apiRequest
 ---@param pathname string The path to replace placeholders in.
 ---@param replaces table<string, any> The table to replace placeholders with.
 ---@return string pathname The path with placeholders replaced.
+---@nodiscard
 local function template( pathname, replaces )
     return (string_gsub( pathname, "{([%w_-]-)}", function( str )
         return tostring( replaces[ str ] )
@@ -187,6 +190,7 @@ github.template = template
 ---@param pathname string The path to send the request to.
 ---@param replaces table<string, any> The table to replace placeholders with.
 ---@return table data The data returned from the API.
+---@nodiscard
 ---@async
 local function templateRequest( method, pathname, replaces )
     return apiRequest( method, template( pathname, replaces ) )
@@ -199,6 +203,7 @@ github.templateRequest = templateRequest
 --- Fetches a list of all github emojis.
 ---
 ---@return table<string, string> data The list of emojis.
+---@nodiscard
 ---@async
 function github.getEmojis()
     return apiRequest( "GET", "/emojis" )
@@ -209,6 +214,7 @@ end
 --- Fetches a list of all github licenses.
 ---
 ---@return dreamwork.std.http.github.License[]
+---@nodiscard
 ---@async
 function github.getLicenses()
     return apiRequest( "GET", "/licenses" )
@@ -220,6 +226,7 @@ end
 ---
 ---@param organization string The name of the organization.
 ---@return dreamwork.std.http.github.Repository[] repos The list of repositories.
+---@nodiscard
 ---@async
 function github.getRepositories( organization )
     return templateRequest( "GET", "/orgs/{org}/repos", {
@@ -234,6 +241,7 @@ end
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
 ---@return dreamwork.std.http.github.Repository repo The repository.
+---@nodiscard
 ---@async
 function github.getRepository( owner, repo )
     return templateRequest( "GET", "/repos/{owner}/{repo}", {
@@ -250,6 +258,7 @@ end
 ---@param repo string The name of the repository.
 ---@param page? integer The page number, default value is `1`.
 ---@return dreamwork.std.http.github.Repository.Tag[] tags The list of tags.
+---@nodiscard
 ---@async
 function github.getRepositoryTags( owner, repo, page )
     return templateRequest( "GET", "/repos/{owner}/{repo}/tags?per_page=100&page={page}", {
@@ -268,6 +277,7 @@ end
 ---@param tree_sha string The SHA1 value or ref (branch or tag) name of the tree.
 ---@param recursive? boolean Setting this parameter to any value returns the objects or subtrees referenced by the tree specified in :tree_sha.
 ---@return dreamwork.std.http.github.Tree tree The tree.
+---@nodiscard
 ---@async
 function github.getTree( owner, repo, tree_sha, recursive )
     return templateRequest( "GET", "/repos/{owner}/{repo}/git/trees/{tree_sha}?recursive={recursive}", {
@@ -286,6 +296,7 @@ end
 ---@param repo string The name of the repository.
 ---@param file_sha string The SHA1 value of the blob.
 ---@return dreamwork.std.http.github.Blob blob The blob.
+---@nodiscard
 ---@async
 function github.getBlob( owner, repo, file_sha )
     local result = templateRequest( "GET", "/repos/{owner}/{repo}/git/blobs/{file_sha}", {
@@ -309,6 +320,7 @@ end
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
 ---@return dreamwork.std.http.github.Contributor[] contributors The list of contributors.
+---@nodiscard
 ---@async
 function github.getContributors( owner, repo )
     return templateRequest( "GET", "/repos/{owner}/{repo}/contributors", {
@@ -324,6 +336,7 @@ end
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
 ---@return table<string, integer> languages The languages.
+---@nodiscard
 ---@async
 function github.getLanguages( owner, repo )
     return templateRequest( "GET", "/repos/{owner}/{repo}/languages", {
@@ -340,6 +353,7 @@ end
 ---@param repo string The name of the repository.
 ---@param ref string The branch name, tag name, or commit sha-1.
 ---@return string content The body of the zipball.
+---@nodiscard
 ---@async
 function github.fetchZip( owner, repo, ref )
     local result = templateRequest( "GET", "/repos/{owner}/{repo}/zipball/{ref}", {

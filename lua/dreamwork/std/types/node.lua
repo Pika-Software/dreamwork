@@ -193,6 +193,7 @@ end
 ---@generic T
 ---@param self dreamwork.std.Node<T>
 ---@return integer size The size of the node tree.
+---@nodiscard
 function Node:size()
     local size = 1
 

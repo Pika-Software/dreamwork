@@ -477,6 +477,7 @@ VariableClass.exists = engine_consoleVariableExists
 ---@param str_name string The name of the console variable.
 ---@param cvar_type dreamwork.std.console.VariableType The type of the console variable.
 ---@return dreamwork.std.console.Variable variable The `console.Variable` object.
+---@nodiscard
 ---@overload fun( str_name: string, cvar_type: "boolean"): dreamwork.std.console.Variable<boolean>
 ---@overload fun( str_name: string, cvar_type: "integer"): dreamwork.std.console.Variable<integer>
 ---@overload fun( str_name: string, cvar_type: "number"): dreamwork.std.console.Variable<number>
@@ -514,6 +515,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return string value The value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getString( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -529,6 +531,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return integer value The value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getInteger( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -544,6 +547,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return number value The value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getFloat( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -561,6 +565,7 @@ VariableClass.getNumber = VariableClass.getFloat
 ---
 ---@param name string The name of the console variable.
 ---@return boolean value The value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getBoolean( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -605,6 +610,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return string help The help text of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getDescription( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -620,6 +626,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return string default The default value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getDefault( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -637,6 +644,7 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@return integer flags The flags of the `console.Variable` object.
+    ---@nodiscard
     local function getFlags( name )
         local object = engine_consoleVariableGet( name )
         if object == nil then
@@ -690,6 +698,7 @@ end
 ---@param name string The name of the console variable.
 ---@param flags integer The flags to check.
 ---@return boolean is_set `true` if the flag is set on the `console.Variable` object, `false` otherwise.
+---@nodiscard
 function VariableClass.isFlagSet( name, flags )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -705,6 +714,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return number minimum The minimum value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getMin( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -720,6 +730,7 @@ end
 ---
 ---@param name string The name of the console variable.
 ---@return number maximum The maximum value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getMax( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then
@@ -736,6 +747,7 @@ end
 ---@param name string The name of the console variable.
 ---@return number minimum The minimum value of the `console.Variable` object.
 ---@return number maximum The maximum value of the `console.Variable` object.
+---@nodiscard
 function VariableClass.getBounds( name )
     local object = engine_consoleVariableGet( name )
     if object == nil then

@@ -1119,6 +1119,7 @@ if std.loadbinary( "efsw" ) then
     ---
     ---@param fs_object string
     ---@return boolean is_watched
+    ---@nodiscard
     function watchdog.isWatched( fs_object )
         if watch_ids[ fs_object ] ~= nil then
             return true
@@ -1367,6 +1368,7 @@ else
     ---
     ---@param fs_object dreamwork.std.fs.Object
     ---@return boolean is_watched
+    ---@nodiscard
     function watchdog.isWatched( fs_object )
         if watch_map[ fs_object ] ~= nil then
             return true
@@ -1952,6 +1954,7 @@ end
 
 ---@protected
 ---@return string
+---@nodiscard
 function File:__tostring()
     return string.format( "File: %p [%s]", self, self.path )
 end
@@ -1961,6 +1964,7 @@ end
 --- Checks if file is busy by async operations.
 ---
 ---@return boolean is_busy `true` if file is busy, otherwise `false`.
+---@nodiscard
 function File:isBusy()
     return async_job_counts[ self ] ~= 0
 end
@@ -1972,6 +1976,7 @@ end
 --- **Basically checks if file size is 0.**
 ---
 ---@return boolean is_empty `true` if file is empty, otherwise `false`.
+---@nodiscard
 function File:isEmpty()
     return sizes[ self ] == 0
 end
@@ -2029,6 +2034,7 @@ end
 --- Returns data of the file by given path.
 ---
 ---@return string data The file data.
+---@nodiscard
 ---@async
 function File:read()
     local f = async_read( mount_paths[ self ], mount_points[ self ] )
@@ -2469,6 +2475,7 @@ end
 --- Checks if directory is busy by async operations.
 ---
 ---@return boolean is_busy `true` if directory is busy, otherwise `false`.
+---@nodiscard
 function Directory:isBusy()
     return async_job_counts[ self ] ~= 0
 end
@@ -2476,6 +2483,7 @@ end
 ---@param relative_path string
 ---@return dreamwork.std.fs.Object | nil fs_object
 ---@return boolean is_directory
+---@nodiscard
 function Directory:lookup( relative_path )
     return directory_lookup( self, relative_path, nil )
 end
@@ -2487,6 +2495,7 @@ end
 ---@param name string The name of the file or directory to get.
 ---@return dreamwork.std.fs.Object | nil fs_object The file or directory.
 ---@return boolean is_directory `true` if the object is a directory, otherwise `false`.
+---@nodiscard
 function Directory:get( name )
     return directory_get( self, name )
 end
@@ -2498,6 +2507,7 @@ do
 
     ---@param wildcard string | nil
     ---@return dreamwork.std.fs.File[], integer, dreamwork.std.fs.Directory[], integer
+    ---@nodiscard
     function Directory:select( wildcard )
         if wildcard == nil then
             wildcard = "*"
@@ -2582,6 +2592,7 @@ do
 end
 
 ---@return integer, integer
+---@nodiscard
 function Directory:count()
     local file_count, directory_count = 0, 0
     local descendants_table = descendants[ self ]
@@ -2692,6 +2703,7 @@ function Directory:scan( deep_scan, full_update, on_new, on_finish )
 end
 
 ---@return boolean
+---@nodiscard
 function Directory:isEmpty()
     local file_count, directory_count = self:count()
     return file_count == 0 and directory_count == 0
@@ -3017,6 +3029,7 @@ end
 ---@param prefix? string
 ---@param is_last? boolean
 ---@return string
+---@nodiscard
 function Directory:toStringTree( prefix, is_last )
     local lines, line_count = {}, 1
 
@@ -3128,6 +3141,7 @@ end
 ---@param path_to string The path to the file or directory.
 ---@return dreamwork.std.fs.Object | nil fs_object The file or directory.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
+---@nodiscard
 function fs.lookup( path_to )
     return directory_lookup( root, path_resolve( path_to ), 2 )
 end
@@ -3139,6 +3153,7 @@ end
 ---@param path_to string The path to the file or directory.
 ---@return boolean exists Returns `true` if the file or directory exists, otherwise `false`.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
+---@nodiscard
 function fs.exists( path_to )
     local fs_object, is_directory = directory_lookup( root, path_resolve( path_to ), 2 )
     return fs_object ~= nil, is_directory
@@ -3150,6 +3165,7 @@ end
 ---
 ---@param directory_path string The path to the directory.
 ---@return boolean exists Returns `true` if the directory exists and is not a file, otherwise `false`.
+---@nodiscard
 function fs.isDirectory( directory_path )
     local directory_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
     return directory_object ~= nil and is_directory
@@ -3161,6 +3177,7 @@ end
 ---
 ---@param file_path string The path to the fs.
 ---@return boolean exists Returns `true` if the file exists and is not a directory, otherwise `false`.
+---@nodiscard
 function fs.isFile( file_path )
     local file_object, is_directory = directory_lookup( root, path_resolve( file_path ), 2 )
     return file_object ~= nil and not is_directory
@@ -3173,6 +3190,7 @@ end
 ---@param path_to string The path to the file or directory.
 ---@return boolean empty Returns `true` if the file or directory is empty, otherwise `false`.
 ---@return boolean is_directory Returns `true` if the object is a directory, otherwise `false`.
+---@nodiscard
 function fs.isEmpty( path_to, forced )
     local fs_object, is_directory = directory_lookup( root, path_resolve( path_to ), 2 )
     if fs_object == nil then
@@ -3250,6 +3268,7 @@ end
 ---
 ---@param file_path string The path to file or directory.
 ---@return integer unix_time The last modified time of file or directory.
+---@nodiscard
 function fs.time( file_path, forced )
     local fs_object = directory_lookup( root, path_resolve( file_path ), 2 )
     if fs_object == nil then
@@ -3269,6 +3288,7 @@ end
 ---
 ---@param file_path string The path to the file or directory.
 ---@return integer size The size of the file or directory in bytes.
+---@nodiscard
 function fs.size( file_path, forced )
     local fs_object = directory_lookup( root, path_resolve( file_path ), 2 )
     if fs_object == nil then
@@ -3294,6 +3314,7 @@ end
 ---@return integer file_count The number of files in the directory.
 ---@return dreamwork.std.fs.Directory[] directories The list of directories in the directory.
 ---@return integer directory_count The number of directories in the directory.
+---@nodiscard
 function fs.select( directory_path, wildcard )
     local directory_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
     if directory_object == nil or not is_directory then
@@ -3327,6 +3348,7 @@ do
     ---@param directory_path string The path to the directory.
     ---@async
     ---@return AsyncIterator<dreamwork.std.fs.Object, boolean> iterator An async iterator that yields the path and a boolean indicating if the object is a directory.
+    ---@nodiscard
     function fs.iterator( directory_path )
         local fs_object, is_directory = directory_lookup( root, path_resolve( directory_path ), 2 )
         if fs_object ~= nil and is_directory then
@@ -3343,6 +3365,7 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@return string data The data of the file.
+---@nodiscard
 ---@async
 function fs.read( file_path )
     local file_object, is_directory = directory_lookup( root, path_resolve( file_path ), 2 )
@@ -3607,6 +3630,7 @@ end
 ---@param fs_object dreamwork.std.fs.Object The file or directory.
 ---@return string mount_point The mount point of the file or directory.
 ---@return string mount_path The mount path of the file or directory.
+---@nodiscard
 function fs.whereis( fs_object )
     local mount_point = mount_points[ fs_object ]
     if mount_point == nil then

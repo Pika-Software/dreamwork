@@ -191,6 +191,7 @@ end
 ---@param big_endian? boolean Whether to encode as big-endian.
 ---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return string utf32_sequence The UTF-32 sequence.
+---@nodiscard
 function utf32.encode( utf32_codepoint, lax, big_endian, stack_level )
     return encode( utf32_codepoint, lax ~= true, stack_level or 1, big_endian )
 end
@@ -212,6 +213,7 @@ end
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
 ---@return integer | nil error_position The position of the invalid sequence.
 ---@return dreamwork.std.utf32.ErrorCode | nil error_code The error code.
+---@nodiscard
 function utf32.decode( utf32_string, index, end_index, lax, big_endian, stack_level )
     return decode( utf32_string, index or 1, end_index or string_len( utf32_string ), lax ~= true, stack_level or 1, big_endian )
 end
@@ -226,6 +228,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-32 validity check, invalid sequences count as one code point each.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer utf32_codepoint_count The number of code points.
+---@nodiscard
 function utf32.len( utf32_string, start_position, end_position, lax, big_endian )
     local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
 
@@ -347,6 +350,7 @@ end
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer[] utf32_codepoints The code points.
 ---@return integer utf32_codepoint_count The number of code points.
+---@nodiscard
 function utf32.unpack( utf32_string, start_position, end_position, lax, big_endian )
     local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
     return unpack( utf32_string, start_index, end_index, lax ~= true, 1, big_endian )
@@ -363,6 +367,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-32 validity check.
 ---@param big_endian? boolean Whether to produce a big-endian string.
 ---@return string utf32_string The UTF-32 string.
+---@nodiscard
 function utf32.pack( utf32_codepoints, utf32_codepoint_count, lax, big_endian )
     return pack( utf32_codepoints, utf32_codepoint_count or #utf32_codepoints, lax ~= true, 1, big_endian )
 end
@@ -377,6 +382,7 @@ end
 ---@param b integer The code points to encode.
 ---@param ... integer The code points to encode.
 ---@return string utf32_string The UTF-32 string.
+---@nodiscard
 function utf32.char( a, b, ... )
     if b == nil then
         if a == nil then
@@ -402,6 +408,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-32 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer ... The code points.
+---@nodiscard
 function utf32.codepoint( utf32_string, start_position, end_position, lax, big_endian )
     local str_length = string_len( utf32_string )
 
@@ -445,6 +452,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-32 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
+---@nodiscard
 function utf32.offset( utf32_string, index, offset, lax, big_endian )
     local str_length = string_len( utf32_string )
     if str_length == 0 then
@@ -507,6 +515,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-32 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return string utf32_sub The substring.
+---@nodiscard
 function utf32.sub( utf32_string, start_position, end_position, lax, big_endian )
     local str_length = string_len( utf32_string )
     if str_length == 0 then
@@ -614,6 +623,7 @@ if ffi == nil then
     ---@param lax? boolean Whether to lax the UTF-32 validity check, invalid sequences are replaced with U+FFFD.
     ---@param big_endian? boolean Whether the string is big-endian.
     ---@return string utf32_reversed The reversed UTF-32 string.
+    ---@nodiscard
     function utf32.reverse( utf32_string, start_position, end_position, lax, big_endian )
         local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
 
@@ -654,6 +664,7 @@ else
     ---@param lax? boolean
     ---@param big_endian? boolean
     ---@return string utf32_reversed
+    ---@nodiscard
     function utf32.reverse( utf32_string, start_position, end_position, lax, big_endian )
         local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
 
@@ -718,6 +729,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return string utf32_normalized The normalized UTF-32 string.
+---@nodiscard
 function utf32.normalize( utf32_string, replacement_str, start_position, end_position, big_endian )
     local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
 
@@ -818,6 +830,7 @@ do
     ---@param lax? boolean Whether to lax the UTF-32 validity check.
     ---@param big_endian? boolean Whether the string is big-endian.
     ---@return ( fun( utf32_string: string, index: integer ): integer | nil, integer | nil ), string, integer
+    ---@nodiscard
     function utf32.codes( utf32_string, lax, big_endian )
         return iterators[ lax ~= true ][ big_endian == true ], utf32_string, 0
     end

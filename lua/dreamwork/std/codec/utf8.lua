@@ -288,6 +288,7 @@ end
 ---@param lax? boolean If `true`, invalid code points (surrogates, negative or above `U+10FFFF`) are encoded as `U+FFFD` instead of raising an error.
 ---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return string utf8_sequence The UTF-8 sequence, 1 to 4 bytes long.
+---@nodiscard
 function utf8.encode( utf8_codepoint, lax, stack_level )
     return encode( utf8_codepoint, lax ~= true, stack_level or 1 )
 end
@@ -308,6 +309,7 @@ end
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
 ---@return integer | nil error_position The position of the invalid byte.
 ---@return dreamwork.std.utf8.ErrorCode | nil error_code The error code.
+---@nodiscard
 function utf8.decode( utf8_string, index, end_index, lax, stack_level )
     return decode( utf8_string, index or 1, end_index or string_len( utf8_string ), lax ~= true, stack_level or 1 )
 end
@@ -321,6 +323,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer sequence_length The length of the string in UTF-8 code units.
+---@nodiscard
 function utf8.len( utf8_string, start_position, end_position, lax )
     local sequence_length, error_position, error_code = len( utf8_string, start_position, end_position, lax )
     if sequence_length == nil then
@@ -343,6 +346,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer[] utf8_codepoints A table of UTF-8 code points.
 ---@return integer utf8_codepoint_count The length of the string in UTF-8 code units.
+---@nodiscard
 local function unpack( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
@@ -381,6 +385,7 @@ utf8.unpack = unpack
 ---@param end_position? integer The position to end at in UTF-8 code units.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return string utf8_sub The substring of the string in UTF-8 code units.
+---@nodiscard
 local function sub( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
@@ -463,6 +468,7 @@ utf8.sub = sub
 ---@param end_position? integer The position to end at in bytes, defaults to `start_position`.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer ... The code points of the UTF-8 string.
+---@nodiscard
 function utf8.codepoint( utf8_string, start_position, end_position, lax )
     local str_length = string_len( utf8_string )
 
@@ -555,6 +561,7 @@ do
     ---@param utf8_string string The UTF-8 string to iterate over.
     ---@param lax? boolean Whether to lax the UTF-8 validity check.
     ---@return ( fun( utf8_string: string, index: integer ): integer | nil, integer | nil ), string, integer
+    ---@nodiscard
     function utf8.codes( utf8_string, lax )
         return lax ~= true and utf8_strict_iterator or utf8_iterator, utf8_string, 0
     end
@@ -573,6 +580,7 @@ if ffi == nil then
     ---@param utf8_codepoint_count? integer The number of code points to encode.
     ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid code points are encoded as U+FFFD.
     ---@return string utf8_string The UTF-8 string.
+    ---@nodiscard
     function pack( utf8_codepoints, utf8_codepoint_count, lax )
         if utf8_codepoint_count == nil then
             utf8_codepoint_count = #utf8_codepoints
@@ -599,6 +607,7 @@ else
     ---@param utf8_codepoint_count? integer
     ---@param lax? boolean
     ---@return string utf8_string
+    ---@nodiscard
     function pack( utf8_codepoints, utf8_codepoint_count, lax )
         if utf8_codepoint_count == nil then
             utf8_codepoint_count = #utf8_codepoints
@@ -662,6 +671,7 @@ utf8.pack = pack
 ---@param b integer The code points to encode.
 ---@param ... integer The code points to encode.
 ---@return string utf8_string The UTF-8 string.
+---@nodiscard
 function utf8.char( a, b, ... )
     if b == nil then
         if a == nil then
@@ -684,6 +694,7 @@ end
 ---@param offset? integer The position to start from in bytes.
 ---@param lax? boolean Whether to lax the UTF-8 validity check.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
+---@nodiscard
 function utf8.offset( utf8_string, index, offset, lax )
     local str_length = string_len( utf8_string )
     if str_length == 0 then
@@ -757,6 +768,7 @@ if ffi == nil then
     ---@param end_position? integer The position to end at in bytes.
     ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences are replaced with U+FFFD.
     ---@return string utf8_reversed The reversed UTF-8 string.
+    ---@nodiscard
     function utf8.reverse( utf8_string, start_position, end_position, lax )
         local str_length = string_len( utf8_string )
 
@@ -798,6 +810,7 @@ else
     ---@param end_position? integer
     ---@param lax? boolean
     ---@return string utf8_reversed
+    ---@nodiscard
     function utf8.reverse( utf8_string, start_position, end_position, lax )
         local str_length = string_len( utf8_string )
 
@@ -861,6 +874,7 @@ do
     ---@param start_position? integer The position to start from in bytes.
     ---@param end_position? integer The position to end at in bytes.
     ---@return string utf8_normalized The normalized UTF-8 string.
+    ---@nodiscard
     function utf8.normalize( utf8_string, replacement_str, start_position, end_position )
         local str_length = string_len( utf8_string )
         if str_length == 0 then

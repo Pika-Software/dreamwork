@@ -210,6 +210,7 @@ if LUA_CLIENT_MENU then
         ---
         --- NOTE: It always returns `true` on the client.
         ---@return boolean bool The `true` if connected, `false` if not.
+        ---@nodiscard
         ---@diagnostic disable-next-line: duplicate-set-field
         function client.isConnected() return true end
 
@@ -219,6 +220,7 @@ if LUA_CLIENT_MENU then
         ---
         --- NOTE: It always returns `false` on the client.
         ---@return boolean bool The `true` if connecting, `false` if not.
+        ---@nodiscard
         ---@diagnostic disable-next-line: duplicate-set-field
         function client.isConnecting() return false end
 

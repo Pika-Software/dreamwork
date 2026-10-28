@@ -22,6 +22,7 @@ lzma.decompress = glua_util.Decompress or lzma.compress
 ---
 ---@param str string Compressed string.
 ---@return integer size The decompressed size in bytes.
+---@nodiscard
 function lzma.size( str )
     return pack_readUInt32( str, false, 6 ) or 0
 end

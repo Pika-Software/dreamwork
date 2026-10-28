@@ -175,6 +175,7 @@ end
 ---@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, 's' by default.
 ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
 ---@return number timestamp The transformed timestamp.
+---@nodiscard
 function time.transform( timestamp, unit, target, as_float )
     return transform( timestamp, unit, target, as_float, 2 )
 end
@@ -373,6 +374,7 @@ end
 ---
 ---@param timestamp? number The Unix timestamp in seconds, current time by default.
 ---@return integer offset The UTC offset in seconds, e.g. `7200` for `+02:00`.
+---@nodiscard
 function time.offset( timestamp )
     return get_offset( timestamp or os_time() )
 end
@@ -442,6 +444,7 @@ end )
 ---@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, 's' by default.
 ---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
 ---@return number timestamp The elapsed time in the specified unit.
+---@nodiscard
 function time.elapsed( unit, as_float )
     if unit == "s" or unit == nil then
         local float = dreamwork_getUpTime()
@@ -506,6 +509,7 @@ end
 ---@param unit? dreamwork.std.time.Unit The unit to return the current time in, `s` by default.
 ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
 ---@return integer | number timestamp The current timestamp in the specified unit.
+---@nodiscard
 local function now( unit, as_float )
     if unit == nil or unit == "s" then
         if as_float then
@@ -547,6 +551,7 @@ end
 ---@param month? integer The calendar month (`1`-`12`). Defaults to the current local month.
 ---@param day? integer The calendar day of the month. Defaults to the current local day.
 ---@return integer days The number of days since the Unix epoch (`1970-01-01`).
+---@nodiscard
 function time.daysFromCivil( year, month, day )
     if year == nil or month == nil or day == nil then
         local current_year, current_month, current_day = today()
@@ -580,6 +585,7 @@ end
 ---@return integer year The calendar year.
 ---@return integer month The calendar month (`1`-`12`).
 ---@return integer day The calendar day of the month.
+---@nodiscard
 function time.civilFromDays( days )
     if days == nil then
         return today()
@@ -595,6 +601,7 @@ end
 ---
 ---@param year? integer The year to check, the current local year by default.
 ---@return boolean is_leap_year Returns `true` if the year is a leap year, otherwise `false`.
+---@nodiscard
 local function isLeapYear( year )
     if year == nil then
         year = today()
@@ -620,6 +627,7 @@ local common_year_month_days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 
 ---@param month? integer The month to get the number of days in (`1`–`12`), the current month by default.
 ---@param year? integer The year to get the number of days in, the current year by default.
 ---@return integer days_in_month The number of days in the month.
+---@nodiscard
 local function daysInMonth( month, year )
     if month == nil or year == nil then
         local current_year, current_month = today()
@@ -650,6 +658,7 @@ time.daysInMonth = daysInMonth
 ---
 ---@param year? integer The year to get the number of days in, the current year by default.
 ---@return integer days_in_year The number of days in the year, `365` or `366`.
+---@nodiscard
 function time.daysInYear( year )
     return isLeapYear( year ) and 366 or 365
 end
@@ -663,6 +672,7 @@ end
 ---@param month? integer The calendar month (`1`-`12`), the current month by default.
 ---@param day? integer The calendar day of the month, the current day by default.
 ---@return integer day_of_year The day of the year (`1`-`366`).
+---@nodiscard
 function time.dayOfYear( year, month, day )
     if year == nil or month == nil or day == nil then
         local current_year, current_month, current_day = today()
@@ -694,6 +704,7 @@ end
 ---
 ---@param days integer The number of days since the Unix epoch.
 ---@return integer weekday The `0`-based weekday index (`0` = Sunday, `6` = Saturday) for that day.
+---@nodiscard
 function time.weekdayFromDays( days )
     return (days + 4) % 7
 end
@@ -708,6 +719,7 @@ end
 ---@param month? integer The calendar month (`1`-`12`), the current month by default.
 ---@param day? integer The calendar day of the month, the current day by default.
 ---@return integer weekday The `0`-based weekday index (`0` = Sunday, `6` = Saturday) for that date.
+---@nodiscard
 function time.weekdayFromCivil( year, month, day )
     return (time.daysFromCivil( year, month, day ) + 4) % 7
 end
@@ -723,6 +735,7 @@ end
 ---@param x integer The target weekday index (`0`-`6`).
 ---@param y integer The starting weekday index (`0`-`6`).
 ---@return integer difference The number of days forward from `y` to reach `x`, in `[0, 6]`.
+---@nodiscard
 function time.weekdayDifference( x, y )
     return (x - y) % 7
 end
@@ -734,6 +747,7 @@ end
 ---
 ---@param weekday integer The current weekday index (`0`-`6`).
 ---@return integer next_weekday The following weekday index (`0`-`6`).
+---@nodiscard
 function time.nextWeekday( weekday )
     return (weekday + 1) % 7
 end
@@ -745,6 +759,7 @@ end
 ---
 ---@param weekday integer The current weekday index (`0`-`6`).
 ---@return integer previous_weekday The preceding weekday index (`0`-`6`).
+---@nodiscard
 function time.prevWeekday( weekday )
     return (weekday - 1) % 7
 end
@@ -774,6 +789,7 @@ end
 ---@param year? integer The year to search in, the current year by default.
 ---@return integer | nil day The day of the month (`1`-`31`) of the `index`-th occurrence of `weekday`, or `nil` if the month has no such occurrence.
 ---@return integer | nil days The same date as a day count relative to the Unix epoch, as produced by `time.daysFromCivil`, or `nil` if the month has no such occurrence.
+---@nodiscard
 function time.monthWeekday( weekday, index, month, year )
     if month == nil or year == nil then
         local current_year, current_month = today()
@@ -835,6 +851,7 @@ end
 ---@param year? integer The year to search in, the current year by default.
 ---@return integer day The day of the month (`22`-`31`) of the last occurrence of `weekday`.
 ---@return integer days The same date as a day count relative to the Unix epoch, as produced by `time.daysFromCivil`.
+---@nodiscard
 function time.lastMonthWeekday( weekday, month, year )
     if month == nil or year == nil then
         local current_year, current_month = today()
@@ -875,6 +892,7 @@ end
 ---@return integer iso_year The ISO week-numbering year, which may differ from `year` by one near year boundaries.
 ---@return integer week The ISO week number (`1`-`53`).
 ---@return integer iso_weekday The ISO weekday (`1` = Monday, `7` = Sunday).
+---@nodiscard
 function time.isoWeek( year, month, day )
     local days = time.daysFromCivil( year, month, day )
 
@@ -897,6 +915,7 @@ end
 ---
 ---@param year? integer The ISO week-numbering year, the current year by default.
 ---@return integer weeks The number of ISO weeks in the year, `52` or `53`.
+---@nodiscard
 function time.isoWeeksInYear( year )
     if year == nil then
         year = today()
@@ -925,6 +944,7 @@ end
 ---@param minute? integer The minute (`0`-`59`), `0` by default.
 ---@param second? number The second (`0`-`59`), `0` by default; may be fractional.
 ---@return number timestamp The Unix timestamp in seconds.
+---@nodiscard
 function time.timestampFromCivil( year, month, day, hour, minute, second )
     return time.daysFromCivil( year, month, day ) * 86400 + (hour or 0) * 3600 + (minute or 0) * 60 + (second or 0)
 end
@@ -945,6 +965,7 @@ end
 ---@return integer minute The minute (`0`-`59`).
 ---@return number second The second (`0`-`59`), fractional if `timestamp` was.
 ---@return integer weekday The `0`-based weekday index (`0` = Sunday, `6` = Saturday).
+---@nodiscard
 function time.civilFromTimestamp( timestamp )
     if timestamp == nil then
         timestamp = wall_clock()
@@ -986,6 +1007,7 @@ end
 ---@param unit? dreamwork.std.time.Unit The unit to convert the duration to, 's' by default.
 ---@param as_float? boolean Whether to return the duration as a float, `false` by default.
 ---@return integer timestamp The duration in the specified unit.
+---@nodiscard
 local function fromDuration( duration_str, unit, as_float )
     local seconds, milliseconds, microseconds, nanoseconds = 0, 0, 0, 0
 
@@ -1071,6 +1093,7 @@ do
     ---@param timestamp integer The timestamp to convert.
     ---@param unit? dreamwork.std.time.Unit The unit to convert the timestamp to, 's' by default.
     ---@return string duration_str The duration string.
+    ---@nodiscard
     function time.toDuration( timestamp, unit )
         local sign = ""
 
@@ -1170,6 +1193,7 @@ end
 ---@param unit? dreamwork.std.time.Unit The unit to parse the timestamp from, 's' by default.
 ---@param in_utc? boolean Whether to return the date in UTC instead of local time, `false` by default.
 ---@return dreamwork.std.time.DateInfo date_info The date and time components.
+---@nodiscard
 function time.parse( timestamp, unit, in_utc )
     local seconds, nanoseconds = split( timestamp or now( unit, true ), unit, 2 )
 
@@ -1338,6 +1362,7 @@ do
     ---@param duration_str dreamwork.std.time.DurationString The duration string to add.
     ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return number new_timestamp
+    ---@nodiscard
     function time.add( timestamp, unit, duration_str, as_float )
         return shift( timestamp, unit, duration_str, as_float, 1 )
     end
@@ -1370,6 +1395,7 @@ do
     ---@param duration_str dreamwork.std.time.DurationString The duration string to subtract.
     ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return number new_timestamp
+    ---@nodiscard
     function time.sub( timestamp, unit, duration_str, as_float )
         return shift( timestamp, unit, duration_str, as_float, -1 )
     end
@@ -1510,6 +1536,7 @@ do
     ---@param unit? dreamwork.std.time.Unit The timestamp unit, 's' by default.
     ---@param in_utc? boolean Use UTC instead of local timezone, `false` by default.
     ---@return string str The formatted string.
+    ---@nodiscard
     function time.format( fmt, timestamp, unit, in_utc )
         return string_interpolate( fmt, setmetatable( { [ 0 ] = in_utc == true, split( timestamp or now( unit, true ), unit, 2 ) }, FormatBuffer ) )
     end
@@ -1535,6 +1562,7 @@ do
     ---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
     ---@param in_utc? boolean Whether to format the string in UTC, `false` by default.
     ---@return string str The RFC 2822 date-time string.
+    ---@nodiscard
     function time.toRFC2822( timestamp, unit, in_utc )
         ---@type integer
         local seconds
@@ -1612,6 +1640,7 @@ do
     ---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
     ---@param in_utc? boolean Whether to format the string in UTC ( with a `Z` suffix ), `false` by default.
     ---@return string str The JS-like date-time string.
+    ---@nodiscard
     function time.toISOString( timestamp, unit, in_utc )
         if timestamp == nil then
             timestamp = now( unit, false )
@@ -1674,6 +1703,7 @@ do
     ---@param unit? dreamwork.std.time.Unit The unit to return the timestamp in, `s` by default.
     ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return number timestamp The unix timestamp in the specified unit.
+    ---@nodiscard
     function time.fromISOString( str, unit, as_float )
         local year_str, month_str, day_str, rest = string_match( str, "^(%d%d%d%d)%-(%d%d)%-(%d%d)(.*)$" )
         if year_str == nil then
@@ -1815,6 +1845,7 @@ do
     ---@param unit? dreamwork.std.time.Unit The unit to return the timestamp in, `s` by default.
     ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
     ---@return number timestamp The unix timestamp in the specified unit.
+    ---@nodiscard
     function time.fromRFC2822( str, unit, as_float )
         local day_str, month_str, year_str, hours_str, minutes_str, rest = string_match(
             string_match( str, "^%s*%a+,%s*(.*)$" ) or str,

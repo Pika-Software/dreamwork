@@ -73,6 +73,7 @@ end
 --- Checks if the stack is empty.
 ---
 ---@return boolean is_empty Returns `true` if the stack has no values, otherwise `false`.
+---@nodiscard
 function Stack:isEmpty()
     return self.size == 0
 end
@@ -118,6 +119,7 @@ end
 ---@generic T
 ---@param self dreamwork.std.Stack<T>
 ---@return T | nil value The value at the top of the stack, or `nil` if the stack is empty.
+---@nodiscard
 function Stack:peek()
     return self[ self.size ]
 end
@@ -171,6 +173,7 @@ end
 ---@param self dreamwork.std.Stack<T>
 ---@return fun( self: dreamwork.std.Stack<T> ): T | nil iterator The iterator function; calling it pops and returns the next value, or `nil` once the stack is empty.
 ---@return dreamwork.std.Stack<T> stack The stack being iterated over, passed as state to the iterator function.
+---@nodiscard
 function Stack:iterator()
     return self.pop, self
 end

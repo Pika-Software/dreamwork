@@ -190,6 +190,7 @@ end
 ---@param location function | integer The function or the stack level to get the main function from.
 ---@param position? integer The bytecode position (program counter) inside the function.
 ---@return jit.funcinfo.c | jit.funcinfo.lua info The function information.
+---@nodiscard
 function jit.getfinfo( location, position )
     if raw_type( location ) == "number" then
         ---@cast location integer
@@ -217,6 +218,7 @@ end
 ---@param position integer The bytecode position (program counter), starting from `0`.
 ---@return integer | nil ins The raw 32-bit bytecode instruction.
 ---@return integer | nil mode The opcode mode flags of the instruction.
+---@nodiscard
 function jit.getfbc( location, position )
     if raw_type( location ) == "number" then
         ---@cast location integer
@@ -245,6 +247,7 @@ end
 ---@param location function | integer The function or the stack level to get the main function from.
 ---@param position integer The index of the constant.
 ---@return any | nil value The constant value.
+---@nodiscard
 function jit.getfconst( location, position )
     if raw_type( location ) == "number" then
         ---@cast location integer
@@ -275,6 +278,7 @@ end
 ---@param location function | integer The function or the stack level to get the main function from.
 ---@param position integer The index of the upvalue, starting from `0`.
 ---@return string | nil name The name of the upvalue.
+---@nodiscard
 function jit.getfupvalue( location, position )
     if raw_type( location ) == "number" then
         ---@cast location integer
@@ -306,6 +310,7 @@ if jit_util.funcinfo == nil then
     ---
     ---@param fn function The function to check.
     ---@return boolean is_ffi `true` if the function is a FFI function, `false` otherwise.
+    ---@nodiscard
     function jit.isFFI( fn )
         local info = debug_getinfo( fn, "S" )
         return info ~= nil and info.what == "C"
@@ -319,6 +324,7 @@ else
     ---
     ---@param fn function The function to check.
     ---@return boolean is_ffi `true` if the function is a FFI function, `false` otherwise.
+    ---@nodiscard
     function jit.isFFI( fn )
         local info = util_funcinfo( fn )
         return info ~= nil and info.ffid ~= nil
@@ -367,6 +373,7 @@ do
         ---
         ---@param object any The value to get the metatable of.
         ---@return metatable | nil metatable The metatable of `object`, or `nil` if it has none.
+        ---@nodiscard
         function debug.getmetatable( object )
             if raw_type( object ) == "cdata" then
                 return ctype_metatables[ raw_tonumber( ffi_typeof( object ) ) ]
@@ -389,6 +396,7 @@ do
         ---
         ---@param object any The value to get the metatable of.
         ---@return metatable | table | nil metatable The metatable (or its `__metatable` value), or `nil` if there is none.
+        ---@nodiscard
         function std.getmetatable( object )
             local metatable = getmetatable( object )
             if metatable == "ffi" then

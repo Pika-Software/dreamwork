@@ -223,6 +223,7 @@ end
 ---@param big_endian? boolean Whether to encode as big-endian.
 ---@param stack_level? integer The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return string utf16_sequence The UTF-16 sequence.
+---@nodiscard
 function utf16.encode( utf16_codepoint, lax, big_endian, stack_level )
     return encode( utf16_codepoint, lax ~= true, stack_level or 1, big_endian )
 end
@@ -244,6 +245,7 @@ end
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
 ---@return integer | nil error_position The position of the invalid sequence.
 ---@return dreamwork.std.utf16.ErrorCode | nil error_code The error code.
+---@nodiscard
 function utf16.decode( utf16_string, index, end_index, lax, big_endian, stack_level )
     return decode( utf16_string, index or 1, end_index or string_len( utf16_string ), lax ~= true, stack_level or 1, big_endian )
 end
@@ -258,6 +260,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-16 validity check, invalid sequences count as one code point each.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer utf16_codepoint_count The number of code points.
+---@nodiscard
 function utf16.len( utf16_string, start_position, end_position, lax, big_endian )
     local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
     local utf16_codepoint_count = 0
@@ -388,6 +391,7 @@ end
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer[] utf16_codepoints The code points.
 ---@return integer utf16_codepoint_count The number of code points.
+---@nodiscard
 function utf16.unpack( utf16_string, start_position, end_position, lax, big_endian )
     local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
     return unpack( utf16_string, start_index, end_index, lax ~= true, 1, big_endian )
@@ -404,6 +408,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-16 validity check.
 ---@param big_endian? boolean Whether to produce a big-endian string.
 ---@return string utf16_string The UTF-16 string.
+---@nodiscard
 function utf16.pack( utf16_codepoints, utf16_codepoint_count, lax, big_endian )
     return pack( utf16_codepoints, utf16_codepoint_count or #utf16_codepoints, lax ~= true, 1, big_endian )
 end
@@ -418,6 +423,7 @@ end
 ---@param b integer The code points to encode.
 ---@param ... integer The code points to encode.
 ---@return string utf16_string The UTF-16 string.
+---@nodiscard
 function utf16.char( a, b, ... )
     if b == nil then
         if a == nil then
@@ -443,6 +449,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-16 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer ... The code points.
+---@nodiscard
 function utf16.codepoint( utf16_string, start_position, end_position, lax, big_endian )
     local str_length = string_len( utf16_string )
     if str_length == 0 then
@@ -488,6 +495,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-16 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
+---@nodiscard
 function utf16.offset( utf16_string, index, offset, lax, big_endian )
     local str_length = string_len( utf16_string )
     if str_length == 0 then
@@ -570,6 +578,7 @@ end
 ---@param lax? boolean Whether to lax the UTF-16 validity check.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return string utf16_sub The substring.
+---@nodiscard
 function utf16.sub( utf16_string, start_position, end_position, lax, big_endian )
     local str_length = string_len( utf16_string )
     if str_length == 0 then
@@ -652,6 +661,7 @@ if ffi == nil then
     ---@param lax? boolean Whether to lax the UTF-16 validity check, invalid sequences are replaced with U+FFFD.
     ---@param big_endian? boolean Whether the string is big-endian.
     ---@return string utf16_reversed The reversed UTF-16 string.
+    ---@nodiscard
     function utf16.reverse( utf16_string, start_position, end_position, lax, big_endian )
         local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
         local strict = lax ~= true
@@ -691,6 +701,7 @@ else
     ---@param lax? boolean
     ---@param big_endian? boolean
     ---@return string utf16_reversed
+    ---@nodiscard
     function utf16.reverse( utf16_string, start_position, end_position, lax, big_endian )
         local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
         if start_index > end_index then
@@ -752,6 +763,7 @@ end
 ---@param end_position? integer The position to end at in bytes.
 ---@param big_endian? boolean Whether the string is big-endian.
 ---@return string utf16_normalized The normalized UTF-16 string.
+---@nodiscard
 function utf16.normalize( utf16_string, replacement_str, start_position, end_position, big_endian )
     local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
 
@@ -852,6 +864,7 @@ do
     ---@param lax? boolean Whether to lax the UTF-16 validity check.
     ---@param big_endian? boolean Whether the string is big-endian.
     ---@return ( fun( utf16_string: string, index: integer ): integer | nil, integer | nil ), string, integer
+    ---@nodiscard
     function utf16.codes( utf16_string, lax, big_endian )
         return iterators[ lax ~= true ][ big_endian == true ], utf16_string, 0
     end

@@ -131,6 +131,7 @@ if ffi == nil then
 
     ---@param value any
     ---@return boolean is_quaternion
+    ---@nodiscard
     function isQuaternion( value )
         return debug_getmetatable( value ) == Quaternion
     end
@@ -153,6 +154,7 @@ else
 
     ---@param value any
     ---@return boolean is_quaternion
+    ---@nodiscard
     function isQuaternion( value )
         return ffi_istype( Quaternion_ctype, value )
     end
@@ -232,6 +234,7 @@ end
 ---@return number x The first imaginary component.
 ---@return number y The second imaginary component.
 ---@return number z The third imaginary component.
+---@nodiscard
 function Quaternion:unpack()
     return self.w, self.x, self.y, self.z
 end
@@ -267,6 +270,7 @@ end
 ---
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@return dreamwork.std.Quaternion copy The new quaternion.
+---@nodiscard
 local function Quaternion_copy( self )
     return Quaternion_create( self.w, self.x, self.y, self.z )
 end
@@ -290,6 +294,7 @@ end
 --- `( -1, 0, 0, 0 )` also means no rotation, but is not identity.
 ---
 ---@return boolean is_identity `true` if the quaternion is identity, `false` otherwise.
+---@nodiscard
 function Quaternion:isIdentity()
     return self.w == 1 and self.x == 0 and self.y == 0 and self.z == 0
 end
@@ -311,6 +316,7 @@ end
 --- Checks if all components of the quaternion are exactly zero.
 ---
 ---@return boolean is_zero `true` if the quaternion is zero, `false` otherwise.
+---@nodiscard
 function Quaternion:isZero()
     return self.w == 0 and self.x == 0 and self.y == 0 and self.z == 0
 end
@@ -320,6 +326,7 @@ end
 --- Checks if the quaternion is real ( all imaginary components are zero ).
 ---
 ---@return boolean is_real `true` if the quaternion is real, `false` otherwise.
+---@nodiscard
 function Quaternion:isReal()
     return self.x == 0 and self.y == 0 and self.z == 0
 end
@@ -331,6 +338,7 @@ end
 --- Unit pure imaginary quaternions are 180 degree rotations.
 ---
 ---@return boolean is_imaginary `true` if the quaternion is pure imaginary, `false` otherwise.
+---@nodiscard
 function Quaternion:isImaginary()
     return self.w == 0
 end
@@ -344,6 +352,7 @@ end
 ---@param quaternion dreamwork.std.Quaternion The quaternion to check.
 ---@param tolerance number The maximum allowed difference per component.
 ---@return boolean is_near `true` if the quaternions are equal within the tolerance, otherwise `false`.
+---@nodiscard
 function Quaternion:isNear( quaternion, tolerance )
     return math_abs( self.w - quaternion.w ) <= tolerance and
         math_abs( self.x - quaternion.x ) <= tolerance and
@@ -360,6 +369,7 @@ end
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@param quaternion dreamwork.std.Quaternion The other quaternion.
 ---@return number dot_product The dot product of two quaternions.
+---@nodiscard
 local function Quaternion_dot( self, quaternion )
     return self.w * quaternion.w + self.x * quaternion.x + self.y * quaternion.y + self.z * quaternion.z
 end
@@ -374,6 +384,7 @@ Quaternion.dot = Quaternion_dot
 ---
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@return number length The squared length of the quaternion.
+---@nodiscard
 local function Quaternion_getLengthSqr( self )
     local w, x, y, z = self.w, self.x, self.y, self.z
     return w * w + x * x + y * y + z * z
@@ -387,6 +398,7 @@ Quaternion.getLengthSqr = Quaternion_getLengthSqr
 ---
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@return number length The length of the quaternion.
+---@nodiscard
 local function Quaternion_getLength( self )
     return math_sqrt( Quaternion_getLengthSqr( self ) )
 end
@@ -415,6 +427,7 @@ Quaternion.scale = Quaternion_scale
 ---
 ---@param scale number The scale factor.
 ---@return dreamwork.std.Quaternion scaled_quat The new quaternion.
+---@nodiscard
 function Quaternion:getScaled( scale )
     return Quaternion_create( self.w * scale, self.x * scale, self.y * scale, self.z * scale )
 end
@@ -467,6 +480,7 @@ Quaternion.normalize = Quaternion_normalize
 --- Zero quaternion returns a zero copy.
 ---
 ---@return dreamwork.std.Quaternion normalized_quat The new quaternion.
+---@nodiscard
 function Quaternion:getNormalized()
     return Quaternion_normalize( Quaternion_copy( self ) )
 end
@@ -490,6 +504,7 @@ end
 --- For unit quaternions the conjugate is the inverse rotation, faster than `getInverse`.
 ---
 ---@return dreamwork.std.Quaternion conjugated_quat The new quaternion.
+---@nodiscard
 function Quaternion:getConjugate()
     return Quaternion_create( self.w, -self.x, -self.y, -self.z )
 end
@@ -525,6 +540,7 @@ Quaternion.invert = Quaternion_invert
 --- Returns the inverse of the quaternion, so `q * q:getInverse()` is identity.
 ---
 ---@return dreamwork.std.Quaternion inverted_quat The new quaternion.
+---@nodiscard
 function Quaternion:getInverse()
     return Quaternion_invert( Quaternion_copy( self ) )
 end
@@ -705,6 +721,7 @@ end
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@param vector dreamwork.std.Vector3 The vector to rotate.
 ---@return dreamwork.std.Vector3 rotated_vec3 The new vector.
+---@nodiscard
 local function Quaternion_getRotatedVector3( self, vector )
     return Vector3Class( rotate( self.w, self.x, self.y, self.z, vector.x, vector.y, vector.z ) )
 end
@@ -746,13 +763,21 @@ function Quaternion.__mul( a, b )
     return Quaternion_mul( Quaternion_copy( a ), b )
 end
 
---- `quat / quat` ( `a * b:getInverse()` ) and `quat / number`, `number / quat` is not supported.
+--- `quat / quat`, `number / quat` ( both are `a * b:getInverse()` ) and `quat / number`.
 ---
----@param value dreamwork.std.Quaternion | number The divisor quaternion or number.
+---@param a dreamwork.std.Quaternion | number
+---@param b dreamwork.std.Quaternion | number
 ---@return dreamwork.std.Quaternion quotient The new quaternion.
 ---@protected
-function Quaternion:__div( value )
-    return Quaternion_div( Quaternion_copy( self ), value )
+function Quaternion.__div( a, b )
+    if isNumber( a ) then
+        ---@cast a number
+        ---@cast b dreamwork.std.Quaternion
+        return Quaternion_scale( Quaternion_invert( Quaternion_copy( b ) ), a )
+    end
+
+    ---@cast a dreamwork.std.Quaternion
+    return Quaternion_div( Quaternion_copy( a ), b )
 end
 
 --- [SHARED AND MENU]
@@ -787,6 +812,7 @@ Quaternion.exp = Quaternion_exp
 --- Returns `e` raised to the power of the quaternion.
 ---
 ---@return dreamwork.std.Quaternion exp_quat The new quaternion.
+---@nodiscard
 function Quaternion:getExp()
     return Quaternion_exp( Quaternion_copy( self ) )
 end
@@ -831,6 +857,7 @@ Quaternion.log = Quaternion_log
 --- Returns the natural logarithm of the quaternion.
 ---
 ---@return dreamwork.std.Quaternion log_quat The new quaternion.
+---@nodiscard
 function Quaternion:getLog()
     return Quaternion_log( Quaternion_copy( self ) )
 end
@@ -856,6 +883,7 @@ Quaternion.pow = Quaternion_pow
 ---
 ---@param exponent number The exponent.
 ---@return dreamwork.std.Quaternion pow_quat The new quaternion.
+---@nodiscard
 function Quaternion:getPow( exponent )
     return Quaternion_pow( Quaternion_copy( self ), exponent )
 end
@@ -914,6 +942,7 @@ Quaternion.lerp = Quaternion_lerp
 ---@param quaternion dreamwork.std.Quaternion The target quaternion.
 ---@param frac number The interpolation factor, `0` keeps the quaternion, `1` sets it to the target.
 ---@return dreamwork.std.Quaternion lerped_quat The new quaternion.
+---@nodiscard
 function Quaternion:getLerped( quaternion, frac )
     return Quaternion_lerp( Quaternion_copy( self ), quaternion, frac )
 end
@@ -965,6 +994,7 @@ Quaternion.slerp = Quaternion_slerp
 ---@param quaternion dreamwork.std.Quaternion The target quaternion, must be normalized.
 ---@param frac number The interpolation factor, `0` keeps the quaternion, `1` sets it to the target.
 ---@return dreamwork.std.Quaternion slerped_quat The new quaternion.
+---@nodiscard
 function Quaternion:getSlerped( quaternion, frac )
     return Quaternion_slerp( Quaternion_copy( self ), quaternion, frac )
 end
@@ -977,6 +1007,7 @@ end
 ---
 ---@param full? boolean If `true`, returns angle in range [0, 360], otherwise in range [-180, 180].
 ---@return number degrees The rotation angle.
+---@nodiscard
 function Quaternion:getAngle( full )
     local x, y, z = self.x, self.y, self.z
 
@@ -995,6 +1026,7 @@ end
 --- Returns `( 0, 0, 1 )` if the quaternion has no rotation.
 ---
 ---@return dreamwork.std.Vector3 axis The new normalized vector.
+---@nodiscard
 function Quaternion:getAxis()
     local x, y, z = self.x, self.y, self.z
 
@@ -1040,6 +1072,7 @@ end
 ---@return number m31
 ---@return number m32
 ---@return number m33
+---@nodiscard
 function Quaternion:unpackMatrix()
     return toMatrix( self.w, self.x, self.y, self.z )
 end
@@ -1049,6 +1082,7 @@ end
 --- Returns the forward direction ( rotated `+X` ) of the quaternion.
 ---
 ---@return dreamwork.std.Vector3 forward_dir The new normalized direction.
+---@nodiscard
 function Quaternion:getForward()
     local a11, _, _, a21, _, _, a31 = toMatrix( self.w, self.x, self.y, self.z )
     return Vector3Class( a11, a21, a31 )
@@ -1059,6 +1093,7 @@ end
 --- Returns the left direction ( rotated `+Y` ) of the quaternion.
 ---
 ---@return dreamwork.std.Vector3 left_dir The new normalized direction.
+---@nodiscard
 function Quaternion:getLeft()
     local _, a12, _, _, a22, _, _, a32 = toMatrix( self.w, self.x, self.y, self.z )
     return Vector3Class( a12, a22, a32 )
@@ -1069,6 +1104,7 @@ end
 --- Returns the right direction ( rotated `-Y` ) of the quaternion.
 ---
 ---@return dreamwork.std.Vector3 right_dir The new normalized direction.
+---@nodiscard
 function Quaternion:getRight()
     local _, a12, _, _, a22, _, _, a32 = toMatrix( self.w, self.x, self.y, self.z )
     return Vector3Class( -a12, -a22, -a32 )
@@ -1079,6 +1115,7 @@ end
 --- Returns the up direction ( rotated `+Z` ) of the quaternion.
 ---
 ---@return dreamwork.std.Vector3 up_dir The new normalized direction.
+---@nodiscard
 function Quaternion:getUp()
     local _, _, a13, _, _, a23, _, _, a33 = toMatrix( self.w, self.x, self.y, self.z )
     return Vector3Class( a13, a23, a33 )
@@ -1096,6 +1133,7 @@ end
 ---@return number pitch The pitch in degrees.
 ---@return number yaw The yaw in degrees.
 ---@return number roll The roll in degrees.
+---@nodiscard
 local function Quaternion_unpackAngles( self )
     local a11, a12, _, a21, a22, _, a31, a32, a33 = toMatrix( self.w, self.x, self.y, self.z )
 
@@ -1123,6 +1161,7 @@ Quaternion.unpackAngles = Quaternion_unpackAngles
 ---
 ---@param self dreamwork.std.Quaternion The quaternion.
 ---@return dreamwork.std.Angle3 ang3 The new angle.
+---@nodiscard
 local function Quaternion_getAngles( self )
     return Angle3Class( Quaternion_unpackAngles( self ) )
 end
@@ -1137,6 +1176,7 @@ Quaternion.toAngle3 = Quaternion_getAngles
 --- Same as `QuaternionMatrix` in Source engine.
 ---
 ---@return dreamwork.std.VMatrix matrix The new rotation matrix.
+---@nodiscard
 function Quaternion:toVMatrix()
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = toMatrix( self.w, self.x, self.y, self.z )
 
@@ -1153,6 +1193,7 @@ end
 --- Creates a new identity quaternion `( 1, 0, 0, 0 )`, which means no rotation.
 ---
 ---@return dreamwork.std.Quaternion quat The new quaternion.
+---@nodiscard
 function QuaternionClass.identity()
     return Quaternion_create( 1, 0, 0, 0 )
 end
@@ -1167,6 +1208,7 @@ end
 ---@param yaw number The yaw in degrees.
 ---@param roll number The roll in degrees.
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 local function QuaternionClass_fromAngles( pitch, yaw, roll )
     local p, y, r = math_rad( pitch ) * 0.5, math_rad( yaw ) * 0.5, math_rad( roll ) * 0.5
 
@@ -1192,6 +1234,7 @@ QuaternionClass.fromAngles = QuaternionClass_fromAngles
 ---
 ---@param angle dreamwork.std.Angle3 The angle.
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function QuaternionClass.fromAngle3( angle )
     return QuaternionClass_fromAngles( angle.pitch, angle.yaw, angle.roll )
 end
@@ -1205,6 +1248,7 @@ end
 ---@param axis dreamwork.std.Vector3 The rotation axis, does not have to be normalized.
 ---@param degrees number The rotation angle in degrees.
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function QuaternionClass.fromAxisAngle( axis, degrees )
     local x, y, z = axis.x, axis.y, axis.z
 
@@ -1229,6 +1273,7 @@ end
 ---@param from dreamwork.std.Vector3 The source direction.
 ---@param to dreamwork.std.Vector3 The target direction.
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function QuaternionClass.fromVectors( from, to )
     local x1, y1, z1 = from.x, from.y, from.z
     local x2, y2, z2 = to.x, to.y, to.z
@@ -1268,6 +1313,7 @@ end
 ---@param a32 number
 ---@param a33 number
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 local function QuaternionClass_fromMatrix( a11, a12, a13, a21, a22, a23, a31, a32, a33 )
     -- remove scale from the columns
     local sx = math_sqrt( a11 * a11 + a21 * a21 + a31 * a31 )
@@ -1309,6 +1355,7 @@ QuaternionClass.fromMatrix = QuaternionClass_fromMatrix
 ---
 ---@param matrix dreamwork.std.VMatrix The matrix.
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function QuaternionClass.fromVMatrix( matrix )
     return QuaternionClass_fromMatrix(
         matrix.m11, matrix.m12, matrix.m13,

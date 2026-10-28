@@ -138,6 +138,7 @@ if ffi == nil then
 
     ---@param value any
     ---@return boolean is_angle3
+    ---@nodiscard
     function isAngle3( value )
         return debug_getmetatable( value ) == Angle3
     end
@@ -159,6 +160,7 @@ else
 
     ---@param value any
     ---@return boolean is_angle3
+    ---@nodiscard
     function isAngle3( value )
         return ffi_istype( Angle3_ctype, value )
     end
@@ -256,6 +258,7 @@ end
 ---@return number pitch The pitch in degrees.
 ---@return number yaw The yaw in degrees.
 ---@return number roll The roll in degrees.
+---@nodiscard
 function Angle3:unpack()
     return self.pitch, self.yaw, self.roll
 end
@@ -290,6 +293,7 @@ end
 ---
 ---@param self dreamwork.std.Angle3 The angle.
 ---@return dreamwork.std.Angle3 copy The new angle.
+---@nodiscard
 local function Angle3_copy( self )
     return Angle3_create( self.pitch, self.yaw, self.roll )
 end
@@ -301,6 +305,7 @@ Angle3.copy = Angle3_copy
 --- Checks if all values of the angle are exactly zero.
 ---
 ---@return boolean is_zero `true` if the angle is zero, `false` otherwise.
+---@nodiscard
 function Angle3:isZero()
     return self.pitch == 0 and self.yaw == 0 and self.roll == 0
 end
@@ -324,6 +329,7 @@ end
 ---@param angle dreamwork.std.Angle3 The angle to check against.
 ---@param tolerance number The maximum allowed difference per value in degrees.
 ---@return boolean is_near `true` if the angles are equal within the tolerance, otherwise `false`.
+---@nodiscard
 function Angle3:isNear( angle, tolerance )
     return math_abs( self.pitch - angle.pitch ) <= tolerance and
         math_abs( self.yaw - angle.yaw ) <= tolerance and
@@ -469,13 +475,20 @@ function Angle3:div( divisor )
     return self
 end
 
---- `ang3 / number`, `ang3 / ang3` and `number / ang3` are not supported.
+--- `ang3 / number`, both `ang3 / ang3` and `number / ang3` raise an error.
 ---
----@param divisor number The divisor.
+---@param a dreamwork.std.Angle3 | number
+---@param b dreamwork.std.Angle3 | number
 ---@return dreamwork.std.Angle3 quotient The new angle.
 ---@protected
-function Angle3:__div( divisor )
-    return Angle3_create( self.pitch / divisor, self.yaw / divisor, self.roll / divisor )
+function Angle3.__div( a, b )
+    if isNumber( b ) then
+        ---@cast a dreamwork.std.Angle3
+        ---@cast b number
+        return Angle3_create( a.pitch / b, a.yaw / b, a.roll / b )
+    end
+
+    error( "attempt to divide by an angle", 2 )
 end
 
 --- [SHARED AND MENU]
@@ -512,6 +525,7 @@ Angle3.lerp = Angle3_lerp
 ---@param target dreamwork.std.Angle3 | number The target angle or a number of degrees ( used for every value ).
 ---@param frac number The interpolation factor, `0` keeps the angle, `1` sets it to the target.
 ---@return dreamwork.std.Angle3 lerped_ang3 The new angle.
+---@nodiscard
 function Angle3:getLerped( target, frac )
     return Angle3_lerp( Angle3_copy( self ), target, frac )
 end
@@ -538,6 +552,7 @@ Angle3.normalize = Angle3_normalize
 --- Returns a normalized copy of the angle, all values will be in range [-180, 180).
 ---
 ---@return dreamwork.std.Angle3 normalized_ang3 The new angle.
+---@nodiscard
 function Angle3:getNormalized()
     return Angle3_normalize( Angle3_copy( self ) )
 end
@@ -551,6 +566,7 @@ end
 ---@return dreamwork.std.Vector3 forward_dir The new normalized forward direction.
 ---@return dreamwork.std.Vector3 right_dir The new normalized right direction.
 ---@return dreamwork.std.Vector3 up_dir The new normalized up direction.
+---@nodiscard
 function Angle3:getVectors()
     local a11, a12, a13, a21, a22, a23, a31, a32, a33 = angleMatrix( self.pitch, self.yaw, self.roll )
     return Vector3Class( a11, a21, a31 ), Vector3Class( -a12, -a22, -a32 ), Vector3Class( a13, a23, a33 )
@@ -563,6 +579,7 @@ end
 --- Same as `Angle:Forward` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 forward_dir The new normalized direction.
+---@nodiscard
 function Angle3:getForward()
     local p, y = math_rad( self.pitch ), math_rad( self.yaw )
     local cp = math_cos( p )
@@ -574,6 +591,7 @@ end
 --- Returns the backward direction of the angle ( negated forward ).
 ---
 ---@return dreamwork.std.Vector3 backward_dir The new normalized direction.
+---@nodiscard
 function Angle3:getBackward()
     local p, y = math_rad( self.pitch ), math_rad( self.yaw )
     local cp = math_cos( p )
@@ -587,6 +605,7 @@ end
 --- Same as `Angle:Right` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 right_dir The new normalized direction.
+---@nodiscard
 function Angle3:getRight()
     local _, a12, _, _, a22, _, _, a32 = angleMatrix( self.pitch, self.yaw, self.roll )
     return Vector3Class( -a12, -a22, -a32 )
@@ -597,6 +616,7 @@ end
 --- Returns the left direction of the angle ( negated right ).
 ---
 ---@return dreamwork.std.Vector3 left_dir The new normalized direction.
+---@nodiscard
 function Angle3:getLeft()
     local _, a12, _, _, a22, _, _, a32 = angleMatrix( self.pitch, self.yaw, self.roll )
     return Vector3Class( a12, a22, a32 )
@@ -609,6 +629,7 @@ end
 --- Same as `Angle:Up` in Garry's Mod.
 ---
 ---@return dreamwork.std.Vector3 up_dir The new normalized direction.
+---@nodiscard
 function Angle3:getUp()
     local _, _, a13, _, _, a23, _, _, a33 = angleMatrix( self.pitch, self.yaw, self.roll )
     return Vector3Class( a13, a23, a33 )
@@ -619,6 +640,7 @@ end
 --- Returns the down direction of the angle ( negated up ).
 ---
 ---@return dreamwork.std.Vector3 down_dir The new normalized direction.
+---@nodiscard
 function Angle3:getDown()
     local _, _, a13, _, _, a23, _, _, a33 = angleMatrix( self.pitch, self.yaw, self.roll )
     return Vector3Class( -a13, -a23, -a33 )
@@ -673,6 +695,7 @@ Angle3.rotate = Angle3_rotate
 ---@param axis dreamwork.std.Vector3 The world axis to rotate around, must be normalized.
 ---@param degrees number The degrees to rotate around the axis.
 ---@return dreamwork.std.Angle3 rotated_ang3 The new angle.
+---@nodiscard
 function Angle3:getRotated( axis, degrees )
     return Angle3_rotate( Angle3_copy( self ), axis, degrees )
 end
@@ -684,6 +707,7 @@ end
 --- Same as `AngleQuaternion` in Source engine.
 ---
 ---@return dreamwork.std.Quaternion quat The new unit quaternion.
+---@nodiscard
 function Angle3:toQuaternion()
     return std.Quaternion.fromAngle3( self )
 end
@@ -695,6 +719,7 @@ end
 --- Same as `AngleMatrix` in Source engine.
 ---
 ---@return dreamwork.std.VMatrix matrix The new rotation matrix.
+---@nodiscard
 function Angle3:toVMatrix()
     return std.VMatrix.fromAngle3( self )
 end

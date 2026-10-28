@@ -158,6 +158,7 @@ end
 --- Returns the console command with the given name.
 ---
 ---@return dreamwork.std.console.Command | nil obj The console command with the given name, or `nil` if it does not exist.
+---@nodiscard
 function CommandClass.get( name )
     return commands[ name ]
 end
@@ -192,6 +193,7 @@ if std.LUA_CLIENT_MENU then
     ---
     ---@param str string The alias to lookup.
     ---@return string | nil cmd The command(s) this alias will execute if ran, or nil if the alias doesn't exist.
+    ---@nodiscard
     function CommandClass.translateAlias( str )
         return input_TranslateAlias( str )
     end
@@ -204,6 +206,7 @@ end
 ---
 ---@param name string The name of the console command.
 ---@return boolean is_blacklisted `true` if the console command is blacklisted, `false` otherwise.
+---@nodiscard
 function CommandClass.isBlacklisted( name )
     return engine_consoleCommandBlocked( name )
 end
@@ -213,6 +216,7 @@ end
 --- Returns whether the console command is blacklisted.
 ---
 ---@return boolean is_blacklisted `true` if the console command is blacklisted, `false` otherwise.
+---@nodiscard
 function Command:isBlacklisted()
     local name = names[ self ]
     if name == nil then

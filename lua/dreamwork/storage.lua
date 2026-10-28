@@ -34,6 +34,7 @@ local error = std.error
 ---
 ---@param key string
 ---@return string
+---@nodiscard
 function storage.read( key )
     ---@type string
     return sqlite_queryValue( "SELECT VALUE FROM 'dreamwork.store' WHERE key=?", key )
@@ -76,6 +77,7 @@ do
     ---
     ---@param url string
     ---@return table?
+    ---@nodiscard
     function http.read( url )
         return sqlite_queryFirst( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
     end
@@ -133,6 +135,7 @@ do
     ---
     ---@param file_path string The path to the file.
     ---@return dreamwork.storage.files.Record | nil data The file record, or `nil` if not found.
+    ---@nodiscard
     function files.read( file_path )
         local result = sqlite_queryFirst( "SELECT * FROM 'dreamwork.storage.files' WHERE path=?", file_path )
         if result ~= nil then
@@ -401,6 +404,7 @@ do
     ---
     ---@param name string The name/version of the migration.
     ---@return boolean is_exists `true` if migration exists, `false` otherwise.
+    ---@nodiscard
     local function is_migration_exists( name )
         for i = 1, #migrations, 1 do
             if migrations[ i ].name == name then

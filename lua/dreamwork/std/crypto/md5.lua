@@ -276,6 +276,7 @@ end
 ---
 ---@param as_hex? boolean If true, the result will be a hex string.
 ---@return string str_result The MD5 string of the message.
+---@nodiscard
 function MD5:digest( as_hex )
     local position = self.position
     local message_length = self.message_length
@@ -329,6 +330,7 @@ if util_MD5 == nil then
     ---@param message string The message to compute MD5 for.
     ---@param as_hex? boolean If true, the result will be a hex string.
     ---@return string str_result The MD5 string of the message.
+    ---@nodiscard
     function MD5Class.digest( message, as_hex )
         local message_length = string_len( message )
         local padding = 64 - (message_length % 64 + 9)
@@ -380,6 +382,7 @@ else
     ---@param message string The message to compute MD5 for.
     ---@param as_hex? boolean If true, the result will be a hex string.
     ---@return string str_result The MD5 string of the message.
+    ---@nodiscard
     function MD5Class.digest( message, as_hex )
         local hex_str = util_MD5( message )
         if as_hex then

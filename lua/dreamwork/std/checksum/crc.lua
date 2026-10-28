@@ -377,6 +377,7 @@ end
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^8 (0x100).
+---@nodiscard
 function CRC8:digest()
     return crc8_finalize( self.value, self.ref_in, self.ref_out, self.xor_out )
 end
@@ -406,6 +407,7 @@ std.CRC8 = CRC8Class
 ---@param ref_out? boolean `true` if output checksum is reversed, otherwise `false`.
 ---@param xor_out? integer The value to be XORed with output checksum.
 ---@return integer checksum The CRC-8 checksum, which is greater or equal to 0, and less than 2^8 (0x100).
+---@nodiscard
 function CRC8Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc8_parameters( poly, init, ref_in, ref_out, xor_out )
     return crc8_finalize( crc8_update( init, raw_str, tables_new( 8, poly, ref_in ) ), ref_in, ref_out, xor_out )
@@ -416,6 +418,7 @@ end
 --- The CRC-8 checksum class that uses MAXIM algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC8 object
+---@nodiscard
 function CRC8Class.MAXIM()
     return CRC8Class( 0x31, 0x00, true, true )
 end
@@ -425,6 +428,7 @@ end
 --- The CRC-8 checksum class that uses ROHC algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC8 object
+---@nodiscard
 function CRC8Class.ROHC()
     return CRC8Class( 0x07, 0xFF, true, true )
 end
@@ -434,6 +438,7 @@ end
 --- The CRC-8 checksum class that uses CDMA2000 algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC8 object
+---@nodiscard
 function CRC8Class.CDMA2000()
     return CRC8Class( 0x9B, 0xFF, false, false )
 end
@@ -533,6 +538,7 @@ end
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^16 (0x10000).
+---@nodiscard
 function CRC16:digest()
     return crc16_finalize( self.value, self.ref_in, self.ref_out, self.xor_out )
 end
@@ -567,6 +573,7 @@ CRC16Class.CDMA2000 = nil
 ---@param ref_out? boolean Whether to reflect the output data after processing.
 ---@param xor_out? integer The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-16 checksum, which is greater or equal to 0, and less than 2^16 (0x10000).
+---@nodiscard
 function CRC16Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc16_parameters( poly, init, ref_in, ref_out, xor_out )
     return crc16_finalize( crc16_update( init, raw_str, tables_new( 16, poly, ref_in ), ref_in ), ref_in, ref_out, xor_out )
@@ -577,6 +584,7 @@ end
 --- The CRC-16 checksum class that uses MAXIM algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC16 object
+---@nodiscard
 function CRC16Class.MAXIM()
     return CRC16Class( 0x8005, 0x0000, true, true, 0xFFFF )
 end
@@ -586,6 +594,7 @@ end
 --- The CRC-16 checksum class that uses XMODEM algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC16 object
+---@nodiscard
 function CRC16Class.XMODEM()
     return CRC16Class( 0x1021, 0x0000, false, false )
 end
@@ -595,6 +604,7 @@ end
 --- The CRC-16 checksum class that uses USB algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC16 object
+---@nodiscard
 function CRC16Class.USB()
     return CRC16Class( 0x8005, 0xFFFF, true, true, 0xFFFF )
 end
@@ -692,6 +702,7 @@ end
 --- Finalizes checksum calculation and returns the resulting checksum.
 ---
 ---@return integer checksum The final checksum value, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function CRC32:digest()
     return crc32_finalize( self.value, self.ref_in, self.ref_out, self.xor_out )
 end
@@ -727,6 +738,7 @@ CRC32Class.USB = nil
 ---@param ref_out? boolean Whether to reflect the output data after processing.
 ---@param xor_out? integer The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
+---@nodiscard
 function CRC32Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc32_parameters( poly, init, ref_in, ref_out, xor_out )
 
@@ -746,6 +758,7 @@ end
 --- The CRC-32 checksum class that uses BZIP2 algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.BZIP2()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, false, false, 0xFFFFFFFF )
 end
@@ -755,6 +768,7 @@ end
 --- The CRC-32 checksum class that uses Castagnoli/C algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.C()
     return CRC32Class( 0x1EDC6F41, 0xFFFFFFFF, true, true, 0xFFFFFFFF )
 end
@@ -764,6 +778,7 @@ end
 --- The CRC-32 checksum class that uses D algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.D()
     return CRC32Class( 0xA833982B, 0xFFFFFFFF, true, true, 0xFFFFFFFF )
 end
@@ -773,6 +788,7 @@ end
 --- The CRC-32 checksum class that uses JamCRC algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.JAMCRC()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, true, true, 0x00000000 )
 end
@@ -782,6 +798,7 @@ end
 --- The CRC-32 checksum class that uses MPEG-2 algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.MPEG2()
     return CRC32Class( 0x04C11DB7, 0xFFFFFFFF, false, false, 0x00000000 )
 end
@@ -791,6 +808,7 @@ end
 --- The CRC-32 checksum class that uses POSIX algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.POSIX()
     return CRC32Class( 0x04C11DB7, 0x00000000, false, false, 0xFFFFFFFF )
 end
@@ -800,6 +818,7 @@ end
 --- The CRC-32 checksum class that uses Q algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.Q()
     return CRC32Class( 0x814141AB, 0x00000000, false, false, 0x00000000 )
 end
@@ -809,6 +828,7 @@ end
 --- The CRC-32 checksum class that uses XFER algorithm parameters.
 ---
 ---@return dreamwork.std.checksum.CRC32 object
+---@nodiscard
 function CRC32Class.XFER()
     return CRC32Class( 0x000000AF, 0x00000000, false, false, 0x00000000 )
 end

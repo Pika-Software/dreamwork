@@ -24,6 +24,7 @@ std.json = json
 ---
 ---@param str string The JSON string to deserialize.
 ---@return table | nil tbl The deserialized table or `nil` if the deserialization failed.
+---@nodiscard
 function json.deserialize( str )
     return util_JSONToTable( str, true, true )
 end

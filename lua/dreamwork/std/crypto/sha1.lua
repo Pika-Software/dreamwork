@@ -551,6 +551,7 @@ else
     ---@param message string The message to compute SHA1 for.
     ---@param as_hex? boolean If true, the result will be a hex string.
     ---@return string str_result The SHA1 string of the message.
+    ---@nodiscard
     function SHA1Class.digest( message, as_hex )
         local hex_str = engine_SHA1( message )
         if as_hex then

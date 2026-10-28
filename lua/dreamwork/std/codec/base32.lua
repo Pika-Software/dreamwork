@@ -50,6 +50,7 @@ std.base32 = base32
 ---
 ---@param alphabet_str string The alphabet string, 32 unique characters without `=`.
 ---@return dreamwork.std.base32.Alphabet alphabet The alphabet.
+---@nodiscard
 function base32.alphabet( alphabet_str )
     if string_len( alphabet_str ) ~= 32 then
         error( "alphabet must be 32 characters long", 2 )
@@ -429,6 +430,7 @@ end
 ---@param ignore_padding? boolean Whether to ignore padding.
 ---@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
 ---@return string base32_str The encoded string.
+---@nodiscard
 function base32.encode( raw_str, ignore_padding, alphabet )
     local str_length = string_len( raw_str )
 
@@ -449,6 +451,7 @@ end
 ---@param ignore_padding? boolean Whether padding is optional.
 ---@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
 ---@return string raw_str The decoded string.
+---@nodiscard
 function base32.decode( base32_str, ignore_padding, alphabet )
     local data_length, err_msg = get_data_length( base32_str, ignore_padding )
 
@@ -478,6 +481,7 @@ end
 ---@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
 ---@return boolean is_valid `true` if the base32 string is valid, `false` otherwise
 ---@return nil | string err_msg The error message.
+---@nodiscard
 function base32.validate( base32_str, ignore_padding, alphabet )
     local data_length, err_msg = get_data_length( base32_str, ignore_padding )
 

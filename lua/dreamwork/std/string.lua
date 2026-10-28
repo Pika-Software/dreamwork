@@ -108,6 +108,7 @@ local pattern_bytes = string.PatternBytes
 ---
 ---@param ... string | dreamwork.std.string.ByteMapRange A list of bytes or byte ranges to include in the map.
 ---@return table<integer, boolean> byte_map A table mapping each included byte value to `true`.
+---@nodiscard
 function string.byteMap( ... )
     ---@type table<integer, boolean>
     local byte_map = {}
@@ -142,6 +143,7 @@ end
 ---@param start_position? integer The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position? integer The position to stop searching at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return integer | nil index The index of the first matching byte within the range, or `nil` if not found.
+---@nodiscard
 function string.findByte( str, searchable_byte, start_position, end_position )
     local start_index, end_index = math_range( string_len( str ), start_position, end_position )
 
@@ -160,6 +162,7 @@ end
 ---
 ---@param str string The string to check.
 ---@return boolean result `true` if `str` has zero length, `false` otherwise.
+---@nodiscard
 function string.isEmpty( str )
     return string_byte( str, 1, 1 ) == nil
 end
@@ -177,6 +180,7 @@ end
 ---@param size? integer The size, in bytes, of each segment. Defaults to `1` (split into individual bytes). Clamped to `[1, #str]`.
 ---@return string[] segments The array of fixed-size segments.
 ---@return integer segment_count The number of segments.
+---@nodiscard
 function string.divide( str, size )
     local str_length = string_len( str )
 
@@ -215,6 +219,7 @@ end
 ---@param with_pattern?   boolean      When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return string new_string The string with the matched portion removed, or `str` unchanged if nothing matched.
 ---@return string | nil extracted The matched text (or its first capture, for patterns with captures), or `default` if nothing matched.
+---@nodiscard
 function string.extract( str, searchable, start_position, default, with_pattern )
     local extraction_start, extraction_end, str_matched = string_find( str, searchable, start_position or 1, with_pattern ~= true )
     if extraction_start == nil then
@@ -240,6 +245,7 @@ end
 ---@param index integer The position to insert at. Defaults to the end of the string; negative values count from the end.
 ---@param value string The string value to insert.
 ---@return string result The string with `value` inserted at the given position.
+---@nodiscard
 ---@overload fun( str: string, value: string ): string
 function string.insert( str, index, value )
     if value == nil then
@@ -276,6 +282,7 @@ end
 ---@param start_position integer The start position of the removal interval, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position integer The end position of the removal interval, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string new_string The string with the specified byte interval removed.
+---@nodiscard
 function string.remove( str, start_position, end_position )
     local str_length = string_len( str )
     local start_index, end_index = math_range( str_length, start_position, end_position )
@@ -300,6 +307,7 @@ end
 ---@param prefix string The prefix to check for.
 ---@param offset? integer The number of bytes to skip from the start of `str` before checking. Defaults to `0`.
 ---@return boolean has_prefix `true` if the string starts with the prefix (at the given offset), `false` otherwise.
+---@nodiscard
 function string.hasPrefix( str, prefix, offset )
     return string_sub( str, (offset or 0) + 1, string_len( prefix ) ) == prefix
 end
@@ -313,6 +321,7 @@ end
 ---@param suffix string The suffix to check for.
 ---@param offset? integer The number of bytes to ignore at the end of `str` before checking. Defaults to `0`.
 ---@return boolean has_suffix `true` if the string ends with the suffix (at the given offset), `false` otherwise.
+---@nodiscard
 function string.hasSuffix( str, suffix, offset )
     return string_sub( str, -(string_len( suffix ) + (offset or 0)), string_len( str ) - (offset or 0) ) == suffix
 end
@@ -332,6 +341,7 @@ end
 ---@param position?     integer The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return integer index The index of the first match, `0` if `searchable` is `nil` or empty, or `-1` if no match is found.
+---@nodiscard
 function string.indexOf( str, searchable, position, with_pattern )
     if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
         return 0
@@ -372,6 +382,7 @@ end
 ---@param left? boolean Whether to add padding on the left side.
 ---@param right? boolean Whether to add padding on the right side.
 ---@return string padded_str The padded string, or `str` unchanged if no padding was needed or requested.
+---@nodiscard
 function string.pad( str, desired_length, padding, left, right )
     if not (left or right) then
         return str
@@ -462,6 +473,7 @@ do
     ---@param end_position?   integer The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Ignored if `searchable` is `nil` or empty.
     ---@return string[] segments The resulting array of substrings.
     ---@return integer segment_count The number of entries in `segments`.
+    ---@nodiscard
     local function split( str, searchable, with_pattern, start_position, end_position )
         local str_length = string_len( str )
 
@@ -528,6 +540,7 @@ do
     ---@param start_position? integer The position to start replacing from, inclusive. Matches outside this range are left untouched.
     ---@param end_position?   integer The position to stop replacing at, inclusive. Matches outside this range are left untouched.
     ---@return string str_replaced The new string with the occurrences replaced.
+    ---@nodiscard
     function string.replace( str, searchable, replaceable, with_pattern, start_position, end_position )
         local segments, segment_count = split( str, searchable, with_pattern, start_position, end_position )
 
@@ -565,6 +578,7 @@ end
 ---@param searchable    string  The substring or pattern to count by.
 ---@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return integer match_count The number of non-overlapping matches, or `string.len( str )` if `searchable` is `nil` or empty.
+---@nodiscard
 function string.count( str, searchable, with_pattern )
     local str_length = string_len( str )
     if searchable == nil or string_byte( searchable, 1, 1 ) == nil then
@@ -605,6 +619,7 @@ end
 ---@param start_position? integer The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
 ---@param end_position? integer The position to stop counting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
 ---@return integer byte_count The total number of occurrences of `counted_byte` within the range.
+---@nodiscard
 function string.countByte( str, counted_byte, reverse_direction, start_position, end_position )
     if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
@@ -667,6 +682,7 @@ end
 ---@param start_position? integer The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
 ---@param end_position? integer The position to stop counting at, inclusive; counting stops early regardless if a non-matching byte is found first. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
 ---@return integer byte_count The number of consecutive occurrences of `counted_byte` found, starting at `start_position`.
+---@nodiscard
 function string.countConsecutiveByte( str, counted_byte, reverse_direction, start_position, end_position )
     if counted_byte == nil or string_byte( str, 1, 1 ) == nil then
         return 0
@@ -735,6 +751,7 @@ end
 ---@param end_position? integer The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
+---@nodiscard
 function string.trimByte( str, trailing_byte, left, right, start_position, end_position )
     local str_length = string_len( str )
 
@@ -792,6 +809,7 @@ end
 ---@param end_position? integer The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
+---@nodiscard
 function string.trimSpaces( str, left, right, start_position, end_position )
     local str_length = string_len( str )
 
@@ -839,6 +857,7 @@ end
 ---@param end_position? integer The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string[] segments The resulting array of substrings.
 ---@return integer segment_count The number of entries in `segments`.
+---@nodiscard
 local function byte_split( str, searchable_byte, start_position, end_position )
     if searchable_byte == nil then
         searchable_byte = 0x20 --[[ Space ]]
@@ -897,6 +916,7 @@ string.byteSplit = byte_split
 ---@param start_position?  integer The position to start replacing from, inclusive. Matches outside this range are left untouched.
 ---@param end_position?    integer The position to stop replacing at, inclusive. Matches outside this range are left untouched.
 ---@return string str_replaced The new string with the occurrences replaced.
+---@nodiscard
 function string.byteReplace( str, searchable_byte, replaceable, start_position, end_position )
     local segments, segment_count = byte_split( str, searchable_byte, start_position, end_position )
 
@@ -931,6 +951,7 @@ end
 ---@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@param start_position? integer The byte position to start searching from. Defaults to `1`. Negative values count from the end of the string.
 ---@return boolean found `true` if `searchable` was found within `str`, `false` otherwise.
+---@nodiscard
 function string.contains( str, searchable, with_pattern, start_position )
     return string_find( str, searchable, start_position, with_pattern ~= true ) ~= nil
 end
@@ -947,6 +968,7 @@ end
 ---@param start_position? integer The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position? integer The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return boolean has_byte `true` if `byte` occurs anywhere within the range, `false` otherwise.
+---@nodiscard
 function string.containsByte( str, byte, start_position, end_position )
     local str_length = string_len( str )
 
@@ -975,6 +997,7 @@ end
 ---@param start_position? integer The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position? integer The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return boolean has_byte `true` if any byte in the range is present in `byte_map`, `false` otherwise.
+---@nodiscard
 function string.containsBytes( str, byte_map, start_position, end_position )
     local str_length = string_len( str )
 
@@ -1003,6 +1026,7 @@ end
 ---@param start_position? integer The position to start purging from, inclusive. Bytes outside this range are left untouched.
 ---@param end_position? integer The position to stop purging at, inclusive. Bytes outside this range are left untouched.
 ---@return string str_purged The string with every occurrence of `byte` removed.
+---@nodiscard
 function string.purge( str, byte, start_position, end_position )
     local segments, segment_count = byte_split( str, byte, start_position, end_position )
     return table_concat( segments, "", 1, segment_count )
@@ -1029,6 +1053,7 @@ do
     ---@param start_position? integer The position to start converting from. Defaults to `1` (the start of the string).
     ---@param end_position? integer The position to stop converting at. Defaults to the end of the string.
     ---@return number | nil num The converted number, or `nil` if the (sub)string is not a valid number in the given base.
+    ---@nodiscard
     local function toNumber( str, base, start_position, end_position )
         if base == nil then
             local uint8_1, uint8_2, uint8_3 = string_byte( str, (start_position or 1), (start_position or 1) + 2 )
@@ -1072,6 +1097,7 @@ do
     ---@param start_position? integer The position to start checking from. Defaults to `1` (the start of the string).
     ---@param end_position? integer The position to stop checking at. Defaults to the end of the string.
     ---@return boolean is_number `true` if the (sub)string is a valid number in the given base, `false` otherwise.
+    ---@nodiscard
     function string.isNumber( str, base, start_position, end_position )
         return toNumber( str, base, start_position, end_position ) ~= nil
     end
@@ -1095,6 +1121,7 @@ end
 ---
 ---@param str string The string to check.
 ---@return boolean result `true` if `str` matches the expected URL shape, `false` otherwise.
+---@nodiscard
 function string.isURL( str )
     return string_match( str, "^%l[%l+-.]+%:[^%z\x01-\x20\x7F-\xFF\"<>^`:{-}]*$" ) ~= nil
 end
@@ -1116,6 +1143,7 @@ end
 ---@param jit_version `0x01` | `0x02` | integer The expected LuaJIT bytecode version byte to match against (see `jit.version_byte`).
 ---@param start_position? integer The position in `str` where the bytecode header is expected to start. Defaults to `1` (the start of the string).
 ---@return boolean result `true` if `str` starts with a matching LuaJIT bytecode header at `start_position`, `false` otherwise.
+---@nodiscard
 function string.isBytecode( str, jit_version, start_position )
     if start_position == nil then
         start_position = 1
@@ -1142,6 +1170,7 @@ end
 ---@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string escaped_str The string with pattern-magic characters escaped for literal matching.
+---@nodiscard
 function string.escapePattern( str, start_position, end_position )
     local str_length = string_len( str )
 
@@ -1197,6 +1226,7 @@ end
 ---@param left? boolean Whether to trim from the start of the string. Defaults to `true`.
 ---@param right? boolean Whether to trim from the end of the string. Defaults to `true`.
 ---@return string trimmed_str The trimmed string.
+---@nodiscard
 function string.trim( str, pattern_str, left, right )
     if pattern_str == nil then
         pattern_str = "%s"
@@ -1256,6 +1286,7 @@ do
     ---@param symbols? boolean Whether to include symbol/punctuation characters. Defaults to `false`.
     ---@param extended_ascii? boolean Whether to include extended (non-ASCII, above `0x7F`) characters. Defaults to `false`.
     ---@return string result A randomly generated string of the requested length, drawn from the enabled character pools.
+    ---@nodiscard
     function string.random( length, lowercase, uppercase, numbers, symbols, extended_ascii )
         if length == nil then
             length = 8
@@ -1341,6 +1372,7 @@ end
 ---@param start_position? integer The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
 ---@param end_position? integer The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
 ---@return string str The interpolated string.
+---@nodiscard
 function string.interpolate( str, variables, start_position, end_position )
     local str_length = string_len( str )
 
@@ -1464,6 +1496,7 @@ end
 ---@param start_position? integer The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
 ---@param end_position? integer The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
 ---@return string str The interpolated string.
+---@nodiscard
 function string.interpolateByte( str, interpolate_byte, variables, variable_count, start_position, end_position )
     local str_length = string_len( str )
     if str_length == 0 then
@@ -1546,6 +1579,7 @@ end
 ---@param bytes integer[] The sequence of bytes to pack, each an integer in the range `0`-`255`.
 ---@param byte_count? integer The number of bytes, from the start of `bytes`, to pack. Defaults to `len( bytes )` (the whole array).
 ---@return string str The packed byte string.
+---@nodiscard
 function string.pack( bytes, byte_count )
     if byte_count == nil then
         byte_count = len( bytes )
@@ -1594,6 +1628,7 @@ end
 ---@param end_position? integer The position to stop unpacking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string (`string.len( str )`).
 ---@return integer[] bytes The unpacked bytes, one entry per byte in the range.
 ---@return integer byte_count The number of bytes unpacked (i.e. `#bytes`).
+---@nodiscard
 function string.unpack( str, start_position, end_position )
     local str_length = string_len( str )
     if str_length == 0 then
@@ -1659,6 +1694,7 @@ end
 ---@param separator? string The separator string to insert between groups. Defaults to `","`.
 ---@param offset? integer The number of characters per group, counted from the right. Defaults to `3`. Normalized to a non-negative integer; `0` returns `str` unchanged.
 ---@return string str The string with separators inserted every `offset` characters from the right.
+---@nodiscard
 function string.comma( str, separator, offset )
     local str_length = string_len( str )
     if str_length == 0 then return str end
@@ -1693,6 +1729,7 @@ end
 ---@param rep_byte integer The byte value to repeat (`0`-`255`).
 ---@param repetitions? integer The number of times to repeat the byte. Defaults to `1`.
 ---@return string rep_str The byte repeated `repetitions` times, as a string.
+---@nodiscard
 function string.byteRep( rep_byte, repetitions )
     if repetitions == nil then
         repetitions = 1
@@ -1744,6 +1781,7 @@ do
     ---@param str string The string to quote.
     ---@param use_single? boolean When `true`, wraps in single quotes (`'`) and escapes any `'` inside `str`. When `false`/omitted, wraps in double quotes (`"`) and escapes any `"` inside `str`.
     ---@return string result The quoted string.
+    ---@nodiscard
     function string.quote( str, use_single )
         if use_single then
             return "'" .. string_replace( str, "'", "\\'" ) .. "'"
@@ -1764,6 +1802,7 @@ do
     ---@param str string The string to unquote.
     ---@param use_single? boolean When `true`, expects and strips single quotes (`'`) and unescapes `\'` inside `str`. When `false`/omitted, expects and strips double quotes (`"`) and unescapes `\"` inside `str`.
     ---@return string result The unquoted string, or `str` unchanged (with unescaping still applied) if it wasn't wrapped in the expected quote character.
+    ---@nodiscard
     function string.unQuote( str, use_single )
         if use_single then
             return string_replace( string_match( str, "^'(.*)'$" ) or str, "\\'", "'" )
@@ -1798,6 +1837,7 @@ do
     ---@param left? boolean Whether to add padding on the left side.
     ---@param right? boolean Whether to add padding on the right side.
     ---@return string padded_str The padded string, or `str` unchanged if no padding was needed or requested.
+    ---@nodiscard
     function string.bytePad( str, desired_length, padding_byte, left, right )
         local missing_length = math_max( 0, desired_length - string_len( str ) )
         if missing_length == 0 then
@@ -1832,6 +1872,7 @@ do
     ---
     ---@param str string The string to unindent.
     ---@return string unindented The string with leading whitespace removed.
+    ---@nodiscard
     local function unIndent( str )
         return (string_trimSpaces( str, true, false ))
     end
@@ -1851,6 +1892,7 @@ do
     ---@param str string The string to indent.
     ---@param size integer The number of spaces the result should start with.
     ---@return string indented The string with its leading whitespace replaced by `size` spaces.
+    ---@nodiscard
     function string_indent( str, size )
         return string_byteRep( 0x20, size ) .. unIndent( str )
     end
@@ -1869,6 +1911,7 @@ do
     ---@param str string The string to indent.
     ---@param size integer The number of spaces each line should start with.
     ---@return string indented The string with every line re-indented to `size` spaces.
+    ---@nodiscard
     function string.indentLines( str, size )
         local lines, line_count = byte_split( str, 0x0A )
 
@@ -1896,6 +1939,7 @@ do
     ---
     ---@param str string The string to unindent.
     ---@return string unindented The string with leading whitespace removed from every line.
+    ---@nodiscard
     function string.unindentLines( str )
         local lines, line_count = byte_split( str, 0x0A )
 
@@ -1976,6 +2020,7 @@ do
     ---@param target string The target string.
     ---@return dreamwork.std.string.Difference[] diff_ops The difference operations.
     ---@return integer diff_op_count The count of difference operations.
+    ---@nodiscard
     function string.diff( source, target )
         -- if both strings is same
         if source == target then
