@@ -73,7 +73,7 @@ if std.LUA_CLIENT_MENU then
             console.visible = visible
             console.VisibilityHook:call( visible )
         end
-    end, "std.console.visible" )
+    end )
 
 end
 

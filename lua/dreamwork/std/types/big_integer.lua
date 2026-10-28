@@ -1411,7 +1411,6 @@ end
 ---
 ---@param value any The second value to be converted into `BigInteger`.
 ---@return dreamwork.std.BigInteger object The result of the operation.
----@nodiscard
 function BigInteger:add( value )
     local b = toBigInteger( value )
     return add_signed( self, b, b.sign )

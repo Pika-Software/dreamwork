@@ -106,7 +106,7 @@ do
                 sv_allowcslua.value = false
             end
 
-            return pcall( glua_require, name )
+            return (pcall( glua_require, name ))
         end
 
         return false
