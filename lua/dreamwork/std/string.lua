@@ -1868,13 +1868,36 @@ do
     ---
     --- Removes leading whitespace from the start of a single-line string (does not affect
     --- subsequent lines if `str` contains embedded newlines — see `string.unindentLines` for
-    --- that). Equivalent to `string.trimSpaces( str, true, false )`.
+    --- that).
+    ---
+    --- If `size` is given, at most `size` leading whitespace bytes are removed; otherwise all
+    --- leading whitespace is removed, equivalent to `string.trimSpaces( str, true, false )`.
     ---
     ---@param str string The string to unindent.
+    ---@param size? integer The maximum number of leading whitespace bytes to remove. Defaults to removing all of them.
     ---@return string unindented The string with leading whitespace removed.
     ---@nodiscard
-    local function unIndent( str )
-        return (string_trimSpaces( str, true, false ))
+    local function unIndent( str, size )
+        if size == nil then
+            return (string_trimSpaces( str, true, false ))
+        end
+
+        local str_length = string_len( str )
+        if size > str_length then
+            size = str_length
+        end
+
+        local index = 1
+
+        while index <= size and ascii_isSpace( string_byte( str, index, index ) ) do
+            index = index + 1
+        end
+
+        if index == 1 then
+            return str
+        end
+
+        return string_sub( str, index, str_length )
     end
 
     string.unIndent = unIndent
@@ -1938,22 +1961,23 @@ do
     --- `string.unIndent`, which only strips the first line.
     ---
     ---@param str string The string to unindent.
+    ---@param size? integer The maximum number of leading whitespace bytes to remove from each line. Defaults to removing all of them.
     ---@return string unindented The string with leading whitespace removed from every line.
     ---@nodiscard
-    function string.unindentLines( str )
+    function string.unindentLines( str, size )
         local lines, line_count = byte_split( str, 0x0A )
 
         if line_count == 0 then
             return ""
         elseif line_count == 1 then
-            return unIndent( str )
+            return unIndent( str, size )
         end
 
         ---@type string[]
         local output = {}
 
         for i = 1, line_count, 1 do
-            output[ i ] = unIndent( lines[ i ] )
+            output[ i ] = unIndent( lines[ i ], size )
         end
 
         return table_concat( output, "\n", 1, line_count )
