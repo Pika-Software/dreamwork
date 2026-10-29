@@ -1,0 +1,402 @@
+---@meta _
+
+--- [SHARED AND MENU]
+---
+--- The bit library.
+---
+---@class bitlib
+bit = {}
+
+bit.tobit = raw.bit.tobit
+
+bit.tohex = raw.bit.tohex
+
+--- [SHARED AND MENU]
+---
+--- Returns the bitwise OR of all provided values.
+---
+--- Each bit is tested against the following truth table:
+---
+--- | A | B | Output |
+--- |:-:|:-:|:------:|
+--- | 0 | 0 |   0    |
+--- | 1 | 0 |   1    |
+--- | 0 | 1 |   1    |
+--- | 1 | 1 |   1    |
+---
+--- ```
+---     0101 0001   81
+---     0001 0101   21
+--- OR  0000 0101   5
+--- _____________
+---     0101 0101   85
+--- ```
+---
+---@generic T: integer | { __bor: function }
+---@param x T The value to be manipulated.
+---@param ... T? Values bit or with. Optional.
+---@return T result The bitwise OR result between all values.
+---@nodiscard
+function bit.bor(x, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the bitwise XOR of all provided numbers.
+---
+--- Each bit is tested against the following truth table:
+---
+--- | A | B | Output |
+--- |:-:|:-:|:------:|
+--- | 0 | 0 |   0    |
+--- | 1 | 0 |   1    |
+--- | 0 | 1 |   1    |
+--- | 1 | 1 |   0    |
+---
+--- <br/>
+---
+--- ```
+---     0101 0001   81
+---     0001 0101   21
+--- XOR 0000 0101   5
+--- _____________
+---     0100 0001   65
+--- ```
+---
+---@generic T: integer | { __bxor: function }
+---@param x T The value to be manipulated.
+---@param ... T? Values bit XOR with. Optional.
+---@return T result Result of bitwise XOR` operation.
+---@nodiscard
+function bit.bxor(x, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the bitwise AND of all provided values.
+---
+--- Each bit is tested against the following truth table:
+---
+--- | A | B | Output |
+--- |:-:|:-:|:------:|
+--- | 0 | 0 |   0    |
+--- | 1 | 0 |   0    |
+--- | 0 | 1 |   0    |
+--- | 1 | 1 |   1    |
+---
+--- ```
+---     1100 1110   222
+---     0101 1000   88
+--- AND 0100 1001   73
+--- _____________
+---     0100 1000   72
+--- ```
+---
+---@generic T: integer | { __band: function }
+---@param x T The value to be manipulated.
+---@param ... T? Values bit to perform bitwise AND with. Optional.
+---@return T result The bitwise AND result between all values.
+---@nodiscard
+function bit.band(x, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the bitwise NOT ( negation ) of `x`.
+---
+--- Inverts every bit of the 32-bit integer.
+---
+--- ```
+--- NOT 1111 0000   240
+--- _____________
+---     0000 1111   15
+--- ```
+---
+--- <br/>
+---
+--- For any integer `x`, the following identity holds:
+---
+--- ```lua
+--- assert( bit.bnot( x ) == ( -1 - x ) % 2 ^ 32 )
+--- ````
+---
+---@generic T: integer | { __bnot: function }
+---@param x T The value to be manipulated/inverted.
+---@return T result The result of bitwise `NOT` (`0101` becomes `1010`).
+---@nodiscard
+function bit.bnot(x) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number `x` shifted `disp` bits to the left.
+---
+--- The number `disp` may be any representable integer.
+---
+--- Negative displacements shift to the right.
+---
+--- In any direction, vacant bits are filled with zeros.
+---
+--- In particular, displacements with absolute values higher than 31 result in zero (all bits are shifted out).
+---
+--- ```
+---     0000 1111   15
+--- LSH 0000 0011   3
+--- _____________
+---     0111 1000   120
+--- ```
+---
+--- **NOTE**: The returned value will be clamped to a signed 32-bit integer, even on 64-bit builds.
+---
+--- See [this wiki article](https://en.wikipedia.org/wiki/Bitwise_operation#Bit_shifts) for more details.
+---
+---@generic T: integer | { __shl: function }
+---@param x T The value to be manipulated.
+---@param disp integer Amounts of bits to shift left by.
+---@return T result The left shifted value. Input of `0b1001` will become `0b10010` for one left shift, etc.
+---@nodiscard
+function bit.lshift(x, disp) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number `x` shifted `disp` bits to the right.
+---
+--- The number `disp` may be any representable integer.
+---
+--- Negative displacements shift to the left. In any direction, vacant bits are filled with zeros.
+---
+--- In particular, displacements with absolute values higher than 31 result in zero (all bits are shifted out).
+---
+--- ```
+---     0111 1000   120
+--- RSH 0000 0011   3
+--- _____________
+---     0000 1111   15
+--- ```
+---
+--- **NOTE**: The returned value will be clamped to a signed 32-bit integer, even on 64-bit builds.
+---
+--- See [this wiki article](https://en.wikipedia.org/wiki/Bitwise_operation#Bit_shifts) for more details.
+---
+---@generic T: integer | { __shr: function }
+---@param x T The value to be manipulated.
+---@param disp integer Amounts of bits to shift right by.
+---@return T result The right shifted value.
+---@nodiscard
+function bit.rshift(x, disp) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number `x` arithmetically shifted `disp` bits to the right.
+---
+--- Unlike `bit.rshift`, the vacated high-order bits are filled with copies of the sign bit
+--- of `x` rather than zeros, so the sign of the value is preserved.
+---
+--- Negative displacements shift to the left, behaving identically to `bit.lshift` in that case.
+---
+--- ```
+---     1111 1000   -8  (as a signed 8-bit value)
+--- ARSH 0000 0010   2
+--- _____________
+---     1111 1110   -2
+--- ```
+---
+---@generic T: integer | { __shar: function }
+---@param x T The value to be manipulated.
+---@param disp integer Amounts of bits to shift.
+---@return T result The arithmetically shifted value.
+---@nodiscard
+function bit.arshift(x, disp) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number `x` rotated `disp` bits to the left.
+---
+--- The number `disp` may be any representable integer.
+---
+--- For any valid displacement, the following identity holds:
+---
+--- ```lua
+--- assert( bit.lrotate( x, disp ) == bit.lrotate( x, disp % 32 ) )
+--- ```
+---
+---@generic T: integer | { __brol: function }
+---@param x T The value to be manipulated.
+---@param disp integer Amounts of bits to rotate left by.
+---@return T result The left rotated value.
+---@nodiscard
+function bit.rol(x, disp) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number `x` rotated `disp` bits to the right.
+---
+--- The number `disp` may be any representable integer.
+---
+--- For any valid displacement, the following identity holds:
+---
+--- ```lua
+--- assert( bit.rrotate( x, disp ) == bit.rrotate( x, disp % 32 ) )
+--- ```
+---
+--- In particular, negative displacements rotate to the left.
+---
+---@generic T: integer | { __bror: function }
+---@param x T The value to be manipulated.
+---@param disp integer Amounts of bits to rotate right by.
+---@return T result The right rotated value.
+---@nodiscard
+function bit.ror(x, disp) end
+
+--- [SHARED AND MENU]
+---
+--- Swaps the byte order of a 32-bit integer.
+---
+---@generic T: integer | { __bswp: function }
+---@param x T The 32-bit integer to be byte-swapped.
+---@return T result The byte-swapped value.
+---@nodiscard
+function bit.bswap(x) end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the bitwise AND of all provided values is non-zero, i.e. whether
+--- `x` and every value in `...` have at least one bit in common.
+---
+--- Equivalent to `bit.band( x, ... ) ~= 0`, but without needing to look at the result.
+---
+---@generic T: integer | { __band: function, __eq: function }
+---@param x T The first value to test.
+---@param ... integer Additional values to test against the first. Optional.
+---@return boolean result `true` if any bit is set in every given value, `false` otherwise.
+---@nodiscard
+function bit.btest(x, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Extracts a bit field of the given `width` from `x`, starting at bit position `field`
+--- (0-indexed, counted from the least significant bit).
+---
+--- Equivalent to shifting `x` right by `field` bits and then masking off everything above `width` bits.
+---
+--- ```
+--- extract( 0b10110100, 2, 3 ) --> 0b101 ( 5 )
+--- ```
+---
+---@generic T: integer | { __rshift: function, __band: function }
+---@param x T The value to extract the bit field from.
+---@param field integer The starting bit position of the field (0-indexed).
+---@param width integer? The number of bits in the field. Defaults to 1.
+---@return T result The extracted bit field, right-aligned as an unsigned integer.
+---@nodiscard
+function bit.extract(x, field, width) end
+
+--- [SHARED AND MENU]
+---
+--- Replaces a bit field of the given `width` in `x`, starting at bit position `field`
+--- (0-indexed, counted from the least significant bit), with the low `width` bits of `extract`.
+---
+--- All bits of `x` outside the targeted field are left unchanged.
+---
+---@generic T: integer | { __band: function, __bnot: function, __lshift: function }
+---@param x T The value whose bit field is to be replaced.
+---@param extract integer The value providing the replacement bits (only the lowest `width` bits are used).
+---@param field integer The starting bit position of the field to replace (0-indexed).
+---@param width integer? The number of bits in the field. Defaults to 1.
+---@return T result The value of `x` with the specified bit field replaced.
+---@nodiscard
+function bit.replace(x, extract, field, width) end
+
+--- [SHARED AND MENU]
+---
+--- Reverses the order of the lowest `bit_count` bits of `x`, so the least significant bit
+--- becomes the most significant bit (within that range) and vice versa.
+---
+--- ```
+--- reverse( 0b1011000, 7 ) --> 0b0001101
+--- ```
+---
+---@generic T: integer | { __bor: function, __band: function, __lshift: function, __rshift: function }
+---@param x T The value whose bits are to be reversed.
+---@param bit_count integer? The number of low-order bits to reverse. Defaults to `32`.
+---@return T result The value of `x` with its bits reversed.
+---@nodiscard
+function bit.reverse(x, bit_count) end
+
+--- [SHARED AND MENU]
+---
+--- Counts the number of leading zero bits in `x`, starting from the most significant bit
+--- of the `bit_count`-bit window and stopping at the first `1` bit.
+---
+--- Returns `bit_count` if `x` is zero (i.e. all bits within the window are zero).
+---
+---@generic T: integer | { __band: function, __bxor: function, __rshift: function }
+---@param x T The value to count the leading zeros of.
+---@param bit_count integer? The width, in bits, of the window to inspect. Defaults to `32`.
+---@return T result The number of leading zero bits.
+---@nodiscard
+function bit.clz(x, bit_count) end
+
+--- [SHARED AND MENU]
+---
+--- Counts the number of trailing zero bits in `x`, starting from the least significant bit
+--- and stopping at the first `1` bit.
+---
+--- Returns `bit_count` if `x` is zero (i.e. all bits within the window are zero).
+---
+---@generic T: integer | { __band: function, __bxor: function, __rshift: function }
+---@param x T The value to count the trailing zeros of.
+---@param bit_count integer? The width, in bits, of the window to inspect. Defaults to `32`.
+---@return T result The number of trailing zero bits.
+---@nodiscard
+function bit.ctz(x, bit_count) end
+
+--- [SHARED AND MENU]
+---
+--- Bitwise multiplexer (also known as "choose"). For each bit position, selects the
+--- corresponding bit of `b` where `a` is `1`, and the corresponding bit of `c` where `a` is `0`.
+---
+--- Equivalent to `c ~ (a & (b ~ c))`, and often used as the `Ch` function in hash algorithms
+--- such as SHA-2.
+---
+---@generic T: integer | { __band: function, __bxor: function }
+---@param a T The selector value: a `1` bit picks from `b`, a `0` bit picks from `c`.
+---@param b T The value to select bits from where `a` is `1`.
+---@param c T The value to select bits from where `a` is `0`.
+---@return T result The bitwise multiplexed value.
+---@nodiscard
+function bit.mux(a, b, c) end
+
+--- [SHARED AND MENU]
+---
+--- Bitwise majority function. For each bit position, returns `1` if at least two of the three
+--- corresponding bits of `a`, `b` and `c` are `1`, and `0` otherwise.
+---
+--- Equivalent to `(a & (b | c)) | (b & c)`, and often used as the `Maj` function in hash
+--- algorithms such as SHA-2.
+---
+---@generic T: integer | { __band: function, __bor: function }
+---@param a T The first value.
+---@param b T The second value.
+---@param c T The third value.
+---@return T result The bitwise majority value.
+---@nodiscard
+function bit.maj(a, b, c) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the sign of an integer.
+---
+---@generic T: integer | { __le: function, __sub: function }
+---@param x T The integer to get the sign of.
+---@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@return T result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+---@nodiscard
+function bit.sign(x, bit_count) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the unsigned value of an integer.
+---
+---@generic T: integer | { __lt: function, __add: function }
+---@param x T The integer to get the unsigned value of.
+---@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@return T result The unsigned value of the integer.
+---@nodiscard
+function bit.unsign(x, bit_count) end

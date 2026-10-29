@@ -1,0 +1,122 @@
+---@meta _
+
+--- [SHARED AND MENU]
+---
+--- Punycode encoding/decoding library.
+---
+--- Punycode represents Unicode text using only the ASCII letters, digits and hyphen
+--- (`[a-z0-9-]`), it is used by IDNA to store internationalized domain names in DNS, where
+--- each encoded label is marked with the ACE prefix `"xn--"`.
+---
+--- * `punycode.pack` / `punycode.unpack` work on a single label given as code points.
+--- * `punycode.encode` / `punycode.decode` work on a whole UTF-8 domain, label by label.
+---
+--- Only the Punycode transform itself is implemented, IDNA mapping and
+--- normalization (lowercasing, NFC, disallowed characters) are left to the caller.
+---
+--- See https://en.wikipedia.org/wiki/Punycode
+---
+--- RFC 3492: https://datatracker.ietf.org/doc/html/rfc3492
+---
+---@class punycode
+punycode = {}
+
+--- [SHARED AND MENU]
+---
+--- Encodes a single label, given as Unicode code points, into Punycode.
+---
+--- A label made of basic (ASCII) code points only is returned as is, without
+--- the `"xn--"` prefix or the trailing `"-"` delimiter, the way IDNA treats such labels.
+---
+--- Basic code points keep their case, the encoded digits are always lowercase.
+---
+--- ```lua
+--- punycode.pack( { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E } ) -- "xn--mnchen-3ya"
+--- punycode.pack( { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, nil, true ) -- "mnchen-3ya"
+--- punycode.pack( { 0x61, 0x62, 0x63 } ) -- "abc"
+--- ```
+---
+---@param codepoints integer[] The code points of the label to encode.
+---@param codepoint_count? integer The number of code points to encode, defaults to the length of `codepoints`.
+---@param ignore_prefix? boolean If `true`, the `"xn--"` prefix is not prepended to the result.
+---@param lax? boolean If `true`, surrogates (U+D800 - U+DFFF) and code points above U+10FFFF are encoded as well instead of being rejected.
+---@return string | nil punycode_str The Punycode string, `nil` if an error occurred.
+---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
+function punycode.pack(codepoints, codepoint_count, ignore_prefix, lax) end
+
+--- [SHARED AND MENU]
+---
+--- Decodes a single Punycode label into Unicode code points.
+---
+--- Unless `ignore_prefix` is `true`, the label must start with the `"xn--"` prefix
+--- (case-insensitive), a label without it is treated as plain UTF-8 and returned as is.
+---
+--- Encoded digits are case-insensitive, basic code points are copied without case changes.
+---
+--- ```lua
+--- punycode.unpack( "xn--mnchen-3ya" ) -- { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, 7
+--- punycode.unpack( "mnchen-3ya", true ) -- { 0x6D, 0xFC, 0x6E, 0x63, 0x68, 0x65, 0x6E }, 7
+--- punycode.unpack( "xn--b" ) -- nil, nil, "invalid input exception occurred"
+--- ```
+---
+--- Invalid UTF-8 in a label without the prefix raises an error, unless `lax` is `true`.
+---
+---@param punycode_str string The Punycode label to decode.
+---@param ignore_prefix? boolean If `true`, `punycode_str` is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param lax? boolean If `true`, non-ASCII bytes before the delimiter, surrogates and code points above U+10FFFF are accepted instead of being rejected.
+---@return integer[] | nil codepoints The decoded code points, `nil` if an error occurred.
+---@return integer | nil codepoint_count The number of decoded code points, `nil` if an error occurred.
+---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
+function punycode.unpack(punycode_str, ignore_prefix, lax) end
+
+--- [SHARED AND MENU]
+---
+--- Encodes a UTF-8 domain name into its ASCII (Punycode) form.
+---
+--- The string is split on `"."` and every label containing non-ASCII characters is
+--- encoded with `punycode.pack`, ASCII-only labels and empty labels are left untouched.
+---
+--- ```lua
+--- punycode.encode( "münchen.de" ) -- "xn--mnchen-3ya.de"
+--- punycode.encode( "bücher.example.рф" ) -- "xn--bcher-kva.example.xn--p1ai"
+--- punycode.encode( "münchen.de", true ) -- "mnchen-3ya.de"
+--- ```
+---
+--- Invalid UTF-8 raises an error, unless `lax` is `true`.
+---
+---@param str string The UTF-8 domain name to encode.
+---@param ignore_prefix? boolean If `true`, encoded labels are not prefixed with `"xn--"`.
+---@param start_position? integer The position to start from in bytes, negative values count from the end.
+---@param end_position? integer The position to end at in bytes, negative values count from the end.
+---@param lax? boolean If `true`, invalid UTF-8 sequences become U+FFFD and surrogates are encoded as well instead of being rejected.
+---@return string | nil punycode_str The encoded domain name, `nil` if an error occurred.
+---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
+function punycode.encode(str, ignore_prefix, start_position, end_position, lax) end
+
+--- [SHARED AND MENU]
+---
+--- Decodes an ASCII (Punycode) domain name into UTF-8.
+---
+--- The string is split on `"."` and every label starting with `"xn--"` (case-insensitive)
+--- is decoded with `punycode.unpack`, other labels are left untouched.
+---
+--- ```lua
+--- punycode.decode( "xn--mnchen-3ya.de" ) -- "münchen.de"
+--- punycode.decode( "mnchen-3ya", true ) -- "münchen"
+--- punycode.decode( "xn--b.de" ) -- nil, "invalid input exception occurred"
+--- ```
+---
+--- Invalid UTF-8 in labels without the prefix raises an error, unless `lax` is `true`.
+---
+---@param punycode_str string The domain name to decode.
+---@param ignore_prefix? boolean If `true`, every label is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param start_position? integer The position to start from in bytes, negative values count from the end.
+---@param end_position? integer The position to end at in bytes, negative values count from the end.
+---@param lax? boolean If `true`, malformed labels are decoded leniently and invalid code points become U+FFFD instead of being rejected.
+---@return string | nil str The decoded UTF-8 domain name, `nil` if an error occurred.
+---@return nil | string err_msg The error message, `nil` if no error occurred.
+---@nodiscard
+function punycode.decode(punycode_str, ignore_prefix, start_position, end_position, lax) end

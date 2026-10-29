@@ -1,21 +1,22 @@
-# DreamWork - Garry's Mod Lua Runtime
+# dreamwork meta
 
-⚠ **ATTENTION THE PROJECT IS STILL IN DEVELOPMENT. UNSTABLE OPERATION, BUGS AND UNPREDICTABLE EXECUTION OF FUNCTIONS ARE POSSIBLE.**
+Generated [LuaLS](https://luals.github.io) definitions for the dreamwork `std` environment,
+do not edit this branch by hand, it is rebuilt from `main` by `.github/workflows/meta.yml`.
 
-![under-construction](https://user-images.githubusercontent.com/2846578/50296605-d76e5780-0448-11e9-9e16-39917d203b98.gif)
+Packages run inside `dreamwork.std`, so everything is declared as a global here:
+`std.print` is `print`, `dreamwork.std.Queue` is `Queue`, and so on.
 
-## Description
+## Usage
 
-Garry's Mod Lua project aimed at expanding the game's functionality and improving performance.
+Add the `library` folder of this branch to your workspace libraries, e.g. in `.luarc.json`:
 
-The project includes a package manager and supports many third-party APIs. The framework itself greatly expands the capabilities of developers for designing complex and comprehensive systems and games based on Garry's Mod.
+```json
+{
+    "runtime.version": "LuaJIT",
+    "workspace.library": [ "path/to/dreamwork-meta/library" ]
+}
+```
 
-After many years of hard work I can finally say that we have created a truly powerful runtime for developers ;>
+or clone the branch into a LuaLS addons folder, it is a valid addon (`config.json` + `library`).
 
-## Bugs and Suggestions
-
-If you have any ideas or found a bug or error, please report it to us, we will try to fix it or explain what the problem is.
-
-## Documentation
-
-Documentation is in development, release time is not available.
+Source commit: `428be25d04c647de9f20d8436eca02d631e245cc`
