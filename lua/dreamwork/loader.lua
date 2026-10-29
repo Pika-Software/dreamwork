@@ -925,45 +925,6 @@ sendfile( "dreamwork/std/types/node.lua" )
 
 do
 
-    ---@class dreamwork.GModTimerLib
-    ---@field Simple fun( delay: number, fn: fun() )
-    ---@diagnostic disable-next-line: undefined-global
-    local timer = timer
-    local timer_Simple = timer.Simple or debug_fempty
-
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the `fn` function after `delay` seconds.
-    ---
-    --- **Usage example:**
-    ---
-    --- ```lua
-    --- std.setTimeout( function()
-    ---     print( "Hello, world!" )
-    --- end, 5 ) -- Calls the function after 5 seconds.
-    --- ```
-    ---
-    ---@param fn function The callback function.
-    ---@param delay? number The delay in seconds, default is `0`.
-    ---@param ... any Additional arguments to pass to the callback function.
-    function std.setTimeout( fn, delay, ... )
-        local arg_count = raw_select( "#", ... )
-        if arg_count ~= 0 then
-            local args = { ... }
-            local callback = fn
-
-            fn = function()
-                callback( table_unpack( args, 1, arg_count ) )
-            end
-        end
-
-        timer_Simple( delay or 0, fn )
-    end
-
-end
-
-do
-
     ---@class dreamwork.std
     ---@field SYSTEM_OSX boolean `true` if the game is running on OSX.
     ---@field SYSTEM_LINUX boolean `true` if the game is running on Linux.
@@ -2824,6 +2785,179 @@ do
 
 end
 
+-- engine timers
+dofile( "dreamwork/engine.timer.lua" )
+sendfile( "dreamwork/engine.timer.lua" )
+
+do
+
+    local dreamwork_errorHandler = dreamwork.errorHandler
+    local timer                  = engine.timer
+
+    do
+
+        ---@type table<integer, function>
+        local timeouts          = {}
+
+        ---@type table<integer, any[]>
+        local timeout_arguments = {}
+
+        local timeout_count     = 0
+
+        ---@param timeout_id integer
+        local function timeout_call( timeout_id )
+            local fn = timeouts[ timeout_id ]
+            if fn == nil then
+                -- cleared
+                return
+            end
+
+            local args = timeout_arguments[ timeout_id ]
+
+            timeouts[ timeout_id ] = nil
+            timeout_arguments[ timeout_id ] = nil
+
+            if args == nil then
+                xpcall( fn, dreamwork_errorHandler )
+            else
+                xpcall( fn, dreamwork_errorHandler, table_unpack( args, 1, args[ 0 ] ) )
+            end
+        end
+
+        dreamwork.hideErrorFrame( timeout_call )
+
+        --- [SHARED AND MENU]
+        ---
+        --- Calls the `fn` function after `delay` seconds.
+        ---
+        --- **Usage example:**
+        ---
+        --- ```lua
+        --- std.setTimeout( function()
+        ---     print( "Hello, world!" )
+        --- end, 5 ) -- Calls the function after 5 seconds.
+        --- ```
+        ---
+        ---@param fn function The callback function.
+        ---@param delay? number The delay in seconds, default is `0`.
+        ---@param ... any Additional arguments to pass to the callback function.
+        ---@return integer timeout_id The identifier of the timeout, used to cancel it with `std.clearTimeout`.
+        function std.setTimeout( fn, delay, ... )
+            timeout_count = timeout_count + 1
+
+            local timeout_id = timeout_count
+            timeouts[ timeout_id ] = fn
+
+            local arg_count = raw_select( "#", ... )
+            if arg_count ~= 0 then
+                timeout_arguments[ timeout_id ] = { [ 0 ] = arg_count, ... }
+            end
+
+            timer.simple( delay or 0, function()
+                return timeout_call( timeout_id )
+            end )
+
+            return timeout_id
+        end
+
+        --- [SHARED AND MENU]
+        ---
+        --- Cancels a timeout created by `std.setTimeout`, so its callback will not be called.
+        ---
+        --- **Usage example:**
+        ---
+        --- ```lua
+        --- local timeout_id = std.setTimeout( function()
+        ---     print( "This will never be printed." )
+        --- end, 5 )
+        ---
+        --- std.clearTimeout( timeout_id )
+        --- ```
+        ---
+        ---@param timeout_id integer The identifier of the timeout returned by `std.setTimeout`.
+        ---@return boolean is_cleared Returns `true` if the timeout was found and cancelled, otherwise `false`.
+        function std.clearTimeout( timeout_id )
+            local fn = timeouts[ timeout_id ]
+            if fn == nil then
+                return false
+            end
+
+            timeout_arguments[ timeout_id ] = nil
+            timeouts[ timeout_id ] = nil
+
+            return true
+        end
+
+    end
+
+    do
+
+        local interval_count = 0
+
+        --- [SHARED AND MENU]
+        ---
+        --- Calls the `fn` function every `delay` seconds, until the interval is cancelled with `std.clearInterval`.
+        ---
+        --- **Usage example:**
+        ---
+        --- ```lua
+        --- local interval_id = std.setInterval( function()
+        ---     print( "Hello, world!" )
+        --- end, 1 ) -- Calls the function every second.
+        ---
+        --- std.setTimeout( function()
+        ---     std.clearInterval( interval_id )
+        --- end, 5 ) -- Stops it after 5 seconds.
+        --- ```
+        ---
+        ---@param fn function The callback function.
+        ---@param delay? number The delay between calls in seconds, default is `1`.
+        ---@param ... any Additional arguments to pass to the callback function.
+        ---@return integer interval_id The identifier of the interval, used to cancel it with `std.clearInterval`.
+        function std.setInterval( fn, delay, ... )
+            interval_count = interval_count + 1
+
+            local arg_count = raw_select( "#", ... )
+            if arg_count ~= 0 then
+                local args = { ... }
+                local callback = fn
+
+                function fn()
+                    return callback( table_unpack( args, 1, arg_count ) )
+                end
+            end
+
+            local name = string_format( "dreamwork.interval.%d", interval_count )
+            timer.create( name, delay or 1, 0, fn )
+            timer.start( name )
+
+            return interval_count
+        end
+
+        --- [SHARED AND MENU]
+        ---
+        --- Cancels an interval created by `std.setInterval`, so its callback will not be called anymore.
+        ---
+        --- **Usage example:**
+        ---
+        --- ```lua
+        --- local interval_id = std.setInterval( function()
+        ---     print( "Hello, world!" )
+        --- end, 1 )
+        ---
+        --- std.clearInterval( interval_id )
+        --- ```
+        ---
+        ---@param interval_id integer The identifier of the interval returned by `std.setInterval`.
+        ---@return boolean is_cleared Returns `true` if the interval was found and cancelled, otherwise `false`.
+        function std.clearInterval( interval_id )
+            return timer.remove( string_format( "dreamwork.interval.%d", interval_id ) )
+        end
+
+    end
+
+end
+
 -- futures library
 dofile( "dreamwork/std/futures.lua" )
 sendfile( "dreamwork/std/futures.lua" )
@@ -2922,8 +3056,8 @@ dofile( "dreamwork/std/types/hook.lua" )
 sendfile( "dreamwork/std/types/hook.lua" )
 
 -- timer class
-dofile( "dreamwork/std/engine/types/timer.lua" )
-sendfile( "dreamwork/std/engine/types/timer.lua" )
+dofile( "dreamwork/std/types/timer.lua" )
+sendfile( "dreamwork/std/types/timer.lua" )
 
 if dreamwork.TickTimer0_05 == nil then
     local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )
