@@ -157,11 +157,10 @@ do
 
                 if uint8_2 == 0x78 --[[ "x" ]] then
                     if start_index + 3 <= end_index then
-                        sequence_length = 4
-
                         local decoded_uint8 = bytepack_readHex8( string_byte( escaped_str, start_index + 2, start_index + 3 ) )
                         if decoded_uint8 ~= nil then
                             unescape_sequence = string_char( decoded_uint8 )
+                            sequence_length = 4
                         end
                     end
                 else
@@ -210,7 +209,7 @@ function string.fnv0( str )
         hash_int = rbit_bxor( hash_int, string_byte( str, index, index ) )
     end
 
-    return hash_int % 0xFFFFFFFF
+    return hash_int % 0x100000000
 end
 
 --- [SHARED AND MENU]
@@ -230,7 +229,7 @@ function string.fnv1( str )
         hash_int = rbit_bxor( hash_int, string_byte( str, index, index ) )
     end
 
-    return hash_int % 0xFFFFFFFF
+    return hash_int % 0x100000000
 end
 
 --- [SHARED AND MENU]
@@ -250,5 +249,5 @@ function string.fnv1a( str )
         hash_int = hash_int + rbit_lshift( hash_int, 1 ) + rbit_lshift( hash_int, 4 ) + rbit_lshift( hash_int, 7 ) + rbit_lshift( hash_int, 8 ) + rbit_lshift( hash_int, 24 )
     end
 
-    return hash_int % 0xFFFFFFFF
+    return hash_int % 0x100000000
 end
