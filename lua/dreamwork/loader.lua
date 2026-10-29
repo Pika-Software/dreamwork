@@ -3048,6 +3048,10 @@ sendfile( "dreamwork/std/crypto/hkdf.lua" )
 dofile( "dreamwork/std/crypto/chacha20.lua" )
 sendfile( "dreamwork/std/crypto/chacha20.lua" )
 
+-- cryptographically secure random
+dofile( "dreamwork/std/crypto/random.lua" )
+sendfile( "dreamwork/std/crypto/random.lua" )
+
 -- uuid library
 dofile( "dreamwork/std/uuid.lua" )
 sendfile( "dreamwork/std/uuid.lua" )
