@@ -1480,13 +1480,13 @@ do
     ---
     ---@param str string The string to print.
     function engine.consoleMessage( str )
-        local index, str_length = 1, utf8_len( str )
+        local index, str_length = 1, utf8_len( str, nil, nil, true )
 
         while str_length ~= 0 do
             -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
             -- by Retr0 ( 989 characters per message )
             local segment_length = math_min( 989, str_length )
-            Msg( utf8_sub( str, index, index + segment_length - 1 ) )
+            Msg( utf8_sub( str, index, index + segment_length - 1, true ) )
             str_length = str_length - segment_length
             index = index + segment_length
         end
@@ -1510,14 +1510,14 @@ do
         ---@param str string The string to print.
         ---@param color dreamwork.std.Color The color to print the string with.
         function engine.consoleMessageColored( str, color )
-            local index, str_length = 1, utf8_len( str )
+            local index, str_length = 1, utf8_len( str, nil, nil, true )
             color_buffer:update( color or 0xFFFFFF )
 
             while str_length ~= 0 do
                 -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
                 -- by Retr0 ( 989 characters per message )
                 local segment_length = math_min( 989, str_length )
-                MsgC( color_buffer, utf8_sub( str, index, index + segment_length - 1 ) )
+                MsgC( color_buffer, utf8_sub( str, index, index + segment_length - 1, true ) )
                 str_length = str_length - segment_length
                 index = index + segment_length
             end
