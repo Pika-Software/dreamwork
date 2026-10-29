@@ -1,15 +1,24 @@
-local _G = _G
+local glua_table = table
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
 local len = std.len
 local next = std.next
-local select = std.select
+local isTable = std.isTable
+
+local raw = std.raw
+local raw_pairs = raw.pairs
+local raw_select = raw.select
+
+local debug = std.debug
+local debug_iscf = debug.iscf
+local debug_getmetavalue = debug.getmetavalue
 
 local math = std.math
 local math_min = math.min
 local math_floor = math.floor
+local math_range = math.range
 local math_random = math.random
 local math_relative = math.relative
 
@@ -18,148 +27,175 @@ local math_relative = math.relative
 --- The table library is a standard Lua library which provides functions to manipulate tables.
 ---
 ---@class dreamwork.std.table
-local table = std.table or {}
+local table = {}
 std.table = table
 
-do
+-- Lua 5.1
+table.concat = glua_table.concat
+-- table.insert = glua_table.insert
+table.remove = glua_table.remove
+table.sort = glua_table.sort
 
-    local debug_iscf = std.debug.iscf
-    local glua_table = _G.table
+table.maxn = glua_table.maxn -- removed in Lua 5.2
 
-    -- Lua 5.1
-    table.concat = glua_table.concat
-    -- table.insert = glua_table.insert
-    table.remove = glua_table.remove
-    table.sort = glua_table.sort
+-- Lua 5.2
+local table_pack = glua_table.pack
+if table_pack ~= nil and debug_iscf( table_pack ) then
+    table.pack = table_pack
+end
 
-    table.maxn = glua_table.maxn -- removed in Lua 5.2
-
-    -- Lua 5.2
-    local table_pack = glua_table.pack
-    if table_pack ~= nil and debug_iscf( table_pack ) then
-        table.pack = table_pack
-    end
-
-    if table.pack == nil then
-        ---@generic V
-        ---@param ... V
-        ---@return V[]
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function table.pack( ... )
-            return { n = select( "#", ... ), ... }
-        end
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Inserts a value into a table at the specified index.
-    ---
+if table.pack == nil then
     ---@generic V
-    ---
-    ---@overload fun( tbl: V[], value: V ): integer
-    ---
-    ---@param tbl V[] The table to insert the value into.
-    ---@param index integer The index to insert the value at.
-    ---@param value V The value to insert.
-    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
-    ---@return integer index The index of the inserted value.
+    ---@param ... V
+    ---@return V[]
+    ---@nodiscard
     ---@diagnostic disable-next-line: duplicate-set-field
-    function table.insert( tbl, index, value, tbl_length )
-        if tbl_length == nil then
-            tbl_length = len( tbl )
-        end
+    function table.pack( ... )
+        return { n = raw_select( "#", ... ), ... }
+    end
+end
 
-        if value == nil then
-            value, index = index, tbl_length + 1
-            tbl[ index ] = value
-            return index
-        end
+--- [SHARED AND MENU]
+---
+--- Inserts a value into a table at the specified index.
+---
+---@generic V
+---
+---@overload fun( tbl: V[], value: V ): integer
+---
+---@param tbl V[] The table to insert the value into.
+---@param index integer The index to insert the value at.
+---@param value V The value to insert.
+---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@return integer index The index of the inserted value.
+---@diagnostic disable-next-line: duplicate-set-field
+function table.insert( tbl, index, value, tbl_length )
+    if tbl_length == nil then
+        tbl_length = len( tbl )
+    end
 
-        if index == nil then
-            index = tbl_length + 1
-        elseif index < 0 then
-            index = math_relative( index, tbl_length + 1 )
-        else
-            index = math_min( index, tbl_length + 1 )
-        end
-
-        if index > tbl_length then
-            tbl[ index ] = value
-            return index
-        end
-
-        if index == tbl_length then
-            tbl[ index + 1 ], tbl[ index ] = tbl[ index ], value
-            return index
-        end
-
-        for j = tbl_length, index, -1 do
-            tbl[ j + 1 ] = tbl[ j ]
-        end
-
+    if value == nil then
+        value, index = index, tbl_length + 1
         tbl[ index ] = value
         return index
     end
 
-    table.unpack = glua_table.unpack or _G.unpack
-
-    -- Lua 5.3
-    local table_move = glua_table.move
-    if table_move ~= nil and debug_iscf( table_move ) then
-        table.move = table_move
+    if index == nil then
+        index = tbl_length + 1
+    elseif index < 0 then
+        index = math_relative( index, tbl_length + 1 )
+    else
+        index = math_min( index, tbl_length + 1 )
     end
 
-    if table.move == nil then
+    if index > tbl_length then
+        tbl[ index ] = value
+        return index
+    end
 
-        --- [SHARED AND MENU]
-        ---
-        --- Moves elements from one table to another.
-        ---
-        ---@generic V
-        ---@param source V[] The source table.
-        ---@param start_position? integer The start position of the source table, defaults to 1.
-        ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
-        ---@param offset? integer The start position of the destination table, defaults to 1.
-        ---@param destination? V[] The destination table, defaults to the source table.
-        ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
-        ---@return V[] destination Selected destination table.
-        ---@diagnostic disable-next-line: duplicate-set-field
-        function table.move( source, start_position, end_position, offset, destination, source_length )
-            if destination == nil then
-                destination = source
-            end
+    if index == tbl_length then
+        tbl[ index + 1 ], tbl[ index ] = tbl[ index ], value
+        return index
+    end
 
-            if source_length == nil then
-                source_length = len( source )
-            end
+    for j = tbl_length, index, -1 do
+        tbl[ j + 1 ] = tbl[ j ]
+    end
 
-            if start_position == nil then
-                start_position = 1
-            elseif start_position < 0 then
-                start_position = math_relative( start_position, source_length )
-            else
-                start_position = math_min( start_position, source_length )
-            end
+    tbl[ index ] = value
+    return index
+end
 
-            if end_position == nil then
-                end_position = source_length
-            elseif end_position < 0 then
-                end_position = math_relative( end_position, source_length )
-            else
-                end_position = math_min( end_position, source_length )
-            end
+table.unpack = glua_table.unpack or unpack
 
-            if offset == nil then
-                offset = 1
-            end
+-- Lua 5.3
+local table_move = glua_table.move
+if table_move ~= nil and debug_iscf( table_move ) then
+    table.move = table_move
+end
 
-            for index = 0, end_position - start_position, 1 do
-                destination[ offset + index ] = source[ start_position + index ]
-            end
+if table.move == nil then
 
-            return destination
+    --- [SHARED AND MENU]
+    ---
+    --- Moves elements from one table to another.
+    ---
+    ---@generic V
+    ---@param source V[] The source table.
+    ---@param start_position? integer The start position of the source table, defaults to 1.
+    ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
+    ---@param offset? integer The start position of the destination table, defaults to 1.
+    ---@param destination? V[] The destination table, defaults to the source table.
+    ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
+    ---@return V[] destination Selected destination table.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function table.move( source, start_position, end_position, offset, destination, source_length )
+        if destination == nil then
+            destination = source
         end
 
+        if source_length == nil then
+            source_length = len( source )
+        end
+
+        local start_index, end_index = math_range( source_length, start_position, end_position )
+
+        if offset == nil then
+            offset = 1
+        end
+
+        for index = 0, end_index - start_index, 1 do
+            destination[ offset + index ] = source[ start_index + index ]
+        end
+
+        return destination
+    end
+
+end
+
+do
+
+    local table_unpack = table.unpack
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a shallow copy of the given table.
+    ---
+    --- NOTE: This function is much faster that any other copy function and method,
+    --- but works and efficient enough only for small tables (up to 1000 elements).
+    ---
+    ---@generic V
+    ---@param tbl V[] The table to copy.
+    ---@return V[] The copied table.
+    ---@nodiscard
+    function table.shallowCopy( tbl )
+        return { table_unpack( tbl ) }
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a range of elements from the given table.
+    ---
+    ---@generic V
+    ---@param tbl V[] The table to get the range from.
+    ---@param start_position? integer The start position of the range.
+    ---@param end_position? integer The end position of the range.
+    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@return V[] range_values The values of the range.
+    ---@return integer range_length The length of the range.
+    ---@nodiscard
+    function table.range( tbl, start_position, end_position, tbl_length )
+        if tbl_length == nil then
+            tbl_length = len( tbl )
+        end
+
+        local start_index, end_index = math_range( tbl_length, start_position, end_position )
+
+        if start_index > end_index then
+            return {}, 0
+        end
+
+        return { table_unpack( tbl, start_index, end_index ) }, end_index - start_index + 1
     end
 
 end
@@ -231,30 +267,17 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] slice The slice of the table.
 ---@return integer length The length of the sliced table.
+---@nodiscard
 function table.slice( tbl, start_position, end_position, step, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
-
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
     local slice, slice_size = {}, 0
 
-    for index = start_position, end_position, step or 1 do
+    for index = start_index, end_index, step or 1 do
         slice_size = slice_size + 1
         slice[ slice_size ] = tbl[ index ]
     end
@@ -294,6 +317,7 @@ end
 ---@param tbl V[] The table to truncate.
 ---@param tbl_length? integer The length of the truncated table. Optionally, it should be used to speed up calculations.
 ---@return V[] truncated The truncated table.
+---@nodiscard
 function table.truncated( tbl, tbl_length )
     local truncated = {}
 
@@ -343,30 +367,20 @@ function table.inject( destination, source, offset, start_position, end_position
         source_length = len( source )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, source_length )
-    else
-        start_position = math_min( start_position, source_length )
+    local start_index, end_index = math_range( source_length, start_position, end_position )
+
+    if start_index > end_index then
+        return
     end
 
-    if end_position == nil then
-        end_position = source_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, source_length )
-    else
-        end_position = math_min( end_position, source_length )
-    end
-
-    local steps = end_position - start_position
+    local steps = end_index - start_index
 
     for i = destination_length, offset, -1 do
         destination[ steps + i + 1 ] = destination[ i ]
     end
 
     for i = 0, steps, 1 do
-        destination[ offset + i ] = source[ start_position + i ]
+        destination[ offset + i ] = source[ start_index + i ]
     end
 end
 
@@ -386,33 +400,23 @@ function table.eject( tbl, start_position, end_position, tbl_length )
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
+    if start_index > end_index then
+        return {}, 0
     end
 
     local values, values_length = {}, 0
 
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         values_length = values_length + 1
         values[ values_length ] = tbl[ index ]
         tbl[ index ] = nil
     end
 
-    local distance = (end_position - start_position) + 1
+    local distance = (end_index - start_index) + 1
 
-    for index = end_position + 1, tbl_length, 1 do
+    for index = end_index + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 
@@ -423,9 +427,9 @@ end
 ---
 --- Returns true if the given table is empty.
 ---
----@generic K, V
----@param tbl table<K, V> The table to check.
+---@param tbl table The table to check.
 ---@return boolean result `true` if the table is empty, `false` otherwise.
+---@nodiscard
 function table.isEmpty( tbl )
     return next( tbl ) == nil
 end
@@ -441,6 +445,7 @@ end
 ---@param searchable V The value to search for.
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The index of the value.
+---@nodiscard
 function table.getIndex( tbl, searchable, tbl_length )
     for index = 1, tbl_length or len( tbl ), 1 do
         if tbl[ index ] == searchable then
@@ -461,6 +466,7 @@ end
 ---@param tbl table<K, V> The table to search.
 ---@param searchable V The value to search for.
 ---@return K | nil key The key of the value.
+---@nodiscard
 function table.getKey( tbl, searchable )
     local key, value = next( tbl, nil )
 
@@ -483,6 +489,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return K[] key_lst The list of keys.
 ---@return integer key_count The length of the list.
+---@nodiscard
 function table.keys( tbl )
     local key = next( tbl, nil )
     local keys, key_count = {}, 0
@@ -504,6 +511,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return V[] value_lst The list of values.
 ---@return integer value_count The length of the list.
+---@nodiscard
 function table.values( tbl )
     local key, value = next( tbl, nil )
     local values, value_count = {}, 0
@@ -524,6 +532,7 @@ end
 ---@generic K, V
 ---@param tbl table<K, V> The table.
 ---@return integer key_count The count of keys.
+---@nodiscard
 function table.count( tbl )
     local key, key_count = next( tbl, nil ), 0
 
@@ -568,6 +577,7 @@ end
 ---@generic K, V
 ---@param tbl table<K, V> The table to flip.
 ---@return table<V, K> result The flipped table.
+---@nodiscard
 function table.flipped( tbl )
     local key, value = next( tbl, nil )
     local result = {}
@@ -592,6 +602,7 @@ end
 ---@param tbl table<K, V> The table.
 ---@return dreamwork.std.table.Pair<K, V>[] result The list of key/value pairs ( sequential table ).
 ---@return integer result_length The length of the list.
+---@nodiscard
 function table.pairs( tbl )
     local result, result_length = {}, 0
     local key, value = next( tbl, nil )
@@ -611,6 +622,7 @@ end
 ---
 ---@param tbl table The table to check.
 ---@return boolean is_sequential `true` if the table is sequential, `false` otherwise.
+---@nodiscard
 function table.isSequential( tbl )
     local key, index = next( tbl, nil ), 1
 
@@ -683,6 +695,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V value The random value.
 ---@return integer | nil index The index of the value.
+---@nodiscard
 function table.randomVI( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -706,6 +719,7 @@ end
 ---@param tbl table<K, V> The key-value table.
 ---@return V value The random value.
 ---@return K key The key of the value.
+---@nodiscard
 function table.randomVK( tbl )
     local key, key_count = next( tbl, nil ), 0
     while key ~= nil do
@@ -787,6 +801,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] reversed The reversed table.
 ---@return integer length The length of the reversed table.
+---@nodiscard
 function table.reversed( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -813,6 +828,7 @@ do
     ---@param value V The value to fill the table with.
     ---@param ... integer The sizes of the table.
     ---@return V[] tbl The created table.
+    ---@nodiscard
     local function create( value, size, ... )
         if size == nil then
             return value
@@ -842,30 +858,17 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] values The extracted values.
 ---@return integer length The length of the extracted values.
+---@nodiscard
 function table.extract( tbl, start_position, end_position, step_size, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
-    end
-
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
 
     local extracted, extracted_length = {}, 0
 
-    for index = start_position, end_position, step_size or 1 do
+    for index = start_index, end_index, step_size or 1 do
         extracted_length = extracted_length + 1
         extracted[ extracted_length ] = tbl[ index ]
     end
@@ -887,6 +890,7 @@ end
 ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
 ---@return V[] mapped The new mapped sequential table.
 ---@return integer mapped_length The length of the new mapped sequential table.
+---@nodiscard
 function table.map( tbl, fn, tbl_length )
     local mapped, mapped_length = {}, 0
 
@@ -921,6 +925,7 @@ do
     ---@param tbl table<K, V> The key/value table.
     ---@param fn fun( key: K, value: V ): V | nil The function to apply.
     ---@return table<K, V> transformed The new transformed key/value table.
+    ---@nodiscard
     function table.transform( tbl, fn )
         local transformed = {}
 
@@ -989,31 +994,56 @@ function table.removeByRange( tbl, start_position, end_position, tbl_length )
         tbl_length = len( tbl )
     end
 
-    if start_position == nil then
-        start_position = 1
-    elseif start_position < 0 then
-        start_position = math_relative( start_position, tbl_length )
-    else
-        start_position = math_min( start_position, tbl_length )
+    local start_index, end_index = math_range( tbl_length, start_position, end_position )
+
+    if start_index > end_index then
+        return
     end
 
-    if end_position == nil then
-        end_position = tbl_length
-    elseif end_position < 0 then
-        end_position = math_relative( end_position, tbl_length )
-    else
-        end_position = math_min( end_position, tbl_length )
-    end
-
-    for index = start_position, end_position, 1 do
+    for index = start_index, end_index, 1 do
         tbl[ index ] = nil
     end
 
-    local distance = (end_position - start_position) + 1
+    local distance = (end_index - start_index) + 1
 
-    for index = end_position + 1, tbl_length, 1 do
+    for index = end_index + 1, tbl_length, 1 do
         tbl[ index - distance ], tbl[ index ] = tbl[ index ], nil
     end
 end
 
-return table
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- Creates a shallow copy of the given table.
+    ---
+    --- The original table is not modified.
+    ---
+    --- The returned table is a shallow copy of the original table.
+    ---
+    ---@generic T
+    ---@param tbl T The table to copy.
+    ---@return T copy The copied table.
+    ---@nodiscard
+    local function copy_fn( tbl )
+        local fn = debug_getmetavalue( tbl, "__copy" )
+        if fn ~= nil then
+            return fn( tbl )
+        end
+
+        local copy_tbl = {}
+
+        for key, value in raw_pairs( tbl ) do
+            if isTable( value ) then
+                copy_tbl[ key ] = copy_fn( value )
+            else
+                copy_tbl[ key ] = value
+            end
+        end
+
+        return copy_tbl
+    end
+
+    table.copy = copy_fn
+
+end

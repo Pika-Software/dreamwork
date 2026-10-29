@@ -1,0 +1,41 @@
+{
+  "languages": {
+    "Lua": {
+      "format_on_save": "on",
+      "formatter": "language_server",
+    },
+  },
+  "lsp": {
+    "lua-language-server": {
+      "settings": {
+        "Lua": {
+          "runtime": {
+            "version": "LuaJIT",
+            "builtin": {
+              "basic": "disable",
+              "bit": "disable",
+              "bit32": "disable",
+              "jit": "disable",
+              "jit.util": "disable",
+              "ffi": "disable",
+              "os": "disable",
+              "io": "disable",
+              "math": "disable",
+              "debug": "disable",
+              "string": "disable",
+              "package": "disable",
+              "utf8": "disable",
+            },
+          },
+          "workspace": {
+            "checkThirdParty": false,
+            "library": [],
+          },
+          "diagnostics": {
+            "disable": ["duplicate-set-field", "lowercase-global"],
+          },
+        },
+      },
+    },
+  },
+}

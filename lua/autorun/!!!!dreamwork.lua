@@ -1,2 +1,3 @@
 assert( not dreamwork, "'dreamwork' is already loaded!" )
-include( "dreamwork/init.lua" )
+---@diagnostic disable-next-line: undefined-global
+include( "dreamwork/loader.lua" )

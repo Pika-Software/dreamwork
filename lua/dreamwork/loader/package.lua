@@ -7,17 +7,31 @@ local std = dreamwork.std
 local class = std.class
 local Version = std.Version
 
----@class dreamwork.Package: dreamwork.std.Object
----@field __class dreamwork.PackageClass
+
+---@class dreamwork.std.Module : dreamwork.std.Object
+---@field file dreamwork.std.File
+local Module = class.base( "Module", true, nil )
+
+
+function Module:__gc()
+    -- TODO: cleanup everything (hooks, caches etc.)
+end
+
+---@class dreamwork.std.ModuleClass : dreamwork.std.Module
+local ModuleClass = class.create( Module )
+
+
+---@class dreamwork.std.Package: dreamwork.std.Object
+---@field __class dreamwork.std.PackageClass
 ---@field name string
----@field version Version
+---@field version dreamwork.std.Version
 ---@field prefix string
 ---@field commands table
 local Package = class.base( "Package", true )
 
----@class dreamwork.PackageClass: dreamwork.Package
----@field __base dreamwork.Package
----@overload fun( name: string, version: string | Version ): Package
+---@class dreamwork.std.PackageClass : dreamwork.std.Package
+---@field __base dreamwork.std.Package
+---@overload fun( name: string, version: ( string | dreamwork.std.Version ) ): dreamwork.std.Package
 local PackageClass = class.create( Package )
 dreamwork.Package = PackageClass
 
@@ -37,13 +51,13 @@ local cache = {}
 ]]
 
 ---@param name string
----@param version string | Version
+---@param version string
 ---@protected
 function Package:__init( name, version )
     local prefix = name .. "@" .. version
     self.prefix = prefix
 
-    self.version = Version( version )
+    self.version = Version.fromString( version )
 
     package.console_variables = {}
     package.console_commands = {}

@@ -1,0 +1,1 @@
+-- TODO: https://wiki.facepunch.com/gmod/Global.Path must be implemented as separate navigation library

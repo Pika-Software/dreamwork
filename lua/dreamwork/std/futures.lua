@@ -1,69 +1,113 @@
---- Python-like futures, made by Retr0
+---@class dreamwork
+local dreamwork = dreamwork
+
+local dreamwork_toError = dreamwork.toError
+local dreamwork_catchError = dreamwork.catchError
+local dreamwork_errorHandler = dreamwork.errorHandler
+local dreamwork_isErrorFrameHidden = dreamwork.isErrorFrameHidden
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local gc_setTableRules = std.gc.setTableRules
-local pcall, xpcall = std.pcall, std.xpcall
-local isFunction = std.isFunction
-local tostring = std.tostring
+local debug = std.debug
+local debug_Stack = debug.Stack
+
+local gc = std.gc
+local gc_setTableRules = gc.setTableRules
+
+local table = std.table
+local table_remove = table.remove
+
+local string = std.string
+local string_format = string.format
 
 local coroutine = std.coroutine
-local string = std.string
-local Queue = std.Queue
+local coroutine_yield = coroutine.yield
+local coroutine_create = coroutine.create
+local coroutine_resume = coroutine.resume
+local coroutine_status = coroutine.status
+local coroutine_running = coroutine.running
 
 local class = std.class
 
+local setTimeout = std.setTimeout
+local tostring = std.tostring
+local xpcall = std.xpcall
+local error = std.error
+local copy = std.copy
+local len = std.len
+
+local isFunction = std.isFunction
+local isError = std.isError
+
+local AsyncError = std.AsyncError
+local Queue = std.Queue
+
+
 --- [SHARED AND MENU]
 ---
---- This library provides tools for asynchronous programming, such as Futures, Tasks, Channels, and async iterators.
+--- This library provides Python-like futures for asynchronous programming,
+--- such as `Futures`, `Tasks`, `Channels`, and async iterators.
+---
+--- Author: [Retr0](https://github.com/dankmolot)
 ---
 ---@class dreamwork.std.futures
-local futures = std.futures or {}
+local futures = {}
 std.futures = futures
 
--- TODO: use errors instead of string
--- TODO: make cancel error
+---@class dreamwork.Future
+---@field RESULT_YIELD dreamwork.std.Symbol
+---@field RESULT_ERROR dreamwork.std.Symbol
+---@field RESULT_END dreamwork.std.Symbol
+---@field ACTION_CANCEL dreamwork.std.Symbol
+---@field ACTION_RESUME dreamwork.std.Symbol
+---@field Listeners table<thread, function>
+---@field AsyncListeners table<thread, thread>
+---@field Stacks table<thread, dreamwork.std.debug.Stack>
+---@field Threads table<thread, thread>
+dreamwork.Future = dreamwork.Future or {
+    RESULT_YIELD = std.Symbol( "FUTURE_RESULT_YIELD" ),
+    RESULT_ERROR = std.Symbol( "FUTURE_RESULT_ERROR" ),
+    RESULT_END = std.Symbol( "FUTURE_RESULT_END" ),
 
----@package
----@enum dreamwork.std.futures.result
-futures.RESULT = futures.RESULT or {
-    YIELD = std.Symbol( "futures.RESULT_YIELD" ),
-    ERROR = std.Symbol( "futures.RESULT_ERROR" ),
-    END = std.Symbol( "futures.RESULT_END" )
+    ACTION_CANCEL = std.Symbol( "FUTURE_ACTION_CANCEL" ),
+    ACTION_RESUME = std.Symbol( "FUTURE_ACTION_RESUME" ),
+
+    ---@type table<thread, function>
+    Listeners = {},
+
+    ---@type table<thread, thread>
+    AsyncListeners = {},
+
+    ---@type table<thread, dreamwork.std.debug.Stack>
+    Stacks = {},
 }
 
----@package
----@enum dreamwork.std.futures.action
-futures.ACTION = futures.ACTION or {
-    CANCEL = std.Symbol( "futures.ACTION_CANCEL" ),
-    RESUME = std.Symbol( "futures.ACTION_RESUME" ),
-}
+local dreamwork_Future = dreamwork.Future
 
-local RESULT_YIELD = futures.RESULT.YIELD
-local RESULT_ERROR = futures.RESULT.ERROR
-local RESULT_END = futures.RESULT.END
+local RESULT_YIELD = dreamwork_Future.RESULT_YIELD
+local RESULT_ERROR = dreamwork_Future.RESULT_ERROR
+local RESULT_END = dreamwork_Future.RESULT_END
 
-local ACTION_CANCEL = futures.ACTION.CANCEL
-local ACTION_RESUME = futures.ACTION.RESUME
+local ACTION_CANCEL = dreamwork_Future.ACTION_CANCEL
+local ACTION_RESUME = dreamwork_Future.ACTION_RESUME
 
----@private
----@type { [thread]: function }
-local listeners = futures.listeners
-if listeners == nil then
-    listeners = {}
-    futures.listeners = listeners
-    gc_setTableRules( listeners, true, false )
-end
+local Listeners = dreamwork_Future.Listeners
+gc_setTableRules( Listeners, true, false )
 
----@private
----@type { [thread]: thread }
-local coroutine_listeners = futures.coroutine_listeners
-if coroutine_listeners == nil then
-    coroutine_listeners = {}
-    futures.coroutine_listeners = coroutine_listeners
-    gc_setTableRules( coroutine_listeners, true, false )
-end
+local AsyncListeners = dreamwork_Future.AsyncListeners
+gc_setTableRules( AsyncListeners, true, false )
+
+local Stacks = dreamwork_Future.Stacks
+
+std.setmetatable( Stacks, {
+    __index = function( self, thread )
+        local stack = debug_Stack()
+        self[ thread ] = stack
+        return stack
+    end,
+    __mode = "k"
+} )
 
 --- [SHARED AND MENU]
 ---
@@ -76,105 +120,181 @@ end
 ---@alias dreamwork.std.futures.Awaitable { await: async fun(...): ... }
 ---@alias Awaitable dreamwork.std.futures.Awaitable
 
-local coroutine_running = coroutine.running
 futures.running = coroutine_running
-
-local coroutine_resume = coroutine.resume
-futures.wakeup = coroutine_resume
-
-local coroutine_create = coroutine.create
-local coroutine_status = coroutine.status
-local coroutine_yield = coroutine.yield
-
--- TODO: replace this crap with normal errors
-local ErrorNoHaltWithStack = _G.ErrorNoHaltWithStack
-
-local function display_error( message )
-    return ErrorNoHaltWithStack( message )
-end
-
-local async_thread_result
-do
-
-    local string_find = string.find
-    local isString = std.isString
-
-    ---@async
-    ---@param ok boolean
-    function async_thread_result( ok, value, ... )
-        local fn = listeners[ coroutine_running() ]
-        if isFunction( fn ) then
-            fn( ok, value, ... )
-        elseif not ok then
-            -- TODO: use errors instead of this string
-            if isString( value ) and string_find( value, "Operation was cancelled" ) then
-                return
-            end
-
-            ErrorNoHaltWithStack( value )
-        end
-    end
-
-end
-
----@async
-local function async_thread( fn, ... )
-    return async_thread_result( pcall( fn, ... ) )
-end
 
 --- [SHARED AND MENU]
 ---
---- Executes a function in a new coroutine
---- you can use this function to call async functions even in sync code
---- callback will be called when function returned or errored
---- it will be called with these arguments:
---- * ok: boolean - whether the function returned without errors
---- * ... - return values of the function (or error message)
+--- Returns the debug stack tracked for the current coroutine,
+--- or `nil` if called outside of a coroutine.
 ---
---- ## Example
---- ```lua
---- ---@async
---- local function asyncFunction( a, b )
----     sleep( 1 )
----     return
---- end
----
---- futures.run( asyncFunction, function( ok, result )
----     if ok then
----         print( "result:", result ) -- result: 4
----     else
----         print( "error:", result )
----     end
---- end, 2, 2 ) -- 2 and 2 are arguments for asyncFunction
---- ```
----@see dreamwork.std.futures.cancel you can cancel returned coroutine from this function
----@param target async fun(...):... The function to execute.
----@param callback fun(ok: boolean, ...)? The callback function.
----@param ... any Arguments to pass into the target function
----@return thread co The created coroutine object.
-local function futures_run( target, callback, ... )
-    local co = coroutine_create( async_thread )
-    listeners[ co ] = callback
-
-    local ok, err = coroutine_resume( co, target, ... )
-
-    if not ok then
-        ErrorNoHaltWithStack( err )
+---@return dreamwork.std.debug.Stack | nil
+---@nodiscard
+function futures.stack()
+    local co = coroutine_running()
+    if co ~= nil then
+        return Stacks[ co ]
     end
 
-    return co
+    return nil
 end
 
-futures.run = futures_run
+--- Turns the error into `Error` with the stack of the coroutine where it was raised,
+--- `ACTION_CANCEL` is passed through as is.
+---
+---@param error_value any
+---@return dreamwork.std.Error | dreamwork.std.Symbol
+local function stack_handler( error_value )
+    if error_value == ACTION_CANCEL then
+        return error_value
+    end
 
+    ---@diagnostic disable-next-line: param-type-mismatch
+    return dreamwork_toError( error_value, AsyncError )
+end
+
+dreamwork.hideErrorFrame( stack_handler )
+
+do
+
+    ---@param co thread
+    ---@param error_object dreamwork.std.Error
+    ---@return dreamwork.std.Error error_object
+    local function with_spawn_stack( co, error_object )
+        local fstack = copy( Stacks[ co ] )
+
+        local stack = error_object.stack
+        if stack ~= nil then
+            for i = 1, stack.size, 1 do
+                fstack:push( stack[ i ] )
+            end
+        end
+
+        error_object.stack = fstack
+        return error_object
+    end
+
+    --- Calls the `futures.run` callback of the coroutine, if any.
+    ---
+    --- Nothing above the coroutine can catch errors of the callback (`futures.wakeup` ignores them),
+    --- so they are displayed here, with the stack of the callback itself.
+    ---
+    ---@param co thread
+    ---@return boolean has_listener
+    local function call_listener( co, ... )
+        local fn = Listeners[ co ]
+        if not isFunction( fn ) then
+            return false
+        end
+
+        local ok, error_object = xpcall( fn, dreamwork_toError, ... )
+        if not ok then
+            dreamwork_errorHandler( with_spawn_stack( co, error_object ) )
+        end
+
+        return true
+    end
+
+    ---@async
+    ---@param co thread
+    ---@param ok boolean
+    local function async_thread_result( co, ok, ... )
+        if ok then
+            call_listener( co, true, ... )
+            return
+        end
+
+        local value = (...)
+
+        if value == ACTION_CANCEL then
+            call_listener( co, false, ACTION_CANCEL )
+            return
+        end
+
+        ---@cast value dreamwork.std.Error
+
+        with_spawn_stack( co, value )
+
+        if not call_listener( co, false, value ) then
+            dreamwork_errorHandler( value )
+        end
+    end
+
+    ---@async
+    local function async_thread( fn, ... )
+        ---@diagnostic disable-next-line: param-type-mismatch
+        return async_thread_result( coroutine_running(), xpcall( fn, stack_handler, ... ) )
+    end
+
+    dreamwork.hideErrorFrame( async_thread_result )
+    dreamwork.hideErrorFrame( call_listener )
+    dreamwork.hideErrorFrame( async_thread )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Executes a function in a new coroutine
+    --- you can use this function to call async functions even in sync code
+    --- callback will be called when function returned or errored
+    --- it will be called with these arguments:
+    --- * ok: boolean - whether the function returned without errors
+    --- * ... - return values of the function (or error message)
+    ---
+    --- ## Example
+    --- ```lua
+    --- ---@async
+    --- local function asyncFunction( a, b )
+    ---     sleep( 1 )
+    ---     return
+    --- end
+    ---
+    --- futures.run( asyncFunction, function( ok, result )
+    ---     if ok then
+    ---         print( "result:", result ) -- result: 4
+    ---     else
+    ---         print( "error:", result )
+    ---     end
+    --- end, 2, 2 ) -- 2 and 2 are arguments for asyncFunction
+    --- ```
+    ---
+    ---@see dreamwork.std.futures.cancel you can cancel returned coroutine from this function
+    ---@param target async fun(...):... The function to execute.
+    ---@param callback fun(ok: boolean, ...)? The callback function.
+    ---@param ... any Arguments to pass into the target function
+    ---@return thread co The created coroutine object.
+    function futures.run( target, callback, ... )
+        local new_co = coroutine_create( async_thread )
+        Listeners[ new_co ] = callback
+
+        local co = coroutine_running()
+        local co_stack
+
+        if co == nil then
+            co_stack = Stacks[ new_co ]
+        else
+            -- own copy, so frames captured for this coroutine never leak into the parent or its siblings
+            co_stack = copy( Stacks[ co ] )
+            Stacks[ new_co ] = co_stack
+        end
+
+        co_stack:capture( 2, 0, 0, 2 )
+        co_stack:filter( dreamwork_isErrorFrameHidden )
+
+        local ok, error_value = coroutine_resume( new_co, target, ... )
+        if not ok then
+            error( error_value, 2, false )
+        end
+
+        return new_co
+    end
+
+end
 
 ---@async
 local function handle_pending( value, ... )
     if value == ACTION_CANCEL then
-        return error( "Operation was cancelled" ) -- TODO: use error
-    else
-        return value, ...
+        return error( ACTION_CANCEL, 2, false )
     end
+
+    return value, ...
 end
 
 --- [SHARED AND MENU]
@@ -211,25 +331,26 @@ end
 
 futures.pending = futures_pending
 
--- --- [SHARED AND MENU]
--- ---
--- --- Used to wake up pending coroutine.
--- ---
--- ---@see dreamwork.std.futures.pending for example
--- ---@param co thread
--- function futures.wakeup( co, ... )
---     coroutine_resume( co, ... )
--- end
-
+--- [SHARED AND MENU]
+---
+--- Used to wake up a pending coroutine.
+---
+---@see dreamwork.std.futures.pending for example
+---@param co thread The coroutine currently suspended inside `futures.pending`.
+---@param ... any Values to return from that `futures.pending()` call.
+function futures.wakeup( co, ... )
+    coroutine_resume( co, ... )
+end
 
 --- [SHARED AND MENU]
 ---
 --- Cancels execution of passed coroutine.
 ---
---- `CancelError` will be thrown in coroutine.
+--- `ACTION_CANCEL` will be thrown in coroutine.
 ---
 --- NB! pcall inside coroutine can catch this error
---- so coroutine may not be cancelled because of pcall.
+--- so coroutine may not be cancelled because of pcall,
+--- use `futures.isCancel` to detect it and rethrow.
 ---
 --- ## Example
 --- ```lua
@@ -241,15 +362,17 @@ futures.pending = futures_pending
 ---     end
 --- end
 ---
---- local co = futures.run( work, function(ok, value )
----     -- because we cancelled coroutine
----     -- ok will be false
----     -- value will be CancelError
---- end)
+--- local co = futures.run( work, function( ok, value )
+---     if futures.isCancel( value ) then
+---         -- because we cancelled coroutine
+---         -- ok will be false
+---         -- value will be `ACTION_CANCEL`
+---     end
+--- end )
 ---
 --- futures.cancel( co ) -- this will stop coroutine from executing
 --- ```
----@param co thread
+---@param co thread The coroutine to cancel.
 function futures.cancel( co )
     local status = coroutine_status( co )
     if status == "suspended" then
@@ -259,8 +382,19 @@ function futures.cancel( co )
         ---@diagnostic disable-next-line: await-in-sync
         coroutine_yield( ACTION_CANCEL )
     elseif status == "running" then
-        error( "Operation was cancelled" ) -- TODO: use error
+        error( ACTION_CANCEL, 2, false )
     end
+end
+
+--- [SHARED AND MENU]
+---
+--- Checks whether the value is the cancellation signal thrown by `futures.cancel`.
+---
+---@param value any The value to check, e.g. an error caught by `pcall` or the `value` of a `futures.run` callback.
+---@return boolean is_cancel `true` if the value is the cancellation signal, otherwise `false`.
+---@nodiscard
+function futures.isCancel( value )
+    return value == ACTION_CANCEL
 end
 
 --- [SHARED AND MENU]
@@ -270,11 +404,12 @@ end
 --- you probably should not use it.
 ---
 ---@see dreamwork.std.futures.apairs for example
----@async
----@param co thread
----@param ... any
+---
+---@param co thread The coroutine to transfer control and values to.
+---@param ... any Values to pass to `co`.
 ---@return boolean success
 ---@return any ...
+---@async
 local function futures_transfer( co, ... )
     local status = coroutine_status( co )
     if status == "suspended" then
@@ -290,7 +425,6 @@ end
 
 futures.transfer = futures_transfer
 
-
 ---@async
 local function handle_yield( ok, value, ... )
     -- ignore errors, they must be handled by whoever calls us
@@ -299,15 +433,15 @@ local function handle_yield( ok, value, ... )
     end
 
     if value == ACTION_CANCEL then
-        return error( "Operation was cancelled" ) -- TODO: use error
+        return error( ACTION_CANCEL, 2, false )
     elseif value == ACTION_RESUME then
         return ...
     elseif value ~= nil then
-        ErrorNoHaltWithStack( "invalid yield action: " .. tostring( value ) )
-    else
-        -- caller probably went sleeping
-        return handle_yield( true, coroutine_yield() )
+        return error( "invalid yield action: " .. tostring( value ), 2, false )
     end
+
+    -- caller probably went sleeping
+    return handle_yield( true, coroutine_yield() )
 end
 
 do
@@ -317,15 +451,18 @@ do
     --- Yields given arguments to the apairs listener.
     ---
     ---@see dreamwork.std.futures.apairs for example
+    ---
+    ---@param ... any Values to yield to the listener.
+    ---@return ... any Values passed back to this coroutine via ACTION_RESUME.
     ---@async
     local function futures_yield( ... )
-        local listener = coroutine_listeners[ coroutine_running() ]
-        if listener then
-            return handle_yield( futures_transfer( listener, RESULT_YIELD, ... ) )
-        else
+        local listener = AsyncListeners[ coroutine_running() ]
+        if listener == nil then
             -- whaat? we don't have a listener?!
-            error( "Operation was cancelled" ) -- TODO: use error
+            error( ACTION_CANCEL, 2, false )
         end
+
+        return handle_yield( futures_transfer( listener, RESULT_YIELD, ... ) )
     end
 
     futures.yield = futures_yield
@@ -336,9 +473,11 @@ end
 ---@async
 local function async_iteratable_thread( fn, ... )
     coroutine_yield() -- wait until anext wakes us up
-    local ok, err = pcall( fn, ... )
 
-    local listener = coroutine_listeners[ coroutine_running() ]
+    -- runtime errors have to keep the stack of the iterator, `handle_anext` rethrows them
+    local ok, err = xpcall( fn, stack_handler, ... )
+
+    local listener = AsyncListeners[ coroutine_running() ]
     if listener then
         if ok then
             futures_transfer( listener, RESULT_END )
@@ -346,16 +485,18 @@ local function async_iteratable_thread( fn, ... )
             futures_transfer( listener, RESULT_ERROR, err )
         end
     elseif not ok then
-        error( err )
+        error( err, 2, false )
     end
 end
+
+dreamwork.hideErrorFrame( async_iteratable_thread )
 
 ---@async
 ---@param co thread
 ---@param ok boolean
 local function handle_anext( co, ok, value, ... )
     if not ok then
-        return error( value )
+        return error( value, 2, false )
     end
 
     if value == RESULT_YIELD then
@@ -363,9 +504,9 @@ local function handle_anext( co, ok, value, ... )
     elseif value == RESULT_END then
         return -- return nothing so for loop with be stopped
     elseif value == RESULT_ERROR then
-        return error( ... )
+        return error( ..., 2, false )
     elseif value ~= nil then
-        ErrorNoHaltWithStack( "invalid anext result: " .. tostring( value ) )
+        error( string_format( "invalid anext result: %s", tostring( value ) ), 2 )
     end
 
     -- iterator went sleeping, wait until it wakes us up
@@ -374,13 +515,18 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Retrieves next value from async iterator coroutine
---- this function returned by apairs
---- you probably should not use it.
+--- Retrieves the next value from an async iterator coroutine.
+---
+--- Returned by `futures.apairs`;
+--- you probably shouldn't call it directly.
 ---
 ---@see dreamwork.std.futures.apairs for example
+---
+---@param iterator thread The async-iterator coroutine, as returned by `futures.apairs`.
+---@param ... any Values to resume the iterator with.
+---@return any ... The next yielded value(s), or nothing if the iterator finished.
+---@nodiscard
 ---@async
----@param iterator thread
 local function futures_anext( iterator, ... )
     return handle_anext( iterator, futures_transfer( iterator, ACTION_RESUME, ... ) )
 end
@@ -409,16 +555,20 @@ futures.anext = futures_anext
 ---
 --- futures.run( main )
 --- ```
+---
 ---@see dreamwork.std.futures.yield
 ---@see dreamwork.std.futures.AsyncIterator
----@async
+---
 ---@generic K, V
----@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<K, V>
+---@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<K, V> The async iterator function to drive.
+---@param ... any Arguments to pass to `iterator`.
 ---@return async fun(...): K, V
 ---@return thread
+---@nodiscard
+---@async
 local function futures_apairs( iterator, ... )
     local co = coroutine_create( async_iteratable_thread )
-    coroutine_listeners[ co ] = coroutine_running()
+    AsyncListeners[ co ] = coroutine_running()
     coroutine_resume( co, iterator, ... )
     return futures_anext, co
 end
@@ -430,11 +580,13 @@ std.apairs = futures_apairs
 ---
 --- Collects all values from async iterator into a list.
 ---
----@async
 ---@generic V
----@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<V>
+---@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<V> The async iterator to collect values from.
+---@param ... any Arguments to pass to `iterator`.
 ---@return V[] results
 ---@return number length
+---@nodiscard
+---@async
 function futures.collect( iterator, ... )
     local results, length = {}, 0
     for value in futures_apairs( iterator, ... ) do
@@ -449,10 +601,12 @@ end
 ---
 --- Collects all values from async iterator into a table.
 ---
----@async
 ---@generic K, V
----@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<K, V>
+---@param iterator async fun(...): dreamwork.std.futures.AsyncIterator<K, V> The async iterator to collect entries from.
+---@param ... any Arguments to pass to `iterator`.
 ---@return table<K, V> result
+---@nodiscard
+---@async
 function futures.collectTable( iterator, ... )
     local result = {}
     for k, v in futures_apairs( iterator, ... ) do
@@ -463,8 +617,6 @@ function futures.collectTable( iterator, ... )
 end
 
 do
-
-    local table = std.table
 
     --- [SHARED AND MENU]
     ---
@@ -494,20 +646,18 @@ do
     --- fut:setError( "something went wrong" )
     --- fut:cancel()
     --- ```
-    ---@class dreamwork.std.futures.Future : dreamwork.std.Object
+    ---@class dreamwork.std.Future<T> : dreamwork.std.Object
     ---@field __class dreamwork.std.futures.FutureClass
     ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
     ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
-    ---@field protected result_value any The result value of the future.
-    ---@field protected error_value any The error value of the future.
-    local Future = futures.Future and futures.Future.__base or class.base( "Future" )
-
-    ---@alias Future dreamwork.std.futures.Future
+    ---@field protected result_value T The result value of the future.
+    ---@field protected error_value string The error value of the future.
+    local Future = std.Future and std.Future.__base or class.base( "Future" )
 
     ---@protected
     function Future:__init()
+        self.callbacks = { [ 0 ] = 0 }
         self.state = 0
-        self.callbacks = {}
     end
 
     ---@protected
@@ -515,15 +665,15 @@ do
         local state = self.state
         if state ~= 0 then
             if state == 2 then
-                return string.format( "Future: %p [cancelled]", self )
+                return string_format( "Future: %p [cancelled]", self )
             elseif self.error_value then
-                return string.format( "Future: %p [failure][%s]", self, tostring( self.error_value ) )
-            else
-                return string.format( "Future: %p [success][%s]", self, tostring( self.result_value ) )
+                return string_format( "Future: %p [failure][%s]", self, tostring( self.error_value ) )
             end
-        else
-            return string.format( "Future: %p [pending]", self )
+
+            return string_format( "Future: %p [success][%s]", self, tostring( self.result_value ) )
         end
+
+        return string_format( "Future: %p [pending]", self )
     end
 
     --- [SHARED AND MENU]
@@ -531,6 +681,7 @@ do
     --- Returns `true` if Future is pending.
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isPending()
         return self.state == 0
     end
@@ -540,6 +691,7 @@ do
     --- Returns `true` if Future is finished (or cancelled).
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isFinished()
         return self.state ~= 0
     end
@@ -549,6 +701,7 @@ do
     --- Returns true if Future was cancelled.
     ---
     ---@return boolean
+    ---@nodiscard
     function Future:isCancelled()
         return self.state == 2
     end
@@ -560,53 +713,78 @@ do
     ---@private
     function Future:runCallbacks()
         local callbacks = self.callbacks
-        self.callbacks = {}
+        self.callbacks = { [ 0 ] = 0 }
 
-        for i = 1, #callbacks, 1 do
-            xpcall( callbacks[ i ], display_error, self )
-        end
-    end
+        -- first signal (e.g. `ACTION_CANCEL`) thrown by a callback, rethrown once all callbacks ran
+        local signal
 
-    do
-
-        local table_insert = table.insert
-
-        --- [SHARED AND MENU]
-        ---
-        --- Adds callback that will be called when future is done
-        --- if future is already done, callback will be called immediately.
-        ---
-        ---@see dreamwork.std.futures.Future.removeCallback for removing callback
-        ---@param fn fun( fut: dreamwork.std.futures.Future )
-        function Future:addCallback( fn )
-            if self.state ~= 0 then
-                xpcall( fn, display_error, self )
-            else
-                table_insert( self.callbacks, fn )
-            end
-        end
-
-    end
-
-    do
-
-        local table_remove = table.remove
-
-        --- [SHARED AND MENU]
-        ---
-        --- Removes callback that was previously added with `:addCallback`.
-        ---
-        ---@see dreamwork.std.futures.Future.addCallback for adding callback
-        ---@param value function
-        function Future:removeCallback( value )
-            local callbacks = self.callbacks
-            for i = #callbacks, 1, -1 do
-                if callbacks[ i ] == value then
-                    table_remove( callbacks, i )
+        for i = 1, callbacks[ 0 ], 1 do
+            local success, error_value = xpcall( callbacks[ i ], dreamwork_catchError, self )
+            if not success then
+                if isError( error_value ) then
+                    error( error_value, 2, true )
+                elseif signal == nil then
+                    signal = error_value
                 end
             end
         end
 
+        if signal ~= nil then
+            error( signal, 2, false )
+        end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Adds callback that will be called when future is done
+    --- if future is already done, callback will be called immediately.
+    ---
+    ---@see dreamwork.std.Future.removeCallback for removing callback
+    ---
+    ---@generic T
+    ---@param self dreamwork.std.Future<T>
+    ---@param fn fun( fut: dreamwork.std.Future<T> ) The callback to invoke with the future once it's done.
+    function Future:addCallback( fn )
+        if self.state ~= 0 then
+            fn( self )
+            return
+        end
+
+        local callbacks = self.callbacks
+        local callback_count = callbacks[ 0 ]
+
+        for i = callback_count, 1, -1 do
+            if callbacks[ i ] == fn then
+                callbacks[ callback_count ] = table_remove( callbacks, i )
+                return
+            end
+        end
+
+        callback_count = callback_count + 1
+        callbacks[ callback_count ] = fn
+        callbacks[ 0 ] = callback_count
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes callback that was previously added with `:addCallback`.
+    ---
+    ---@see dreamwork.std.Future.addCallback for adding callback
+    ---
+    ---@generic T
+    ---@param self dreamwork.std.Future<T>
+    ---@param fn function The callback previously passed to `:addCallback`.
+    function Future:removeCallback( fn )
+        local callbacks = self.callbacks
+        local callback_count = callbacks[ 0 ]
+
+        for i = callback_count, 1, -1 do
+            if callbacks[ i ] == fn then
+                table_remove( callbacks, i )
+                callbacks[ 0 ] = callback_count - 1
+                return
+            end
+        end
     end
 
     --- [SHARED AND MENU]
@@ -614,12 +792,15 @@ do
     --- Sets result of the Future, marks it as finished, and runs all callbacks
     --- if future is already finished, error will be thrown.
     ---
-    ---@see dreamwork.std.futures.Future.result to retrieve result
-    ---@see dreamwork.std.futures.Future.await to asynchronously retrieve result
-    ---@param result any
+    ---@see dreamwork.std.Future.result to retrieve result
+    ---@see dreamwork.std.Future.await to asynchronously retrieve result
+    ---
+    ---@generic T
+    ---@param self dreamwork.std.Future<T>
+    ---@param result T The value to resolve the future with.
     function Future:setResult( result )
         if self.state ~= 0 then
-            error( "future is already finished", 2 )
+            error( "future is already finished", 2, false )
         end
 
         self.state = 1
@@ -633,10 +814,10 @@ do
     --- Sets error of the Future, marks it as finished, and runs all callbacks
     --- if future is already finished, error will be thrown.
     ---
-    ---@param err any
+    ---@param err string The error to fail the future with.
     function Future:setError( err )
         if self.state ~= 0 then
-            error( "future is already finished", 2 )
+            error( "future is already finished", 2, false )
         end
 
         self.state = 1
@@ -663,21 +844,24 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Returns error if future is finished and has error
-    --- otherwise returns nil
-    --- if future is not finished or cancelled, returns error.
+    --- Returns the future's error, if any:
+    --- * if cancelled, returns "future was cancelled"
+    --- * if still pending, returns "future is not finished"
+    --- * if finished successfully, returns nil
+    --- * if finished with an error, returns that error
     ---
-    ---@see dreamwork.std.futures.Future.setError
-    ---@return unknown?
+    ---@see dreamwork.std.Future.setError
+    ---@return string | nil
+    ---@nodiscard
     function Future:error()
         local state = self.state
         if state == 2 then
             return "future was cancelled"
         elseif state == 0 then
             return "future is not finished"
-        else
-            return self.error_value
         end
+
+        return self.error_value
     end
 
     --- [SHARED AND MENU]
@@ -685,22 +869,26 @@ do
     --- Returns result if future is finished
     --- otherwise throws an error.
     ---
-    ---@see dreamwork.std.futures.Future.setResult
-    ---@return any
+    ---@see dreamwork.std.Future.setResult
+    ---@generic T
+    ---@param self dreamwork.std.Future<T>
+    ---@return T
+    ---@nodiscard
     function Future:result()
         local state = self.state
+
         if state == 2 then
-            return error( "future was cancelled" )
+            error( "future was cancelled", 2, false )
         elseif state == 0 then
-            return error( "future is not finished" )
-        else
-            local error_value = self.error_value
-            if error_value == nil then
-                return self.result_value
-            else
-                error( error_value )
-            end
+            error( "future is not finished", 2, false )
         end
+
+        local error_value = self.error_value
+        if error_value == nil then
+            return self.result_value
+        end
+
+        error( error_value, 2, false )
     end
 
     --- [SHARED AND MENU]
@@ -709,10 +897,15 @@ do
     --- if it contains an error, then it will be thrown.
     ---
     ---@async
-    ---@return any
+    ---@generic T
+    ---@param self dreamwork.std.Future<T>
+    ---@return T
     function Future:await()
         if self.state == 0 then
             local co = coroutine_running()
+            if co == nil then
+                error( "`Future:await` cannot be called outside async context.", 2, false )
+            end
 
             self:addCallback( function()
                 coroutine_resume( co )
@@ -722,7 +915,7 @@ do
         end
 
         if self.state == 0 then
-            error( "future hasn't changed it's state wtf???" )
+            error( "future hasn't changed it's state wtf???", 2, false )
         end
 
         return self:result()
@@ -730,32 +923,30 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Future class.
+    --- The class used to create new `Future` instances.
     ---
-    ---@class dreamwork.std.futures.FutureClass : dreamwork.std.futures.Future
-    ---@field __base dreamwork.std.futures.Future
-    ---@overload fun(): dreamwork.std.futures.Future
-    local FutureClass = class.create( Future )
-    futures.Future = FutureClass
-    std.Future = FutureClass
+    ---@class dreamwork.std.futures.FutureClass : dreamwork.std.Future
+    ---@field __base dreamwork.std.Future
+    ---@overload fun(): dreamwork.std.Future
+    std.Future = class.create( Future )
 
 end
 
 do
 
+    local futures_run = futures.run
+
     --- [SHARED AND MENU]
     ---
     --- Async task object.
     ---
-    ---@class dreamwork.std.futures.Task : dreamwork.std.futures.Future
+    ---@class dreamwork.std.futures.Task<T> : dreamwork.std.Future
     ---@field __class dreamwork.std.futures.TaskClass
-    ---@field __parent dreamwork.std.futures.Future
-    ---@field private setResult fun( self, result )
-    ---@field private setError fun( self, error )
-    local Task = futures.Task and futures.Task.__base or class.base( "Task", false, futures.Future )
-
-    ---@diagnostic disable-next-line: duplicate-doc-alias
-    ---@alias Task dreamwork.std.futures.Task
+    ---@field __parent dreamwork.std.Future
+    ---@field protected setResult fun( self: dreamwork.std.futures.Task<T>, result: T )
+    ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, error: self )
+    ---@field addCallback fun( self: dreamwork.std.futures.Task<T>, callback: fun( task: dreamwork.std.futures.Task<T> ) )
+    local Task = std.Task and std.Task.__base or class.base( "Task", false, std.Future )
 
     ---@protected
     ---@param fn async fun(...): any
@@ -765,14 +956,17 @@ do
         futures_run( fn, function( ok, value )
             if ok then
                 self:setResult( value )
+            elseif value == ACTION_CANCEL then
+                self:cancel()
             else
                 self:setError( value )
-                -- TODO: check if error is cancel
             end
         end, ... )
     end
 
     --- [SHARED AND MENU]
+    ---
+    --- The class used to create new `Task` instances.
     ---
     --- Task is a Future wrapper around futures.run(...) to retrieve result of async function
     --- when task is created, it will immediately run given function.
@@ -793,10 +987,8 @@ do
     ---
     ---@class dreamwork.std.futures.TaskClass : dreamwork.std.futures.Task
     ---@field __base dreamwork.std.futures.Task
-    ---@overload fun( fn: ( async fun(...): any ), ...: any ): dreamwork.std.futures.Task
-    local TaskClass = class.create( Task )
-    futures.Task = TaskClass
-    std.Task = TaskClass
+    ---@overload fun( fn: ( async fun( ...: any ): any ), ...: any ): dreamwork.std.futures.Task
+    std.Task = class.create( Task )
 
 end
 
@@ -806,21 +998,20 @@ do
     ---
     --- A channel is a queue-type object that can be used by multiple coroutines.
     ---
-    ---@alias Channel dreamwork.std.futures.Channel
-    ---@class dreamwork.std.futures.Channel : dreamwork.std.Object
+    ---@class dreamwork.std.futures.Channel<T> : dreamwork.std.Object
     ---@field __class dreamwork.std.futures.ChannelClass
     ---@field max_size integer Maximum size of the channel.
-    ---@field private queue dreamwork.std.Queue Queue of values.
-    ---@field private getters dreamwork.std.Queue Queue of getters.
-    ---@field private setters dreamwork.std.Queue Queue of setters.
-    ---@field private closed boolean `true` if the channel is closed, `false` otherwise.
-    local Channel = futures.Channel and futures.Channel.__base or class.base( "Channel" )
+    ---@field protected queue dreamwork.std.Queue<T> Queue of values.
+    ---@field protected getters dreamwork.std.Queue<thread> Queue of getters.
+    ---@field protected setters dreamwork.std.Queue<thread> Queue of setters.
+    ---@field protected closed boolean `true` if the channel is closed, `false` otherwise.
+    local Channel = std.Channel and std.Channel.__base or class.base( "Channel" )
 
     ---@protected
     ---@param max_size number? Maximum size of the channel.
     function Channel:__init( max_size )
         if max_size and max_size < 0 then
-            error( "maxSize must be greater or equal to 0" )
+            error( "`max_size` must be greater or equal to 0", 2, false )
         end
 
         self.max_size = max_size or 0
@@ -830,13 +1021,10 @@ do
         self.closed = false
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the number of elements in the channel.
-    ---
-    ---@return number length
-    function Channel:getLength()
-        return self.queue:getLength()
+    ---@return integer
+    ---@protected
+    function Channel:__len()
+        return len( self.queue )
     end
 
     --- [SHARED AND MENU]
@@ -844,6 +1032,7 @@ do
     --- Returns `true` if the channel is empty, `false` otherwise.
     ---
     ---@return boolean isEmpty
+    ---@nodiscard
     function Channel:isEmpty()
         return self.queue:isEmpty()
     end
@@ -853,13 +1042,14 @@ do
     --- Returns `true` if the channel is full, `false` otherwise.
     ---
     ---@return boolean isFull
+    ---@nodiscard
     function Channel:isFull()
         local max_size = self.max_size
         if max_size == 0 then
             return false
-        else
-            return self:getLength() >= max_size
         end
+
+        return len( self.queue ) >= max_size
     end
 
     --- [SHARED AND MENU]
@@ -872,11 +1062,13 @@ do
         -- wake up all getters and setters
         local getters = self.getters
         while not getters:isEmpty() do
+            ---@diagnostic disable-next-line: param-type-mismatch
             coroutine_resume( getters:pop() )
         end
 
         local setters = self.setters
         while not setters:isEmpty() do
+            ---@diagnostic disable-next-line: param-type-mismatch
             coroutine_resume( setters:pop() )
         end
     end
@@ -886,18 +1078,38 @@ do
     --- Returns `true` if the channel is closed, `false` otherwise.
     ---
     ---@return boolean isClosed
+    ---@nodiscard
     function Channel:isClosed()
         return self.closed
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Puts a value into the channel, without waiting.
+    --- Puts a value into the channel.
     ---
-    ---@param value any
+    ---@generic T
+    ---@param self dreamwork.std.futures.Channel<T>
+    ---@param value T The value to push. Must not be `nil`.
+    ---@param force boolean? If `true`, push without waiting for space, bypassing the max-size check.
     ---@return boolean success
-    function Channel:putNow( value )
-        if self:isFull() or self.closed or value == nil then
+    function Channel:push( value, force )
+        if value == nil then
+            return false
+        end
+
+        if force ~= true then
+            local co = coroutine_running()
+            if co == nil then
+                error( "`Channel:push` cannot be called outside async context without `force`.", 2, false )
+            end
+
+            while (self:isFull() and not self.closed) do
+                self.setters:push( co )
+                futures_pending()
+            end
+        end
+
+        if self:isFull() or self.closed then
             return false
         end
 
@@ -913,26 +1125,25 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Puts a value into the channel.
+    --- Gets a value from the channel.
     ---
-    ---@async
-    ---@param value any
-    ---@param wait boolean?
-    ---@return boolean success
-    function Channel:put( value, wait )
-        while wait ~= false and (self:isFull() and not self.closed) do
-            self.setters:push( coroutine_running() )
-            futures_pending()
+    ---@generic T
+    ---@param self dreamwork.std.futures.Channel<T>
+    ---@param force boolean? If `true`, pop without waiting for a value even if the channel is empty.
+    ---@return T | nil value
+    function Channel:pop( force )
+        if force ~= true then
+            local co = coroutine_running()
+            if co == nil then
+                error( "`Channel:pop` cannot be called outside async context without `force`.", 2, false )
+            end
+
+            while self:isEmpty() and not self.closed do
+                self.getters:push( co )
+                futures_pending()
+            end
         end
 
-        return self:putNow( value )
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Gets a value from the channel, without waiting.
-    ---
-    function Channel:getNow()
         if self:isEmpty() or self.closed then
             return nil
         end
@@ -949,29 +1160,14 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Gets a value from the channel.
-    ---
-    ---@async
-    ---@param wait boolean?
-    function Channel:get( wait )
-        while wait ~= false and self:isEmpty() and not self.closed do
-            self.getters:push( coroutine_running() )
-            futures_pending()
-        end
-
-        return self:getNow()
-    end
-
-    --- [SHARED AND MENU]
+    --- The class used to create new `Channel` instances.
     ---
     --- A channel is a queue-type class that can be used by multiple coroutines.
     ---
     ---@class dreamwork.std.futures.ChannelClass : dreamwork.std.futures.Channel
     ---@field __base dreamwork.std.futures.Channel
     ---@overload fun( maxsize: number? ): dreamwork.std.futures.Channel
-    local ChannelClass = class.create( Channel )
-    futures.Channel = ChannelClass
-    std.Channel = ChannelClass
+    std.Channel = class.create( Channel )
 
 end
 
@@ -984,7 +1180,7 @@ end
 ---@return any[]
 local function awaitList( awaitables )
     local results = {}
-    for i = 1, #awaitables do
+    for i = 1, len( awaitables ), 1 do
         results[ i ] = awaitables[ i ]:await()
     end
 
@@ -997,7 +1193,7 @@ end
 ---
 ---@param awaitables (Awaitable | { cancel: function })[]
 local function cancelList( awaitables )
-    for i = 1, #awaitables do
+    for i = 1, len( awaitables ), 1 do
         local awaitable = awaitables[ i ]
         if isFunction( awaitable.cancel ) then
             awaitable:cancel()
@@ -1007,25 +1203,24 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Awaits concurrently all given `awaitables` and returns results in table
+--- Awaits all given `awaitables` (in order) and returns their results in a table.
 ---
---- if any of awaitables throws an error, it will be thrown.
+--- Each item must implement `:await()` (e.g. Future/Task) — plain functions are not supported.
 ---
---- if any of awaitables if function, it will be asynchronously executed with given vararg
+--- If any awaitable throws, the error is re-thrown and all remaining awaitables are cancelled.
 ---
---- On error also cancels all other awaitables.
----
----@async
----@param awaitables Awaitable[]
+---@param awaitables Awaitable[] The list of awaitables (e.g. Future/Task instances) to await.
 ---@return any[]
+---@async
 function futures.all( awaitables )
-    local ok, result = pcall( awaitList, awaitables )
+    -- `stack_handler` keeps the stack of the failed awaitable and lets `ACTION_CANCEL` through
+    local ok, result = xpcall( awaitList, stack_handler, awaitables )
     if ok then
         return result
-    else
-        cancelList( awaitables )
-        error( result )
     end
+
+    cancelList( awaitables )
+    error( result, 2, false )
 end
 
 --- [SHARED AND MENU]
@@ -1034,11 +1229,16 @@ end
 ---
 --- Other awaitables will be cancelled after first result or error.
 ---
----@async
----@param futureList Future[]
+---@param futureList dreamwork.std.Future[] The list of futures to race against each other.
 ---@return any
+---@async
 function futures.any( futureList )
     local co = coroutine_running()
+    if co == nil then
+        error( "`futures.any` cannot be called outside async context.", 2, false )
+    end
+
+    ---@type boolean
     local finished = false
 
     local function callback( fut )
@@ -1048,12 +1248,35 @@ function futures.any( futureList )
         end
     end
 
-    for i = 1, #futureList do
+    for i = 1, len( futureList ), 1 do
         futureList[ i ]:addCallback( callback )
     end
 
-    ---@type Future
+    ---@type dreamwork.std.Future
     local fut = futures_pending()
     cancelList( futureList )
     return fut:result()
+end
+
+--- [SHARED AND MENU]
+---
+--- Puts current thread to sleep for given amount of seconds.
+---
+---@see dreamwork.std.futures.pending
+---@see dreamwork.std.futures.wakeup
+---
+---@param seconds number How long to sleep, in seconds.
+---@async
+function futures.sleep( seconds )
+    local co = coroutine_running()
+    if co == nil then
+        error( "`futures.sleep` cannot be called outside async context.", 2, false )
+    end
+
+    ---@cast co thread
+    setTimeout( function()
+        return coroutine_resume( co )
+    end, seconds )
+
+    futures_pending()
 end

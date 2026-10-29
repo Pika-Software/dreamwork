@@ -14,6 +14,7 @@ local map = {}
 ---@param key string
 ---@param arguments string[] | table<string, string>
 ---@return string
+---@nodiscard
 function i18n.get( key, arguments )
     local value = map[ key ]
     if value == nil then

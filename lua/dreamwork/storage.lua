@@ -7,8 +7,6 @@ local std = dreamwork.std
 local assert = std.assert
 local pcall = std.pcall
 
-local isTable = std.isTable
-local isNumber = std.isNumber
 local isString = std.isString
 local isCallable = std.isCallable
 
@@ -26,7 +24,9 @@ local time = std.time
 local time_now = time.now
 local time_tick = time.tick
 
-local raw_tonumber = std.raw.tonumber
+local tonumber = std.tonumber
+local error = std.error
+
 
 --- [SHARED AND MENU]
 ---
@@ -34,6 +34,7 @@ local raw_tonumber = std.raw.tonumber
 ---
 ---@param key string
 ---@return string
+---@nodiscard
 function storage.read( key )
     ---@type string
     return sqlite_queryValue( "SELECT VALUE FROM 'dreamwork.store' WHERE key=?", key )
@@ -76,6 +77,7 @@ do
     ---
     ---@param url string
     ---@return table?
+    ---@nodiscard
     function http.read( url )
         return sqlite_queryFirst( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
     end
@@ -99,7 +101,7 @@ do
         end
 
         -- we are unable to store null bytes in sqlite
-        if string.hasByte( content, 0x00 ) then
+        if string.containsByte( content, 0x00 ) then
             if ignore_errors then
                 return
             end
@@ -133,13 +135,14 @@ do
     ---
     ---@param file_path string The path to the file.
     ---@return dreamwork.storage.files.Record | nil data The file record, or `nil` if not found.
+    ---@nodiscard
     function files.read( file_path )
         local result = sqlite_queryFirst( "SELECT * FROM 'dreamwork.storage.files' WHERE path=?", file_path )
         if result ~= nil then
             return {
                 path = result.path,
-                size = raw_tonumber( result.size, 10 ) or -1,
-                time = raw_tonumber( result.os_time, 10 ) or 0
+                size = tonumber( result.size, 10 ) or -1,
+                time = tonumber( result.os_time, 10 ) or 0
             }
         end
 
@@ -401,6 +404,7 @@ do
     ---
     ---@param name string The name/version of the migration.
     ---@return boolean is_exists `true` if migration exists, `false` otherwise.
+    ---@nodiscard
     local function is_migration_exists( name )
         for i = 1, #migrations, 1 do
             if migrations[ i ].name == name then
@@ -423,14 +427,16 @@ do
         assert( isCallable( migration.execute ), "Database migration failed: '%s' does not have an 'execute' function.", migration.name )
         dreamwork.Logger:info( "Running migration '" .. tostring( migration.name ) .. "'..." )
 
-        local success, err_msg = pcall( sqlite_transaction, migration.execute, migration )
+        local success, error_object = pcall( sqlite_transaction, migration.execute, migration )
         if success then
             sqlite_query( "insert into 'dreamwork.storage.migrations' (name, timestamp) values (?, ?)", migration.name, time_now() )
-        else
-            std.errorf( 2, false, "Database migration failed: %s", err_msg )
+            return true
         end
 
-        return success
+        -- rethrown as is, the error already carries the stack of where the migration failed
+        dreamwork.Logger:error( "Database migration '%s' failed.", migration.name )
+        error( error_object, 2 )
+        return false
     end
 
     storage.migrateByTable = migrate_by_table
@@ -513,7 +519,7 @@ function storage.init()
 
     local pragma_values = pragma_read( "foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint" )
     if pragma_values ~= nil then
-        if (raw_tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma foreign_keys = 1" )
         end
 
@@ -521,21 +527,21 @@ function storage.init()
             sqlite_rawQuery( "pragma journal_mode = wal" )
         end
 
-        if (raw_tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma synchronous = normal" )
         end
 
-        if (raw_tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
+        if (tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
             sqlite_rawQuery( "pragma wal_autocheckpoint = 100" )
         end
     end
 
     -- truncate WAL journal on shutdown
-    dreamwork.engine.hookCatch( "ShutDown", function()
+    dreamwork.engine.hookCatch( "ShutDown", "dreamwork.sqlite", function()
         if sqlite.query( "pragma wal_checkpoint(TRUNCATE)" ) == false then
             dreamwork.Logger:error( "Failed to truncate WAL journal: %s", sqlite.getLastError() )
         end
-    end, 1 )
+    end, -1000 )
 
     sqlite_rawQuery( "CREATE TABLE IF NOT EXISTS 'dreamwork.storage.migrations' (name TEXT, timestamp INTEGER)" )
 

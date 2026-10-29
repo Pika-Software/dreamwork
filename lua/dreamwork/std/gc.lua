@@ -1,3 +1,35 @@
+---@class dreamwork.std
+local std = dreamwork.std
+
+local raw = std.raw
+local raw_get = raw.get
+
+local debug = std.debug
+local debug_getmetatable = debug.getmetatable
+
+local setmetatable = std.setmetatable
+
+--- [SHARED AND MENU]
+---
+--- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
+---
+--- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
+---
+---@class dreamwork.std.gc
+local gc = {}
+std.gc = gc
+
+---
+--- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-collectgarbage51)
+---
+---@overload fun( opt: "collect" )
+---@overload fun( opt: "stop" )
+---@overload fun( opt: "restart" )
+---@overload fun( opt: "count" ): number
+---@overload fun( opt: "step", arg: integer ): true
+---@overload fun( opt: "setpause", arg: integer ): integer
+---@overload fun( opt: "setstepmul", arg: integer ): integer
+---@overload fun( opt: "isrunning" ): boolean
 local collectgarbage = collectgarbage
 
 if collectgarbage == nil then
@@ -9,19 +41,6 @@ if collectgarbage == nil then
         end
     end
 end
-
----@class dreamwork.std
-local std = dreamwork.std
-
---- [SHARED AND MENU]
----
---- Lua manages memory automatically by running a garbage collector to collect all dead objects (that is, objects that are no longer accessible from Lua).
----
---- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
----
----@class dreamwork.std.gc
-local gc = std.gc or {}
-std.gc = gc
 
 --- [SHARED AND MENU]
 ---
@@ -36,6 +55,7 @@ end
 --- The value has a fractional part, so that it multiplied by 1024 gives the exact number of bytes in use by Lua (except for overflows).
 ---
 ---@return number count The total memory in use by Lua in Kbytes.
+---@nodiscard
 function gc.getMemory()
     return collectgarbage( "count" )
 end
@@ -62,6 +82,7 @@ end
 --- Returns a boolean that tells whether the collector is running (i.e., not stopped).
 ---
 ---@return boolean is_running Returns true if the collector is running, false otherwise.
+---@nodiscard
 function gc.isRunning()
     return collectgarbage( "isrunning" )
 end
@@ -105,11 +126,7 @@ function gc.setStepMultiplier( value )
     return collectgarbage( "setstepmul", value )
 end
 
-local debug_getmetatable = std.debug.getmetatable
-
 do
-
-    local raw_get = std.raw.get
 
     --- [SHARED AND MENU]
     ---
@@ -118,6 +135,7 @@ do
     ---@param tbl table The table to query.
     ---@return boolean key_mode `true` if key c ollection is allowed, `false` otherwise.
     ---@return boolean value_mode `true` if value collection is allowed, `false` otherwise.
+    ---@nodiscard
     function gc.getTableRules( tbl )
         local metatable = debug_getmetatable( tbl )
         if metatable == nil then
@@ -138,8 +156,6 @@ do
 end
 
 do
-
-    local setmetatable = std.setmetatable
 
     local presets = {
         [ 1 ] = { __mode = "kv" },

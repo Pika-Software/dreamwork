@@ -2,16 +2,16 @@
 local dreamwork = dreamwork
 if dreamwork.detour ~= nil then return end
 
--- ref: https://github.com/unknown-gd/safety-lite/blob/main/src/detour.lua
-local functions = {}
-
 --- [SHARED AND MENU]
 ---
 --- A library for intercepting engine functions and runtime patching using detour/hook.
 ---
 ---@class dreamwork.detour
-local detour = dreamwork.detour or {}
+local detour = {}
 dreamwork.detour = detour
+
+---@type table<function, function>
+local functions = {}
 
 --- [SHARED AND MENU]
 ---
@@ -21,6 +21,7 @@ dreamwork.detour = detour
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.simple( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -52,6 +53,7 @@ end
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`, return result of `new_fn` will be ignored.
+---@nodiscard
 function detour.before( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -79,6 +81,7 @@ end
 ---@param new_fn fun( results: any[], ... ): any, any, any, any, any, any The new function to call instead of `in_fn`.
 ---@param in_fn? F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`, return result of `in_fn` will be ignored.
+---@nodiscard
 function detour.after( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -107,6 +110,7 @@ end
 ---@param in_fn F The original function.
 ---@param new_fn F The new function to call instead of `in_fn`.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.replace( new_fn, in_fn )
     if in_fn == nil then
         return new_fn
@@ -125,10 +129,11 @@ end
 ---
 --- Returns a function that calls the `new_fn` instead of the `in_fn`.
 ---
----@generic F: function
----@param new_fn ( fun( in_fn: (F | nil), ...: any ): any, any, any, any, any, any ) The new function to call instead of `in_fn`.
----@param in_fn F | nil The original function.
+---@generic F: function | nil
+---@param new_fn ( fun( in_fn: F, ...: any ): any, any, any, any, any, any ) The new function to call instead of `in_fn`.
+---@param in_fn F The original function.
 ---@return F hooked_fn Hooked function that calls `new_fn` instead of `in_fn`.
+---@nodiscard
 function detour.attach( new_fn, in_fn )
     if in_fn == nil then
         return function( ... )
@@ -183,3 +188,5 @@ function detour.shadow( fn )
         return old_fn, true
     end
 end
+
+return detour

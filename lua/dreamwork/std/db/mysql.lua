@@ -1,0 +1,3 @@
+-- TODO: implement wrapper/library
+--
+-- ref: https://github.com/FredyH/MySQLOO
