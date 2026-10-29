@@ -1684,14 +1684,6 @@ sendfile( "dreamwork/std/types/big_integer.lua" )
 dofile( "dreamwork/std/types/big_fixed.lua" )
 sendfile( "dreamwork/std/types/big_fixed.lua" )
 
--- -- ByteReader class
--- dofile( "dreamwork/std/types/binary_reader.lua" )
--- sendfile( "dreamwork/std/types/binary_reader.lua" )
-
--- -- ByteWriter class
--- dofile( "dreamwork/std/types/binary_writer.lua" )
--- sendfile( "dreamwork/std/types/binary_writer.lua" )
-
 -- engine submodule
 dofile( "dreamwork/engine.lua" )
 sendfile( "dreamwork/engine.lua" )
@@ -1830,6 +1822,18 @@ end
 -- error class
 dofile( "dreamwork/std/types/error.lua" )
 sendfile( "dreamwork/std/types/error.lua" )
+
+-- pack library
+dofile( "dreamwork/std/codec/pack.lua" )
+sendfile( "dreamwork/std/codec/pack.lua" )
+
+-- -- ByteReader class
+-- dofile( "dreamwork/std/types/binary_reader.lua" )
+-- sendfile( "dreamwork/std/types/binary_reader.lua" )
+
+-- -- ByteWriter class
+-- dofile( "dreamwork/std/types/binary_writer.lua" )
+-- sendfile( "dreamwork/std/types/binary_writer.lua" )
 
 local engine = dreamwork.engine
 
@@ -3024,6 +3028,10 @@ sendfile( "dreamwork/std/crypto/sha256.lua" )
 dofile( "dreamwork/std/crypto/sha512.lua" )
 sendfile( "dreamwork/std/crypto/sha512.lua" )
 
+-- sha384 hash library
+dofile( "dreamwork/std/crypto/sha384.lua" )
+sendfile( "dreamwork/std/crypto/sha384.lua" )
+
 -- hmac library
 dofile( "dreamwork/std/crypto/hmac.lua" )
 sendfile( "dreamwork/std/crypto/hmac.lua" )
@@ -3031,6 +3039,14 @@ sendfile( "dreamwork/std/crypto/hmac.lua" )
 -- pbkdf2 library
 dofile( "dreamwork/std/crypto/pbkdf2.lua" )
 sendfile( "dreamwork/std/crypto/pbkdf2.lua" )
+
+-- hkdf library
+dofile( "dreamwork/std/crypto/hkdf.lua" )
+sendfile( "dreamwork/std/crypto/hkdf.lua" )
+
+-- chacha20 and xchacha20 stream ciphers
+dofile( "dreamwork/std/crypto/chacha20.lua" )
+sendfile( "dreamwork/std/crypto/chacha20.lua" )
 
 -- uuid library
 dofile( "dreamwork/std/uuid.lua" )
