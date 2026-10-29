@@ -1401,10 +1401,6 @@ sendfile( "dreamwork/std/codec/bitpack.lua" )
 dofile( "dreamwork/std/codec/bytepack.lua" )
 sendfile( "dreamwork/std/codec/bytepack.lua" )
 
--- pack library
-dofile( "dreamwork/std/codec/pack.lua" )
-sendfile( "dreamwork/std/codec/pack.lua" )
-
 -- string library ( extension )
 dofile( "dreamwork/std/string.ext.lua" )
 sendfile( "dreamwork/std/string.ext.lua" )
@@ -3011,13 +3007,6 @@ sendfile( "dreamwork/std/types/url.lua" )
 ---
 ---@class dreamwork.std.crypto
 std.crypto = std.crypto or {}
-
----@alias dreamwork.std.HashClass.digest fun( data: string ): string
-
----@class dreamwork.std.HashClass : dreamwork.std.Class
----@field digest dreamwork.std.HashClass.digest The digest function.
----@field digest_size integer The size of the digest in bytes.
----@field block_size integer The size of the block in bytes.
 
 -- md5 hash library
 dofile( "dreamwork/std/crypto/md5.lua" )

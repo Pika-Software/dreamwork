@@ -49,5 +49,5 @@ options.length = 16
 ---
 --- The hash algorithm class to use for the key derivation.
 ---
----@type dreamwork.std.HashClass
+---@type dreamwork.std.crypto.HashClass
 options.hash = nil

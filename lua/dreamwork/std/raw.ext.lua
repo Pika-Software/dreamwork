@@ -80,9 +80,9 @@ if not operators then
     ---@class dreamwork.GModBitLib : bitlib
     ---@field bshift fun( x: integer, disp: integer ): integer
     ---@field brotate fun( x: integer, disp: integer ): integer
-    ---@field btest fun( ...: integer ): boolean
-    ---@field extract fun( x: integer, field: integer, width: integer ): integer
-    ---@field replace fun( x: integer, extract: integer, field: integer, width: integer ): integer
+    ---@field btest fun( x: integer, ...: integer ): boolean
+    ---@field extract fun( x: integer, field: integer, width?: integer ): integer
+    ---@field replace fun( x: integer, extract: integer, field: integer, width?: integer ): integer
     ---@diagnostic disable-next-line: undefined-global, deprecated
     local glua_bit = bit or bit32
 
@@ -118,10 +118,16 @@ if rbit.tobit == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Normalizes the specified value and clamps it in the range of a signed 32bit integer.
+    --- Normalizes the specified value to a signed 32-bit integer by wrapping it
+    --- around modulo `2^32`, so values outside the range are not clamped.
     ---
-    ---@param x integer The value to be normalized.
-    ---@return integer result The normalized value.
+    --- ```lua
+    --- rbit.tobit( 0xFFFFFFFF ) -- -1
+    --- rbit.tobit( 2 ^ 32 + 5 ) -- 5
+    --- ```
+    ---
+    ---@param x (integer | ffi.cdata*) The value to be normalized.
+    ---@return integer result The normalized value, in the range `-2147483648` to `2147483647`.
     ---@nodiscard
     function rbit.tobit( x )
         x = x % 0x100000000
@@ -136,10 +142,15 @@ if rbit.tohex == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the hexadecimal representation of the number with the specified digits.
+    --- Returns the lowercase hexadecimal representation of the number, zero-padded to `length` digits.
     ---
-    ---@param x integer The value to be converted.
-    ---@param length integer? The number of digits. Defaults to 8.
+    --- ```lua
+    --- rbit.tohex( 255 ) -- "000000ff"
+    --- rbit.tohex( 255, 2 ) -- "ff"
+    --- ```
+    ---
+    ---@param x (integer | ffi.cdata*) The value to be converted.
+    ---@param length integer? The number of digits, must be positive. Defaults to `8`.
     ---@return string str The hexadecimal representation.
     ---@nodiscard
     function rbit.tohex( x, length )
@@ -152,11 +163,12 @@ if rbit.band == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a bitwise AND operation on all the specified 32bit integers.
+    --- Performs a bitwise AND operation on all the specified 32-bit integers.
     ---
-    ---@param x integer The first value.
-    ---@param ... integer Additional values to AND together with the first.
-    ---@return integer result The bitwise AND of all given values, normalized to a signed 32bit integer.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The first value.
+    ---@param ... T Additional values to AND together with the first.
+    ---@return T result The bitwise AND of all given values, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.band( x, ... )
         ---@type boolean[]
@@ -188,11 +200,12 @@ if rbit.bor == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a bitwise OR operation on all the specified 32bit integers.
+    --- Performs a bitwise OR operation on all the specified 32-bit integers.
     ---
-    ---@param x integer The first value.
-    ---@param ... integer Additional values to OR together with the first.
-    ---@return integer result The bitwise OR of all given values, normalized to a signed 32bit integer.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The first value.
+    ---@param ... T Additional values to OR together with the first.
+    ---@return T result The bitwise OR of all given values, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.bor( x, ... )
         ---@type boolean[]
@@ -224,11 +237,12 @@ if rbit.bxor == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a bitwise XOR (exclusive OR) operation on all the specified 32bit integers.
+    --- Performs a bitwise XOR (exclusive OR) operation on all the specified 32-bit integers.
     ---
-    ---@param x integer The first value.
-    ---@param ... integer Additional values to XOR together with the first.
-    ---@return integer result The bitwise XOR of all given values, normalized to a signed 32bit integer.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The first value.
+    ---@param ... T Additional values to XOR together with the first.
+    ---@return T result The bitwise XOR of all given values, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.bxor( x, ... )
         ---@type boolean[]
@@ -263,10 +277,11 @@ if rbit.bnot == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a bitwise NOT (one's complement) operation on the specified 32bit integer.
+    --- Performs a bitwise NOT (one's complement) operation on the specified 32-bit integer.
     ---
-    ---@param x integer The value to be inverted.
-    ---@return integer result The bitwise complement of the given value, normalized to a signed 32bit integer.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value to be inverted.
+    ---@return T result The bitwise complement of the given value, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.bnot( x )
         ---@type integer
@@ -294,12 +309,13 @@ if rbit.lshift == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Performs a logical left shift of the specified 32bit integer by the given number of bits.
+        --- Performs a logical left shift of the specified 32-bit integer by the given number of bits.
         --- Bits shifted out of the top are discarded and zero bits are shifted in from the bottom.
         ---
-        ---@param x integer The value to be shifted.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be shifted.
         ---@param disp integer The number of bits to shift left by.
-        ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@return T result The shifted value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.lshift( x, disp )
             return rbit_tobit( x * (2 ^ disp) )
@@ -309,12 +325,13 @@ if rbit.lshift == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Performs a logical left shift of the specified 32bit integer by the given number of bits.
+        --- Performs a logical left shift of the specified 32-bit integer by the given number of bits.
         --- Bits shifted out of the top are discarded and zero bits are shifted in from the bottom.
         ---
-        ---@param x integer The value to be shifted.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be shifted.
         ---@param disp integer The number of bits to shift left by.
-        ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@return T result The shifted value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.lshift( x, disp )
             return rbit_bshift( x, disp )
@@ -333,13 +350,14 @@ if rbit.rshift == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Performs a logical right shift of the specified 32bit integer by the given number of bits.
+        --- Performs a logical right shift of the specified 32-bit integer by the given number of bits.
         --- Bits shifted out of the bottom are discarded and zero bits are shifted in from the top,
         --- regardless of the sign of the value.
         ---
-        ---@param x integer The value to be shifted.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be shifted.
         ---@param disp integer The number of bits to shift right by.
-        ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@return T result The shifted value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.rshift( x, disp )
             return rbit_tobit( math_floor( x / (2 ^ disp) ) )
@@ -349,13 +367,14 @@ if rbit.rshift == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Performs a logical right shift of the specified 32bit integer by the given number of bits.
+        --- Performs a logical right shift of the specified 32-bit integer by the given number of bits.
         --- Bits shifted out of the bottom are discarded and zero bits are shifted in from the top,
         --- regardless of the sign of the value.
         ---
-        ---@param x integer The value to be shifted.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be shifted.
         ---@param disp integer The number of bits to shift right by.
-        ---@return integer result The shifted value, normalized to a signed 32bit integer.
+        ---@return T result The shifted value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.rshift( x, disp )
             return rbit_bshift( x, -disp )
@@ -371,12 +390,13 @@ if rbit.bshift == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a logical bit shift of the specified 32bit integer.
+    --- Performs a logical bit shift of the specified 32-bit integer.
     --- A positive displacement shifts left, a negative displacement shifts right.
     ---
-    ---@param x integer The value to be shifted.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value to be shifted.
     ---@param disp integer The number of bits to shift by. Positive shifts left, negative shifts right.
-    ---@return integer result The shifted value, normalized to a signed 32bit integer.
+    ---@return T result The shifted value, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.bshift( x, disp )
         if disp > 0 then
@@ -392,13 +412,14 @@ if rbit.arshift == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs an arithmetic right shift of the specified 32bit integer by the given number of bits.
+    --- Performs an arithmetic right shift of the specified 32-bit integer by the given number of bits.
     --- Bits shifted out of the bottom are discarded and the sign bit is copied into the vacated
     --- high-order bits, preserving the sign of the value.
     ---
-    ---@param x integer The value to be shifted.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value to be shifted.
     ---@param disp integer The number of bits to shift right by.
-    ---@return integer result The shifted value, normalized to a signed 32bit integer.
+    ---@return T result The shifted value, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.arshift( x, disp )
         if x < 0x80000000 then
@@ -417,12 +438,13 @@ if rbit.lrotate == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Rotates the bits of the specified 32bit integer to the left by the given number of bits.
+        --- Rotates the bits of the specified 32-bit integer to the left by the given number of bits.
         --- Bits shifted out of the top are wrapped around and shifted in at the bottom.
         ---
-        ---@param x integer The value to be rotated.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be rotated.
         ---@param disp integer The number of bits to rotate left by.
-        ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@return T result The rotated value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.lrotate( x, disp )
             return rbit_bor( rbit_lshift( x, disp ), rbit_rshift( x, 32 - disp ) )
@@ -432,12 +454,13 @@ if rbit.lrotate == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Rotates the bits of the specified 32bit integer to the left by the given number of bits.
+        --- Rotates the bits of the specified 32-bit integer to the left by the given number of bits.
         --- Bits shifted out of the top are wrapped around and shifted in at the bottom.
         ---
-        ---@param x integer The value to be rotated.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be rotated.
         ---@param disp integer The number of bits to rotate left by.
-        ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@return T result The rotated value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.lrotate( x, disp )
             return rbit_brotate( x, disp )
@@ -456,12 +479,13 @@ if rbit.rrotate == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Rotates the bits of the specified 32bit integer to the right by the given number of bits.
+        --- Rotates the bits of the specified 32-bit integer to the right by the given number of bits.
         --- Bits shifted out of the bottom are wrapped around and shifted in at the top.
         ---
-        ---@param x integer The value to be rotated.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be rotated.
         ---@param disp integer The number of bits to rotate right by.
-        ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@return T result The rotated value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.rrotate( x, disp )
             return rbit_bor( rbit_rshift( x, disp ), rbit_lshift( x, 32 - disp ) )
@@ -471,12 +495,13 @@ if rbit.rrotate == nil then
 
         --- [SHARED AND MENU]
         ---
-        --- Rotates the bits of the specified 32bit integer to the right by the given number of bits.
+        --- Rotates the bits of the specified 32-bit integer to the right by the given number of bits.
         --- Bits shifted out of the bottom are wrapped around and shifted in at the top.
         ---
-        ---@param x integer The value to be rotated.
+        ---@generic T: integer | ffi.cdata*
+        ---@param x T The value to be rotated.
         ---@param disp integer The number of bits to rotate right by.
-        ---@return integer result The rotated value, normalized to a signed 32bit integer.
+        ---@return T result The rotated value, normalized to a signed 32-bit integer.
         ---@nodiscard
         function rbit.rrotate( x, disp )
             return rbit_brotate( x, -disp )
@@ -492,12 +517,13 @@ if rbit.brotate == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Rotates the bits of the specified 32bit integer.
+    --- Rotates the bits of the specified 32-bit integer.
     --- A positive displacement rotates left, a negative displacement rotates right.
     ---
-    ---@param x integer The value to be rotated.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value to be rotated.
     ---@param disp integer The number of bits to rotate by. Positive rotates left, negative rotates right.
-    ---@return integer result The rotated value, normalized to a signed 32bit integer.
+    ---@return T result The rotated value, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.brotate( x, disp )
         if disp > 0 then
@@ -513,11 +539,12 @@ if rbit.btest == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Performs a bitwise AND operation on all the specified 32bit integers and returns whether
+    --- Performs a bitwise AND operation on all the specified 32-bit integers and returns whether
     --- the result is non-zero.
     ---
-    ---@param x integer The first value.
-    ---@param ... integer Additional values to AND together with the first.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The first value.
+    ---@param ... T Additional values to AND together with the first.
     ---@return boolean result `true` if the bitwise AND of all given values is non-zero, `false` otherwise.
     ---@nodiscard
     function rbit.btest( x, ... )
@@ -530,13 +557,18 @@ if rbit.extract == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Extracts a bit field of the given width from the specified 32bit integer, starting at
+    --- Extracts a bit field of the given width from the specified 32-bit integer, starting at
     --- the given bit position (0-indexed, counted from the least significant bit).
     ---
-    ---@param x integer The value to extract the bit field from.
+    --- ```lua
+    --- rbit.extract( 0xB4, 2, 3 ) -- 5 (0b10110100 -> 0b101)
+    --- ```
+    ---
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value to extract the bit field from.
     ---@param field integer The starting bit position of the field (0-indexed).
-    ---@param width integer? The number of bits in the field. Defaults to 1.
-    ---@return integer result The extracted bit field, right-aligned as an unsigned integer.
+    ---@param width integer? The number of bits in the field. Defaults to `1`.
+    ---@return T result The extracted bit field, right-aligned as an unsigned integer.
     ---@nodiscard
     function rbit.extract( x, field, width )
         return rbit_band( rbit_rshift( x, field ), 2 ^ (width or 1) - 1 )
@@ -548,15 +580,16 @@ if rbit.replace == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Replaces a bit field of the given width in the specified 32bit integer, starting at the
+    --- Replaces a bit field of the given width in the specified 32-bit integer, starting at the
     --- given bit position (0-indexed, counted from the least significant bit), with the bits
     --- taken from `extract`.
     ---
-    ---@param x integer The value whose bit field is to be replaced.
-    ---@param extract integer The value providing the replacement bits (only the lowest `width` bits are used).
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value whose bit field is to be replaced.
+    ---@param extract T The value providing the replacement bits (only the lowest `width` bits are used).
     ---@param field integer The starting bit position of the field to replace (0-indexed).
-    ---@param width integer? The number of bits in the field. Defaults to 1.
-    ---@return integer result The value of `x` with the specified bit field replaced, normalized to a signed 32bit integer.
+    ---@param width integer? The number of bits in the field. Defaults to `1`.
+    ---@return T result The value of `x` with the specified bit field replaced.
     ---@nodiscard
     function rbit.replace( x, extract, field, width )
         local mask = 2 ^ (width or 1) - 1
@@ -570,11 +603,12 @@ if rbit.bswap == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Swaps the byte order (endianness) of the specified 32bit integer, reversing the order
+    --- Swaps the byte order (endianness) of the specified 32-bit integer, reversing the order
     --- of its four constituent bytes.
     ---
-    ---@param x integer The value whose byte order is to be swapped.
-    ---@return integer result The byte-swapped value, normalized to a signed 32bit integer.
+    ---@generic T: integer | ffi.cdata*
+    ---@param x T The value whose byte order is to be swapped.
+    ---@return T result The byte-swapped value, normalized to a signed 32-bit integer.
     ---@nodiscard
     function rbit.bswap( x )
         return rbit_bor(
@@ -592,13 +626,14 @@ end
 --- Reverses the order of the lowest `bit_count` bits of `x`, so the least significant bit
 --- becomes the most significant bit (within that range) and vice versa.
 ---
---- ```
---- reverse( 0b1011000, 7 ) --> 0b0001101
+--- ```lua
+--- rbit.reverse( 0x58, 7 ) -- 13 (0b1011000 -> 0b0001101)
 --- ```
 ---
----@param x integer The value whose bits are to be reversed.
+---@generic T: integer | ffi.cdata*
+---@param x T The value whose bits are to be reversed.
 ---@param bit_count integer? The number of low-order bits to reverse. Defaults to `32`.
----@return integer result The value of `x` with its bits reversed.
+---@return T result The value of `x` with its bits reversed.
 ---@nodiscard
 function rbit.reverse( x, bit_count )
     ---@type integer
@@ -615,11 +650,21 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the sign of an integer.
+--- Converts an unsigned `bit_count`-bit integer to its signed (two's complement) value,
+--- the inverse of `rbit.unsign`.
 ---
----@param x integer The integer to get the sign of.
----@param bit_count? integer The amount of bits to unsign to, `32` by default.
----@return integer result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
+--- Every positive `x` has `2 ^ bit_count` subtracted from it, so only pass values that have
+--- the sign bit set; zero and negative values are returned unchanged.
+---
+--- ```lua
+--- rbit.sign( 0xFFFFFFFF ) -- -1
+--- rbit.sign( 0xFF, 8 ) -- -1
+--- ```
+---
+---@generic T: integer | ffi.cdata*
+---@param x T The unsigned integer to convert.
+---@param bit_count? integer The bit width of the integer, `32` by default.
+---@return T result The signed value of the integer.
 ---@nodiscard
 function rbit.sign( x, bit_count )
     if x > 0 then
@@ -641,11 +686,19 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the unsigned value of an integer.
+--- Converts a signed `bit_count`-bit integer to its unsigned value, the inverse of `rbit.sign`.
 ---
----@param x integer The integer to get the unsigned value of.
----@param bit_count? integer The amount of bits to unsign to, `32` by default.
----@return integer result The unsigned value of the integer.
+--- Negative values have `2 ^ bit_count` added to them; zero and positive values are returned unchanged.
+---
+--- ```lua
+--- rbit.unsign( -1 ) -- 4294967295
+--- rbit.unsign( -1, 8 ) -- 255
+--- ```
+---
+---@generic T: integer | ffi.cdata*
+---@param x T The signed integer to convert.
+---@param bit_count? integer The bit width of the integer, `32` by default.
+---@return T result The unsigned value of the integer.
 ---@nodiscard
 function rbit.unsign( x, bit_count )
     if x < 0 then
