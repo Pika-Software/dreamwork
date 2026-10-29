@@ -37,6 +37,8 @@ local raw_select = raw.select
 local rbit = raw.bit
 local rbit_band = rbit.band
 
+local bitpack = std.bitpack
+
 local setmetatable = std.setmetatable
 local error = std.error
 local pcall = std.pcall
@@ -2158,9 +2160,7 @@ if engine.loadMaterial == nil then
     ---| 32 # If set does nothing, if unset - enables **Point Sampling (Texture Filtering)** on the material as well as adds the **No Level Of Detail** flag to it.
     ---| 64 # If set, the material will be given `$ignorez` flag, which is necessary for some rendering operations, such as render targets and 3d2d rendering.
 
-    local bitpack = std.bitpack
     local bitpack_toString = bitpack.toString
-    local bitpack_writeUInt = bitpack.writeUInt
 
     local glua_Material = _G.Material
 
@@ -2237,7 +2237,7 @@ if engine.loadMaterial == nil then
                 return c_material_fn( file_path )
             end
 
-            return c_material_fn( file_path, bitpack_toString( bitpack_writeUInt( parameters, 8 ), 8, false ) )
+            return c_material_fn( file_path, bitpack_toString( parameters ) )
         end
 
     end

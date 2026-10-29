@@ -3,149 +3,476 @@ local std = dreamwork.std
 
 local string = std.string
 local string_len = string.len
-local string_rep = string.rep
-local string_byte, string_char = string.byte, string.char
+local string_sub, string_byte = string.sub, string.byte
 
-local math = std.math
-local math_ceil = math.ceil
-local math_floor = math.floor
+local table = std.table
+local table_concat = table.concat
 
-local error = std.error
+local raw = std.raw
+
+local rbit = raw.bit
+local rbit_band, rbit_bor, rbit_bxor, rbit_bnot = rbit.band, rbit.bor, rbit.bxor, rbit.bnot
+local rbit_lshift, rbit_rshift, rbit_arshift = rbit.lshift, rbit.rshift, rbit.arshift
+
 local len = std.len
 
 
 --- [SHARED AND MENU]
 ---
---- Library that packs/unpacks types as bit sequences.
+--- Library that packs & unpacks bits in integers and bytes.
 ---
----@class dreamwork.std.bits
+--- Bit positions are `0`-indexed and counted from the least significant bit,
+--- so position `0` is the lowest bit (`0x01`) and position `7` is the highest bit of a byte (`0x80`),
+--- same as `bit.extract` and `pack`.
+---
+--- Field functions (`get`, `set`, `toggle`, `readUInt`, `readInt`, `write`)
+--- work on any integer up to 32 bits, not only on bytes, because they are made of 32-bit shifts:
+--- `readUInt( x, position, bit_count )` shifts the field to the top of 32 bits (bits above it fall off),
+--- then shifts it down to bit `0` (bits below it fall off).
+---
+--- So fields that cross byte boundaries are read and written by joining bytes into an integer with `bytepack` first:
+---
+--- ```
+--- -- [15] flag_a [14] flag_b [13..0] int14
+--- local x = bytepack.readUInt16BE( uint8_1, uint8_2 )
+---
+--- local flag_a = bitpack.get( x, 15 )
+--- local flag_b = bitpack.get( x, 14 )
+--- local value = bitpack.readInt( x, 0, 14 )
+---
+--- x = bitpack.write( x, 0, 14, value - 1 )
+--- uint8_1, uint8_2 = bytepack.writeUInt16BE( x )
+--- ```
+---
+--- Integers are taken modulo `2 ^ 32`, a field must fit in them (`position + bit_count <= 32`),
+--- and results with bit `31` set are negative (signed 32-bit), except `readUInt`.
+---
+--- Byte functions (`reverse`, `count`, `findFirst`, `findLast`, `rotate`, `swapNibbles`,
+--- `pack`, `unpack`, `toString`, `fromString`) work on the lowest 8 bits only.
+---
+--- Bit sequences are tables of booleans, stored LSB-first by default
+--- (`bits[ 1 ]` is bit `0` of the first byte), or MSB-first when `msb_first` is `true`
+--- (`bits[ 1 ]` is bit `7` of the first byte, the order bits are usually written in).
+---
+---@class dreamwork.std.bitpack
 local bitpack = {}
 std.bitpack = bitpack
 
----@alias dreamwork.std.bitpack.Sequence boolean[] The sequence of bits (booleans).
+---@type integer[]
+local reversed = {}
+
+---@type integer[]
+local counts = {}
+
+---@type string[]
+local strings = {}
+
+---@type table<integer, integer>
+local lowest = {}
+
+---@type table<integer, integer>
+local highest = {}
+
+do
+
+    ---@type string[]
+    local digits = {}
+
+    for byte = 0, 255, 1 do
+        local reverse, count = 0, 0
+
+        for position = 0, 7, 1 do
+            local value = rbit_band( rbit_rshift( byte, position ), 1 )
+
+            reverse = rbit_bor( reverse, rbit_lshift( value, 7 - position ) )
+            count = count + value
+
+            if value == 1 then
+                if lowest[ byte ] == nil then
+                    lowest[ byte ] = position
+                end
+
+                highest[ byte ] = position
+            end
+
+            digits[ 8 - position ] = value == 1 and "1" or "0"
+        end
+
+        reversed[ byte ] = reverse
+        counts[ byte ] = count
+        strings[ byte ] = table_concat( digits, "", 1, 8 )
+    end
+
+end
 
 --- [SHARED AND MENU]
 ---
---- Reads unsigned integer from table of bits (booleans).
+--- Checks if the bit at the given position of the integer is set.
 ---
----@param bit_sequence dreamwork.std.bitpack.Sequence The sequence of bits.
----@param bit_sequence_size? integer The size of the bit sequence.
----@param start_position? integer The start position in the bit sequence.
----@return integer uint The unsigned integer.
-local function bitpack_readUInt( bit_sequence, bit_sequence_size, start_position )
-    if start_position == nil then
-        start_position = 1
+--- ```
+--- get( 0b00000100, 2 ) --> true
+--- get( 0x8000, 15 ) --> true
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position integer The bit position (`0` - `31`).
+---@return boolean is_set `true` if the bit is `1`, `false` if it is `0`.
+---@nodiscard
+function bitpack.get( x, position )
+    return rbit_band( x, rbit_lshift( 1, position ) ) ~= 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets the bit at the given position of the integer.
+---
+--- ```
+--- set( 0b00000000, 2, true ) --> 0b00000100
+--- set( 0b11111111, 0, false ) --> 0b11111110
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position integer The bit position (`0` - `31`).
+---@param value? boolean | 0 | 1 The new value of the bit, `true` by default.
+---@return integer x The changed integer.
+---@nodiscard
+function bitpack.set( x, position, value )
+    if value == false or value == 0 then
+        return rbit_band( x, rbit_bnot( rbit_lshift( 1, position ) ) )
     end
 
-    if bit_sequence_size == nil then
-        bit_sequence_size = len( bit_sequence )
-    elseif bit_sequence_size == 0 then
-        return 0
-    elseif bit_sequence_size < 0 then
-        error( "bit count cannot be negative", 2 )
+    return rbit_bor( x, rbit_lshift( 1, position ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Flips the bit at the given position of the integer.
+---
+--- ```
+--- toggle( 0b00000101, 2 ) --> 0b00000001
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position integer The bit position (`0` - `31`).
+---@return integer x The changed integer.
+---@nodiscard
+function bitpack.toggle( x, position )
+    return rbit_bxor( x, rbit_lshift( 1, position ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Reads unsigned integer from the bit field of the integer.
+---
+--- ```
+--- readUInt( 0b01101100, 2, 4 ) --> 0b1011 ( 11 )
+--- readUInt( 0xBB2E, 0, 14 ) --> 15150
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position? integer The position of the lowest bit of the field (`0` - `31`), `0` by default.
+---@param bit_count? integer The size of the field in bits (`1` - `32`), `1` by default.
+---@return integer value The unsigned integer.
+---@nodiscard
+function bitpack.readUInt( x, position, bit_count )
+    if bit_count == nil then
+        bit_count = 1
     end
 
-    local value = 0
+    local value = rbit_rshift( rbit_lshift( x, 32 - (position or 0) - bit_count ), 32 - bit_count )
 
-    for i = start_position, bit_sequence_size + (start_position - 1), 1 do
-        if bit_sequence[ i ] then
-            value = value * 2 + 1
-        else
-            value = value * 2
-        end
+    -- only a 32-bit field can have bit `31` set
+    if value < 0 then
+        return value + 0x100000000
     end
 
     return value
 end
 
-bitpack.readUInt = bitpack_readUInt
+--- [SHARED AND MENU]
+---
+--- Reads signed (two's complement) integer from the bit field of the integer.
+---
+--- ```
+--- readInt( 0b01101100, 2, 4 ) --> -5
+--- readInt( 0xBB2E, 0, 14 ) --> -1234
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position? integer The position of the lowest bit of the field (`0` - `31`), `0` by default.
+---@param bit_count? integer The size of the field in bits (`1` - `32`), `1` by default.
+---@return integer value The signed integer.
+---@nodiscard
+function bitpack.readInt( x, position, bit_count )
+    if bit_count == nil then
+        bit_count = 1
+    end
+
+    return rbit_arshift( rbit_lshift( x, 32 - (position or 0) - bit_count ), 32 - bit_count )
+end
 
 --- [SHARED AND MENU]
 ---
---- Writes unsigned integer as table of bits (booleans).
+--- Writes unsigned or signed (two's complement) integer into the bit field of the integer,
+--- bits outside of the field are left unchanged.
 ---
----@param value integer	The unsigned integer.
----@param bit_sequence_size? integer The size of the bit sequence.
----@return dreamwork.std.bitpack.Sequence bit_sequence The sequence of bits.
-local function bitpack_writeUInt( value, bit_sequence_size )
-    if bit_sequence_size == nil then
-        bit_sequence_size = 8
+--- Only the lowest `bit_count` bits of the value are written,
+--- for negative values these bits already are their two's complement,
+--- so the same field can be read back with `readUInt` or `readInt`.
+---
+--- ```
+--- write( 0b00000011, 2, 4, 11 ) --> 0b00101111
+--- write( 0b00000011, 2, 4, -5 ) --> 0b00101111
+--- write( 0x8000, 0, 14, -1234 ) --> 0xBB2E
+--- ```
+---
+---@param x integer The integer (up to 32 bits).
+---@param position integer The position of the lowest bit of the field (`0` - `31`).
+---@param bit_count integer The size of the field in bits (`1` - `32`).
+---@param value integer The unsigned or signed integer.
+---@return integer x The changed integer.
+---@nodiscard
+function bitpack.write( x, position, bit_count, value )
+    local mask = rbit_lshift( rbit_rshift( 0xFFFFFFFF, 32 - bit_count ), position )
+
+    return rbit_bor(
+        rbit_band( x, rbit_bnot( mask ) ),
+        rbit_band( rbit_lshift( value, position ), mask )
+    )
+end
+
+--- [SHARED AND MENU]
+---
+--- Reverses the order of bits in the byte.
+---
+--- ```
+--- reverse( 0b00000110 ) --> 0b01100000
+--- ```
+---
+---@param byte integer The byte.
+---@return integer byte The reversed byte.
+---@nodiscard
+function bitpack.reverse( byte )
+    return reversed[ rbit_band( byte, 0xFF ) ]
+end
+
+--- [SHARED AND MENU]
+---
+--- Counts set bits in the byte (population count).
+---
+--- ```
+--- count( 0b01101100 ) --> 4
+--- ```
+---
+---@param byte integer The byte.
+---@return integer count The number of `1` bits (`0` - `8`).
+---@nodiscard
+function bitpack.count( byte )
+    return counts[ rbit_band( byte, 0xFF ) ]
+end
+
+--- [SHARED AND MENU]
+---
+--- Finds the position of the lowest set bit in the byte.
+---
+--- ```
+--- findFirst( 0b01101100 ) --> 2
+--- findFirst( 0 ) --> nil
+--- ```
+---
+---@param byte integer The byte.
+---@return integer | nil position The bit position (`0` - `7`), or `nil` if the byte is `0`.
+---@nodiscard
+function bitpack.findFirst( byte )
+    return lowest[ rbit_band( byte, 0xFF ) ]
+end
+
+--- [SHARED AND MENU]
+---
+--- Finds the position of the highest set bit in the byte.
+---
+--- ```
+--- findLast( 0b01101100 ) --> 6
+--- findLast( 0 ) --> nil
+--- ```
+---
+---@param byte integer The byte.
+---@return integer | nil position The bit position (`0` - `7`), or `nil` if the byte is `0`.
+---@nodiscard
+function bitpack.findLast( byte )
+    return highest[ rbit_band( byte, 0xFF ) ]
+end
+
+--- [SHARED AND MENU]
+---
+--- Rotates bits of the byte, bits shifted out of one end come back on the other.
+---
+--- ```
+--- rotate( 0b10000001, 1 ) --> 0b00000011
+--- rotate( 0b10000001, -1 ) --> 0b11000000
+--- ```
+---
+---@param byte integer The byte.
+---@param shift integer The number of bits to rotate by, positive to the left (towards the highest bit), negative to the right.
+---@return integer byte The rotated byte.
+---@nodiscard
+function bitpack.rotate( byte, shift )
+    byte, shift = rbit_band( byte, 0xFF ), rbit_band( shift, 7 )
+    return rbit_band( rbit_bor( rbit_lshift( byte, shift ), rbit_rshift( byte, 8 - shift ) ), 0xFF )
+end
+
+--- [SHARED AND MENU]
+---
+--- Swaps the lower and upper 4 bits (nibbles) of the byte.
+---
+--- ```
+--- swapNibbles( 0xA5 ) --> 0x5A
+--- ```
+---
+---@param byte integer The byte.
+---@return integer byte The swapped byte.
+---@nodiscard
+function bitpack.swapNibbles( byte )
+    return rbit_bor( rbit_band( rbit_lshift( byte, 4 ), 0xF0 ), rbit_band( rbit_rshift( byte, 4 ), 0x0F ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Unpacks the byte as 8 booleans, from the lowest bit to the highest.
+---
+--- ```
+--- unpack( 0b00000101 ) --> true, false, true, false, false, false, false, false
+--- ```
+---
+---@param byte integer The byte.
+---@return boolean bit0
+---@return boolean bit1
+---@return boolean bit2
+---@return boolean bit3
+---@return boolean bit4
+---@return boolean bit5
+---@return boolean bit6
+---@return boolean bit7
+---@nodiscard
+function bitpack.unpack( byte )
+    return rbit_band( byte, 0x01 ) ~= 0,
+        rbit_band( byte, 0x02 ) ~= 0,
+        rbit_band( byte, 0x04 ) ~= 0,
+        rbit_band( byte, 0x08 ) ~= 0,
+        rbit_band( byte, 0x10 ) ~= 0,
+        rbit_band( byte, 0x20 ) ~= 0,
+        rbit_band( byte, 0x40 ) ~= 0,
+        rbit_band( byte, 0x80 ) ~= 0
+end
+
+--- [SHARED AND MENU]
+---
+--- Packs up to 8 booleans into the byte, from the lowest bit to the highest, `nil` is `false`.
+---
+--- ```
+--- pack( true, false, true ) --> 0b00000101
+--- ```
+---
+---@param bit0? boolean
+---@param bit1? boolean
+---@param bit2? boolean
+---@param bit3? boolean
+---@param bit4? boolean
+---@param bit5? boolean
+---@param bit6? boolean
+---@param bit7? boolean
+---@return integer byte The byte.
+---@nodiscard
+function bitpack.pack( bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7 )
+    return (bit0 and 0x01 or 0) +
+        (bit1 and 0x02 or 0) +
+        (bit2 and 0x04 or 0) +
+        (bit3 and 0x08 or 0) +
+        (bit4 and 0x10 or 0) +
+        (bit5 and 0x20 or 0) +
+        (bit6 and 0x40 or 0) +
+        (bit7 and 0x80 or 0)
+end
+
+--- [SHARED AND MENU]
+---
+--- Unpacks the sequence of bytes into the sequence of bits (booleans).
+---
+---@param bytes integer[] The sequence of bytes.
+---@param byte_count? integer The number of bytes.
+---@param msb_first? boolean `true` to store the highest bit of each byte first, `false` by default.
+---@return boolean[] bits The sequence of bits.
+---@return integer bit_count The number of bits.
+---@nodiscard
+function bitpack.toTable( bytes, byte_count, msb_first )
+    if byte_count == nil then
+        byte_count = len( bytes )
     end
 
-    if value < 0 then
-        error( "integer is too small to write", 1 )
-    elseif value > (2 ^ bit_sequence_size) - 1 then
-        error( "integer is too large to write", 2 )
-    end
+    ---@type boolean[]
+    local bits = {}
 
-    local bit_sequence = {}
+    ---@type integer
+    local bit_count = 0
 
-    for i = bit_sequence_size, 1, -1 do
-        if value == 0 then
-            bit_sequence[ i ] = false
+    for index = 1, byte_count, 1 do
+        local byte = bytes[ index ]
+
+        if msb_first then
+            for position = 7, 0, -1 do
+                bit_count = bit_count + 1
+                bits[ bit_count ] = rbit_band( rbit_rshift( byte, position ), 1 ) == 1
+            end
         else
-            bit_sequence[ i ] = value % 2 == 1
-            value = math_floor( value * 0.5 )
+            for position = 0, 7, 1 do
+                bit_count = bit_count + 1
+                bits[ bit_count ] = rbit_band( rbit_rshift( byte, position ), 1 ) == 1
+            end
         end
     end
 
-    return bit_sequence
-end
-
-bitpack.writeUInt = bitpack_writeUInt
-
---- [SHARED AND MENU]
----
---- Reads signed integer from table of bits (booleans).
----
----@param bit_sequence dreamwork.std.bitpack.Sequence The sequence of bits.
----@param bit_sequence_size integer The size of the bit sequence.
----@param start_position integer The start position in the bit sequence.
----@return integer value The signed integer.
-function bitpack.readInt( bit_sequence, bit_sequence_size, start_position )
-    return bitpack_readUInt( bit_sequence, bit_sequence_size, start_position ) - (2 ^ (bit_sequence_size - 1))
+    return bits, bit_count
 end
 
 --- [SHARED AND MENU]
 ---
---- Writes signed integer as table of bits (booleans).
+--- Packs the sequence of bits (booleans) into the sequence of bytes,
+--- unused bits of the last byte are `0`.
 ---
----@param value integer The number to explode.
----@param bit_sequence_size integer
----@return dreamwork.std.bitpack.Sequence bit_sequence
-function bitpack.writeInt( value, bit_sequence_size )
-    return bitpack_writeUInt( value + (2 ^ (bit_sequence_size - 1)), bit_sequence_size )
-end
-
---- [SHARED AND MENU]
----
---- Writes table of bits (booleans) as bytecodes.
----
----@param bit_sequence dreamwork.std.bitpack.Sequence The table of bits (booleans).
----@param bit_sequence_size? integer The size of the bit sequence.
----@param big_endian? boolean `true` for big endian, `false` for little endian.
----@return dreamwork.std.bytepack.Sequence bytes The sequence of bytes.
+---@param bits boolean[] The sequence of bits.
+---@param bit_count? integer The number of bits.
+---@param msb_first? boolean `true` if the highest bit of each byte is stored first, `false` by default.
+---@return integer[] bytes The sequence of bytes.
 ---@return integer byte_count The number of bytes.
-function bitpack.pack( bit_sequence, bit_sequence_size, big_endian )
-    if bit_sequence_size == nil then
-        bit_sequence_size = len( bit_sequence )
-    elseif bit_sequence_size < 1 then
-        error( "bit count cannot be less than 1", 1 )
+---@nodiscard
+function bitpack.fromTable( bits, bit_count, msb_first )
+    if bit_count == nil then
+        bit_count = len( bits )
     end
 
-    local byte_count = math.ceil( bit_sequence_size * 0.125 )
+    ---@type integer[]
     local bytes = {}
 
-    if big_endian then
-        for i = byte_count, 1, -1 do
-            bytes[ i ] = bitpack_readUInt( bit_sequence, 8, i * 8 - 7 )
-        end
-    else
-        bit_sequence_size = bit_sequence_size + 1
+    local byte_count = rbit_rshift( bit_count + 7, 3 )
 
-        for i = 1, byte_count, 1 do
-            bytes[ i ] = bitpack_readUInt( bit_sequence, 8, bit_sequence_size - i * 8 )
+    for index = 1, byte_count, 1 do
+        local offset = (index - 1) * 8
+
+        ---@type integer
+        local byte = 0
+
+        for position = 0, 7, 1 do
+            local bit_index = offset + position + 1
+            if bit_index > bit_count then
+                break
+            end
+
+            if bits[ bit_index ] then
+                byte = rbit_bor( byte, rbit_lshift( 1, msb_first and (7 - position) or position ) )
+            end
         end
+
+        bytes[ index ] = byte
     end
 
     return bytes, byte_count
@@ -153,107 +480,56 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Reads bytecodes as table of bits (booleans).
+--- Converts the byte to a string of `0`s and `1`s, from the highest bit to the lowest.
 ---
----@param big_endian? boolean `true` for big endian, `false` for little endian.
----@param bytes dreamwork.std.bytepack.Sequence The bytecodes (bytes as integers<0-255>).
----@param byte_count? integer The number of bytes.
----@return dreamwork.std.bitpack.Sequence bit_sequence The table of bits (booleans).
----@return integer bit_sequence_size The size of the bit table.
-function bitpack.unpack( big_endian, bytes, byte_count )
-    if byte_count == nil then
-        byte_count = len( bytes )
+--- ```
+--- toString( 5 ) --> "00000101"
+--- toString( 5, 4 ) --> "0101"
+--- ```
+---
+---@param byte integer The byte.
+---@param bit_count? integer The number of the lowest bits to convert (`1` - `8`), `8` by default.
+---@return string str The string of `0`s and `1`s.
+---@nodiscard
+function bitpack.toString( byte, bit_count )
+    local str = strings[ rbit_band( byte, 0xFF ) ]
+    if bit_count == nil or bit_count == 8 then
+        return str
     end
 
-    local bit_sequence, bit_sequence_size = {}, 0
-
-    for i = big_endian and 1 or byte_count, big_endian and byte_count or 1, big_endian and 1 or -1 do
-        local uint8 = bytes[ i ]
-
-        for j = 8, 1, -1 do
-            if uint8 == 0 then
-                bit_sequence[ bit_sequence_size + j ] = false
-            else
-                bit_sequence[ bit_sequence_size + j ] = (uint8 % 2) == 1
-                uint8 = math_floor( uint8 * 0.5 )
-            end
-        end
-
-        bit_sequence_size = bit_sequence_size + 8
-    end
-
-    return bit_sequence, bit_sequence_size
+    return string_sub( str, 9 - bit_count, 8 )
 end
 
-do
-
-    local table_concat = std.table.concat
-
-    --- [SHARED AND MENU]
-    ---
-    --- Converts table of bits (booleans) to string of 0s and 1s.
-    ---
-    ---@param bit_sequence dreamwork.std.bitpack.Sequence The table of bits (booleans).
-    ---@param bit_sequence_size? integer The size of the bit table.
-    ---@param full_bytes? boolean `true` for full bytes, `false` for bit count.
-    ---@return string bit_str The string of 0s and 1s.
-    function bitpack.toString( bit_sequence, bit_sequence_size, full_bytes )
-        if bit_sequence_size == nil then
-            bit_sequence_size = len( bit_sequence )
-        end
-
-        local bytes = {}
-
-        for index = 1, bit_sequence_size, 1 do
-            bytes[ index ] = bit_sequence[ index ] and "1" or "0"
-        end
-
-        local bit_str = table_concat( bytes, "", 1, bit_sequence_size )
-
-        if full_bytes then
-            return string_rep( "0", (math_ceil( bit_sequence_size * 0.125 ) * 8) - bit_sequence_size ) .. bit_str
-        end
-
-        return bit_str
+--- [SHARED AND MENU]
+---
+--- Reads the byte from a string of `0`s and `1`s, from the highest bit to the lowest.
+---
+--- ```
+--- fromString( "00000101" ) --> 5
+--- fromString( "101" ) --> 5
+--- fromString( "2" ) --> nil
+--- ```
+---
+---@param str string The string of `0`s and `1`s, up to 8 characters.
+---@return integer | nil byte The byte, or `nil` if the string is empty, too long or has other characters.
+---@nodiscard
+function bitpack.fromString( str )
+    local str_length = string_len( str )
+    if str_length == 0 or str_length > 8 then
+        return nil
     end
 
-end
+    ---@type integer
+    local byte = 0
 
-do
-
-    local string_find = string.find
-
-    --- [SHARED AND MENU]
-    ---
-    --- Reads bit sequence from string of 0s and 1s.
-    ---
-    ---@param bit_str string The string of 0s and 1s.
-    ---@param bit_str_length? integer The length of the string.
-    ---@return dreamwork.std.bitpack.Sequence bit_sequence The table of bits (booleans).
-    ---@return integer bit_sequence_size The size of the bit table.
-    function bitpack.fromString( bit_str, bit_str_length )
-        if bit_str_length == nil then
-            bit_str_length = string_len( bit_str )
+    for index = 1, str_length, 1 do
+        local digit = string_byte( str, index, index ) - 0x30
+        if digit ~= 0 and digit ~= 1 then
+            return nil
         end
 
-        local bit_sequence = {}
-
-        local first_true = string_find( bit_str, "1", 1, true )
-        if first_true == nil then
-            for index = 1, bit_str_length, 1 do
-                bit_sequence[ index ] = false
-            end
-        else
-
-            first_true = first_true - 1
-
-            for index = first_true + 1, bit_str_length, 1 do
-                bit_sequence[ index - first_true ] = string_byte( bit_str, index, index ) == 0x31
-            end
-
-        end
-
-        return bit_sequence, bit_str_length
+        byte = byte * 2 + digit
     end
 
+    return byte
 end
