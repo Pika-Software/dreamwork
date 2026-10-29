@@ -4,6 +4,8 @@ local std = dreamwork.std
 ---@class dreamwork.std.crypto
 local crypto = std.crypto
 
+local error = std.error
+
 local table = std.table
 local table_unpack = table.unpack
 
@@ -19,6 +21,8 @@ local bit_bxor = bit.bxor
 ---
 --- Hash-based Message Authentication Code library.
 ---
+--- See [RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104) for the algorithm.
+---
 --- [About HMAC](https://en.wikipedia.org/wiki/HMAC)
 ---@class dreamwork.std.crypto.hmac
 local hmac = {}
@@ -28,15 +32,17 @@ crypto.hmac = hmac
 ---
 --- Normalizes the key to the block size of the hash function.
 ---
+--- Keys longer than `block_size` are hashed first, shorter keys are padded with zero bytes.
+---
 ---@param key string The key to normalize.
----@param hash_fn function
+---@param digest_fn fun( data: string ): string The hash function to use.
 ---@param block_size integer The block size of the hash function.
----@return string hmac_key The normalized key.
+---@return string normalized_key The key of exactly `block_size` bytes.
 ---@nodiscard
-local function key_normalize( key, hash_fn, block_size )
+local function normalizeKey( key, digest_fn, block_size )
     local key_length = string_len( key )
     if key_length > block_size then
-        return key_normalize( hash_fn( key ), hash_fn, block_size )
+        return normalizeKey( digest_fn( key ), digest_fn, block_size )
     elseif key_length < block_size then
         return key .. string_rep( "\0", block_size - key_length )
     else
@@ -44,111 +50,86 @@ local function key_normalize( key, hash_fn, block_size )
     end
 end
 
-hmac.key = key_normalize
+hmac.normalizeKey = normalizeKey
 
 --- [SHARED AND MENU]
 ---
---- Computes the key padding.
+--- Computes the outer and inner pads of the key, `key ⊕ opad` and `key ⊕ ipad`.
 ---
---- This function will NOT check
---- if the padding's entered into
---- it is correct.
+--- The pads can be computed once and reused with `hmac.digestWithPads` for many messages under the same key.
 ---
---- See https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation for the algorithm.
----
----@param key string The normalized by given block size key.
+---@param key string The key normalized by `hmac.normalizeKey`, must be exactly `block_size` bytes.
 ---@param block_size integer The block size of the hash function.
----@param outer? string The known outer padding.
----@param inner? string The known inner padding.
----@return string outer The outer padding.
----@return string inner The inner padding.
+---@return string outer The outer pad.
+---@return string inner The inner pad.
 ---@nodiscard
-local function key_padding( key, block_size, outer, inner )
-    if outer == nil and inner == nil then
-        local outer_tbl, inner_tbl = {}, {}
-
-        for i = 1, block_size, 1 do
-            local byte = string_byte( key, i )
-            outer_tbl[ i ] = bit_bxor( byte, 0x5c )
-            inner_tbl[ i ] = bit_bxor( byte, 0x36 )
-        end
-
-        return string_char( table_unpack( outer_tbl, 1, block_size ) ), string_char( table_unpack( inner_tbl, 1, block_size ) )
-    elseif outer == nil then
-        ---@cast inner string
-        local outer_tbl = {}
-
-        for i = 1, block_size, 1 do
-            outer_tbl[ i ] = bit_bxor( string_byte( key, i ), 0x5c )
-        end
-
-        return string_char( table_unpack( outer_tbl, 1, block_size ) ), inner
-    elseif inner == nil then
-        ---@cast outer string
-        local inner_tbl = {}
-
-        for i = 1, block_size, 1 do
-            inner_tbl[ i ] = bit_bxor( string_byte( key, i ), 0x36 )
-        end
-
-        return outer, string_char( table_unpack( inner_tbl, 1, block_size ) )
-    else
-        ---@cast inner string
-        ---@cast outer string
-        return outer, inner
+local function pads( key, block_size )
+    if string_len( key ) ~= block_size then
+        error( "hmac key must be exactly " .. block_size .. " bytes, use `hmac.normalizeKey` first", 2 )
     end
+
+    local outer_tbl, inner_tbl = {}, {}
+
+    for i = 1, block_size, 1 do
+        local byte = string_byte( key, i )
+        outer_tbl[ i ] = bit_bxor( byte, 0x5c )
+        inner_tbl[ i ] = bit_bxor( byte, 0x36 )
+    end
+
+    return string_char( table_unpack( outer_tbl, 1, block_size ) ), string_char( table_unpack( inner_tbl, 1, block_size ) )
 end
 
-hmac.padding = key_padding
+hmac.pads = pads
 
 --- [SHARED AND MENU]
 ---
---- Computes hmac and returns the result using the given hash function.
+--- Computes hmac of the message using precomputed pads from `hmac.pads`.
 ---
----@param hash_fn dreamwork.std.HashClass.digest The hash function to use.
----@param outer string The outer hmac padding.
----@param inner string The inner hmac padding.
----@param msg string The message to compute hmac for.
+---@param message string The message to compute hmac for.
+---@param outer string The outer pad.
+---@param inner string The inner pad.
+---@param digest_fn fun( data: string, as_hex?: boolean ): string The hash function to use.
 ---@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
----@return string hmac_str The binary hmac string of the message.
+---@return string hmac_str The hmac string of the message.
 ---@nodiscard
-function hmac.compute( hash_fn, outer, inner, msg, as_hex )
-    return hash_fn( outer .. hash_fn( inner .. msg ) )
+function hmac.digestWithPads( message, outer, inner, digest_fn, as_hex )
+    return digest_fn( outer .. digest_fn( inner .. message ), as_hex )
 end
 
 --- [SHARED AND MENU]
 ---
---- Computes hmac and returns the result using the given hash function.
+--- Computes hmac of the message using the given hash function.
 ---
----@param msg string The message to compute hmac for.
+---@param message string The message to compute hmac for.
 ---@param key string The key to use.
----@param hash_fn dreamwork.std.HashClass.digest The hash function to use.
+---@param digest_fn fun( data: string, as_hex?: boolean ): string The hash function to use.
 ---@param block_size integer The block size of the hash function.
 ---@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
----@return string str_result The hmac string of the message.
+---@return string hmac_str The hmac string of the message.
 ---@nodiscard
-local function hash( msg, key, hash_fn, block_size, as_hex )
-    local outer, inner = key_padding( key_normalize( key, hash_fn, block_size ), block_size )
-    return hash_fn( outer .. hash_fn( inner .. msg ) )
+local function digest( message, key, digest_fn, block_size, as_hex )
+    local outer, inner = pads( normalizeKey( key, digest_fn, block_size ), block_size )
+    return digest_fn( outer .. digest_fn( inner .. message ), as_hex )
 end
 
-hmac.hash = hash
+hmac.digest = digest
 
 --- [SHARED AND MENU]
 ---
---- Returns a function that computes hmac using the given hash function and block length.
+--- Returns a function that computes hmac using the given hash class.
 ---
----@param digest_fn fun( str: string ): string
----@param block_size integer
+---@param hash dreamwork.std.crypto.HashClass The hash class to use, e.g. `std.crypto.SHA256`.
 ---@return fun( message: string, key: string, as_hex?: boolean ): string
 ---@nodiscard
-function hmac.preset( digest_fn, block_size )
+function hmac.preset( hash )
+    local digest_fn, block_size = hash.digest, hash.block_size
+
     ---@param message string The message to compute hmac for.
     ---@param key string The key to use.
     ---@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
-    ---@return string str_result The hmac string of the message.
+    ---@return string hmac_str The hmac string of the message.
     return function( message, key, as_hex )
-        return hash( message, key, digest_fn, block_size, as_hex )
+        return digest( message, key, digest_fn, block_size, as_hex )
     end
 end
 
@@ -156,22 +137,28 @@ end
 ---
 --- Computes a hmac using the MD5 hashing.
 ---
-hmac.md5 = hmac.preset( crypto.MD5.digest, crypto.MD5.block_size )
+hmac.md5 = hmac.preset( crypto.MD5 )
 
 --- [SHARED AND MENU]
 ---
 --- Computes a hmac using the SHA-1 hashing.
 ---
-hmac.sha1 = hmac.preset( crypto.SHA1.digest, crypto.SHA1.block_size )
+hmac.sha1 = hmac.preset( crypto.SHA1 )
 
 --- [SHARED AND MENU]
 ---
 --- Computes a hmac using the SHA-256 hashing.
 ---
-hmac.sha256 = hmac.preset( crypto.SHA256.digest, crypto.SHA256.block_size )
+hmac.sha256 = hmac.preset( crypto.SHA256 )
 
--- --- [SHARED AND MENU]
--- ---
--- --- Computes a hmac using the SHA-512 hashing.
--- ---
--- hmac.sha512 = hmac.preset( crypto.SHA512.digest, crypto.SHA512.block_size )
+--- [SHARED AND MENU]
+---
+--- Computes a hmac using the SHA-384 hashing.
+---
+hmac.sha384 = hmac.preset( crypto.SHA384 )
+
+--- [SHARED AND MENU]
+---
+--- Computes a hmac using the SHA-512 hashing.
+---
+hmac.sha512 = hmac.preset( crypto.SHA512 )

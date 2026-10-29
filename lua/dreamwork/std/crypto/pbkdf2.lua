@@ -21,9 +21,9 @@ local bytepack_writeUInt32BE = bytepack.writeUInt32BE
 local crypto = std.crypto
 
 local hmac = crypto.hmac
-local hmac_key = hmac.key
-local hmac_padding = hmac.padding
-local hmac_compute = hmac.compute
+local hmac_pads = hmac.pads
+local hmac_normalizeKey = hmac.normalizeKey
+local hmac_digestWithPads = hmac.digestWithPads
 
 --- [SHARED AND MENU]
 ---
@@ -45,16 +45,16 @@ function crypto.pbkdf2( options )
     local block_size = pbkdf2_hash.block_size
     local digest_fn = pbkdf2_hash.digest
 
-    local hmac_outer, hmac_inner = hmac_padding( hmac_key( pbkdf2_password, digest_fn, block_size ), block_size )
+    local hmac_outer, hmac_inner = hmac_pads( hmac_normalizeKey( pbkdf2_password, digest_fn, block_size ), block_size )
     local block_count = math_ceil( pbkdf2_length / digest_size )
     local blocks = {}
 
     for block = 1, block_count, 1 do
-        local u = hmac_compute( digest_fn, hmac_outer, hmac_inner, pbkdf2_salt .. string_char( bytepack_writeUInt32BE( block ) ), false )
+        local u = hmac_digestWithPads( pbkdf2_salt .. string_char( bytepack_writeUInt32BE( block ) ), hmac_outer, hmac_inner, digest_fn )
         local t = { string_byte( u, 1, digest_size ) }
 
         for _ = 2, pbkdf2_iterations, 1 do
-            u = hmac_compute( digest_fn, hmac_outer, hmac_inner, u, false )
+            u = hmac_digestWithPads( u, hmac_outer, hmac_inner, digest_fn )
 
             for j = 1, digest_size, 1 do
                 t[ j ] = bit_bxor( t[ j ], string_byte( u, j ) )

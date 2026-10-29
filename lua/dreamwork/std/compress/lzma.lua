@@ -12,7 +12,7 @@ local pack_readUInt32LE = pack.readUInt32LE
 ---
 ---@class dreamwork.std.lzma
 ---@field PROPS_SIZE number The size of the lzma properties in bytes.
-local lzma = std.lzma or { PROPS_SIZE = 5 }
+local lzma = { PROPS_SIZE = 5 }
 std.lzma = lzma
 
 lzma.compress = glua_util.Compress or function() return "" end
