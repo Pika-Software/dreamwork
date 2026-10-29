@@ -1401,6 +1401,10 @@ sendfile( "dreamwork/std/codec/bitpack.lua" )
 dofile( "dreamwork/std/codec/bytepack.lua" )
 sendfile( "dreamwork/std/codec/bytepack.lua" )
 
+-- pack library
+dofile( "dreamwork/std/codec/pack.lua" )
+sendfile( "dreamwork/std/codec/pack.lua" )
+
 -- string library ( extension )
 dofile( "dreamwork/std/string.ext.lua" )
 sendfile( "dreamwork/std/string.ext.lua" )
@@ -1472,10 +1476,6 @@ sendfile( "dreamwork/std/codec/punycode.lua" )
 -- debug stack class
 dofile( "dreamwork/std/types/debug_stack.lua" )
 sendfile( "dreamwork/std/types/debug_stack.lua" )
-
--- buffer library
-dofile( "dreamwork/std/codec/buffer.lua" )
-sendfile( "dreamwork/std/codec/buffer.lua" )
 
 do
 

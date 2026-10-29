@@ -1,8 +1,10 @@
+local glua_util = util
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local pack_readUInt32 = std.buffer.readUInt32
-local glua_util = util
+local pack = std.pack
+local pack_readUInt32LE = pack.readUInt32LE
 
 --- [SHARED AND MENU]
 ---
@@ -24,5 +26,8 @@ lzma.decompress = glua_util.Decompress or lzma.compress
 ---@return integer size The decompressed size in bytes.
 ---@nodiscard
 function lzma.size( str )
-    return pack_readUInt32( str, false, 6 ) or 0
+    return pack_readUInt32LE( str, 6 )
 end
+
+-- https://holylib.raphaelit7.com/util.AsyncCompress
+-- https://holylib.raphaelit7.com/util.AsyncDecompress
