@@ -1,29 +1,30 @@
--- Based on https://github.com/kikito/md5.lua
-
 local std = dreamwork.std
+local ffi = std.ffi
 
 ---@class dreamwork.std.crypto
 local crypto = std.crypto
 
 local class = std.class
 
-local bit = std.bit
-local bit_bxor = bit.bxor
-local bit_band, bit_bor = bit.band, bit.bor
-local bit_lshift, bit_rshift = bit.lshift, bit.rshift
+local rbit = std.raw.bit
+local rbit_bnot = rbit.bnot
+local rbit_bswap = rbit.bswap
+local rbit_lrotate = rbit.lrotate
+local rbit_band, rbit_bor, rbit_bxor = rbit.band, rbit.bor, rbit.bxor
+local rbit_lshift, rbit_rshift, rbit_tobit = rbit.lshift, rbit.rshift, rbit.tobit
 
 local string = std.string
 local string_len = string.len
 local string_rep = string.rep
+local string_sub = string.sub
 local string_format = string.format
 local string_char, string_byte = string.char, string.byte
 
 local math = std.math
 local math_floor = math.floor
 
-local bytepack = std.bytepack
-local bytepack_readUInt32 = bytepack.readUInt32BE
-local bytepack_writeUInt32 = bytepack.writeUInt32BE
+local type = std.type
+
 
 --- [SHARED AND MENU]
 ---
@@ -31,6 +32,12 @@ local bytepack_writeUInt32 = bytepack.writeUInt32BE
 ---
 ---@class dreamwork.std.crypto.MD5 : dreamwork.std.Object
 ---@field __class dreamwork.std.crypto.MD5Class
+---@field protected a integer The first word of the hash state ( int32 ).
+---@field protected b integer The second word of the hash state ( int32 ).
+---@field protected c integer The third word of the hash state ( int32 ).
+---@field protected d integer The fourth word of the hash state ( int32 ).
+---@field protected message_length integer The total length of the message in bytes.
+---@field protected buffer string The unprocessed tail of the message, less than 64 bytes.
 local MD5 = class.base( "MD5" )
 
 --- [SHARED AND MENU]
@@ -52,161 +59,241 @@ local MD5 = class.base( "MD5" )
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
 ---
----@class dreamwork.std.crypto.MD5Class : dreamwork.std.crypto.MD5
+---@class dreamwork.std.crypto.MD5Class : dreamwork.std.crypto.MD5, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.MD5
+---@field digest fun( message: string, as_hex?: boolean ): string
 ---@field digest_size integer
 ---@field block_size integer
----@overload fun(): dreamwork.std.crypto.MD5
+---@operator call: dreamwork.std.crypto.MD5
 local MD5Class = class.create( MD5 )
 crypto.MD5 = MD5Class
 
 MD5Class.digest_size = 16
 MD5Class.block_size = 64
 
----@param x integer
----@param y integer
----@param z integer
----@return integer
-local function f( x, y, z )
-    return bit_bor( bit_band( x, y ), bit_band( -x - 1, z ) )
-end
-
----@param x integer
----@param y integer
----@param z integer
----@return integer
-local function g( x, y, z )
-    return bit_bor( bit_band( x, z ), bit_band( y, -(z + 1) ) )
-end
-
----@param x integer
----@param y integer
----@param z integer
----@return integer
-local function i( x, y, z )
-    return bit_bxor( y, bit_bor( x, -(z + 1) ) )
-end
-
----@param a integer
----@param b integer
----@param c integer
----@param x integer
----@param shift integer
----@param constant integer
----@return integer
-local function z( a, b, c, x, shift, constant )
-    -- a = bit_band( a + c + x + constant, 0xFFFFFFFF )
-    a = a + c + x + constant
-    -- be *very* careful that left shift does not cause rounding!
-    return bit_bor( bit_lshift( bit_band( a, bit_rshift( 0xFFFFFFFF, shift ) ), shift ), bit_rshift( a, 32 - shift ) ) + b
-end
-
---- [SHARED AND MENU]
+--- Applies the 64 MD5 operations to the state using the given 16 words.
 ---
---- Performs a single MD5 transformation.
+---@return integer a
+---@return integer b
+---@return integer c
+---@return integer d
+local function compress( a, b, c, d, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15 )
+    local in_a, in_b, in_c, in_d = a, b, c, d
+
+    -- constants above 0x7FFFFFFF are written as negative int32 values, this way every operand fits into int32
+    -- and JIT narrows all additions that feed bit operations into plain wrapping int32 adds ( ~3x faster than doubles )
+    -- no normalization between the steps is needed, in the interpreter values grow by at most 2^32 per step,
+    -- so they stay exact in doubles and `rbit_lrotate` reduces them to 32 bits anyway
+
+    a = rbit_lrotate( a + rbit_bxor( d, rbit_band( b, rbit_bxor( c, d ) ) ) + x0 - 0x28955b88, 7 ) + b
+    d = rbit_lrotate( d + rbit_bxor( c, rbit_band( a, rbit_bxor( b, c ) ) ) + x1 - 0x173848aa, 12 ) + a
+    c = rbit_lrotate( c + rbit_bxor( b, rbit_band( d, rbit_bxor( a, b ) ) ) + x2 + 606105819, 17 ) + d
+    b = rbit_lrotate( b + rbit_bxor( a, rbit_band( c, rbit_bxor( d, a ) ) ) + x3 - 0x3e423112, 22 ) + c
+    a = rbit_lrotate( a + rbit_bxor( d, rbit_band( b, rbit_bxor( c, d ) ) ) + x4 - 0x0a83f051, 7 ) + b
+    d = rbit_lrotate( d + rbit_bxor( c, rbit_band( a, rbit_bxor( b, c ) ) ) + x5 + 1200080426, 12 ) + a
+    c = rbit_lrotate( c + rbit_bxor( b, rbit_band( d, rbit_bxor( a, b ) ) ) + x6 - 0x57cfb9ed, 17 ) + d
+    b = rbit_lrotate( b + rbit_bxor( a, rbit_band( c, rbit_bxor( d, a ) ) ) + x7 - 0x02b96aff, 22 ) + c
+    a = rbit_lrotate( a + rbit_bxor( d, rbit_band( b, rbit_bxor( c, d ) ) ) + x8 + 1770035416, 7 ) + b
+    d = rbit_lrotate( d + rbit_bxor( c, rbit_band( a, rbit_bxor( b, c ) ) ) + x9 - 0x74bb0851, 12 ) + a
+    c = rbit_lrotate( c + rbit_bxor( b, rbit_band( d, rbit_bxor( a, b ) ) ) + x10 - 0x0000a44f, 17 ) + d
+    b = rbit_lrotate( b + rbit_bxor( a, rbit_band( c, rbit_bxor( d, a ) ) ) + x11 - 0x76a32842, 22 ) + c
+    a = rbit_lrotate( a + rbit_bxor( d, rbit_band( b, rbit_bxor( c, d ) ) ) + x12 + 1804603682, 7 ) + b
+    d = rbit_lrotate( d + rbit_bxor( c, rbit_band( a, rbit_bxor( b, c ) ) ) + x13 - 0x02678e6d, 12 ) + a
+    c = rbit_lrotate( c + rbit_bxor( b, rbit_band( d, rbit_bxor( a, b ) ) ) + x14 - 0x5986bc72, 17 ) + d
+    b = rbit_lrotate( b + rbit_bxor( a, rbit_band( c, rbit_bxor( d, a ) ) ) + x15 + 1236535329, 22 ) + c
+
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_band( d, rbit_bxor( b, c ) ) ) + x1 - 0x09e1da9e, 5 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_band( c, rbit_bxor( a, b ) ) ) + x6 - 0x3fbf4cc0, 9 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_band( b, rbit_bxor( d, a ) ) ) + x11 + 643717713, 14 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_band( a, rbit_bxor( c, d ) ) ) + x0 - 0x16493856, 20 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_band( d, rbit_bxor( b, c ) ) ) + x5 - 0x29d0efa3, 5 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_band( c, rbit_bxor( a, b ) ) ) + x10 + 38016083, 9 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_band( b, rbit_bxor( d, a ) ) ) + x15 - 0x275e197f, 14 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_band( a, rbit_bxor( c, d ) ) ) + x4 - 0x182c0438, 20 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_band( d, rbit_bxor( b, c ) ) ) + x9 + 568446438, 5 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_band( c, rbit_bxor( a, b ) ) ) + x14 - 0x3cc8f82a, 9 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_band( b, rbit_bxor( d, a ) ) ) + x3 - 0x0b2af279, 14 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_band( a, rbit_bxor( c, d ) ) ) + x8 + 1163531501, 20 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_band( d, rbit_bxor( b, c ) ) ) + x13 - 0x561c16fb, 5 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_band( c, rbit_bxor( a, b ) ) ) + x2 - 0x03105c08, 9 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_band( b, rbit_bxor( d, a ) ) ) + x7 + 1735328473, 14 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_band( a, rbit_bxor( c, d ) ) ) + x12 - 0x72d5b376, 20 ) + c
+
+    a = rbit_lrotate( a + rbit_bxor( b, c, d ) + x5 - 0x0005c6be, 4 ) + b
+    d = rbit_lrotate( d + rbit_bxor( a, b, c ) + x8 - 0x788e097f, 11 ) + a
+    c = rbit_lrotate( c + rbit_bxor( d, a, b ) + x11 + 1839030562, 16 ) + d
+    b = rbit_lrotate( b + rbit_bxor( c, d, a ) + x14 - 0x021ac7f4, 23 ) + c
+    a = rbit_lrotate( a + rbit_bxor( b, c, d ) + x1 - 0x5b4115bc, 4 ) + b
+    d = rbit_lrotate( d + rbit_bxor( a, b, c ) + x4 + 1272893353, 11 ) + a
+    c = rbit_lrotate( c + rbit_bxor( d, a, b ) + x7 - 0x0944b4a0, 16 ) + d
+    b = rbit_lrotate( b + rbit_bxor( c, d, a ) + x10 - 0x41404390, 23 ) + c
+    a = rbit_lrotate( a + rbit_bxor( b, c, d ) + x13 + 681279174, 4 ) + b
+    d = rbit_lrotate( d + rbit_bxor( a, b, c ) + x0 - 0x155ed806, 11 ) + a
+    c = rbit_lrotate( c + rbit_bxor( d, a, b ) + x3 - 0x2b10cf7b, 16 ) + d
+    b = rbit_lrotate( b + rbit_bxor( c, d, a ) + x6 + 76029189, 23 ) + c
+    a = rbit_lrotate( a + rbit_bxor( b, c, d ) + x9 - 0x262b2fc7, 4 ) + b
+    d = rbit_lrotate( d + rbit_bxor( a, b, c ) + x12 - 0x1924661b, 11 ) + a
+    c = rbit_lrotate( c + rbit_bxor( d, a, b ) + x15 + 530742520, 16 ) + d
+    b = rbit_lrotate( b + rbit_bxor( c, d, a ) + x2 - 0x3b53a99b, 23 ) + c
+
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_bor( b, rbit_bnot( d ) ) ) + x0 - 0x0bd6ddbc, 6 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_bor( a, rbit_bnot( c ) ) ) + x7 + 1126891415, 10 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_bor( d, rbit_bnot( b ) ) ) + x14 - 0x546bdc59, 15 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_bor( c, rbit_bnot( a ) ) ) + x5 - 0x036c5fc7, 21 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_bor( b, rbit_bnot( d ) ) ) + x12 + 1700485571, 6 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_bor( a, rbit_bnot( c ) ) ) + x3 - 0x70f3336e, 10 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_bor( d, rbit_bnot( b ) ) ) + x10 - 0x00100b83, 15 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_bor( c, rbit_bnot( a ) ) ) + x1 - 0x7a7ba22f, 21 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_bor( b, rbit_bnot( d ) ) ) + x8 + 1873313359, 6 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_bor( a, rbit_bnot( c ) ) ) + x15 - 0x01d31920, 10 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_bor( d, rbit_bnot( b ) ) ) + x6 - 0x5cfebcec, 15 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_bor( c, rbit_bnot( a ) ) ) + x13 + 1309151649, 21 ) + c
+    a = rbit_lrotate( a + rbit_bxor( c, rbit_bor( b, rbit_bnot( d ) ) ) + x4 - 0x08ac817e, 6 ) + b
+    d = rbit_lrotate( d + rbit_bxor( b, rbit_bor( a, rbit_bnot( c ) ) ) + x11 - 0x42c50dcb, 10 ) + a
+    c = rbit_lrotate( c + rbit_bxor( a, rbit_bor( d, rbit_bnot( b ) ) ) + x2 + 718787259, 15 ) + d
+    b = rbit_lrotate( b + rbit_bxor( d, rbit_bor( c, rbit_bnot( a ) ) ) + x9 - 0x14792c6f, 21 ) + c
+
+    return rbit_tobit( in_a + a ), rbit_tobit( in_b + b ), rbit_tobit( in_c + c ), rbit_tobit( in_d + d )
+end
+
+--- Processes a single 64-byte block.
 ---
----@param in_str string
----@param index integer
----@param in_a integer
----@param in_b integer
----@param in_c integer
----@param in_d integer
----@return integer
----@return integer
----@return integer
----@return integer
-local function transform( in_str, index, in_a, in_b, in_c, in_d )
-    local uint32_1 = bytepack_readUInt32( string_byte( in_str, index, index + 3 ) )
-    local uint32_2 = bytepack_readUInt32( string_byte( in_str, index + 4, index + 7 ) )
-    local uint32_3 = bytepack_readUInt32( string_byte( in_str, index + 8, index + 11 ) )
-    local uint32_4 = bytepack_readUInt32( string_byte( in_str, index + 12, index + 15 ) )
-    local uint32_5 = bytepack_readUInt32( string_byte( in_str, index + 16, index + 19 ) )
-    local uint32_6 = bytepack_readUInt32( string_byte( in_str, index + 20, index + 23 ) )
-    local uint32_7 = bytepack_readUInt32( string_byte( in_str, index + 24, index + 27 ) )
-    local uint32_8 = bytepack_readUInt32( string_byte( in_str, index + 28, index + 31 ) )
-    local uint32_9 = bytepack_readUInt32( string_byte( in_str, index + 32, index + 35 ) )
-    local uint32_10 = bytepack_readUInt32( string_byte( in_str, index + 36, index + 39 ) )
-    local uint32_11 = bytepack_readUInt32( string_byte( in_str, index + 40, index + 43 ) )
-    local uint32_12 = bytepack_readUInt32( string_byte( in_str, index + 44, index + 47 ) )
-    local uint32_13 = bytepack_readUInt32( string_byte( in_str, index + 48, index + 51 ) )
-    local uint32_14 = bytepack_readUInt32( string_byte( in_str, index + 52, index + 55 ) )
-    local uint32_15 = bytepack_readUInt32( string_byte( in_str, index + 56, index + 59 ) )
-    local uint32_16 = bytepack_readUInt32( string_byte( in_str, index + 60, index + 63 ) )
+---@type fun( str: string, offset: integer, a: integer, b: integer, c: integer, d: integer ): integer, integer, integer, integer
+local transform
 
-    local out_a, out_b, out_c, out_d = in_a, in_b, in_c, in_d
+if ffi == nil or not ffi.abi( "le" ) then
 
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_1, 7, 0xd76aa478 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_2, 12, 0xe8c7b756 )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_3, 17, 0x242070db )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_4, 22, 0xc1bdceee )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_5, 7, 0xf57c0faf )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_6, 12, 0x4787c62a )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_7, 17, 0xa8304613 )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_8, 22, 0xfd469501 )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_9, 7, 0x698098d8 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_10, 12, 0x8b44f7af )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_11, 17, 0xffff5bb1 )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_12, 22, 0x895cd7be )
-    out_a = z( out_a, out_b, f( out_b, out_c, out_d ), uint32_13, 7, 0x6b901122 )
-    out_d = z( out_d, out_a, f( out_a, out_b, out_c ), uint32_14, 12, 0xfd987193 )
-    out_c = z( out_c, out_d, f( out_d, out_a, out_b ), uint32_15, 17, 0xa679438e )
-    out_b = z( out_b, out_c, f( out_c, out_d, out_a ), uint32_16, 22, 0x49b40821 )
+    ---@param str string
+    ---@param offset integer The 0-based byte offset of the block.
+    function transform( str, offset, a, b, c, d )
+        -- every word is built right after its bytes are read, otherwise 64 live bytes run JIT out of spill slots
+        local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 1, offset + 4 )
+        local x0 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
 
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_2, 5, 0xf61e2562 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_7, 9, 0xc040b340 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_12, 14, 0x265e5a51 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_1, 20, 0xe9b6c7aa )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_6, 5, 0xd62f105d )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_11, 9, 0x02441453 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_16, 14, 0xd8a1e681 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_5, 20, 0xe7d3fbc8 )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_10, 5, 0x21e1cde6 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_15, 9, 0xc33707d6 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_4, 14, 0xf4d50d87 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_9, 20, 0x455a14ed )
-    out_a = z( out_a, out_b, g( out_b, out_c, out_d ), uint32_14, 5, 0xa9e3e905 )
-    out_d = z( out_d, out_a, g( out_a, out_b, out_c ), uint32_3, 9, 0xfcefa3f8 )
-    out_c = z( out_c, out_d, g( out_d, out_a, out_b ), uint32_8, 14, 0x676f02d9 )
-    out_b = z( out_b, out_c, g( out_c, out_d, out_a ), uint32_13, 20, 0x8d2a4c8a )
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 5, offset + 8 )
+        local x1 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
 
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_6, 4, 0xfffa3942 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_9, 11, 0x8771f681 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_12, 16, 0x6d9d6122 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_15, 23, 0xfde5380c )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_2, 4, 0xa4beea44 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_5, 11, 0x4bdecfa9 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_8, 16, 0xf6bb4b60 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_11, 23, 0xbebfbc70 )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_14, 4, 0x289b7ec6 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_1, 11, 0xeaa127fa )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_4, 16, 0xd4ef3085 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_7, 23, 0x04881d05 )
-    out_a = z( out_a, out_b, bit_bxor( out_b, bit_bxor( out_c, out_d ) ), uint32_10, 4, 0xd9d4d039 )
-    out_d = z( out_d, out_a, bit_bxor( out_a, bit_bxor( out_b, out_c ) ), uint32_13, 11, 0xe6db99e5 )
-    out_c = z( out_c, out_d, bit_bxor( out_d, bit_bxor( out_a, out_b ) ), uint32_16, 16, 0x1fa27cf8 )
-    out_b = z( out_b, out_c, bit_bxor( out_c, bit_bxor( out_d, out_a ) ), uint32_3, 23, 0xc4ac5665 )
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 9, offset + 12 )
+        local x2 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
 
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_1, 6, 0xf4292244 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_8, 10, 0x432aff97 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_15, 15, 0xab9423a7 )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_6, 21, 0xfc93a039 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_13, 6, 0x655b59c3 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_4, 10, 0x8f0ccc92 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_11, 15, 0xffeff47d )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_2, 21, 0x85845dd1 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_9, 6, 0x6fa87e4f )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_16, 10, 0xfe2ce6e0 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_7, 15, 0xa3014314 )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_14, 21, 0x4e0811a1 )
-    out_a = z( out_a, out_b, i( out_b, out_c, out_d ), uint32_5, 6, 0xf7537e82 )
-    out_d = z( out_d, out_a, i( out_a, out_b, out_c ), uint32_12, 10, 0xbd3af235 )
-    out_c = z( out_c, out_d, i( out_d, out_a, out_b ), uint32_3, 15, 0x2ad7d2bb )
-    out_b = z( out_b, out_c, i( out_c, out_d, out_a ), uint32_10, 21, 0xeb86d391 )
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 13, offset + 16 )
+        local x3 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
 
-    return (in_a + out_a) % 0xFFFFFFFF,
-        (in_b + out_b) % 0xFFFFFFFF,
-        (in_c + out_c) % 0xFFFFFFFF,
-        (in_d + out_d) % 0xFFFFFFFF
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 17, offset + 20 )
+        local x4 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 21, offset + 24 )
+        local x5 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 25, offset + 28 )
+        local x6 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 29, offset + 32 )
+        local x7 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 33, offset + 36 )
+        local x8 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 37, offset + 40 )
+        local x9 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 41, offset + 44 )
+        local x10 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 45, offset + 48 )
+        local x11 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 49, offset + 52 )
+        local x12 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 53, offset + 56 )
+        local x13 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 57, offset + 60 )
+        local x14 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+
+        uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, offset + 61, offset + 64 )
+        local x15 = rbit_bor( uint8_1, rbit_lshift( uint8_2, 8 ), rbit_lshift( uint8_3, 16 ), rbit_lshift( uint8_4, 24 ) )
+        return compress( a, b, c, d, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15 )
+    end
+
+else
+
+    local ffi_cast = ffi.cast
+
+    local uint8_ptr_t = ffi.typeof( "const uint8_t *" )
+    local int32_ptr_t = ffi.typeof( "const int32_t *" )
+
+    -- little endian only, so words can be read directly from the string memory
+    ---@param str string
+    ---@param offset integer The 0-based byte offset of the block.
+    function transform( str, offset, a, b, c, d )
+        local x = ffi_cast( int32_ptr_t, ffi_cast( uint8_ptr_t, str ) + offset )
+        return compress( a, b, c, d,
+            x[ 0 ], x[ 1 ], x[ 2 ], x[ 3 ], x[ 4 ], x[ 5 ], x[ 6 ], x[ 7 ],
+            x[ 8 ], x[ 9 ], x[ 10 ], x[ 11 ], x[ 12 ], x[ 13 ], x[ 14 ], x[ 15 ]
+        )
+    end
+
+end
+
+--- Processes all complete 64-byte blocks of the string starting from the given offset.
+---
+---@param str string
+---@param offset integer The 0-based byte offset.
+---@param str_length integer
+---@return integer offset The offset of the first unprocessed byte.
+---@return integer a
+---@return integer b
+---@return integer c
+---@return integer d
+local function process( str, offset, str_length, a, b, c, d )
+    local last_offset = str_length - 64
+
+    while offset <= last_offset do
+        a, b, c, d = transform( str, offset, a, b, c, d )
+        offset = offset + 64
+    end
+
+    return offset, a, b, c, d
+end
+
+--- Pads the tail of the message, processes the final block(s) and returns the digest.
+---
+---@param tail string The unprocessed tail of the message, less than 64 bytes.
+---@param message_length integer The total length of the message in bytes.
+---@param as_hex? boolean
+---@return string
+local function finalize( tail, message_length, a, b, c, d, as_hex )
+    local rbit_count_low = (message_length % 0x20000000) * 8
+    local rbit_count_high = math_floor( message_length / 0x20000000 )
+
+    local block = tail .. "\128" .. string_rep( "\0", (55 - string_len( tail )) % 64 ) .. string_char(
+        rbit_band( rbit_count_low, 0xFF ), rbit_band( rbit_rshift( rbit_count_low, 8 ), 0xFF ), rbit_band( rbit_rshift( rbit_count_low, 16 ), 0xFF ), rbit_rshift( rbit_count_low, 24 ),
+        rbit_band( rbit_count_high, 0xFF ), rbit_band( rbit_rshift( rbit_count_high, 8 ), 0xFF ), rbit_band( rbit_rshift( rbit_count_high, 16 ), 0xFF ), rbit_rshift( rbit_count_high, 24 )
+    )
+
+    a, b, c, d = transform( block, 0, a, b, c, d )
+
+    if string_len( block ) == 128 then
+        a, b, c, d = transform( block, 64, a, b, c, d )
+    end
+
+    if as_hex then
+        return string_format( "%08x%08x%08x%08x",
+            rbit_bswap( a ) % 0x100000000,
+            rbit_bswap( b ) % 0x100000000,
+            rbit_bswap( c ) % 0x100000000,
+            rbit_bswap( d ) % 0x100000000
+        )
+    end
+
+    return string_char(
+        rbit_band( a, 0xFF ), rbit_band( rbit_rshift( a, 8 ), 0xFF ), rbit_band( rbit_rshift( a, 16 ), 0xFF ), rbit_rshift( a, 24 ),
+        rbit_band( b, 0xFF ), rbit_band( rbit_rshift( b, 8 ), 0xFF ), rbit_band( rbit_rshift( b, 16 ), 0xFF ), rbit_rshift( b, 24 ),
+        rbit_band( c, 0xFF ), rbit_band( rbit_rshift( c, 8 ), 0xFF ), rbit_band( rbit_rshift( c, 16 ), 0xFF ), rbit_rshift( c, 24 ),
+        rbit_band( d, 0xFF ), rbit_band( rbit_rshift( d, 8 ), 0xFF ), rbit_band( rbit_rshift( d, 16 ), 0xFF ), rbit_rshift( d, 24 )
+    )
 end
 
 --- [SHARED AND MENU]
@@ -219,18 +306,21 @@ end
 ---
 ---@return dreamwork.std.crypto.MD5 obj The reset MD5 object.
 function MD5:reset()
-    self.a, self.b, self.c, self.d = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
+    self.a, self.b, self.c, self.d = 0x67452301, -0x10325477, -0x67452302, 0x10325476
 
     self.message_length = 0
-    self.message = ""
+    self.buffer = ""
 
-    self.position = 0
     return self
 end
 
 MD5.__init = MD5.reset
 
-local bucket64 = math.bucketize( 64 )
+---@return string
+---@protected
+function MD5:__represent()
+    return string_format( "%s: %p [%d]", type( self ), self, self.message_length )
+end
 
 --- [SHARED AND MENU]
 ---
@@ -243,26 +333,34 @@ local bucket64 = math.bucketize( 64 )
 ---@param str string The string to update the MD5 object with.
 ---@return dreamwork.std.crypto.MD5 obj The updated MD5 object.
 function MD5:update( str )
-    local message_length = self.message_length + string_len( str )
-    self.message_length = message_length
-
-    if message_length < 64 then
-        self.message = self.message .. str
+    local str_length = string_len( str )
+    if str_length == 0 then
         return self
     end
 
-    local message, position, blocks_size = self.message .. str, self.position, bucket64( message_length )
+    self.message_length = self.message_length + str_length
 
-    local a, b, c, d = self.a, self.b, self.c, self.d
+    local buffer = self.buffer
+    local required = 64 - string_len( buffer )
 
-    for index = position + 1, blocks_size, 64 do
-        a, b, c, d = transform( message, index, a, b, c, d )
+    if str_length < required then
+        self.buffer = buffer .. str
+        return self
     end
 
-    self.a, self.b, self.c, self.d = a, b, c, d
+    local a, b, c, d = self.a, self.b, self.c, self.d
+    local offset = 0
 
-    self.position = position + blocks_size
-    self.message = message
+    -- complete the buffered block without copying the whole string
+    if required ~= 64 then
+        a, b, c, d = transform( buffer .. string_sub( str, 1, required ), 0, a, b, c, d )
+        offset = required
+    end
+
+    offset, a, b, c, d = process( str, offset, str_length, a, b, c, d )
+
+    self.a, self.b, self.c, self.d = a, b, c, d
+    self.buffer = string_sub( str, offset + 1 )
 
     return self
 end
@@ -274,51 +372,18 @@ end
 --- This instance method returns the MD5 hash of the data associated with the object.
 --- Useful when the MD5 object has been incrementally updated with input data.
 ---
+--- Does not change the state, so the object can be updated further.
+---
 ---@param as_hex? boolean If true, the result will be a hex string.
 ---@return string str_result The MD5 string of the message.
 ---@nodiscard
 function MD5:digest( as_hex )
-    local position = self.position
-    local message_length = self.message_length
-    local remaining = message_length - position
-    local padding = 64 - (remaining + 9)
-
-    local bit_count = message_length * 8
-
-    if message_length > 0x20000000 then
-        bit_count = bit_count % 0x100000000
-    end
-
-    local block = self.message .. "\128" .. string_rep( "\0", padding ) ..
-        string_char( bytepack_writeUInt32( bit_count ) ) ..
-        string_char( bytepack_writeUInt32( math_floor( message_length / 0x20000000 ) ) )
-
-    local a, b, c, d = self.a, self.b, self.c, self.d
-
-    for index = position + 1, message_length + 1 + padding + 8, 64 do
-        a, b, c, d = transform( block, index, a, b, c, d )
-    end
-
-    local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeUInt32( a )
-    local uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeUInt32( b )
-    local uint8_9, uint8_10, uint8_11, uint8_12 = bytepack_writeUInt32( c )
-    local uint8_13, uint8_14, uint8_15, uint8_16 = bytepack_writeUInt32( d )
-
-    if as_hex then
-        return string_format( "%08x%08x%08x%08x",
-            bytepack_readUInt32( uint8_4, uint8_3, uint8_2, uint8_1 ),
-            bytepack_readUInt32( uint8_8, uint8_7, uint8_6, uint8_5 ),
-            bytepack_readUInt32( uint8_12, uint8_11, uint8_10, uint8_9 ),
-            bytepack_readUInt32( uint8_16, uint8_15, uint8_14, uint8_13 )
-        )
-    end
-
-    return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 )
+    return finalize( self.buffer, self.message_length, self.a, self.b, self.c, self.d, as_hex )
 end
 
-local util_MD5 = util.MD5
+MD5.__tostring = MD5.digest
 
-if util_MD5 == nil then
+if util == nil or util.MD5 == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -333,44 +398,14 @@ if util_MD5 == nil then
     ---@nodiscard
     function MD5Class.digest( message, as_hex )
         local message_length = string_len( message )
-        local padding = 64 - (message_length % 64 + 9)
-
-        local bit_count = message_length * 8
-
-        if message_length > 0x20000000 then
-            bit_count = bit_count % 0x100000000
-        end
-
-        local block = message .. "\128" .. string_rep( "\0", padding ) ..
-            string_char( bytepack_writeUInt32( bit_count ) ) ..
-            string_char( bytepack_writeUInt32( math_floor( message_length / 0x20000000 ) ) )
-
-        local a, b, c, d = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
-
-        for index = 1, message_length + 1 + padding + 8, 64 do
-            a, b, c, d = transform( block, index, a, b, c, d )
-        end
-
-        local uint8_1, uint8_2, uint8_3, uint8_4 = bytepack_writeUInt32( a )
-        local uint8_5, uint8_6, uint8_7, uint8_8 = bytepack_writeUInt32( b )
-        local uint8_9, uint8_10, uint8_11, uint8_12 = bytepack_writeUInt32( c )
-        local uint8_13, uint8_14, uint8_15, uint8_16 = bytepack_writeUInt32( d )
-
-        if as_hex then
-            return string_format( "%08x%08x%08x%08x",
-                bytepack_readUInt32( uint8_4, uint8_3, uint8_2, uint8_1 ),
-                bytepack_readUInt32( uint8_8, uint8_7, uint8_6, uint8_5 ),
-                bytepack_readUInt32( uint8_12, uint8_11, uint8_10, uint8_9 ),
-                bytepack_readUInt32( uint8_16, uint8_15, uint8_14, uint8_13 )
-            )
-        end
-
-        return string_char( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 )
+        local offset, a, b, c, d = process( message, 0, message_length, 0x67452301, -0x10325477, -0x67452302, 0x10325476 )
+        return finalize( string_sub( message, offset + 1 ), message_length, a, b, c, d, as_hex )
     end
 
 else
 
     local base16_decode = std.base16.decode
+    local util_MD5 = util.MD5
 
     --- [SHARED AND MENU]
     ---
