@@ -1,13 +1,13 @@
----@diagnostic disable-next-line: undefined-global
-local SysTime = SysTime
-
----@diagnostic disable-next-line: undefined-global
-local CurTime = CurTime
-
+local HolyLib = HolyLib
 local glua_os = os
+
+local SysTime = SysTime
+local CurTime = CurTime
 
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local debug = std.debug
 
 --- [SHARED AND MENU]
 ---
@@ -20,7 +20,9 @@ local os = {
     clock = glua_os.clock,
     difftime = glua_os.difftime,
     time = glua_os.time,
-    date = glua_os.date
+    date = glua_os.date,
+    getenv = os.getenv,
+    exit = os.exit
 }
 
 std.os = os
@@ -57,4 +59,10 @@ if os.date == nil then
         ---@diagnostic disable-next-line: return-type-mismatch
         return "<os.date is missing>"
     end
+end
+
+if HolyLib ~= nil and HolyLib.GetEnvironmentValue ~= nil then
+    os.getenv = HolyLib.GetEnvironmentValue
+else
+    os.getenv = debug.fempty
 end

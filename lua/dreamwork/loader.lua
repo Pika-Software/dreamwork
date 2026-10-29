@@ -3494,23 +3494,6 @@ if LUA_CLIENT and CurTime ~= nil then
 
 end
 
-if isFunction( holylib.GetEnvironmentValue ) then
-    os.getenv = holylib.GetEnvironmentValue
-else
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the value of the process environment variable varname or fail if the variable is not defined.
-    ---
-    ---@param key string
-    ---@return string | nil value
-    ---@nodiscard
-    function os.getenv( key )
-        return ""
-    end
-
-end
-
 --- [SHARED AND MENU]
 ---
 ---
