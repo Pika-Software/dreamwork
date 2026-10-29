@@ -1,0 +1,88 @@
+name: Meta
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "lua/**"
+      - "meta/lua.lua"
+      - "meta/dreamwork/**"
+      - ".github/scripts/generate_meta.py"
+      - ".github/scripts/check_meta.py"
+      - ".github/workflows/meta.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meta
+  cancel-in-progress: false
+
+env:
+  META_BRANCH: meta
+  LUALS_VERSION: "3.19.2"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Prepare meta branch
+        run: |
+          if git ls-remote --exit-code --heads origin "$META_BRANCH" > /dev/null; then
+            git fetch --depth=1 origin "$META_BRANCH"
+            git worktree add -B "$META_BRANCH" "$RUNNER_TEMP/meta" FETCH_HEAD
+          else
+            git worktree add --detach "$RUNNER_TEMP/meta"
+            git -C "$RUNNER_TEMP/meta" checkout --orphan "$META_BRANCH"
+          fi
+
+          # the generator owns the whole branch
+          find "$RUNNER_TEMP/meta" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+
+      - name: Generate meta
+        run: python3 .github/scripts/generate_meta.py --output "$RUNNER_TEMP/meta" --branch "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --verbose
+
+      - name: Install lua-language-server
+        run: |
+          mkdir -p "$RUNNER_TEMP/luals"
+          curl -fsSL "https://github.com/LuaLS/lua-language-server/releases/download/$LUALS_VERSION/lua-language-server-$LUALS_VERSION-linux-x64.tar.gz" | tar -xz -C "$RUNNER_TEMP/luals"
+
+      - name: Check meta
+        run: |
+          cat > "$RUNNER_TEMP/check.luarc.json" << 'EOF'
+          {
+              "runtime.version": "LuaJIT",
+              "diagnostics.disable": [ "lowercase-global", "duplicate-set-field", "duplicate-doc-field", "missing-return", "unused-local" ]
+          }
+          EOF
+
+          # exits with 1 on any problem, the report decides instead
+          "$RUNNER_TEMP/luals/bin/lua-language-server" --check="$RUNNER_TEMP/meta" --configpath="$RUNNER_TEMP/check.luarc.json" \
+            --checklevel=Warning --check_format=json --check_out_path="$RUNNER_TEMP/check.json" --logpath="$RUNNER_TEMP/luals-log" || true
+
+          if [ ! -f "$RUNNER_TEMP/check.json" ]; then
+            echo "no problems found"
+            exit 0
+          fi
+
+          python3 .github/scripts/check_meta.py "$RUNNER_TEMP/check.json" "$RUNNER_TEMP/meta"
+
+      - name: Commit meta
+        working-directory: ${{ runner.temp }}/meta
+        run: |
+          git add -A
+
+          # README carries the source commit, it alone is not worth a commit
+          if git rev-parse --verify --quiet HEAD > /dev/null && git diff --cached --quiet HEAD -- library config.json; then
+            echo "meta is up to date"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --quiet -m "meta: generated from ${GITHUB_SHA::8}"
+          git push origin "HEAD:$META_BRANCH"
