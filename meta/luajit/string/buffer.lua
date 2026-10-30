@@ -2,6 +2,8 @@
 
 ---@version JIT
 ---
+--- [SHARED AND MENU]
+---
 --- The string buffer library allows high-performance manipulation of string-like data.
 ---
 --- Unlike Lua strings, which are constants, string buffers are mutable sequences of 8-bit (binary-transparent) characters. Data can be stored, formatted and encoded into a string buffer and later converted, extracted or decoded.
@@ -120,6 +122,8 @@
 ---@class string.bufferlib
 local buffer = {}
 
+--- [SHARED AND MENU]
+---
 --- A buffer object is a garbage-collected Lua object. After creation with `buffer.new()`, it can (and should) be reused for many operations. When the last reference to a buffer object is gone, it will eventually be freed by the garbage collector, along with the allocated buffer space.
 ---
 --- Buffers operate like a FIFO (first-in first-out) data structure. Data can be appended (written) to the end of the buffer and consumed (read) from the front of the buffer. These operations may be freely mixed.
@@ -132,11 +136,15 @@ local buffer = {}
 ---@class string.buffer : table
 local buf = {}
 
+--- [SHARED AND MENU]
+---
 --- A string, number, or any object obj with a __tostring metamethod to the buffer.
 ---
 ---@alias string.buffer.data string|number|table
 
 
+--- [SHARED AND MENU]
+---
 --- Appends a string str, a number num or any object obj with a `__tostring` metamethod to the buffer. Multiple arguments are appended in the given order.
 ---
 --- Appending a buffer to a buffer is possible and short-circuited internally. But it still involves a copy. Better combine the buffer writes to use a single buffer.
@@ -146,6 +154,8 @@ local buf = {}
 ---@return string.buffer
 function buf:put( data, ... ) end
 
+--- [SHARED AND MENU]
+---
 --- Appends the formatted arguments to the buffer. The format string supports the same options as string.format().
 ---
 ---@param format string
@@ -153,6 +163,8 @@ function buf:put( data, ... ) end
 ---@return string.buffer
 function buf:putf( format, ... ) end
 
+--- [SHARED AND MENU]
+---
 --- Appends the given len number of bytes from the memory pointed to by the FFI cdata object to the buffer. The object needs to be convertible to a (constant) pointer.
 ---
 ---@param cdata ffi.cdata*
@@ -160,6 +172,8 @@ function buf:putf( format, ... ) end
 ---@return string.buffer
 function buf:putcdata( cdata, len ) end
 
+--- [SHARED AND MENU]
+---
 --- This method allows zero-copy consumption of a string or an FFI cdata object as a buffer. It stores a reference to the passed string str or the FFI cdata object in the buffer. Any buffer space originally allocated is freed. This is not an append operation, unlike the `buf:put*()` methods.
 ---
 --- After calling this method, the buffer behaves as if `buf:free():put(str)` or `buf:free():put(cdata, len)` had been called. However, the data is only referenced and not copied, as long as the buffer is only consumed.
@@ -173,15 +187,21 @@ function buf:putcdata( cdata, len ) end
 ---@overload fun(self:string.buffer, cdata:ffi.cdata*, len:integer):string.buffer
 function buf:set( str ) end
 
+--- [SHARED AND MENU]
+---
 --- Reset (empty) the buffer. The allocated buffer space is not freed and may be reused.
 ---@return string.buffer
 function buf:reset() end
 
+--- [SHARED AND MENU]
+---
 --- The buffer space of the buffer object is freed. The object itself remains intact, empty and may be reused.
 ---
 --- Note: you normally don't need to use this method. The garbage collector automatically frees the buffer space, when the buffer object is collected. Use this method, if you need to free the associated memory immediately.
 function buf:free() end
 
+--- [SHARED AND MENU]
+---
 --- The reserve method reserves at least size bytes of write space in the buffer. It returns an uint8_t * FFI cdata pointer ptr that points to this space.
 ---
 --- The available length in bytes is returned in len. This is at least size bytes, but may be more to facilitate efficient buffer growth. You can either make use of the additional space or ignore len and only use size bytes.
@@ -205,16 +225,22 @@ function buf:free() end
 ---@return integer len    # available length (bytes)
 function buf:reserve( size ) end
 
+--- [SHARED AND MENU]
+---
 --- Appends the used bytes of the previously returned write space to the buffer data.
 ---@param used integer
 ---@return string.buffer
 function buf:commit( used ) end
 
+--- [SHARED AND MENU]
+---
 --- Skips (consumes) len bytes from the buffer up to the current length of the buffer data.
 ---@param len integer
 ---@return string.buffer
 function buf:skip( len ) end
 
+--- [SHARED AND MENU]
+---
 --- Consumes the buffer data and returns one or more strings. If called without arguments, the whole buffer data is consumed. If called with a number, up to `len` bytes are consumed. A `nil` argument consumes the remaining buffer space (this only makes sense as the last argument). Multiple arguments consume the buffer data in the given order.
 ---
 --- Note: a zero length or no remaining buffer data returns an empty string and not `nil`.
@@ -224,12 +250,16 @@ function buf:skip( len ) end
 ---@return string ...
 function buf:get( len, ... ) end
 
+--- [SHARED AND MENU]
+---
 --- Creates a string from the buffer data, but doesn't consume it. The buffer remains unchanged.
 ---
 --- Buffer objects also define a `__tostring metamethod`. This means buffers can be passed to the global `tostring()` function and many other functions that accept this in place of strings. The important internal uses in functions like `io.write()` are short-circuited to avoid the creation of an intermediate string object.
 ---@return string
 function buf:tostring() end
 
+--- [SHARED AND MENU]
+---
 --- Returns an uint8_t * FFI cdata pointer ptr that points to the buffer data. The length of the buffer data in bytes is returned in len.
 ---
 --- The returned pointer can be directly passed to C functions that expect a buffer and a length. You can also do bytewise reads (`local x = ptr[i]`) or writes (`ptr[i] = 0x40`) of the buffer data.
@@ -252,6 +282,8 @@ function buf:tostring() end
 ---@return integer len # length of the buffer data in bytes
 function buf:ref() end
 
+--- [SHARED AND MENU]
+---
 --- Serializes (encodes) the Lua object to the buffer
 ---
 --- This function may throw an error when attempting to serialize unsupported object types, circular references or deeply nested tables.
@@ -259,6 +291,8 @@ function buf:ref() end
 ---@return string.buffer
 function buf:encode( obj ) end
 
+--- [SHARED AND MENU]
+---
 --- De-serializes one object from the buffer.
 ---
 --- The returned object may be any of the supported Lua types — even `nil`.
@@ -272,6 +306,8 @@ function buf:encode( obj ) end
 ---@return any obj
 function buf:decode() end
 
+--- [SHARED AND MENU]
+---
 --- Serializes (encodes) the Lua object obj
 ---
 --- This function may throw an error when attempting to serialize unsupported object types, circular references or deeply nested tables.
@@ -279,6 +315,8 @@ function buf:decode() end
 ---@return string
 function buffer.encode( obj ) end
 
+--- [SHARED AND MENU]
+---
 --- De-serializes (decodes) the string to a Lua object
 ---
 --- The returned object may be any of the supported Lua types — even `nil`.
@@ -292,6 +330,8 @@ function buffer.encode( obj ) end
 ---@return any obj
 function buffer.decode( str ) end
 
+--- [SHARED AND MENU]
+---
 --- Creates a new buffer object.
 ---
 --- The optional size argument ensures a minimum initial buffer size. This is strictly an optimization when the required buffer size is known beforehand. The buffer space will grow as needed, in any case.
@@ -303,6 +343,8 @@ function buffer.decode( str ) end
 ---@return string.buffer
 function buffer.new( size, options ) end
 
+--- [SHARED AND MENU]
+---
 --- Serialization Options
 ---
 --- The options table passed to buffer.new() may contain the following members (all optional):
