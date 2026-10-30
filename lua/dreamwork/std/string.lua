@@ -35,8 +35,11 @@ local table_reversed = table.reversed
 --- In dreamwork string library contains additional functions.
 ---
 ---@class dreamwork.std.string
+---@field buffer string.bufferlib | nil The string buffer library allows high-performance manipulation of string-like data.
 ---@field PatternBytes table<integer, string>
 local string = {
+    buffer = glua_string.buffer,
+
     byte = glua_string.byte,
     char = glua_string.char,
     dump = glua_string.dump,

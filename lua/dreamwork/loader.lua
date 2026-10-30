@@ -3386,6 +3386,16 @@ elseif std.loadbinary( "getregistry" ) and getregistry ~= nil then
     logger:info( "`gm_getregistry` was loaded & connected, enjoy full access to `debug.getregistry`." )
 end
 
+if ffi ~= nil then
+    if not ffi.SANDBOXED then
+        logger:warn( "FFI is in unsafe mode, raw memory access is enabled and FFI fast paths are used." )
+    elseif ffi.string ~= nil then
+        logger:warn( "FFI is in safe mode (sandboxed), `ffi.C` and `ffi.load` are disabled, raw memory functions are emulated with `string.buffer`." )
+    else
+        logger:warn( "FFI is in safe mode (sandboxed), raw memory access is disabled and FFI fast paths fall back to pure Lua." )
+    end
+end
+
 do
 
     ---@type fun( bytecode: string ): function | nil

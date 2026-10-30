@@ -19,7 +19,7 @@ table = {}
 ---@param j?   integer
 ---@return string
 ---@nodiscard
-function table.concat(list, sep, i, j) end
+function table.concat( list, sep, i, j ) end
 
 ---@version >5.5
 ---
@@ -31,18 +31,18 @@ function table.concat(list, sep, i, j) end
 ---@param nrec? integer
 ---@return table
 ---@nodiscard
-function table.create(nseq, nrec) end
+function table.create( nseq, nrec ) end
 
 ---
 ---Inserts element `value` at position `pos` in `list`.
 ---
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-table.insert)
 ---
----@overload fun(list: table, value: any)
 ---@param list table
 ---@param pos integer
 ---@param value any
-function table.insert(list, pos, value) end
+---@overload fun(list: table, value: any)
+function table.insert( list, pos, value ) end
 
 ---@version <5.1
 ---
@@ -53,7 +53,7 @@ function table.insert(list, pos, value) end
 ---@param table table
 ---@return integer
 ---@nodiscard
-function table.maxn(table) end
+function table.maxn( table ) end
 
 ---@version >5.3, JIT
 ---
@@ -73,7 +73,7 @@ function table.maxn(table) end
 ---@param t   integer
 ---@param a2? table
 ---@return table a2
-function table.move(a1, f, e, t, a2) end
+function table.move( a1, f, e, t, a2 ) end
 
 ---@version >5.2, JIT
 ---
@@ -83,7 +83,7 @@ function table.move(a1, f, e, t, a2) end
 ---
 ---@return table
 ---@nodiscard
-function table.pack(...) end
+function table.pack( ... ) end
 
 ---
 ---Removes from `list` the element at position `pos`, returning the value of the removed element.
@@ -93,7 +93,7 @@ function table.pack(...) end
 ---@param list table
 ---@param pos? integer
 ---@return any
-function table.remove(list, pos) end
+function table.remove( list, pos ) end
 
 ---
 ---Sorts list elements in a given order, *in-place*, from `list[1]` to `list[#list]`.
@@ -103,7 +103,7 @@ function table.remove(list, pos) end
 ---@generic T
 ---@param list T[]
 ---@param comp? fun(a: T, b: T):boolean
-function table.sort(list, comp) end
+function table.sort( list, comp ) end
 
 ---@version >5.2, JIT
 ---
@@ -133,7 +133,7 @@ function table.sort(list, comp) end
 ---@param j?   integer
 ---@return T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
 ---@nodiscard
-function table.unpack(list, i, j) end
+function table.unpack( list, i, j ) end
 
 ---@version <5.1, JIT
 ---
@@ -146,7 +146,7 @@ function table.unpack(list, i, j) end
 ---@param callback fun(key: string, value: any):T|nil
 ---@return T|nil
 ---@deprecated
-function table.foreach(list, callback) end
+function table.foreach( list, callback ) end
 
 ---@version <5.1, JIT
 ---
@@ -159,7 +159,7 @@ function table.foreach(list, callback) end
 ---@param callback fun(key: string, value: any):T|nil
 ---@return T|nil
 ---@deprecated
-function table.foreachi(list, callback) end
+function table.foreachi( list, callback ) end
 
 ---@version <5.1, JIT
 ---
@@ -172,6 +172,6 @@ function table.foreachi(list, callback) end
 ---@return integer
 ---@nodiscard
 ---@deprecated
-function table.getn(list) end
+function table.getn( list ) end
 
 return table

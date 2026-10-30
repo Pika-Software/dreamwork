@@ -13,6 +13,7 @@
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#5.4)
 ---
 ---@class stringlib
+---@field buffer string.bufferlib | nil
 string = {}
 
 --- [SHARED AND MENU]
