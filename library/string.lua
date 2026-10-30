@@ -9,6 +9,7 @@
 --- In dreamwork string library contains additional functions.
 ---
 ---@class stringlib
+---@field buffer string.bufferlib | nil The string buffer library allows high-performance manipulation of string-like data.
 ---@field PatternBytes table<integer, string>
 string = {}
 

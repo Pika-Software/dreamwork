@@ -6,7 +6,12 @@
 ---
 --- Available only if the server/client has access to it (e.g. via [HolyLib](https://holylib.raphaelit7.com/jit.getffi)), otherwise `ffi` is `nil`.
 ---
+--- Some builds (e.g. HolyLib's LuaJIT) sandbox it: `string`, `copy`, `fill` and `load` are removed
+--- and `ffi.C` symbol lookups throw, see `ffi.SANDBOXED`.
+--- `string`, `copy` and `fill` are rebuilt on top of `string.buffer` when it is available.
+---
 ---@class ffilib
+---@field SANDBOXED boolean `true` if the FFI is sandboxed: `C` and `load` are unavailable, `string`, `copy` and `fill` are emulated (or `nil` without `string.buffer`).
 
 ---@type ffilib | nil
 ffi = nil

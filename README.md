@@ -19,4 +19,4 @@ Add the `library` folder of this branch to your workspace libraries, e.g. in `.l
 
 or clone the branch into a LuaLS addons folder, it is a valid addon (`config.json` + `library`).
 
-Source commit: `428be25d04c647de9f20d8436eca02d631e245cc`
+Source commit: `64aa40eeb69e8baf7cbbddb3186042f0cf2b78e3`
