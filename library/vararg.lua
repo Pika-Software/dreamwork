@@ -123,3 +123,20 @@ function vararg.unpack(tbl) end
 ---@return string str The resulting concatenated string.
 ---@nodiscard
 function vararg.concat(sep, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Calls `fn` for each argument and returns the results as a new argument list.
+---
+--- `fn` receives the index first and the value second, same as `table.map`.
+---
+--- Only the first return value of `fn` is used for each argument.
+---
+--- The number of arguments is preserved, including `nil` values.
+---
+---@generic T
+---@param fn fun( index: integer, value: T ): T | nil The function to apply to each argument.
+---@param ... T The argument list to map.
+---@return T ... The mapped argument list.
+---@nodiscard
+function vararg.map(fn, ...) end

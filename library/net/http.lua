@@ -50,7 +50,7 @@ function http.request(options) end
 --- Sends a GET request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.Request.headers The headers to send with the request.
+---@param headers? http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
@@ -61,8 +61,8 @@ function http.get(url, headers, timeout) end
 --- Sends a POST request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param parameters? http.Request.parameters The body to send with the request.
----@param headers? http.Request.headers The headers to send with the request.
+---@param parameters? http.Parameters The body to send with the request.
+---@param headers? http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
@@ -73,7 +73,7 @@ function http.post(url, parameters, headers, timeout) end
 --- Sends a HEAD request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.Request.headers The headers to send with the request.
+---@param headers? http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
