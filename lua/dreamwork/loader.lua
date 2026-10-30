@@ -2049,6 +2049,13 @@ do
 
     dreamwork.errorHandler = error_handler
 
+    ---@param value any
+    ---@return string
+    local function safe_tostring( value )
+        local success, str = pcall( raw.tostring, value )
+        return success and str or "<value that cannot be converted to string>"
+    end
+
     -- below gmod specific error output function, that get message/value from engine and return new message (possibly can be string only)
     local function engine_error_handler( error_value )
         if error_value == ERROR_SENTINEL then
@@ -2076,13 +2083,6 @@ do
     end
 
     hidden_functions[ display_error ] = true
-
-    ---@param value any
-    ---@return string
-    local function safe_tostring( value )
-        local success, str = pcall( raw.tostring, value )
-        return success and str or "<value that cannot be converted to string>"
-    end
 
     engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value )
         -- this runs inside error handlers, where a second error would replace the original one,

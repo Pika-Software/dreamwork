@@ -53,7 +53,7 @@ local COLOR_ERROR       = color_Scheme.error
 ---@field protected __frame fun( self: dreamwork.std.Error, frame: dreamwork.std.debug.StackLevel )
 ---@field protected __tail fun( self: dreamwork.std.Error )
 ---@operator concat( any ): string
-local Error = class.base( "Error", false, nil )
+local Error = std.Error and std.Error.__base or class.base( "Error", false, nil )
 
 ---@param message string | nil
 ---@protected
@@ -280,7 +280,7 @@ end
 ---@class dreamwork.std.ErrorClass : dreamwork.std.Error
 ---@field __base dreamwork.std.Error
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.Error
-local ErrorClass = class.create( Error )
+local ErrorClass = std.Error or class.create( Error )
 std.Error = ErrorClass
 
 --- [SHARED AND MENU]

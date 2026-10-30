@@ -153,7 +153,7 @@ end
 ---
 ---@param predicate fun( item: dreamwork.std.debug.Stack ): boolean The function that decides whether a frame is removed.
 function Stack:filter( predicate )
-    self.__parent:filter( predicate )
+    self.__parent.filter( self, predicate )
     self.start = 1 -- hop start
 end
 
