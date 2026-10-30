@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Generates compact LuaLS meta definitions for the dreamwork `std` environment.
 
@@ -29,8 +28,19 @@ from pathlib import Path
 # and `---@class string` / `---@class table` would leak the library functions
 # into every string / table value.
 BUILTIN_LIBRARIES = {
-    "bit", "bit32", "coroutine", "debug", "ffi", "io", "jit",
-    "math", "os", "package", "string", "table", "utf8",
+    "bit",
+    "bit32",
+    "coroutine",
+    "debug",
+    "ffi",
+    "io",
+    "jit",
+    "math",
+    "os",
+    "package",
+    "string",
+    "table",
+    "utf8",
 }
 
 STD_TYPE_PATTERN = re.compile(r"\bdreamwork\.std\.([A-Za-z_]\w*)((?:\.[A-Za-z_]\w*)*)")
@@ -58,8 +68,28 @@ def transform_doc(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 KEYWORDS = {
-    "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if",
-    "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
+    "and",
+    "break",
+    "do",
+    "else",
+    "elseif",
+    "end",
+    "false",
+    "for",
+    "function",
+    "goto",
+    "if",
+    "in",
+    "local",
+    "nil",
+    "not",
+    "or",
+    "repeat",
+    "return",
+    "then",
+    "true",
+    "until",
+    "while",
 }
 
 OPERATORS = ("...", "==", "~=", "<=", ">=", "..", "::", "//", "<<", ">>")
@@ -74,19 +104,82 @@ SEPARATOR_LINE = re.compile(r"----+\s*")
 
 # tokens after which the next token continues the same expression
 CONTINUATION = {
-    "=", ",", "(", "{", "[", "..", "+", "-", "*", "/", "%", "^", "#", "==", "~=", "<", ">",
-    "<=", ">=", "and", "or", "not", "return", "local", "function", "in", ".", ":",
+    "=",
+    ",",
+    "(",
+    "{",
+    "[",
+    "..",
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "^",
+    "#",
+    "==",
+    "~=",
+    "<",
+    ">",
+    "<=",
+    ">=",
+    "and",
+    "or",
+    "not",
+    "return",
+    "local",
+    "function",
+    "in",
+    ".",
+    ":",
 }
 
 STATEMENT_END_KEYWORDS = {"end", "else", "elseif", "until"}
 
 # globals that exist in every Lua environment, safe to reference from the meta files
 LUA_GLOBALS = {
-    "_G", "_VERSION", "assert", "bit", "collectgarbage", "coroutine", "debug", "dofile", "error",
-    "gcinfo", "getfenv", "getmetatable", "io", "ipairs", "jit", "load", "loadfile", "loadstring",
-    "math", "module", "newproxy", "next", "os", "package", "pairs", "pcall", "print", "rawequal",
-    "rawget", "rawlen", "rawset", "require", "select", "setfenv", "setmetatable", "string", "table",
-    "tonumber", "tostring", "type", "unpack", "xpcall",
+    "_G",
+    "_VERSION",
+    "assert",
+    "bit",
+    "collectgarbage",
+    "coroutine",
+    "debug",
+    "dofile",
+    "error",
+    "gcinfo",
+    "getfenv",
+    "getmetatable",
+    "io",
+    "ipairs",
+    "jit",
+    "load",
+    "loadfile",
+    "loadstring",
+    "math",
+    "module",
+    "newproxy",
+    "next",
+    "os",
+    "package",
+    "pairs",
+    "pcall",
+    "print",
+    "rawequal",
+    "rawget",
+    "rawlen",
+    "rawset",
+    "require",
+    "select",
+    "setfenv",
+    "setmetatable",
+    "string",
+    "table",
+    "tonumber",
+    "tostring",
+    "type",
+    "unpack",
+    "xpcall",
 }
 
 
@@ -137,7 +230,11 @@ def lex(source: str) -> tuple[list[Token], dict[int, str]]:
             end = source.find("\n", i)
             end = n if end < 0 else end
             text = source[i:end]
-            if text.startswith("---") and line != last_token_line and not SEPARATOR_LINE.fullmatch(text):
+            if (
+                text.startswith("---")
+                and line != last_token_line
+                and not SEPARATOR_LINE.fullmatch(text)
+            ):
                 docs[line] = text[3:].rstrip()
 
             i = end
@@ -163,23 +260,25 @@ def lex(source: str) -> tuple[list[Token], dict[int, str]]:
 
                 j += 1
 
-            push("string", source[i:j + 1], line)
+            push("string", source[i : j + 1], line)
             line += source.count("\n", i, j + 1)
             i = j + 1
             continue
 
         if c.isdigit() or (c == "." and i + 1 < n and source[i + 1].isdigit()):
             match = NUMBER.match(source, i)
-            push("number", match.group(0), line)
-            i = match.end()
-            continue
+            if match is not None:
+                push("number", match.group(0), line)
+                i = match.end()
+                continue
 
         if c.isalpha() or c == "_":
             match = NAME.match(source, i)
-            word = match.group(0)
-            push("keyword" if word in KEYWORDS else "name", word, line)
-            i = match.end()
-            continue
+            if match is not None:
+                word = match.group(0)
+                push("keyword" if word in KEYWORDS else "name", word, line)
+                i = match.end()
+                continue
 
         for operator in OPERATORS:
             if source.startswith(operator, i):
@@ -204,7 +303,9 @@ def annotate(tokens: list[Token]):
     for token in tokens:
         token.depth = depth
         token.fn_depth = fn_depth
-        token.stmt = depth == 0 and (previous is None or (token.first and previous.value not in CONTINUATION))
+        token.stmt = depth == 0 and (
+            previous is None or (token.first and previous.value not in CONTINUATION)
+        )
 
         value = token.value
         if token.kind == "keyword":
@@ -257,7 +358,9 @@ class Statement:
 def parse_path(tokens: list[Token], i: int) -> tuple[list[str], int]:
     names = [tokens[i].value]
     i += 1
-    while i + 1 < len(tokens) and tokens[i].value == "." and tokens[i + 1].kind == "name":
+    while (
+        i + 1 < len(tokens) and tokens[i].value == "." and tokens[i + 1].kind == "name"
+    ):
         names.append(tokens[i + 1].value)
         i += 2
 
@@ -284,7 +387,11 @@ def ends_statement(tokens: list[Token], i: int) -> bool:
         return True
 
     token = tokens[i]
-    return token.stmt or token.value == ";" or (token.kind == "keyword" and token.value in STATEMENT_END_KEYWORDS)
+    return (
+        token.stmt
+        or token.value == ";"
+        or (token.kind == "keyword" and token.value in STATEMENT_END_KEYWORDS)
+    )
 
 
 def ends_field(tokens: list[Token], i: int) -> bool:
@@ -299,8 +406,13 @@ def parse_table(tokens: list[Token], i: int) -> tuple[list[tuple[Token, Rhs]], i
     k = i + 1
     while k < len(tokens) and not (tokens[k].value == "}" and tokens[k].depth == depth):
         token = tokens[k]
-        if token.depth == depth and token.kind == "name" and tokens[k - 1].value in ("{", ",", ";") \
-                and k + 1 < len(tokens) and tokens[k + 1].value == "=":
+        if (
+            token.depth == depth
+            and token.kind == "name"
+            and tokens[k - 1].value in ("{", ",", ";")
+            and k + 1 < len(tokens)
+            and tokens[k + 1].value == "="
+        ):
             fields.append((token, parse_rhs(tokens, k + 2, ends_field)))
 
         k += 1
@@ -318,7 +430,9 @@ def parse_rhs(tokens: list[Token], i: int, ends=ends_statement) -> Rhs:
         params, _ = parse_params(tokens, i + 1)
         return Rhs("func", params)
 
-    if (token.kind in ("number", "string") or token.value in ("true", "false", "nil")) and ends(tokens, i + 1):
+    if (
+        token.kind in ("number", "string") or token.value in ("true", "false", "nil")
+    ) and ends(tokens, i + 1):
         return Rhs("literal", token.value)
 
     if token.value == "{":
@@ -352,7 +466,11 @@ def parse_statement(tokens: list[Token], i: int) -> Statement | None:
             else:
                 break
 
-        rhs = parse_rhs(tokens, i + 1) if i < len(tokens) and tokens[i].value == "=" else None
+        rhs = (
+            parse_rhs(tokens, i + 1)
+            if i < len(tokens) and tokens[i].value == "="
+            else None
+        )
         return Statement("local", names, rhs=rhs)
 
     if token.value == "function" and token.kind == "keyword":
@@ -381,8 +499,12 @@ def parse_statement(tokens: list[Token], i: int) -> Statement | None:
 # ---------------------------------------------------------------------------
 
 CLASS_TAG = re.compile(r"^\s*@class\s+(?:\([^)]*\)\s*)?([^\s:<]+)")
-TYPE_DEFINITION_TAG = re.compile(r"^\s*@(?:class|alias|enum)\s+(?:\([^)]*\)\s*)?([^\s:<]+)")
-FIELD_TAG = re.compile(r"^\s*@field\s+(?:(public|private|protected|package)\s+)?([A-Za-z_]\w*)(\??)\s+(.*)$")
+TYPE_DEFINITION_TAG = re.compile(
+    r"^\s*@(?:class|alias|enum)\s+(?:\([^)]*\)\s*)?([^\s:<]+)"
+)
+FIELD_TAG = re.compile(
+    r"^\s*@field\s+(?:(public|private|protected|package)\s+)?([A-Za-z_]\w*)(\??)\s+(.*)$"
+)
 PRIVATE_TAG = re.compile(r"^\s*@private\b")
 DROPPED_TAG = re.compile(r"^\s*@diagnostic\b")
 TYPE_TAG = re.compile(r"^\s*@type\b")
@@ -411,15 +533,25 @@ class Doc:
 
     @property
     def defined_names(self) -> list[str]:
-        return [match.group(1) for match in map(TYPE_DEFINITION_TAG.match, self.lines) if match]
+        return [
+            match.group(1)
+            for match in map(TYPE_DEFINITION_TAG.match, self.lines)
+            if match
+        ]
 
     @property
     def is_empty(self) -> bool:
-        return not any(line.strip() and not DROPPED_TAG.match(line) for line in self.lines)
+        return not any(
+            line.strip() and not DROPPED_TAG.match(line) for line in self.lines
+        )
 
     @property
     def is_function(self) -> bool:
-        return not self.has_type and not self.defines_types and any(FUNCTION_TAG.match(line) for line in self.lines)
+        return (
+            not self.has_type
+            and not self.defines_types
+            and any(FUNCTION_TAG.match(line) for line in self.lines)
+        )
 
     @property
     def param_names(self) -> list[str]:
@@ -448,8 +580,16 @@ class Doc:
             match = CLASS_PARENTS.match(line)
             if match:
                 # `---@class dreamwork.std.debug : debuglib` is `debuglib : debuglib` now
-                parents = [parent for parent in match.group(4).split(",") if parent.strip() != match.group(2)]
-                line = match.group(1) + match.group(2) + (match.group(3) + ",".join(parents) if parents else "")
+                parents = [
+                    parent
+                    for parent in match.group(4).split(",")
+                    if parent.strip() != match.group(2)
+                ]
+                line = (
+                    match.group(1)
+                    + match.group(2)
+                    + (match.group(3) + ",".join(parents) if parents else "")
+                )
 
             rendered.append("---" + line)
 
@@ -566,7 +706,9 @@ class Target:
         return f"{text}:{method}" if method else text
 
     def key(self, method: str | None = None) -> str:
-        return ("local:%d:" % id(self.owner) if self.owner else "global:") + self.render(method)
+        return (
+            "local:%d:" % id(self.owner) if self.owner else "global:"
+        ) + self.render(method)
 
 
 @dataclass
@@ -582,7 +724,9 @@ class Item:
 
     @property
     def documented(self) -> bool:
-        return self.rendered_doc is not None or (self.doc is not None and not self.doc.is_empty)
+        return self.rendered_doc is not None or (
+            self.doc is not None and not self.doc.is_empty
+        )
 
     def key(self) -> str | None:
         return self.target.key(self.method) if self.target is not None else None
@@ -591,11 +735,22 @@ class Item:
         lines = list(self.rendered_doc or (self.doc.render() if self.doc else []))
 
         if self.declares is not None:
-            lines.append(("" if self.declares.export else "local ") + self.declares.display() + " = {}")
+            lines.append(
+                ("" if self.declares.export else "local ")
+                + self.declares.display()
+                + " = {}"
+            )
         elif self.params is not None:
-            lines.append("function %s(%s) end" % (self.target.render(self.method), ", ".join(self.params)))
+            lines.append(
+                "function %s(%s) end"
+                % (self.target.render(self.method), ", ".join(self.params))
+            )
         elif self.target is not None:
-            value = self.value.display() if isinstance(self.value, ClassLocal) else self.value
+            value = (
+                self.value.display()
+                if isinstance(self.value, ClassLocal)
+                else self.value
+            )
             lines.append("%s = %s" % (self.target.render(), value))
         elif self.code is not None:
             lines.append(self.code)
@@ -615,7 +770,9 @@ class FileExtractor:
         self.items: list[Item] = []
         self.class_locals: list[ClassLocal] = []
         self.env: dict[str, tuple] = {}
-        self.nested_docs: dict[int, Doc] = {}  # docs inside expressions, e.g. table constructor fields
+        self.nested_docs: dict[
+            int, Doc
+        ] = {}  # docs inside expressions, e.g. table constructor fields
 
     # -- resolution ---------------------------------------------------------
 
@@ -655,7 +812,9 @@ class FileExtractor:
         return None
 
     def wants_class(self, class_name: str | None) -> bool:
-        return self.std_file or (class_name is not None and class_name.startswith("dreamwork.std."))
+        return self.std_file or (
+            class_name is not None and class_name.startswith("dreamwork.std.")
+        )
 
     # -- emission -----------------------------------------------------------
 
@@ -679,8 +838,17 @@ class FileExtractor:
             if description:
                 rendered += ["--- " + transform_doc(description), "---"]
 
-            rendered.append("---@type " + rename_types(type_text) + ("?" if match.group(3) else ""))
-            self.items.append(Item(None, target=Target([match.group(2)]), value="nil", rendered_doc=rendered))
+            rendered.append(
+                "---@type " + rename_types(type_text) + ("?" if match.group(3) else "")
+            )
+            self.items.append(
+                Item(
+                    None,
+                    target=Target([match.group(2)]),
+                    value="nil",
+                    rendered_doc=rendered,
+                )
+            )
 
     def handle(self, statement: Statement, doc: Doc | None):
         if doc is not None and doc.is_empty:
@@ -709,16 +877,17 @@ class FileExtractor:
                 self.env[name] = (FUNC, LocalFunction(statement.params, doc))
                 return
 
-            binding = self.env.get(name)
-            if binding is not None and statement.rhs.kind == "table":
-                # `local raw = std.raw; if raw == nil then raw = { ... } end`
-                if binding[0] == PATH and binding[1]:
-                    self.handle_assign(Target(binding[1]), statement.rhs, doc)
-                    return
+            if statement.rhs is not None:
+                binding = self.env.get(name)
+                if binding is not None and statement.rhs.kind == "table":
+                    # `local raw = std.raw; if raw == nil then raw = { ... } end`
+                    if binding[0] == PATH and binding[1]:
+                        self.handle_assign(Target(binding[1]), statement.rhs, doc)
+                        return
 
-                if binding[0] == CLASS:
-                    self.emit_fields(Target([], binding[1]), statement.rhs.value)
-                    return
+                    if binding[0] == CLASS:
+                        self.emit_fields(Target([], binding[1]), statement.rhs.value)
+                        return
 
             # plain global, not part of the environment
             if doc is not None:
@@ -729,7 +898,11 @@ class FileExtractor:
         if statement.method is not None:
             container, name = statement.names, None
 
-        target = self.target_of(container, name) if name is not None else self.method_target(container)
+        target = (
+            self.target_of(container, name)
+            if name is not None
+            else self.method_target(container)
+        )
         if target is None:
             if doc is not None:
                 self.emit_floating(doc)
@@ -737,7 +910,11 @@ class FileExtractor:
             return
 
         if kind == "func":
-            self.items.append(Item(doc, target=target, method=statement.method, params=statement.params))
+            self.items.append(
+                Item(
+                    doc, target=target, method=statement.method, params=statement.params
+                )
+            )
             return
 
         self.handle_assign(target, statement.rhs, doc)
@@ -764,7 +941,9 @@ class FileExtractor:
             return
 
         name = names[0]
-        resolved = self.resolve(rhs.value) if rhs is not None and rhs.kind == "ref" else None
+        resolved = (
+            self.resolve(rhs.value) if rhs is not None and rhs.kind == "ref" else None
+        )
         class_name = doc.class_name if doc is not None else None
 
         if class_name == "dreamwork.std":
@@ -775,7 +954,9 @@ class FileExtractor:
         if class_name is not None:
             if resolved is not None and resolved[0] == PATH:
                 self.env[name] = resolved
-                if self.wants_class(class_name) and not self.is_trivial_class(doc, resolved[1]):
+                if self.wants_class(class_name) and not self.is_trivial_class(
+                    doc, resolved[1]
+                ):
                     self.items.append(Item(doc, target=Target(resolved[1]), value="{}"))
             elif self.wants_class(class_name):
                 class_local = ClassLocal(name, doc)
@@ -803,9 +984,14 @@ class FileExtractor:
 
     @staticmethod
     def is_trivial_class(doc: Doc, path: list[str]) -> bool:
-        lines = [line for line in doc.lines if line.strip() and not DROPPED_TAG.match(line)]
-        return len(lines) == 1 and CLASS_TAG.match(lines[0]) is not None \
+        lines = [
+            line for line in doc.lines if line.strip() and not DROPPED_TAG.match(line)
+        ]
+        return (
+            len(lines) == 1
+            and CLASS_TAG.match(lines[0]) is not None
             and lines[0].split()[-1] == "dreamwork.std." + ".".join(path)
+        )
 
     def handle_assign(self, target: Target, rhs: Rhs, doc: Doc | None):
         kind = rhs.kind
@@ -829,7 +1015,9 @@ class FileExtractor:
             if resolved is None and rhs.value[0] in LUA_GLOBALS:
                 # a Lua builtin (e.g. `std.pcall = pcall`), not a local
                 if target.owner is not None or target.path != rhs.value:
-                    self.items.append(Item(doc, target=target, value=".".join(rhs.value)))
+                    self.items.append(
+                        Item(doc, target=target, value=".".join(rhs.value))
+                    )
                 elif doc is not None:
                     self.items.append(Item(doc, target=target, value="nil"))
 
@@ -840,7 +1028,9 @@ class FileExtractor:
 
             if resolved[0] == FUNC:
                 function = resolved[1]
-                self.items.append(Item(doc or function.doc, target=target, params=function.params))
+                self.items.append(
+                    Item(doc or function.doc, target=target, params=function.params)
+                )
                 return
 
             if resolved[0] == CLASS and not resolved[2]:
@@ -854,7 +1044,9 @@ class FileExtractor:
 
             if resolved[0] == PATH:
                 if resolved[1] and resolved[1] != target.path:
-                    self.items.append(Item(doc, target=target, value=".".join(resolved[1])))
+                    self.items.append(
+                        Item(doc, target=target, value=".".join(resolved[1]))
+                    )
                 elif doc is not None:
                     self.items.append(Item(doc, target=target, value="nil"))
 
@@ -868,7 +1060,13 @@ class FileExtractor:
         elif doc.is_function:
             self.items.append(Item(doc, target=target, params=doc.param_names))
         else:
-            self.items.append(Item(doc, target=target, value="{}" if doc.class_name and not doc.has_type else "nil"))
+            self.items.append(
+                Item(
+                    doc,
+                    target=target,
+                    value="{}" if doc.class_name and not doc.has_type else "nil",
+                )
+            )
 
     def emit_fields(self, target: Target, fields: list[tuple[Token, Rhs]]):
         for token, rhs in fields:
@@ -879,7 +1077,9 @@ class FileExtractor:
             if doc is not None and doc.is_private:
                 continue
 
-            self.handle_assign(Target(target.path + [token.value], target.owner), rhs, doc)
+            self.handle_assign(
+                Target(target.path + [token.value], target.owner), rhs, doc
+            )
 
     # -- driver -------------------------------------------------------------
 
@@ -905,7 +1105,9 @@ class FileExtractor:
             else:
                 floating.append((line, Doc(lines)))
 
-        events: list[tuple[int, int, object]] = [(line, 0, doc) for line, doc in floating]
+        events: list[tuple[int, int, object]] = [
+            (line, 0, doc) for line, doc in floating
+        ]
 
         for index, token in enumerate(tokens):
             if not token.first:
@@ -1044,13 +1246,21 @@ def copy_meta(path: Path, target: Path):
     """Copies a hand-written meta file, rewritten to the environment point of view."""
     text = path.read_text(encoding="utf-8")
     text = re.sub(r"^---@meta\b.*$", "---@meta _", text, count=1, flags=re.M)
-    lines = [transform_doc(line) if line.lstrip().startswith("--") else rename_types(line) for line in text.split("\n")]
+    lines = [
+        transform_doc(line) if line.lstrip().startswith("--") else rename_types(line)
+        for line in text.split("\n")
+    ]
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text("\n".join(line for line in lines if not DROPPED_TAG.match(line.lstrip()[3:])), encoding="utf-8")
+    target.write_text(
+        "\n".join(line for line in lines if not DROPPED_TAG.match(line.lstrip()[3:])),
+        encoding="utf-8",
+    )
 
 
-def generate(source_root: Path, output: Path, verbose: bool, branch: str, commit: str) -> int:
+def generate(
+    source_root: Path, output: Path, verbose: bool, branch: str, commit: str
+) -> int:
     lua_root = source_root / "lua" / "dreamwork"
     std_root = lua_root / "std"
     meta_root = source_root / "meta"
@@ -1063,7 +1273,11 @@ def generate(source_root: Path, output: Path, verbose: bool, branch: str, commit
             continue
 
         std_file = std_root in path.parents
-        name = str(path.relative_to(std_root)) if std_file else "_core/" + str(path.relative_to(lua_root))
+        name = (
+            str(path.relative_to(std_root))
+            if std_file
+            else "_core/" + str(path.relative_to(lua_root))
+        )
 
         extractor = FileExtractor(path, std_file, stats)
         items = extractor.run(path.read_text(encoding="utf-8"))
@@ -1091,7 +1305,10 @@ def generate(source_root: Path, output: Path, verbose: bool, branch: str, commit
 
     # hand-written meta definitions: the std ones and the shared aliases (`byte`, `numberbase`, ...)
     hand_written = [(meta_root / "lua.lua", library / "_meta" / "lua.lua")]
-    hand_written += [(path, library / "_meta" / path.relative_to(meta_root / "dreamwork")) for path in sorted((meta_root / "dreamwork").rglob("*.lua"))]
+    hand_written += [
+        (path, library / "_meta" / path.relative_to(meta_root / "dreamwork"))
+        for path in sorted((meta_root / "dreamwork").rglob("*.lua"))
+    ]
 
     for path, target in hand_written:
         if path.is_file():
@@ -1108,27 +1325,49 @@ def generate(source_root: Path, output: Path, verbose: bool, branch: str, commit
         },
     }
 
-    (output / "config.json").write_text(json.dumps(config, indent=4) + "\n", encoding="utf-8")
-    (output / "README.md").write_text(README % {"branch": branch, "commit": commit}, encoding="utf-8")
+    (output / "config.json").write_text(
+        json.dumps(config, indent=4) + "\n", encoding="utf-8"
+    )
+    (output / "README.md").write_text(
+        README % {"branch": branch, "commit": commit}, encoding="utf-8"
+    )
 
     print("generated %d meta files into %s" % (written, library))
     if verbose:
-        print("undocumented expressions skipped: %d, unbound doc blocks dropped: %d" % (stats["skipped_expressions"], stats["dropped_docs"]))
+        print(
+            "undocumented expressions skipped: %d, unbound doc blocks dropped: %d"
+            % (stats["skipped_expressions"], stats["dropped_docs"])
+        )
 
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[2], help="repository root")
-    parser.add_argument("--output", type=Path, default=Path("meta-out"), help="output directory")
-    parser.add_argument("--branch", default="main", help="source branch name for the README")
-    parser.add_argument("--commit", default="unknown", help="source commit hash for the README")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=Path(__file__).resolve().parents[2],
+        help="repository root",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=Path("meta-out"), help="output directory"
+    )
+    parser.add_argument(
+        "--branch", default="main", help="source branch name for the README"
+    )
+    parser.add_argument(
+        "--commit", default="unknown", help="source commit hash for the README"
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
     args.output.mkdir(parents=True, exist_ok=True)
-    return generate(args.source.resolve(), args.output, args.verbose, args.branch, args.commit)
+    return generate(
+        args.source.resolve(), args.output, args.verbose, args.branch, args.commit
+    )
 
 
 if __name__ == "__main__":
