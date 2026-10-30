@@ -2,8 +2,13 @@
 
 
 ---@class garrysmod.http.RequestMethod
----| "GET" | "POST" | "HEAD" | "PUT"
----| "DELETE" | "PATCH" | "OPTIONS"
+---| "GET"
+---| "POST"
+---| "HEAD"
+---| "PUT"
+---| "DELETE"
+---| "PATCH"
+---| "OPTIONS"
 
 
 ---@alias garrysmod.http.RequestURL "http://" | "https://" | string

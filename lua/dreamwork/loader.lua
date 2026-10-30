@@ -1848,13 +1848,13 @@ sendfile( "dreamwork/std/types/error.lua" )
 dofile( "dreamwork/std/codec/pack.lua" )
 sendfile( "dreamwork/std/codec/pack.lua" )
 
--- -- ByteReader class
--- dofile( "dreamwork/std/types/binary_reader.lua" )
--- sendfile( "dreamwork/std/types/binary_reader.lua" )
+-- ByteReader class
+dofile( "dreamwork/std/types/binary_reader.lua" )
+sendfile( "dreamwork/std/types/binary_reader.lua" )
 
--- -- ByteWriter class
--- dofile( "dreamwork/std/types/binary_writer.lua" )
--- sendfile( "dreamwork/std/types/binary_writer.lua" )
+-- ByteWriter class
+dofile( "dreamwork/std/types/binary_writer.lua" )
+sendfile( "dreamwork/std/types/binary_writer.lua" )
 
 local engine = dreamwork.engine
 

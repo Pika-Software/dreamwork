@@ -279,3 +279,65 @@ function vararg.concat( sep, ... )
 
     return str
 end
+
+do
+
+    ---@param fn function
+    ---@param index integer
+    ---@param count integer
+    ---@param value any
+    ---@param ... any
+    ---@return any ...
+    local function map( fn, index, count, value, ... )
+        if index == count then
+            return (fn( index, value ))
+        else
+            return (fn( index, value )), map( fn, index + 1, count, ... )
+        end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Calls `fn` for each argument and returns the results as a new argument list.
+    ---
+    --- `fn` receives the index first and the value second, same as `table.map`.
+    ---
+    --- Only the first return value of `fn` is used for each argument.
+    ---
+    --- The number of arguments is preserved, including `nil` values.
+    ---
+    ---@generic T
+    ---@param fn fun( index: integer, value: T ): T | nil The function to apply to each argument.
+    ---@param ... T The argument list to map.
+    ---@return T ... The mapped argument list.
+    ---@nodiscard
+    function vararg.map( fn, ... )
+        local count = raw_select( "#", ... )
+
+        if count == 0 then
+            return
+        elseif count == 1 then
+            return (fn( 1, ... ))
+        elseif count == 2 then
+            local a, b = ...
+            return (fn( 1, a )), (fn( 2, b ))
+        elseif count == 3 then
+            local a, b, c = ...
+            return (fn( 1, a )), (fn( 2, b )), (fn( 3, c ))
+        elseif count == 4 then
+            local a, b, c, d = ...
+            return (fn( 1, a )), (fn( 2, b )), (fn( 3, c )), (fn( 4, d ))
+        elseif count <= 16 then
+            return map( fn, 1, count, ... )
+        end
+
+        local tbl = { ... }
+
+        for i = 1, count, 1 do
+            tbl[ i ] = fn( i, tbl[ i ] )
+        end
+
+        return table_unpack( tbl, 1, count )
+    end
+
+end

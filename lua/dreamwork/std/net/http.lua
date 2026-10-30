@@ -271,6 +271,7 @@ local function request( options )
     ---@cast url string
 
     local method = options.method or "GET"
+    ---@cast method dreamwork.std.http.RequestMethod
     options.method = method
 
     local timeout = options.timeout
@@ -408,7 +409,7 @@ http.request = request
 --- Sends a GET request.
 ---
 ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
----@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
+---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return dreamwork.std.http.Response response The response from the request.
 ---@async
@@ -426,8 +427,8 @@ end
 --- Sends a POST request.
 ---
 ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
----@param parameters? dreamwork.std.http.Request.parameters The body to send with the request.
----@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
+---@param parameters? dreamwork.std.http.Parameters The body to send with the request.
+---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return dreamwork.std.http.Response response The response from the request.
 ---@async
@@ -448,7 +449,7 @@ end
 --- Sends a HEAD request.
 ---
 ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
----@param headers? dreamwork.std.http.Request.headers The headers to send with the request.
+---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
 ---@param timeout? integer The timeout in seconds.
 ---@return dreamwork.std.http.Response response The response from the request.
 ---@async
