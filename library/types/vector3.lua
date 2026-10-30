@@ -69,6 +69,14 @@ function __Vector3:__tostring() end
 ---@protected
 function __Vector3:__eq(other) end
 
+---@param writer BinaryWriter
+---@protected
+function __Vector3:__serialize(writer) end
+
+---@param reader BinaryReader
+---@protected
+function __Vector3:__deserialize(reader) end
+
 --- [SHARED AND MENU]
 ---
 --- Returns the x, y, and z coordinates of the vector.

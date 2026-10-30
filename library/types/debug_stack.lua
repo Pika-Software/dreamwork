@@ -46,6 +46,13 @@ function Stack:merge(other) end
 
 --- [SHARED AND MENU]
 ---
+--- Removes every item for which `predicate` returns `true`, keeping the order of the remaining items.
+---
+---@param predicate fun( item: debug.Stack ): boolean The function that decides whether a frame is removed.
+function Stack:filter(predicate) end
+
+--- [SHARED AND MENU]
+---
 --- Captures the current call stack and merges it into this `Stack`.
 ---
 --- On the first call (empty stack), every captured frame is simply pushed

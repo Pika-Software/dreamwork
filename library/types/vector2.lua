@@ -67,15 +67,11 @@ function __Vector2:__tostring() end
 ---@protected
 function __Vector2:__eq(other) end
 
---- Writes the vector as two 32-bit floats ( precision is reduced to float ).
----
----@param writer BinaryWriter The writer.
+---@param writer BinaryWriter
 ---@protected
 function __Vector2:__serialize(writer) end
 
---- Reads the vector from two 32-bit floats.
----
----@param reader BinaryReader The reader.
+---@param reader BinaryReader
 ---@protected
 function __Vector2:__deserialize(reader) end
 

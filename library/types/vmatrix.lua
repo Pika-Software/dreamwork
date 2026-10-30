@@ -113,6 +113,14 @@ function __VMatrix.unpack(self) end
 ---@return VMatrix matrix The same matrix.
 function __VMatrix.setUnpacked(self, m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44) end
 
+---@param writer BinaryWriter
+---@protected
+function __VMatrix:__serialize(writer) end
+
+---@param reader BinaryReader
+---@protected
+function __VMatrix:__deserialize(reader) end
+
 --- [SHARED AND MENU]
 ---
 --- Copies the values of another matrix into this matrix.

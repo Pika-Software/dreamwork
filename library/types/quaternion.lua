@@ -83,6 +83,14 @@ function __Quaternion:__tostring() end
 ---@protected
 function __Quaternion:__eq(other) end
 
+---@param writer BinaryWriter
+---@protected
+function __Quaternion:__serialize(writer) end
+
+---@param reader BinaryReader .
+---@protected
+function __Quaternion:__deserialize(reader) end
+
 --- [SHARED AND MENU]
 ---
 --- Returns the w ( r ), x ( i ), y ( j ), and z ( k ) components of the quaternion.

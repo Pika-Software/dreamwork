@@ -255,6 +255,14 @@ function __BigInteger:__represent() end
 ---@protected
 function __BigInteger:__concat(value) end
 
+---@param writer BinaryWriter
+---@protected
+function __BigInteger:__serialize(writer) end
+
+---@param reader BinaryReader
+---@protected
+function __BigInteger:__deserialize(reader) end
+
 ---@return BigInteger new_obj The new negated big integer object.
 ---@protected
 function __BigInteger:__unm() end

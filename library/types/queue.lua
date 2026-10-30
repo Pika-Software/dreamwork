@@ -36,6 +36,33 @@ function __Queue:__len() end
 ---@protected
 function __Queue:__init() end
 
+--- Writes the queue, the number of values (`UInt32`), then every value from the one `pop` returns first,
+--- each is a presence bit and the value (`writer:writeObject`).
+---
+--- Values must be objects with `__serialize`, or `nil`.
+---
+---@generic T
+---@param self Queue<T>
+---@param writer BinaryWriter The writer.
+---@param ... any The arguments passed to `__serialize` of every value.
+---@protected
+function __Queue:__serialize(writer, ...) end
+
+--- Reads the queue written by `__serialize`, replacing its values,
+--- values are read with `reader:readClass( value_class, ... )`.
+---
+--- ```
+--- local queue = reader:readClass( Queue, Vector3 )
+--- ```
+---
+---@generic T
+---@param self Queue<T>
+---@param reader BinaryReader The reader.
+---@param value_class? Class The class of the values, can be omitted if every value is `nil`.
+---@param ... any The arguments passed to `__deserialize` of every value.
+---@protected
+function __Queue:__deserialize(reader, value_class, ...) end
+
 --- [SHARED AND MENU]
 ---
 --- Checks if the queue is empty.
