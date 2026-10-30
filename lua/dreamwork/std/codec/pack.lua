@@ -6,13 +6,15 @@ local string_len, string_rep = string.len, string.rep
 local string_sub, string_find = string.sub, string.find
 local string_byte, string_char = string.byte, string.char
 
-local table_unpack = std.table.unpack
+local table = std.table
+local table_unpack = table.unpack
 
 local bytepack = std.bytepack
 
 local raw = std.raw
 
 local rbit = raw.bit
+local rbit_bswap = rbit.bswap
 local rbit_band, rbit_bor = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
 
@@ -2102,6 +2104,33 @@ do
             end
 
             return (is_little_endian and read_uint_le or read_uint_be)[ full_bytes ]( string_byte( str, byte_index, (byte_index + full_bytes) - 1 ) )
+        end
+
+        local bit_offset = rbit_band( bit_position, 7 )
+
+        -- fields within 4 bytes: one 32-bit window, no loops, `bit_count` is `31` at most here
+        if bit_offset + bit_count <= 32 then
+            local byte_index = rbit_rshift( bit_position, 3 ) + 1
+            local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( str, byte_index, byte_index + 3 )
+
+            local value = rbit_band(
+                rbit_rshift(
+                    rbit_bor( uint8_1, rbit_lshift( uint8_2 or 0, 8 ), rbit_lshift( uint8_3 or 0, 16 ), rbit_lshift( uint8_4 or 0, 24 ) ),
+                    bit_offset
+                ),
+                rbit_rshift( 0xFFFFFFFF, 32 - bit_count )
+            )
+
+            if is_little_endian or full_bytes == 0 then
+                return value
+            end
+
+            -- big endian: the low `remaining_bits` are the highest bits of the value,
+            -- the bytes above them are in the reversed order
+            return rbit_bor(
+                rbit_lshift( rbit_band( value, rbit_lshift( 1, remaining_bits ) - 1 ), full_bytes * 8 ),
+                rbit_rshift( rbit_bswap( rbit_rshift( value, remaining_bits ) ), 32 - full_bytes * 8 )
+            )
         end
 
         if is_little_endian then
