@@ -21,7 +21,12 @@ local util_funcuvname = jit_util.funcuvname
 ---
 --- Available only if the server/client has access to it (e.g. via [HolyLib](https://holylib.raphaelit7.com/jit.getffi)), otherwise `std.ffi` is `nil`.
 ---
+--- Some builds (e.g. HolyLib's LuaJIT) sandbox it: `string`, `copy`, `fill` and `load` are removed
+--- and `ffi.C` symbol lookups throw, see `std.ffi.SANDBOXED`.
+--- `string`, `copy` and `fill` are rebuilt on top of `string.buffer` when it is available.
+---
 ---@class dreamwork.std.ffi : ffilib
+---@field SANDBOXED boolean `true` if the FFI is sandboxed: `C` and `load` are unavailable, `string`, `copy` and `fill` are emulated (or `nil` without `string.buffer`).
 
 ---@class dreamwork.std
 ---@field ffi dreamwork.std.ffi | nil
@@ -410,6 +415,95 @@ do
 
             ---@cast metatable metatable | table | nil
             return metatable
+        end
+
+        ffi_copy.SANDBOXED = ffi.string == nil or ffi.copy == nil or ffi.fill == nil or ffi.load == nil
+
+        -- HolyLib's sandboxed LuaJIT drops raw memory functions but keeps `string.buffer` and `ffi.cast`,
+        -- which are enough to rebuild `string`, `copy` and `fill`; `C` and `load` stay unavailable
+        local string_buffer = string.buffer
+        if ffi_copy.SANDBOXED and string_buffer ~= nil and ffi.cast ~= nil then
+            local string_sub = string.sub
+            local ffi_cast = ffi.cast
+
+            local uint8_ptr_t = ffi_typeof( "uint8_t *" )
+            local const_uint8_ptr_t = ffi_typeof( "const uint8_t *" )
+
+            local buffer = string_buffer.new()
+
+            if ffi.string == nil then
+
+                ---@param pointer ffi.cdata* | string
+                ---@param length? integer
+                ---@return string
+                function ffi_copy.string( pointer, length )
+                    if length == nil then
+                        local bytes = ffi_cast( const_uint8_ptr_t, pointer )
+                        length = 0
+
+                        while bytes[ length ] ~= 0 do
+                            length = length + 1
+                        end
+                    end
+
+                    ---@type string
+                    local str
+
+                    if raw_type( pointer ) == "string" then
+                        -- `putcdata` does not accept strings, the original also respects `length` and zero bytes here
+                        ---@cast pointer string
+                        str = string_sub( pointer, 1, length )
+                    else
+                        ---@cast pointer ffi.cdata*
+                        str = buffer:reset():putcdata( pointer, length ):tostring()
+
+                        -- do not keep big allocations alive between calls
+                        if length > 0x10000 then
+                            buffer:free()
+                        end
+                    end
+
+                    return str
+                end
+
+            end
+
+            if ffi.copy == nil then
+
+                ---@param destination ffi.cdata*
+                ---@param source ffi.cdata* | string
+                ---@param length? integer
+                function ffi_copy.copy( destination, source, length )
+                    if length == nil then
+                        -- like the original, a string is copied together with its terminating zero
+                        length = #source + 1
+                    end
+
+                    local target, bytes = ffi_cast( uint8_ptr_t, destination ), ffi_cast( const_uint8_ptr_t, source )
+                    for index = 0, length - 1, 1 do
+                        target[ index ] = bytes[ index ]
+                    end
+                end
+
+            end
+
+            if ffi.fill == nil then
+
+                ---@param destination ffi.cdata*
+                ---@param length integer
+                ---@param value? integer
+                function ffi_copy.fill( destination, length, value )
+                    if value == nil then
+                        value = 0
+                    end
+
+                    local target = ffi_cast( uint8_ptr_t, destination )
+                    for index = 0, length - 1, 1 do
+                        target[ index ] = value
+                    end
+                end
+
+            end
         end
 
         std.ffi = ffi_copy

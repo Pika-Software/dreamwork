@@ -2,8 +2,8 @@ local dreamwork_getUpTime = dreamwork.getUpTime
 local engine = dreamwork.engine
 
 local std = dreamwork.std
-
 local ffi = std.ffi
+
 local gc = std.gc
 
 local debug = std.debug
@@ -61,10 +61,12 @@ if ffi ~= nil then
     if std.SYSTEM_WINDOWS then
         pcall( ffi.cdef, "uint8_t __stdcall SystemFunction036( void* buffer, unsigned long length );" )
 
-        local success, advapi32 = pcall( ffi.load, "advapi32" )
-        if success then
-            local RtlGenRandom = advapi32.SystemFunction036
+        -- symbol lookups can throw (missing export, sandboxed FFI), so they are resolved inside pcall
+        local success, RtlGenRandom = pcall( function()
+            return ffi.load( "advapi32" ).SystemFunction036
+        end )
 
+        if success then
             function os_random( length )
                 local buffer = ffi_new( "uint8_t[?]", length )
                 if RtlGenRandom( buffer, length ) == 0 then
@@ -79,12 +81,14 @@ if ffi ~= nil then
         pcall( ffi.cdef, "FILE* fopen( const char* path, const char* mode );" )
         pcall( ffi.cdef, "size_t fread( void* buffer, size_t size, size_t count, FILE* stream );" )
 
-        local C = ffi.C
+        -- symbol lookups can throw (HolyLib's LuaJIT sandboxes `ffi.C`), so they are resolved inside pcall
+        local success, handle, fread = pcall( function()
+            local C = ffi.C
+            ---@diagnostic disable-next-line: redundant-return-value
+            return C.fopen( "/dev/urandom", "rb" ), C.fread
+        end )
 
-        local success, handle = pcall( C.fopen, "/dev/urandom", "rb" )
         if success and handle ~= nil then
-            local fread = C.fread
-
             -- the handle stays open for the whole session, it is reused by every read
             function os_random( length )
                 local buffer = ffi_new( "uint8_t[?]", length )

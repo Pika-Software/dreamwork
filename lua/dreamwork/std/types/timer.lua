@@ -1,5 +1,4 @@
 local engine = dreamwork.engine
-
 local engine_timer = engine.timer
 
 local engine_timer_create = engine_timer.create
@@ -42,6 +41,9 @@ local math_huge = math.huge
 
 local class = std.class
 
+local uuid = std.uuid
+local uuid_unique = uuid.unique
+
 local represent = std.represent
 local tonumber = std.tonumber
 local type = std.type
@@ -69,8 +71,6 @@ setmetatable( hooks, {
     end,
     __mode = "k"
 } )
-
-local unnamed_count = 0
 
 ---@alias dreamwork.std.Timer.state
 ---| `0` # Timer stopped.
@@ -114,8 +114,7 @@ do
     ---@protected
     function Timer:__init( interval, repetition_count, name )
         if name == nil then
-            unnamed_count = unnamed_count + 1
-            name = "unnamed#" .. unnamed_count
+            name = uuid_unique()
         end
 
         names[ self ] = name
