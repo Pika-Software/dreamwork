@@ -64,25 +64,22 @@ local MATCH_LEN_MASK = rbit_lshift( 1, MATCH_LEN_BITS ) - 1
 local HASH_MULT_LO = 0x79B1 -- 2654435761 & 0xFFFF
 local HASH_MULT_HI = 0x9E37 -- 2654435761 >> 16
 
-local CHARS = {}
-for i = 0, 255, 1 do
-    CHARS[ i ] = string_char( i )
-end
-
 --- Writes the extra bytes of a literal count / match length that did not fit into the token.
 ---@param out string[]
----@param outNext integer
+---@param output_size integer
 ---@param remaining integer
 ---@return integer
-local function writeLength( out, outNext, remaining )
+local function writeLength( out, output_size, remaining )
     while remaining >= 0xFF do
-        out[ outNext ] = "\255"
-        outNext = outNext + 1
+        output_size = output_size + 1
+        out[ output_size ] = "\255"
         remaining = remaining - 0xFF
     end
 
-    out[ outNext ] = CHARS[ remaining ]
-    return outNext + 1
+    output_size = output_size + 1
+    out[ output_size ] = string_char( remaining )
+
+    return output_size
 end
 
 if holylib_CompressLZ4 == nil then
@@ -115,7 +112,9 @@ if holylib_CompressLZ4 == nil then
             error( "acceleration must be an integer >= 1", 2 )
         end
 
-        local out, outNext = {}, 1
+        ---@type string[]
+        local output = {}
+        local output_size = 0
 
         local index, dataLen = 1, string_len( data ) -- 1-indexed
         local nextUnencodedPos = index               -- Sometimes called the "anchor" in other implementations
@@ -194,32 +193,31 @@ if holylib_CompressLZ4 == nil then
                 local matchLength = index - matchStart
 
                 -- Write token
-                out[ outNext ] = CHARS[ rbit_bor(
+                output_size = output_size + 1
+                output[ output_size ] = string_char( rbit_bor(
                     rbit_lshift( literalCount < LIT_COUNT_MASK and literalCount or LIT_COUNT_MASK, MATCH_LEN_BITS ),
                     matchLength < MATCH_LEN_MASK and matchLength or MATCH_LEN_MASK
-                ) ]
-
-                outNext = outNext + 1
+                ) )
 
                 -- Write literal count
                 if literalCount >= LIT_COUNT_MASK then
-                    outNext = writeLength( out, outNext, literalCount - LIT_COUNT_MASK )
+                    output_size = writeLength( output, output_size, literalCount - LIT_COUNT_MASK )
                 end
 
                 -- Write literals
                 if literalCount ~= 0 then
-                    out[ outNext ] = string_sub( data, nextUnencodedPos, nextUnencodedPos + literalCount - 1 )
-                    outNext = outNext + 1
+                    output_size = output_size + 1
+                    output[ output_size ] = string_sub( data, nextUnencodedPos, nextUnencodedPos + literalCount - 1 )
                 end
 
                 -- Write offset (little-endian)
-                out[ outNext ] = CHARS[ rbit_band( matchOffset, 0xFF ) ]
-                out[ outNext + 1 ] = CHARS[ rbit_rshift( matchOffset, 8 ) ]
-                outNext = outNext + 2
+                output_size = output_size + 1
+                output[ output_size ] = string_char( rbit_band( matchOffset, 0xFF ), rbit_rshift( matchOffset, 8 ) )
+
 
                 -- Write match length
                 if matchLength >= MATCH_LEN_MASK then
-                    outNext = writeLength( out, outNext, matchLength - MATCH_LEN_MASK )
+                    output_size = writeLength( output, output_size, matchLength - MATCH_LEN_MASK )
                 end
 
                 -- Move the anchor
@@ -239,18 +237,20 @@ if holylib_CompressLZ4 == nil then
 
         -- Write remaining token (only literals, match length is 0)
         local literalCount = dataLen - nextUnencodedPos + 1
-        out[ outNext ] = CHARS[ rbit_lshift( literalCount < LIT_COUNT_MASK and literalCount or LIT_COUNT_MASK, MATCH_LEN_BITS ) ]
-        outNext = outNext + 1
+
+        output_size = output_size + 1
+        output[ output_size ] = string_char( rbit_lshift( literalCount < LIT_COUNT_MASK and literalCount or LIT_COUNT_MASK, MATCH_LEN_BITS ) )
 
         -- Write remaining literal count
         if literalCount >= LIT_COUNT_MASK then
-            outNext = writeLength( out, outNext, literalCount - LIT_COUNT_MASK )
+            output_size = writeLength( output, output_size, literalCount - LIT_COUNT_MASK )
         end
 
         -- Write remaining literals
-        out[ outNext ] = string_sub( data, nextUnencodedPos )
+        output_size = output_size + 1
+        output[ output_size ] = string_sub( data, nextUnencodedPos )
 
-        return table_concat( out )
+        return table_concat( output, "", 1, output_size )
     end
 
 else
@@ -277,7 +277,9 @@ if holylib_DecompressLZ4 == nil then
     ---@return string decompressed The decompressed string.
     ---@nodiscard
     function lz4.decompress( data )
-        local out, outLen = {}, 0
+        ---@type byte[]
+        local output = {}
+        local output_size = 0
 
         local index = 1 -- 1-indexed
         local dataLen = string_len( data )
@@ -309,8 +311,8 @@ if holylib_DecompressLZ4 == nil then
             end
 
             for j = index, literalEnd, 1 do
-                outLen = outLen + 1
-                out[ outLen ] = string_byte( data, j )
+                output_size = output_size + 1
+                output[ output_size ] = string_byte( data, j )
             end
 
             index = literalEnd + 1
@@ -325,10 +327,10 @@ if holylib_DecompressLZ4 == nil then
             end
 
             local offsetA, offsetB = string_byte( data, index, index + 1 )
-            local matchStart = outLen - (offsetA + offsetB * 0x100)
+            local matchStart = output_size - (offsetA + offsetB * 0x100)
             index = index + 2
 
-            if matchStart < 0 or matchStart == outLen then
+            if matchStart < 0 or matchStart == output_size then
                 error( "corrupt LZ4 data: invalid match offset", 2 )
             end
 
@@ -350,27 +352,30 @@ if holylib_DecompressLZ4 == nil then
 
             -- Copy match (byte by byte, source and destination may overlap)
             for i = 1, matchLength, 1 do
-                out[ outLen + i ] = out[ matchStart + i ]
+                output[ output_size + i ] = output[ matchStart + i ]
             end
 
-            outLen = outLen + matchLength
+            output_size = output_size + matchLength
 
             if index > dataLen then
                 error( "corrupt LZ4 data: block must end with literals", 2 )
             end
         end
 
-        if outLen <= CHUNK_SIZE then
-            return string_char( table_unpack( out, 1, outLen ) )
+        if output_size <= CHUNK_SIZE then
+            return string_char( table_unpack( output, 1, output_size ) )
         end
 
-        local chunks, chunkCount = {}, 0
-        for i = 1, outLen, CHUNK_SIZE do
-            chunkCount = chunkCount + 1
-            chunks[ chunkCount ] = string_char( table_unpack( out, i, math_min( i + CHUNK_SIZE - 1, outLen ) ) )
+        ---@type string[]
+        local chunks = {}
+        local chunk_count = 0
+
+        for i = 1, output_size, CHUNK_SIZE do
+            chunk_count = chunk_count + 1
+            chunks[ chunk_count ] = string_char( table_unpack( output, i, math_min( i + CHUNK_SIZE - 1, output_size ) ) )
         end
 
-        return table_concat( chunks, "", 1, chunkCount )
+        return table_concat( chunks, "", 1, chunk_count )
     end
 
 else
