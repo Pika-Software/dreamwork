@@ -60,15 +60,7 @@ function Stack:__serialize( writer, ... )
     writer:writeUInt( size, 32 )
 
     for index = 1, size, 1 do
-        local value = self[ index ]
-
-        -- presence bit, `nil` has no `__serialize`
-        if value == nil then
-            writer:writeBit( 0 )
-        else
-            writer:writeBit( 1 )
-            writer:writeObject( value, ... )
-        end
+        writer:writeObject( self[ index ], ... )
     end
 end
 
@@ -90,22 +82,13 @@ function Stack:__deserialize( reader, value_class, ... )
         self[ index ] = nil
     end
 
-    self.size = 0
-
-    -- every value takes at least 1 bit, so a broken count runs out of data instead of memory
     local size = reader:readUInt( 32 )
 
     for index = 1, size, 1 do
-        if reader:readBit() == 1 then
-            if value_class == nil then
-                error( "stack has a value, but `value_class` is missing" )
-            end
-
-            self[ index ] = reader:readClass( value_class, ... )
-        end
-
-        self.size = index
+        self[ index ] = reader:readClass( value_class, ... )
     end
+
+    self.size = size
 end
 
 --- [SHARED AND MENU]
