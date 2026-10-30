@@ -275,6 +275,21 @@ local debug_getmetatable = debug.getmetatable
 raw.getmetatable = debug_getmetatable
 raw.setmetatable = debug.setmetatable
 
+---@class dreamwork.meta
+local dreamwork_meta = debug_getmetatable( dreamwork )
+if dreamwork_meta == nil then
+    local hidden_functions = {}
+    gc.setTableRules( hidden_functions, true, false )
+
+    ---@class dreamwork.meta : metatable
+    ---@field hidden_error_frames table<function, (true | nil)> Functions whose frames never appear in an error call stack.
+    dreamwork_meta = {
+        hidden_error_frames = hidden_functions
+    }
+
+    debug.setmetatable( dreamwork, dreamwork_meta )
+end
+
 --- [SHARED AND MENU]
 ---
 --- Returns the value of the given key in the metatable of the given value.
@@ -772,6 +787,12 @@ local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
 
 std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
+
+---@return string
+---@protected
+function dreamwork_meta:__represent()
+    return string_format( "%s: %p [%s]", dreamwork.Prefix, self, std.jit.version or string_format( "Lua %s", std.LUA_VERSION ) )
+end
 
 do
 
@@ -1850,11 +1871,7 @@ do
     --- Message handed back to the engine once dreamwork has displayed the error itself.
     local ERROR_SENTINEL = "The original error message was caught by dreamwork, see above for details about the error."
 
-    --- Functions whose frames never appear in an error call stack.
-    ---
-    ---@type table<function, boolean>
-    local hidden_functions = {}
-    gc.setTableRules( hidden_functions, true, false )
+    local hidden_functions = dreamwork_meta.hidden_error_frames
 
     --- [SHARED AND MENU]
     ---
@@ -2049,16 +2066,31 @@ do
     std._R[ 1 ] = engine_error_handler
     hidden_functions[ engine_error_handler ] = true
 
-    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value )
+    ---@param error_value any
+    local function display_error( error_value )
         if not isError( error_value ) then
             error_value = to_error( error_value )
         end
 
-        -- this runs inside error handlers, where a second error would replace the original one
-        local success, display_error = pcall( error_value.display, error_value )
+        error_value:display()
+    end
+
+    hidden_functions[ display_error ] = true
+
+    ---@param value any
+    ---@return string
+    local function safe_tostring( value )
+        local success, str = pcall( raw.tostring, value )
+        return success and str or "<value that cannot be converted to string>"
+    end
+
+    engine.hookCatch( "dreamwork.lua.error", "console.display", function( error_value )
+        -- this runs inside error handlers, where a second error would replace the original one,
+        -- so the conversion is protected as well, not only the display
+        local success, display_failure = pcall( display_error, error_value )
         if not success then
-            raw.print( "[dreamwork] failed to display an error: " .. raw.tostring( display_error ) )
-            raw.print( "[dreamwork] original error: " .. raw.tostring( error_value.message ) )
+            raw.print( "[dreamwork] failed to display an error: " .. safe_tostring( display_failure ) )
+            raw.print( "[dreamwork] original error: " .. safe_tostring( error_value ) )
         end
 
         return ERROR_SENTINEL
