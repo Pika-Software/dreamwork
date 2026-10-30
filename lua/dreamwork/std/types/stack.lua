@@ -45,28 +45,68 @@ function Stack:__init()
     self.size = 0
 end
 
--- ---@param writer dreamwork.std.buffer.Writer
--- ---@protected
--- function Stack:__serialize( writer )
---     local size = self.size
---     writer:writeInt32( size )
+--- Writes the stack, the number of values (`UInt32`), then every value from the bottom to the top,
+--- each is a presence bit and the value (`writer:writeObject`).
+---
+--- Values must be objects with `__serialize`, or `nil`.
+---
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@param writer dreamwork.std.BinaryWriter The writer.
+---@param ... any The arguments passed to `__serialize` of every value.
+---@protected
+function Stack:__serialize( writer, ... )
+    local size = self.size
+    writer:writeUInt( size, 32 )
 
---     for i = 1, size, 1 do
---         writer:serialize( self[ i ] )
---     end
--- end
+    for index = 1, size, 1 do
+        local value = self[ index ]
 
--- ---@param reader dreamwork.std.buffer.Reader
--- ---@param fallback dreamwork.std.Object | nil
--- ---@protected
--- function Stack:__deserialize( reader, fallback )
---     local size = reader:readInt32() or 0
---     self.size = size
+        -- presence bit, `nil` has no `__serialize`
+        if value == nil then
+            writer:writeBit( 0 )
+        else
+            writer:writeBit( 1 )
+            writer:writeObject( value, ... )
+        end
+    end
+end
 
---     for i = 1, size, 1 do
---         self[ i ] = reader:deserialize( self[ i ] or fallback or Stack, fallback )
---     end
--- end
+--- Reads the stack written by `__serialize`, replacing its values,
+--- values are read with `reader:readClass( value_class, ... )`.
+---
+--- ```
+--- local stack = reader:readClass( Stack, Vector3 )
+--- ```
+---
+---@generic T
+---@param self dreamwork.std.Stack<T>
+---@param reader dreamwork.std.BinaryReader The reader.
+---@param value_class? dreamwork.std.Class The class of the values, can be omitted if every value is `nil`.
+---@param ... any The arguments passed to `__deserialize` of every value.
+---@protected
+function Stack:__deserialize( reader, value_class, ... )
+    for index = 1, self.size or 0, 1 do
+        self[ index ] = nil
+    end
+
+    self.size = 0
+
+    -- every value takes at least 1 bit, so a broken count runs out of data instead of memory
+    local size = reader:readUInt( 32 )
+
+    for index = 1, size, 1 do
+        if reader:readBit() == 1 then
+            if value_class == nil then
+                error( "stack has a value, but `value_class` is missing" )
+            end
+
+            self[ index ] = reader:readClass( value_class, ... )
+        end
+
+        self.size = index
+    end
+end
 
 --- [SHARED AND MENU]
 ---
@@ -159,7 +199,6 @@ function Stack:filter( predicate )
         self[ i ] = nil
     end
 
-    self.start = 1 -- hop start
     self.size = new_size
 end
 

@@ -204,27 +204,23 @@ function Quaternion:__eq( other )
     return isQuaternion( other ) and self.w == other.w and self.x == other.x and self.y == other.y and self.z == other.z
 end
 
--- --- Writes the quaternion as four 32-bit floats in `w x y z` order ( precision is reduced to float ).
--- ---
--- ---@param writer dreamwork.std.BinaryWriter The writer.
--- ---@protected
--- function Quaternion:__serialize( writer )
---     writer:writeFloat( self.w )
---     writer:writeFloat( self.x )
---     writer:writeFloat( self.y )
---     writer:writeFloat( self.z )
--- end
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function Quaternion:__serialize( writer )
+    writer:writeDouble( self.w, true )
+    writer:writeDouble( self.x, true )
+    writer:writeDouble( self.y, true )
+    writer:writeDouble( self.z, true )
+end
 
--- --- Reads the quaternion from four 32-bit floats in `w x y z` order.
--- ---
--- ---@param reader dreamwork.std.BinaryReader The reader.
--- ---@protected
--- function Quaternion:__deserialize( reader )
---     self.w = reader:readFloat()
---     self.x = reader:readFloat()
---     self.y = reader:readFloat()
---     self.z = reader:readFloat()
--- end
+---@param reader dreamwork.std.BinaryReader .
+---@protected
+function Quaternion:__deserialize( reader )
+    self.w = reader:readDouble( true )
+    self.x = reader:readDouble( true )
+    self.y = reader:readDouble( true )
+    self.z = reader:readDouble( true )
+end
 
 --- [SHARED AND MENU]
 ---

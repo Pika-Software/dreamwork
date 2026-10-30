@@ -7,7 +7,10 @@ local table_remove = table.remove
 local string = std.string
 local string_format = string.format
 
+local debug_getmetatable = std.debug.getmetatable
+
 local class = std.class
+local class_new = class.new
 
 --- [SHARED AND MENU]
 ---
@@ -61,36 +64,99 @@ function Node:__init( value, parent )
     end
 end
 
--- ---@generic T
--- ---@param self dreamwork.std.Node<T>
--- ---@param writer dreamwork.std.buffer.Writer
--- ---@protected
--- function Node:__serialize( writer )
---     writer:writeInt32( self.depth )
+--- Writes the node and its whole subtree, depth-first,
+--- every node is a presence bit, its value (`writer:writeObject`), the number of children (`UInt32`) and the children.
+---
+--- Values must be objects with `__serialize`, or `nil`.
+---
+--- ```
+--- writer:writeObject( root ) -- calls `value:__serialize( writer )` for every value
+--- ```
+---
+---@generic T
+---@param self dreamwork.std.Node<T>
+---@param writer dreamwork.std.BinaryWriter The writer.
+---@param ... any The arguments passed to `__serialize` of every value.
+---@protected
+function Node:__serialize( writer, ... )
+    local value = self.value
 
---     local width = self.width
---     writer:writeInt32( width )
+    -- presence bit, `nil` has no `__serialize`
+    if value == nil then
+        writer:writeBit( 0 )
+    else
+        writer:writeBit( 1 )
+        writer:writeObject( value, ... )
+    end
 
---     for index = 1, width, 1 do
---         writer:serialize( self[ index ] )
---     end
--- end
+    local width = self.width
+    writer:writeUInt( width, 32 )
 
--- ---@generic T
--- ---@param self dreamwork.std.Node<T>
--- ---@param reader dreamwork.std.buffer.Reader
--- ---@param fallback dreamwork.std.Object | nil
--- ---@protected
--- function Node:__deserialize( reader, fallback )
---     self.depth = reader:readInt32() or 0
+    for index = 1, width, 1 do
+        writer:writeObject( self[ index ], ... )
+    end
+end
 
---     local width = reader:readInt32() or 0
---     self.width = width
+--- Reads the subtree written by `__serialize` into the node, replacing its values and children.
+---
+--- Values are read with `reader:readClass( value_class, ... )`,
+--- existing children are reused, new ones are created with the class of this node,
+--- `parent` and `depth` are restored from the tree.
+---
+--- ```
+--- local root = reader:readClass( Node, Vector3 )
+--- ```
+---
+---@generic T
+---@param self dreamwork.std.Node<T>
+---@param reader dreamwork.std.BinaryReader The reader.
+---@param value_class? dreamwork.std.Class The class of the values, can be omitted if every value is `nil`.
+---@param ... any The arguments passed to `__deserialize` of every value.
+---@protected
+function Node:__deserialize( reader, value_class, ... )
+    if reader:readBit() == 0 then
+        self.value = nil
+    elseif value_class == nil then
+        error( "node has a value, but `value_class` is missing" )
+    else
+        self.value = reader:readClass( value_class, ... )
+    end
 
---     for index = 1, width, 1 do
---         self[ index ] = reader:deserialize( self[ index ] or fallback or Node, fallback )
---     end
--- end
+    -- `readClass` creates the root without `__init`
+    local depth = self.depth
+    if depth == nil then
+        depth = 0
+        self.depth = 0
+    end
+
+    local old_width = self.width or 0
+    local width = reader:readUInt( 32 )
+
+    -- children get the class of this node, so subclasses stay subclasses
+    local base = debug_getmetatable( self )
+    ---@cast base dreamwork.std.Node
+
+    -- every child takes at least 33 bits, so a broken width runs out of data instead of memory
+    for index = 1, width, 1 do
+        ---@type dreamwork.std.Node | nil
+        local child = self[ index ]
+        if child == nil then
+            child = class_new( base )
+            self[ index ] = child
+        end
+
+        -- `readObject`, not `readClass`: existing children are reused,
+        -- and `depth` must be set before the child reads its own children
+        child.parent, child.depth = self, depth + 1
+        reader:readObject( child, value_class, ... )
+    end
+
+    for index = width + 1, old_width, 1 do
+        self[ index ] = nil
+    end
+
+    self.width = width
+end
 
 --- [SHARED AND MENU]
 ---

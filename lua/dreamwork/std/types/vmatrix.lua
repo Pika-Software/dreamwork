@@ -295,27 +295,23 @@ end
 
 VMatrix.setUnpacked = VMatrix_setUnpacked
 
--- --- Writes the matrix as sixteen 32-bit floats row by row ( precision is reduced to float ).
--- ---
--- ---@param writer dreamwork.std.BinaryWriter The writer.
--- ---@protected
--- function VMatrix:__serialize( writer )
---     writer:writeFloat( self.m11 ); writer:writeFloat( self.m12 ); writer:writeFloat( self.m13 ); writer:writeFloat( self.m14 )
---     writer:writeFloat( self.m21 ); writer:writeFloat( self.m22 ); writer:writeFloat( self.m23 ); writer:writeFloat( self.m24 )
---     writer:writeFloat( self.m31 ); writer:writeFloat( self.m32 ); writer:writeFloat( self.m33 ); writer:writeFloat( self.m34 )
---     writer:writeFloat( self.m41 ); writer:writeFloat( self.m42 ); writer:writeFloat( self.m43 ); writer:writeFloat( self.m44 )
--- end
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function VMatrix:__serialize( writer )
+    writer:writeDouble( self.m11, true ); writer:writeDouble( self.m12, true ); writer:writeDouble( self.m13, true ); writer:writeDouble( self.m14, true )
+    writer:writeDouble( self.m21, true ); writer:writeDouble( self.m22, true ); writer:writeDouble( self.m23, true ); writer:writeDouble( self.m24, true )
+    writer:writeDouble( self.m31, true ); writer:writeDouble( self.m32, true ); writer:writeDouble( self.m33, true ); writer:writeDouble( self.m34, true )
+    writer:writeDouble( self.m41, true ); writer:writeDouble( self.m42, true ); writer:writeDouble( self.m43, true ); writer:writeDouble( self.m44, true )
+end
 
--- --- Reads the matrix from sixteen 32-bit floats row by row.
--- ---
--- ---@param reader dreamwork.std.BinaryReader The reader.
--- ---@protected
--- function VMatrix:__deserialize( reader )
---     self.m11 = reader:readFloat(); self.m12 = reader:readFloat(); self.m13 = reader:readFloat(); self.m14 = reader:readFloat()
---     self.m21 = reader:readFloat(); self.m22 = reader:readFloat(); self.m23 = reader:readFloat(); self.m24 = reader:readFloat()
---     self.m31 = reader:readFloat(); self.m32 = reader:readFloat(); self.m33 = reader:readFloat(); self.m34 = reader:readFloat()
---     self.m41 = reader:readFloat(); self.m42 = reader:readFloat(); self.m43 = reader:readFloat(); self.m44 = reader:readFloat()
--- end
+---@param reader dreamwork.std.BinaryReader
+---@protected
+function VMatrix:__deserialize( reader )
+    self.m11, self.m12, self.m13, self.m14 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
+    self.m21, self.m22, self.m23, self.m24 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
+    self.m31, self.m32, self.m33, self.m34 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
+    self.m41, self.m42, self.m43, self.m44 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
+end
 
 --- [SHARED AND MENU]
 ---

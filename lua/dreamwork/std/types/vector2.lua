@@ -170,22 +170,18 @@ function Vector2:__eq( other )
     return isVector2( other ) and self.x == other.x and self.y == other.y
 end
 
---- Writes the vector as two 32-bit floats ( precision is reduced to float ).
----
----@param writer dreamwork.std.BinaryWriter The writer.
+---@param writer dreamwork.std.BinaryWriter
 ---@protected
 function Vector2:__serialize( writer )
-    writer:writeFloat( self.x )
-    writer:writeFloat( self.y )
+    writer:writeDouble( self.x, true )
+    writer:writeDouble( self.y, true )
 end
 
---- Reads the vector from two 32-bit floats.
----
----@param reader dreamwork.std.BinaryReader The reader.
+---@param reader dreamwork.std.BinaryReader
 ---@protected
 function Vector2:__deserialize( reader )
-    self.x = reader:readFloat()
-    self.y = reader:readFloat()
+    self.x = reader:readDouble( true )
+    self.y = reader:readDouble( true )
 end
 
 --- [SHARED AND MENU]

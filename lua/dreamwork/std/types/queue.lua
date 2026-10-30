@@ -51,28 +51,70 @@ function Queue:__init()
     self.back = 0
 end
 
--- ---@param writer dreamwork.std.buffer.Writer
--- ---@protected
--- function Queue:__serialize( writer )
---     writer:writeInt32( self.front )
---     writer:writeInt32( self.back )
+--- Writes the queue, the number of values (`UInt32`), then every value from the one `pop` returns first,
+--- each is a presence bit and the value (`writer:writeObject`).
+---
+--- Values must be objects with `__serialize`, or `nil`.
+---
+---@generic T
+---@param self dreamwork.std.Queue<T>
+---@param writer dreamwork.std.BinaryWriter The writer.
+---@param ... any The arguments passed to `__serialize` of every value.
+---@protected
+function Queue:__serialize( writer, ... )
+    local back, front = self.back, self.front
+    writer:writeUInt( front - back, 32 )
 
---     for i = self.back + 1, self.front, 1 do
---         writer:serialize( self[ i ] )
---     end
--- end
+    for index = back + 1, front, 1 do
+        local value = self[ index ]
 
--- ---@param reader dreamwork.std.buffer.Reader
--- ---@param fallback dreamwork.std.Object | nil
--- ---@protected
--- function Queue:__deserialize( reader, fallback )
---     local front, back = reader:readInt32() or 0, reader:readInt32() or 0
---     self.front, self.back = front, back
+        -- presence bit, `nil` has no `__serialize`
+        if value == nil then
+            writer:writeBit( 0 )
+        else
+            writer:writeBit( 1 )
+            writer:writeObject( value, ... )
+        end
+    end
+end
 
---     for i = back + 1, front, 1 do
---         self[ i ] = reader:deserialize( self[ i ] or fallback or Queue, fallback )
---     end
--- end
+--- Reads the queue written by `__serialize`, replacing its values,
+--- values are read with `reader:readClass( value_class, ... )`.
+---
+--- ```
+--- local queue = reader:readClass( Queue, Vector3 )
+--- ```
+---
+---@generic T
+---@param self dreamwork.std.Queue<T>
+---@param reader dreamwork.std.BinaryReader The reader.
+---@param value_class? dreamwork.std.Class The class of the values, can be omitted if every value is `nil`.
+---@param ... any The arguments passed to `__deserialize` of every value.
+---@protected
+function Queue:__deserialize( reader, value_class, ... )
+    local back, front = self.back or 0, self.front or 0
+
+    for index = back + 1, front, 1 do
+        self[ index ] = nil
+    end
+
+    self.back, self.front = 0, 0
+
+    -- every value takes at least 1 bit, so a broken count runs out of data instead of memory
+    local count = reader:readUInt( 32 )
+
+    for index = 1, count, 1 do
+        if reader:readBit() == 1 then
+            if value_class == nil then
+                error( "queue has a value, but `value_class` is missing" )
+            end
+
+            self[ index ] = reader:readClass( value_class, ... )
+        end
+
+        self.front = index
+    end
+end
 
 --- [SHARED AND MENU]
 ---

@@ -45,6 +45,7 @@ local string_format = string.format
 local class = std.class
 local class_new = class.new
 
+
 -- Values are stored as little-endian arrays of 16-bit limbs, `limbs[ 0 ]` is the limb count.
 --
 -- 16 bits is the sweet spot for doubles: a limb product is below 2^32, so
@@ -1218,21 +1219,35 @@ do
 
 end
 
--- ---@param writer dreamwork.std.BinaryWriter
--- function BigInteger:__serialize( writer )
---     local limbs = self.limbs
---     local limb_count = limbs[ 0 ]
---     writer:writeBoolean( self.sign )
---     writer:writeCountedString( ... big-endian bytes of `limbs[ 1 .. limb_count ]` ..., 48 )
--- end
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function BigInteger:__serialize( writer )
+    local limbs = self.limbs
+    local limb_count = limbs[ 0 ]
 
--- ---@param reader dreamwork.std.BinaryReader
--- function BigInteger:__deserialize( reader )
---     local sign = reader:readBoolean()
---     local bytes, byte_count = reader:readCountedString( 48 )
---     self:fromBytes( false, string_byte( bytes, 1, byte_count ) )
---     self.sign = sign
--- end
+    writer:writeUInt( limb_count, 16, true )
+
+    for i = 1, limb_count, 1 do
+        writer:writeUInt( limbs[ i ], 16, true )
+    end
+
+    writer:writeBoolean( self.sign )
+end
+
+---@param reader dreamwork.std.BinaryReader
+---@protected
+function BigInteger:__deserialize( reader )
+    local limbs = {
+        [ 0 ] = reader:readUInt( 16, true )
+    }
+
+    for i = 1, limbs[ 0 ], 1 do
+        limbs[ i ] = reader:readUInt( 16, true )
+    end
+
+    self.limbs = limbs
+    self.sign = reader:readBoolean()
+end
 
 local BigInteger_negate = BigInteger.negate
 local BigInteger_copy = BigInteger.copy

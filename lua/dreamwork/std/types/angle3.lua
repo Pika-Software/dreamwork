@@ -231,25 +231,21 @@ function Angle3:__eq( other )
     return isAngle3( other ) and self.pitch == other.pitch and self.yaw == other.yaw and self.roll == other.roll
 end
 
--- --- Writes the angle as three 32-bit floats ( precision is reduced to float ).
--- ---
--- ---@param writer dreamwork.std.BinaryWriter The writer.
--- ---@protected
--- function Angle3:__serialize( writer )
---     writer:writeFloat( self.pitch )
---     writer:writeFloat( self.yaw )
---     writer:writeFloat( self.roll )
--- end
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function Angle3:__serialize( writer )
+    writer:writeDouble( self.pitch )
+    writer:writeDouble( self.yaw )
+    writer:writeDouble( self.roll )
+end
 
--- --- Reads the angle from three 32-bit floats.
--- ---
--- ---@param reader dreamwork.std.BinaryReader The reader.
--- ---@protected
--- function Angle3:__deserialize( reader )
---     self.pitch = reader:readFloat()
---     self.yaw = reader:readFloat()
---     self.roll = reader:readFloat()
--- end
+---@param reader dreamwork.std.BinaryReader
+---@protected
+function Angle3:__deserialize( reader )
+    self.pitch = reader:readDouble( true )
+    self.yaw = reader:readDouble( true )
+    self.roll = reader:readDouble( true )
+end
 
 --- [SHARED AND MENU]
 ---

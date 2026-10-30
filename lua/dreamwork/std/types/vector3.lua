@@ -205,25 +205,21 @@ function Vector3:__eq( other )
     return isVector3( other ) and self.x == other.x and self.y == other.y and self.z == other.z
 end
 
--- --- Writes the vector as three 32-bit floats ( precision is reduced to float ).
--- ---
--- ---@param writer dreamwork.std.BinaryWriter The writer.
--- ---@protected
--- function Vector3:__serialize( writer )
---     writer:writeFloat( self.x )
---     writer:writeFloat( self.y )
---     writer:writeFloat( self.z )
--- end
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function Vector3:__serialize( writer )
+    writer:writeDouble( self.x, true )
+    writer:writeDouble( self.y, true )
+    writer:writeDouble( self.z, true )
+end
 
--- --- Reads the vector from three 32-bit floats.
--- ---
--- ---@param reader dreamwork.std.BinaryReader The reader.
--- ---@protected
--- function Vector3:__deserialize( reader )
---     self.x = reader:readFloat()
---     self.y = reader:readFloat()
---     self.z = reader:readFloat()
--- end
+---@param reader dreamwork.std.BinaryReader
+---@protected
+function Vector3:__deserialize( reader )
+    self.x = reader:readDouble( true )
+    self.y = reader:readDouble( true )
+    self.z = reader:readDouble( true )
+end
 
 --- [SHARED AND MENU]
 ---
