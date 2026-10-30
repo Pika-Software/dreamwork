@@ -30,7 +30,31 @@ if operators then
         local rbit = raw.bit
         local raw_select = raw.select
 
-        function rbit.bor( x, ... )
+        -- no loops for up to 8 arguments: a loop in such a small shared function gets blacklisted
+        -- by the JIT under real workloads, then every call of it runs interpreted (~33 ns instead of ~0.7 ns)
+        function rbit.bor( x, a, b, c, d, e, f, g, ... )
+            if a == nil then return x end
+            x = x | a
+
+            if b == nil then return x end
+            x = x | b
+
+            if c == nil then return x end
+            x = x | c
+
+            if d == nil then return x end
+            x = x | d
+
+            if e == nil then return x end
+            x = x | e
+
+            if f == nil then return x end
+            x = x | f
+
+            if g == nil then return x end
+            x = x | g
+
+            -- 9+ arguments, no caller passes that many
             for i = 1, raw_select( "#", ... ), 1 do
                 x = x | raw_select( i, ... )
             end
@@ -38,7 +62,29 @@ if operators then
             return x
         end
 
-        function rbit.bxor( x, ... )
+        function rbit.bxor( x, a, b, c, d, e, f, g, ... )
+            if a == nil then return x end
+            x = x ~ a
+
+            if b == nil then return x end
+            x = x ~ b
+
+            if c == nil then return x end
+            x = x ~ c
+
+            if d == nil then return x end
+            x = x ~ d
+
+            if e == nil then return x end
+            x = x ~ e
+
+            if f == nil then return x end
+            x = x ~ f
+
+            if g == nil then return x end
+            x = x ~ g
+
+            -- 9+ arguments, no caller passes that many
             for i = 1, raw_select( "#", ... ), 1 do
                 x = x ~ raw_select( i, ... )
             end
@@ -46,7 +92,29 @@ if operators then
             return x
         end
 
-        function rbit.band( x, ... )
+        function rbit.band( x, a, b, c, d, e, f, g, ... )
+            if a == nil then return x end
+            x = x & a
+
+            if b == nil then return x end
+            x = x & b
+
+            if c == nil then return x end
+            x = x & c
+
+            if d == nil then return x end
+            x = x & d
+
+            if e == nil then return x end
+            x = x & e
+
+            if f == nil then return x end
+            x = x & f
+
+            if g == nil then return x end
+            x = x & g
+
+            -- 9+ arguments, no caller passes that many
             for i = 1, raw_select( "#", ... ), 1 do
                 x = x & raw_select( i, ... )
             end

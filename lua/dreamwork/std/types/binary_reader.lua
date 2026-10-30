@@ -941,8 +941,6 @@ end
 ---@param ... any The arguments passed to `__deserialize`.
 ---@return T obj The same object.
 function BinaryReader:readObject( obj, ... )
-    ---@cast obj dreamwork.std.Object
-
     ---@type nil | fun( obj: dreamwork.std.Object, reader: dreamwork.std.BinaryReader, ...: any )
     local fn = obj.__deserialize
     if fn == nil then

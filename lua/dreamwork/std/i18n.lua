@@ -40,7 +40,8 @@ function i18n.load( language_code )
 end
 
 --[[
-    TODO:
+
+    TODO/refs:
 
         https://github.com/alerque/fluent-lua
         https://github.com/Pika-Software/plib_translate
