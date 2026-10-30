@@ -24,6 +24,7 @@
               "debug": "disable",
               "string": "disable",
               "string.buffer": "disable",
+              "package": "disable",
               "table": "disable",
               "utf8": "disable",
             },
