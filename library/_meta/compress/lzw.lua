@@ -1,0 +1,40 @@
+---@meta _
+
+
+--- [SHARED AND MENU]
+---
+--- Options of `lzw.compress` and `lzw.decompress`, every field is optional and both sides must use the same ones.
+---
+--- Common formats:
+--- * GIF image data (without the sub-block framing): `{ bit_order = "lsb", literal_bits = <LZW minimum code size>, max_width = 12, clear_code = true, end_code = true }`
+--- * TIFF and PDF `LZWDecode`: `{ max_width = 12, clear_code = true, end_code = true, early_change = true }`
+---
+---@class lzw.Options
+---@field bit_order? "msb" | "lsb" The order codes are packed into bytes in, `"msb"` by default.
+---@field literal_bits? integer The bit size of input bytes ( 1 - 8 ), the first `2 ^ literal_bits` codes are literals, `8` by default.
+---@field max_width? integer The maximum code width in bits ( up to 16 ), `16` by default.
+---@field clear_code? boolean Reserves the code after the literals as the clear code, the encoder starts with it and sends it when the dictionary is full, `false` by default.
+---@field end_code? boolean Reserves the next code as the end of data, everything after it is ignored, `false` by default.
+---@field early_change? boolean Code width grows one code early, like TIFF and PDF do, `false` by default.
+---@field on_full? "reset" | "freeze" What happens when the dictionary is full, `"reset"` starts over (sending the clear code if there is one), `"freeze"` keeps it as is, `"reset"` by default.
+---@field alphabet? string Writes the bit stream as characters of this alphabet instead of bytes, its length must be a power of two, e.g. 64 characters for a base64-like stream.
+---@field pad? string | false The character that pads alphabet output to whole bytes like base64 does, `"="` by default, `false` disables padding.
+
+---@class lzw.Format
+---@field msb boolean
+---@field literal_count integer
+---@field clear integer | nil
+---@field finish integer | nil
+---@field first integer
+---@field min_width integer
+---@field min_scale integer `2 ^ min_width`
+---@field max_scale integer `2 ^ max_width`
+---@field max_width integer
+---@field early integer
+---@field reset boolean
+---@field symbol_bits integer
+---@field symbol_scale integer `2 ^ symbol_bits`
+---@field symbols table<integer, integer> | nil
+---@field reverse table<integer, integer> | nil
+---@field pad_byte integer | nil
+---@field pad_group integer

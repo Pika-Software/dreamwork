@@ -4,32 +4,28 @@
 ---
 --- Lempel–Ziv–Welch (LZW) is a universal lossless compression algorithm created by Abraham Lempel, Jacob Ziv, and Terry Welch.
 ---
---- [Source Code](https://github.com/Rochet2/lualzw)
----
---- Author: [Rochet2](https://github.com/Rochet2)
----
---- Edited by Unknown Developer
----
 ---@class lzw
 lzw = {}
 
 --- [SHARED AND MENU]
 ---
---- Compresses a string using LZW compression.
+--- Compresses a string using variable-width LZW, the format is set by the options.
 ---
 ---@param raw_data string The string to compress.
----@param forced? boolean If `true`, compression will ignore the excess length of compressed data relative to uncompressed data. By default: `true`
----@return string | nil compressed_data The compressed string or `nil` if the compression fails.
----@return nil | string error_message The error message or `nil` if the compression succeeds.
+---@param options? lzw.Options The format options.
+---@return string compressed_data The compressed string.
 ---@nodiscard
-function lzw.compress(raw_data, forced) end
+function lzw.compress(raw_data, options) end
 
 --- [SHARED AND MENU]
 ---
---- Decompresses a string using LZW compression.
+--- Decompresses a variable-width LZW string, the options must match the compression ones.
 ---
----@param encoded_data string The string to decompress.
----@return string | nil decompressed_data The decompressed string or `nil` if the decompression fails.
----@return nil | string error_message The error message or `nil` if the decompression succeeds.
+--- Without an end code the bits that do not form a whole code are ignored,
+--- so formats with codes narrower than a character should use one.
+---
+---@param compressed_data string The string to decompress.
+---@param options? lzw.Options The format options.
+---@return string decompressed_data The decompressed string.
 ---@nodiscard
-function lzw.decompress(encoded_data) end
+function lzw.decompress(compressed_data, options) end
