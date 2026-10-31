@@ -19,7 +19,7 @@ function sqlite.getLastError() end
 ---
 --- Converts a string to a safe string for use in an SQL query.
 ---
----@param str string? The string to convert.
+---@param str string | null | nil The string to convert.
 ---@return string str The safe string.
 ---@nodiscard
 function sqlite.escape(str, no_quotes) end

@@ -19,5 +19,5 @@
 ---| "WITH"
 ---| string
 
----@alias sqlite.QueryValue boolean | integer | number | string
+---@alias sqlite.QueryValue boolean | integer | number | string | null
 ---@alias sqlite.QueryRow table<string, sqlite.QueryValue>

@@ -14,6 +14,8 @@ vdf = {}
 --- Nested tables become sub-sections, booleans are written as `1`/`0`,
 --- unsupported keys and values (functions, userdata, etc.) are skipped.
 ---
+--- Raises an `EncodeError` on circular references.
+---
 --- `\`, `"`, `\n` and `\t` are escaped, so use `uses_escape_sequences` when deserializing.
 ---
 ---@param tbl table The table to convert.
@@ -31,6 +33,9 @@ function vdf.serialize(tbl, root_key) end
 --- Order is not preserved, repeated keys overwrite earlier ones, numeric keys and values are converted to numbers.
 ---
 --- Supports quoted and unquoted tokens, `//` comments and skips `[$CONDITION]` blocks.
+---
+--- Raises a `DecodeError` (with the byte position of the problem) on unterminated strings or conditionals,
+--- keys without values, a missing root key or unbalanced braces, empty input decodes to an empty table.
 ---
 ---@param key_values string The KeyValues string to convert.
 ---@param uses_escape_sequences boolean? If set to `true`, will replace `\t`, `\n`, `\"` and `\\` with their escaped variants.

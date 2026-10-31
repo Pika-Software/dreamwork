@@ -275,6 +275,70 @@ EndOfFileError = {}
 
 --- [SHARED AND MENU]
 ---
+--- An error raised when encoded data (JSON, VDF, ...) cannot be decoded
+--- because it is malformed.
+---
+---@class DecodeError : Error
+---@field __class DecodeErrorClass
+---@field __parent Error
+---@field message string | nil The reason the data could not be decoded.
+---@field position integer | nil Byte offset in the input where decoding failed.
+local __DecodeError = {}
+
+---@param message string | nil
+---@param position integer | nil
+---@protected
+function __DecodeError:__init(message, position) end
+
+---@param error_message string | nil
+---@return string
+---@protected
+function __DecodeError:__message(error_message) end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `DecodeError` instances.
+---
+---@class DecodeErrorClass : DecodeError
+---@field __base DecodeError
+---@field __parent ErrorClass
+---@overload fun( message: ( string | nil ), position: ( integer | nil ) ): DecodeError
+DecodeError = {}
+
+--- [SHARED AND MENU]
+---
+--- An error raised when a value cannot be encoded into a data format
+--- (JSON, VDF, ...) because the format cannot represent it.
+---
+---@class EncodeError : Error
+---@field __class EncodeErrorClass
+---@field __parent Error
+---@field message string | nil The reason the value could not be encoded.
+---@field value any The value that could not be encoded.
+local __EncodeError = {}
+
+---@param message string | nil
+---@param value any
+---@protected
+function __EncodeError:__init(message, value) end
+
+---@param error_message string | nil
+---@return string
+---@protected
+function __EncodeError:__message(error_message) end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `EncodeError` instances.
+---
+---@class EncodeErrorClass : EncodeError
+---@field __base EncodeError
+---@field __parent ErrorClass
+---@overload fun( message: ( string | nil ), value: any ): EncodeError
+EncodeError = {}
+
+--- [SHARED AND MENU]
+---
 --- An error that occurs when the compiler encounters an issue.
 ---
 ---@class CompileError : Object

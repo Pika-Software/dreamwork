@@ -70,6 +70,11 @@ FRAME_TIME = nil
 ---@type number
 FPS = nil
 
+--- A sentinel symbol that represents an explicit "no value", compare it by identity.
+---
+---@type null
+null = nil
+
 --- [SHARED AND MENU]
 ---
 --- Throws an error with the specified message and level.
@@ -386,6 +391,18 @@ function hash(value) end
 ---@return string hex_str The hexadecimal identifier of `value`, optionally padded or truncated to `desired_length`.
 ---@nodiscard
 function tohex(value, desired_length) end
+
+--- [SHARED AND MENU]
+---
+--- A sentinel symbol that represents an explicit "no value".
+---
+--- Unlike `nil`, it can be stored in tables and passed around as a real value,
+--- which makes it useful for telling "intentionally empty" apart from "missing".
+---
+--- It is a singleton, so compare it by identity: `value == null`.
+---
+---@class null : Symbol
+null = {}
 
 --- [SHARED AND MENU]
 ---
