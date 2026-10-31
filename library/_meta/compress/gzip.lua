@@ -1,0 +1,31 @@
+---@meta _
+
+
+--- [SHARED AND MENU]
+---
+--- Options of `gzip.compress`, every field is optional.
+---
+--- gzip has no preset dictionaries, so `dictionary` is not allowed.
+---
+---@class gzip.Options
+---@field level? integer The compression level ( 0 - 9 ), `0` stores the data without compression, `1` is the fastest, `9` gives the smallest output, `6` by default.
+---@field strategy? "default" | "filtered" | "huffman_only" | "rle" | "fixed" The compression strategy, `"default"` by default, see `deflate.Options`.
+---@field name? string The original file name, without zero bytes.
+---@field comment? string The file comment, without zero bytes.
+---@field mtime? integer The modification time of the original file as a Unix timestamp in seconds ( 0 - 4294967295 ), `0` (no time) by default.
+---@field os? integer The operating system code ( 0 - 255 ) the file was compressed on, `3` is Unix, `11` is NTFS, by default the code of the runtime system ( `11` on Windows, `3` on Linux and macOS, `255` on others ).
+---@field extra? string The raw extra field (subfields of 2 ID bytes, 2 length bytes and data), up to 65535 bytes.
+---@field text? boolean Marks the data as probably ASCII text, `false` by default.
+---@field header_crc? boolean Adds the CRC-16 of the header, `false` by default.
+
+--- [SHARED AND MENU]
+---
+--- The header of the gzip member, returned by `gzip.decompress`.
+---
+---@class gzip.Header
+---@field name string | nil The original file name.
+---@field comment string | nil The file comment.
+---@field mtime integer The modification time as a Unix timestamp in seconds, `0` if there is none.
+---@field os integer The operating system code.
+---@field extra string | nil The raw extra field.
+---@field text boolean `true` if the data is marked as probably ASCII text.
