@@ -2614,6 +2614,7 @@ do
     local string_indent = string.indent
     local string_gsub   = string.gsub
     local string_find   = string.find
+    local string_diff   = string.diff
 
     local Stack         = std.Stack
 
@@ -2826,6 +2827,37 @@ do
         end
 
         engine_consoleMessageColored( "}\n", COLOR_SUVA_GRAY )
+    end
+
+    ---@type table<dreamwork.std.string.DifferenceType, dreamwork.std.Color>
+    local diff_colors = {
+        [ 0 ] = COLOR_SUVA_GRAY,
+        [ 1 ] = color_scheme.green,
+        [ 2 ] = color_scheme.red
+    }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Prints the difference between two strings to the console.
+    ---
+    --- The difference is computed with `string.diff` and printed inline as a single
+    --- colored line, terminated with a newline:
+    --- - unchanged parts are printed in gray;
+    --- - parts inserted in `b` are printed in green;
+    --- - parts removed from `a` are printed in red.
+    ---
+    ---@param a string The source string.
+    ---@param b string The target string.
+    ---@param minimal? boolean If `true`, prints the raw minimal edit script without the readability cleanup. Defaults to `false`.
+    function std.printDiff( a, b, minimal )
+        local diff_ops, diff_op_count = string_diff( a, b, minimal )
+
+        for i = 1, diff_op_count, 1 do
+            local diff_op = diff_ops[ i ]
+            engine_consoleMessageColored( string_sub( diff_op.source, diff_op.start_position, diff_op.end_position ), diff_colors[ diff_op.type ] )
+        end
+
+        engine_consoleMessage( "\n" )
     end
 
 end
