@@ -581,6 +581,92 @@ std.EndOfFileError = class.create( EndOfFileError )
 
 --- [SHARED AND MENU]
 ---
+--- An error raised when encoded data (JSON, VDF, ...) cannot be decoded
+--- because it is malformed.
+---
+---@class dreamwork.std.DecodeError : dreamwork.std.Error
+---@field __class dreamwork.std.DecodeErrorClass
+---@field __parent dreamwork.std.Error
+---@field message string | nil The reason the data could not be decoded.
+---@field position integer | nil Byte offset in the input where decoding failed.
+local DecodeError = class.base( "DecodeError", false, ErrorClass )
+
+---@param message string | nil
+---@param position integer | nil
+---@protected
+function DecodeError:__init( message, position )
+    self.message = message
+    self.position = position
+end
+
+---@param error_message string | nil
+---@return string
+---@protected
+function DecodeError:__message( error_message )
+    if error_message == nil then
+        error_message = "malformed data"
+    end
+
+    if self.position == nil then
+        return error_message
+    end
+
+    return string_format( "%s at position %d", error_message, self.position )
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `DecodeError` instances.
+---
+---@class dreamwork.std.DecodeErrorClass : dreamwork.std.DecodeError
+---@field __base dreamwork.std.DecodeError
+---@field __parent dreamwork.std.ErrorClass
+---@overload fun( message: ( string | nil ), position: ( integer | nil ) ): dreamwork.std.DecodeError
+std.DecodeError = class.create( DecodeError )
+
+--- [SHARED AND MENU]
+---
+--- An error raised when a value cannot be encoded into a data format
+--- (JSON, VDF, ...) because the format cannot represent it.
+---
+---@class dreamwork.std.EncodeError : dreamwork.std.Error
+---@field __class dreamwork.std.EncodeErrorClass
+---@field __parent dreamwork.std.Error
+---@field message string | nil The reason the value could not be encoded.
+---@field value any The value that could not be encoded.
+local EncodeError = class.base( "EncodeError", false, ErrorClass )
+
+---@param message string | nil
+---@param value any
+---@protected
+function EncodeError:__init( message, value )
+    self.message = message
+    self.value = value
+end
+
+---@param error_message string | nil
+---@return string
+---@protected
+function EncodeError:__message( error_message )
+    if error_message == nil then
+        return string_format( "unable to encode `%s`", represent( self.value ) )
+    end
+
+    return error_message
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `EncodeError` instances.
+---
+---@class dreamwork.std.EncodeErrorClass : dreamwork.std.EncodeError
+---@field __base dreamwork.std.EncodeError
+---@field __parent dreamwork.std.ErrorClass
+---@overload fun( message: ( string | nil ), value: any ): dreamwork.std.EncodeError
+std.EncodeError = class.create( EncodeError )
+
+--- [SHARED AND MENU]
+---
 --- An error that occurs when the compiler encounters an issue.
 ---
 ---@class dreamwork.std.CompileError : dreamwork.std.Object

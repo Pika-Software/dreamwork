@@ -9,6 +9,9 @@ local isNumber = std.isNumber
 local isBoolean = std.isBoolean
 
 local error = std.error
+local TypeError = std.TypeError
+local DecodeError = std.DecodeError
+local EncodeError = std.EncodeError
 local setmetatable = std.setmetatable
 
 local raw = std.raw
@@ -85,7 +88,7 @@ if glua_util.TableToKeyValues == nil then
     ---@return integer buffer_size
     local function write_table( buffer, buffer_size, tbl, depth, visited )
         if visited[ tbl ] then
-            error( "circular reference detected", 3 )
+            error( EncodeError( "circular reference detected", tbl ), 2 )
         end
 
         visited[ tbl ] = true
@@ -135,6 +138,8 @@ if glua_util.TableToKeyValues == nil then
     --- Nested tables become sub-sections, booleans are written as `1`/`0`,
     --- unsupported keys and values (functions, userdata, etc.) are skipped.
     ---
+    --- Raises an `EncodeError` on circular references.
+    ---
     --- `\`, `"`, `\n` and `\t` are escaped, so use `uses_escape_sequences` when deserializing.
     ---
     ---@param tbl table The table to convert.
@@ -142,6 +147,10 @@ if glua_util.TableToKeyValues == nil then
     ---@return string key_values The KeyValues string.
     ---@nodiscard
     function vdf.serialize( tbl, root_key )
+        if not isTable( tbl ) then
+            error( TypeError( 1, tbl, "table", "tbl", "vdf.serialize" ), 2 )
+        end
+
         local buffer = {
             "\"",
             stringify( root_key or "TableToKeyValues" ) or "TableToKeyValues",
@@ -180,7 +189,10 @@ local next_backslash = 0
 ---@return string value
 ---@return integer position
 local function read_escaped( str, position, str_length )
-    local quote = string_find( str, "\"", position, true ) or (str_length + 1)
+    local quote = string_find( str, "\"", position, true )
+    if quote == nil then
+        error( DecodeError( "unterminated string", position - 1 ), 2 )
+    end
 
     if next_backslash < position then
         next_backslash = string_find( str, "\\", position, true ) or (str_length + 1)
@@ -191,16 +203,14 @@ local function read_escaped( str, position, str_length )
     end
 
     local segments, segment_count = {}, 0
+    local opening = position - 1
 
+    -- `next_backslash < quote <= str_length`, so the escaped byte always exists
     while next_backslash < quote do
         segments[ segment_count + 1 ] = string_sub( str, position, next_backslash - 1 )
 
         local uint8 = string_byte( str, next_backslash + 1 )
-        if uint8 == nil then
-            segments[ segment_count + 2 ] = "\\"
-        else
-            segments[ segment_count + 2 ] = unescape_map[ uint8 ] or ("\\" .. string_char( uint8 ))
-        end
+        segments[ segment_count + 2 ] = unescape_map[ uint8 ] or ("\\" .. string_char( uint8 ))
 
         segment_count = segment_count + 2
         position = next_backslash + 2
@@ -208,7 +218,10 @@ local function read_escaped( str, position, str_length )
         next_backslash = string_find( str, "\\", position, true ) or (str_length + 1)
 
         if quote < position then
-            quote = string_find( str, "\"", position, true ) or (str_length + 1)
+            quote = string_find( str, "\"", position, true )
+            if quote == nil then
+                error( DecodeError( "unterminated string", opening ), 2 )
+            end
         end
     end
 
@@ -226,8 +239,8 @@ end
 ---@param str_length integer
 ---@param uses_escape_sequences boolean
 ---@return integer | nil kind
----@return integer start The start of the token, `0` if not a string.
----@return integer finish The end of the token, `0` if not a string.
+---@return integer start The start of the token contents, the token position for other tokens and escaped strings.
+---@return integer finish The end of the token contents, the token position for other tokens and escaped strings.
 ---@return integer position The position after the token.
 ---@return string | nil value The unescaped value, only for quoted strings with escape sequences enabled.
 local function read_token( str, position, str_length, uses_escape_sequences )
@@ -245,21 +258,30 @@ local function read_token( str, position, str_length, uses_escape_sequences )
     end
 
     if uint8 == nil then
-        return nil, 0, 0, str_length + 1
+        return nil, str_length + 1, str_length + 1, str_length + 1
     elseif uint8 == 0x7B --[[ { ]] then
-        return TOKEN_OPEN, 0, 0, position + 1
+        return TOKEN_OPEN, position, position, position + 1
     elseif uint8 == 0x7D --[[ } ]] then
-        return TOKEN_CLOSE, 0, 0, position + 1
+        return TOKEN_CLOSE, position, position, position + 1
     elseif uint8 == 0x22 --[[ " ]] then
         if uses_escape_sequences then
             local value, next_position = read_escaped( str, position + 1, str_length )
-            return TOKEN_STRING, 0, 0, next_position, value
+            return TOKEN_STRING, position, position, next_position, value
         end
 
-        local finish = string_find( str, "\"", position + 1, true ) or (str_length + 1)
+        local finish = string_find( str, "\"", position + 1, true )
+        if finish == nil then
+            error( DecodeError( "unterminated string", position ), 2 )
+        end
+
         return TOKEN_STRING, position + 1, finish - 1, finish + 1
     elseif uint8 == 0x5B --[[ [ ]] then
-        return TOKEN_CONDITION, 0, 0, (string_find( str, "]", position + 1, true ) or str_length) + 1
+        local finish = string_find( str, "]", position + 1, true )
+        if finish == nil then
+            error( DecodeError( "unterminated conditional", position ), 2 )
+        end
+
+        return TOKEN_CONDITION, position, position, finish + 1
     end
 
     local finish = position + 1
@@ -313,14 +335,16 @@ end
 ---@param uses_escape_sequences boolean
 ---@param preserve_key_case boolean
 ---@param result table
----@return integer position
+---@return integer position The position after the closing brace.
 local function read_section( str, position, str_length, uses_escape_sequences, preserve_key_case, result )
     local kind, start, finish, escaped
 
     kind, start, finish, position, escaped = read_token( str, position, str_length, uses_escape_sequences )
 
-    while kind ~= nil and kind ~= TOKEN_CLOSE do
-        if kind == TOKEN_OPEN then
+    while kind ~= TOKEN_CLOSE do
+        if kind == nil then
+            error( DecodeError( "expected '}'", start ), 2 )
+        elseif kind == TOKEN_OPEN then
             -- anonymous section, parse and discard
             position = read_section( str, position, str_length, uses_escape_sequences, preserve_key_case, {} )
         elseif kind == TOKEN_STRING then
@@ -377,11 +401,17 @@ local function read_section( str, position, str_length, uses_escape_sequences, p
                 end
 
                 if uint8 == 0x5B --[[ [ ]] then
-                    position = (string_find( str, "]", position + 1, true ) or str_length) + 1
+                    local condition_end = string_find( str, "]", position + 1, true )
+                    if condition_end == nil then
+                        error( DecodeError( "unterminated conditional", position ), 2 )
+                    end
+
+                    position = condition_end + 1
                 end
+            elseif kind == nil then
+                error( DecodeError( "unexpected end of input", start ), 2 )
             else
-                -- key without value, end of section or input
-                return position
+                error( DecodeError( "expected value", start ), 2 )
             end
 
             result[ key ] = value
@@ -403,6 +433,9 @@ end
 ---
 --- Supports quoted and unquoted tokens, `//` comments and skips `[$CONDITION]` blocks.
 ---
+--- Raises a `DecodeError` (with the byte position of the problem) on unterminated strings or conditionals,
+--- keys without values, a missing root key or unbalanced braces, empty input decodes to an empty table.
+---
 ---@param key_values string The KeyValues string to convert.
 ---@param uses_escape_sequences boolean? If set to `true`, will replace `\t`, `\n`, `\"` and `\\` with their escaped variants.
 ---@param preserve_key_case boolean? Whether to preserve key case or not (always lowercase).
@@ -410,7 +443,7 @@ end
 ---@nodiscard
 function vdf.deserialize( key_values, uses_escape_sequences, preserve_key_case )
     if not isString( key_values ) then
-        error( "bad argument #1 to 'decode' (string expected)", 2 )
+        error( TypeError( 1, key_values, "string", "key_values", "vdf.deserialize" ), 2 )
     end
 
     uses_escape_sequences = uses_escape_sequences == true
@@ -419,19 +452,28 @@ function vdf.deserialize( key_values, uses_escape_sequences, preserve_key_case )
     local str_length = #key_values
 
     -- root key, its name is discarded
-    local kind, _, _, position = read_token( key_values, 1, str_length, uses_escape_sequences )
-    if kind ~= TOKEN_STRING then
+    local kind, start, _, position = read_token( key_values, 1, str_length, uses_escape_sequences )
+    if kind == nil then
         return {}
+    elseif kind ~= TOKEN_STRING then
+        error( DecodeError( "expected root key", start ), 2 )
     end
 
     repeat
-        kind, _, _, position = read_token( key_values, position, str_length, uses_escape_sequences )
+        kind, start, _, position = read_token( key_values, position, str_length, uses_escape_sequences )
     until kind ~= TOKEN_CONDITION
 
-    local result = {}
+    if kind ~= TOKEN_OPEN then
+        error( DecodeError( "expected '{'", start ), 2 )
+    end
 
-    if kind == TOKEN_OPEN then
-        read_section( key_values, position, str_length, uses_escape_sequences, preserve_key_case == true, result )
+    local result = {}
+    position = read_section( key_values, position, str_length, uses_escape_sequences, preserve_key_case == true, result )
+
+    -- anything after the root section is ignored, except a brace that has nothing to close
+    kind, start = read_token( key_values, position, str_length, uses_escape_sequences )
+    if kind == TOKEN_CLOSE then
+        error( DecodeError( "unexpected '}'", start ), 2 )
     end
 
     return result
