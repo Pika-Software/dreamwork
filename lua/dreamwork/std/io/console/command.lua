@@ -279,6 +279,10 @@ function Command:await()
     return hooks[ self ]:await( "peek" )
 end
 
+---@param client garrysmod.Player | nil
+---@param name string
+---@param argument_string string
+---@param args string[]
 engine.hookCatch( "dreamwork.console.command.execute", "console.handle", function( client, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
@@ -297,6 +301,9 @@ engine.hookCatch( "dreamwork.console.command.execute", "console.handle", functio
     return true
 end, -500 )
 
+---@param name string
+---@param argument_string string
+---@param args string[]
 engine.hookCatch( "dreamwork.console.command.autocomplete", "console.autocomplete", function( name, argument_string, args )
     local command = commands[ name ]
     if command == nil then return end

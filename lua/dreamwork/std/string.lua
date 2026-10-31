@@ -994,24 +994,28 @@ end
 --- byte values to `true` — so this is effectively "does any byte in this range belong to the
 --- given character class".
 ---
+--- The scan stops at the first match. If the resolved start position is greater than the end
+--- position, the range is scanned backwards, so the match returned is the last one in the string
+--- rather than the first.
+---
 ---@param str string The string to check.
 ---@param byte_map table<integer, boolean> A byte map, as produced by `string.byteMap`, giving the set of bytes to look for.
 ---@param start_position? integer The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
 ---@param end_position? integer The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return boolean has_byte `true` if any byte in the range is present in `byte_map`, `false` otherwise.
+---@return integer? position The position of the first matching byte found in scan order, or `nil` if there is no match.
+---@return byte? found_byte The value of the matching byte, or `nil` if there is no match.
 ---@nodiscard
 function string.containsBytes( str, byte_map, start_position, end_position )
-    local str_length = string_len( str )
-
-    local start_index, end_index = math_range( str_length, start_position, end_position )
+    local start_index, end_index = math_range( string_len( str ), start_position, end_position )
 
     for index = start_index, end_index, ((start_index < end_index) and 1 or -1) do
         if byte_map[ string_byte( str, index, index ) ] then
-            return true
+            return true, index, string_byte( str, index, index )
         end
     end
 
-    return false
+    return false, nil, nil
 end
 
 --- [SHARED AND MENU]
