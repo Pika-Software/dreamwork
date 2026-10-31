@@ -16,7 +16,7 @@ local lzma = { PROPS_SIZE = 5 }
 std.lzma = lzma
 
 lzma.compress = glua_util.Compress or function() return "" end
-lzma.decompress = glua_util.Decompress or lzma.compress
+lzma.decompress = glua_util.Decompress or function() return "" end
 
 --- [SHARED AND MENU]
 ---
