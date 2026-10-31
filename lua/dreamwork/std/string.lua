@@ -23,7 +23,6 @@ local math_min, math_max = math.min, math.max
 local table = std.table
 local table_unpack = table.unpack
 local table_concat = table.concat
-local table_reversed = table.reversed
 
 
 --- [SHARED AND MENU]
@@ -1990,65 +1989,31 @@ end
 
 do
 
-    ---@param diff_ops dreamwork.std.string.Difference[]
-    ---@param diff_op_count integer
-    ---@param type dreamwork.std.string.DifferenceType
-    ---@param source string
-    ---@param position integer
-    ---@return integer diff_op_count
-    local function prepend_diff_op( diff_ops, diff_op_count, type, source, position )
-        local data = diff_ops[ diff_op_count ]
-        if data == nil then
-            diff_op_count = diff_op_count + 1
-            diff_ops[ diff_op_count ] = {
-                type = type,
-                source = source,
-                start_position = position,
-                end_position = position
-            }
-
-            return diff_op_count
-        end
-
-        if data.type == type and data.source == source then
-            data.start_position = math_min( data.start_position or position, position )
-            data.end_position = math_max( data.end_position or position, position )
-            return diff_op_count
-        end
-
-        diff_op_count = diff_op_count + 1
-        diff_ops[ diff_op_count ] = {
-            start_position = position,
-            end_position = position,
-            source = source,
-            type = type
-        }
-
-        return diff_op_count
-    end
-
-
     --- [SHARED AND MENU]
     ---
     --- Computes a Myers diff between two strings.
     ---
     --- The result is a list of edit operations that transform `source` into `target`.
     --- Operations are returned in order from the start of the strings to the end, and runs
-    --- of the same kind are merged, so the result is as compact as possible while still being
-    --- a minimal edit script (in terms of number of inserted/removed characters) between the
-    --- two strings.
+    --- of the same kind are merged; within every changed region removals come before insertions.
     ---
     --- Common prefixes and suffixes shared by `source` and `target` are detected and emitted
     --- as `0` (equal) operations directly, without going through the general diff algorithm;
     --- the remaining differing middle section, if any, is solved using an O(ND) Myers
     --- shortest-edit-script search to find the minimal set of insertions and removals.
     ---
+    --- By default the minimal script is then cleaned up for readability: every equal run that
+    --- is not longer than the changes on both of its sides is folded into them, so a heavily
+    --- rewritten region becomes one removal and one insertion instead of a byte-by-byte mix
+    --- of coincidental matches. Pass `minimal` as `true` to skip this and get the raw script.
+    ---
     ---@param source string The source string.
     ---@param target string The target string.
+    ---@param minimal? boolean If `true`, returns the minimal edit script without the readability cleanup. Defaults to `false`.
     ---@return dreamwork.std.string.Difference[] diff_ops The difference operations.
     ---@return integer diff_op_count The count of difference operations.
     ---@nodiscard
-    function string.diff( source, target )
+    function string.diff( source, target, minimal )
         -- if both strings is same
         if source == target then
             return {
@@ -2102,20 +2067,26 @@ do
             suffix_length = suffix_length + 1
         end
 
-        ---@type dreamwork.std.string.Difference[]
-        local diff_ops = {}
+        -- matching blocks in order, everything between two neighbouring blocks is a change,
+        -- the first one is a zero-length sentinel at the start of both strings
+
+        ---@type integer[]
+        local match_sources = { 1 }
+
+        ---@type integer[]
+        local match_targets = { 1 }
+
+        ---@type integer[]
+        local match_lengths = { 0 }
 
         ---@type integer
-        local diff_op_count = 0
+        local match_count = 1
 
-        if suffix_length ~= 0 then
-            diff_op_count = diff_op_count + 1
-            diff_ops[ diff_op_count ] = {
-                type = 0,
-                source = source,
-                start_position = source_length - suffix_length + 1,
-                end_position = source_length
-            }
+        if prefix_length ~= 0 then
+            match_count = match_count + 1
+            match_sources[ match_count ] = 1
+            match_targets[ match_count ] = 1
+            match_lengths[ match_count ] = prefix_length
         end
 
         ---@type integer
@@ -2124,40 +2095,7 @@ do
         ---@type integer
         local mid_target_length = target_length - prefix_length - suffix_length
 
-        if mid_source_length == 0 and mid_target_length == 0 then
-            -- `source` equals `target` after trimming, nothing but prefix/suffix, just append prefix after that, if it exists of course
-            if prefix_length ~= 0 then
-                diff_op_count = diff_op_count + 1
-                diff_ops[ diff_op_count ] = {
-                    type = 0,
-                    source = source,
-                    start_position = 1,
-                    end_position = prefix_length
-                }
-            end
-
-            return diff_ops, diff_op_count
-        elseif mid_source_length == 0 then
-            -- `source` is empty after trimming, so lets append the whole target
-
-            diff_op_count = diff_op_count + 1
-            diff_ops[ diff_op_count ] = {
-                type = 1,
-                source = target,
-                start_position = prefix_length + 1,
-                end_position = target_length - suffix_length
-            }
-        elseif mid_target_length == 0 then
-            -- same case as with `source`, but right now `target` is empty so we append `source` and stops here
-            diff_op_count = diff_op_count + 1
-            diff_ops[ diff_op_count ] = {
-                type = 2,
-                source = source,
-                start_position = prefix_length + 1,
-                end_position = source_length - suffix_length
-            }
-        else
-
+        if mid_source_length ~= 0 and mid_target_length ~= 0 then
             local max_distance = mid_source_length + mid_target_length
             local offset = max_distance
 
@@ -2226,11 +2164,8 @@ do
 
             ::diff_trace_done::
 
-            ---@type dreamwork.std.string.Difference[]
-            local mid_diff_ops = {}
-
-            ---@type integer
-            local mid_diff_op_count = 0
+            -- backtracking yields the blocks from the end, so they are reversed in place afterwards
+            local first_block = match_count + 1
 
             local x, y = mid_source_length, mid_target_length
 
@@ -2254,41 +2189,122 @@ do
                 local previous_x = snapshot[ offset + previous_k ] or 0
                 local previous_y = previous_x - previous_k
 
-                while x > previous_x and y > previous_y do
-                    mid_diff_op_count = prepend_diff_op( mid_diff_ops, mid_diff_op_count, 0, source, prefix_length + x )
-                    x, y = x - 1, y - 1
+                local snake_length = math_min( x - previous_x, y - previous_y )
+                if snake_length > 0 then
+                    match_count = match_count + 1
+                    match_sources[ match_count ] = prefix_length + x - snake_length + 1
+                    match_targets[ match_count ] = prefix_length + y - snake_length + 1
+                    match_lengths[ match_count ] = snake_length
+                    x, y = x - snake_length, y - snake_length
                 end
 
                 if i ~= 0 then
                     if x == previous_x then
-                        mid_diff_op_count = prepend_diff_op( mid_diff_ops, mid_diff_op_count, 1, target, prefix_length + y )
                         y = y - 1
                     else
-                        mid_diff_op_count = prepend_diff_op( mid_diff_ops, mid_diff_op_count, 2, source, prefix_length + x )
                         x = x - 1
                     end
                 end
             end
 
-            for i = 1, mid_diff_op_count, 1 do
-                diff_ops[ diff_op_count + i ] = mid_diff_ops[ i ]
+            local left, right = first_block, match_count
+            while left < right do
+                match_sources[ left ], match_sources[ right ] = match_sources[ right ], match_sources[ left ]
+                match_targets[ left ], match_targets[ right ] = match_targets[ right ], match_targets[ left ]
+                match_lengths[ left ], match_lengths[ right ] = match_lengths[ right ], match_lengths[ left ]
+                left, right = left + 1, right - 1
+            end
+        end
+
+        if suffix_length ~= 0 then
+            match_count = match_count + 1
+            match_sources[ match_count ] = source_length - suffix_length + 1
+            match_targets[ match_count ] = target_length - suffix_length + 1
+            match_lengths[ match_count ] = suffix_length
+        end
+
+        -- zero-length sentinel at the end of both strings
+        match_count = match_count + 1
+        match_sources[ match_count ] = source_length + 1
+        match_targets[ match_count ] = target_length + 1
+        match_lengths[ match_count ] = 0
+
+        if not minimal then
+            -- the blocks are compacted in place as a stack, a block is dropped (merging the changes
+            -- around it) when it is not longer than the bigger side of both neighbouring changes,
+            -- after a drop the previous block gets checked again against the grown change
+            local kept_count = 1
+
+            for i = 2, match_count, 1 do
+                local next_source, next_target = match_sources[ i ], match_targets[ i ]
+
+                while kept_count ~= 1 do
+                    local block_source, block_target, block_length = match_sources[ kept_count ], match_targets[ kept_count ], match_lengths[ kept_count ]
+
+                    local previous_length = match_lengths[ kept_count - 1 ]
+
+                    if block_length > math_max( block_source - match_sources[ kept_count - 1 ] - previous_length, block_target - match_targets[ kept_count - 1 ] - previous_length ) or
+                        block_length > math_max( next_source - block_source - block_length, next_target - block_target - block_length ) then
+                        break
+                    end
+
+                    kept_count = kept_count - 1
+                end
+
+                kept_count = kept_count + 1
+                match_sources[ kept_count ] = next_source
+                match_targets[ kept_count ] = next_target
+                match_lengths[ kept_count ] = match_lengths[ i ]
             end
 
-            diff_op_count = diff_op_count + mid_diff_op_count
-
+            match_count = kept_count
         end
 
-        if prefix_length ~= 0 then
-            diff_op_count = diff_op_count + 1
-            diff_ops[ diff_op_count ] = {
-                type = 0,
-                source = source,
-                start_position = 1,
-                end_position = prefix_length
-            }
+        ---@type dreamwork.std.string.Difference[]
+        local diff_ops = {}
+
+        ---@type integer
+        local diff_op_count = 0
+
+        for i = 2, match_count, 1 do
+            local removed_start = match_sources[ i - 1 ] + match_lengths[ i - 1 ]
+            local inserted_start = match_targets[ i - 1 ] + match_lengths[ i - 1 ]
+
+            local block_source, block_length = match_sources[ i ], match_lengths[ i ]
+            local block_target = match_targets[ i ]
+
+            if block_source ~= removed_start then
+                diff_op_count = diff_op_count + 1
+                diff_ops[ diff_op_count ] = {
+                    type = 2,
+                    source = source,
+                    start_position = removed_start,
+                    end_position = block_source - 1
+                }
+            end
+
+            if block_target ~= inserted_start then
+                diff_op_count = diff_op_count + 1
+                diff_ops[ diff_op_count ] = {
+                    type = 1,
+                    source = target,
+                    start_position = inserted_start,
+                    end_position = block_target - 1
+                }
+            end
+
+            if block_length ~= 0 then
+                diff_op_count = diff_op_count + 1
+                diff_ops[ diff_op_count ] = {
+                    type = 0,
+                    source = source,
+                    start_position = block_source,
+                    end_position = block_source + block_length - 1
+                }
+            end
         end
 
-        return table_reversed( diff_ops, diff_op_count )
+        return diff_ops, diff_op_count
     end
 
 end
