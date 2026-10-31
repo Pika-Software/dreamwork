@@ -884,6 +884,21 @@ function printTable(tbl, max_depth) end
 
 --- [SHARED AND MENU]
 ---
+--- Prints the difference between two strings to the console.
+---
+--- The difference is computed with `string.diff` and printed inline as a single
+--- colored line, terminated with a newline:
+--- - unchanged parts are printed in gray;
+--- - parts inserted in `b` are printed in green;
+--- - parts removed from `a` are printed in red.
+---
+---@param a string The source string.
+---@param b string The target string.
+---@param minimal? boolean If `true`, prints the raw minimal edit script without the readability cleanup. Defaults to `false`.
+function printDiff(a, b, minimal) end
+
+--- [SHARED AND MENU]
+---
 --- Calls the `fn` function after `delay` seconds.
 ---
 --- **Usage example:**
