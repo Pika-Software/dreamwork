@@ -3262,6 +3262,14 @@ sendfile( "dreamwork/std/compress/lz4.lua" )
 dofile( "dreamwork/std/compress/deflate.lua" )
 sendfile( "dreamwork/std/compress/deflate.lua" )
 
+-- zlib compression library
+dofile( "dreamwork/std/compress/zlib.lua" )
+sendfile( "dreamwork/std/compress/zlib.lua" )
+
+-- gzip compression library
+dofile( "dreamwork/std/compress/gzip.lua" )
+sendfile( "dreamwork/std/compress/gzip.lua" )
+
 -- lzma compression library
 dofile( "dreamwork/std/compress/lzma.lua" )
 sendfile( "dreamwork/std/compress/lzma.lua" )

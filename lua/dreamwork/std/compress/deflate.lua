@@ -1,3215 +1,2028 @@
---[[
-    Based on LibDeflate by safeteeWow
-    https://github.com/safeteeWow/LibDeflate
-
-    Edit by Unknown Developer
---]]
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local ffi = std.ffi
 local raw = std.raw
-local raw_pairs = raw.pairs
+
+local rbit = raw.bit
+local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
+local rbit_band, rbit_bor, rbit_bxor = rbit.band, rbit.bor, rbit.bxor
+
+local bitpack = std.bitpack
+local bitpack_reverse = bitpack.reverse
 
 local math = std.math
-local math_max = math.max
+local math_ceil = math.ceil
+local math_huge = math.huge
+local math_min, math_max = math.min, math.max
 
 local table = std.table
 local table_sort = table.sort
 local table_concat = table.concat
-local table_insert = table.insert
+local table_unpack = table.unpack
 
 local string = std.string
 local string_len = string.len
-local string_find = string.find
-local string_gsub, string_sub = string.gsub, string.sub
-local string_byte, string_char = string.byte, string.char
-
-local Adler32 = std.Adler32
-local Adler32_digest = Adler32.digest
+local string_sub = string.sub
+local string_byte = string.byte
+local string_char = string.char
 
 local error = std.error
 
 
 --- [SHARED AND MENU]
 ---
---- A library for compressing and decompressing data using the deflate algorithm and more.
+--- DEFLATE is a lossless compression format that combines LZ77 and Huffman coding, it is used by zlib, gzip, PNG and ZIP.
+---
+--- Produces and consumes raw [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951) streams (no header, no checksum)
+--- compatible with zlib's `deflate` / `inflate` with negative window bits, see `std.zlib` for the zlib format.
 ---
 ---@class dreamwork.std.deflate
 local deflate = {}
 std.deflate = deflate
 
---- [SHARED AND MENU]
----
---- A library for compressing and decompressing data using the zlib algorithm and more.
----
----@class dreamwork.std.zlib
-local zlib = {}
-std.zlib = zlib
+local WINDOW_SIZE = 0x8000
+local WINDOW_MASK = 0x7FFF
 
--- TODO: remove this crap and replace with luajited fucntions :p
--- Converts i to 2^i, (0<=i<=32)
--- This is used to implement bit left shift and bit right shift.
--- "x >> y" in C:   "(x-x%_pow2[y])/_pow2[y]" in Lua
--- "x << y" in C:   "x*_pow2[y]" in Lua
-local _pow2 = {}
+local HASH_BITS = 15
+local HASH_MASK = rbit_lshift( 1, HASH_BITS ) - 1
+local HASH_SHIFT = 5 -- 3 bytes are shifted out of the hash, `ceil( HASH_BITS / 3 )`
 
--- _reverseBitsTbl[len][val] stores the bit reverse of the number with bit length "len" and value "val"
--- For example, decimal number 6 with bits length 5 is binary 00110
--- It's reverse is binary 01100, which is decimal 12 and 12 == _reverseBitsTbl[5][6]
--- 1<=len<=9, 0<=val<=2^len-1
--- The reason for 1<=len<=9 is that the max of min bitlen of huffman code of a huffman alphabet is 9?
-local _reverse_bits_tbl = {}
+local MIN_MATCH = 3
+local MAX_MATCH = 258
 
--- TODO: maybe move this into separate libraries like LZ77 and huffman libs
--- Convert a LZ77 length (3<=len<=258) to a deflate literal/LZ77_length code (257<=code<=285)
-local _length_to_deflate_code = {}
+--- A match of 3 bytes further than this is not worth it, its distance takes more bits than the literals.
+local TOO_FAR = 4096
 
--- convert a LZ77 length (3<=len<=258) to a deflate literal/LZ77_length code extra bits.
-local _length_to_deflate_extra_bits = {}
+--- The number of literals and matches in one block, the same as zlib's default.
+local BLOCK_SYMBOLS = 0x4000
 
--- Convert a LZ77 length (3<=len<=258) to a deflate literal/LZ77_length code extra bit length.
-local _length_to_deflate_extra_bitlen = {}
+--- The size of stored block parts.
+local MAX_STORED = 0xFFFF
 
--- Convert a small LZ77 distance (1<=dist<=256) to a deflate code.
-local _dist256_to_deflate_code = {}
-
--- Convert a small LZ77 distance (1<=dist<=256) to a deflate distance code extra bits.
-local _dist256_to_deflate_extra_bits = {}
-
--- Convert a small LZ77 distance (1<=dist<=256) to a deflate distance code extra bit length.
-local _dist256_to_deflate_extra_bitlen = {}
-
--- Convert a literal/LZ77_length deflate code to LZ77 base length
--- The key of the table is (code - 256), 257<=code<=285
-local _literal_deflate_code_to_base_len = {
-    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67,
-    83, 99, 115, 131, 163, 195, 227, 258
+-- Settings of compression levels, the same as zlib's: `{ good_length, max_lazy, nice_length, max_chain, lazy }`
+--
+-- * `good_length` - the chain is cut to a quarter once a match is at least this long
+-- * `max_lazy` - lazy matching stops looking for a better match once a match is at least this long,
+--   without lazy matching the positions inside of matches longer than this are not hashed
+-- * `nice_length` - the chain search stops once a match is at least this long
+-- * `max_chain` - the maximum number of positions checked in the chain
+-- * `lazy` - checks if the next position has a longer match before taking a match
+local LEVELS = {
+    { 4,  4,   8,   4,    false },
+    { 4,  5,   16,  8,    false },
+    { 4,  6,   32,  32,   false },
+    { 4,  4,   16,  16,   true },
+    { 8,  16,  32,  32,   true },
+    { 8,  16,  128, 128,  true },
+    { 8,  32,  128, 256,  true },
+    { 32, 128, 258, 1024, true },
+    { 32, 258, 258, 4096, true }
 }
 
--- Convert a literal/LZ77_length deflate code to base LZ77 length extra bits
--- The key of the table is (code - 256), 257<=code<=285
-local _literal_deflate_code_to_extra_bitlen = {
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5,
-    5, 5, 5, 0
-}
+local LENGTH_BASE = { [ 0 ] = 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258 }
+local LENGTH_EXTRA = { [ 0 ] = 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0 }
 
--- Convert a distance deflate code to base LZ77 distance. (0<=code<=29)
-local _dist_deflate_code_to_base_dist = {
-    [ 0 ] = 1,
-    2,
-    3,
-    4,
-    5,
-    7,
-    9,
-    13,
-    17,
-    25,
-    33,
-    49,
-    65,
-    97,
-    129,
-    193,
-    257,
-    385,
-    513,
-    769,
-    1025,
-    1537,
-    2049,
-    3073,
-    4097,
-    6145,
-    8193,
-    12289,
-    16385,
-    24577
-}
+local DISTANCE_BASE = { [ 0 ] = 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577 }
+local DISTANCE_EXTRA = { [ 0 ] = 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13 }
 
--- Convert a distance deflate code to LZ77 bits length. (0<=code<=29)
-local _dist_deflate_code_to_extra_bitlen = {
-    [ 0 ] = 0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    2,
-    2,
-    3,
-    3,
-    4,
-    4,
-    5,
-    5,
-    6,
-    6,
-    7,
-    7,
-    8,
-    8,
-    9,
-    9,
-    10,
-    10,
-    11,
-    11,
-    12,
-    12,
-    13,
-    13
-}
+--- The order code length code lengths are stored in.
+local CODE_LENGTH_ORDER = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 }
 
--- The code order of the first huffman header in the dynamic deflate block. See the page 12 of RFC1951
-local _rle_codes_huffman_bitlen_order = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 }
+--- Match length ( 3 - 258 ) to its literal/length symbol ( 257 - 285 ).
+---@type integer[]
+local LENGTH_SYMBOLS = { [ 0 ] = 0, 0, 0 }
 
--- The following tables are used by fixed deflate block. The value of these tables are assigned at the bottom of the source.
+--- Match distance ( 1 - 32768 ) to its distance code ( 0 - 29 ).
+---@type integer[]
+local DISTANCE_CODES = {}
 
--- The huffman code of the literal/LZ77_length deflate codes, in fixed deflate block.
-local _fix_block_literal_huffman_code
-
--- Convert huffman code of the literal/LZ77_length to deflate codes, in fixed deflate block.
-local _fix_block_literal_huffman_to_deflate_code
-
--- The bit length of the huffman code of literal/LZ77_length deflate codes, in fixed deflate block.
-local _fix_block_literal_huffman_bitlen
-
--- The count of each bit length of the literal/LZ77_length deflate codes, in fixed deflate block.
-local _fix_block_literal_huffman_bitlen_count
-
--- The huffman code of the distance deflate codes, in fixed deflate block.
-local _fix_block_dist_huffman_code
-
--- Convert huffman code of the distance to deflate codes, in fixed deflate block.
-local _fix_block_dist_huffman_to_deflate_code
-
--- The bit length of the huffman code of the distance deflate codes, in fixed deflate block.
-local _fix_block_dist_huffman_bitlen
-
--- The count of each bit length of the huffman code of the distance deflate codes, in fixed deflate block.
-local _fix_block_dist_huffman_bitlen_count
-
-do
-    local pow = 1
-    for i = 0, 32 do
-        _pow2[ i ] = pow
-        pow = pow * 2
+for code = 0, 28, 1 do
+    local base = LENGTH_BASE[ code ]
+    for length = base, math_min( base + rbit_lshift( 1, LENGTH_EXTRA[ code ] ) - 1, MAX_MATCH ), 1 do
+        LENGTH_SYMBOLS[ length ] = 257 + code
     end
 end
 
-for i = 1, 9 do
-    _reverse_bits_tbl[ i ] = {}
-    for j = 0, 2 ^ (i + 1) - 1 do
-        local reverse = 0
-        local value = j
-        for _ = 1, i do
-            -- The following line is equivalent to "res | (code %2)" in C.
-            reverse = reverse - reverse % 2 + (((reverse % 2 == 1) or (value % 2) == 1) and 1 or 0)
-            value = (value - value % 2) / 2
-            reverse = reverse * 2
-        end
+-- 258 has its own code, 284 with all extra bits set would be 258 too
+LENGTH_SYMBOLS[ MAX_MATCH ] = 285
 
-        _reverse_bits_tbl[ i ][ j ] = (reverse - reverse % 2) / 2
+for code = 0, 29, 1 do
+    local base = DISTANCE_BASE[ code ]
+    for distance = base, base + rbit_lshift( 1, DISTANCE_EXTRA[ code ] ) - 1, 1 do
+        DISTANCE_CODES[ distance ] = code
     end
 end
 
--- The source code is written according to the pattern in the numbers in RFC1951 Page10.
-do
-
-    local a = 18
-    local b = 16
-    local c = 265
-    local bitlen = 1
-
-    for len = 3, 258 do
-        if len <= 10 then
-            _length_to_deflate_code[ len ] = len + 254
-            _length_to_deflate_extra_bitlen[ len ] = 0
-        elseif len == 258 then
-            _length_to_deflate_code[ len ] = 285
-            _length_to_deflate_extra_bitlen[ len ] = 0
-        else
-            if len > a then
-                a = a + b
-                b = b * 2
-                c = c + 4
-                bitlen = bitlen + 1
-            end
-
-            local t = len - a - 1 + b / 2
-            _length_to_deflate_code[ len ] = (t - (t % (b / 8))) / (b / 8) + c
-            _length_to_deflate_extra_bitlen[ len ] = bitlen
-            _length_to_deflate_extra_bits[ len ] = t % (b / 8)
-        end
-    end
-
+--- Reverses the order of the lowest `bit_count` bits, Huffman codes are packed starting from their highest bit.
+---@param code integer
+---@param bit_count integer
+---@return integer
+local function reverse_bits( code, bit_count )
+    return rbit_rshift( bitpack_reverse( rbit_band( code, 0xFF ) ) * 0x100 + bitpack_reverse( rbit_rshift( code, 8 ) ), 16 - bit_count )
 end
 
--- The source code is written according to the pattern in the numbers in RFC1951 Page11.
-do
+-- Buffers are zero-based, FFI `uint8_t[?]` and `int32_t[?]` arrays when FFI is available, Lua tables otherwise,
+-- the same code works with both.
 
-    _dist256_to_deflate_code[ 1 ] = 0
-    _dist256_to_deflate_code[ 2 ] = 1
-    _dist256_to_deflate_extra_bitlen[ 1 ] = 0
-    _dist256_to_deflate_extra_bitlen[ 2 ] = 0
+---@alias dreamwork.std.deflate.Bytes ffi.cdata* | integer[]
 
-    local a = 3
-    local b = 4
-    local code = 2
-    local bitlen = 0
-    for dist = 3, 256 do
-        if dist > b then
-            a = a * 2
-            b = b * 2
-            code = code + 2
-            bitlen = bitlen + 1
-        end
+---@type fun( size: integer ): dreamwork.std.deflate.Bytes, integer
+local get_bytes
 
-        _dist256_to_deflate_code[ dist ] = (dist <= a) and code or (code + 1)
-        _dist256_to_deflate_extra_bitlen[ dist ] = (bitlen < 0) and 0 or bitlen
+---@type fun( bytes: dreamwork.std.deflate.Bytes, length: integer, size: integer ): dreamwork.std.deflate.Bytes, integer
+local grow_bytes
 
-        if b >= 8 then
-            _dist256_to_deflate_extra_bits[ dist ] = (dist - b / 2 - 1) % (b / 4)
-        end
-    end
+---@type fun( bytes: dreamwork.std.deflate.Bytes, offset: integer, length: integer ): string
+local bytes_to_string
 
-end
+---@type fun( bytes: dreamwork.std.deflate.Bytes, offset: integer, str: string, index: integer, length: integer )
+local copy_string
 
---- Compare adler32 checksum.
---- adler32 should be compared with a mod to avoid sign problem 4072834167 (unsigned) is the same adler32 as -222133129
-local function isEqualAdler32( actual, expected )
-    return (actual % 0x100000000) == (expected % 0x100000000)
-end
+---@type fun( bytes: dreamwork.std.deflate.Bytes, length: integer )
+local release_bytes
 
---- Create a preset dictionary.
----
---- This function is not fast, and the memory consumption of the produced
---- dictionary is about 50 times of the input string. Therefore, it is suggestted
---- to run this function only once in your program.
----
---- It is very important to know that if you do use a preset dictionary,
---- compressors and decompressors MUST USE THE SAME dictionary. That is,
---- dictionary must be created using the same string. If you update your program
---- with a new dictionary, people with the old version won't be able to transmit
---- data with people with the new version. Therefore, changing the dictionary must be very careful.
----
----
---- The parameters "strlen" and "adler32" add a layer of verification to ensure
---- the parameter "str" is not modified unintentionally during the program development.
----
----
----@usage local dict_str = "1234567890"
----
---- print(dict_str:len(), deflate.calculateAdler32(dict_str))
---- Hardcode the print result below to verify it to avoid acciently
---- modification of 'str' during the program development.
---- string length: 10, Adler-32: 187433486,
---- Don't calculate string length and its Adler-32 at run-time.
----
---- local dict = deflate.createDictionary(dict_str, 10, 187433486)
----
----@param str string The string used as the preset dictionary.
----
----You should put stuffs that frequently appears in the dictionary
----string and preferablely put more frequently appeared stuffs toward the end of the string.
----
----
---- Empty string and string longer than 32768 bytes are not allowed.
----@return table dict The dictionary used for preset dictionary compression and decompression.
----@nodiscard
----@raise error if 'strlen' does not match the length of 'str',
---- or if 'adler32' does not match the Adler-32 checksum of 'str'.
-function deflate.createDictionary( str )
-    local strlen = string_len( str )
-    if strlen == 0 then
-        error( "Empty string is not allowed.", 2 )
-    elseif strlen > 32768 then
-        error( "String longer than 32768 bytes is not allowed. Got " .. strlen .. " bytes.", 2 )
-    end
+---@type fun( size: integer ): ffi.cdata* | integer[]
+local new_integers
 
-    local string_table = { string_byte( str, 1, 2 ) }
-    local hash_tables = {}
+---@type fun( bytes: dreamwork.std.deflate.Bytes, length: integer, source: integer, count: integer )
+local copy_match
 
-    local dictionary = {
-        [ "adler32" ] = Adler32_digest( str ),
-        [ "string_table" ] = string_table,
-        [ "hash_tables" ] = hash_tables,
-        [ "strlen" ] = strlen
-    }
+if ffi == nil then
 
-    if strlen >= 3 then
-        local i = 1
-        local hash = string_table[ 1 ] * 0x100 + string_table[ 2 ]
+    --- Bytes per `string.char` call, has to stay well below the C stack limit
+    local CHUNK_SIZE = 4096
 
-        while i <= (strlen - 5) do
-            local x1, x2, x3, x4 = string_byte( str, i + 2, i + 5 )
+    --- Larger tables are temporary, so memory isn't held after one big call.
+    local max_buffer_size = 0x40000
 
-            string_table[ i + 2 ] = x1
-            string_table[ i + 3 ] = x2
-            string_table[ i + 4 ] = x3
-            string_table[ i + 5 ] = x4
-
-            hash = (hash * 0x100 + x1) % 0x1000000
-
-            local t = hash_tables[ hash ]
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, i - strlen )
-            i = i + 1
-
-            hash = (hash * 0x100 + x2) % 0x1000000
-            t = hash_tables[ hash ]
-
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, i - strlen )
-            i = i + 1
-
-            hash = (hash * 0x100 + x3) % 0x1000000
-            t = hash_tables[ hash ]
-
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, i - strlen )
-            i = i + 1
-
-            hash = (hash * 0x100 + x4) % 0x1000000
-            t = hash_tables[ hash ]
-
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, i - strlen )
-            i = i + 1
-        end
-
-        while i <= (strlen - 2) do
-            local x = string_byte( str, i + 2 )
-            string_table[ i + 2 ] = x
-
-            hash = (hash * 0x100 + x) % 0x1000000
-
-            local t = hash_tables[ hash ]
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, i - strlen )
-            i = i + 1
-        end
-    end
-
-    return dictionary
-end
-
---[[
-    key of the configuration table is the compression level,
-    and its value stores the compression setting.
-    These numbers come from zlib source code.
-
-    Higher compression level usually means better compression.
-    (Because LibDeflate uses a simplified version of zlib algorithm,
-    there is no guarantee that higher compression level does not create
-    bigger file than lower level, but I can say it's 99% likely)
-
-    Be careful with the high compression level. This is a pure lua
-    implementation compressor/decompressor, which is significant slower than
-    a C/C++ equivalant compressor/decompressor. Very high compression level
-    costs significant more CPU time, and usually compression size won't be
-    significant smaller when you increase compression level by 1, when the
-    level is already very high. Benchmark yourself if you can afford it.
-
-    See also https://github.com/madler/zlib/blob/master/doc/algorithm.txt,
-    https://github.com/madler/zlib/blob/master/deflate.c for more information.
-
-    The meaning of each field:
-    @field 1 use_lazy_evaluation:
-        true/false. Whether the program uses lazy evaluation.
-        See what is "lazy evaluation" in the link above.
-        lazy_evaluation improves ratio, but relatively slow.
-    @field 2 good_prev_length:
-        Only effective if lazy is set, Only use 1/4 of max_chain,
-        if prev length of lazy match is above this.
-    @field 3 max_insert_length/max_lazy_match:
-        If not using lazy evaluation,
-        insert new strings in the hash table only if the match length is not
-        greater than this length.
-        If using lazy evaluation, only continue lazy evaluation,
-        if previous match length is strictly smaller than this value.
-    @field 4 nice_length:
-        Number. Don't continue to go down the hash chain,
-        if match length is above this.
-    @field 5 max_chain:
-        Number. The maximum number of hash chains we look.
---]]
-local _compression_level_configs = {
-    [ 0 ] = { false, nil, 0, 0, 0 },      -- level 0, no compression
-    [ 1 ] = { false, nil, 4, 8, 4 },      -- level 1, similar to zlib level 1
-    [ 2 ] = { false, nil, 5, 18, 8 },     -- level 2, similar to zlib level 2
-    [ 3 ] = { false, nil, 6, 32, 32 },    -- level 3, similar to zlib level 3
-    [ 4 ] = { true, 4, 4, 16, 16 },       -- level 4, similar to zlib level 4
-    [ 5 ] = { true, 8, 16, 32, 32 },      -- level 5, similar to zlib level 5
-    [ 6 ] = { true, 8, 16, 128, 128 },    -- level 6, similar to zlib level 6
-    [ 7 ] = { true, 8, 32, 128, 256 },    -- (SLOW) level 7, similar to zlib level 7
-    [ 8 ] = { true, 32, 128, 258, 1024 }, -- (SLOW) level 8,similar to zlib level 8
-    [ 9 ] = { true, 32, 258, 258, 4096 }  -- (VERY SLOW) level 9, similar to zlib level 9
-}
-
-local validate_dictionary, validate_configs
-do
-
-    local isTable, isNumber = std.isTable, std.isNumber
-
-    function validate_dictionary( dictionary, error_level )
-        if error_level == nil then error_level = 1 end
-
-        error_level = error_level + 1
-
-        if not isNumber( dictionary.adler32 ) then
-            error( "'dictionary' - missing required field 'adler32'.", error_level )
-        end
-
-        local string_table = dictionary.string_table
-        if not isTable( dictionary.string_table ) then
-            error( "'dictionary' - missing required field 'string_table'.", error_level )
-        end
-
-        if not isNumber( dictionary.strlen ) then
-            error( "'dictionary' - missing required field 'strlen'.", error_level )
-        end
-
-        local strlen = dictionary.strlen
-        if strlen <= 0 or strlen > 32768 then
-            error( "'dictionary' - 'strlen' must be between 1 and 32768.", error_level )
-        end
-
-        if strlen ~= #string_table then
-            error( "'dictionary' - 'strlen' does not match the length of 'string_table'.", error_level )
-        end
-
-        if not isTable( dictionary.hash_tables ) then
-            error( "'dictionary' - missing required field 'hash_tables'.", error_level )
-        end
-    end
-
-    function validate_configs( configs, error_level )
-        if error_level == nil then error_level = 1 end
-
-        error_level = error_level + 1
-
-        local level = configs.level
-        if level == nil then
-            error( "'configs' - missing required field 'level'.", error_level )
-        end
-
-        if not _compression_level_configs[ level ] then
-            error( "'configs' - unsupported 'level': '" .. std.tostring( level ) .. "'.", error_level )
-        end
-
-        local strategy = configs.strategy
-        if strategy == nil then
-            error( "'configs' - missing required field 'strategy'.", error_level )
-        end
-
-        -- random_block_type is for testing purpose
-        if not (strategy == "fixed" or strategy == "huffman_only" or strategy == "dynamic") then
-            error( "'configs' - unsupported 'strategy': '" .. std.tostring( strategy ) .. "'.", error_level )
-        end
-    end
-
-end
-
--- Compress code --
-
--- partial flush to save memory
-local _FLUSH_MODE_MEMORY_CLEANUP = 0
-
--- full flush with partial bytes
-local _FLUSH_MODE_OUTPUT = 1
-
--- write bytes to get to byte boundary
-local _FLUSH_MODE_BYTE_BOUNDARY = 2
-
--- no flush, just get num of bits written so far
-local _FLUSH_MODE_NO_FLUSH = 3
-
---[[
-    Create an empty writer to easily write stuffs as the unit of bits.
-    Return values:
-    1. writeBits(code, bitlen):
-    2. writeString(str):
-    3. Flush(mode):
---]]
-local function createWriter()
-    local buffer_size = 0
-    local cache = 0
-    local cache_bitlen = 0
-    local total_bitlen = 0
+    -- tables grow by themselves, so the capacity is never reached,
+    -- one is kept between calls, so it does not have to grow every time
     local buffer = {}
 
-    -- When buffer is big enough, flush into result_buffer to save memory.
-    local result_buffer, result_buffer_size = {}, 0
+    function get_bytes( size )
+        if size > max_buffer_size then
+            return {}, math_huge
+        end
 
-    --- Write bits with value "value" and bit length of "bitlen" into writer.
-    ---@param value number The value being written
-    ---@param bitlen number The bit length of "value"
-    local function writeBits( value, bitlen )
-        cache = cache + value * _pow2[ cache_bitlen ]
-        cache_bitlen = cache_bitlen + bitlen
-        total_bitlen = total_bitlen + bitlen
+        return buffer, math_huge
+    end
 
-        -- Only bulk to buffer every 4 bytes. This is quicker.
-        if cache_bitlen >= 32 then
-            buffer_size = buffer_size + 1
-            buffer[ buffer_size ] = string_char(
-                cache % 0x100,
-                (cache - cache % 0x100) / 0x100 % 0x100,
-                (cache - cache % 0x10000) / 0x10000 % 0x100,
-                (cache - cache % 0x1000000) / 0x1000000 % 0x100
-            )
+    function grow_bytes( bytes )
+        return bytes, math_huge
+    end
 
-            local rshift_mask = _pow2[ 32 - cache_bitlen + bitlen ]
-            cache = (value - value % rshift_mask) / rshift_mask
-
-            cache_bitlen = cache_bitlen - 32
+    function release_bytes( bytes, length )
+        if bytes == buffer and length > max_buffer_size then
+            buffer = {}
         end
     end
 
-    --- Write the entire string into the writer.
-    ---@param str string The string being written
-    ---@return nil
-    local function writeString( str )
-        for _ = 1, cache_bitlen, 8 do
-            buffer_size = buffer_size + 1
-            buffer[ buffer_size ] = string_char( cache % 0x100 )
-
-            cache = (cache - cache % 0x100) / 0x100
+    function bytes_to_string( bytes, offset, length )
+        if length <= CHUNK_SIZE then
+            return string_char( table_unpack( bytes, offset, offset + length - 1 ) )
         end
 
-        cache_bitlen = 0
+        local chunks, chunk_count = {}, 0
+        local last = offset + length - 1
 
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = str
+        for i = offset, last, CHUNK_SIZE do
+            chunk_count = chunk_count + 1
+            chunks[ chunk_count ] = string_char( table_unpack( bytes, i, math_min( i + CHUNK_SIZE - 1, last ) ) )
+        end
 
-        total_bitlen = total_bitlen + string_len( str ) * 8
+        return table_concat( chunks, "", 1, chunk_count )
     end
 
-    --- Flush current stuffs in the writer and return it.
-    --- This operation will free most of the memory.
-    ---@param mode number See the descrtion of the constant and the source code.
-    ---@return integer bit_count The total number of bits stored in the writer right now.
-    --- for byte boundary mode, it includes the padding bits.
-    --- for output mode, it does not include padding bits.
-    ---@return string? result Return the outputs if mode is output.
-    local function flushWriter( mode )
-        if mode == _FLUSH_MODE_NO_FLUSH then
-            return total_bitlen
+    function copy_string( bytes, offset, str, index, length )
+        offset = offset - index
+
+        for i = index, index + length - 1, 1 do
+            bytes[ offset + i ] = string_byte( str, i )
+        end
+    end
+
+    function new_integers( size )
+        local integers = {}
+
+        for i = 0, size - 1, 1 do
+            integers[ i ] = 0
         end
 
-        if mode == _FLUSH_MODE_OUTPUT or mode == _FLUSH_MODE_BYTE_BOUNDARY then
-            -- Full flush, also output cache.
-            -- Need to pad some bits if cache_bitlen is not multiple of 8.
-            local padding_bitlen = (8 - cache_bitlen % 8) % 8
+        return integers
+    end
 
-            if cache_bitlen > 0 then
-                -- padding with all 1 bits, mainly because "\000" is not
-                -- good to be tranmitted. I do this so "\000" is a little bit
-                -- less frequent.
-                cache = cache - _pow2[ cache_bitlen ] + _pow2[ cache_bitlen + padding_bitlen ]
+    function copy_match( bytes, length, source, count )
+        for i = 0, count - 1, 1 do
+            bytes[ length + i ] = bytes[ source + i ]
+        end
+    end
 
-                for _ = 1, cache_bitlen, 8 do
-                    buffer_size = buffer_size + 1
-                    buffer[ buffer_size ] = string_char( cache % 0x100 )
-                    cache = (cache - cache % 0x100) / 0x100
-                end
+else
 
-                cache = 0
-                cache_bitlen = 0
+    local ffi_cast = ffi.cast
+    local ffi_copy = ffi.copy
+    local ffi_string = ffi.string
+
+    local uint8_ptr_t = ffi.typeof( "const uint8_t *" )
+    local uint8_array_t = ffi.typeof( "uint8_t[?]" )
+    local int32_array_t = ffi.typeof( "int32_t[?]" )
+
+    --- Larger buffers are temporary, so memory isn't held after one big call.
+    local max_buffer_size = 0x100000
+
+    local buffer_size = 0x1000
+    local buffer = uint8_array_t( buffer_size )
+
+    function get_bytes( size )
+        if size > buffer_size then
+            if size > max_buffer_size then
+                return uint8_array_t( size ), size
             end
 
-            if mode == _FLUSH_MODE_BYTE_BOUNDARY then
-                total_bitlen = total_bitlen + padding_bitlen
-                return total_bitlen
-            end
+            buffer_size = math_max( size, buffer_size * 2 )
+            buffer = uint8_array_t( buffer_size )
         end
 
-        local flushed = table_concat( buffer )
+        return buffer, buffer_size
+    end
 
-        buffer = {}
-        buffer_size = 0
+    function grow_bytes( bytes, length, size )
+        local grown = uint8_array_t( size )
+        ffi_copy( grown, bytes, length )
+        return grown, size
+    end
 
-        result_buffer_size = result_buffer_size + 1
-        result_buffer[ result_buffer_size ] = flushed
+    function bytes_to_string( bytes, offset, length )
+        return ffi_string( bytes + offset, length )
+    end
 
-        if mode == _FLUSH_MODE_MEMORY_CLEANUP then
-            return total_bitlen
-        elseif result_buffer_size == 1 then
-            return total_bitlen, result_buffer[ 1 ]
-        elseif result_buffer_size == 2 then
-            return total_bitlen, result_buffer[ 1 ] .. result_buffer[ 2 ]
+    -- the buffer never grows
+    function release_bytes()
+    end
+
+    function copy_string( bytes, offset, str, index, length )
+        ffi_copy( bytes + offset, ffi_cast( uint8_ptr_t, str ) + (index - 1), length )
+    end
+
+    function new_integers( size )
+        return int32_array_t( size )
+    end
+
+    -- 4 bytes at a time, up to 3 bytes past the end are overwritten
+    function copy_match( bytes, length, source, count )
+        for i = 0, count - 1, 4 do
+            bytes[ length + i ] = bytes[ source + i ]
+            bytes[ length + i + 1 ] = bytes[ source + i + 1 ]
+            bytes[ length + i + 2 ] = bytes[ source + i + 2 ]
+            bytes[ length + i + 3 ] = bytes[ source + i + 3 ]
+        end
+    end
+
+end
+
+--- Builds length limited Huffman code lengths for the frequencies,
+--- with the in-place algorithm by Alistair Moffat and Jyrki Katajainen and the length limit of miniz.
+---
+--- At least two symbols get a code, even if they are not used, like zlib does,
+--- some decoders do not accept a code with a single symbol.
+---
+---@param frequencies integer[]
+---@param symbol_count integer
+---@param max_length integer
+---@param lengths integer[]
+local function build_lengths( frequencies, symbol_count, max_length, lengths )
+    -- frequency * 512 + symbol, sorted by frequency, then by symbol
+    ---@type integer[]
+    local sorted = {}
+    local used = 0
+
+    for symbol = 0, symbol_count - 1, 1 do
+        lengths[ symbol ] = 0
+
+        local frequency = frequencies[ symbol ]
+        if frequency ~= 0 then
+            used = used + 1
+            sorted[ used ] = frequency * 512 + symbol
+        end
+    end
+
+    if used < 2 then
+        local symbol = used == 0 and 0 or sorted[ 1 ] % 512
+        lengths[ symbol ] = 1
+        lengths[ symbol == 0 and 1 or 0 ] = 1
+        return
+    end
+
+    table_sort( sorted )
+
+    -- `nodes` are frequencies, then parent indexes, then depths
+    ---@type integer[]
+    local nodes = {}
+
+    for i = 1, used, 1 do
+        nodes[ i - 1 ] = rbit_rshift( sorted[ i ], 9 )
+    end
+
+    nodes[ 0 ] = nodes[ 0 ] + nodes[ 1 ]
+
+    local root, leaf = 0, 2
+
+    for next_node = 1, used - 2, 1 do
+        if leaf >= used or nodes[ root ] < nodes[ leaf ] then
+            nodes[ next_node ] = nodes[ root ]
+            nodes[ root ] = next_node
+            root = root + 1
         else
-            return total_bitlen, table_concat( result_buffer, "", 1, result_buffer_size )
+            nodes[ next_node ] = nodes[ leaf ]
+            leaf = leaf + 1
+        end
+
+        if leaf >= used or (root < next_node and nodes[ root ] < nodes[ leaf ]) then
+            nodes[ next_node ] = nodes[ next_node ] + nodes[ root ]
+            nodes[ root ] = next_node
+            root = root + 1
+        else
+            nodes[ next_node ] = nodes[ next_node ] + nodes[ leaf ]
+            leaf = leaf + 1
         end
     end
 
-    return writeBits, writeString, flushWriter
-end
+    nodes[ used - 2 ] = 0
 
---- Push an element into a max heap
----@param heap table A max heap whose max element is at index 1.
----@param e table The element to be pushed. Assume element "e" is a table
---- and comparison is done via its first entry e[1]
----@param heap_size number current number of elements in the heap.
---- NOTE: There may be some garbage stored in
---- heap[heap_size+1], heap[heap_size+2], etc..
-local function minHeapPush( heap, e, heap_size )
-    heap_size = heap_size + 1
-    heap[ heap_size ] = e
-
-    local value = e[ 1 ]
-    local pos = heap_size
-    local parent_pos = (pos - pos % 2) / 2
-
-    while (parent_pos >= 1 and heap[ parent_pos ][ 1 ] > value) do
-        local t = heap[ parent_pos ]
-        heap[ parent_pos ] = e
-        heap[ pos ] = t
-        pos = parent_pos
-        parent_pos = (parent_pos - parent_pos % 2) / 2
+    for next_node = used - 3, 0, -1 do
+        nodes[ next_node ] = nodes[ nodes[ next_node ] ] + 1
     end
-end
 
---- Pop an element from a max heap
----@param heap table A max heap whose max element is at index 1.
----@param heap_size number current number of elements in the heap.
----@return any top the poped element
---- Note: This function does not change table size of "heap" to save CPU time.
-local function minHeapPop( heap, heap_size )
-    local top = heap[ 1 ]
-    local e = heap[ heap_size ]
-    local value = e[ 1 ]
+    ---@type integer[]
+    local length_counts = {}
 
-    heap[ 1 ] = e
-    heap[ heap_size ] = top
-    heap_size = heap_size - 1
+    for length = 1, max_length, 1 do
+        length_counts[ length ] = 0
+    end
 
-    local pos = 1
-    local left_child_pos = pos * 2
-    local right_child_pos = left_child_pos + 1
+    do
 
-    while left_child_pos <= heap_size do
-        local left_child = heap[ left_child_pos ]
-        if (right_child_pos <= heap_size and heap[ right_child_pos ][ 1 ] < left_child[ 1 ]) then
-            local right_child = heap[ right_child_pos ]
-            if right_child[ 1 ] < value then
-                heap[ right_child_pos ] = e
-                heap[ pos ] = right_child
-                pos = right_child_pos
-                left_child_pos = pos * 2
-                right_child_pos = left_child_pos + 1
-            else
+        local available, used_nodes, depth = 1, 0, 0
+        local next_node = used - 1
+        root = used - 2
+
+        while available > 0 do
+            while root >= 0 and nodes[ root ] == depth do
+                used_nodes = used_nodes + 1
+                root = root - 1
+            end
+
+            while available > used_nodes do
+                -- deeper leaves are cut to the limit and fixed below
+                local length = math_min( depth, max_length )
+                length_counts[ length ] = length_counts[ length ] + 1
+
+                next_node = next_node - 1
+                available = available - 1
+            end
+
+            available = 2 * used_nodes
+            depth = depth + 1
+            used_nodes = 0
+        end
+
+    end
+
+    -- the cut leaves over-subscribe the code, every step moves the overflow by one leaf
+    local total = 0
+
+    for length = 1, max_length, 1 do
+        total = total + rbit_lshift( length_counts[ length ], max_length - length )
+    end
+
+    local full = rbit_lshift( 1, max_length )
+
+    while total ~= full do
+        length_counts[ max_length ] = length_counts[ max_length ] - 1
+
+        for length = max_length - 1, 1, -1 do
+            if length_counts[ length ] ~= 0 then
+                length_counts[ length ] = length_counts[ length ] - 1
+                length_counts[ length + 1 ] = length_counts[ length + 1 ] + 2
                 break
             end
+        end
+
+        total = total - 1
+    end
+
+    -- the most frequent symbols get the shortest codes
+    local index = used
+
+    for length = 1, max_length, 1 do
+        for _ = 1, length_counts[ length ], 1 do
+            lengths[ sorted[ index ] % 512 ] = length
+            index = index - 1
+        end
+    end
+end
+
+---@type integer[]
+local next_codes = {}
+
+--- Builds canonical Huffman codes with reversed bits from the code lengths.
+---
+---@param lengths integer[]
+---@param symbol_count integer
+---@param codes integer[]
+local function build_codes( lengths, symbol_count, codes )
+    for length = 0, 15, 1 do
+        next_codes[ length ] = 0
+    end
+
+    for symbol = 0, symbol_count - 1, 1 do
+        local length = lengths[ symbol ]
+        next_codes[ length ] = next_codes[ length ] + 1
+    end
+
+    local code = 0
+    next_codes[ 0 ] = 0
+
+    for length = 1, 15, 1 do
+        local count = next_codes[ length ]
+        next_codes[ length ] = code
+        code = (code + count) * 2
+    end
+
+    for symbol = 0, symbol_count - 1, 1 do
+        local length = lengths[ symbol ]
+        if length == 0 then
+            codes[ symbol ] = 0
         else
-            if left_child[ 1 ] < value then
-                heap[ left_child_pos ] = e
-                heap[ pos ] = left_child
-                pos = left_child_pos
-                left_child_pos = pos * 2
-                right_child_pos = left_child_pos + 1
-            else
-                break
+            local next_code = next_codes[ length ]
+            next_codes[ length ] = next_code + 1
+            codes[ symbol ] = reverse_bits( next_code, length )
+        end
+    end
+end
+
+--- Builds codes of all match lengths with their extra bits for the literal/length code.
+---
+---@param literal_codes integer[]
+---@param literal_lengths integer[]
+---@param length_codes integer[]
+---@param length_bits integer[]
+local function build_length_codes( literal_codes, literal_lengths, length_codes, length_bits )
+    for length = MIN_MATCH, MAX_MATCH, 1 do
+        local symbol = LENGTH_SYMBOLS[ length ]
+        local code = symbol - 257
+        local bit_count = literal_lengths[ symbol ]
+
+        length_codes[ length ] = rbit_bor( literal_codes[ symbol ], rbit_lshift( length - LENGTH_BASE[ code ], bit_count ) )
+        length_bits[ length ] = bit_count + LENGTH_EXTRA[ code ]
+    end
+end
+
+---@type integer[]
+local FIXED_LITERAL_LENGTHS = {}
+
+---@type integer[]
+local FIXED_DISTANCE_LENGTHS = {}
+
+do
+
+    for symbol = 0, 287, 1 do
+        FIXED_LITERAL_LENGTHS[ symbol ] = (symbol < 144 and 8) or (symbol < 256 and 9) or (symbol < 280 and 7) or 8
+    end
+
+    for code = 0, 31, 1 do
+        FIXED_DISTANCE_LENGTHS[ code ] = 5
+    end
+
+end
+
+-- Compression --
+
+---@class dreamwork.std.deflate.Writer
+---@field bytes dreamwork.std.deflate.Bytes
+---@field length integer
+---@field capacity integer
+---@field bit_buffer integer
+---@field bit_count integer
+
+---@param writer dreamwork.std.deflate.Writer
+---@param size integer
+local function reserve( writer, size )
+    local required = writer.length + size
+    if required > writer.capacity then
+        writer.bytes, writer.capacity = grow_bytes( writer.bytes, writer.length, math_max( required, writer.capacity * 2 ) )
+    end
+end
+
+--- Writes up to 24 bits, bytes have to be reserved.
+---
+---@param writer dreamwork.std.deflate.Writer
+---@param value integer
+---@param bit_count integer
+local function write_bits( writer, value, bit_count )
+    local bit_buffer = rbit_bor( writer.bit_buffer, rbit_lshift( value, writer.bit_count ) )
+    bit_count = writer.bit_count + bit_count
+
+    local bytes, length = writer.bytes, writer.length
+
+    while bit_count >= 8 do
+        bytes[ length ] = rbit_band( bit_buffer, 0xFF )
+        length = length + 1
+
+        bit_buffer = rbit_rshift( bit_buffer, 8 )
+        bit_count = bit_count - 8
+    end
+
+    writer.bit_buffer, writer.bit_count = bit_buffer, bit_count
+    writer.length = length
+end
+
+--- Writes the stored blocks of the bytes from `index` to `last`, the last of them is final if `is_last` is `true`.
+---
+---@param writer dreamwork.std.deflate.Writer
+---@param data string
+---@param index integer
+---@param last integer
+---@param is_last boolean
+local function write_stored( writer, data, index, last, is_last )
+    local remaining = last - index + 1
+
+    reserve( writer, remaining + 5 * (math_ceil( remaining / MAX_STORED ) + 1) + 1 )
+
+    repeat
+        local size = math_min( remaining, MAX_STORED )
+        remaining = remaining - size
+
+        write_bits( writer, (is_last and remaining == 0) and 1 or 0, 3 )
+
+        local bytes, length = writer.bytes, writer.length
+
+        if writer.bit_count ~= 0 then
+            bytes[ length ] = writer.bit_buffer
+            length = length + 1
+        end
+
+        bytes[ length ] = rbit_band( size, 0xFF )
+        bytes[ length + 1 ] = rbit_rshift( size, 8 )
+        bytes[ length + 2 ] = rbit_band( rbit_bxor( size, 0xFFFF ), 0xFF )
+        bytes[ length + 3 ] = rbit_rshift( rbit_bxor( size, 0xFFFF ), 8 )
+
+        copy_string( bytes, length + 4, data, index, size )
+
+        writer.length = length + 4 + size
+        writer.bit_buffer, writer.bit_count = 0, 0
+
+        index = index + size
+    until remaining == 0
+end
+
+--- Writes literals and matches with the codes, and the end of the block.
+---
+--- Every code is added to at most 7 bits that are left over, then all whole bytes are taken out of the buffer,
+--- three bytes are always written, so the buffer never holds more than 31 bits.
+---
+---@param writer dreamwork.std.deflate.Writer
+---@param items integer[]
+---@param item_count integer
+---@param literal_codes integer[]
+---@param literal_lengths integer[]
+---@param length_codes integer[]
+---@param length_bits integer[]
+---@param distance_codes integer[]
+---@param distance_lengths integer[]
+local function write_items( writer, items, item_count, literal_codes, literal_lengths, length_codes, length_bits, distance_codes, distance_lengths )
+    local bytes, length = writer.bytes, writer.length
+    local bit_buffer, bit_count = writer.bit_buffer, writer.bit_count
+
+    for i = 0, item_count - 1, 1 do
+        local item = items[ i ]
+
+        if item < 256 then
+            bit_buffer = rbit_bor( bit_buffer, rbit_lshift( literal_codes[ item ], bit_count ) )
+            bit_count = bit_count + literal_lengths[ item ]
+        else
+            local match_length = rbit_band( item, 0x1FF )
+
+            bit_buffer = rbit_bor( bit_buffer, rbit_lshift( length_codes[ match_length ], bit_count ) )
+            bit_count = bit_count + length_bits[ match_length ]
+
+            bytes[ length ] = rbit_band( bit_buffer, 0xFF )
+            bytes[ length + 1 ] = rbit_band( rbit_rshift( bit_buffer, 8 ), 0xFF )
+            bytes[ length + 2 ] = rbit_band( rbit_rshift( bit_buffer, 16 ), 0xFF )
+
+            local whole = rbit_rshift( bit_count, 3 )
+            length = length + whole
+            bit_buffer = rbit_rshift( bit_buffer, whole * 8 )
+            bit_count = rbit_band( bit_count, 7 )
+
+            local distance = rbit_rshift( item, 9 )
+            local code = DISTANCE_CODES[ distance ]
+
+            bit_buffer = rbit_bor( bit_buffer, rbit_lshift( distance_codes[ code ], bit_count ) )
+            bit_count = bit_count + distance_lengths[ code ]
+
+            bytes[ length ] = rbit_band( bit_buffer, 0xFF )
+            bytes[ length + 1 ] = rbit_band( rbit_rshift( bit_buffer, 8 ), 0xFF )
+            bytes[ length + 2 ] = rbit_band( rbit_rshift( bit_buffer, 16 ), 0xFF )
+
+            whole = rbit_rshift( bit_count, 3 )
+            length = length + whole
+            bit_buffer = rbit_rshift( bit_buffer, whole * 8 )
+            bit_count = rbit_band( bit_count, 7 )
+
+            bit_buffer = rbit_bor( bit_buffer, rbit_lshift( distance - DISTANCE_BASE[ code ], bit_count ) )
+            bit_count = bit_count + DISTANCE_EXTRA[ code ]
+        end
+
+        bytes[ length ] = rbit_band( bit_buffer, 0xFF )
+        bytes[ length + 1 ] = rbit_band( rbit_rshift( bit_buffer, 8 ), 0xFF )
+        bytes[ length + 2 ] = rbit_band( rbit_rshift( bit_buffer, 16 ), 0xFF )
+
+        local whole = rbit_rshift( bit_count, 3 )
+        length = length + whole
+        bit_buffer = rbit_rshift( bit_buffer, whole * 8 )
+        bit_count = rbit_band( bit_count, 7 )
+    end
+
+    writer.bytes, writer.length = bytes, length
+    writer.bit_buffer, writer.bit_count = bit_buffer, bit_count
+
+    write_bits( writer, literal_codes[ 256 ], literal_lengths[ 256 ] )
+end
+
+---@type integer[]
+local FIXED_LITERAL_CODES = {}
+
+---@type integer[]
+local FIXED_DISTANCE_CODES = {}
+
+---@type integer[]
+local FIXED_LENGTH_CODES = {}
+
+---@type integer[]
+local FIXED_LENGTH_BITS = {}
+
+build_codes( FIXED_LITERAL_LENGTHS, 288, FIXED_LITERAL_CODES )
+build_codes( FIXED_DISTANCE_LENGTHS, 32, FIXED_DISTANCE_CODES )
+build_length_codes( FIXED_LITERAL_CODES, FIXED_LITERAL_LENGTHS, FIXED_LENGTH_CODES, FIXED_LENGTH_BITS )
+
+-- Block buffers, shared between calls.
+--
+-- Items are literals ( 0 - 255 ) and matches ( `distance * 512 + length` ).
+
+local items = new_integers( BLOCK_SYMBOLS )
+
+local literal_frequencies = new_integers( 288 )
+local distance_frequencies = new_integers( 32 )
+
+---@type integer[]
+local literal_lengths, literal_codes = {}, {}
+
+---@type integer[]
+local distance_lengths, distance_codes = {}, {}
+
+---@type integer[]
+local length_codes, length_bits = {}, {}
+
+---@type integer[]
+local code_length_frequencies, code_length_lengths, code_length_codes = {}, {}, {}
+
+--- The code lengths of both codes, then their run-length encoding, `symbol + extra bits * 32`.
+---@type integer[]
+local all_lengths, length_runs = {}, {}
+
+--- Run-length encodes the code lengths and counts the frequencies of code length symbols.
+---
+---@param length_count integer
+---@return integer run_count
+local function encode_lengths( length_count )
+    for symbol = 0, 18, 1 do
+        code_length_frequencies[ symbol ] = 0
+    end
+
+    local run_count = 0
+    local index = 0
+
+    while index < length_count do
+        local length = all_lengths[ index ]
+
+        local run = 1
+        while index + run < length_count and all_lengths[ index + run ] == length do
+            run = run + 1
+        end
+
+        index = index + run
+
+        if length == 0 then
+            while run >= 11 do
+                local size = math_min( run, 138 )
+                run = run - size
+
+                run_count = run_count + 1
+                length_runs[ run_count ] = 18 + (size - 11) * 32
+                code_length_frequencies[ 18 ] = code_length_frequencies[ 18 ] + 1
             end
+
+            if run >= 3 then
+                run_count = run_count + 1
+                length_runs[ run_count ] = 17 + (run - 3) * 32
+                code_length_frequencies[ 17 ] = code_length_frequencies[ 17 ] + 1
+                run = 0
+            end
+        else
+            run_count = run_count + 1
+            length_runs[ run_count ] = length
+            code_length_frequencies[ length ] = code_length_frequencies[ length ] + 1
+            run = run - 1
+
+            while run >= 3 do
+                local size = math_min( run, 6 )
+                run = run - size
+
+                run_count = run_count + 1
+                length_runs[ run_count ] = 16 + (size - 3) * 32
+                code_length_frequencies[ 16 ] = code_length_frequencies[ 16 ] + 1
+            end
+        end
+
+        for _ = 1, run, 1 do
+            run_count = run_count + 1
+            length_runs[ run_count ] = length
+            code_length_frequencies[ length ] = code_length_frequencies[ length ] + 1
         end
     end
 
-    return top
+    return run_count
 end
 
---- Deflate defines a special huffman tree, which is unique once the bit length of huffman code of all symbols are known.
----@param bitlen_counts table Number of symbols with a specific bitlen
----@param symbol_bitlens table The bit length of a symbol
----@param max_symbol number The max symbol among all symbols, which is (number of symbols - 1)
----@param max_bitlen number The max huffman bit length among all symbols.
----@return table symbol_huffman_codes The huffman code of all symbols.
-local function getHuffmanCodeFromBitlen( bitlen_counts, symbol_bitlens, max_symbol, max_bitlen )
-    local huffman_code = 0
-    local next_codes = {}
-    local symbol_huffman_codes = {}
+--- Writes the block of items as the smallest of stored, fixed and dynamic blocks.
+---
+---@param writer dreamwork.std.deflate.Writer
+---@param data string
+---@param first integer The index of the first byte of the block.
+---@param last integer The index of the last byte of the block.
+---@param item_count integer
+---@param is_last boolean
+---@param strategy integer `1` for fixed codes only
+local function write_block( writer, data, first, last, item_count, is_last, strategy )
+    literal_frequencies[ 256 ] = 1
 
-    for bitlen = 1, max_bitlen do
-        huffman_code = (huffman_code + (bitlen_counts[ bitlen - 1 ] or 0)) * 2
-        next_codes[ bitlen ] = huffman_code
+    -- extra bits are the same for fixed and dynamic codes
+    local extra_bits = 0
+
+    for code = 0, 28, 1 do
+        extra_bits = extra_bits + literal_frequencies[ 257 + code ] * LENGTH_EXTRA[ code ]
     end
 
-    for symbol = 0, max_symbol do
-        local bitlen = symbol_bitlens[ symbol ]
-        if bitlen then
-            huffman_code = next_codes[ bitlen ]
-            next_codes[ bitlen ] = huffman_code + 1
+    for code = 0, 29, 1 do
+        extra_bits = extra_bits + distance_frequencies[ code ] * DISTANCE_EXTRA[ code ]
+    end
 
-            ---Reverse the bits of huffman code,
-            ---because most signifant bits of huffman code
-            ---is stored first into the compressed data.
-            ---@see RFC1951 Page5 Section 3.1.1
-            if bitlen <= 9 then -- Have cached reverse for small bitlen.
-                symbol_huffman_codes[ symbol ] = _reverse_bits_tbl[ bitlen ][ huffman_code ]
-            else
-                local reverse = 0
-                for _ = 1, bitlen do
-                    reverse = reverse - reverse % 2 + (((reverse % 2 == 1) or (huffman_code % 2) == 1) and 1 or 0)
-                    huffman_code = (huffman_code - huffman_code % 2) / 2
-                    reverse = reverse * 2
-                end
+    local fixed_size = 3 + extra_bits
 
-                symbol_huffman_codes[ symbol ] = (reverse - reverse % 2) / 2
-            end
+    for symbol = 0, 285, 1 do
+        fixed_size = fixed_size + literal_frequencies[ symbol ] * FIXED_LITERAL_LENGTHS[ symbol ]
+    end
+
+    for code = 0, 29, 1 do
+        fixed_size = fixed_size + distance_frequencies[ code ] * 5
+    end
+
+    local dynamic_size = math_huge
+    local literal_count, distance_count, code_length_count, run_count
+
+    if strategy ~= 1 then
+        build_lengths( literal_frequencies, 286, 15, literal_lengths )
+        build_lengths( distance_frequencies, 30, 15, distance_lengths )
+
+        literal_count = 286
+        while literal_count > 257 and literal_lengths[ literal_count - 1 ] == 0 do
+            literal_count = literal_count - 1
+        end
+
+        distance_count = 30
+        while distance_count > 1 and distance_lengths[ distance_count - 1 ] == 0 do
+            distance_count = distance_count - 1
+        end
+
+        for symbol = 0, literal_count - 1, 1 do
+            all_lengths[ symbol ] = literal_lengths[ symbol ]
+        end
+
+        for code = 0, distance_count - 1, 1 do
+            all_lengths[ literal_count + code ] = distance_lengths[ code ]
+        end
+
+        run_count = encode_lengths( literal_count + distance_count )
+        build_lengths( code_length_frequencies, 19, 7, code_length_lengths )
+
+        code_length_count = 19
+        while code_length_count > 4 and code_length_lengths[ CODE_LENGTH_ORDER[ code_length_count ] ] == 0 do
+            code_length_count = code_length_count - 1
+        end
+
+        dynamic_size = 3 + 14 + code_length_count * 3 + extra_bits
+            + code_length_frequencies[ 16 ] * 2 + code_length_frequencies[ 17 ] * 3 + code_length_frequencies[ 18 ] * 7
+
+        for symbol = 0, 18, 1 do
+            dynamic_size = dynamic_size + code_length_frequencies[ symbol ] * code_length_lengths[ symbol ]
+        end
+
+        for symbol = 0, 285, 1 do
+            dynamic_size = dynamic_size + literal_frequencies[ symbol ] * literal_lengths[ symbol ]
+        end
+
+        for code = 0, 29, 1 do
+            dynamic_size = dynamic_size + distance_frequencies[ code ] * distance_lengths[ code ]
         end
     end
 
-    return symbol_huffman_codes
-end
+    -- stored blocks start at a byte and take 4 bytes of lengths per 65535 bytes
+    local byte_count = last - first + 1
+    local stored_size = (strategy == 1) and math_huge or (byte_count + 5 * math_max( 1, math_ceil( byte_count / MAX_STORED ) )) * 8
 
---- A helper function to sort heap elements
---- a[1], b[1] is the huffman frequency
---- a[2], b[2] is the symbol value.
-local function sortByFirstThenSecond( a, b )
-    return a[ 1 ] < b[ 1 ] or (a[ 1 ] == b[ 1 ] and a[ 2 ] < b[ 2 ])
-end
-
---- Calculate the huffman bit length and huffman code.
----@param symbol_counts table A table whose table key is the symbol, and table value is the symbol frenquency (nil means 0 frequency).
----@param max_bitlen number See description of return value.
----@param max_symbol number The maximum symbol
----@return table symbol_bitlens A table whose key is the symbol, and the value is the huffman bit bit length. We guarantee that all bit length <= max_bitlen.
----For 0<=symbol<=max_symbol, table value could be nil if the frequency of the symbol is 0 or nil.
----@return table symbol_codes A table whose key is the symbol, and the value is the huffman code.
----@return number max_non_zero_bitlen_symbol A number indicating the maximum symbol whose bitlen is not 0.
-local function getHuffmanBitlenAndCode( symbol_counts, max_bitlen, max_symbol )
-    local heap_size
-    local max_non_zero_bitlen_symbol = -1
-    local leafs = {}
-    local heap = {}
-    local symbol_bitlens = {}
-    local symbol_codes = {}
-    local bitlen_counts = {}
-
-    --[[
-        tree[1]: weight, temporarily used as parent and bitLengths
-        tree[2]: symbol
-        tree[3]: left child
-        tree[4]: right child
-    --]]
-    local number_unique_symbols = 0
-    for symbol, count in raw_pairs( symbol_counts ) do
-        number_unique_symbols = number_unique_symbols + 1
-        leafs[ number_unique_symbols ] = { count, symbol }
-    end
-
-    if number_unique_symbols == 0 then
-        -- no code.
-        return {}, {}, -1
-    elseif number_unique_symbols == 1 then
-        -- Only one code. In this case, its huffman code
-        -- needs to be assigned as 0, and bit length is 1.
-        -- This is the only case that the return result
-        -- represents an imcomplete huffman tree.
-        local symbol = leafs[ 1 ][ 2 ]
-        symbol_bitlens[ symbol ] = 1
-        symbol_codes[ symbol ] = 0
-
-        return symbol_bitlens, symbol_codes, symbol
+    if stored_size <= fixed_size and stored_size <= dynamic_size then
+        write_stored( writer, data, first, last, is_last )
     else
-        table_sort( leafs, sortByFirstThenSecond )
-        heap_size = number_unique_symbols
+        -- codes are written before the buffer is flushed, 3 bytes past the end
+        reserve( writer, rbit_rshift( math_min( fixed_size, dynamic_size ), 3 ) + 8 )
 
-        for i = 1, heap_size do
-            heap[ i ] = leafs[ i ]
-        end
-
-        while heap_size > 1 do
-            -- Note: pop does not change table size of heap
-            local leftChild = minHeapPop( heap, heap_size )
-            heap_size = heap_size - 1
-
-            local rightChild = minHeapPop( heap, heap_size )
-            heap_size = heap_size - 1
-
-            local newNode = { leftChild[ 1 ] + rightChild[ 1 ], -1, leftChild, rightChild }
-            minHeapPush( heap, newNode, heap_size )
-            heap_size = heap_size + 1
-        end
-
-        -- Number of leafs whose bit length is greater than max_len.
-        local number_bitlen_overflow = 0
-
-        -- Calculate bit length of all nodes
-        local fifo = { heap[ 1 ], 0, 0, 0 } -- preallocate some spaces.
-        local fifo_size = 1
-        local index = 1
-        heap[ 1 ][ 1 ] = 0
-
-        while index <= fifo_size do -- Breath first search
-            local e = fifo[ index ]
-            local bitlen = e[ 1 ]
-            local symbol = e[ 2 ]
-            local left_child = e[ 3 ]
-            local right_child = e[ 4 ]
-
-            if left_child then
-                fifo_size = fifo_size + 1
-                fifo[ fifo_size ] = left_child
-                left_child[ 1 ] = bitlen + 1
-            end
-
-            if right_child then
-                fifo_size = fifo_size + 1
-                fifo[ fifo_size ] = right_child
-                right_child[ 1 ] = bitlen + 1
-            end
-
-            index = index + 1
-
-            if bitlen > max_bitlen then
-                number_bitlen_overflow = number_bitlen_overflow + 1
-                bitlen = max_bitlen
-            end
-
-            if symbol >= 0 then
-                symbol_bitlens[ symbol ] = bitlen
-                max_non_zero_bitlen_symbol = (symbol > max_non_zero_bitlen_symbol) and symbol or max_non_zero_bitlen_symbol
-                bitlen_counts[ bitlen ] = (bitlen_counts[ bitlen ] or 0) + 1
-            end
-        end
-
-        ---Resolve bit length overflow
-        ---@see ZLib/trees.c:gen_bitlen(s, desc), for reference
-        if number_bitlen_overflow > 0 then
-            repeat
-                local bitlen = max_bitlen - 1
-                while (bitlen_counts[ bitlen ] or 0) == 0 do
-                    bitlen = bitlen - 1
-                end
-
-                -- move one leaf down the tree
-                bitlen_counts[ bitlen ] = bitlen_counts[ bitlen ] - 1
-
-                -- move one overflow item as its brother
-                bitlen_counts[ bitlen + 1 ] = (bitlen_counts[ bitlen + 1 ] or 0) + 2
-                bitlen_counts[ max_bitlen ] = bitlen_counts[ max_bitlen ] - 1
-
-                -- TODO: check that math_max is necessary here
-                number_bitlen_overflow = math_max( number_bitlen_overflow - 2, 0 )
-            until number_bitlen_overflow == 0
-
-            index = 1
-            for bitlen = max_bitlen, 1, -1 do
-                local n = bitlen_counts[ bitlen ] or 0
-                while n > 0 do
-                    local symbol = leafs[ index ][ 2 ]
-                    symbol_bitlens[ symbol ] = bitlen
-
-                    n = n - 1
-                    index = index + 1
-                end
-            end
-        end
-
-        return symbol_bitlens, getHuffmanCodeFromBitlen( bitlen_counts, symbol_bitlens, max_symbol, max_bitlen ), max_non_zero_bitlen_symbol
-    end
-end
-
---- Calculate the first huffman header in the dynamic huffman block
----@see RFC1951 Page 12
----@param lcode_bitlens table The huffman bit length of literal/LZ77_length.
----@param max_non_zero_bitlen_lcode number The maximum literal/LZ77_length symbol whose huffman bit length is not zero.
----@param dcode_bitlens table The huffman bit length of LZ77 distance.
----@param max_non_zero_bitlen_dcode number The maximum LZ77 distance symbol whose huffman bit length is not zero.
----@return table rle_codes The run length encoded codes.
----@return table rle_extra_bits The extra bits. One entry for each rle code that needs extra bits. (code == 16 or 17 or 18).
----@return table rle_code_counts The count of appearance of each rle codes.
-local function runLengthEncodeHuffmanBitlen( lcode_bitlens, max_non_zero_bitlen_lcode, dcode_bitlens, max_non_zero_bitlen_dcode )
-    local rle_code_tblsize = 0
-    local rle_codes = {}
-    local rle_code_counts = {}
-    local rle_extra_bits_tblsize = 0
-    local rle_extra_bits = {}
-    local prev = nil
-    local count = 0
-
-    -- If there is no distance code, assume one distance code of bit length 0.
-    -- RFC1951: One distance code of zero bits means that
-    -- there are no distance codes used at all (the data is all literals).
-    max_non_zero_bitlen_dcode = (max_non_zero_bitlen_dcode < 0) and 0 or max_non_zero_bitlen_dcode
-    local max_code = max_non_zero_bitlen_lcode + max_non_zero_bitlen_dcode + 1
-
-    for code = 0, max_code + 1 do
-        local len = (code <= max_non_zero_bitlen_lcode) and
-            (lcode_bitlens[ code ] or 0) or ((code <= max_code) and
-                (dcode_bitlens[ code - max_non_zero_bitlen_lcode - 1 ] or 0) or nil)
-
-        if len == prev then
-            count = count + 1
-
-            if len ~= 0 and count == 6 then
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = 16
-                rle_extra_bits_tblsize = rle_extra_bits_tblsize + 1
-                rle_extra_bits[ rle_extra_bits_tblsize ] = 3
-                rle_code_counts[ 16 ] = (rle_code_counts[ 16 ] or 0) + 1
-                count = 0
-            elseif len == 0 and count == 138 then
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = 18
-                rle_extra_bits_tblsize = rle_extra_bits_tblsize + 1
-                rle_extra_bits[ rle_extra_bits_tblsize ] = 127
-                rle_code_counts[ 18 ] = (rle_code_counts[ 18 ] or 0) + 1
-                count = 0
-            end
+        if fixed_size <= dynamic_size then
+            write_bits( writer, is_last and 3 or 2, 3 )
+            write_items( writer, items, item_count, FIXED_LITERAL_CODES, FIXED_LITERAL_LENGTHS, FIXED_LENGTH_CODES, FIXED_LENGTH_BITS, FIXED_DISTANCE_CODES, FIXED_DISTANCE_LENGTHS )
         else
-            if count == 1 then
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = prev
-                ---@diagnostic disable-next-line: need-check-nil
-                rle_code_counts[ prev ] = (rle_code_counts[ prev ] or 0) + 1
-            elseif count == 2 then
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = prev
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = prev
-                ---@diagnostic disable-next-line: need-check-nil
-                rle_code_counts[ prev ] = (rle_code_counts[ prev ] or 0) + 2
-            elseif count >= 3 then
-                rle_code_tblsize = rle_code_tblsize + 1
+            write_bits( writer, is_last and 5 or 4, 3 )
+            write_bits( writer, literal_count - 257, 5 )
+            write_bits( writer, distance_count - 1, 5 )
+            write_bits( writer, code_length_count - 4, 4 )
 
-                local rleCode = (prev ~= 0) and 16 or (count <= 10 and 17 or 18)
-                rle_codes[ rle_code_tblsize ] = rleCode
-                rle_code_counts[ rleCode ] = (rle_code_counts[ rleCode ] or 0) + 1
-                rle_extra_bits_tblsize = rle_extra_bits_tblsize + 1
-                rle_extra_bits[ rle_extra_bits_tblsize ] = (count <= 10) and (count - 3) or (count - 11)
+            for i = 1, code_length_count, 1 do
+                write_bits( writer, code_length_lengths[ CODE_LENGTH_ORDER[ i ] ], 3 )
             end
 
-            prev = len
+            build_codes( code_length_lengths, 19, code_length_codes )
 
-            if len and len ~= 0 then
-                rle_code_tblsize = rle_code_tblsize + 1
-                rle_codes[ rle_code_tblsize ] = len
-                rle_code_counts[ len ] = (rle_code_counts[ len ] or 0) + 1
-                count = 0
-            else
-                count = 1
+            for i = 1, run_count, 1 do
+                local run = length_runs[ i ]
+                local symbol = rbit_band( run, 31 )
+
+                write_bits( writer, code_length_codes[ symbol ], code_length_lengths[ symbol ] )
+
+                if symbol == 16 then
+                    write_bits( writer, rbit_rshift( run, 5 ), 2 )
+                elseif symbol == 17 then
+                    write_bits( writer, rbit_rshift( run, 5 ), 3 )
+                elseif symbol == 18 then
+                    write_bits( writer, rbit_rshift( run, 5 ), 7 )
+                end
             end
+
+            build_codes( literal_lengths, 286, literal_codes )
+            build_codes( distance_lengths, 30, distance_codes )
+            build_length_codes( literal_codes, literal_lengths, length_codes, length_bits )
+
+            write_items( writer, items, item_count, literal_codes, literal_lengths, length_codes, length_bits, distance_codes, distance_lengths )
         end
     end
 
-    return rle_codes, rle_extra_bits, rle_code_counts
+    for symbol = 0, 287, 1 do
+        literal_frequencies[ symbol ] = 0
+    end
+
+    for code = 0, 31, 1 do
+        distance_frequencies[ code ] = 0
+    end
 end
 
---- Load the string into a table, in order to speed up LZ77.
---- Loop unrolled 16 times to speed this function up.
----@param str string The string to be loaded.
----@param t table The load destination
----@param start number str[index] will be the first character to be loaded.
----@param stop number str[index] will be the last character to be loaded
----@param offset number str[index] will be loaded into t[index-offset]
----@return table t
-local function loadStringToTable( str, t, start, stop, offset )
-    local i = start - offset
-    while i <= (stop - 15 - offset) do
-        t[ i ], t[ i + 1 ], t[ i + 2 ], t[ i + 3 ], t[ i + 4 ], t[ i + 5 ], t[ i + 6 ], t[ i + 7 ], t[ i + 8 ], t[ i + 9 ], t[ i + 10 ], t[ i + 11 ], t[ i + 12 ], t[ i + 13 ], t[ i + 14 ], t[ i + 15 ] = string_byte( str, i + offset, i + 15 + offset )
-        i = i + 16
+-- The hash chains keep the last position of every hash in `heads` and the previous position with the same hash
+-- in `chains[ position % 32768 ]`, both are shared between calls.
+--
+-- Positions are stored with a base that grows with every call, so entries left over from previous calls
+-- always look further away than the window and never have to be cleared.
+
+local heads = new_integers( HASH_MASK + 1 )
+local chains = new_integers( WINDOW_SIZE )
+
+local next_base = WINDOW_SIZE + 1
+
+---@alias dreamwork.std.deflate.Input string | ffi.cdata*
+
+--- Returns the input of `find_match`, the string itself or a pointer to its bytes.
+---@type fun( data: string ): dreamwork.std.deflate.Input
+local get_input
+
+---@type fun( input: dreamwork.std.deflate.Input, base: integer, position: integer, candidate: integer, best_length: integer, max_length: integer, nice_length: integer, chain_length: integer ): integer, integer
+local find_match
+
+-- HolyLib's `ffi.cast` is a regular C function that is not compiled, ~25 times slower than `string.byte`
+if ffi == nil or not std.jit.isFFI( ffi.cast ) then
+
+    function get_input( data )
+        return data
     end
 
-    while i <= (stop - offset) do
-        t[ i ] = string_byte( str, i + offset, i + offset )
-        i = i + 1
+    --- Finds the longest match of the position in the hash chain, starting with the candidate.
+    ---
+    ---@param data string
+    ---@param base integer
+    ---@param position integer
+    ---@param candidate integer
+    ---@param best_length integer Only longer matches are taken.
+    ---@param max_length integer
+    ---@param nice_length integer
+    ---@param chain_length integer
+    ---@return integer best_length
+    ---@return integer best_start
+    function find_match( data, base, position, candidate, best_length, max_length, nice_length, chain_length )
+        local limit = position - WINDOW_SIZE
+        local best_start = 0
+
+        local first, second = string_byte( data, position, position + 1 )
+        local scan_end1, scan_end = string_byte( data, position + best_length - 1, position + best_length )
+
+        repeat
+            local match_end1, match_end = string_byte( data, candidate + best_length - 1, candidate + best_length )
+
+            if match_end == scan_end and match_end1 == scan_end1 then
+                local candidate_first, candidate_second = string_byte( data, candidate, candidate + 1 )
+
+                if candidate_first == first and candidate_second == second then
+                    local length = 2
+                    while length < max_length and string_byte( data, position + length ) == string_byte( data, candidate + length ) do
+                        length = length + 1
+                    end
+
+                    if length > best_length then
+                        best_length, best_start = length, candidate
+
+                        if length >= nice_length then
+                            break
+                        end
+
+                        scan_end1, scan_end = string_byte( data, position + length - 1, position + length )
+                    end
+                end
+            end
+
+            chain_length = chain_length - 1
+            if chain_length == 0 then
+                break
+            end
+
+            candidate = chains[ rbit_band( candidate, WINDOW_MASK ) ] - base
+        until candidate <= limit
+
+        return best_length, best_start
     end
 
-    return t
+else
+
+    local ffi_cast = ffi.cast
+
+    local uint8_ptr_t = ffi.typeof( "const uint8_t *" )
+    local uint16_ptr_t = ffi.typeof( "const uint16_t *" )
+    local int32_ptr_t = ffi.typeof( "const int32_t *" )
+
+    --- Returns a pointer to the bytes of the string that is indexed from `1`.
+    function get_input( data )
+        return ffi_cast( uint8_ptr_t, data ) - 1
+    end
+
+    -- the same as above, with 2 bytes loaded at once and matches compared 4 bytes at a time
+    function find_match( input, base, position, candidate, best_length, max_length, nice_length, chain_length )
+        local limit = position - WINDOW_SIZE
+        local best_start = 0
+
+        local start_pair = ffi_cast( uint16_ptr_t, input + position )[ 0 ]
+        local end_pair = ffi_cast( uint16_ptr_t, input + position + best_length - 1 )[ 0 ]
+
+        repeat
+            if ffi_cast( uint16_ptr_t, input + candidate + best_length - 1 )[ 0 ] == end_pair and ffi_cast( uint16_ptr_t, input + candidate )[ 0 ] == start_pair then
+                local length = 2
+
+                while length <= max_length - 4 and ffi_cast( int32_ptr_t, input + position + length )[ 0 ] == ffi_cast( int32_ptr_t, input + candidate + length )[ 0 ] do
+                    length = length + 4
+                end
+
+                while length < max_length and input[ position + length ] == input[ candidate + length ] do
+                    length = length + 1
+                end
+
+                if length > best_length then
+                    best_length, best_start = length, candidate
+
+                    if length >= nice_length then
+                        break
+                    end
+
+                    end_pair = ffi_cast( uint16_ptr_t, input + position + length - 1 )[ 0 ]
+                end
+            end
+
+            chain_length = chain_length - 1
+            if chain_length == 0 then
+                break
+            end
+
+            candidate = chains[ rbit_band( candidate, WINDOW_MASK ) ] - base
+        until candidate <= limit
+
+        return best_length, best_start
+    end
+
 end
 
--- deflate.loadStringToTable = loadStringToTable
+---@param writer dreamwork.std.deflate.Writer
+---@param data string
+---@param data_length integer
+---@param start integer
+---@param settings table
+---@param strategy integer
+local function compress_lazy( writer, data, data_length, start, settings, strategy )
+    local good_length, max_lazy, nice_length, max_chain = settings[ 1 ], settings[ 2 ], settings[ 3 ], settings[ 4 ]
+    local filtered = strategy == 2
 
---- Do LZ77 process. This function uses the majority of the CPU time.
----@see zlib/deflate.c:deflate_fast(), zlib/deflate.c:deflate_slow()
----@see https://github.com/madler/zlib/blob/master/doc/algorithm.txt
---- This function uses the algorithms used above. You should read the
---- algorithm.txt above to understand what is the hash function and the lazy evaluation.
----
----
---- The special optimization used here is hash functions used here.
---- The hash function is just the multiplication of the three consective characters.
---- So if the hash matches, it guarantees 3 characters are matched.
---- This optimization can be implemented because Lua table is a hash table.
----
----@param level number number that describes compression level.
----@param string_table table table that stores the value of string to be compressed.
----			The index of this table starts from 1.
----			The caller needs to make sure all values needed by this function are loaded.
----
----			Assume "str" is the origin input string into the compressor
----			str[block_start]..str[block_end+3] needs to be loaded into
----			string_table[block_start-offset]..string_table[block_end-offset]
----			If dictionary is presented, the last 258 bytes of the dictionary
----			needs to be loaded into sing_table[-257..0]
----			(See more in the description of offset.)
----@param hash_tables table The table key is the hash value (0<=hash<=16777216=256^3)
----			The table value is an array0 that stores the indexes of the
----			input data string to be compressed, such that
----			hash == str[index]*str[index+1]*str[index+2]
----			Indexes are ordered in this array.
----@param block_start number The indexes of the input data string to be compressed. that starts the LZ77 block.
----@param block_end number The indexes of the input data string to be compressed. that stores the LZ77 block.
----@param offset number str[index] is stored in string_table[index-offset],
----			This offset is mainly an optimization to limit the index
----			of string_table, so lua can access this table quicker.
----@param dictionary table See deflate.createDictionary
----@return table lcodes literal/LZ77_length deflate codes.
----@return table lextra_bits the extra bits of literal/LZ77_length deflate codes.
----@return table lcodes_counts the count of each literal/LZ77 deflate code.
----@return table dcodes LZ77 distance deflate codes.
----@return table dextra_bits the extra bits of LZ77 distance deflate codes.
----@return table dcodes_counts the count of each LZ77 distance deflate code.
-local function getBlockLZ77Result( level, string_table, hash_tables, block_start, block_end, offset, dictionary )
-    local config = _compression_level_configs[ level ]
-    local config_use_lazy, config_good_prev_length, config_max_lazy_match, config_nice_length, config_max_hash_chain = config[ 1 ], config[ 2 ], config[ 3 ], config[ 4 ], config[ 5 ]
-    local config_max_insert_length = (not config_use_lazy) and config_max_lazy_match or 2147483646
-    local config_good_hash_chain = (config_max_hash_chain - config_max_hash_chain % 4 / 4)
-
-    local hash
-
-    local dict_hash_tables
-    local dict_string_table
-    local dict_string_len = 0
-
-    if dictionary then
-        dict_hash_tables = dictionary.hash_tables
-        dict_string_table = dictionary.string_table
-        dict_string_len = dictionary.strlen
-        assert( block_start == 1 )
-
-        if block_end >= block_start and dict_string_len >= 2 then
-            hash = dict_string_table[ dict_string_len - 1 ] * 0x10000 + dict_string_table[ dict_string_len ] * 0x100 + string_table[ 1 ]
-
-            local t = hash_tables[ hash ]
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, -1 )
+    local base = next_base
+    if base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
+        for i = 0, HASH_MASK, 1 do
+            heads[ i ] = 0
         end
 
-        if block_end >= block_start + 1 and dict_string_len >= 1 then
-            hash = dict_string_table[ dict_string_len ] * 0x10000 + string_table[ 1 ] * 0x100 + string_table[ 2 ]
-
-            local t = hash_tables[ hash ]
-            if t == nil then
-                t = {}; hash_tables[ hash ] = t
-            end
-
-            table_insert( t, 0 )
+        for i = 0, WINDOW_MASK, 1 do
+            chains[ i ] = 0
         end
+
+        base = WINDOW_SIZE + 1
     end
 
-    local dict_string_len_plus3 = dict_string_len + 3
+    next_base = base + data_length + WINDOW_SIZE + 1
 
-    hash = (string_table[ block_start - offset ] or 0) * 0x100 + (string_table[ block_start + 1 - offset ] or 0)
+    local input = get_input( data )
 
-    local lcodes = {}
-    local lcode_tblsize = 0
-    local lcodes_counts = {}
-    local dcodes = {}
-    local dcodes_tblsize = 0
-    local dcodes_counts = {}
+    -- the last position that has 3 bytes to hash
+    local hash_limit = data_length - 2
 
-    local lextra_bits = {}
-    local lextra_bits_tblsize = 0
-    local dextra_bits = {}
-    local dextra_bits_tblsize = 0
+    local hash = 0
+    if data_length >= 2 then
+        hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, 1 ), HASH_SHIFT ), string_byte( data, 2 ) ), HASH_MASK )
+    end
 
+    -- the dictionary is only hashed
+    for position = 1, math_min( start - 1, hash_limit ), 1 do
+        hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+        chains[ rbit_band( position, WINDOW_MASK ) ] = heads[ hash ]
+        heads[ hash ] = base + position
+    end
+
+    local item_count = 0
+    local block_first = start
+
+    local position = start
     local match_available = false
-    local prev_len
-    local prev_dist
-    local cur_len = 0
-    local cur_dist = 0
+    local match_length, match_start = 2, 0
 
-    local index = block_start
-    local index_end = block_end + (config_use_lazy and 1 or 0)
+    while position <= data_length do
+        local candidate = -WINDOW_SIZE
 
-    -- the zlib source code writes separate code for lazy evaluation and
-    -- not lazy evaluation, which is easier to understand.
-    -- I put them together, so it is a bit harder to understand.
-    -- because I think this is easier for me to maintain it.
-    while index <= index_end do
-        local string_table_index = index - offset
-        local offset_minus_three = offset - 3
+        if position <= hash_limit then
+            hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
 
-        prev_len = cur_len
-        prev_dist = cur_dist
-        cur_len = 0
+            local head = heads[ hash ]
+            candidate = head - base
 
-        hash = (hash * 0x100 + (string_table[ string_table_index + 2 ] or 0)) % 0x1000000
-
-        local chain_index
-        local cur_chain
-        local hash_chain = hash_tables[ hash ]
-        local chain_old_size
-
-        if not hash_chain then
-            chain_old_size = 0
-            hash_chain = {}
-            hash_tables[ hash ] = hash_chain
-
-            if dict_hash_tables then
-                cur_chain = dict_hash_tables[ hash ]
-                chain_index = cur_chain and #cur_chain or 0
-            else
-                chain_index = 0
-            end
-        else
-            chain_old_size = #hash_chain
-            cur_chain = hash_chain
-            chain_index = chain_old_size
+            chains[ rbit_band( position, WINDOW_MASK ) ] = head
+            heads[ hash ] = base + position
         end
 
-        if index <= block_end then
-            hash_chain[ chain_old_size + 1 ] = index
-        end
+        local previous_length, previous_start = match_length, match_start
+        match_length = 2
 
-        if (chain_index > 0 and index + 2 <= block_end and (not config_use_lazy or prev_len < config_max_lazy_match)) then
-            local depth = (config_use_lazy and prev_len >= config_good_prev_length) and config_good_hash_chain or config_max_hash_chain
-            local max_len_minus_one = block_end - index
-            max_len_minus_one = (max_len_minus_one >= 257) and 257 or max_len_minus_one
-            max_len_minus_one = max_len_minus_one + string_table_index
+        if previous_length < max_lazy and candidate > position - WINDOW_SIZE then
+            local max_length = math_min( data_length - position + 1, MAX_MATCH )
 
-            local string_table_index_plus_three = string_table_index + 3
+            if previous_length < max_length then
+                match_length, match_start = find_match( input, base, position, candidate, previous_length, max_length, math_min( nice_length, max_length ),
+                    previous_length >= good_length and rbit_rshift( max_chain, 2 ) or max_chain )
 
-            while chain_index >= 1 and depth > 0 do
-                local prev = cur_chain[ chain_index ]
-                if index - prev > 32768 then
-                    break
-                end
-
-                if prev < index then
-                    local sj = string_table_index_plus_three
-                    if prev >= -257 then
-                        local pj = prev - offset_minus_three
-                        while (sj <= max_len_minus_one and string_table[ pj ] == string_table[ sj ]) do
-                            sj = sj + 1
-                            pj = pj + 1
-                        end
-                    else
-                        local pj = dict_string_len_plus3 + prev
-                        while (sj <= max_len_minus_one and dict_string_table[ pj ] == string_table[ sj ]) do
-                            sj = sj + 1
-                            pj = pj + 1
-                        end
-                    end
-
-                    local j = sj - string_table_index
-                    if j > cur_len then
-                        cur_len = j
-                        cur_dist = index - prev
-                    end
-
-                    if cur_len >= config_nice_length then
-                        break
-                    end
-                end
-
-                chain_index = chain_index - 1
-                depth = depth - 1
-
-                if chain_index == 0 and prev > 0 and dict_hash_tables then
-                    cur_chain = dict_hash_tables[ hash ]
-                    chain_index = cur_chain and #cur_chain or 0
+                if match_length <= 5 and (filtered or (match_length == 3 and position - match_start > TOO_FAR)) then
+                    match_length = 2
                 end
             end
         end
 
-        if not config_use_lazy then
-            prev_len, prev_dist = cur_len, cur_dist
-        end
+        if previous_length >= MIN_MATCH and match_length <= previous_length then
+            local distance = position - 1 - previous_start
 
-        if ((not config_use_lazy or match_available) and (prev_len > 3 or (prev_len == 3 and prev_dist < 4096)) and cur_len <= prev_len) then
-            local code = _length_to_deflate_code[ prev_len ]
-            local length_extra_bits_bitlen = _length_to_deflate_extra_bitlen[ prev_len ]
-            local dist_code, dist_extra_bits_bitlen, dist_extra_bits
+            items[ item_count ] = distance * 512 + previous_length
+            item_count = item_count + 1
 
-            if prev_dist <= 0x100 then -- have cached code for small distance.
-                dist_code = _dist256_to_deflate_code[ prev_dist ]
-                dist_extra_bits = _dist256_to_deflate_extra_bits[ prev_dist ]
-                dist_extra_bits_bitlen = _dist256_to_deflate_extra_bitlen[ prev_dist ]
-            else
-                dist_code = 0x10
-                dist_extra_bits_bitlen = 7
+            local symbol = LENGTH_SYMBOLS[ previous_length ]
+            literal_frequencies[ symbol ] = literal_frequencies[ symbol ] + 1
 
-                local a = 384
-                local b = 512
+            local code = DISTANCE_CODES[ distance ]
+            distance_frequencies[ code ] = distance_frequencies[ code ] + 1
 
-                while true do
-                    if prev_dist <= a then
-                        dist_extra_bits = (prev_dist - (b / 2) - 1) % (b / 4)
-                        break
-                    elseif prev_dist <= b then
-                        dist_extra_bits = (prev_dist - (b / 2) - 1) % (b / 4)
-                        dist_code = dist_code + 1
-                        break
-                    else
-                        dist_code = dist_code + 2
-                        dist_extra_bits_bitlen = dist_extra_bits_bitlen + 1
+            -- the match started at the previous position, which is hashed already
+            local last = position + previous_length - 2
 
-                        a = a * 2
-                        b = b * 2
-                    end
-                end
+            for inserted = position + 1, math_min( last, hash_limit ), 1 do
+                hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, inserted + 2 ) ), HASH_MASK )
+                chains[ rbit_band( inserted, WINDOW_MASK ) ] = heads[ hash ]
+                heads[ hash ] = base + inserted
             end
 
-            lcode_tblsize = lcode_tblsize + 1
-            lcodes[ lcode_tblsize ] = code
-            lcodes_counts[ code ] = (lcodes_counts[ code ] or 0) + 1
-
-            dcodes_tblsize = dcodes_tblsize + 1
-            dcodes[ dcodes_tblsize ] = dist_code
-            dcodes_counts[ dist_code ] = (dcodes_counts[ dist_code ] or 0) + 1
-
-            if length_extra_bits_bitlen > 0 then
-                local lenExtraBits = _length_to_deflate_extra_bits[ prev_len ]
-                lextra_bits_tblsize = lextra_bits_tblsize + 1
-                lextra_bits[ lextra_bits_tblsize ] = lenExtraBits
-            end
-
-            if dist_extra_bits_bitlen > 0 then
-                dextra_bits_tblsize = dextra_bits_tblsize + 1
-                dextra_bits[ dextra_bits_tblsize ] = dist_extra_bits
-            end
-
-            for i = index + 1, index + prev_len - (config_use_lazy and 2 or 1) do
-                hash = (hash * 0x100 + (string_table[ i - offset + 2 ] or 0)) % 0x1000000
-
-                if prev_len <= config_max_insert_length then
-                    hash_chain = hash_tables[ hash ]
-                    if hash_chain == nil then
-                        hash_chain = {}; hash_tables[ hash ] = hash_chain
-                    end
-
-                    table_insert( hash_chain, i )
-                end
-            end
-
-            index = index + prev_len - (config_use_lazy and 1 or 0)
+            position = last + 1
             match_available = false
-        elseif (not config_use_lazy) or match_available then
-            local code = string_table[ config_use_lazy and (string_table_index - 1) or string_table_index ]
-            lcode_tblsize = lcode_tblsize + 1
-            lcodes[ lcode_tblsize ] = code
-            lcodes_counts[ code ] = (lcodes_counts[ code ] or 0) + 1
-            index = index + 1
+            match_length = 2
+
+            if item_count == BLOCK_SYMBOLS then
+                write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+                block_first, item_count = position, 0
+            end
+        elseif match_available then
+            local byte = string_byte( data, position - 1 )
+
+            items[ item_count ] = byte
+            item_count = item_count + 1
+
+            literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
+            position = position + 1
+
+            if item_count == BLOCK_SYMBOLS then
+                write_block( writer, data, block_first, position - 2, item_count, false, strategy )
+                block_first, item_count = position - 1, 0
+            end
         else
             match_available = true
-            index = index + 1
+            position = position + 1
         end
     end
 
-    -- Write "end of block" symbol
-    lcode_tblsize = lcode_tblsize + 1
-    lcodes[ lcode_tblsize ] = 0x100
-    lcodes_counts[ 0x100 ] = (lcodes_counts[ 0x100 ] or 0) + 1
+    if match_available then
+        local byte = string_byte( data, position - 1 )
 
-    return lcodes, lextra_bits, lcodes_counts, dcodes, dextra_bits, dcodes_counts
+        items[ item_count ] = byte
+        item_count = item_count + 1
+
+        literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
+    end
+
+    write_block( writer, data, block_first, data_length, item_count, true, strategy )
 end
 
---- Get the header data of dynamic block.
----@param lcodes_counts table The count of each literal/LZ77_length codes.
----@param dcodes_counts table The count of each Lz77 distance codes.
----@return number HLIT The number of literal/LZ77_length codes.
----@return number HDIST The number of LZ77 distance codes.
----@return number HCLEN The number of Huffman codes.
----@return table rle_codes_huffman_bitlens The huffman bit length of literal codes.
----@return table rle_codes_huffman_codes The huffman symbol of literal codes.
----@return table lcodes_huffman_bitlens The huffman bit length of literal codes.
----@return table lcodes_huffman_codes The huffman symbol of literal codes.
----@return table dcodes_huffman_bitlens The huffman bit length of distance codes.
----@return table dcodes_huffman_codes The huffman symbol of distance codes.
----@return table rle_deflate_codes The huffman symbol of literal codes.
----@return table rle_extra_bits The extra bits of literal codes.
----@see RFC1951 Page 12
-local function getBlockDynamicHuffmanHeader( lcodes_counts, dcodes_counts )
-    local lcodes_huffman_bitlens, lcodes_huffman_codes, max_non_zero_bitlen_lcode = getHuffmanBitlenAndCode( lcodes_counts, 15, 285 )
-    local dcodes_huffman_bitlens, dcodes_huffman_codes, max_non_zero_bitlen_dcode = getHuffmanBitlenAndCode( dcodes_counts, 15, 29 )
+---@param writer dreamwork.std.deflate.Writer
+---@param data string
+---@param data_length integer
+---@param start integer
+---@param settings table
+---@param strategy integer
+local function compress_fast( writer, data, data_length, start, settings, strategy )
+    local max_insert, nice_length, max_chain = settings[ 2 ], settings[ 3 ], settings[ 4 ]
 
-    local rle_deflate_codes, rle_extra_bits, rle_codes_counts = runLengthEncodeHuffmanBitlen( lcodes_huffman_bitlens, max_non_zero_bitlen_lcode, dcodes_huffman_bitlens, max_non_zero_bitlen_dcode )
-    local rle_codes_huffman_bitlens, rle_codes_huffman_codes = getHuffmanBitlenAndCode( rle_codes_counts, 7, 18 )
-
-    local HCLEN = 0
-    for i = 1, 19 do
-        if (rle_codes_huffman_bitlens[ _rle_codes_huffman_bitlen_order[ i ] ] or 0) ~= 0 then
-            HCLEN = i
+    local base = next_base
+    if base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
+        for i = 0, HASH_MASK, 1 do
+            heads[ i ] = 0
         end
-    end
 
-    HCLEN = HCLEN - 4
-
-    local HLIT = max_non_zero_bitlen_lcode + 1 - 257
-    local HDIST = max_non_zero_bitlen_dcode + 1 - 1
-    if HDIST < 0 then
-        HDIST = 0
-    end
-
-    return HLIT, HDIST, HCLEN, rle_codes_huffman_bitlens, rle_codes_huffman_codes, rle_deflate_codes, rle_extra_bits, lcodes_huffman_bitlens, lcodes_huffman_codes, dcodes_huffman_bitlens, dcodes_huffman_codes
-end
-
---- Get the size of dynamic block without writing any bits into the writer.
----@param lcodes table
----@param dcodes table
----@param HCLEN number
----@param rle_codes_huffman_bitlens table
----@param rle_deflate_codes table
----@param lcodes_huffman_bitlens table
----@param dcodes_huffman_bitlens table
----@return number block_bitlen the bit length of the dynamic block
-local function getDynamicHuffmanBlockSize( lcodes, dcodes, HCLEN, rle_codes_huffman_bitlens, rle_deflate_codes, lcodes_huffman_bitlens, dcodes_huffman_bitlens )
-    local block_bitlen = 17 -- 1+2+5+5+4
-    block_bitlen = block_bitlen + (HCLEN + 4) * 3
-
-    for i = 1, #rle_deflate_codes, 1 do
-        local code = rle_deflate_codes[ i ]
-        block_bitlen = block_bitlen + rle_codes_huffman_bitlens[ code ]
-
-        if code >= 16 then
-            block_bitlen = block_bitlen + ((code == 16) and 2 or (code == 17 and 3 or 7))
+        for i = 0, WINDOW_MASK, 1 do
+            chains[ i ] = 0
         end
+
+        base = WINDOW_SIZE + 1
     end
 
-    local length_code_count = 0
+    next_base = base + data_length + WINDOW_SIZE + 1
 
-    for i = 1, #lcodes, 1 do
-        local code = lcodes[ i ]
-        block_bitlen = block_bitlen + lcodes_huffman_bitlens[ code ]
+    local input = get_input( data )
 
-        if code > 256 then -- Length code
-            length_code_count = length_code_count + 1
+    local hash_limit = data_length - 2
 
-            if code > 264 and code < 285 then -- Length code with extra bits
-                local extra_bits_bitlen = _literal_deflate_code_to_extra_bitlen[ code - 256 ]
-                block_bitlen = block_bitlen + extra_bits_bitlen
-            end
+    local hash = 0
+    if data_length >= 2 then
+        hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, 1 ), HASH_SHIFT ), string_byte( data, 2 ) ), HASH_MASK )
+    end
 
-            local dist_code = dcodes[ length_code_count ]
-            block_bitlen = block_bitlen + dcodes_huffman_bitlens[ dist_code ]
+    for position = 1, math_min( start - 1, hash_limit ), 1 do
+        hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+        chains[ rbit_band( position, WINDOW_MASK ) ] = heads[ hash ]
+        heads[ hash ] = base + position
+    end
 
-            if dist_code > 3 then -- dist code with extra bits
-                block_bitlen = block_bitlen + (dist_code - dist_code % 2) * 0.5 - 1
+    local item_count = 0
+    local block_first = start
+
+    local position = start
+
+    while position <= data_length do
+        local candidate = -WINDOW_SIZE
+
+        if position <= hash_limit then
+            hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+
+            local head = heads[ hash ]
+            candidate = head - base
+
+            chains[ rbit_band( position, WINDOW_MASK ) ] = head
+            heads[ hash ] = base + position
+        end
+
+        local match_length, match_start = 0, 0
+
+        if candidate > position - WINDOW_SIZE then
+            local max_length = math_min( data_length - position + 1, MAX_MATCH )
+            if max_length >= MIN_MATCH then
+                match_length, match_start = find_match( input, base, position, candidate, 2, max_length, math_min( nice_length, max_length ), max_chain )
             end
         end
-    end
 
-    return block_bitlen
-end
+        if match_length >= MIN_MATCH then
+            local distance = position - match_start
 
---- Write dynamic block.
----@param writeBits any
----@param is_last_block any
----@param lcodes any
----@param lextra_bits any
----@param dcodes any
----@param dextra_bits any
----@param HLIT any
----@param HDIST any
----@param HCLEN any
----@param rle_codes_huffman_bitlens any
----@param rle_codes_huffman_codes any
----@param rle_deflate_codes any
----@param rle_extra_bits any
----@param lcodes_huffman_bitlens any
----@param lcodes_huffman_codes any
----@param dcodes_huffman_bitlens any
----@param dcodes_huffman_codes any
-local function compressDynamicHuffmanBlock( writeBits, is_last_block, lcodes, lextra_bits, dcodes, dextra_bits, HLIT, HDIST, HCLEN, rle_codes_huffman_bitlens, rle_codes_huffman_codes, rle_deflate_codes, rle_extra_bits, lcodes_huffman_bitlens, lcodes_huffman_codes, dcodes_huffman_bitlens, dcodes_huffman_codes )
-    writeBits( is_last_block and 1 or 0, 1 ) -- Last block identifier
-    writeBits( 2, 2 )                        -- Dynamic Huffman block identifier
+            items[ item_count ] = distance * 512 + match_length
+            item_count = item_count + 1
 
-    writeBits( HLIT, 5 )
-    writeBits( HDIST, 5 )
-    writeBits( HCLEN, 4 )
+            local symbol = LENGTH_SYMBOLS[ match_length ]
+            literal_frequencies[ symbol ] = literal_frequencies[ symbol ] + 1
 
-    for i = 1, HCLEN + 4 do
-        writeBits( rle_codes_huffman_bitlens[ _rle_codes_huffman_bitlen_order[ i ] ] or 0, 3 )
-    end
+            local code = DISTANCE_CODES[ distance ]
+            distance_frequencies[ code ] = distance_frequencies[ code ] + 1
 
-    local rleExtraBitsIndex = 0
+            local next_position = position + match_length
 
-    for i = 1, #rle_deflate_codes, 1 do
-        local code = rle_deflate_codes[ i ]
-        writeBits( rle_codes_huffman_codes[ code ], rle_codes_huffman_bitlens[ code ] )
-
-        if code >= 16 then
-            rleExtraBitsIndex = rleExtraBitsIndex + 1
-            writeBits( rle_extra_bits[ rleExtraBitsIndex ], (code == 16) and 2 or (code == 17 and 3 or 7) )
-        end
-    end
-
-    local length_code_count = 0
-    local length_code_with_extra_count = 0
-    local dist_code_with_extra_count = 0
-
-    for i = 1, #lcodes, 1 do
-        local deflate_codee = lcodes[ i ]
-        writeBits( lcodes_huffman_codes[ deflate_codee ], lcodes_huffman_bitlens[ deflate_codee ] )
-
-        if deflate_codee > 256 then -- Length code
-            length_code_count = length_code_count + 1
-
-            if deflate_codee > 264 and deflate_codee < 285 then
-                -- Length code with extra bits
-                length_code_with_extra_count = length_code_with_extra_count + 1
-                writeBits( lextra_bits[ length_code_with_extra_count ], _literal_deflate_code_to_extra_bitlen[ deflate_codee - 256 ] )
-            end
-
-            -- Write distance code
-            local dist_deflate_code = dcodes[ length_code_count ]
-            writeBits( dcodes_huffman_codes[ dist_deflate_code ], dcodes_huffman_bitlens[ dist_deflate_code ] )
-
-            if dist_deflate_code > 3 then -- dist code with extra bits
-                dist_code_with_extra_count = dist_code_with_extra_count + 1
-                writeBits( dextra_bits[ dist_code_with_extra_count ], (dist_deflate_code - dist_deflate_code % 2) * 0.5 - 1 )
-            end
-        end
-    end
-end
-
---- Get the size of fixed block without writing any bits into the writer.
----@param lcodes table literal/LZ77_length deflate codes
----@param dcodes table LZ77 distance deflate codes
----@return number block_bitlen the bit length of the fixed block
-local function getFixedHuffmanBlockSize( lcodes, dcodes )
-    local block_bitlen = 3
-    local length_code_count = 0
-
-    for i = 1, #lcodes, 1 do
-        local code = lcodes[ i ]
-
-        block_bitlen = block_bitlen + _fix_block_literal_huffman_bitlen[ code ]
-
-        if code > 256 then -- Length code
-            length_code_count = length_code_count + 1
-
-            if code > 264 and code < 285 then -- Length code with extra bits
-                block_bitlen = block_bitlen + _literal_deflate_code_to_extra_bitlen[ code - 256 ]
-            end
-
-            local dist_code = dcodes[ length_code_count ]
-            block_bitlen = block_bitlen + 5
-
-            if dist_code > 3 then -- dist code with extra bits
-                block_bitlen = block_bitlen + ((dist_code - dist_code % 2) / 2 - 1)
-            end
-        end
-    end
-
-    return block_bitlen
-end
-
---- Write fixed block.
----@param lcodes table literal/LZ77_length deflate codes
----@param dcodes table LZ77 distance deflate codes
-local function compressFixedHuffmanBlock( writeBits, is_last_block, lcodes, lextra_bits, dcodes, dextra_bits )
-    writeBits( is_last_block and 1 or 0, 1 ) -- Last block identifier
-    writeBits( 1, 2 )                        -- Fixed Huffman block identifier
-
-    local length_code_count = 0
-    local length_code_with_extra_count = 0
-    local dist_code_with_extra_count = 0
-
-    for i = 1, #lcodes, 1 do
-        local deflate_code = lcodes[ i ]
-
-        writeBits( _fix_block_literal_huffman_code[ deflate_code ], _fix_block_literal_huffman_bitlen[ deflate_code ] )
-
-        if deflate_code > 256 then -- Length code
-            length_code_count = length_code_count + 1
-
-            if deflate_code > 264 and deflate_code < 285 then
-                -- Length code with extra bits
-                length_code_with_extra_count = length_code_with_extra_count + 1
-                writeBits( lextra_bits[ length_code_with_extra_count ], _literal_deflate_code_to_extra_bitlen[ deflate_code - 256 ] )
-            end
-
-            -- Write distance code
-            local dist_code = dcodes[ length_code_count ]
-            writeBits( _fix_block_dist_huffman_code[ dist_code ], 5 )
-
-            if dist_code > 3 then -- dist code with extra bits
-                dist_code_with_extra_count = dist_code_with_extra_count + 1
-                writeBits( dextra_bits[ dist_code_with_extra_count ], (dist_code - dist_code % 2) / 2 - 1 )
-            end
-        end
-    end
-end
-
---- Get the size of store block without writing any bits into the writer.
----@param block_start number The start index of the origin input string
----@param block_end number The end index of the origin input string
----@param total_bitlen number bit lens had been written into the compressed result before, because store block needs to shift to byte boundary.
----@return number block_bitlen the bit length of the fixed block
-local function getStoreBlockSize( block_start, block_end, total_bitlen )
-    assert( block_end - block_start + 1 <= 65535 )
-
-    local block_bitlen = 3
-    total_bitlen = total_bitlen + 3
-
-    local padding_bitlen = (8 - total_bitlen % 8) % 8
-    block_bitlen = block_bitlen + padding_bitlen
-    block_bitlen = block_bitlen + 32
-    block_bitlen = block_bitlen + (block_end - block_start + 1) * 8
-
-    return block_bitlen
-end
-
---- Write the store block.
-local function compressStoreBlock( writeBits, writeString, is_last_block, str, block_start, block_end, total_bitlen )
-    assert( block_end - block_start + 1 <= 65535 )
-
-    writeBits( is_last_block and 1 or 0, 1 ) -- Last block identifer.
-    writeBits( 0, 2 )                        -- Store block identifier.
-    total_bitlen = total_bitlen + 3
-
-    local padding_bitlen = (8 - total_bitlen % 8) % 8
-    if padding_bitlen > 0 then
-        writeBits( _pow2[ padding_bitlen ] - 1, padding_bitlen )
-    end
-
-    local size = block_end - block_start + 1
-    writeBits( size, 16 )
-
-    -- Write size's one's complement
-    writeBits( (255 - size % 256) + (255 - (size - size % 256) / 256) * 256, 16 )
-    writeString( string_sub( str, block_start, block_end ) )
-end
-
---- Do the deflate
---- Currently using a simple way to determine the block size
---- (This is why the compression ratio is little bit worse than zlib when
---- the input size is very large
---- The first block is 64KB, the following block is 32KB.
---- After each block, there is a memory cleanup operation.
---- This is not a fast operation, but it is needed to save memory usage, so
---- the memory usage does not grow unboundly. If the data size is less than 64KB,
---- then memory cleanup won't happen.
---- This function determines whether to use store/fixed/dynamic blocks by
---- calculating the block size of each block type and chooses the smallest one.
-local function deflate_fn( configs, writeBits, writeString, flushWriter, str, dictionary )
-    local string_table = {}
-    local hash_tables = {}
-    local is_last_block = nil
-    local block_start
-    local block_end
-    local bitlen_written
-    local total_bitlen = flushWriter( _FLUSH_MODE_NO_FLUSH )
-    local strlen = string_len( str )
-    local offset
-
-    local level
-    local strategy
-    if configs then
-        if configs.level then level = configs.level end
-
-        if configs.strategy then strategy = configs.strategy end
-    end
-
-    if not level then
-        if strlen < 2048 then
-            level = 7
-        elseif strlen > 65536 then
-            level = 3
-        else
-            level = 5
-        end
-    end
-
-    while not is_last_block do
-        if not block_start then
-            block_start = 1
-            block_end = 64 * 1024 - 1
-            offset = 0
-        else
-            block_start = block_end + 1
-            block_end = block_end + 32 * 1024
-            offset = block_start - 32 * 1024 - 1
-        end
-
-        if block_end >= strlen then
-            block_end = strlen
-            is_last_block = true
-        else
-            is_last_block = false
-        end
-
-        local lcodes, lextra_bits, lcodes_counts, dcodes, dextra_bits, dcodes_counts
-        local HLIT, HDIST, HCLEN, rle_codes_huffman_bitlens, rle_codes_huffman_codes, rle_deflate_codes, rle_extra_bits, lcodes_huffman_bitlens, lcodes_huffman_codes, dcodes_huffman_bitlens, dcodes_huffman_codes
-
-        local dynamic_block_bitlen
-        local fixed_block_bitlen
-        local store_block_bitlen
-
-        if level ~= 0 then
-            -- GetBlockLZ77 needs block_start to block_end+3 to be loaded.
-            loadStringToTable( str, string_table, block_start, block_end + 3, offset )
-
-            if block_start == 1 and dictionary then
-                local dict_string_table = dictionary.string_table
-                local dict_strlen = dictionary.strlen
-
-                for i = 0, (-dict_strlen + 1) < -257 and -257 or (-dict_strlen + 1), -1 do
-                    string_table[ i ] = dict_string_table[ dict_strlen + i ]
+            if match_length <= max_insert then
+                for inserted = position + 1, math_min( next_position - 1, hash_limit ), 1 do
+                    hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, inserted + 2 ) ), HASH_MASK )
+                    chains[ rbit_band( inserted, WINDOW_MASK ) ] = heads[ hash ]
+                    heads[ hash ] = base + inserted
                 end
+            elseif next_position < data_length then
+                -- the positions inside of the match are skipped, the hash starts over
+                hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, next_position ), HASH_SHIFT ), string_byte( data, next_position + 1 ) ), HASH_MASK )
             end
 
-            if strategy == "huffman_only" then
-                lcodes = {}
-                loadStringToTable( str, lcodes, block_start, block_end, block_start - 1 )
-
-                lextra_bits = {}
-                lcodes_counts = {}
-                lcodes[ block_end - block_start + 2 ] = 256 -- end of block
-
-                for i = 1, block_end - block_start + 2 do
-                    local code = lcodes[ i ]
-                    lcodes_counts[ code ] = (lcodes_counts[ code ] or 0) + 1
-                end
-
-                dcodes = {}
-                dextra_bits = {}
-                dcodes_counts = {}
-            else
-                lcodes, lextra_bits, lcodes_counts, dcodes, dextra_bits, dcodes_counts = getBlockLZ77Result( level, string_table, hash_tables, block_start, block_end, offset, dictionary )
-            end
-
-            HLIT, HDIST, HCLEN, rle_codes_huffman_bitlens, rle_codes_huffman_codes, rle_deflate_codes, rle_extra_bits, lcodes_huffman_bitlens, lcodes_huffman_codes, dcodes_huffman_bitlens, dcodes_huffman_codes = getBlockDynamicHuffmanHeader( lcodes_counts, dcodes_counts )
-            dynamic_block_bitlen = getDynamicHuffmanBlockSize( lcodes, dcodes, HCLEN, rle_codes_huffman_bitlens, rle_deflate_codes, lcodes_huffman_bitlens, dcodes_huffman_bitlens )
-            fixed_block_bitlen = getFixedHuffmanBlockSize( lcodes, dcodes )
-        end
-
-        store_block_bitlen = getStoreBlockSize( block_start, block_end, total_bitlen )
-
-        local min_bitlen = store_block_bitlen
-        min_bitlen = (fixed_block_bitlen and fixed_block_bitlen < min_bitlen) and fixed_block_bitlen or min_bitlen
-        min_bitlen = (dynamic_block_bitlen and dynamic_block_bitlen < min_bitlen) and dynamic_block_bitlen or min_bitlen
-
-        if level == 0 or (strategy ~= "fixed" and strategy ~= "dynamic" and store_block_bitlen == min_bitlen) then
-            compressStoreBlock( writeBits, writeString, is_last_block, str, block_start, block_end, total_bitlen )
-            total_bitlen = total_bitlen + store_block_bitlen
-        elseif strategy ~= "dynamic" and (strategy == "fixed" or fixed_block_bitlen == min_bitlen) then
-            compressFixedHuffmanBlock( writeBits, is_last_block, lcodes, lextra_bits, dcodes, dextra_bits )
-            total_bitlen = total_bitlen + fixed_block_bitlen
-        elseif strategy == "dynamic" or dynamic_block_bitlen == min_bitlen then
-            compressDynamicHuffmanBlock( writeBits, is_last_block, lcodes, lextra_bits, dcodes, dextra_bits, HLIT, HDIST, HCLEN, rle_codes_huffman_bitlens, rle_codes_huffman_codes, rle_deflate_codes, rle_extra_bits, lcodes_huffman_bitlens, lcodes_huffman_codes, dcodes_huffman_bitlens, dcodes_huffman_codes )
-            total_bitlen = total_bitlen + dynamic_block_bitlen
-        end
-
-        if is_last_block then
-            bitlen_written = flushWriter( _FLUSH_MODE_NO_FLUSH )
+            position = next_position
         else
-            bitlen_written = flushWriter( _FLUSH_MODE_MEMORY_CLEANUP )
+            local byte = string_byte( data, position )
+
+            items[ item_count ] = byte
+            item_count = item_count + 1
+
+            literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
+            position = position + 1
         end
 
-        assert( bitlen_written == total_bitlen )
-
-        -- Memory clean up, so memory consumption does not always grow linearly, even if input string is > 64K.
-        -- Not a very efficient operation, but this operation won't happen
-        -- when the input data size is less than 64K.
-        if not is_last_block then
-            local j
-            if dictionary and block_start == 1 then
-                j = 0
-
-                while string_table[ j ] do
-                    string_table[ j ] = nil
-                    j = j - 1
-                end
-            end
-
-            dictionary = nil
-            j = 1
-
-            for i = block_end - 32767, block_end do
-                string_table[ j ] = string_table[ i - offset ]
-                j = j + 1
-            end
-
-            for k, t in raw_pairs( hash_tables ) do
-                local tSize = #t
-                if tSize > 0 and (block_end + 1 - t[ 1 ]) > 32768 then
-                    if tSize == 1 then
-                        hash_tables[ k ] = nil
-                    else
-                        local new = {}
-                        local newSize = 0
-
-                        for i = 2, tSize do
-                            j = t[ i ]
-
-                            if (block_end + 1 - j) <= 32768 then
-                                newSize = newSize + 1
-                                new[ newSize ] = j
-                            end
-                        end
-
-                        hash_tables[ k ] = new
-                    end
-                end
-            end
+        if item_count == BLOCK_SYMBOLS then
+            write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+            block_first, item_count = position, 0
         end
     end
+
+    write_block( writer, data, block_first, data_length, item_count, true, strategy )
 end
 
---- The description to compression configuration table.
+--- Only literals, or only runs of the previous byte ( matches with the distance `1` ).
 ---
---- Any field can be nil to use its default.
+---@param writer dreamwork.std.deflate.Writer
+---@param data string
+---@param data_length integer
+---@param start integer
+---@param strategy integer
+---@param runs boolean
+local function compress_simple( writer, data, data_length, start, strategy, runs )
+    local item_count = 0
+    local block_first = start
+
+    local position = start
+
+    while position <= data_length do
+        local byte = string_byte( data, position )
+        local run = 0
+
+        if runs and position > 1 and string_byte( data, position - 1 ) == byte then
+            local max_length = math_min( data_length - position + 1, MAX_MATCH )
+
+            run = 1
+            while run < max_length and string_byte( data, position + run ) == byte do
+                run = run + 1
+            end
+        end
+
+        if run >= MIN_MATCH then
+            items[ item_count ] = 512 + run
+            item_count = item_count + 1
+
+            local symbol = LENGTH_SYMBOLS[ run ]
+            literal_frequencies[ symbol ] = literal_frequencies[ symbol ] + 1
+            distance_frequencies[ 0 ] = distance_frequencies[ 0 ] + 1
+
+            position = position + run
+        else
+            items[ item_count ] = byte
+            item_count = item_count + 1
+
+            literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
+            position = position + 1
+        end
+
+        if item_count == BLOCK_SYMBOLS then
+            write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+            block_first, item_count = position, 0
+        end
+    end
+
+    write_block( writer, data, block_first, data_length, item_count, true, strategy )
+end
+
+local STRATEGIES = {
+    default = 0,
+    fixed = 1,
+    filtered = 2,
+    huffman_only = 3,
+    rle = 4
+}
+
+--- [SHARED AND MENU]
 ---
---- Table with keys other than those below is an invalid table.
----@class compression_configs
----@field level number The compression level ranged from 0 to 9. 0 is no compression. 9 is the slowest but best compression. Use nil for default level.
----@field strategy string The compression strategy. "fixed" to only use fixed deflate compression block. "dynamic" to only use dynamic block. "huffman_only" to do no LZ77 compression. Only do huffman compression.
-
-
---- Compress using the raw deflate format.
----@param str string The data to be compressed.
----@param configs? table The configuration table to control the compression.
----@param dictionary? table The dictionary to use.
---- If nil, use the default configuration.
----@return string? result The compressed data.
----@return number bit_count The number of bits padded at the end of output.
+--- Compresses a string into a raw DEFLATE stream.
+---
+---@param raw_data string The string to compress.
+---@param options? dreamwork.std.deflate.Options The compression options.
+---@return string compressed_data The compressed string.
 ---@nodiscard
---- 0 <= bits < 8
----
---- This means the most significant "bits" of the last byte of the returned
---- compressed data are padding bits and they don't affect decompression.
---- You don't need to use this value unless you want to do some postprocessing
---- to the compressed data.
----@see compression_configs
----@see deflate.decompress
-function deflate.compress( str, configs, dictionary )
-    if configs ~= nil then
-        validate_configs( configs, 2 )
+function deflate.compress( raw_data, options )
+    local level, strategy, dictionary = 6, 0, nil
+
+    if options ~= nil then
+        if options.level ~= nil then
+            level = options.level
+            if not (level % 1 == 0 and level >= 0 and level <= 9) then
+                error( "options.level must be an integer from 0 to 9", 2 )
+            end
+        end
+
+        if options.strategy ~= nil then
+            strategy = STRATEGIES[ options.strategy ]
+            if strategy == nil then
+                error( "options.strategy must be \"default\", \"filtered\", \"huffman_only\", \"rle\" or \"fixed\"", 2 )
+            end
+        end
+
+        dictionary = options.dictionary
     end
+
+    local start = 1
 
     if dictionary ~= nil then
-        validate_dictionary( dictionary, 2 )
-    end
-
-    local writeBits, writeString, flushWriter = createWriter()
-    deflate_fn( configs, writeBits, writeString, flushWriter, str, dictionary )
-
-    local total_bitlen, result = flushWriter( _FLUSH_MODE_OUTPUT )
-    return result, (8 - total_bitlen % 8) % 8
-end
-
---- Compress using the zlib format.
----@param str string the data to be compressed.
----@param configs? table The configuration table to control the compression. If `nil`, use the default configuration.
----@param dictionary? table A preset dictionary produced by deflate.createDictionary()
----@return string? result The compressed data.
----@return number bit_count The number of bits padded at the end of output.
----@nodiscard
---- Should always be 0.
---- Zlib formatted compressed data never has padding bits at the end.
----@see compression_configs
----@see zlib.compress
----@see zlib.decompress
-function zlib.compress( str, configs, dictionary )
-    if configs ~= nil then
-        validate_configs( configs, 2 )
-    end
-
-    if dictionary ~= nil then
-        validate_dictionary( dictionary, 2 )
-    end
-
-    local writeBits, writeString, flushWriter = createWriter()
-
-    local CM = 8    -- Compression method
-    local CINFO = 7 -- Window Size = 32K
-    local CMF = CINFO * 16 + CM
-    writeBits( CMF, 8 )
-
-    local FDIST = dictionary and 1 or 0
-    local FLEVEL = 2 -- Default compression
-    local FLG = FLEVEL * 64 + FDIST * 32
-    local FCHECK = (31 - (CMF * 256 + FLG) % 31)
-
-    -- The FCHECK value must be such that CMF and FLG, when viewed as a 16-bit unsigned integer stored in MSB order (CMF*256 + FLG), is a multiple of 31.
-    FLG = FLG + FCHECK
-    writeBits( FLG, 8 )
-
-    if FDIST == 1 then
-        ---@cast dictionary table
-        local adler32 = dictionary.adler32
-        local byte0 = adler32 % 0x100
-
-        adler32 = (adler32 - byte0) / 0x100
-        local byte1 = adler32 % 0x100
-
-        adler32 = (adler32 - byte1) / 0x100
-        local byte2 = adler32 % 0x100
-
-        adler32 = (adler32 - byte2) / 0x100
-        local byte3 = adler32 % 0x100
-
-        writeBits( byte3, 8 )
-        writeBits( byte2, 8 )
-        writeBits( byte1, 8 )
-        writeBits( byte0, 8 )
-    end
-
-    deflate_fn( configs, writeBits, writeString, flushWriter, str, dictionary )
-    flushWriter( _FLUSH_MODE_BYTE_BOUNDARY )
-
-    -- Most significant byte first
-    local adler32 = Adler32_digest( str )
-    local byte3 = adler32 % 0x100
-
-    adler32 = (adler32 - byte3) / 0x100
-    local byte2 = adler32 % 0x100
-
-    adler32 = (adler32 - byte2) / 0x100
-    local byte1 = adler32 % 0x100
-
-    adler32 = (adler32 - byte1) / 0x100
-    local byte0 = adler32 % 0x100
-
-    writeBits( byte0, 8 )
-    writeBits( byte1, 8 )
-    writeBits( byte2, 8 )
-    writeBits( byte3, 8 )
-
-    local total_bitlen, result = flushWriter( _FLUSH_MODE_OUTPUT )
-    return result, (8 - total_bitlen % 8) % 8
-end
-
--- Decompress code --
-
---[[
-    Create a reader to easily reader stuffs as the unit of bits.
-    Return values:
-    1. readBits(bitlen)
-    2. readBytes(bytelen, buffer, buffer_size)
-    3. Decode(huffman_bitlen_count, huffman_symbol, min_bitlen)
-    4. readerBitlenLeft()
-    5. skipToByteBoundary()
---]]
-local function createReader( input )
-    local input_strlen = string_len( input )
-    local input_next_byte_pos = 1
-    local cache_bitlen = 0
-    local cache = 0
-
-    --- Read some bits.
-    --- To improve speed, this function does not
-    --- check if the input has been exhausted.
-    --- Use readerBitlenLeft() < 0 to check it.
-    ---@param bitlen number the number of bits to read
-    ---@return number code the data is read.
-    local function readBits( bitlen )
-        local rshift_mask = _pow2[ bitlen ]
-        local code
-
-        if bitlen <= cache_bitlen then
-            code = cache % rshift_mask
-            cache = (cache - code) / rshift_mask
-            cache_bitlen = cache_bitlen - bitlen
-        else -- Whether input has been exhausted is not checked.
-            local lshift_mask = _pow2[ cache_bitlen ]
-            local byte1, byte2, byte3, byte4 = string_byte( input, input_next_byte_pos, input_next_byte_pos + 3 )
-
-            -- This requires lua number to be at least double ()
-            cache = cache + ((byte1 or 0) + (byte2 or 0) * 256 + (byte3 or 0) * 65536 + (byte4 or 0) * 16777216) * lshift_mask
-            input_next_byte_pos = input_next_byte_pos + 4
-            cache_bitlen = cache_bitlen + 32 - bitlen
-            code = cache % rshift_mask
-
-            cache = (cache - code) / rshift_mask
+        local dictionary_length = string_len( dictionary )
+        if dictionary_length > WINDOW_SIZE then
+            dictionary, dictionary_length = string_sub( dictionary, -WINDOW_SIZE ), WINDOW_SIZE
         end
 
-        return code
+        if dictionary_length ~= 0 then
+            raw_data = dictionary .. raw_data
+            start = dictionary_length + 1
+        end
     end
 
-    --- Read some bytes from the reader.
-    --- Assume reader is on the byte boundary.
-    ---@param bytelen number The number of bytes to be read.
-    ---@param buffer table The byte read will be stored into this buffer.
-    ---@param buffer_size number The buffer will be modified starting from
-    ---	buffer[buffer_size+1], ending at buffer[buffer_size+bytelen-1]
-    ---@return number size the new buffer_size
-    local function readBytes( bytelen, buffer, buffer_size )
-        assert( cache_bitlen % 8 == 0 )
+    local data_length = string_len( raw_data )
 
-        local byte_from_cache = (cache_bitlen / 8 < bytelen) and (cache_bitlen / 8) or bytelen
-        for _ = 1, byte_from_cache do
-            local byte = cache % 0x100
-            buffer_size = buffer_size + 1
-            buffer[ buffer_size ] = string_char( byte )
-            cache = (cache - byte) / 0x100
-        end
+    local bytes, capacity = get_bytes( data_length - start + 1 + 0x400 )
 
-        cache_bitlen = cache_bitlen - byte_from_cache * 8
-        bytelen = bytelen - byte_from_cache
-
-        if (input_strlen - input_next_byte_pos - bytelen + 1) * 8 + cache_bitlen < 0 then
-            return -1 -- out of input
-        end
-
-        for i = input_next_byte_pos, input_next_byte_pos + bytelen - 1 do
-            buffer_size = buffer_size + 1
-            buffer[ buffer_size ] = string_sub( input, i, i )
-        end
-
-        input_next_byte_pos = input_next_byte_pos + bytelen
-        return buffer_size
-    end
-
-    --- Decode huffman code
-    --- To improve speed, this function does not check
-    --- if the input has been exhausted.
-    --- Use readerBitlenLeft() < 0 to check it.
-    --- Credits for Mark Adler. This code is from puff:decode()
-    ---@see puff:decode(...)
-    ---@param huffman_bitlen_counts number
-    ---@param huffman_symbols number
-    ---@param min_bitlen number The minimum huffman bit length of all symbols
-    ---@return number code The decoded deflate code.
-    ---	Negative value is returned if decoding fails.
-    local function decode( huffman_bitlen_counts, huffman_symbols, min_bitlen )
-        local code = 0
-        local first = 0
-        local index = 0
-        local count
-
-        if min_bitlen > 0 then
-            if cache_bitlen < 15 and input then
-                local lshift_mask = _pow2[ cache_bitlen ]
-                local byte1, byte2, byte3, byte4 = string_byte( input, input_next_byte_pos, input_next_byte_pos + 3 )
-
-                -- This requires lua number to be at least double ()
-                cache = cache + ((byte1 or 0) + (byte2 or 0) * 0x100 + (byte3 or 0) * 0x10000 + (byte4 or 0) * 0x1000000) * lshift_mask
-                input_next_byte_pos = input_next_byte_pos + 4
-                cache_bitlen = cache_bitlen + 32
-            end
-
-            local rshift_mask = _pow2[ min_bitlen ]
-            cache_bitlen = cache_bitlen - min_bitlen
-            code = cache % rshift_mask
-            cache = (cache - code) / rshift_mask
-
-            -- Reverse the bits
-            code = _reverse_bits_tbl[ min_bitlen ][ code ]
-
-            count = huffman_bitlen_counts[ min_bitlen ]
-            if code < count then
-                return huffman_symbols[ code ]
-            end
-
-            index = count
-            first = count * 2
-            code = code * 2
-        end
-
-        for bitlen = min_bitlen + 1, 15 do
-            local bit = cache % 2
-            cache = (cache - bit) / 2
-            cache_bitlen = cache_bitlen - 1
-
-            code = (bit == 1) and (code + 1 - code % 2) or code
-            count = huffman_bitlen_counts[ bitlen ] or 0
-
-            local diff = code - first
-            if diff < count then
-                return huffman_symbols[ index + diff ]
-            end
-
-            index = index + count
-            first = first + count
-            first = first * 2
-            code = code * 2
-        end
-
-        -- invalid literal/length or distance code in fixed or dynamic block (run out of code)
-        return -10
-    end
-
-    local function readerBitlenLeft()
-        return (input_strlen - input_next_byte_pos + 1) * 8 + cache_bitlen
-    end
-
-    local function skipToByteBoundary()
-        local skipped_bitlen = cache_bitlen % 8
-        local rshift_mask = _pow2[ skipped_bitlen ]
-        cache_bitlen = cache_bitlen - skipped_bitlen
-        cache = (cache - cache % rshift_mask) / rshift_mask
-    end
-
-    return readBits, readBytes, decode, readerBitlenLeft, skipToByteBoundary
-end
-
---- Create a deflate state, so I can pass in less arguments to functions.
----@param str string the whole string to be decompressed.
----@param dictionary? table The preset dictionary. nil if not provided.
---- This dictionary should be produced by deflate.createDictionary(str)
----@return table state The decomrpess state.
-local function createDecompressState( str, dictionary )
-    local readBits, readBytes, decode, readerBitlenLeft, skipToByteBoundary = createReader( str )
-    return {
-        [ "readBits" ] = readBits,
-        [ "readBytes" ] = readBytes,
-        [ "decode" ] = decode,
-        [ "readerBitlenLeft" ] = readerBitlenLeft,
-        [ "skipToByteBoundary" ] = skipToByteBoundary,
-        [ "buffer_size" ] = 0,
-        [ "buffer" ] = {},
-        [ "result_buffer" ] = {},
-        [ "dictionary" ] = dictionary
+    ---@type dreamwork.std.deflate.Writer
+    local writer = {
+        bytes = bytes,
+        length = 0,
+        capacity = capacity,
+        bit_buffer = 0,
+        bit_count = 0
     }
-end
 
---- Get the stuffs needed to decode huffman codes
----@see puff.c:construct(...)
----@param huffman_bitlens table The huffman bit length of the huffman codes.
----@param max_symbol number The maximum symbol
----@param max_bitlen number The min huffman bit length of all codes
----@return number left zero or positive for success, negative for failure.
----@return table huffman_bitlen_counts The count of each huffman bit length.
----@return table huffman_symbols A table to convert huffman codes to deflate codes.
----@return number min_bitlen The minimum huffman bit length.
-local function getHuffmanForDecode( huffman_bitlens, max_symbol, max_bitlen )
-    local huffman_bitlen_counts = {}
-    local min_bitlen = max_bitlen
-
-    for symbol = 0, max_symbol do
-        local bitlen = huffman_bitlens[ symbol ] or 0
-        min_bitlen = (bitlen > 0 and bitlen < min_bitlen) and bitlen or min_bitlen
-        huffman_bitlen_counts[ bitlen ] = (huffman_bitlen_counts[ bitlen ] or 0) + 1
+    if level == 0 then
+        write_stored( writer, raw_data, start, data_length, true )
+    elseif strategy == 3 or strategy == 4 then
+        compress_simple( writer, raw_data, data_length, start, strategy, strategy == 4 )
+    else
+        local settings = LEVELS[ level ]
+        if settings[ 5 ] then
+            compress_lazy( writer, raw_data, data_length, start, settings, strategy )
+        else
+            compress_fast( writer, raw_data, data_length, start, settings, strategy )
+        end
     end
 
-    if huffman_bitlen_counts[ 0 ] == max_symbol + 1 then -- No Codes
-        return 0, huffman_bitlen_counts, {}, 0           -- Complete, but decode will fail
+    local length = writer.length
+
+    if writer.bit_count ~= 0 then
+        writer.bytes[ length ] = writer.bit_buffer
+        length = length + 1
+    end
+
+    local compressed_data = bytes_to_string( writer.bytes, 0, length )
+    release_bytes( writer.bytes, length )
+
+    return compressed_data
+end
+
+-- Decompression --
+
+-- Decoding table entries are `( value * 8 + kind ) * 16 + bit count`, the bit count is how many bits the code takes,
+-- the value is a byte for literals, `base * 16 + extra bits` for lengths and distances,
+-- and `offset * 16 + index bits` for links to the second level tables of codes longer than the first level index.
+
+local LITERAL = 0
+local LENGTH = 1
+local END_OF_BLOCK = 2
+local LINK = 3
+local INVALID = 4
+local DISTANCE = 5
+
+local INVALID_ENTRY = INVALID * 16
+
+local LITERAL_BITS = 10
+local LITERAL_MASK = rbit_lshift( 1, LITERAL_BITS ) - 1
+
+local DISTANCE_BITS = 8
+local DISTANCE_MASK = rbit_lshift( 1, DISTANCE_BITS ) - 1
+
+local CODE_LENGTH_BITS = 7
+local CODE_LENGTH_MASK = rbit_lshift( 1, CODE_LENGTH_BITS ) - 1
+
+---@type integer[]
+local LITERAL_VALUES = {}
+
+---@type integer[]
+local DISTANCE_VALUES = {}
+
+---@type integer[]
+local CODE_LENGTH_VALUES = {}
+
+do
+
+    for symbol = 0, 255, 1 do
+        LITERAL_VALUES[ symbol ] = symbol * 8 + LITERAL
+    end
+
+    LITERAL_VALUES[ 256 ] = END_OF_BLOCK
+
+    for code = 0, 28, 1 do
+        LITERAL_VALUES[ 257 + code ] = (LENGTH_BASE[ code ] * 16 + LENGTH_EXTRA[ code ]) * 8 + LENGTH
+    end
+
+    LITERAL_VALUES[ 286 ], LITERAL_VALUES[ 287 ] = INVALID, INVALID
+
+    for code = 0, 29, 1 do
+        DISTANCE_VALUES[ code ] = (DISTANCE_BASE[ code ] * 16 + DISTANCE_EXTRA[ code ]) * 8 + DISTANCE
+    end
+
+    DISTANCE_VALUES[ 30 ], DISTANCE_VALUES[ 31 ] = INVALID, INVALID
+
+    for symbol = 0, 18, 1 do
+        CODE_LENGTH_VALUES[ symbol ] = symbol * 8 + LITERAL
+    end
+
+end
+
+---@type integer[]
+local length_counts = {}
+
+--- Builds the two level decoding table of the code lengths, like zlib's `inflate_table`.
+---
+--- Codes with a single 1 bit code are the only incomplete codes allowed (`allow_single`),
+--- codes without any symbols make tables that only have invalid entries.
+---
+---@param lengths integer[]
+---@param first integer
+---@param symbol_count integer
+---@param values integer[]
+---@param root_bits integer
+---@param decoding_table integer[]
+---@param allow_single boolean
+---@return boolean | nil success
+---@return nil | string error_message
+local function build_table( lengths, first, symbol_count, values, root_bits, decoding_table, allow_single )
+    for length = 0, 15, 1 do
+        length_counts[ length ] = 0
+    end
+
+    for symbol = first, first + symbol_count - 1, 1 do
+        local length = lengths[ symbol ]
+        length_counts[ length ] = length_counts[ length ] + 1
+    end
+
+    local root_size = rbit_lshift( 1, root_bits )
+
+    for i = 0, root_size - 1, 1 do
+        decoding_table[ i ] = INVALID_ENTRY
+    end
+
+    local max_length = 15
+    while max_length ~= 0 and length_counts[ max_length ] == 0 do
+        max_length = max_length - 1
+    end
+
+    if max_length == 0 then
+        return true
     end
 
     local left = 1
-    for len = 1, max_bitlen do
-        left = left * 2
-        left = left - (huffman_bitlen_counts[ len ] or 0)
+
+    for length = 1, 15, 1 do
+        left = left * 2 - length_counts[ length ]
         if left < 0 then
-            return left, huffman_bitlen_counts, {}, 0 -- Over-subscribed, return negative
+            return nil, "over-subscribed code lengths"
         end
     end
 
-    -- Generate offsets info symbol table for each length for sorting
-    local offsets = {
-        [ 1 ] = 0
-    }
-
-    for len = 1, max_bitlen - 1 do
-        offsets[ len + 1 ] = offsets[ len ] + (huffman_bitlen_counts[ len ] or 0)
+    if left > 0 and not (allow_single and max_length == 1) then
+        return nil, "incomplete code lengths"
     end
 
-    local huffman_symbols = {}
-    for symbol = 0, max_symbol do
-        local bitlen = huffman_bitlens[ symbol ] or 0
-        if bitlen ~= 0 then
-            local offset = offsets[ bitlen ]
-            huffman_symbols[ offset ] = symbol
-            offsets[ bitlen ] = offsets[ bitlen ] + 1
-        end
+    local code = 0
+    length_counts[ 0 ] = 0
+
+    for length = 1, 15, 1 do
+        code = (code + length_counts[ length - 1 ]) * 2
+        next_codes[ length ] = code
     end
 
-    -- Return zero for complete set, positive for incomplete set.
-    return left, huffman_bitlen_counts, huffman_symbols, min_bitlen
-end
+    -- codes that fit into the first level fill every entry that starts with them
+    for symbol = 0, symbol_count - 1, 1 do
+        local length = lengths[ first + symbol ]
+        if length ~= 0 and length <= root_bits then
+            local next_code = next_codes[ length ]
+            next_codes[ length ] = next_code + 1
 
---- Decode a fixed or dynamic huffman blocks, excluding last block identifier
---- and block type identifer.
----@see puff.c:codes()
----@param state table decompression state that will be modified by this function.
----@param lcodes_huffman_bitlens table The huffman bit length of literal codes.
----@param lcodes_huffman_symbols table The huffman symbol of literal codes.
----@param lcodes_huffman_min_bitlen number The minimum huffman bit length of literal codes.
----@param dcodes_huffman_bitlens table The huffman bit length of distance codes.
----@param dcodes_huffman_symbols table The huffman symbol of distance codes.
----@param dcodes_huffman_min_bitlen number The minimum huffman bit length of distance codes.
----@return number status 0 on success, other value on failure.
-local function decodeUntilEndOfBlock( state, lcodes_huffman_bitlens, lcodes_huffman_symbols, lcodes_huffman_min_bitlen, dcodes_huffman_bitlens, dcodes_huffman_symbols, dcodes_huffman_min_bitlen )
-    local buffer, buffer_size, readBits, decode, readerBitlenLeft, result_buffer = state.buffer, state.buffer_size, state.readBits, state.decode, state.readerBitlenLeft, state.result_buffer
-    local dictionary = state.dictionary
-    local dict_string_table
-    local dict_strlen
+            local entry = values[ symbol ] * 16 + length
 
-    local buffer_end = 1
-    if dictionary and not buffer[ 0 ] then
-        -- If there is a dictionary, copy the last 258 bytes into
-        -- the string_table to make the copy in the main loop quicker.
-        -- This is done only once per decompression.
-        dict_string_table = dictionary.string_table
-        dict_strlen = dictionary.strlen
-        buffer_end = -dict_strlen + 1
-
-        for i = 0, (-dict_strlen + 1) < -257 and -257 or (-dict_strlen + 1), -1 do
-            buffer[ i ] = string_char( dict_string_table[ dict_strlen + i ] )
-        end
-    end
-
-    repeat
-        local symbol = decode( lcodes_huffman_bitlens, lcodes_huffman_symbols, lcodes_huffman_min_bitlen )
-        if symbol < 0 or symbol > 285 then
-            -- invalid literal/length or distance code in fixed or dynamic block
-            return -10
-        elseif symbol < 256 then -- Literal
-            buffer_size = buffer_size + 1
-            buffer[ buffer_size ] = string_char( symbol )
-        elseif symbol > 256 then -- Length code
-            symbol = symbol - 256
-            local bitlen = _literal_deflate_code_to_base_len[ symbol ]
-            bitlen = (symbol >= 8) and (bitlen + readBits( _literal_deflate_code_to_extra_bitlen[ symbol ] )) or bitlen
-            symbol = decode( dcodes_huffman_bitlens, dcodes_huffman_symbols, dcodes_huffman_min_bitlen )
-
-            if symbol < 0 or symbol > 29 then
-                -- invalid literal/length or distance code in fixed or dynamic block
-                return -10
+            for i = reverse_bits( next_code, length ), root_size - 1, rbit_lshift( 1, length ) do
+                decoding_table[ i ] = entry
             end
+        end
+    end
 
-            local dist = _dist_deflate_code_to_base_dist[ symbol ]
-            dist = (dist > 4) and (dist + readBits( _dist_deflate_code_to_extra_bitlen[ symbol ] )) or dist
+    -- longer codes are in canonical order, so the codes of every first level prefix go one after another,
+    -- the second level table of the prefix is sized to fit all of them
+    local next_offset = root_size
+    local table_prefix, table_offset, table_end = -1, 0, 0
 
-            local char_buffer_index = buffer_size - dist + 1
-            if char_buffer_index < buffer_end then
-                -- distance is too far back in fixed or dynamic block
-                return -11
-            end
+    for length = root_bits + 1, max_length, 1 do
+        local sub_length = length - root_bits
+        local step = rbit_lshift( 1, sub_length )
 
-            if char_buffer_index >= -257 then
-                for _ = 1, bitlen do
-                    buffer_size = buffer_size + 1
-                    buffer[ buffer_size ] = buffer[ char_buffer_index ]
-                    char_buffer_index = char_buffer_index + 1
+        for symbol = 0, symbol_count - 1, 1 do
+            if lengths[ first + symbol ] == length then
+                local next_code = next_codes[ length ]
+                next_codes[ length ] = next_code + 1
+
+                local prefix = rbit_rshift( next_code, sub_length )
+
+                if prefix ~= table_prefix then
+                    local table_bits = sub_length
+                    left = step
+
+                    while table_bits + root_bits < max_length do
+                        left = left - length_counts[ table_bits + root_bits ]
+                        if left <= 0 then
+                            break
+                        end
+
+                        table_bits = table_bits + 1
+                        left = left * 2
+                    end
+
+                    table_prefix, table_offset = prefix, next_offset
+                    table_end = table_offset + rbit_lshift( 1, table_bits )
+                    next_offset = table_end
+
+                    for i = table_offset, table_end - 1, 1 do
+                        decoding_table[ i ] = INVALID_ENTRY
+                    end
+
+                    decoding_table[ reverse_bits( prefix, root_bits ) ] = ((table_offset * 16 + table_bits) * 8 + LINK) * 16 + root_bits
                 end
-            else
-                char_buffer_index = dict_strlen + char_buffer_index
-                for _ = 1, bitlen do
-                    buffer_size = buffer_size + 1
-                    buffer[ buffer_size ] = string_char( dict_string_table[ char_buffer_index ] )
-                    char_buffer_index = char_buffer_index + 1
+
+                local entry = values[ symbol ] * 16 + sub_length
+
+                for i = table_offset + reverse_bits( rbit_band( next_code, step - 1 ), sub_length ), table_end - 1, step do
+                    decoding_table[ i ] = entry
                 end
+
+                length_counts[ length ] = length_counts[ length ] - 1
             end
         end
+    end
 
-        if readerBitlenLeft() < 0 then
-            return 2 -- available inflate data did not terminate
-        end
+    return true
+end
 
-        if buffer_size >= 65536 then
-            table_insert( result_buffer, table_concat( buffer, "", 1, 32768 ) )
+-- Second level tables take at most 1504 entries for literals/lengths and 384 for distances,
+-- a complete code needs `n + 1` codes for a table of `n` bits.
+local literal_table = new_integers( 4096 )
+local distance_table = new_integers( 1024 )
 
-            for i = 32769, buffer_size do
-                buffer[ i - 32768 ] = buffer[ i ]
+local code_length_table = new_integers( 128 )
+
+local FIXED_LITERAL_TABLE = new_integers( rbit_lshift( 1, LITERAL_BITS ) )
+local FIXED_DISTANCE_TABLE = new_integers( rbit_lshift( 1, DISTANCE_BITS ) )
+
+build_table( FIXED_LITERAL_LENGTHS, 0, 288, LITERAL_VALUES, LITERAL_BITS, FIXED_LITERAL_TABLE, false )
+build_table( FIXED_DISTANCE_LENGTHS, 0, 32, DISTANCE_VALUES, DISTANCE_BITS, FIXED_DISTANCE_TABLE, false )
+
+--- Reads 16 more bits, bytes past the end of the data are zeros.
+---
+---@param data string
+---@param position integer
+---@param bit_buffer integer
+---@param bit_count integer
+---@return integer position
+---@return integer bit_buffer
+---@return integer bit_count
+local function refill( data, position, bit_buffer, bit_count )
+    local uint8_1, uint8_2 = string_byte( data, position, position + 1 )
+    return position + 2, rbit_bor( bit_buffer, rbit_lshift( (uint8_1 or 0) + (uint8_2 or 0) * 0x100, bit_count ) ), bit_count + 16
+end
+
+---@type integer[]
+local code_lengths = {}
+
+--- Reads the code lengths of a dynamic block and builds its tables.
+---
+---@param data string
+---@param position integer
+---@param bit_buffer integer
+---@param bit_count integer
+---@return integer | nil position
+---@return integer | string bit_buffer The bit buffer, or the error message.
+---@return integer? bit_count
+local function read_dynamic_tables( data, position, bit_buffer, bit_count )
+    if bit_count < 16 then
+        position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+    end
+
+    local literal_count = rbit_band( bit_buffer, 0x1F ) + 257
+    local distance_count = rbit_band( rbit_rshift( bit_buffer, 5 ), 0x1F ) + 1
+    local code_length_count = rbit_band( rbit_rshift( bit_buffer, 10 ), 0xF ) + 4
+
+    bit_buffer = rbit_rshift( bit_buffer, 14 )
+    bit_count = bit_count - 14
+
+    if literal_count > 286 or distance_count > 30 then
+        return nil, "too many length or distance symbols"
+    end
+
+    for i = 1, 19, 1 do
+        local length = 0
+
+        if i <= code_length_count then
+            if bit_count < 16 then
+                position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
             end
 
-            buffer_size = buffer_size - 32768
-            buffer[ buffer_size + 1 ] = nil
-
-            -- NOTE: buffer[32769..end] and buffer[-257..0] are not cleared.
-            -- This is why "buffer_size" variable is needed.
-        end
-    until symbol == 256
-
-    state.buffer_size = buffer_size
-
-    return 0
-end
-
---- Decompress a store block
----@param state table decompression state that will be modified by this function.
----@return number status 0 if succeeds, other value if fails.
-local function decompressStoreBlock( state )
-    local buffer, buffer_size, readBits, readBytes, readerBitlenLeft, skipToByteBoundary, result_buffer = state.buffer, state.buffer_size, state.readBits, state.readBytes, state.readerBitlenLeft, state.skipToByteBoundary, state.result_buffer
-    skipToByteBoundary()
-
-    local bytelen = readBits( 16 )
-    if readerBitlenLeft() < 0 then
-        return 2 -- available inflate data did not terminate
-    end
-
-    local bytelenComp = readBits( 16 )
-    if readerBitlenLeft() < 0 then
-        return 2 -- available inflate data did not terminate
-    end
-
-    if bytelen % 256 + bytelenComp % 256 ~= 255 then
-        return -2 -- Not one's complement
-    end
-
-    if (bytelen - bytelen % 256) / 256 + (bytelenComp - bytelenComp % 256) / 256 ~= 255 then
-        return -2 -- Not one's complement
-    end
-
-    -- Note that readBytes will skip to the next byte boundary first.
-    buffer_size = readBytes( bytelen, buffer, buffer_size )
-    if buffer_size < 0 then
-        return 2 -- available inflate data did not terminate
-    end
-
-    -- memory clean up when there are enough bytes in the buffer.
-    if buffer_size >= 65536 then
-        table_insert( result_buffer, table_concat( buffer, "", 1, 32768 ) )
-
-        for i = 32769, buffer_size do
-            buffer[ i - 32768 ] = buffer[ i ]
+            length = rbit_band( bit_buffer, 7 )
+            bit_buffer = rbit_rshift( bit_buffer, 3 )
+            bit_count = bit_count - 3
         end
 
-        buffer_size = buffer_size - 32768
-        buffer[ buffer_size + 1 ] = nil
+        code_lengths[ CODE_LENGTH_ORDER[ i ] ] = length
     end
 
-    state.buffer_size = buffer_size
-    return 0
-end
-
---- Decompress a fixed block
----@param state table decompression state that will be modified by this function.
----@return number status 0 if succeeds other value if fails.
-local function decompressFixBlock( state )
-    return decodeUntilEndOfBlock( state, _fix_block_literal_huffman_bitlen_count, _fix_block_literal_huffman_to_deflate_code, 7, _fix_block_dist_huffman_bitlen_count, _fix_block_dist_huffman_to_deflate_code, 5 )
-end
-
---- Decompress a dynamic block
----@param state table decompression state that will be modified by this function.
----@return number status 0 if success, other value if fails.
-local function decompressDynamicBlock( state )
-    local readBits, decode = state.readBits, state.decode
-
-    local nlen = readBits( 5 ) + 257
-    local ndist = readBits( 5 ) + 1
-    local ncode = readBits( 4 ) + 4
-
-    -- dynamic block code description: too many length or distance codes
-    if nlen > 286 or ndist > 30 then
-        return -3
+    local success, error_message = build_table( code_lengths, 0, 19, CODE_LENGTH_VALUES, CODE_LENGTH_BITS, code_length_table, false )
+    if not success then
+        return nil, "invalid code length code: " .. error_message
     end
 
-    local rle_codes_huffman_bitlens = {}
-    for i = 1, ncode do
-        rle_codes_huffman_bitlens[ _rle_codes_huffman_bitlen_order[ i ] ] = readBits( 3 )
-    end
-
-    local rle_codes_err, rle_codes_huffman_bitlen_counts, rle_codes_huffman_symbols, rle_codes_huffman_min_bitlen = getHuffmanForDecode( rle_codes_huffman_bitlens, 18, 7 )
-
-    -- dynamic block code description: code lengths codes incomplete
-    if rle_codes_err ~= 0 then -- Require complete code set here
-        return -4
-    end
-
-    local lcodes_huffman_bitlens = {}
-    local dcodes_huffman_bitlens = {}
-
-    -- Read length/literal and distance code length tables
+    local length_count = literal_count + distance_count
     local index = 0
-    while index < (nlen + ndist) do
-        -- Decoded value
-        local symbol = decode( rle_codes_huffman_bitlen_counts, rle_codes_huffman_symbols, rle_codes_huffman_min_bitlen )
 
-        -- Last length to repeat
-        local bitlen
+    while index < length_count do
+        if bit_count < 16 then
+            position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+        end
 
-        if symbol < 0 then
-            return symbol -- Invalid symbol
-        elseif symbol < 16 then
-            if index < nlen then
-                lcodes_huffman_bitlens[ index ] = symbol
-            else
-                dcodes_huffman_bitlens[ index - nlen ] = symbol
-            end
+        local entry = code_length_table[ rbit_band( bit_buffer, CODE_LENGTH_MASK ) ]
+        if entry == INVALID_ENTRY then
+            return nil, "invalid code length code"
+        end
 
+        local entry_bits = rbit_band( entry, 15 )
+        bit_buffer = rbit_rshift( bit_buffer, entry_bits )
+        bit_count = bit_count - entry_bits
+
+        local symbol = rbit_rshift( entry, 7 )
+
+        if symbol < 16 then
+            code_lengths[ index ] = symbol
             index = index + 1
         else
-            bitlen = 0
+            local length, repeat_count = 0, 0
 
             if symbol == 16 then
-                -- dynamic block code description: repeat lengths with no first length
                 if index == 0 then
-                    return -5
+                    return nil, "repeated code length without a previous one"
                 end
 
-                if index - 1 < nlen then
-                    bitlen = lcodes_huffman_bitlens[ index - 1 ]
-                else
-                    bitlen = dcodes_huffman_bitlens[ index - nlen - 1 ]
-                end
+                length = code_lengths[ index - 1 ]
+                repeat_count = 3 + rbit_band( bit_buffer, 3 )
 
-                symbol = 3 + readBits( 2 )
-            elseif symbol == 17 then -- Repeat zero 3..10 times
-                symbol = 3 + readBits( 3 )
-            else                     -- == 18, repeat zero 11.138 times
-                symbol = 11 + readBits( 7 )
+                bit_buffer = rbit_rshift( bit_buffer, 2 )
+                bit_count = bit_count - 2
+            elseif symbol == 17 then
+                repeat_count = 3 + rbit_band( bit_buffer, 7 )
+
+                bit_buffer = rbit_rshift( bit_buffer, 3 )
+                bit_count = bit_count - 3
+            else
+                repeat_count = 11 + rbit_band( bit_buffer, 0x7F )
+
+                bit_buffer = rbit_rshift( bit_buffer, 7 )
+                bit_count = bit_count - 7
             end
 
-            -- dynamic block code description:
-            -- repeat more than specified lengths
-            if index + symbol > nlen + ndist then
-                return -6
+            if index + repeat_count > length_count then
+                return nil, "repeated code lengths past the end"
             end
 
-            while symbol > 0 do -- Repeat last or zero symbol times
-                symbol = symbol - 1
-
-                if index < nlen then
-                    lcodes_huffman_bitlens[ index ] = bitlen
-                else
-                    dcodes_huffman_bitlens[ index - nlen ] = bitlen
-                end
-
-                index = index + 1
+            for i = index, index + repeat_count - 1, 1 do
+                code_lengths[ i ] = length
             end
+
+            index = index + repeat_count
         end
     end
 
-    -- dynamic block code description: missing end-of-block code
-    if (lcodes_huffman_bitlens[ 0x100 ] or 0) == 0 then
-        return -9
+    if code_lengths[ 256 ] == 0 then
+        return nil, "missing end-of-block code"
     end
 
-    local lcodes_err, lcodes_huffman_bitlen_counts, lcodes_huffman_symbols, lcodes_huffman_min_bitlen = getHuffmanForDecode( lcodes_huffman_bitlens, nlen - 1, 15 )
-
-    -- dynamic block code description: invalid literal/length code lengths,
-    -- Incomplete code ok only for single length 1 code
-    ---@diagnostic disable-next-line: need-check-nil
-    if (lcodes_err ~= 0 and (lcodes_err < 0 or nlen ~= (lcodes_huffman_bitlen_counts[ 0 ] or 0) + (lcodes_huffman_bitlen_counts[ 1 ] or 0))) then
-        return -7
+    success, error_message = build_table( code_lengths, 0, literal_count, LITERAL_VALUES, LITERAL_BITS, literal_table, true )
+    if not success then
+        return nil, "invalid literal/length code: " .. error_message
     end
 
-    local dcodes_err, dcodes_huffman_bitlen_counts, dcodes_huffman_symbols, dcodes_huffman_min_bitlen = getHuffmanForDecode( dcodes_huffman_bitlens, ndist - 1, 15 )
-
-    -- dynamic block code description: invalid distance code lengths,
-    -- Incomplete code ok only for single length 1 code
-    ---@diagnostic disable-next-line: need-check-nil
-    if (dcodes_err ~= 0 and (dcodes_err < 0 or ndist ~= (dcodes_huffman_bitlen_counts[ 0 ] or 0) + (dcodes_huffman_bitlen_counts[ 1 ] or 0))) then
-        return -8
+    success, error_message = build_table( code_lengths, literal_count, distance_count, DISTANCE_VALUES, DISTANCE_BITS, distance_table, true )
+    if not success then
+        return nil, "invalid distance code: " .. error_message
     end
 
-    ---Build buffman table for literal/length codes
-    return decodeUntilEndOfBlock( state, lcodes_huffman_bitlen_counts, lcodes_huffman_symbols, lcodes_huffman_min_bitlen, dcodes_huffman_bitlen_counts, dcodes_huffman_symbols, dcodes_huffman_min_bitlen )
+    return position, bit_buffer, bit_count
 end
 
---- Decompress a deflate stream
+--- Decodes literals and matches until the end of the block.
 ---
----@param state table a decompression state
----@return string | nil str the decompressed string if succeeds. nil if fails.
----@return number | nil status 0 if succeeds, other value if fails
-local function inflate( state )
-    local readBits = state.readBits
+---@param data string
+---@param position_limit integer The data is truncated if the position is past it.
+---@param position integer
+---@param bit_buffer integer
+---@param bit_count integer
+---@param bytes dreamwork.std.deflate.Bytes
+---@param length integer
+---@param capacity integer
+---@param literals integer[]
+---@param distances integer[]
+---@return integer | nil position
+---@return integer | string bit_buffer The bit buffer, or the error message.
+---@return integer? bit_count
+---@return dreamwork.std.deflate.Bytes? bytes
+---@return integer? length
+---@return integer? capacity
+local function inflate_block( data, position_limit, position, bit_buffer, bit_count, bytes, length, capacity, literals, distances )
+    while true do
+        if bit_count < 16 then
+            position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
 
-    local is_last_block
-    while not is_last_block do
-        is_last_block = readBits( 1 ) == 1
+            if position > position_limit then
+                return nil, "truncated data"
+            end
+        end
 
-        local block_type = readBits( 2 )
-        local status
-        if block_type == 0 then
-            status = decompressStoreBlock( state )
-        elseif block_type == 1 then
-            status = decompressFixBlock( state )
-        elseif block_type == 2 then
-            status = decompressDynamicBlock( state )
+        local entry = literals[ rbit_band( bit_buffer, LITERAL_MASK ) ]
+        local kind = rbit_band( rbit_rshift( entry, 4 ), 7 )
+
+        if kind == LINK then
+            bit_buffer = rbit_rshift( bit_buffer, LITERAL_BITS )
+            bit_count = bit_count - LITERAL_BITS
+
+            local link = rbit_rshift( entry, 7 )
+            entry = literals[ rbit_rshift( link, 4 ) + rbit_band( bit_buffer, rbit_lshift( 1, rbit_band( link, 15 ) ) - 1 ) ]
+            kind = rbit_band( rbit_rshift( entry, 4 ), 7 )
+        end
+
+        local entry_bits = rbit_band( entry, 15 )
+        bit_buffer = rbit_rshift( bit_buffer, entry_bits )
+        bit_count = bit_count - entry_bits
+
+        if kind == LITERAL then
+            if length == capacity then
+                bytes, capacity = grow_bytes( bytes, length, capacity * 2 )
+            end
+
+            bytes[ length ] = rbit_rshift( entry, 7 )
+            length = length + 1
+        elseif kind == LENGTH then
+            local value = rbit_rshift( entry, 7 )
+            local extra = rbit_band( value, 15 )
+
+            if bit_count < 16 then
+                position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+            end
+
+            local match_length = rbit_rshift( value, 4 ) + rbit_band( bit_buffer, rbit_lshift( 1, extra ) - 1 )
+            bit_buffer = rbit_rshift( bit_buffer, extra )
+            bit_count = bit_count - extra
+
+            if bit_count < 16 then
+                position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+            end
+
+            entry = distances[ rbit_band( bit_buffer, DISTANCE_MASK ) ]
+            kind = rbit_band( rbit_rshift( entry, 4 ), 7 )
+
+            if kind == LINK then
+                bit_buffer = rbit_rshift( bit_buffer, DISTANCE_BITS )
+                bit_count = bit_count - DISTANCE_BITS
+
+                local link = rbit_rshift( entry, 7 )
+                entry = distances[ rbit_rshift( link, 4 ) + rbit_band( bit_buffer, rbit_lshift( 1, rbit_band( link, 15 ) ) - 1 ) ]
+                kind = rbit_band( rbit_rshift( entry, 4 ), 7 )
+            end
+
+            if kind ~= DISTANCE then
+                return nil, "invalid distance code"
+            end
+
+            entry_bits = rbit_band( entry, 15 )
+            bit_buffer = rbit_rshift( bit_buffer, entry_bits )
+            bit_count = bit_count - entry_bits
+
+            value = rbit_rshift( entry, 7 )
+            extra = rbit_band( value, 15 )
+
+            if bit_count < 16 then
+                position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+            end
+
+            local distance = rbit_rshift( value, 4 ) + rbit_band( bit_buffer, rbit_lshift( 1, extra ) - 1 )
+            bit_buffer = rbit_rshift( bit_buffer, extra )
+            bit_count = bit_count - extra
+
+            if distance > length then
+                return nil, "invalid distance too far back"
+            end
+
+            if length + match_length + 3 > capacity then
+                bytes, capacity = grow_bytes( bytes, length, math_max( capacity * 2, length + match_length + 3 ) )
+            end
+
+            -- forward copy, so a match that overlaps itself repeats its bytes
+            copy_match( bytes, length, length - distance, match_length )
+
+            length = length + match_length
+        elseif kind == END_OF_BLOCK then
+            return position, bit_buffer, bit_count, bytes, length, capacity
         else
-            return nil, -1 -- invalid block type (type == 3)
-        end
-
-        if status ~= 0 then
-            return nil, status
+            return nil, "invalid literal/length code"
         end
     end
-
-    local result_buffer = state.result_buffer
-    return table_concat( result_buffer, "", 1, table_insert( result_buffer, table_concat( state.buffer, "", 1, state.buffer_size ) ) )
 end
 
---- Decompress a raw deflate compressed data.
----@param str string The data to be decompressed.
----@param dictionary? table The dictionary to be used.
----@return string | nil data If the decompression succeeds, return the decompressed data.
---- If the decompression fails, return nil. You should check if this return
---- value is non-nil to know if the decompression succeeds.
----@return number | nil byte_count If the decompression succeeds, return the number of
----@nodiscard
---- unprocessed bytes in the input compressed data. This return value is a
---- positive integer if the input data is a valid compressed data appended by an
---- arbitary non-empty string. This return value is 0 if the input data does not
---- contain any extra bytes.
+--- [SHARED AND MENU]
 ---
---- If the decompression fails (The first return value of this function is nil),
---- this return value is undefined.
----@see deflate.compress
----@see deflate.decompress(str)
-function deflate.decompress( str, dictionary )
+--- Decompresses a raw DEFLATE stream.
+---
+--- Throws an error on malformed or truncated data; call via `pcall()` when processing untrusted input.
+---
+--- The stream may be followed by other data (like the zlib or gzip trailer),
+--- the second return value is the position right after the stream.
+---
+---@param compressed_data string The DEFLATE stream to decompress.
+---@param dictionary? string The preset dictionary the data was compressed with.
+---@param start_position? integer The position of the stream in the string, `1` by default.
+---@return string decompressed_data The decompressed string.
+---@return integer end_position The position of the first byte after the stream.
+---@nodiscard
+function deflate.decompress( compressed_data, dictionary, start_position )
+    if start_position == nil then
+        start_position = 1
+    elseif not (start_position % 1 == 0 and start_position >= 1) then
+        error( "start_position must be a positive integer", 2 )
+    end
+
+    local data_length = string_len( compressed_data )
+
+    -- the bit buffer may read up to 4 bytes past the end of a valid stream
+    local position_limit = data_length + 5
+
+    local dictionary_length = 0
     if dictionary ~= nil then
-        validate_dictionary( dictionary, 2 )
-    end
-
-    local state = createDecompressState( str, dictionary )
-
-    local result, status = inflate( state )
-    if not result then
-        return nil, status
-    end
-
-    local bitlen_left = state.readerBitlenLeft()
-    return result, (bitlen_left - bitlen_left % 8) * 0.125
-end
-
---- Decompress a zlib compressed data.
----@param str string The data to be decompressed
----@param dictionary? table The dictionary to be used
----@return string | nil data If the decompression succeeds, return the decompressed data.
---- If the decompression fails, return nil. You should check if this return
---- value is non-nil to know if the decompression succeeds.
----@return number | nil byte_count If the decompression succeeds, return the number of
----@nodiscard
---- unprocessed bytes in the input compressed data. This return value is a
---- positive integer if the input data is a valid compressed data appended by an
---- arbitary non-empty string. This return value is 0 if the input data does not
---- contain any extra bytes.
----
---- If the decompression fails (The first return value of this function is nil),
---- this return value is undefined.
----@see zlib.compress
----@see zlib.decompress(str)
-function zlib.decompress( str, dictionary )
-    if dictionary ~= nil then
-        validate_dictionary( dictionary, 2 )
-    end
-
-    local state = createDecompressState( str, dictionary )
-    local readBits = state.readBits
-
-    local CMF = readBits( 8 )
-    if state.readerBitlenLeft() < 0 then
-        return nil, 2 -- available inflate data did not terminate
-    end
-
-    local CM = CMF % 16
-    local CINFO = (CMF - CM) * 0.0625
-
-    if CM ~= 8 then
-        return nil, -12 -- invalid compression method
-    end
-
-    if CINFO > 7 then
-        return nil, -13 -- invalid window size
-    end
-
-    local FLG = readBits( 8 )
-    if state.readerBitlenLeft() < 0 then
-        return nil, 2 -- available inflate data did not terminate
-    end
-
-    if (CMF * 256 + FLG) % 31 ~= 0 then
-        return nil, -14 -- invalid header checksum
-    end
-
-    local FDIST = ((FLG - FLG % 32) / 32 % 2)
-    -- luacheck: ignore FLEVEL
-    -- local FLEVEL = ( ( FLG - FLG % 64 ) / 64 % 4 )
-
-    if FDIST == 1 then
-        if not dictionary then
-            return nil, -16 -- need dictonary, but dictionary is not provided.
-        end
-
-        local actual_adler32 = readBits( 8 ) * 0x1000000 + readBits( 8 ) * 0x10000 + readBits( 8 ) * 0x100 + readBits( 8 )
-
-        if state.readerBitlenLeft() < 0 then
-            return nil, 2 -- available inflate data did not terminate
-        end
-
-        if not isEqualAdler32( actual_adler32, dictionary.adler32 ) then
-            return nil, -17 -- dictionary adler32 does not match
+        dictionary_length = string_len( dictionary )
+        if dictionary_length > WINDOW_SIZE then
+            dictionary, dictionary_length = string_sub( dictionary, -WINDOW_SIZE ), WINDOW_SIZE
         end
     end
 
-    local result, status = inflate( state )
-    if not result then
-        return nil, status
+    local bytes, capacity = get_bytes( dictionary_length + math_max( (data_length - start_position + 1) * 4, 0x1000 ) )
+    local length = 0
+
+    if dictionary_length ~= 0 then
+        ---@cast dictionary string
+        copy_string( bytes, 0, dictionary, 1, dictionary_length )
+        length = dictionary_length
     end
 
-    state.skipToByteBoundary()
+    local position, bit_buffer, bit_count = start_position, 0, 0
 
-    local adler_byte0 = readBits( 8 )
-    local adler_byte1 = readBits( 8 )
-    local adler_byte2 = readBits( 8 )
-    local adler_byte3 = readBits( 8 )
-
-    if state.readerBitlenLeft() < 0 then
-        return nil, 2 -- available inflate data did not terminate
-    end
-
-    local adler32_expected = adler_byte0 * 0x1000000 + adler_byte1 * 0x10000 + adler_byte2 * 0x100 + adler_byte3
-
-    local adler32_actual = Adler32_digest( result )
-    if not isEqualAdler32( adler32_expected, adler32_actual ) then
-        return nil, -15 -- adler32 checksum does not match
-    end
-
-    local bitlen_left = state.readerBitlenLeft()
-    return result, (bitlen_left - bitlen_left % 8) * 0.125
-end
-
--- Calculate the huffman code of fixed block
-do
-
-    _fix_block_literal_huffman_bitlen = {}
-    for sym = 0, 143 do _fix_block_literal_huffman_bitlen[ sym ] = 8 end
-
-    for sym = 144, 255 do _fix_block_literal_huffman_bitlen[ sym ] = 9 end
-
-    for sym = 256, 279 do _fix_block_literal_huffman_bitlen[ sym ] = 7 end
-
-    for sym = 280, 287 do _fix_block_literal_huffman_bitlen[ sym ] = 8 end
-
-    _fix_block_dist_huffman_bitlen = {}
-    for dist = 0, 31 do
-        _fix_block_dist_huffman_bitlen[ dist ] = 5
-    end
-
-    local status
-
-    status, _fix_block_literal_huffman_bitlen_count, _fix_block_literal_huffman_to_deflate_code = getHuffmanForDecode( _fix_block_literal_huffman_bitlen, 287, 9 )
-    assert( status == 0 )
-
-    status, _fix_block_dist_huffman_bitlen_count, _fix_block_dist_huffman_to_deflate_code = getHuffmanForDecode( _fix_block_dist_huffman_bitlen, 31, 5 )
-    assert( status == 0 )
-
-    _fix_block_literal_huffman_code = getHuffmanCodeFromBitlen( _fix_block_literal_huffman_bitlen_count, _fix_block_literal_huffman_bitlen, 287, 9 )
-    _fix_block_dist_huffman_code = getHuffmanCodeFromBitlen( _fix_block_dist_huffman_bitlen_count, _fix_block_dist_huffman_bitlen, 31, 5 )
-
-end
-
--- Prefix encoding algorithm
--- Credits to LibCompress.
--- The code has been rewritten by the author of deflate.
-------------------------------------------------------------------------------
-
--- to be able to match any requested byte value, the search
--- string must be preprocessed characters to escape with %:
--- ( ) . % + - * ? [ ] ^ $
--- "illegal" byte values:
--- 0 is replaces %z
-local escape_for_gsub
-do
-
-    local escape_table = {
-        [ "\000" ] = "%z",
-        [ "(" ] = "%(",
-        [ ")" ] = "%)",
-        [ "." ] = "%.",
-        [ "%" ] = "%%",
-        [ "+" ] = "%+",
-        [ "-" ] = "%-",
-        [ "*" ] = "%*",
-        [ "?" ] = "%?",
-        [ "[" ] = "%[",
-        [ "]" ] = "%]",
-        [ "^" ] = "%^",
-        [ "$" ] = "%$"
-    }
-
-    function escape_for_gsub( str )
-        return string_gsub( str, "([%z%(%)%.%%%+%-%*%?%[%]%^%$])", escape_table )
-    end
-
-end
-
---- Create a custom codec with encoder and decoder.
----
---- This codec is used to convert an input string to make it not contain some specific bytes.
----
---- This created codec and the parameters of this function do NOT take
---- localization into account. One byte (0-255) in the string is exactly one character (0-255).
----
---- Credits to LibCompress.
---- The code has been rewritten by the author of deflate.
----
----@param reserved_chars string The created encoder will ensure encoded
---- data does not contain any single character in reserved_chars. This parameter should be non-empty.
----
----@param escape_chars string The escape character(s) used in the created codec.
---- The codec converts any character included in reserved\_chars /
---- escape\_chars / map\_chars to (one escape char + one character not in
---- reserved\_chars / escape\_chars / map\_chars).
---- You usually only need to provide a length-1 string for this parameter.
---- Length-2 string is only needed when
---- reserved\_chars + escape\_chars + map\_chars is longer than 127.
---- This parameter should be non-empty.
----@param map_chars string The created encoder will map every
---- reserved\_chars:sub(i, i) (1 <= i <= #map\_chars) to map\_chars:sub(i, i).
---- This parameter CAN be empty string.
----@return table? codec  If the codec cannot be created, return nil.
----
---- If the codec can be created according to the given
---- parameters, return the codec, which is a encode/decode table.
---- The table contains two functions:
----
---- t:encode(str) returns the encoded string.
----
---- t:decode(str) returns the decoded string if succeeds. nil if fails.
----@return string? message  If the codec is successfully created, return nil.
----@nodiscard
---- If not, return a string that describes the reason why the codec cannot be created.
----
----@usage
---- Create an encoder/decoder that maps all "\000" to "\003",
---- and escape "\001" (and "\002" and "\003") properly
---- local codec = deflate.createCodec("\000\001", "\002", "\003")
----
---- local encoded = codec:encode(SOME_STRING)
---- "encoded" does not contain "\000" or "\001"
---- local decoded = codec:decode(encoded)
---- assert(decoded == SOME_STRING)
-function deflate.createCodec( reserved_chars, escape_chars, map_chars )
-    if string_byte( escape_chars, 1, 1 ) == nil then
-        return nil, "No escape characters supplied."
-    end
-
-    local map_chars_length = string_len( map_chars )
-    if string_len( reserved_chars ) < map_chars_length then
-        return nil, "The number of reserved characters must be at least as many as the number of mapped chars."
-    end
-
-    if string_byte( reserved_chars, 1, 1 ) == nil then
-        return nil, "No characters to encode."
-    end
-
-    local encode_bytes = reserved_chars .. escape_chars .. map_chars
-    local encode_bytes_length = string_len( encode_bytes )
-
-    -- build list of bytes not available as a suffix to a prefix byte
-    local encode_bytes_lst = { string_byte( encode_bytes, 1, encode_bytes_length ) }
-    local taken = {}
-
-    for i = 1, encode_bytes_length, 1 do
-        local byte = encode_bytes_lst[ i ]
-        if taken[ byte ] then
-            return nil, "There must be no duplicate characters in the concatenation of reserved_chars, escape_chars and map_chars."
+    while true do
+        if bit_count < 16 then
+            position, bit_buffer, bit_count = refill( compressed_data, position, bit_buffer, bit_count )
         end
 
-        taken[ byte ] = true
-    end
+        local is_last = rbit_band( bit_buffer, 1 ) == 1
+        local block_type = rbit_band( rbit_rshift( bit_buffer, 1 ), 3 )
 
-    local decode_patterns, decode_patterns_count = {}, 0
-    local decode_repls = {}
+        bit_buffer = rbit_rshift( bit_buffer, 3 )
+        bit_count = bit_count - 3
 
-    -- the encoding can be a single gsub, but the decoding can require multiple gsubs
-    local encode_search, encode_search_size = {}, 0
-    local encode_translate = {}
+        -- the bit buffer, or the error message
+        ---@type integer | string
+        local result
 
-    -- map single byte to single byte
-    if map_chars_length > 0 then
-        local decode_search = {}
-        local decode_translate = {}
+        if block_type == 0 then
+            -- the rest of the byte is skipped, buffered whole bytes go back to the data
+            position = position - rbit_rshift( bit_count, 3 )
+            bit_buffer, bit_count = 0, 0
 
-        for i = 1, map_chars_length, 1 do
-            local from = string_sub( reserved_chars, i, i )
-            local to = string_sub( map_chars, i, i )
-
-            encode_translate[ from ] = to
-            encode_search_size = encode_search_size + 1
-            encode_search[ encode_search_size ] = from
-
-            decode_translate[ to ] = from
-            table_insert( decode_search, to )
-        end
-
-        decode_patterns_count = decode_patterns_count + 1
-        decode_patterns[ decode_patterns_count ] = "([" .. escape_for_gsub( table_concat( decode_search ) ) .. "])"
-
-        table_insert( decode_repls, decode_translate )
-    end
-
-    local escape_char_index = 1
-    local escape_char = string_sub( escape_chars, escape_char_index, escape_char_index )
-
-    -- map single byte to double-byte
-    local r = 0 -- suffix char value to the escapeChar
-
-    local decode_search = {}
-    local decode_translate = {}
-
-    for i = 1, encode_bytes_length, 1 do
-        local char = string_sub( encode_bytes, i, i )
-        if encode_translate[ char ] == nil then
-            while r >= 256 or taken[ r ] do
-                r = r + 1
-
-                if r > 255 then -- switch to next escapeChar
-                    decode_patterns_count = decode_patterns_count + 1
-                    decode_patterns[ decode_patterns_count ] = escape_for_gsub( escape_char ) .. "([" .. escape_for_gsub( table_concat( decode_search ) ) .. "])"
-
-                    table_insert( decode_repls, decode_translate )
-
-                    escape_char_index = escape_char_index + 1
-                    escape_char = string_sub( escape_chars, escape_char_index, escape_char_index )
-
-                    r = 0
-                    decode_search = {}
-                    decode_translate = {}
-
-                    if escape_char == nil or string_byte( escape_char, 1, 1 ) == nil then
-                        -- actually I don't need to check
-                        -- "not ecape_char", but what if Lua changes
-                        -- the behavior of string.sub() in the future?
-                        -- we are out of escape chars and we need more!
-                        return nil, "Out of escape characters."
-                    end
-                end
+            local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( compressed_data, position, position + 3 )
+            if uint8_4 == nil then
+                error( "corrupt DEFLATE data: truncated stored block", 2 )
             end
 
-            local char_r = string_char( r )
+            local size = uint8_1 + uint8_2 * 0x100
+            if rbit_bxor( size, 0xFFFF ) ~= uint8_3 + uint8_4 * 0x100 then
+                error( "corrupt DEFLATE data: invalid stored block lengths", 2 )
+            end
 
-            encode_translate[ char ] = escape_char .. char_r
+            position = position + 4
 
-            encode_search_size = encode_search_size + 1
-            encode_search[ encode_search_size ] = char
+            if position + size - 1 > data_length then
+                error( "corrupt DEFLATE data: truncated stored block", 2 )
+            end
 
-            decode_translate[ char_r ] = char
-            table_insert( decode_search, char_r )
+            if length + size > capacity then
+                bytes, capacity = grow_bytes( bytes, length, math_max( capacity * 2, length + size ) )
+            end
 
-            r = r + 1
+            copy_string( bytes, length, compressed_data, position, size )
+
+            length = length + size
+            position = position + size
+        else
+            -- `nil` on errors
+            local next_position, next_bit_count, next_bytes, next_length, next_capacity
+
+            if block_type == 1 then
+                next_position, result, next_bit_count, next_bytes, next_length, next_capacity = inflate_block( compressed_data, position_limit, position, bit_buffer, bit_count, bytes, length, capacity, FIXED_LITERAL_TABLE, FIXED_DISTANCE_TABLE )
+            elseif block_type == 2 then
+                next_position, result, next_bit_count = read_dynamic_tables( compressed_data, position, bit_buffer, bit_count )
+
+                if next_position ~= nil then
+                    ---@cast result integer
+                    ---@cast next_bit_count integer
+                    next_position, result, next_bit_count, next_bytes, next_length, next_capacity = inflate_block( compressed_data, position_limit, next_position, result, next_bit_count, bytes, length, capacity, literal_table, distance_table )
+                end
+            else
+                error( "corrupt DEFLATE data: invalid block type", 2 )
+            end
+
+            if next_position == nil then
+                error( "corrupt DEFLATE data: " .. result, 2 )
+            end
+
+            ---@cast next_bit_count integer
+            ---@cast next_bytes dreamwork.std.deflate.Bytes
+            ---@cast next_length integer
+            ---@cast next_capacity integer
+
+            position, bit_count, bytes, length, capacity = next_position, next_bit_count, next_bytes, next_length, next_capacity
+
+            ---@cast result integer
+            bit_buffer = result
         end
 
-        if i == encode_bytes_length then
-            decode_patterns_count = decode_patterns_count + 1
-            decode_patterns[ decode_patterns_count ] = escape_for_gsub( escape_char ) .. "([" .. escape_for_gsub( table_concat( decode_search ) ) .. "])"
-
-            table_insert( decode_repls, decode_translate )
+        if is_last then
+            break
         end
     end
 
-    local codec = {}
-
-    local encode_pattern = "([" .. escape_for_gsub( table_concat( encode_search, "", 1, encode_search_size ) ) .. "])"
-
-    function codec:encode( str )
-        return string_gsub( str, encode_pattern, encode_translate )
+    -- the last byte of the stream is partially read, whole bytes in the buffer are not a part of it
+    local end_position = position - rbit_rshift( bit_count, 3 )
+    if end_position > data_length + 1 then
+        error( "corrupt DEFLATE data: truncated data", 2 )
     end
 
-    local decode_fail_pattern = "([" .. escape_for_gsub( reserved_chars ) .. "])"
+    local decompressed_data = bytes_to_string( bytes, dictionary_length, length - dictionary_length )
+    release_bytes( bytes, length )
 
-    function codec:decode( str )
-        if string_find( str, decode_fail_pattern ) then return nil end
-
-        for i = 1, decode_patterns_count, 1 do
-            str = string_gsub( str, decode_patterns[ i ], decode_repls[ i ] )
-        end
-
-        return str
-    end
-
-    return codec
+    return decompressed_data, end_position
 end
-
-do
-
-    local _addon_channel_codec
-
-    ---@return table? codec
-    ---@return string? err_msg
-    local function generateWoWAddonChannelCodec()
-        return deflate.createCodec( "\000", "\001", "" )
-    end
-
-    --- encode the string to make it ready to be transmitted in World of Warcraft addon channel.
-    ---
-    ---
-    --- The encoded string is guaranteed to contain no NULL ("\000") character.
-    ---@param str string The string to be encoded.
-    ---@return string result The encoded string.
-    ---@nodiscard
-    ---@see deflate.decodeForWoWAddonChannel
-    function deflate.encodeForWoWAddonChannel( str )
-        if _addon_channel_codec == nil then
-            _addon_channel_codec = generateWoWAddonChannelCodec()
-        end
-
-        ---@cast _addon_channel_codec table
-
-        return _addon_channel_codec:encode( str )
-    end
-
-    --- Decode the string produced by deflate.encodeForWoWAddonChannel
-    ---@param str string The string to be decoded.
-    ---@return string | nil result The decoded string if succeeds. nil if fails.
-    ---@nodiscard
-    ---@see deflate.encodeForWoWAddonChannel
-    function deflate.decodeForWoWAddonChannel( str )
-        if _addon_channel_codec == nil then
-            _addon_channel_codec = generateWoWAddonChannelCodec()
-        end
-
-        ---@cast _addon_channel_codec table
-
-        return _addon_channel_codec:decode( str )
-    end
-
-    --- For World of Warcraft Chat Channel Encoding
-    --- Credits to LibCompress.
-    --- The code has been rewritten by the author of deflate.
-    ---
-    --- Following byte values are not allowed:
-    --- \000, s, S, \010, \013, \124, %
-    --- Because SendChatMessage will error
-    --- if an UTF8 multibyte character is incomplete,
-    --- all character values above 127 have to be encoded to avoid this.
-    --- This costs quite a bit of bandwidth (about 13-14%)
-    --- Also, because drunken status is unknown for the received,
-    --- strings used with SendChatMessage should be terminated with
-    --- an identifying byte value, after which the server MAY add "...hic!"
-    --- or as much as it can fit(!).
-    --- Pass the identifying byte as a reserved character to this function
-    --- to ensure the encoding doesn't contain that value.
-    --- or use this: local message, match = arg1:gsub("^(.*)\029.-$", "%1")
-    --- arg1 is message from channel, \029 is the string terminator,
-    --- but may be used in the encoded datastream as well. :-)
-    --- This encoding will expand data anywhere from:
-    --- 0% (average with pure ascii text)
-    --- 53.5% (average with random data valued zero to 255)
-    --- 100% (only encoding data that encodes to two bytes)
-    ---@return table? codec
-    ---@return string? err_msg
-    local function generateWoWChatChannelCodec()
-        local r = {}
-        for i = 128, 255 do
-            r[ i - 127 ] = string_char( i )
-        end
-
-        return deflate.createCodec( "sS\000\010\013\124%" .. table_concat( r ), "\029\031", "\015\020" )
-    end
-
-    local _chat_channel_codec
-
-    --- encode the string to make it ready to be transmitted in World of Warcraft chat channel.
-    ---
-    --- See also https://wow.gamepedia.com/ValidChatMessageCharacters
-    ---@param str string The string to be encoded.
-    ---@return string The encoded string.
-    ---@nodiscard
-    ---@see deflate.decodeForWoWChatChannel
-    function deflate.encodeForWoWChatChannel( str )
-        if _chat_channel_codec == nil then
-            _chat_channel_codec = generateWoWChatChannelCodec()
-        end
-
-        ---@cast _chat_channel_codec table
-
-        return _chat_channel_codec:encode( str )
-    end
-
-    --- Decode the string produced by deflate.encodeForWoWChatChannel.
-    ---@param str string The string to be decoded.
-    ---@return string | nil result The decoded string if succeeds. nil if fails.
-    ---@nodiscard
-    ---@see deflate.encodeForWoWChatChannel
-    function deflate.decodeForWoWChatChannel( str )
-        if _chat_channel_codec == nil then
-            _chat_channel_codec = generateWoWChatChannelCodec()
-        end
-
-        ---@cast _chat_channel_codec table
-
-        return _chat_channel_codec:decode( str )
-    end
-
-    --- Clear the cache of the World of Warcraft addon channel codec.
-    function deflate.clearWoWCache()
-        _addon_channel_codec = nil
-        _chat_channel_codec = nil
-    end
-
-end
-
--- Credits to WeakAuras2 and Galmok for the 6 bit encoding algorithm.
--- The code has been rewritten by the author of deflate.
--- The result of encoding will be 25% larger than the
--- origin string, but every single byte of the encoding result will be
--- printable characters as the following.
-local _byte_to_6bit_char = {
-    [ 0 ] = "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "(",
-    ")"
-}
-
-local _6bit_to_byte = {
-    [ 97 ] = 0,
-    [ 98 ] = 1,
-    [ 99 ] = 2,
-    [ 100 ] = 3,
-    [ 101 ] = 4,
-    [ 102 ] = 5,
-    [ 103 ] = 6,
-    [ 104 ] = 7,
-    [ 105 ] = 8,
-    [ 106 ] = 9,
-    [ 107 ] = 10,
-    [ 108 ] = 11,
-    [ 109 ] = 12,
-    [ 110 ] = 13,
-    [ 111 ] = 14,
-    [ 112 ] = 15,
-    [ 113 ] = 16,
-    [ 114 ] = 17,
-    [ 115 ] = 18,
-    [ 116 ] = 19,
-    [ 117 ] = 20,
-    [ 118 ] = 21,
-    [ 119 ] = 22,
-    [ 120 ] = 23,
-    [ 121 ] = 24,
-    [ 122 ] = 25,
-    [ 65 ] = 26,
-    [ 66 ] = 27,
-    [ 67 ] = 28,
-    [ 68 ] = 29,
-    [ 69 ] = 30,
-    [ 70 ] = 31,
-    [ 71 ] = 32,
-    [ 72 ] = 33,
-    [ 73 ] = 34,
-    [ 74 ] = 35,
-    [ 75 ] = 36,
-    [ 76 ] = 37,
-    [ 77 ] = 38,
-    [ 78 ] = 39,
-    [ 79 ] = 40,
-    [ 80 ] = 41,
-    [ 81 ] = 42,
-    [ 82 ] = 43,
-    [ 83 ] = 44,
-    [ 84 ] = 45,
-    [ 85 ] = 46,
-    [ 86 ] = 47,
-    [ 87 ] = 48,
-    [ 88 ] = 49,
-    [ 89 ] = 50,
-    [ 90 ] = 51,
-    [ 48 ] = 52,
-    [ 49 ] = 53,
-    [ 50 ] = 54,
-    [ 51 ] = 55,
-    [ 52 ] = 56,
-    [ 53 ] = 57,
-    [ 54 ] = 58,
-    [ 55 ] = 59,
-    [ 56 ] = 60,
-    [ 57 ] = 61,
-    [ 40 ] = 62,
-    [ 41 ] = 63
-}
-
---- encode the string to make it printable.
----
----
---- Credit to WeakAuras2, this function is equivalant to the implementation it is using right now.
----
---- The code has been rewritten by the author of deflate.
----
---- The encoded string will be 25% larger than the origin string. However, every
---- single byte of the encoded string will be one of 64 printable ASCII
---- characters, which are can be easier copied, pasted and displayed.
---- (26 lowercase letters, 26 uppercase letters, 10 numbers digits, left parenthese, or right parenthese)
----@param str string The string to be encoded.
----@return string result The encoded string.
----@nodiscard
-function deflate.encodeForPrint( str )
-    local strlen = string_len( str )
-    local strlenMinus2 = strlen - 2
-    local i = 1
-    local buffer = {}
-    local buffer_size = 0
-
-    while i <= strlenMinus2 do
-        local x1, x2, x3 = string_byte( str, i, i + 2 )
-        i = i + 3
-
-        local cache = x1 + x2 * 256 + x3 * 65536
-        local uint8_1 = cache % 64
-        cache = (cache - uint8_1) / 64
-
-        local uint8_2 = cache % 64
-        cache = (cache - uint8_2) / 64
-
-        local uint8_3 = cache % 64
-        local uint8_4 = (cache - uint8_3) / 64
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = _byte_to_6bit_char[ uint8_1 ] .. _byte_to_6bit_char[ uint8_2 ] .. _byte_to_6bit_char[ uint8_3 ] .. _byte_to_6bit_char[ uint8_4 ]
-    end
-
-    local cache = 0
-    local cache_bitlen = 0
-
-    while i <= strlen do
-        local x = string_byte( str, i, i )
-        cache = cache + x * _pow2[ cache_bitlen ]
-        cache_bitlen = cache_bitlen + 8
-        i = i + 1
-    end
-
-    while cache_bitlen > 0 do
-        local bit6 = cache % 64
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = _byte_to_6bit_char[ bit6 ]
-        cache = (cache - bit6) / 64
-        cache_bitlen = cache_bitlen - 6
-    end
-
-    return table_concat( buffer )
-end
-
---- Decode the printable string produced by deflate.encodeForPrint.
---- "str" will have its prefixed and trailing control characters or space
---- removed before it is decoded, so it is easier to use if "str" comes form
---- user copy and paste with some prefixed or trailing spaces.
---- Then decode fails if the string contains any characters cant be produced by deflate.encodeForPrint.
---- That means, decode fails if the string contains a
---- characters NOT one of 26 lowercase letters, 26 uppercase letters,
---- 10 numbers digits, left parenthese, or right parenthese.
----@param str string The string to be decoded
----@return string | nil result The decoded string if succeeds. nil if fails.
----@nodiscard
-function deflate.decodeForPrint( str )
-    str = string_gsub( str, "^[%c ]+", "" )
-    str = string_gsub( str, "[%c ]+$", "" )
-
-    local strlen = string_len( str )
-    if strlen == 1 then
-        return nil
-    end
-
-    local strlenMinus3 = strlen - 3
-    local i = 1
-    local buffer = {}
-    local buffer_size = 0
-
-    while i <= strlenMinus3 do
-        local x1, x2, x3, x4 = string_byte( str, i, i + 3 )
-        x1 = _6bit_to_byte[ x1 ]
-        x2 = _6bit_to_byte[ x2 ]
-        x3 = _6bit_to_byte[ x3 ]
-        x4 = _6bit_to_byte[ x4 ]
-
-        if not (x1 and x2 and x3 and x4) then return nil end
-
-        i = i + 4
-
-        local cache = x1 + x2 * 64 + x3 * 4096 + x4 * 262144
-        local uint8_1 = cache % 0x100
-        cache = (cache - uint8_1) / 0x100
-
-        local uint8_2 = cache % 0x100
-        local uint8_3 = (cache - uint8_2) / 0x100
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = string_char( uint8_1, uint8_2, uint8_3 )
-    end
-
-    local cache = 0
-    local cache_bitlen = 0
-    while i <= strlen do
-        local x = string_byte( str, i, i )
-        x = _6bit_to_byte[ x ]
-        if not x then return nil end
-
-        cache = cache + x * _pow2[ cache_bitlen ]
-        cache_bitlen = cache_bitlen + 6
-        i = i + 1
-    end
-
-    while cache_bitlen >= 8 do
-        local byte = cache % 0x100
-
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = string_char( byte )
-
-        cache = (cache - byte) / 0x100
-        cache_bitlen = cache_bitlen - 8
-    end
-
-    return table_concat( buffer )
-end
-
--- TODO: https://github.com/SafeteeWoW/LibDeflate/issues/9
-
--- TODO: make it async as chacha20
