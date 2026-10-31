@@ -848,18 +848,22 @@ function string.unindentLines(str, size) end
 ---
 --- The result is a list of edit operations that transform `source` into `target`.
 --- Operations are returned in order from the start of the strings to the end, and runs
---- of the same kind are merged, so the result is as compact as possible while still being
---- a minimal edit script (in terms of number of inserted/removed characters) between the
---- two strings.
+--- of the same kind are merged; within every changed region removals come before insertions.
 ---
 --- Common prefixes and suffixes shared by `source` and `target` are detected and emitted
 --- as `0` (equal) operations directly, without going through the general diff algorithm;
 --- the remaining differing middle section, if any, is solved using an O(ND) Myers
 --- shortest-edit-script search to find the minimal set of insertions and removals.
 ---
+--- By default the minimal script is then cleaned up for readability: every equal run that
+--- is not longer than the changes on both of its sides is folded into them, so a heavily
+--- rewritten region becomes one removal and one insertion instead of a byte-by-byte mix
+--- of coincidental matches. Pass `minimal` as `true` to skip this and get the raw script.
+---
 ---@param source string The source string.
 ---@param target string The target string.
+---@param minimal? boolean If `true`, returns the minimal edit script without the readability cleanup. Defaults to `false`.
 ---@return string.Difference[] diff_ops The difference operations.
 ---@return integer diff_op_count The count of difference operations.
 ---@nodiscard
-function string.diff(source, target) end
+function string.diff(source, target, minimal) end
