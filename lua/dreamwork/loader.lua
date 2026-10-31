@@ -2854,7 +2854,7 @@ do
 
         for i = 1, diff_op_count, 1 do
             local diff_op = diff_ops[ i ]
-            engine_consoleMessageColored( string_sub( diff_op.source, diff_op.start_position, diff_op.end_position ), diff_colors[ diff_op.type ] )
+            engine_consoleMessageColored( string_escape( string_sub( diff_op.source, diff_op.start_position, diff_op.end_position ), false ), diff_colors[ diff_op.type ] )
         end
 
         engine_consoleMessage( "\n" )
