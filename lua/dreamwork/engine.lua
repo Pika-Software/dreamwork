@@ -2066,6 +2066,8 @@ do
             return network_id
         end
 
+        -- TODO: integration with https://github.com/RaphaelIT7/gmod-holylib/blob/main/example-scripts/networkchannel.lua
+
         ---@class garrysmod.net
         local glua_net = glua_library( "net" )
 
