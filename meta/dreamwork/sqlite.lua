@@ -19,5 +19,5 @@
 ---| "WITH"
 ---| string
 
----@alias dreamwork.std.sqlite.QueryValue boolean | integer | number | string
+---@alias dreamwork.std.sqlite.QueryValue boolean | integer | number | string | dreamwork.std.null
 ---@alias dreamwork.std.sqlite.QueryRow table<string, dreamwork.std.sqlite.QueryValue>

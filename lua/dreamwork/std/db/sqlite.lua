@@ -22,6 +22,8 @@ local isBoolean = std.isBoolean
 local isNumber = std.isNumber
 local isString = std.isString
 
+local null = std.null
+
 local tostring = std.tostring
 local xpcall = std.xpcall
 local error = std.error
@@ -50,13 +52,15 @@ end
 ---
 --- Converts a string to a safe string for use in an SQL query.
 ---
----@param str string? The string to convert.
+---@param str string | dreamwork.std.null | nil The string to convert.
 ---@return string str The safe string.
 ---@nodiscard
 local function escape( str, no_quotes )
-    if str == nil then
+    if str == nil or str == null then
         return "null"
     end
+
+    ---@cast str string
 
     str = string_match(
         string_replace( str, "'", "''", false ),
@@ -127,7 +131,7 @@ local function query( str, ... )
 
     for index = 1, raw_select( "#", ... ), 1 do
         local value = raw_select( index, ... )
-        if value == nil then
+        if value == nil or value == null then
             variables[ index ] = "NULL"
         elseif isString( value ) then
             ---@cast value string
@@ -153,7 +157,7 @@ local function query( str, ... )
         for key, value in raw_pairs( row ) do
             ---@cast value string
             if isString( value ) and string_lower( value ) == "null" then
-                row[ key ] = nil
+                row[ key ] = null
             end
         end
     end

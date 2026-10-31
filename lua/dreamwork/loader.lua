@@ -41,6 +41,7 @@ dreamwork.dofile = dofile
 ---@field DEVELOPER integer A cached value of `developer` console variable.
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
+---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
 
 ---@diagnostic disable-next-line: assign-type-mismatch, undefined-global
@@ -871,6 +872,18 @@ end
 -- symbols
 dofile( "dreamwork/std/types/symbol.lua" )
 sendfile( "dreamwork/std/types/symbol.lua" )
+
+--- [SHARED AND MENU]
+---
+--- A sentinel symbol that represents an explicit "no value".
+---
+--- Unlike `nil`, it can be stored in tables and passed around as a real value,
+--- which makes it useful for telling "intentionally empty" apart from "missing".
+---
+--- It is a singleton, so compare it by identity: `value == std.null`.
+---
+---@class dreamwork.std.null : dreamwork.std.Symbol
+std.null = std.Symbol( "null" )
 
 -- class library
 dofile( "dreamwork/std/class.lua" )
