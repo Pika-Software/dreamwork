@@ -1,11 +1,22 @@
 ---@meta garrysmod.vmatrix
 
 
+--- [SHARED AND MENU]
+---
+--- Creates a new VMatrix.
+---
+--- If `data` is omitted the matrix is the identity matrix, otherwise it is a copy of the given VMatrix or is built from a 4x4 table of rows.
+---
+---@param data garrysmod.VMatrix | number[][] | nil The matrix to copy, or a 4x4 table of rows.
+---@return garrysmod.VMatrix matrix The new matrix.
+function Matrix( data ) end
+
 ---@class garrysmod.VMatrix : metatable
 ---@operator add( garrysmod.VMatrix ): garrysmod.VMatrix
 ---@operator sub( garrysmod.VMatrix ): garrysmod.VMatrix
 ---@operator mul( garrysmod.VMatrix ): garrysmod.VMatrix
 ---@operator mul( garrysmod.Vector ): garrysmod.Vector
+---@operator unm: garrysmod.VMatrix
 local VMatrix = {}
 
 --- Adds the specified matrix to this matrix, component-wise.
@@ -55,6 +66,11 @@ function VMatrix:GetScale() end
 ---@return garrysmod.Vector translation The translation of the matrix.
 function VMatrix:GetTranslation() end
 
+--- Returns a transposed copy of the matrix.
+---
+---@return garrysmod.VMatrix transposed The transposed matrix.
+function VMatrix:GetTransposed() end
+
 --- Returns the up direction of the matrix (third column).
 ---
 ---@return garrysmod.Vector up The up direction.
@@ -80,6 +96,16 @@ function VMatrix:IsIdentity() end
 ---
 ---@return boolean is_rotation `true` if the matrix is a rotation matrix.
 function VMatrix:IsRotationMatrix() end
+
+--- Returns whether all components of the matrix are zero.
+---
+---@return boolean is_zero `true` if the matrix is zero.
+function VMatrix:IsZero() end
+
+--- Multiplies this matrix by the given matrix, in place.
+---
+---@param other garrysmod.VMatrix The matrix to multiply by.
+function VMatrix:Mul( other ) end
 
 --- Rotates the matrix by the given angle.
 ---
@@ -133,6 +159,26 @@ function VMatrix:SetScale( scale ) end
 ---@param translation garrysmod.Vector The new translation.
 function VMatrix:SetTranslation( translation ) end
 
+--- Sets all components of the matrix, row by row.
+---
+---@param e11 number
+---@param e12 number
+---@param e13 number
+---@param e14 number
+---@param e21 number
+---@param e22 number
+---@param e23 number
+---@param e24 number
+---@param e31 number
+---@param e32 number
+---@param e33 number
+---@param e34 number
+---@param e41 number
+---@param e42 number
+---@param e43 number
+---@param e44 number
+function VMatrix:SetUnpacked( e11, e12, e13, e14, e21, e22, e23, e24, e31, e32, e33, e34, e41, e42, e43, e44 ) end
+
 --- Sets the up direction of the matrix (third column).
 ---
 ---@param up garrysmod.Vector The new up direction.
@@ -148,6 +194,26 @@ function VMatrix:Sub( other ) end
 ---@return number[][] rows The rows of the matrix.
 function VMatrix:ToTable() end
 
+--- Returns all components of the matrix, row by row.
+---
+---@return number e11
+---@return number e12
+---@return number e13
+---@return number e14
+---@return number e21
+---@return number e22
+---@return number e23
+---@return number e24
+---@return number e31
+---@return number e32
+---@return number e33
+---@return number e34
+---@return number e41
+---@return number e42
+---@return number e43
+---@return number e44
+function VMatrix:Unpack() end
+
 --- Translates the matrix by the given vector.
 ---
 ---@param translation garrysmod.Vector The translation to apply.
@@ -155,14 +221,3 @@ function VMatrix:Translate( translation ) end
 
 --- Sets all components of the matrix to zero.
 function VMatrix:Zero() end
-
-
---- [SHARED AND MENU]
----
---- Creates a new VMatrix.
----
---- If `data` is omitted the matrix is the identity matrix, otherwise it is a copy of the given VMatrix or is built from a 4x4 table of rows.
----
----@param data garrysmod.VMatrix | number[][] | nil The matrix to copy, or a 4x4 table of rows.
----@return garrysmod.VMatrix matrix The new matrix.
-function Matrix( data ) end

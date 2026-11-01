@@ -1515,7 +1515,7 @@ dreamwork_load( "std/types/angle3.lua" )
 dreamwork_load( "std/types/quaternion.lua" )
 dreamwork_load( "std/types/vmatrix.lua" )
 
-dreamwork_load( "modules/engine/classes.lua" )
+dreamwork_load( "modules/engine/proxies.lua" )
 dreamwork_load( "modules/engine/injection.lua" )
 
 dreamwork_load( "modules/engine/console.lua" )

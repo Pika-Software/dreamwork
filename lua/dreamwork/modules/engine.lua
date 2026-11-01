@@ -91,6 +91,24 @@ local NextBot = debug_initmetatable( "NextBot" )
 engine.NextBot = NextBot
 NextBot.__parent = Entity
 
+--- The metatable of the engine `Vector` class.
+---
+---@class garrysmod.Vector : metatable
+local Vector = debug_initmetatable( "Vector" )
+engine.Vector = Vector
+
+--- The metatable of the engine `Angle` class.
+---
+---@class garrysmod.Angle : metatable
+local Angle = debug_initmetatable( "Angle" )
+engine.Angle = Angle
+
+--- The metatable of the engine `VMatrix` class.
+---
+---@class garrysmod.VMatrix : metatable
+local VMatrix = debug_initmetatable( "VMatrix" )
+engine.VMatrix = VMatrix
+
 --- The metatable of the engine `ConVar` class.
 ---
 ---@class garrysmod.console.Variable
