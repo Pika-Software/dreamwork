@@ -38,7 +38,7 @@ do
         hidden = true
     } )
 
-    variable:attach( function( value )
+    variable:attach( function( _, value )
         api_token = value
     end )
 

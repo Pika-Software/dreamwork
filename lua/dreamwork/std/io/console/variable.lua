@@ -768,7 +768,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
 function Variable:attach( handler )
     hooks[ self ]:attach( "peek", handler )
 end
@@ -780,7 +780,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
 function Variable:once( handler )
     hooks[ self ]:once( "peek", handler )
 end
@@ -791,7 +791,7 @@ end
 --- If the hook is currently running, the handler is replaced with a no-op and
 --- the actual removal is deferred until the hook finishes running.
 ---
----@param handler dreamwork.std.Hook<T> | dreamwork.std.Mixin<T> | fun( value: T )
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
 function Variable:detach( handler )
     hooks[ self ]:detach( "peek", handler )
 end
@@ -817,6 +817,9 @@ function Variable:await()
     return hooks[ self ]:await( "peek" )
 end
 
+---@param str_name string
+---@param str_old string
+---@param str_new string
 engine.hookCatch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
     if variable == nil then return end
@@ -835,7 +838,7 @@ engine.hookCatch( "dreamwork.console.variable.change", "variable.change", functi
     values[ variable ] = old_value
 
     local hook = hooks[ variable ]
-    xpcall( hook.call, dreamwork_errorHandler, hook, new_value )
+    xpcall( hook.call, dreamwork_errorHandler, hook, variable, new_value )
 
     values[ variable ] = new_value
 end, -1000 )

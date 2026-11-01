@@ -131,6 +131,7 @@ function Command:__newindex( key, value )
     if key == "autocomplete" then
         std.checktype( 3, value, "function" )
         autocomplete[ self ] = value
+        return
     end
 
     error( "attempt to write to read-only or non-existent field '" .. tostring( key ) .. "'", 2 )
@@ -235,7 +236,7 @@ end
 --- If the hook is currently running, the change is deferred and applied once
 --- the hook finishes running.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler dreamwork.std.console.Command.Callback
 function Command:attach( handler )
     hooks[ self ]:attach( "peek", handler )
 end
@@ -245,7 +246,7 @@ end
 --- Attaches a handler function to the hook that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler dreamwork.std.console.Command.Callback
 function Command:once( handler )
     hooks[ self ]:once( "peek", handler )
 end
@@ -256,7 +257,7 @@ end
 --- If the hook is currently running, the handler is replaced with a no-op and
 --- the actual removal is deferred until the hook finishes running.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler dreamwork.std.console.Command.Callback
 function Command:detach( handler )
     hooks[ self ]:detach( "peek", handler )
 end

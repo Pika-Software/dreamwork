@@ -3260,15 +3260,11 @@ if os.exit == nil then
 end
 
 local developer = console.Variable.get( "developer", "integer" )
-if developer == nil then
-    std.DEVELOPER = 1
-else
-    developer:attach( function( value )
-        std.DEVELOPER = value
-    end )
+std.DEVELOPER = developer.value
 
-    std.DEVELOPER = developer.value
-end
+developer:attach( function( _, value )
+    std.DEVELOPER = value
+end )
 
 local logger = console.Logger( {
     color = color_scheme.dreamwork_main,

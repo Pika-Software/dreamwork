@@ -266,6 +266,7 @@ end
 
 if server.getName == nil then
 
+    ---@type dreamwork.std.console.Variable<string>
     local dreamwork_server_hostname = console_Variable( {
         name = "dreamwork.server.hostname",
         description = "The publicly visible name of the server.",
@@ -280,29 +281,25 @@ if server.getName == nil then
     ---@return string hostname The name of the server.
     ---@nodiscard
     function server.getName()
-        ---@diagnostic disable-next-line: return-type-mismatch
         return dreamwork_server_hostname.value
     end
 
     if std.LUA_SERVER then
 
         local hostname = console_Variable.get( "hostname", "string" )
+        dreamwork_server_hostname.value = hostname.value
 
-        if hostname ~= nil then
-            dreamwork_server_hostname.value = hostname.value
+        dreamwork_server_hostname:attach( function( _, value )
+            if hostname.value ~= value then
+                hostname.value = value
+            end
+        end )
 
-            dreamwork_server_hostname:attach( function( value )
-                if hostname.value ~= value then
-                    hostname.value = value
-                end
-            end )
-
-            hostname:attach( function( value )
-                if dreamwork_server_hostname.value ~= value then
-                    dreamwork_server_hostname.value = value
-                end
-            end )
-        end
+        hostname:attach( function( _, value )
+            if dreamwork_server_hostname.value ~= value then
+                dreamwork_server_hostname.value = value
+            end
+        end )
 
         --- [SERVER]
         ---
@@ -323,8 +320,7 @@ if std.LUA_CLIENT_SERVER then
 
         local game_GetTimeScale = glua_game.GetTimeScale or debug
 
-        ---@type dreamwork.std.console.Variable<number>
-        local host_timescale = console_Variable.get( "host_timescale", "float" )
+        local host_timescale = console_Variable.get( "host_timescale", "number" )
 
         --- [SERVER]
         ---

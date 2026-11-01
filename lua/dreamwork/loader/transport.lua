@@ -82,3 +82,6 @@ function transport.startup()
     selected_transport:revert()
     transport.startup()
 end
+
+-- TODO: https://wiki.facepunch.com/gmod/resource.AddFile & https://wiki.facepunch.com/gmod/resource.AddSingleFile
+-- TODO: https://wiki.facepunch.com/gmod/Global.AddCSLuaFile

@@ -5,6 +5,8 @@
 ---
 --- Callback of `file.AsyncWrite` and `file.AsyncAppend`.
 ---
+--- Unlike `file.AsyncRead` and `gm_asyncio`, there is no `game_path` argument, the status is the second one.
+---
 ---@alias gm_async_write.Callback fun( path: string, status: garrysmod.file.AsyncStatus )
 
 --- [SHARED AND MENU]
@@ -13,24 +15,52 @@
 ---
 --- Available after `require( "async_write" )`. Modeled on `file.AsyncRead`, but may not be 1:1 with a future native implementation.
 ---
+--- The path is rejected right away with `FSASYNC_ERR_FILEOPEN` and the callback is **never called** if it ends with a slash,
+--- leaves `DATA`, is a directory or its extension is not one of `txt`, `dat`, `json`, `xml`, `csv`, `jpg`, `jpeg`, `png`, `vtf`, `vmt`, `mp3`, `wav` or `ogg`
+--- (case-sensitive, narrower than `file.Write`).
+---
+--- Missing directories are not created, the callback gets `FSASYNC_ERR_FILEOPEN` then.
+---
+--- Callbacks are called from a `Think` hook, one per tick.
+---
 --- ```lua
---- file.AsyncWrite( "hello.txt", "Hello", function( path, status )
+--- local status = file.AsyncWrite( "hello.txt", "Hello", function( path, status )
 ---     print( path, status == FSASYNC_OK )
 --- end )
+---
+--- if status ~= FSASYNC_OK then
+---     print( "rejected, the callback will not be called" )
+--- end
 --- ```
 ---
 ---@param path string The path to the file, relative to `DATA`.
 ---@param data string The data to write, replacing the file contents.
----@param callback gm_async_write.Callback Called when the write completes; `status` is `FSASYNC_OK`, `FSASYNC_ERR_FILEOPEN` or `FSASYNC_ERR_FAILURE`.
----@return garrysmod.file.AsyncStatus status The status of the queued write.
-function file.AsyncWrite( path, data, callback ) end
+---@param callback? gm_async_write.Callback Called when the write completes; `status` is `FSASYNC_OK`, `FSASYNC_ERR_FILEOPEN` or `FSASYNC_ERR_FAILURE`. Without it, the write is fire-and-forget.
+---@param sync? boolean If `true`, the file is written right away and the callback is called before the function returns.
+---@return garrysmod.file.AsyncStatus status `FSASYNC_OK` if queued, `FSASYNC_ERR_FILEOPEN` if the path was rejected.
+function file.AsyncWrite( path, data, callback, sync ) end
 
 --- [SHARED AND MENU]
 ---
---- Adds `file.AsyncAppend` to the `file` library. Same as `file.AsyncWrite`, but appends to the file.
+--- Adds `file.AsyncAppend` to the `file` library. Same as `file.AsyncWrite`, but appends to the file, creating it if missing.
+---
+--- **Warning:** the returned value is only a status if the path was rejected (`FSASYNC_ERR_FILEOPEN`).
+--- Otherwise the module pushes nothing and the top of the stack is returned, which is the last passed argument (`callback`, `sync` or `data`),
+--- so check it with `isnumber` first and rely on the callback for the result.
+---
+--- ```lua
+--- local status = file.AsyncAppend( "hello.txt", "!", function( path, status )
+---     print( path, status == FSASYNC_OK )
+--- end )
+---
+--- if isnumber( status ) and status ~= FSASYNC_OK then
+---     print( "rejected, the callback will not be called" )
+--- end
+--- ```
 ---
 ---@param path string The path to the file, relative to `DATA`.
 ---@param data string The data to append.
----@param callback gm_async_write.Callback Called when the append completes.
----@return garrysmod.file.AsyncStatus status The status of the queued append.
-function file.AsyncAppend( path, data, callback ) end
+---@param callback? gm_async_write.Callback Called when the append completes. Without it, the append is fire-and-forget.
+---@param sync? boolean If `true`, the file is appended right away and the callback is called before the function returns.
+---@return garrysmod.file.AsyncStatus | gm_async_write.Callback | boolean | string status `FSASYNC_ERR_FILEOPEN` if the path was rejected, otherwise the last passed argument.
+function file.AsyncAppend( path, data, callback, sync ) end
