@@ -306,7 +306,7 @@ do
 
         return string_format( "%08x-%04x-%04x-%04x-%04x%08x",
             timestamp_high,
-            timestamp - timestamp_high * 0x10000,
+            timestamp - (timestamp_high * 0x10000),
             0x7000 + sequence,
             0x8000 + math_random( 0, 0x3FFF ),
             math_random( 0, 0xFFFF ),
@@ -363,40 +363,44 @@ end
 
 do
 
-    -- `time.now()` at load plus 32 random bits, keeps identifiers apart between sessions and machines
-    local session_time, session_random = time_now(), math_random( 0, 0xFFFFFFFF )
     local counter = -1
 
     --- [SHARED AND MENU]
     ---
-    --- Returns a fast, process-unique identifier (24 lower-case hex digits).
+    --- Returns a fast, process-unique identifier formatted as a UUID version 8.
     ---
-    --- It is not a UUID, layout: `ssssssssrrrrrrrrcccccccc`
+    --- Layout: `ssssssss-rrrr-8rrr-Nrrr-rrrrcccccccc`
     --- * `s` - load time of the library in seconds, fixed per session.
-    --- * `r` - 32 random bits, fixed per session.
+    --- * `N`, `r` - variant and 58 random bits, fixed per session.
     --- * `c` - 32-bit counter, increments on every call.
     ---
     --- Identifiers never repeat within the process, sort in creation order
     --- and practically never collide between sessions or machines.
     --- They are trivially predictable, never use them as secrets.
     ---
-    --- Use it for cache file names, temporary keys and similar, prefer `uuid.v7` when the value must be a standard UUID.
+    --- Use it for cache file names, temporary keys and similar, prefer `uuid.v7` for record identifiers.
     ---
     --- ```lua
-    --- uuid.unique() -- e.g. "6902aa806ae3cad800000000"
-    --- uuid.unique() -- e.g. "6902aa806ae3cad800000001"
+    --- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000000"
+    --- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000001"
     --- ```
     ---
-    ---@return string id The unique identifier.
+    ---@return string uuid_str A UUID v8 string.
     ---@nodiscard
     function uuid.unique()
         counter = counter + 1
 
         if counter > 0xFFFFFFFF then
-            session_time, session_random, counter = time_now(), math_random( 0, 0xFFFFFFFF ), 0
+            counter = 0
         end
 
-        return string_format( "%08x%08x%08x", session_time, session_random, counter )
+        return string_format( "%08x-%04x-%04x-%04x-%04x",
+            time_now(),
+            math_random( 0, 0xFFFF ),
+            0x8000 + math_random( 0, 0x0FFF ),
+            0x8000 + math_random( 0, 0x3FFF ),
+            math_random( 0, 0xFFFF )
+        ) .. string_format( "%08x", counter )
     end
 
 end
