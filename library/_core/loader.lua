@@ -661,6 +661,18 @@ function raw.index(tbl, key) end
 
 --- [SHARED AND MENU]
 ---
+--- Converts any error value into an `Error` and captures its call stack if it has none yet.
+---
+--- Can be passed to `xpcall` directly as a message handler.
+---
+---@param error_value any The error value to convert.
+---@param error_class? ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+---@return Error error_object
+---@nodiscard
+function toError(error_value, error_class) end
+
+--- [SHARED AND MENU]
+---
 --- Throws an error with the specified message and level.
 ---
 --- An `Error` that already has a call stack is rethrown as is; if it was captured in another

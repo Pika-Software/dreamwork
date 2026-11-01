@@ -1,10 +1,5 @@
 ---@meta _
 
----@class dreamwork.GModGUILibrary
----@field ShowConsole fun() | nil
----@field IsConsoleVisible ( fun(): boolean ) | nil
-local glua_gui = {}
-
 --- [SHARED AND MENU]
 ---
 --- The source engine console library.

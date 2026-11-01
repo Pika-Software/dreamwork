@@ -1,45 +1,13 @@
 ---@meta _
 
----@class steam
-steam = {}
-
---- [SHARED AND MENU]
----
---- [Steam Account Type](https://developer.valvesoftware.com/wiki/SteamID#Types_of_Steam_Accounts)
----
----@alias steam.Identifier.type
----| `"Invalid"`
----| `"Individual"`
----| `"Multiseat"`
----| `"GameServer"`
----| `"AnonGameServer"`
----| `"Pending"`
----| `"ContentServer"`
----| `"Clan"`
----| `"Chat"`
----| `"ConsoleUser"`
----| `"AnonUser"
-
---- [SHARED AND MENU]
----
---- [Steam Account Universe](https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts)
----
----@alias steam.Identifier.universe
----| `"Invalid"`
----| `"Public"`
----| `"Beta"`
----| `"Internal"`
----| `"Dev"`
----| `"RC"`
-
 --- [SHARED AND MENU]
 ---
 --- The Steam ID object.
 ---
 ---@class steam.Identifier : Object
 ---@field __class steam.IdentifierClass
----@field universe steam.Identifier.universe Indicates the Steam environment (e.g., public, beta).
----@field type steam.Identifier.type Specifies the entity type (e.g., individual user, group, game server).
+---@field universe steam.IdentifierUniverse Indicates the Steam environment (e.g., public, beta).
+---@field type steam.IdentifierType Specifies the entity type (e.g., individual user, group, game server).
 ---@field instance integer Differentiates between multiple instances of the same type within a universe. For individual user accounts, this is typically set to 1, representing the desktop instance.
 ---@field id integer The unique account number.
 ---@operator add( integer ): steam.Identifier
@@ -52,19 +20,17 @@ local Identifier = {}
 ---
 ---@class steam.IdentifierClass : steam.Identifier
 ---@field __base steam.Identifier
----@overload fun( universe?: steam.Identifier.universe, type?: steam.Identifier.type, id?: integer, instance?: integer ): steam.Identifier
-local IdentifierClass = {}
-
-steam.Identifier = IdentifierClass
+---@overload fun( universe?: steam.IdentifierUniverse, type?: steam.IdentifierType, id?: integer, instance?: integer ): steam.Identifier
+steam.Identifier = {}
 
 ---@protected
-function Identifier:__add(int32) end
+function Identifier.__add(a, b) end
 
 ---@protected
 function Identifier:__sub(int32) end
 
 ---@protected
-function IdentifierClass:__new(universe, type, id, instance) end
+function steam.Identifier:__new(universe, type, id, instance) end
 
 --- [SHARED AND MENU]
 ---
@@ -72,6 +38,7 @@ function IdentifierClass:__new(universe, type, id, instance) end
 ---
 ---@param ignore_universe? boolean
 ---@return string
+---@nodiscard
 function Identifier:toSteam2(ignore_universe) end
 
 --- [SHARED AND MENU]
@@ -79,9 +46,11 @@ function Identifier:toSteam2(ignore_universe) end
 --- Converts a SteamID object to a Steam3 identifier.
 ---
 ---@return string steam3_str Steam3 identifier.
+---@nodiscard
 function Identifier:toSteam3() end
 
 ---@return string
+---@nodiscard
 ---@protected
 function Identifier:__tostring() end
 
@@ -91,6 +60,7 @@ function Identifier:__tostring() end
 ---
 ---@param object steam.Identifier
 ---@return string uint64_str SteamID as a 64-bit integer
+---@nodiscard
 function Identifier.to64(object) end
 
 --- [SHARED AND MENU]
@@ -99,6 +69,7 @@ function Identifier.to64(object) end
 ---
 ---@param http? boolean If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
 ---@return string | nil url_str The URL for the SteamID object.
+---@nodiscard
 function Identifier:getURL(http) end
 
 --- [SHARED AND MENU]
@@ -108,7 +79,8 @@ function Identifier:getURL(http) end
 ---@param uint64_str string The 64-bit identifier to check.
 ---@return boolean is_valid `true` if the string is a valid 64-bit identifier, `false` otherwise
 ---@return nil | string error_message The error message if the string is not a valid 64-bit identifier.
-function IdentifierClass.isValid64(uint64_str) end
+---@nodiscard
+function steam.Identifier.isValid64(uint64_str) end
 
 --- [SHARED AND MENU]
 ---
@@ -116,7 +88,8 @@ function IdentifierClass.isValid64(uint64_str) end
 ---
 ---@param uint64_str string The 64-bit number string.
 ---@return steam.Identifier
-function IdentifierClass.from64(uint64_str) end
+---@nodiscard
+function steam.Identifier.from64(uint64_str) end
 
 --- [SHARED AND MENU]
 ---
@@ -124,7 +97,8 @@ function IdentifierClass.from64(uint64_str) end
 ---
 ---@param steam2_str string The Steam2 identifier to check.
 ---@return boolean is_valid `true` if the string is a valid Steam2 identifier, `false` otherwise
-function IdentifierClass.isValidSteam2(steam2_str) end
+---@nodiscard
+function steam.Identifier.isValidSteam2(steam2_str) end
 
 --- [SHARED AND MENU]
 ---
@@ -132,7 +106,8 @@ function IdentifierClass.isValidSteam2(steam2_str) end
 ---
 ---@param steam3_str string The Steam3 identifier to check.
 ---@return boolean is_valid `true` if the string is a valid Steam3 identifier, `false` otherwise
-function IdentifierClass.isValidSteam3(steam3_str) end
+---@nodiscard
+function steam.Identifier.isValidSteam3(steam3_str) end
 
 --- [SHARED AND MENU]
 ---
@@ -141,7 +116,8 @@ function IdentifierClass.isValidSteam3(steam3_str) end
 ---@param steam2_str string The steam2 string to parse.
 ---@param allow_zero_universe? boolean Whether to allow the universe to be zero.
 ---@return steam.Identifier object The SteamID object.
-function IdentifierClass.fromSteam2(steam2_str, allow_zero_universe) end
+---@nodiscard
+function steam.Identifier.fromSteam2(steam2_str, allow_zero_universe) end
 
 --- [SHARED AND MENU]
 ---
@@ -149,4 +125,5 @@ function IdentifierClass.fromSteam2(steam2_str, allow_zero_universe) end
 ---
 ---@param steam3_str string The steam3 string to parse.
 ---@return steam.Identifier object The SteamID object.
-function IdentifierClass.fromSteam3(steam3_str) end
+---@nodiscard
+function steam.Identifier.fromSteam3(steam3_str) end

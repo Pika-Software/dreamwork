@@ -1,18 +1,5 @@
 ---@meta _
 
----@class dreamwork.GModEngineLib
----@field ActiveGamemode fun(): string
----@field ServerFrameTime fun(): number
----@field GetIPAddress fun(): string
-local glua_engine = {}
-
----@class dreamwork.GModGameLib
----@field SinglePlayer fun(): boolean
----@field IsDedicated fun(): boolean
----@field GetTimeScale fun(): number
----@field SetTimeScale fun(scale: number)
-local glua_game = {}
-
 --- [SHARED AND MENU]
 ---
 --- The game's server library.

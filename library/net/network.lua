@@ -17,12 +17,12 @@ Network = {}
 
 ---@class Network.Callback
 ---@field name string
----@field fn fun( network: Network, reader: buffer.Reader, index: integer, total: integer )
+---@field fn fun( network: Network, reader: BinaryReader, index: integer, total: integer )
 ---@field once boolean
 ---@type table<Network, Network.Callback[]>
 local receive_callbacks = {}
 
----@param fn fun( network: Network, reader: buffer.Reader, index: integer, total: integer )
+---@param fn fun( network: Network, reader: BinaryReader, index: integer, total: integer )
 ---@param identifier? string
 ---@param once? boolean
 function __Network:attach(fn, identifier, once) end
@@ -59,7 +59,7 @@ function __Network:__newindex(key, value) end
 ---@type Network.Thread[]
 local outgoing_activity = {}
 
----@param fn fun( network: Network, writer: buffer.Writer )
+---@param fn fun( network: Network, writer: BinaryWriter )
 ---@param client garrysmod.Player
 ---@return thread | nil
 function __Network:transmit(fn, client) end

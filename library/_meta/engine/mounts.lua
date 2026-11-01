@@ -1,0 +1,36 @@
+---@meta _
+
+
+--- [SHARED AND MENU]
+---
+--- Information about a game (e.g., Counter-Strike: Source) whose content can be mounted by the engine.
+---
+---@class dreamwork.engine.mounts.GameInfo
+---@field depot integer The game's Steam depot (app) ID.
+---@field folder string The game's mount folder name.
+---@field title string The game's display title.
+---@field owned boolean `true` if the user owns the game.
+---@field mounted boolean `true` if the game's content is currently mounted.
+---@field installed boolean `true` if the game is installed.
+---@field index integer The game's index in `dreamwork.engine.mounts.GameList`.
+---@field mount_time integer Time the game was mounted, as a Unix timestamp.
+
+--- [SHARED AND MENU]
+---
+--- Information about a Steam Workshop addon (`.gma`) known to the engine.
+---
+---@class dreamwork.engine.mounts.AddonInfo
+---@field downloaded boolean `true` if the addon is downloaded.
+---@field size integer The addon's size in bytes.
+---@field file string The path to the addon's `.gma` file.
+---@field mounted boolean `true` if the addon is currently mounted.
+---@field updated integer Time the addon was last updated on the Workshop, as a Unix timestamp.
+---@field models integer The number of models in the addon.
+---@field title string The addon's display title.
+---@field tags string The addon's Workshop tags, comma-separated.
+---@field wsid string The addon's Steam Workshop ID.
+---@field timeadded integer Time the addon was subscribed to, as a Unix timestamp.
+---@field index integer The addon's index in `dreamwork.engine.mounts.AddonList`.
+---@field laid integer The local addon ID, the `fnv1a` hash of the addon's `.gma` file path.
+---@field folder string The addon's folder name, `gma_` followed by `laid` as 8 hex digits.
+---@field mount_time integer Time the addon was mounted, as a Unix timestamp.

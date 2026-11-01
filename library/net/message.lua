@@ -8,7 +8,7 @@ local __Message = {}
 function __Message:__init(name) end
 
 ---
----@param fn fun( message: Message, sender: any, reader: buffer.Reader )
+---@param fn fun( message: Message, sender: any, reader: BinaryReader )
 function __Message:attach(fn) end
 
 ---@param data string
