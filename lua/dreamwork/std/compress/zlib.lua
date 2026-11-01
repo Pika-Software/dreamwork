@@ -1,8 +1,6 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local error = std.error
-
 local bitpack = std.bitpack
 local bitpack_get = bitpack.get
 local bitpack_readUInt = bitpack.readUInt
@@ -21,6 +19,8 @@ local Adler32_digest = Adler32.digest
 local deflate = std.deflate
 local deflate_compress = deflate.compress
 local deflate_decompress = deflate.decompress
+
+local error = std.error
 
 
 --- [SHARED AND MENU]

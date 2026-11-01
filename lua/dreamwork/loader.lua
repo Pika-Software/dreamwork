@@ -756,8 +756,8 @@ local dreamwork_getUpTime = dreamwork.getUpTime
 dreamwork.InitTime = dreamwork_getUpTime()
 
 -- detour library
-dofile( "dreamwork/detour.lua" )
-sendfile( "dreamwork/detour.lua" )
+dofile( "dreamwork/engine/detour.lua" )
+sendfile( "dreamwork/engine/detour.lua" )
 
 -- table library
 dofile( "dreamwork/std/table.lua" )
@@ -1719,8 +1719,9 @@ dofile( "dreamwork/std/types/big_fixed.lua" )
 sendfile( "dreamwork/std/types/big_fixed.lua" )
 
 -- engine submodule
-dofile( "dreamwork/engine.lua" )
-sendfile( "dreamwork/engine.lua" )
+-- TODO: split to separate sub modules (too large)
+dofile( "dreamwork/engine/engine.lua" )
+sendfile( "dreamwork/engine/engine.lua" )
 
 -- time library
 dofile( "dreamwork/std/time.lua" )
@@ -2863,8 +2864,8 @@ do
 end
 
 -- engine timers
-dofile( "dreamwork/engine.timer.lua" )
-sendfile( "dreamwork/engine.timer.lua" )
+dofile( "dreamwork/engine/timer.lua" )
+sendfile( "dreamwork/engine/timer.lua" )
 
 do
 
@@ -3133,6 +3134,30 @@ sendfile( "dreamwork/std/crypto/random.lua" )
 dofile( "dreamwork/std/uuid.lua" )
 sendfile( "dreamwork/std/uuid.lua" )
 
+-- lzw compression library
+dofile( "dreamwork/std/compress/lzw.lua" )
+sendfile( "dreamwork/std/compress/lzw.lua" )
+
+-- lz4 compression library
+dofile( "dreamwork/std/compress/lz4.lua" )
+sendfile( "dreamwork/std/compress/lz4.lua" )
+
+-- deflate compression library
+dofile( "dreamwork/std/compress/deflate.lua" )
+sendfile( "dreamwork/std/compress/deflate.lua" )
+
+-- zlib compression library
+dofile( "dreamwork/std/compress/zlib.lua" )
+sendfile( "dreamwork/std/compress/zlib.lua" )
+
+-- gzip compression library
+dofile( "dreamwork/std/compress/gzip.lua" )
+sendfile( "dreamwork/std/compress/gzip.lua" )
+
+-- lzma compression library
+dofile( "dreamwork/std/compress/lzma.lua" )
+sendfile( "dreamwork/std/compress/lzma.lua" )
+
 -- mixin
 dofile( "dreamwork/std/types/mixin.lua" )
 sendfile( "dreamwork/std/types/mixin.lua" )
@@ -3273,42 +3298,6 @@ local logger = console.Logger( {
 } )
 
 dreamwork.Logger = logger
-
--- virtual file system library
-dofile( "dreamwork/engine/vfs.lua" )
-sendfile( "dreamwork/engine/vfs.lua" )
-
--- -- file system library
--- dofile( "std/io/fs.lua" )
--- sendfile( "std/io/fs.lua" )
-
--- lzw compression library
-dofile( "dreamwork/std/compress/lzw.lua" )
-sendfile( "dreamwork/std/compress/lzw.lua" )
-
--- lz4 compression library
-dofile( "dreamwork/std/compress/lz4.lua" )
-sendfile( "dreamwork/std/compress/lz4.lua" )
-
--- deflate compression library
-dofile( "dreamwork/std/compress/deflate.lua" )
-sendfile( "dreamwork/std/compress/deflate.lua" )
-
--- zlib compression library
-dofile( "dreamwork/std/compress/zlib.lua" )
-sendfile( "dreamwork/std/compress/zlib.lua" )
-
--- gzip compression library
-dofile( "dreamwork/std/compress/gzip.lua" )
-sendfile( "dreamwork/std/compress/gzip.lua" )
-
--- lzma compression library
-dofile( "dreamwork/std/compress/lzma.lua" )
-sendfile( "dreamwork/std/compress/lzma.lua" )
-
--- sqlite library
-dofile( "std/db/sqlite.lua" )
-sendfile( "std/db/sqlite.lua" )
 
 -- Welcome message
 do
@@ -3461,6 +3450,18 @@ do
 
 end
 
+-- virtual file system library
+dofile( "dreamwork/engine/vfs.lua" )
+sendfile( "dreamwork/engine/vfs.lua" )
+
+-- -- file system library
+-- dofile( "std/io/fs.lua" )
+-- sendfile( "std/io/fs.lua" )
+
+-- sqlite library
+dofile( "std/db/sqlite.lua" )
+sendfile( "std/db/sqlite.lua" )
+
 if isFunction( holylib.GetRegistry ) then
     -- https://github.com/RaphaelIT7/gmod-holylib
     debug.setregistry( holylib.GetRegistry() )
@@ -3517,20 +3518,53 @@ do
     ---
     ---@param bytecode string The luajit bytecode chunk.
     ---@param env table | nil The environment of compiled function.
-    ---@return function | nil fn The compiled function.
-    ---@return string | nil msg The error message.
+    ---@return function fn The compiled function.
     ---@nodiscard
     function std.loadbytecode( bytecode, env )
         local success, result = pcall( load_bytecode, bytecode )
         if success and result ~= nil then
             ---@cast result function
             setfenv( result, env or getfenv( 2 ) )
-            return result, nil
+            return result
         end
 
         ---@diagnostic disable-next-line: cast-type-mismatch
         ---@cast result string | nil
-        return nil, result or "unknown error"
+        error( result or "unknown error", 2 )
+    end
+
+end
+
+do
+
+    local vfs_readFile = dreamwork.vfs.readFile
+
+    local string_isBytecode = string.isBytecode
+
+    local loadbytecode = std.loadbytecode
+    local loadstring = std.loadstring
+
+    --- [SHARED AND MENU]
+    ---
+    --- Loads a file as a lua code chunk in the specified environment
+    --- and returns function as a compile result.
+    ---
+    ---@param file_path string The path to the file to read.
+    ---@param env table | nil The environment of compiled function.
+    ---@return function fn The compiled function.
+    ---@nodiscard
+    function std.loadfile( file_path, env )
+        local content = vfs_readFile( file_path, 2 )
+
+        if env == nil then
+            env = getfenv( 2 )
+        end
+
+        if string_isBytecode( content, jit.version_byte ) then
+            return loadbytecode( content, env )
+        end
+
+        return loadstring( content, file_path, env )
     end
 
 end
@@ -3544,7 +3578,7 @@ end )
 ---@param addon_info dreamwork.engine.AddonInfo
 ---@param is_mounted boolean
 engine.hookCatch( "dreamwork.addon.mount", "logs", function( addon_info, is_mounted )
-    logger:debug( "Addon '%s' (%d) was %s.", addon_info.title, addon_info.index, is_mounted and "mounted" or "unmounted" )
+    logger:debug( "Addon '%s' (ID: %s) was %s.", addon_info.title, addon_info.folder, is_mounted and "mounted" or "unmounted" )
 end )
 
 do
@@ -3638,6 +3672,10 @@ end
 function std.require( modname, ... )
     -- TODO: reimplement
 end
+
+-- dreamwork cli
+dofile( "dreamwork/cli/init.lua" )
+sendfile( "dreamwork/cli/init.lua" )
 
 local total_memory = gc.getMemory()
 logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (dreamwork_getUpTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )

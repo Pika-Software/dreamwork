@@ -9,8 +9,6 @@ end
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local error = std.error
-
 local rbit = std.raw.bit
 local rbit_band, rbit_bor = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
@@ -27,6 +25,8 @@ local string_byte = string.byte
 local table = std.table
 local table_concat = table.concat
 local table_unpack = table.unpack
+
+local error = std.error
 
 
 --- [SHARED AND MENU]

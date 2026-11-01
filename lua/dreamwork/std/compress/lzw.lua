@@ -2,7 +2,6 @@
 local std = dreamwork.std
 
 local ffi = std.ffi
-local error = std.error
 
 local raw = std.raw
 local raw_type = raw.type
@@ -23,6 +22,8 @@ local string = std.string
 local string_len = string.len
 local string_char = string.char
 local string_byte = string.byte
+
+local error = std.error
 
 
 --- [SHARED AND MENU]
