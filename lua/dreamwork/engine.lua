@@ -327,6 +327,33 @@ do
 
     end
 
+    do
+
+        ---@param handlers dreamwork.engine.hook.Handler[]
+        ---@param vfs_path string
+        ---@param is_directory boolean
+        local function handler_vfs( handlers, vfs_path, is_directory )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( vfs_path, is_directory )
+            end
+        end
+
+        event_handlers[ "dreamwork.vfs.created" ] = handler_vfs
+        event_handlers[ "dreamwork.vfs.deleted" ] = handler_vfs
+        event_handlers[ "dreamwork.vfs.modified" ] = handler_vfs
+
+    end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param mount_path string
+    ---@param search_path string
+    ---@param is_mounted boolean
+    event_handlers[ "dreamwork.vfs.directory.mount" ] = function( handlers, mount_path, search_path, is_mounted )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( mount_path, search_path, is_mounted )
+        end
+    end
+
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@param command string
     ---@param pl garrysmod.Player | nil

@@ -3274,9 +3274,13 @@ local logger = console.Logger( {
 
 dreamwork.Logger = logger
 
--- file system library
-dofile( "std/io/fs.lua" )
-sendfile( "std/io/fs.lua" )
+-- virtual file system library
+dofile( "dreamwork/engine/vfs.lua" )
+sendfile( "dreamwork/engine/vfs.lua" )
+
+-- -- file system library
+-- dofile( "std/io/fs.lua" )
+-- sendfile( "std/io/fs.lua" )
 
 -- lzw compression library
 dofile( "dreamwork/std/compress/lzw.lua" )
