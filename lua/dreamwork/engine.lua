@@ -22,6 +22,7 @@ local debug_fempty = debug.fempty
 local debug_getmetatable = debug.getmetatable
 
 local string = std.string
+local string_fnv1a = string.fnv1a
 local string_lower = string.lower
 local string_format = string.format
 
@@ -1879,10 +1880,13 @@ do
                 local addon_title = addon_info.title
                 addons_hash[ addon_title ] = addon_info
 
-                if actual_addon_hash[ addon_title ] == nil then
-                    addon_info.folder = string_format( "gma_%.4x", addon_info.index )
+                local previous_info = actual_addon_hash[ addon_title ]
+                if previous_info == nil then
+                    addon_info.folder = string_format( "gma_%.4x", string_fnv1a( addon_title ) )
                     engine_hookCall( "dreamwork.addon.mount", addon_info, true )
                     addons_changed = addons_changed + 1
+                else
+                    addon_info.folder = previous_info.folder
                 end
             end
         end
