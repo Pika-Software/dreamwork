@@ -9,6 +9,9 @@
     "lua-language-server": {
       "settings": {
         "Lua": {
+          "completion": {
+            "autoRequire": false,
+          },
           "runtime": {
             "version": "LuaJIT",
             "special": {
