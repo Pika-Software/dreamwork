@@ -1,15 +1,18 @@
 local dreamwork_errorHandler = dreamwork.errorHandler
+local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
+
 local std = dreamwork.std
 
 ---@class dreamwork.std.console
 local console = std.console
 
-local engine = dreamwork.engine
-local engine_consoleCommandRun = engine.consoleCommandRun
-local engine_consoleVariableGet = engine.consoleVariableGet
-local engine_consoleVariableCreate = engine.consoleVariableCreate
-local engine_consoleVariableRemove = engine.consoleVariableRemove
-local engine_consoleVariableExists = engine.consoleVariableExists
+local engine_console = dreamwork_engine.console
+local console_commandRun = engine_console.commandRun
+local console_variableGet = engine_console.variableGet
+local console_variableCreate = engine_console.variableCreate
+local console_variableRemove = engine_console.variableRemove
+local console_variableExists = engine_console.variableExists
 
 local LUA_SERVER = std.LUA_SERVER
 
@@ -92,7 +95,7 @@ setmetatable( variable_to_gmodconvar, {
             return nil
         end
 
-        local cvar = engine_consoleVariableGet( name )
+        local cvar = console_variableGet( name )
         self[ variable ] = cvar
         return cvar
     end,
@@ -346,7 +349,7 @@ function Variable:__newindex( str_key, value )
         local cvar_type = types[ self ]
         if cvar_type == "boolean" then
             local bool_value = toboolean( value )
-            engine_consoleCommandRun( gmodconvar_names[ self ], bool_value and "1" or "0" )
+            console_commandRun( gmodconvar_names[ self ], bool_value and "1" or "0" )
             values[ self ] = bool_value
         elseif cvar_type == "integer" or cvar_type == "number" then
             local float_value = raw_tonumber( value, 10 ) or 0.0
@@ -354,11 +357,11 @@ function Variable:__newindex( str_key, value )
                 float_value = math_floor( float_value )
             end
 
-            engine_consoleCommandRun( gmodconvar_names[ self ], string_format( "%f", float_value ) )
+            console_commandRun( gmodconvar_names[ self ], string_format( "%f", float_value ) )
             values[ self ] = float_value
         else
             local str_value = tostring( value )
-            engine_consoleCommandRun( gmodconvar_names[ self ], str_value )
+            console_commandRun( gmodconvar_names[ self ], str_value )
             values[ self ] = str_value
         end
     elseif str_key == "type" then
@@ -370,7 +373,7 @@ end
 
 -- ---@protected
 -- function Variable:__gc()
---     engine_consoleVariableRemove( gmodconvar_names[ self ] )
+--     console_variableRemove( gmodconvar_names[ self ] )
 -- end
 
 ---@param options dreamwork.std.console.VariableOptions
@@ -382,7 +385,7 @@ function Variable:__init( options )
     local cvar_type = options.type or "string"
     types[ self ] = cvar_type
 
-    local cvar = engine_consoleVariableGet( str_name )
+    local cvar = console_variableGet( str_name )
     if cvar == nil then
         local str_description = options.description or ""
         gmodconvar_descriptions[ self ] = str_description
@@ -439,7 +442,7 @@ function Variable:__init( options )
             mins[ self ], maxs[ self ] = int32_min, int32_max
         end
 
-        cvar = engine_consoleVariableCreate( str_name, str_default, int32_flags, str_description, int32_min, int32_max )
+        cvar = console_variableCreate( str_name, str_default, int32_flags, str_description, int32_min, int32_max )
     end
 
     if cvar == nil then
@@ -468,7 +471,7 @@ function VariableClass:__new( str_name )
     return variables[ str_name ]
 end
 
-VariableClass.exists = engine_consoleVariableExists
+VariableClass.exists = console_variableExists
 
 --- [SHARED AND MENU]
 ---
@@ -485,7 +488,7 @@ VariableClass.exists = engine_consoleVariableExists
 function VariableClass.get( str_name, cvar_type )
     local variable = variables[ str_name ]
     if variable == nil then
-        if not engine_consoleVariableExists( str_name ) then
+        if not console_variableExists( str_name ) then
             error( "console variable '" .. str_name .. "' does not exist", 2 )
         end
 
@@ -517,7 +520,7 @@ end
 ---@return string value The value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getString( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return ""
     else
@@ -533,7 +536,7 @@ end
 ---@return integer value The value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getInteger( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return 0
     else
@@ -549,7 +552,7 @@ end
 ---@return number value The value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getFloat( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return 0.0
     else
@@ -567,7 +570,7 @@ VariableClass.getNumber = VariableClass.getFloat
 ---@return boolean value The value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getBoolean( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return false
     else
@@ -596,12 +599,12 @@ end
 ---
 ---@param name string The name of the console variable.
 function VariableClass.revert( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         error( "Variable '" .. name .. "' does not exist.", 2 )
     end
 
-    engine_consoleCommandRun( name, GModConVar_getDefault( object ) )
+    console_commandRun( name, GModConVar_getDefault( object ) )
 end
 
 --- [SHARED AND MENU]
@@ -612,7 +615,7 @@ end
 ---@return string help The help text of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getDescription( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return ""
     end
@@ -628,7 +631,7 @@ end
 ---@return string default The default value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getDefault( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return ""
     end
@@ -646,7 +649,7 @@ do
     ---@return integer flags The flags of the `console.Variable` object.
     ---@nodiscard
     local function getFlags( name )
-        local object = engine_consoleVariableGet( name )
+        local object = console_variableGet( name )
         if object == nil then
             return 0
         end
@@ -670,19 +673,19 @@ do
         local cvar_type = raw_type( value )
         if cvar_type == "boolean" then
             ---@cast value boolean
-            engine_consoleCommandRun( name, value and "1" or "0" )
+            console_commandRun( name, value and "1" or "0" )
         elseif cvar_type == "string" then
             ---@cast value string
-            engine_consoleCommandRun( name, value )
+            console_commandRun( name, value )
         elseif cvar_type == "number" then
             ---@cast value number | integer
 
             if (value % 1) == 0 then
                 ---@cast value integer
-                engine_consoleCommandRun( name, string_format( "%d", value ) )
+                console_commandRun( name, string_format( "%d", value ) )
             else
                 ---@cast value number
-                engine_consoleCommandRun( name, string_format( "%f", value ) )
+                console_commandRun( name, string_format( "%f", value ) )
             end
         end
 
@@ -700,7 +703,7 @@ end
 ---@return boolean is_set `true` if the flag is set on the `console.Variable` object, `false` otherwise.
 ---@nodiscard
 function VariableClass.isFlagSet( name, flags )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return false
     end
@@ -716,7 +719,7 @@ end
 ---@return number minimum The minimum value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getMin( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return 0
     end
@@ -732,7 +735,7 @@ end
 ---@return number maximum The maximum value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getMax( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return 0
     end
@@ -749,7 +752,7 @@ end
 ---@return number maximum The maximum value of the `console.Variable` object.
 ---@nodiscard
 function VariableClass.getBounds( name )
-    local object = engine_consoleVariableGet( name )
+    local object = console_variableGet( name )
     if object == nil then
         return 0, 0
     end
@@ -820,7 +823,7 @@ end
 ---@param str_name string
 ---@param str_old string
 ---@param str_new string
-engine.hookCatch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
+engine_hook.catch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
     if variable == nil then return end
 

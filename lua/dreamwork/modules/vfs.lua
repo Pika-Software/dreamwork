@@ -1,6 +1,10 @@
-local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
-local engine_hookCatch = engine.hookCatch
+local dreamwork_engine = dreamwork.engine
+
+local engine_mounts = dreamwork_engine.mounts
+
+local engine_hook = dreamwork_engine.hook
+local hook_catch = engine_hook.catch
+local hook_call = engine_hook.call
 
 local dreamwork_getUpTime = dreamwork.getUpTime
 local error_handler = dreamwork.errorHandler
@@ -331,8 +335,8 @@ do
             return status
         end
 
-        glua_file.AsyncWrite = detour.attach( async_write, glua_file.AsyncWrite )
-        glua_file.AsyncAppend = detour.attach( async_write, glua_file.AsyncAppend )
+        detour.attach( async_write, glua_file, "AsyncWrite" )
+        detour.attach( async_write, glua_file, "AsyncAppend" )
     end
 
 end
@@ -864,7 +868,7 @@ local function reattach( nested, nested_count )
 
         if not attach_at( mount.path, mount.node ) then
             mounts[ mount.path ] = nil
-            engine_hookCall( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
+            hook_call( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
         end
     end
 end
@@ -1422,7 +1426,7 @@ do
     ---@param is_directory boolean
     local function watch_report( event_name, vfs_path, is_directory )
         if vfs_path ~= reported_path then
-            engine_hookCall( event_name, vfs_path, is_directory )
+            hook_call( event_name, vfs_path, is_directory )
         end
     end
 
@@ -1748,7 +1752,7 @@ do
             reported_path = previous_path
         end
 
-        engine_hookCall( event_name, vfs_path, is_directory )
+        hook_call( event_name, vfs_path, is_directory )
     end
 
     --- Reports changes of a mount, virtual directories can be created or pruned anywhere on the way to it.
@@ -1786,7 +1790,7 @@ do
         end
     end
 
-    engine_hookCatch( "Tick", "dreamwork.vfs.watchdog", function()
+    hook_catch( "Tick", "dreamwork.vfs.watchdog", function()
         if watch_count == 0 then return end
 
         -- the scanned directory could be unwatched by an event handler
@@ -2053,7 +2057,7 @@ do
             end
 
             mounts[ mount_path ] = mount
-            engine_hookCall( "dreamwork.vfs.directory.mount", mount_path, search_path, true )
+            hook_call( "dreamwork.vfs.directory.mount", mount_path, search_path, true )
             watchdog_refresh_mount( mount_path, true )
 
             return true
@@ -2090,7 +2094,7 @@ do
         end
 
         map_unmount( mount )
-        engine_hookCall( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
+        hook_call( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
         watchdog_refresh_mount( mount.path, false )
 
         return true
@@ -3329,7 +3333,7 @@ end
 
 do
 
-    ---@param game_info dreamwork.engine.GameInfo
+    ---@param game_info dreamwork.engine.mounts.GameInfo
     ---@param is_mounted boolean
     local function game_mount( game_info, is_mounted )
         local folder = game_info.folder
@@ -3342,7 +3346,7 @@ do
         end
     end
 
-    ---@param addon_info dreamwork.engine.AddonInfo
+    ---@param addon_info dreamwork.engine.mounts.AddonInfo
     ---@param is_mounted boolean
     local function addon_mount( addon_info, is_mounted )
         local mount_path = "/addons/" .. addon_info.folder
@@ -3353,16 +3357,16 @@ do
         end
     end
 
-    engine_hookCatch( "dreamwork.game.mount", "dreamwork.vfs", game_mount, 2 )
-    engine_hookCatch( "dreamwork.addon.mount", "dreamwork.vfs", addon_mount, 2 )
+    hook_catch( "dreamwork.game.mount", "dreamwork.vfs", game_mount, 2 )
+    hook_catch( "dreamwork.addon.mount", "dreamwork.vfs", addon_mount, 2 )
 
-    local game_list = engine.GameList
-    for index = 1, engine.GameCount or 0, 1 do
+    local game_list = engine_mounts.GameList
+    for index = 1, engine_mounts.GameCount or 0, 1 do
         game_mount( game_list[ index ], true )
     end
 
-    local addon_list = engine.AddonList
-    for index = 1, engine.AddonCount or 0, 1 do
+    local addon_list = engine_mounts.AddonList
+    for index = 1, engine_mounts.AddonCount or 0, 1 do
         addon_mount( addon_list[ index ], true )
     end
 

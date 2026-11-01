@@ -1,31 +1,34 @@
-if dreamwork.engine.timer ~= nil then return end
+---@class dreamwork.engine
+local dreamwork_engine = dreamwork.engine
+if dreamwork_engine.timer ~= nil then return end
 
 local dreamwork_errorHandler = dreamwork.errorHandler
 local dreamwork_getUpTime = dreamwork.getUpTime
+local engine_hook = dreamwork_engine.hook
 
----@class dreamwork.engine
-local engine = dreamwork.engine
 local std = dreamwork.std
-
-local xpcall = std.xpcall
 
 local debug = std.debug
 local debug_fempty = debug.fempty
 
-local bit = std.bit
-local bit_rshift = bit.rshift
+local raw = std.raw
+
+local rbit = raw.bit
+local rbit_rshift = rbit.rshift
 
 local math = std.math
 local math_max = math.max
 local math_huge = math.huge
 
+local xpcall = std.xpcall
+
 
 ---
 --- Named timers ticked by garry's mod `timer` or the `Think` hook.
 ---
----@class dreamwork.std.engine.timer
+---@class dreamwork.engine.timer
 local engine_timer = {}
-engine.timer = engine_timer
+dreamwork_engine.timer = engine_timer
 
 ---@type table<string, number>
 local intervals = {}
@@ -64,9 +67,6 @@ local heap_names = {}
 --- The amount of scheduled timers.
 local heap_size = 0
 
---- The amount of created fallback simple timers.
-local simple_count = 0
-
 --- Uptime of the next call, `heap_deadlines[ i ]` belongs to `heap_names[ i ]`.
 ---
 ---@type number[]
@@ -91,7 +91,7 @@ end
 ---@param deadline number
 local function heap_siftUp( index, name, deadline )
     while index > 1 do
-        local parent = bit_rshift( index, 1 )
+        local parent = rbit_rshift( index, 1 )
 
         local parent_deadline = heap_deadlines[ parent ]
         if parent_deadline <= deadline then
@@ -242,7 +242,7 @@ do
 
     local timer_api = systimer or timer
     if timer_api == nil then
-        engine.hookCatch( "Think", "dreamwork.engine.timer", tick )
+        engine_hook.catch( "Think", "dreamwork.engine.timer", tick )
     else
         timer_api.Create( "dreamwork.engine.timer", 0, 0, tick )
     end
@@ -652,11 +652,7 @@ function engine_timer.resume( name )
     return true
 end
 
--- `systimer.Simple` is not used, it has the same heap corruption as `systimer.Create`
--- when called from a `systimer` callback, and every timer here runs inside one
-local timer_Simple = timer ~= nil and timer.Simple or nil
-
-if timer_Simple == nil then
+if timer.Simple == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -679,6 +675,8 @@ if timer_Simple == nil then
 
 else
 
+    local timer_Simple = timer.Simple
+
     --- [SHARED AND MENU]
     ---
     --- Calls the function once after the delay.
@@ -688,5 +686,37 @@ else
     function engine_timer.simple( delay, fn )
         timer_Simple( delay, fn )
     end
+
+end
+
+do
+
+    ---@type function[]
+    local queue = { [ 0 ] = 0 }
+
+    --- [SHARED AND MENU]
+    ---
+    --- Calls a function once on the next engine `Tick`, before regular tick hooks (priority `-1000`).
+    ---
+    --- Functions run in the order they were queued, with no arguments, and their return values are ignored.
+    ---
+    --- Cheaper than `timer.simple( 0, fn )`, as no timer object is created.
+    ---
+    ---@param fn fun() The function to call on the next tick.
+    function timer.nextTick( fn )
+        local queue_size = queue[ 0 ] + 1
+        queue[ queue_size ] = fn
+        queue[ 0 ] = queue_size
+    end
+
+    engine_hook.catch( "Tick", "engine.timer.waitNextTick", function()
+        if queue[ 0 ] == 0 then return end
+
+        for i = 1, queue[ 0 ], 1 do
+            queue[ i ]()
+        end
+
+        queue[ 0 ] = 0
+    end, -1000 )
 
 end

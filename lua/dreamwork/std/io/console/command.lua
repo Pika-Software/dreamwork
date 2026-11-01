@@ -1,13 +1,17 @@
 local dreamwork_errorHandler = dreamwork.errorHandler
+local dreamwork_engine = dreamwork.engine
+
+local engine_hook = dreamwork_engine.hook
+
+local engine_console = dreamwork_engine.console
+local console_commandRun = engine_console.commandRun
+local console_commandBlocked = engine_console.commandBlocked
+local console_commandRegister = engine_console.commandRegister
+
 local std = dreamwork.std
 
 ---@class dreamwork.std.console
 local console = std.console
-
-local engine = dreamwork.engine
-local engine_consoleCommandRun = engine.consoleCommandRun
-local engine_consoleCommandBlocked = engine.consoleCommandBlocked
-local engine_consoleCommandRegister = engine.consoleCommandRegister
 
 local raw = std.raw
 local raw_index = raw.index
@@ -93,7 +97,7 @@ function Command:__init( options )
     local description = options.description or "description not provided"
 
     local int32_flags = console.flags( options.flags or 0, options )
-    engine_consoleCommandRegister( name, description, int32_flags )
+    console_commandRegister( name, description, int32_flags )
 
     names[ self ] = name
     descriptions[ self ] = description
@@ -164,8 +168,8 @@ function CommandClass.get( name )
     return commands[ name ]
 end
 
-CommandClass.exists = engine.consoleCommandExists
-CommandClass.run = engine_consoleCommandRun
+CommandClass.exists = engine_console.commandExists
+CommandClass.run = console_commandRun
 
 --- [SHARED AND MENU]
 ---
@@ -176,7 +180,7 @@ function Command:run( ... )
     local name = names[ self ]
     if name == nil then return end
 
-    engine_consoleCommandRun( name, ... )
+    console_commandRun( name, ... )
 end
 
 if std.LUA_CLIENT_MENU then
@@ -209,7 +213,7 @@ end
 ---@return boolean is_blacklisted `true` if the console command is blacklisted, `false` otherwise.
 ---@nodiscard
 function CommandClass.isBlacklisted( name )
-    return engine_consoleCommandBlocked( name )
+    return console_commandBlocked( name )
 end
 
 --- [SHARED AND MENU]
@@ -224,7 +228,7 @@ function Command:isBlacklisted()
         return false
     end
 
-    return engine_consoleCommandBlocked( name )
+    return console_commandBlocked( name )
 end
 
 --- [SHARED AND MENU]
@@ -284,7 +288,7 @@ end
 ---@param name string
 ---@param argument_string string
 ---@param args string[]
-engine.hookCatch( "dreamwork.console.command.execute", "console.handle", function( client, name, args, argument_string )
+engine_hook.catch( "dreamwork.console.command.execute", "console.handle", function( client, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
         return nil
@@ -305,7 +309,7 @@ end, -500 )
 ---@param name string
 ---@param argument_string string
 ---@param args string[]
-engine.hookCatch( "dreamwork.console.command.autocomplete", "console.autocomplete", function( name, argument_string, args )
+engine_hook.catch( "dreamwork.console.command.autocomplete", "console.autocomplete", function( name, argument_string, args )
     local command = commands[ name ]
     if command == nil then return end
 

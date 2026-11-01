@@ -1,15 +1,17 @@
-local engine                       = dreamwork.engine
-local engine_consoleMessageColored = engine.consoleMessageColored
+local dreamwork_engine = dreamwork.engine
+
+local engine_console = dreamwork_engine.console
+local console_messageColored = engine_console.messageColored
 
 
-local std           = dreamwork.std
+local std   = dreamwork.std
+
+local class = std.class
+
 
 local raw           = std.raw
 local raw_select    = raw.select
 local raw_tostring  = raw.tostring
-
-local color_scheme  = std.color.Scheme
-local realm_color   = color_scheme.realm
 
 local time          = std.time
 local time_format   = time.format
@@ -18,7 +20,9 @@ local string        = std.string
 local string_gsub   = string.gsub
 local string_format = string.format
 
-local class         = std.class
+
+local color_scheme = std.color.Scheme
+local realm_color  = color_scheme.realm
 
 
 local represent = std.represent
@@ -127,12 +131,12 @@ end
 ---@param fmt string The log message.
 ---@param ... any The log message arguments to format/interpolate.
 local function write_log( object, color, level, fmt, ... )
-    engine_consoleMessageColored( time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), secondary_text_color )
-    engine_consoleMessageColored( realm_text, realm_color )
-    engine_consoleMessageColored( level, color )
-    engine_consoleMessageColored( " --> ", secondary_text_color )
-    engine_consoleMessageColored( object.title, object.title_color )
-    engine_consoleMessageColored( " : ", secondary_text_color )
+    console_messageColored( time_format( "{day}-{month}-{year} {hours}:{minutes}:{seconds}.{milliseconds} " ), secondary_text_color )
+    console_messageColored( realm_text, realm_color )
+    console_messageColored( level, color )
+    console_messageColored( " --> ", secondary_text_color )
+    console_messageColored( object.title, object.title_color )
+    console_messageColored( " : ", secondary_text_color )
 
     if object.interpolation then
         local args = {}
@@ -141,11 +145,11 @@ local function write_log( object, color, level, fmt, ... )
             args[ raw_tostring( i ) ] = represent( raw_select( i, ... ) )
         end
 
-        engine_consoleMessageColored( string_gsub( fmt, "{([0-9]+)}", args ) .. "\n", object.text_color )
+        console_messageColored( string_gsub( fmt, "{([0-9]+)}", args ) .. "\n", object.text_color )
         return
     end
 
-    engine_consoleMessageColored( string_format( fmt, ... ) .. "\n", object.text_color )
+    console_messageColored( string_format( fmt, ... ) .. "\n", object.text_color )
 end
 
 Logger.log = write_log

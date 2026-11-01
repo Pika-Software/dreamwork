@@ -143,3 +143,11 @@ function SysTime() end
 ---@param handleError boolean If `false` this function will return an error string instead of throwing an error.
 ---@return function | string result
 function CompileString( code, identifier, handleError ) end
+
+--- [SHARED AND MENU]
+---
+--- Writes text to the right hand side of the screen, like the old error system. Messages disappear after a couple of seconds.
+---
+---@param slot integer The location on the right hand screen to write the debug info to. Starts at 0, no upper limit.
+---@param info string The debugging information to be written to the screen.
+function DebugInfo( slot, info ) end

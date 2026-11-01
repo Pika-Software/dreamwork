@@ -6,8 +6,8 @@ local std = dreamwork.std
 
 local class = std.class
 
-local engine = dreamwork.engine
-local engine_hookCatch = engine.hookCatch
+local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
 
 local CurTime = CurTime
 local Hook = std.Hook
@@ -51,7 +51,7 @@ do
 
     -- TODO: attempt to implement manual tick counter, to stop calling engine fn
 
-    engine.hookCatch( "Tick", "dreamwork.tick_counter", function()
+    engine_hook.catch( "Tick", "dreamwork.tick_counter", function()
         local ticks_elapsed = engine_TickCount()
         if ticks_elapsed ~= tick_id then
             tick_id = ticks_elapsed

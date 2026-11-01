@@ -2,9 +2,11 @@
 local dreamwork = dreamwork
 local std = dreamwork.std
 
-local engine = dreamwork.engine
-local engine_consoleMessage = engine.consoleMessage
-local engine_consoleMessageColored = engine.consoleMessageColored
+local dreamwork_engine = dreamwork.engine
+local engine_console = dreamwork_engine.console
+
+local console_message = engine_console.message
+local console_messageColored = engine_console.messageColored
 
 local console = std.console
 local console_Command = console.Command
@@ -31,8 +33,7 @@ local math = std.math
 local math_ceil = math.ceil
 local math_floor = math.floor
 
-local sendfile = dreamwork.sendfile
-local dofile = dreamwork.dofile
+local dreamwork_load = dreamwork.load
 
 
 --- [SHARED AND MENU]
@@ -100,7 +101,7 @@ local function print_help( page )
         page = 1
     end
 
-    engine_consoleMessageColored( string_format( "Usage: %s <command> [arguments]\n", console_command.name ), COLOR_DESCRIPTION )
+    console_messageColored( string_format( "Usage: %s <command> [arguments]\n", console_command.name ), COLOR_DESCRIPTION )
 
     local first = (page - 1) * HELP_PAGE_SIZE + 1
     local last = first + HELP_PAGE_SIZE - 1
@@ -112,28 +113,28 @@ local function print_help( page )
         local name = names[ index ]
         local command = commands[ name ]
 
-        engine_consoleMessage( "  " )
-        engine_consoleMessageColored( name, COLOR_NAME )
+        console_message( "  " )
+        console_messageColored( name, COLOR_NAME )
 
         local usage = command.usage
         if usage ~= nil then
-            engine_consoleMessage( " " .. usage )
+            console_message( " " .. usage )
         end
 
         local description = command.description
         if description ~= nil then
-            engine_consoleMessageColored( " - " .. description, COLOR_DESCRIPTION )
+            console_messageColored( " - " .. description, COLOR_DESCRIPTION )
         end
 
-        engine_consoleMessage( "\n" )
+        console_message( "\n" )
     end
 
-    engine_consoleMessageColored( string_format( "\nPage %d/%d (%d commands)\n", page, page_count, name_count ), COLOR_NAME )
+    console_messageColored( string_format( "\nPage %d/%d (%d commands)\n", page, page_count, name_count ), COLOR_NAME )
 
     if page < page_count then
-        engine_consoleMessageColored( string_format( "Use '%s help %d' to see the next page.\n", console_command.name, page + 1 ), COLOR_DESCRIPTION )
+        console_messageColored( string_format( "Use '%s help %d' to see the next page.\n", console_command.name, page + 1 ), COLOR_DESCRIPTION )
     elseif page_count > 1 then
-        engine_consoleMessageColored( string_format( "Use '%s help <page>' to see another page.\n", console_command.name ), COLOR_DESCRIPTION )
+        console_messageColored( string_format( "Use '%s help <page>' to see another page.\n", console_command.name ), COLOR_DESCRIPTION )
     end
 end
 
@@ -143,7 +144,7 @@ console_command:attach( function( self, client, args, argument_string )
 
     local command = commands[ name ]
     if command == nil then
-        engine_consoleMessageColored( string_format( "Unknown command '%s', see '%s help'.\n", name, self.name ), COLOR_ERROR )
+        console_messageColored( string_format( "Unknown command '%s', see '%s help'.\n", name, self.name ), COLOR_ERROR )
         return
     end
 
@@ -230,7 +231,7 @@ cli.register( "help", {
         if page_str ~= nil then
             local page_value = raw_tonumber( page_str, 10 )
             if page_value == nil or page_value ~= page_value or page_value > 0xFFFF then
-                engine_consoleMessageColored( "Invalid page number.\n", COLOR_ERROR )
+                console_messageColored( "Invalid page number.\n", COLOR_ERROR )
                 return
             end
 
@@ -241,6 +242,4 @@ cli.register( "help", {
     end
 } )
 
-
-dofile( "dreamwork/cli/modules/debug.lua" )
-sendfile( "dreamwork/cli/modules/debug.lua" )
+dreamwork_load( "modules/cli/commands/debug.lua" )

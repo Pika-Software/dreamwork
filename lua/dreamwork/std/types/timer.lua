@@ -1,5 +1,5 @@
-local engine = dreamwork.engine
-local engine_timer = engine.timer
+local dreamwork_engine = dreamwork.engine
+local engine_timer = dreamwork_engine.timer
 
 local engine_timer_create = engine_timer.create
 local engine_timer_remove = engine_timer.remove

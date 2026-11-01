@@ -2,7 +2,6 @@ local sql = sql
 local sql_Query = sql.Query
 
 local dreamwork_Logger = dreamwork.Logger
-local dreamwork_toError = dreamwork.toError
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -25,6 +24,7 @@ local isString = std.isString
 local null = std.null
 
 local tostring = std.tostring
+local toError = std.toError
 local xpcall = std.xpcall
 local error = std.error
 local type = std.type
@@ -228,7 +228,7 @@ end
 function sqlite.transaction( fn )
     query_raw( "begin" )
 
-    local ok, result = xpcall( fn, dreamwork_toError, query )
+    local ok, result = xpcall( fn, toError, query )
     if ok then
         query_raw( "commit" )
         return result

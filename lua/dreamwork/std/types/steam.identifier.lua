@@ -26,42 +26,13 @@ local class = std.class
 
 local setmetatable = std.setmetatable
 local error = std.error
+local isNumber = std.isNumber
 
 
 ---@class dreamwork.std.steam
-local steam = {}
-std.steam = steam
+local steam = std.steam
 
---- [SHARED AND MENU]
----
---- [Steam Account Type](https://developer.valvesoftware.com/wiki/SteamID#Types_of_Steam_Accounts)
----
----@alias dreamwork.std.steam.Identifier.type
----| `"Invalid"`
----| `"Individual"`
----| `"Multiseat"`
----| `"GameServer"`
----| `"AnonGameServer"`
----| `"Pending"`
----| `"ContentServer"`
----| `"Clan"`
----| `"Chat"`
----| `"ConsoleUser"`
----| `"AnonUser"
-
---- [SHARED AND MENU]
----
---- [Steam Account Universe](https://developer.valvesoftware.com/wiki/SteamID#Universes_Available_for_Steam_Accounts)
----
----@alias dreamwork.std.steam.Identifier.universe
----| `"Invalid"`
----| `"Public"`
----| `"Beta"`
----| `"Internal"`
----| `"Dev"`
----| `"RC"`
-
----@type table<dreamwork.std.steam.Identifier.type, integer>
+---@type table<dreamwork.std.steam.IdentifierType, integer>
 local type2int = {
     Invalid = 0,
     Individual = 1,
@@ -76,7 +47,7 @@ local type2int = {
     AnonUser = 10
 }
 
----@type table<dreamwork.std.steam.Identifier.universe, integer>
+---@type table<dreamwork.std.steam.IdentifierUniverse, integer>
 local universe2int = {
     Invalid = 0,
     Public = 1,
@@ -112,8 +83,8 @@ local int2type = table.flipped( type2int )
 ---
 ---@class dreamwork.std.steam.Identifier : dreamwork.std.Object
 ---@field __class dreamwork.std.steam.IdentifierClass
----@field universe dreamwork.std.steam.Identifier.universe Indicates the Steam environment (e.g., public, beta).
----@field type dreamwork.std.steam.Identifier.type Specifies the entity type (e.g., individual user, group, game server).
+---@field universe dreamwork.std.steam.IdentifierUniverse Indicates the Steam environment (e.g., public, beta).
+---@field type dreamwork.std.steam.IdentifierType Specifies the entity type (e.g., individual user, group, game server).
 ---@field instance integer Differentiates between multiple instances of the same type within a universe. For individual user accounts, this is typically set to 1, representing the desktop instance.
 ---@field id integer The unique account number.
 ---@operator add( integer ): dreamwork.std.steam.Identifier
@@ -126,22 +97,31 @@ local Identifier = class.base( "Identifier" )
 ---
 ---@class dreamwork.std.steam.IdentifierClass : dreamwork.std.steam.Identifier
 ---@field __base dreamwork.std.steam.Identifier
----@overload fun( universe?: dreamwork.std.steam.Identifier.universe, type?: dreamwork.std.steam.Identifier.type, id?: integer, instance?: integer ): dreamwork.std.steam.Identifier
+---@overload fun( universe?: dreamwork.std.steam.IdentifierUniverse, type?: dreamwork.std.steam.IdentifierType, id?: integer, instance?: integer ): dreamwork.std.steam.Identifier
 local IdentifierClass = class.create( Identifier )
 steam.Identifier = IdentifierClass
 
 ---@protected
-function Identifier:__add( int32 )
+function Identifier.__add( a, b )
+    -- `number + identifier`
+    if isNumber( a ) then
+        a, b = b, a
+    end
+
     return setmetatable( {
-        universe = self.universe,
-        type = self.type,
-        instance = self.instance,
-        id = self.id + int32
+        universe = a.universe,
+        type = a.type,
+        instance = a.instance,
+        id = a.id + b
     }, Identifier )
 end
 
 ---@protected
 function Identifier:__sub( int32 )
+    if isNumber( self ) then
+        error( "attempt to subtract an identifier from a number, only `identifier - number` is supported", 2 )
+    end
+
     return setmetatable( {
         universe = self.universe,
         type = self.type,
@@ -166,6 +146,7 @@ end
 ---
 ---@param ignore_universe? boolean
 ---@return string
+---@nodiscard
 function Identifier:toSteam2( ignore_universe )
     local id = self.id
     local y = id % 2
@@ -174,7 +155,7 @@ end
 
 do
 
-    ---@type table<dreamwork.std.steam.Identifier.type, string>
+    ---@type table<dreamwork.std.steam.IdentifierType, string>
     local type2letter = {
         Invalid = "I",
         Individual = "U",
@@ -194,6 +175,7 @@ do
     --- Converts a SteamID object to a Steam3 identifier.
     ---
     ---@return string steam3_str Steam3 identifier.
+    ---@nodiscard
     function Identifier:toSteam3()
         return string_format( "[%s:%d:%d]", type2letter[ self.type ] or "I", universe2int[ self.universe ] or 0, self.id )
     end
@@ -201,6 +183,7 @@ do
 end
 
 ---@return string
+---@nodiscard
 ---@protected
 function Identifier:__tostring()
     return string_format( "Steam Identifier: %p %s", self, self:toSteam3() )
@@ -212,6 +195,7 @@ end
 ---
 ---@param object dreamwork.std.steam.Identifier
 ---@return string uint64_str SteamID as a 64-bit integer
+---@nodiscard
 local function to64( object )
     local high = bit_bor(
         bit_lshift( universe2int[ object.universe ] or 0, 24 ),
@@ -256,6 +240,7 @@ do
     ---
     ---@param http? boolean If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
     ---@return string | nil url_str The URL for the SteamID object.
+    ---@nodiscard
     function Identifier:getURL( http )
         local path = int2path[ self.type ]
         if path == nil then
@@ -289,6 +274,7 @@ local byte2int = {
 ---@param uint64_str string The 64-bit identifier to check.
 ---@return boolean is_valid `true` if the string is a valid 64-bit identifier, `false` otherwise
 ---@return nil | string error_message The error message if the string is not a valid 64-bit identifier.
+---@nodiscard
 function IdentifierClass.isValid64( uint64_str )
     local uint64_str_length = string_len( uint64_str )
 
@@ -311,6 +297,7 @@ end
 ---
 ---@param uint64_str string The 64-bit number string.
 ---@return dreamwork.std.steam.Identifier
+---@nodiscard
 function IdentifierClass.from64( uint64_str )
     -- original variant was replaced with a more efficient implementation from Be1zebub: https://github.com/Be1zebub/Small-GLua-Things/blob/master/libs/steamid64-parse.lua
     local high, low = 0, 0
@@ -335,6 +322,7 @@ end
 ---
 ---@param steam2_str string The Steam2 identifier to check.
 ---@return boolean is_valid `true` if the string is a valid Steam2 identifier, `false` otherwise
+---@nodiscard
 function IdentifierClass.isValidSteam2( steam2_str )
     local x, y, z = string_match( steam2_str, "^STEAM_(%d+):(%d+):(%d+)$" )
     if not (x and y and z) then
@@ -364,6 +352,7 @@ end
 ---
 ---@param steam3_str string The Steam3 identifier to check.
 ---@return boolean is_valid `true` if the string is a valid Steam3 identifier, `false` otherwise
+---@nodiscard
 function IdentifierClass.isValidSteam3( steam3_str )
     local letter, universe_str, id_str = string_match( steam3_str, "^%[(%a):(%d+):(%d+)%]$" )
     if not (letter and universe_str and id_str) or letter2int[ letter ] == nil then
@@ -390,6 +379,7 @@ end
 ---@param steam2_str string The steam2 string to parse.
 ---@param allow_zero_universe? boolean Whether to allow the universe to be zero.
 ---@return dreamwork.std.steam.Identifier object The SteamID object.
+---@nodiscard
 function IdentifierClass.fromSteam2( steam2_str, allow_zero_universe )
     local x, y, z = string_match( steam2_str, "^STEAM_([12]?%d?%d):([01]):(%d+)$" )
     if x == nil or y == nil or z == nil then
@@ -415,6 +405,7 @@ end
 ---
 ---@param steam3_str string The steam3 string to parse.
 ---@return dreamwork.std.steam.Identifier object The SteamID object.
+---@nodiscard
 function IdentifierClass.fromSteam3( steam3_str )
     local letter, universe, id = string_match( steam3_str, "^%[?(%a):(%d+):(%d+)%]?$" )
     if letter == nil or universe == nil or id == nil then

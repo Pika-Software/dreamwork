@@ -1,5 +1,3 @@
-local _G = _G
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -22,7 +20,7 @@ std.Gamemode = GamemodeClass
 
 -- TODO: make gamemode class and gamemode handler
 
--- dreamwork.engine.hookCatch( "GamemodeLoaded", function()
+-- dreamwork.engine.hook.catch( "GamemodeLoaded", function()
 --     -- -- https://github.com/Facepunch/garrysmod-requests/issues/2793
 --     -- local sv_defaultdeployspeed = console_Variable.get( "sv_defaultdeployspeed", "number" )
 --     -- if sv_defaultdeployspeed ~= nil and sv_defaultdeployspeed.value == 4 then

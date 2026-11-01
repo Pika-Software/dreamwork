@@ -1,15 +1,13 @@
-local sendfile = dreamwork.sendfile
-local dofile = dreamwork.dofile
+local dreamwork_engine = dreamwork.engine
+local dreamwork_load = dreamwork.load
 
----@class dreamwork.GModGUILibrary
----@field ShowConsole fun() | nil
----@field IsConsoleVisible ( fun(): boolean ) | nil
----@diagnostic disable-next-line: undefined-global
+local engine_console = dreamwork_engine.console
+local console_commandRun = engine_console.commandRun
+
+local console_message = engine_console.message
+local console_messageColored = engine_console.messageColored
+
 local glua_gui = gui or {}
-
-local engine = dreamwork.engine
-local engine_consoleMessage = engine.consoleMessage
-local engine_consoleMessageColored = engine.consoleMessageColored
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -30,14 +28,12 @@ std.console = console
 
 if std.LUA_MENU then
 
-    local engine_consoleCommandRun = dreamwork.engine.consoleCommandRun
-
     --- [MENU]
     ---
     --- Shows the console.
     ---
     console.show = glua_gui.ShowConsole or function()
-        engine_consoleCommandRun( "showconsole" )
+        console_commandRun( "showconsole" )
     end
 
     --- [MENU]
@@ -45,7 +41,7 @@ if std.LUA_MENU then
     --- Hides the console.
     ---
     function console.hide()
-        engine_consoleCommandRun( "hideconsole" )
+        console_commandRun( "hideconsole" )
     end
 
     --- [MENU]
@@ -53,7 +49,7 @@ if std.LUA_MENU then
     --- Toggles the console.
     ---
     function console.toggle()
-        engine_consoleCommandRun( "toggleconsole" )
+        console_commandRun( "toggleconsole" )
     end
 
 end
@@ -96,7 +92,7 @@ do
                 color = value
             else
                 ---@cast value string
-                engine_consoleMessageColored( value, color )
+                console_messageColored( value, color )
             end
         end
     end
@@ -110,7 +106,7 @@ do
     ---@param ... string | dreamwork.std.Color The message to write to the console.
     function console.writeLine( ... )
         console_write( ... )
-        engine_consoleMessage( "\n" )
+        console_message( "\n" )
     end
 
     if std.LUA_SERVER then
@@ -120,7 +116,7 @@ do
         --- Clears the console output.
         ---
         function console.clear()
-            engine_consoleMessage( "\27[2J\27[H" ) -- ANSI escape codes to clear the screen and move the cursor to the top-left corner.
+            console_message( "\27[2J\27[H" ) -- ANSI escape codes to clear the screen and move the cursor to the top-left corner.
         end
 
     end
@@ -240,17 +236,9 @@ do
 
 end
 
--- engine console variable class
-dofile( "dreamwork/std/io/console/variable.lua" )
-sendfile( "dreamwork/std/io/console/variable.lua" )
-
--- engine console command class
-dofile( "dreamwork/std/io/console/command.lua" )
-sendfile( "dreamwork/std/io/console/command.lua" )
-
--- engine console logger class
-dofile( "dreamwork/std/io/console/logger.lua" )
-sendfile( "dreamwork/std/io/console/logger.lua" )
+dreamwork_load( "std/io/console/variable.lua" )
+dreamwork_load( "std/io/console/command.lua" )
+dreamwork_load( "std/io/console/logger.lua" )
 
 if not std.LUA_SERVER then
     function console.clear()

@@ -1,5 +1,6 @@
-local engine_hookCatch = dreamwork.engine.hookCatch
 local dreamwork_getUpTime = dreamwork.getUpTime
+local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -427,7 +428,7 @@ do
 
 end
 
-engine_hookCatch( "Tick", "dreamwork.std.time", function()
+engine_hook.catch( "Tick", "dreamwork.std.time", function()
     -- frequent sampling keeps the sub-second anchor precise
     wall_clock()
 

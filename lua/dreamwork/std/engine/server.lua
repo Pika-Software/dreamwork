@@ -1,20 +1,12 @@
----@class dreamwork.GModEngineLib
----@field ActiveGamemode fun(): string
----@field ServerFrameTime fun(): number
----@field GetIPAddress fun(): string
----@diagnostic disable-next-line: undefined-global
-local glua_engine = engine or {}
+local dreamwork_engine = dreamwork.engine
 
----@class dreamwork.GModGameLib
----@field SinglePlayer fun(): boolean
----@field IsDedicated fun(): boolean
----@field GetTimeScale fun(): number
----@field SetTimeScale fun(scale: number)
----@diagnostic disable-next-line: undefined-global
-local glua_game = game or {}
+local engine_hook = dreamwork_engine.hook
 
-local engine = dreamwork.engine
-local engine_hookCatch = engine.hookCatch
+---@type garrysmod.engine
+local glua_engine = dreamwork_engine.requireLibrary( "engine" )
+
+---@type garrysmod.game
+local glua_game = dreamwork_engine.requireLibrary( "game" )
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -22,10 +14,10 @@ local std = dreamwork.std
 local debug = std.debug
 local debug_fempty = debug.fempty
 
-local Hook = std.Hook
-
 local console = std.console
 local console_Variable = console.Variable
+
+local Hook = std.Hook
 
 --- [SHARED AND MENU]
 ---
@@ -156,7 +148,7 @@ if server.getGamemodeName == nil then
             end
         end
 
-        engine_hookCatch( "dreamwork.gamemode.select", "gamemode.translator", function( name )
+        engine_hook.catch( "dreamwork.gamemode.select", "gamemode.translator", function( name )
             if gamemode_value == nil then
                 return nil
             else
@@ -199,7 +191,7 @@ if std.LUA_CLIENT and server.Tick == nil then
     --- Called once every processed server frame during lag.
     ---
     local Tick = Hook( "server.Tick" )
-    engine_hookCatch( "Think", "server.Tick", Tick )
+    engine_hook.catch( "Think", "server.Tick", Tick )
     server.Tick = Tick
 
 end
@@ -230,7 +222,7 @@ if std.LUA_MENU then
     --- Called when the server details are received from the server.
     ---
     local server_Details = std.Hook( "server.GameDetails" )
-    engine_hookCatch( "dreamwork.server.details", "server.Details", server_Details )
+    engine_hook.catch( "dreamwork.server.details", "server.Details", server_Details )
     server.Details = server_Details
 
 end
@@ -239,7 +231,7 @@ do
 
     local string_match = std.string.match
 
-    local game_GetIPAddress = glua_engine.GetIPAddress or function() return "127.0.0.1:27015" end
+    local game_GetIPAddress = glua_game.GetIPAddress or function() return "127.0.0.1:27015" end
     server.getAddress = game_GetIPAddress
 
     --- [SHARED AND MENU]
@@ -578,7 +570,7 @@ if std.LUA_SERVER then
 
         local title = nil
 
-        engine_hookCatch( "GetGameDescription", "gamemode.title", function()
+        engine_hook.catch( "GetGameDescription", "gamemode.title", function()
             return title
         end, 1000 )
 

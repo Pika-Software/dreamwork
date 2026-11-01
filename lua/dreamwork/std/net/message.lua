@@ -1,4 +1,8 @@
-local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
+
+local engine_console = dreamwork_engine.console
+local console_commandRegister = engine_console.commandRegister
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -35,21 +39,19 @@ local Message = std.class.base( "Message" )
 
 local description = "Internal side-realm message, do not use."
 
-local engine_consoleCommandRegister = dreamwork.engine.consoleCommandRegister
-
 ---@protected
 function Message:__init( name )
     self.name = name
 
     local internal_name = "dreamwork.inet." .. receiver_prefix .. "." .. name
-    engine_consoleCommandRegister( internal_name, description, 16 )
+    console_commandRegister( internal_name, description, 16 )
     messages[ internal_name ] = self
 
     self.fns = {}
 
 end
 
-dreamwork.engine.hookCatch( "dreamwork.console.command.execute", "usermessage.handler", function( sender, name, args )
+engine_hook.catch( "dreamwork.console.command.execute", "usermessage.handler", function( sender, name, args )
     local message = messages[ name ]
     if message == nil then
         return nil
@@ -59,7 +61,7 @@ dreamwork.engine.hookCatch( "dreamwork.console.command.execute", "usermessage.ha
         sender = nil
     end
 
-    local reader = std.buffer.Reader()
+    local reader = std.BinaryReader()
     reader:open( std.base64.decode( args[ 1 ] ) )
     for _, fn in pairs( message.fns ) do
         reader:seek( 0 )
@@ -70,7 +72,7 @@ dreamwork.engine.hookCatch( "dreamwork.console.command.execute", "usermessage.ha
 end, -1000 )
 
 ---
----@param fn fun( message: dreamwork.std.Message, sender: any, reader: dreamwork.std.buffer.Reader )
+---@param fn fun( message: dreamwork.std.Message, sender: any, reader: dreamwork.std.BinaryReader )
 function Message:attach( fn )
     self.fns[ #self.fns + 1 ] = fn
 end
@@ -86,6 +88,8 @@ function Message:send( data, pl, realm )
     local hex_data = std.base64.encode( data )
 
     if LUA_SERVER then
+        if pl == nil then return end
+
         pl:ConCommand( "dreamwork.inet." .. (realm or "client") .. "." .. self.name .. " " .. hex_data )
         return
     end

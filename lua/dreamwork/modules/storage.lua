@@ -1,3 +1,6 @@
+local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
+
 ---@class dreamwork.storage
 local storage = dreamwork.storage or {}
 dreamwork.storage = storage
@@ -537,7 +540,7 @@ function storage.init()
     end
 
     -- truncate WAL journal on shutdown
-    dreamwork.engine.hookCatch( "ShutDown", "dreamwork.sqlite", function()
+    engine_hook.catch( "ShutDown", "dreamwork.sqlite", function()
         if sqlite.query( "pragma wal_checkpoint(TRUNCATE)" ) == false then
             dreamwork.Logger:error( "Failed to truncate WAL journal: %s", sqlite.getLastError() )
         end

@@ -1,10 +1,5 @@
 -- TODO: https://holylib.raphaelit7.com/HolyLib.InvalidateBoneCache
 
----@type dreamwork
-local dreamwork = dreamwork
-
-local engine = dreamwork.engine
-
 ---@class dreamwork.std
 local std = dreamwork.std
 

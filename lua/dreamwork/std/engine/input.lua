@@ -184,7 +184,7 @@ if std.LUA_CLIENT_MENU then
             ---@type dreamwork.std.Stack<dreamwork.std.Future>
             local captures = std.Stack()
 
-            dreamwork.engine.hookCatch( "Tick", "input.keyboard.capture", function()
+            dreamwork.engine.hook.catch( "Tick", "input.keyboard.capture", function()
                 if captures:isEmpty() then return end
 
                 if not input_IsKeyTrapping() then

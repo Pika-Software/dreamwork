@@ -1,7 +1,5 @@
 ---@class dreamwork
 local dreamwork = dreamwork
-
-local dreamwork_toError = dreamwork.toError
 local dreamwork_catchError = dreamwork.catchError
 local dreamwork_errorHandler = dreamwork.errorHandler
 local dreamwork_isErrorFrameHidden = dreamwork.isErrorFrameHidden
@@ -30,18 +28,19 @@ local coroutine_running = coroutine.running
 
 local class = std.class
 
-local setTimeout = std.setTimeout
-local tostring = std.tostring
-local xpcall = std.xpcall
-local error = std.error
-local copy = std.copy
 local len = std.len
+local copy = std.copy
+local error = std.error
+local xpcall = std.xpcall
+local toError = std.toError
+local tostring = std.tostring
+local setTimeout = std.setTimeout
 
-local isFunction = std.isFunction
 local isError = std.isError
+local isFunction = std.isFunction
 
-local AsyncError = std.AsyncError
 local Queue = std.Queue
+local AsyncError = std.AsyncError
 
 
 --- [SHARED AND MENU]
@@ -149,7 +148,7 @@ local function stack_handler( error_value )
     end
 
     ---@diagnostic disable-next-line: param-type-mismatch
-    return dreamwork_toError( error_value, AsyncError )
+    return toError( error_value, AsyncError )
 end
 
 dreamwork.hideErrorFrame( stack_handler )
@@ -186,7 +185,7 @@ do
             return false
         end
 
-        local ok, error_object = xpcall( fn, dreamwork_toError, ... )
+        local ok, error_object = xpcall( fn, toError, ... )
         if not ok then
             dreamwork_errorHandler( with_spawn_stack( co, error_object ) )
         end

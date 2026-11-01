@@ -31,12 +31,12 @@
 
 --     local voice_chat_state = false
 
---     dreamwork.engine.hookCatch( "PlayerStartVoice", function( entity )
+--     dreamwork.engine.hook.catch( "PlayerStartVoice", function( entity )
 --         if entity ~= client.entity then return end
 --         voice_chat_state = true
 --     end, 1 )
 
---     dreamwork.engine.hookCatch( "PlayerEndVoice", function( entity )
+--     dreamwork.engine.hook.catch( "PlayerEndVoice", function( entity )
 --         if entity ~= client.entity then return end
 --         voice_chat_state = false
 --     end, 1 )

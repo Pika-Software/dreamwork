@@ -29,6 +29,7 @@ local crypto_SHA1 = crypto.SHA1
 local MD5_digest = crypto_MD5.digest
 local SHA1_digest = crypto_SHA1.digest
 
+
 --- [SHARED AND MENU]
 ---
 --- The UUID library, generates, parses and formats [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562) UUIDs.

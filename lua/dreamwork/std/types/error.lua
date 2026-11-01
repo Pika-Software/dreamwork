@@ -1,5 +1,7 @@
-local engine = dreamwork.engine
-local engine_consoleMessageColored = engine.consoleMessageColored
+local dreamwork_engine = dreamwork.engine
+
+local engine_console = dreamwork_engine.console
+local console_messageColored = engine_console.messageColored
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -160,15 +162,15 @@ do
     --- the console instead of building and returning a string.
     ---
     function Error:display()
-        engine_consoleMessageColored( time_format( "\n┌> {day}-{month}-{year} - {hours}:{minutes}:{seconds}.{milliseconds}\n" ), COLOR_SUVA_GRAY )
+        console_messageColored( time_format( "\n┌> {day}-{month}-{year} - {hours}:{minutes}:{seconds}.{milliseconds}\n" ), COLOR_SUVA_GRAY )
 
-        engine_consoleMessageColored( "[", COLOR_WHITE_SMOKE )
-        engine_consoleMessageColored( realm_name, COLOR_ERROR )
-        engine_consoleMessageColored( "/", COLOR_SUVA_GRAY )
-        engine_consoleMessageColored( type( self ), COLOR_MONA_LISA )
-        engine_consoleMessageColored( "] ", COLOR_WHITE_SMOKE )
+        console_messageColored( "[", COLOR_WHITE_SMOKE )
+        console_messageColored( realm_name, COLOR_ERROR )
+        console_messageColored( "/", COLOR_SUVA_GRAY )
+        console_messageColored( type( self ), COLOR_MONA_LISA )
+        console_messageColored( "] ", COLOR_WHITE_SMOKE )
 
-        engine_consoleMessageColored( tostring( self ) .. "\n", COLOR_MONA_LISA )
+        console_messageColored( tostring( self ) .. "\n", COLOR_MONA_LISA )
 
         local stack = self.stack
         if stack == nil then
@@ -193,19 +195,19 @@ do
                 file_path = debug.getfsource( func )
             end
 
-            engine_consoleMessageColored( "  thrown at ", COLOR_SUVA_GRAY )
-            engine_consoleMessageColored( file_path or "=[C]", COLOR_SANDSTONE )
+            console_messageColored( "  thrown at ", COLOR_SUVA_GRAY )
+            console_messageColored( file_path or "=[C]", COLOR_SANDSTONE )
 
-            engine_consoleMessageColored( ":", COLOR_SUVA_GRAY )
+            console_messageColored( ":", COLOR_SUVA_GRAY )
 
-            engine_consoleMessageColored( tostring( top_frame.currentline or -1 ), COLOR_SPRAY )
-            engine_consoleMessageColored( "\n", COLOR_SUVA_GRAY )
+            console_messageColored( tostring( top_frame.currentline or -1 ), COLOR_SPRAY )
+            console_messageColored( "\n", COLOR_SUVA_GRAY )
 
             -- TODO: Add error source, aka addon/package/folder in basic error throw info
             -- create std.File.get( path_to_file ).mount / `whereis` alternative
 
-            -- engine_consoleMessageColored( "  thrown by ", COLOR_SUVA_GRAY )
-            -- engine_consoleMessageColored( file_path or "=[C]", COLOR_SANDSTONE )
+            -- console_messageColored( "  thrown by ", COLOR_SUVA_GRAY )
+            -- console_messageColored( file_path or "=[C]", COLOR_SANDSTONE )
         end
 
         local head_fn = self.__head
@@ -214,11 +216,11 @@ do
         end
 
         if stack_size > 0 then
-            engine_consoleMessageColored( "\n  call stack:\n", COLOR_SUVA_GRAY )
+            console_messageColored( "\n  call stack:\n", COLOR_SUVA_GRAY )
         end
 
         for index = 1, stack_size, 1 do
-            engine_consoleMessageColored( "  " .. index, COLOR_SANDSTONE )
+            console_messageColored( "  " .. index, COLOR_SANDSTONE )
 
             ---@type dreamwork.std.debug.StackLevel
             local frame = stack[ (stack_size - index) + 1 ]
@@ -235,27 +237,27 @@ do
                 file_path = debug.getfsource( func )
             end
 
-            engine_consoleMessageColored( ". ", COLOR_SUVA_GRAY )
+            console_messageColored( ". ", COLOR_SUVA_GRAY )
 
             if name == nil then
-                engine_consoleMessageColored( "<unknown>", COLOR_LIGHT_GRAY )
+                console_messageColored( "<unknown>", COLOR_LIGHT_GRAY )
             else
-                engine_consoleMessageColored( name, COLOR_WHITE_SMOKE )
+                console_messageColored( name, COLOR_WHITE_SMOKE )
             end
 
-            engine_consoleMessageColored( " [", COLOR_SUVA_GRAY )
+            console_messageColored( " [", COLOR_SUVA_GRAY )
 
             if func == nil then
-                engine_consoleMessageColored( "=[C]", COLOR_SPRAY )
+                console_messageColored( "=[C]", COLOR_SPRAY )
             else
-                engine_consoleMessageColored( tostring( func ), COLOR_SPRAY )
+                console_messageColored( tostring( func ), COLOR_SPRAY )
             end
 
-            engine_consoleMessageColored( "]:\n     file: ", COLOR_SUVA_GRAY )
-            engine_consoleMessageColored( file_path or "=[C]", COLOR_SANDSTONE )
+            console_messageColored( "]:\n     file: ", COLOR_SUVA_GRAY )
+            console_messageColored( file_path or "=[C]", COLOR_SANDSTONE )
 
-            engine_consoleMessageColored( ":", COLOR_SUVA_GRAY )
-            engine_consoleMessageColored( tostring( frame.currentline or -1 ) .. "\n", COLOR_SPRAY )
+            console_messageColored( ":", COLOR_SUVA_GRAY )
+            console_messageColored( tostring( frame.currentline or -1 ) .. "\n", COLOR_SPRAY )
 
             local frame_fn = self.__frame
             if frame_fn ~= nil then
@@ -268,7 +270,7 @@ do
             tail_fn( self )
         end
 
-        engine_consoleMessageColored( "\n", COLOR_WHITE_SMOKE )
+        console_messageColored( "\n", COLOR_WHITE_SMOKE )
     end
 
 end
@@ -377,17 +379,17 @@ local AsyncError = class.base( "AsyncError", false, ErrorClass )
 ---@param top_frame dreamwork.std.debug.StackLevel | nil
 ---@protected
 function AsyncError:__head( top_frame )
-    engine_consoleMessageColored( "         in ", COLOR_SUVA_GRAY )
+    console_messageColored( "         in ", COLOR_SUVA_GRAY )
 
     if top_frame ~= nil then
         local thread = top_frame.thread
         if thread ~= nil then
-            engine_consoleMessageColored( represent( top_frame.thread ) .. "\n", COLOR_SPRAY )
+            console_messageColored( represent( top_frame.thread ) .. "\n", COLOR_SPRAY )
             return
         end
     end
 
-    engine_consoleMessageColored( "main\n", COLOR_LIGHT_GRAY )
+    console_messageColored( "main\n", COLOR_LIGHT_GRAY )
 end
 
 ---@param frame dreamwork.std.debug.StackLevel
@@ -395,11 +397,11 @@ end
 function AsyncError:__frame( frame )
     local thread = frame.thread
     if thread == nil then
-        engine_consoleMessageColored( "     thread: ", COLOR_SUVA_GRAY )
-        engine_consoleMessageColored( "main\n", COLOR_LIGHT_GRAY )
+        console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
+        console_messageColored( "main\n", COLOR_LIGHT_GRAY )
     else
-        engine_consoleMessageColored( "     thread: ", COLOR_SUVA_GRAY )
-        engine_consoleMessageColored( string_format( "%p\n", thread ), COLOR_SPRAY )
+        console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
+        console_messageColored( string_format( "%p\n", thread ), COLOR_SPRAY )
     end
 end
 
@@ -448,25 +450,25 @@ end
 
 ---@protected
 function TypeError:__head()
-    engine_consoleMessageColored( "  value info:\n", COLOR_SUVA_GRAY )
+    console_messageColored( "  value info:\n", COLOR_SUVA_GRAY )
 
-    engine_consoleMessageColored( "    index: ", COLOR_SUVA_GRAY )
-    engine_consoleMessageColored( self.index .. "\n", COLOR_LIGHT_GRAY )
+    console_messageColored( "    index: ", COLOR_SUVA_GRAY )
+    console_messageColored( self.index .. "\n", COLOR_LIGHT_GRAY )
 
-    engine_consoleMessageColored( "    type: ", COLOR_SUVA_GRAY )
-    engine_consoleMessageColored( "\"" .. self.received_type .. "\"\n", COLOR_SANDSTONE )
+    console_messageColored( "    type: ", COLOR_SUVA_GRAY )
+    console_messageColored( "\"" .. self.received_type .. "\"\n", COLOR_SANDSTONE )
 
-    engine_consoleMessageColored( "    name: ", COLOR_SUVA_GRAY )
+    console_messageColored( "    name: ", COLOR_SUVA_GRAY )
 
     local value_name = self.value_name
     if value_name == nil then
-        engine_consoleMessageColored( "<unknown>\n", COLOR_LIGHT_GRAY )
+        console_messageColored( "<unknown>\n", COLOR_LIGHT_GRAY )
     else
-        engine_consoleMessageColored( "\"" .. value_name .. "\"\n", COLOR_SANDSTONE )
+        console_messageColored( "\"" .. value_name .. "\"\n", COLOR_SANDSTONE )
     end
 
-    engine_consoleMessageColored( "    value: ", COLOR_SUVA_GRAY )
-    engine_consoleMessageColored( represent( self.value ) .. "\n", COLOR_SPRAY )
+    console_messageColored( "    value: ", COLOR_SUVA_GRAY )
+    console_messageColored( represent( self.value ) .. "\n", COLOR_SPRAY )
 end
 
 ---@return string

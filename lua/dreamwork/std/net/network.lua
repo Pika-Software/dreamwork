@@ -1,29 +1,31 @@
----@type dreamwork
-local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
 
----@type dreamwork.engine
-local engine = dreamwork.engine
-local engine_hookCall = engine.hookCall
+local dreamwork_getUpTime = dreamwork.getUpTime
+
+local engine_network = dreamwork_engine.network
+
+local engine_hook = dreamwork_engine.hook
+local hook_call = engine_hook.call
 
 ---@class dreamwork.std
 local std = dreamwork.std
+
 local raw = std.raw
+
 local gc = std.gc
+
+local math = std.math
+local math_ceil = math.ceil
+local math_floor = math.floor
+
+local string = std.string
+local string_len = string.len
+
+local crc16_digest = std.CRC16.digest
 
 local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
 
----@type dreamwork.std.string
-local string = std.string
-local string_len = string.len
-
-local UnPredictedCurTime = UnPredictedCurTime or std.os.clock
-
----@type dreamwork.std.math
-local math = std.math
-local math_ceil, math_floor = math.ceil, math.floor
-
-local crc16_digest = std.checksum.CRC16.digest
 
 --[[
 
@@ -60,8 +62,8 @@ await respond           |                  \|/
 --- in bits
 ---
 ---@type integer
-local internal_header = 8 +            -- unknown magical byte
-    dreamwork.engine.NetworkHeaderSize -- header ( network id ) + unreliable
+local internal_header = 8 +   -- unknown magical byte
+    engine_network.HeaderSize -- header ( network id ) + unreliable
 
 ---
 --- net limit - header
@@ -136,13 +138,13 @@ gc.setTableRules( receive_allowed, true, false )
 
 ---@class dreamwork.std.Network.Callback
 ---@field name string
----@field fn fun( network: dreamwork.std.Network, reader: dreamwork.std.buffer.Reader, index: integer, total: integer )
+---@field fn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, index: integer, total: integer )
 ---@field once boolean
 ---@type table<dreamwork.std.Network, dreamwork.std.Network.Callback[]>
 local receive_callbacks = {}
 gc.setTableRules( receive_callbacks, true, false )
 
----@param fn fun( network: dreamwork.std.Network, reader: dreamwork.std.buffer.Reader, index: integer, total: integer )
+---@param fn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, index: integer, total: integer )
 ---@param identifier? string
 ---@param once? boolean
 function Network:attach( fn, identifier, once )
@@ -199,7 +201,7 @@ end
 local function perform_callbacks( network, segments, index, total )
     local callbacks = receive_callbacks[ network ]
 
-    local reader = std.buffer.Reader()
+    local reader = std.BinaryReader()
     reader:open( table.concat( segments, "", 1, index ) )
 
     for i = 1, callbacks[ 0 ], 1 do
@@ -207,7 +209,7 @@ local function perform_callbacks( network, segments, index, total )
         callbacks[ i ].fn( network, reader, index, total )
     end
 
-    reader:close()
+    -- reader:close()
 end
 
 ---@type table<dreamwork.std.Network, number>
@@ -341,8 +343,8 @@ if LUA_SERVER then
         __mode = "k"
     } )
 
-    engine.hookCatch( "Think", "network.writer", function()
-        local time_used = UnPredictedCurTime()
+    engine_hook.catch( "Tick", "network.writer", function()
+        local time_used = dreamwork_getUpTime()
 
         for i = outgoing_activity[ 0 ], 1, -1 do
             local thread_data = outgoing_activity[ i ]
@@ -373,7 +375,7 @@ if LUA_SERVER then
 
         for i = thread_count, 1, -1 do
             if outgoing_activity[ i ].thread == thread then
-                outgoing_activity[ i ].time = UnPredictedCurTime() + (engine_hookCall( "NetworkTimeout", network ) or network.timeout)
+                outgoing_activity[ i ].time = dreamwork_getUpTime() + (hook_call( "NetworkTimeout", network ) or network.timeout)
                 return
             end
         end
@@ -383,7 +385,7 @@ if LUA_SERVER then
 
         outgoing_activity[ thread_count ] = {
             thread = thread,
-            time = UnPredictedCurTime() + network.timeout,
+            time = dreamwork_getUpTime() + network.timeout,
             client = client
         }
     end
@@ -439,7 +441,7 @@ if LUA_SERVER then
 
         dreamwork.Logger:info( "Sended a handshake for a new transmission, waiting for confirmation... [complex: yes, id: %d, target: %s]", network_to_index[ network ], client )
 
-        local checksum = std.checksum.CRC32()
+        local checksum = std.CRC32()
 
         local segment_checksum = 0
         local index = 0
@@ -536,23 +538,23 @@ if LUA_SERVER then
         dreamwork.Logger:info( "transmission finished" )
     end
 
-    ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.buffer.Writer )
+    ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.BinaryWriter )
     ---@param client garrysmod.Player
     ---@return thread | nil
     function Network:transmit( fn, client )
-        local writer = std.buffer.Writer()
+        local writer = std.BinaryWriter()
         writer:open()
 
         fn( self, writer )
 
-        transmit( self, writer:flush(), client )
+        transmit( self, writer:compile(), client )
     end
 
     ---@param network_id integer
     ---@param unreliable boolean
     ---@param remaining_bits integer
     ---@param sender garrysmod.Player | nil
-    engine.hookCatch( "dreamwork.network.message.incoming", "network.server.handler", function( network_id, unreliable, remaining_bits, sender )
+    engine_hook.catch( "dreamwork.network.message.incoming", "network.server.handler", function( network_id, unreliable, remaining_bits, sender )
         local networks = outgoing_transmissions[ sender ]
         if networks ~= nil and unreliable then
             local outgoing_thread = networks[ network_id ]
@@ -585,7 +587,7 @@ if LUA_CLIENT then
     local incoming_activity = { [ 0 ] = 0 }
 
     engine.hookCatch( "Think", "network.reader", function()
-        local time_used = UnPredictedCurTime()
+        local time_used = dreamwork_getUpTime()
 
         for i = 1, incoming_activity[ 0 ], 1 do
             local thread_data = incoming_activity[ i ]
@@ -602,7 +604,7 @@ if LUA_CLIENT then
 
         for i = thread_count, 1, -1 do
             if incoming_activity[ i ].value == value then
-                incoming_activity[ i ].time = UnPredictedCurTime() + network.timeout
+                incoming_activity[ i ].time = dreamwork_getUpTime() + network.timeout
                 return
             end
         end
@@ -612,7 +614,7 @@ if LUA_CLIENT then
 
         incoming_activity[ thread_count ] = {
             value = value,
-            time = UnPredictedCurTime() + network.timeout
+            time = dreamwork_getUpTime() + network.timeout
         }
     end
 
@@ -661,7 +663,7 @@ if LUA_CLIENT then
     ---@param total_segments integer
     local function complex_receiving( network, total_segments )
         local network_name = network_to_identifier[ network ]
-        local checksum = std.checksum.CRC32()
+        local checksum = std.CRC32()
 
         ---@type string[]
         local segments = {}

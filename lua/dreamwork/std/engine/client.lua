@@ -26,9 +26,6 @@
 -- ---@type dreamwork
 -- local dreamwork = dreamwork
 
--- ---@type dreamwork.engine
--- local engine = dreamwork.engine
-
 -- ---@class dreamwork.std
 -- local std = dreamwork.std
 
