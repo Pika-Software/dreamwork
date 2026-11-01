@@ -1,5 +1,79 @@
 ---@meta garrysmod
 
+--- Orthographic projection borders for `CameraData`.
+---
+--- Each field is the distance of that border from the view position;
+--- `left + right` and `top + bottom` should equal 0 to center on the view position.
+---
+---@class garrysmod.Orthographic
+---@field left number Distance of the left border from the view position.
+---@field right number Distance of the right border from the view position.
+---@field top number Distance of the top border from the view position.
+---@field bottom number Distance of the bottom border from the view position.
+
+--- Camera setup structure, used by `cam` and `render` view functions and the `CalcView` hook.
+---
+---@class garrysmod.CameraData
+---@field origin garrysmod.Vector The camera's position.
+---@field angles garrysmod.Angle The camera's angles.
+---@field fov integer The camera's field of view, in degrees.
+---@field znear number Distance to the near clipping plane.
+---@field zfar number Distance to the far clipping plane.
+---@field drawviewer boolean Set `true` to draw the local player's player model.
+---@field ortho garrysmod.Orthographic? If set, enables orthographic mode.
+
+--- Data about a bullet that was fired, passed to the `EntityFireBullets` hook.
+---
+---@class garrysmod.FiredBullet
+---@field AmmoType string The type of ammo that was fired.
+---@field Attacker garrysmod.Entity The `Entity` that fired the bullet.
+---@field Damage number The amount of damage dealt by the bullet. When `0`, damage is determined by the AmmoData of the bullet's ammo type.
+---@field Force number The physics impact force of the bullet.
+---@field Tracer integer Frequency of visible bullet tracers: a tracer is fired once after this many non-tracer bullets. Set to `1` to always fire a tracer.
+---@field Trace garrysmod.Trace The `TraceResult` structure from the `Trace` that determined where and what the bullet hit.
+
+--- Bullet structure, used by `Entity:FireBullets`.
+---
+---@class garrysmod.Bullet
+---@field Attacker garrysmod.Entity? The entity that fired the bullet, used for damage attribution.
+---@field Callback fun(attacker: garrysmod.Entity, trace: garrysmod.Trace, damage: garrysmod.DamageInfo)? Called for each bullet hit; allows modifying the damage info.
+---@field Damage number? Damage dealt by each bullet. `0` uses the ammo type's default damage.
+---@field Force number? Physics impact force of each bullet.
+---@field Distance number? Maximum distance the bullet can travel.
+---@field HullSize number? Size of the hull used for the bullet trace; `0` makes it a ray.
+---@field Num integer? Number of bullets fired at once (e.g. shotgun pellets). Default `1`.
+---@field Tracer integer? Frequency of visible tracers: a tracer is fired once after this many non-tracer bullets. Default `1`.
+---@field TracerName string? Effect name of the tracer. Default `"Tracer"`.
+---@field AmmoType string? Ammo type name, determines base damage and impact effects.
+---@field Src garrysmod.Vector The origin of the bullets.
+---@field Dir garrysmod.Vector The direction of the bullets.
+---@field Spread garrysmod.Vector? Random spread applied to the bullet direction, per axis.
+---@field IgnoreEntity garrysmod.Entity? Entity ignored by the bullet trace.
+---@field Filter (garrysmod.Entity | garrysmod.Entity[] | fun(ent: garrysmod.Entity): boolean)? Entities the trace ignores, or a function returning `true` to hit.
+---@field Mask integer? Trace mask (`MASK_*`) used for the bullet trace.
+---@field DisableLagComp boolean? Set `true` to disable lag compensation for this bullet (server only).
+
+
+--- [SHARED AND MENU]
+---
+--- Executes a Lua file and returns whatever the file returns.
+---
+--- The path is resolved relative to the calling file's folder first, then relative to the `lua/` folder.
+---
+--- > **NOTE**: On the client, this function tries to load the local client file if `sv_allowcslua` is `1`.
+---
+---@param file_path string Path to the Lua file, including the `.lua` extension.
+---@return any ... Values returned by the executed file.
+function include( file_path ) end
+
+--- [SHARED AND MENU]
+---
+--- Marks a Lua file to be sent to clients when they join the server.
+---
+--- Does nothing on the client, so it is safe to call from a shared file.
+---
+---@param file_path? string Path to the Lua file, relative to the `lua/` folder. If omitted, the calling file is sent.
+function AddCSLuaFile( file_path ) end
 
 --- [SHARED AND MENU]
 ---

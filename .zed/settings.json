@@ -11,6 +11,11 @@
         "Lua": {
           "runtime": {
             "version": "LuaJIT",
+            "special": {
+              "dreamwork.load": "dofile",
+              "std.errorf": "error",
+              "std.error": "error",
+            },
             "builtin": {
               "basic": "disable",
               "bit": "disable",
