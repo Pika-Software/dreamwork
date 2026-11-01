@@ -1,0 +1,345 @@
+---@meta garrysmod.hook
+
+
+--- [SHARED AND MENU]
+---
+--- The hook library allows you to add hooks called by the game engine, allowing multiple scripts to modify game function.
+---
+---@class garrysmod.hook
+hook = {}
+
+--- [SHARED AND MENU]
+---
+--- Registers a function (or "callback") with the [Hook](https://wiki.facepunch.com/gmod/Hook) system so that it will be called automatically whenever a specific event (or "hook") occurs.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/hook.Add)
+---
+---@param event_name string The event to hook on to. This can be any GM_Hooks hook, gameevent after using gameevent.Listen, or custom hook run with hook.Call or hook.Run.
+---@param identifier any The unique identifier, usually a string. This can be used elsewhere in the code to replace or remove the hook. The identifier **should** be unique so that you do not accidentally override some other mods hook, unless that's what you are trying to do.
+---
+--- The identifier can be either a string, or a table/object with an IsValid function defined such as an garrysmod.Entity or garrysmod.Panel. numbers and booleans, for example, are not allowed.
+---
+--- If the identifier is a table/object, it will be inserted in front of the other arguments in the callback and the hook will be called as long as it's valid. However, if IsValid( identifier ) returns false when **any** event_name hook is called, the hook will be removed.
+---@param func function The function to be called, arguments given to it depend on the identifier used.
+---
+--- 	Returning any value besides nil from the hook's function will stop other hooks of the same event down the loop from being executed. Only return a value when absolutely necessary and when you know what you are doing.
+---
+--- 	It will also prevent the associated `GM:*` hook from being called on the gamemode.
+---
+---     It WILL break other addons.
+---
+---@overload fun(event_name: "AcceptInput", identifier: any, func: fun(ent: garrysmod.Entity, input: string, activator: garrysmod.Entity, caller: garrysmod.Entity, value: any):(boolean?))
+---@overload fun(event_name: "AddDeathNotice", identifier: any, func: fun(attacker: string, attackerTeam: number, inflictor: string, victim: string, victimTeam: number, flags: number):(any?))
+---@overload fun(event_name: "AdjustMouseSensitivity", identifier: any, func: fun(defaultSensitivity: number, localFOV: number, defaultFOV: number):(number?))
+---@overload fun(event_name: "AllowPlayerPickup", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "CalcMainActivity", identifier: any, func: fun(ply: garrysmod.Player, vel: garrysmod.Vector):(number?, number?))
+---@overload fun(event_name: "CalcVehicleView", identifier: any, func: fun(veh: garrysmod.Vehicle, ply: garrysmod.Player, view: table):(table?))
+---@overload fun(event_name: "CalcView", identifier: any, func: fun(ply: garrysmod.Player, origin: garrysmod.Vector, angles: garrysmod.Angle, fov: number, znear: number, zfar: number):(garrysmod.CameraData?))
+---@overload fun(event_name: "CalcViewModelView", identifier: any, func: fun(wep: garrysmod.Weapon, vm: garrysmod.Entity, oldPos: garrysmod.Vector, oldAng: garrysmod.Angle, pos: garrysmod.Vector, ang: garrysmod.Angle):(garrysmod.Vector?, garrysmod.Angle?))
+---@overload fun(event_name: "CanCreateUndo", identifier: any, func: fun(ply: garrysmod.Player, undo: table):(boolean?))
+---@overload fun(event_name: "CanEditVariable", identifier: any, func: fun(ent: garrysmod.Entity, ply: garrysmod.Player, key: string, value: string, editor: table):(boolean?))
+---@overload fun(event_name: "CanExitVehicle", identifier: any, func: fun(veh: garrysmod.Vehicle, ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "CanPlayerEnterVehicle", identifier: any, func: fun(player: garrysmod.Player, vehicle: garrysmod.Vehicle, role: number):(boolean?))
+---@overload fun(event_name: "CanPlayerSuicide", identifier: any, func: fun(player: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "CanPlayerUnfreeze", identifier: any, func: fun(player: garrysmod.Player, entity: garrysmod.Entity, phys: garrysmod.Physics):(boolean?))
+---@overload fun(event_name: "CaptureVideo", identifier: any, func: fun(): any)
+---@overload fun(event_name: "ChatText", identifier: any, func: fun(index: number, name: string, text: string, type: string):(boolean?))
+---@overload fun(event_name: "ChatTextChanged", identifier: any, func: fun(text: string): any)
+---@overload fun(event_name: "CheckPassword", identifier: any, func: fun(steamID64: string, ipAddress: string, svPassword: string, clPassword: string, name: string):(boolean?, string?))
+---@overload fun(event_name: "ClientSignOnStateChanged", identifier: any, func: fun(userID: number, oldState: number, newState: number): any)
+---@overload fun(event_name: "CloseDermaMenus", identifier: any, func: fun(): any)
+---@overload fun(event_name: "CreateClientsideRagdoll", identifier: any, func: fun(entity: garrysmod.Entity, ragdoll: garrysmod.Entity): any)
+---@overload fun(event_name: "CreateEntityRagdoll", identifier: any, func: fun(owner: garrysmod.Entity, ragdoll: garrysmod.Entity): any)
+---@overload fun(event_name: "CreateMove", identifier: any, func: fun(cmd: garrysmod.UserCommand):(boolean?))
+---@overload fun(event_name: "CreateTeams", identifier: any, func: fun(): any)
+---@overload fun(event_name: "DoAnimationEvent", identifier: any, func: fun(ply: garrysmod.Player, event: number, data: number):(number?))
+---@overload fun(event_name: "DoPlayerDeath", identifier: any, func: fun(ply: garrysmod.Player, attacker: garrysmod.Entity, dmg: garrysmod.DamageInfo): any)
+---@overload fun(event_name: "DrawDeathNotice", identifier: any, func: fun(x: number, y: number): any)
+---@overload fun(event_name: "DrawMonitors", identifier: any, func: fun(): any)
+---@overload fun(event_name: "DrawOverlay", identifier: any, func: fun(): any)
+---@overload fun(event_name: "DrawPhysgunBeam", identifier: any, func: fun(ply: garrysmod.Player, physgun: garrysmod.Weapon, enabled: boolean, target: garrysmod.Entity, physBone: number, hitPos: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "EndEntityDriving", identifier: any, func: fun(ent: garrysmod.Entity, ply: garrysmod.Player): any)
+---@overload fun(event_name: "EntityEmitSound", identifier: any, func: fun(data: table):(boolean?))
+---@overload fun(event_name: "EntityFireBullets", identifier: any, func: fun(entity: garrysmod.Entity, data: garrysmod.Bullet):(boolean?))
+---@overload fun(event_name: "EntityKeyValue", identifier: any, func: fun(ent: garrysmod.Entity, key: string, value: string):(string?))
+---@overload fun(event_name: "EntityNetworkedVarChanged", identifier: any, func: fun(ent: garrysmod.Entity, name: string, oldval: any, newval: any): any)
+---@overload fun(event_name: "EntityRemoved", identifier: any, func: fun(ent: garrysmod.Entity, fullUpdate: boolean): any)
+---@overload fun(event_name: "EntityTakeDamage", identifier: any, func: fun(target: garrysmod.Entity, dmg: garrysmod.DamageInfo):(boolean?))
+---@overload fun(event_name: "FindUseEntity", identifier: any, func: fun(ply: garrysmod.Player, defaultEnt: garrysmod.Entity):(garrysmod.Entity?))
+---@overload fun(event_name: "FinishChat", identifier: any, func: fun(): any)
+---@overload fun(event_name: "FinishMove", identifier: any, func: fun(ply: garrysmod.Player, mv: garrysmod.MoveData):(boolean?))
+---@overload fun(event_name: "ForceDermaSkin", identifier: any, func: fun():(string?))
+---@overload fun(event_name: "GameContentChanged", identifier: any, func: fun(): any)
+---@overload fun(event_name: "GetDeathNoticeEntityName", identifier: any, func: fun(name: string|garrysmod.Entity):(string?))
+---@overload fun(event_name: "GetFallDamage", identifier: any, func: fun(ply: garrysmod.Player, speed: number):(number?))
+---@overload fun(event_name: "GetGameDescription", identifier: any, func: fun():(string?))
+---@overload fun(event_name: "GetMotionBlurValues", identifier: any, func: fun(horizontal: number, vertical: number, forward: number, rotational: number):(number?, number?, number?, number?))
+---@overload fun(event_name: "GetPreferredCarryAngles", identifier: any, func: fun(ent: garrysmod.Entity, ply: garrysmod.Player):(garrysmod.Angle?))
+---@overload fun(event_name: "GetTeamColor", identifier: any, func: fun(ent: garrysmod.Entity):(garrysmod.Color?))
+---@overload fun(event_name: "GetTeamNumColor", identifier: any, func: fun(team: number):(garrysmod.Color?))
+---@overload fun(event_name: "GrabEarAnimation", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "GravGunOnDropped", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity): any)
+---@overload fun(event_name: "GravGunOnPickedUp", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity): any)
+---@overload fun(event_name: "GravGunPickupAllowed", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "GravGunPunt", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "GUIMouseDoublePressed", identifier: any, func: fun(mouseCode: number, aimVector: garrysmod.Vector): any)
+---@overload fun(event_name: "GUIMousePressed", identifier: any, func: fun(mouseCode: number, aimVector: garrysmod.Vector): any)
+---@overload fun(event_name: "GUIMouseReleased", identifier: any, func: fun(mouseCode: number, aimVector: garrysmod.Vector): any)
+---@overload fun(event_name: "HandlePlayerArmorReduction", identifier: any, func: fun(ply: garrysmod.Player, dmginfo: garrysmod.DamageInfo): any)
+---@overload fun(event_name: "HandlePlayerDriving", identifier: any, func: fun(ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "HandlePlayerDucking", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "HandlePlayerJumping", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "HandlePlayerLanding", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector, onGround: boolean):(boolean?))
+---@overload fun(event_name: "HandlePlayerNoClipping", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "HandlePlayerSwimming", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "HandlePlayerVaulting", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector):(boolean?))
+---@overload fun(event_name: "HideTeam", identifier: any, func: fun(): any)
+---@overload fun(event_name: "HUDAmmoPickedUp", identifier: any, func: fun(itemName: string, amount: number): any)
+---@overload fun(event_name: "HUDDrawPickupHistory", identifier: any, func: fun(): any)
+---@overload fun(event_name: "HUDDrawScoreBoard", identifier: any, func: fun(): any)
+---@overload fun(event_name: "HUDDrawTargetID", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "HUDItemPickedUp", identifier: any, func: fun(itemName: string): any)
+---@overload fun(event_name: "HUDPaint", identifier: any, func: fun(): any)
+---@overload fun(event_name: "HUDPaintBackground", identifier: any, func: fun(): any)
+---@overload fun(event_name: "HUDShouldDraw", identifier: any, func: fun(name: string):(boolean?))
+---@overload fun(event_name: "HUDWeaponPickedUp", identifier: any, func: fun(weapon: garrysmod.Weapon): any)
+---@overload fun(event_name: "Initialize", identifier: any, func: fun(): any)
+---@overload fun(event_name: "InitPostEntity", identifier: any, func: fun(): any)
+---@overload fun(event_name: "InputMouseApply", identifier: any, func: fun(cmd: garrysmod.UserCommand, x: number, y: number, ang: garrysmod.Angle):(boolean?))
+---@overload fun(event_name: "IsSpawnpointSuitable", identifier: any, func: fun(ply: garrysmod.Player, spawnpoint: garrysmod.Entity, makeSuitable: boolean):(boolean?))
+---@overload fun(event_name: "KeyPress", identifier: any, func: fun(ply: garrysmod.Player, key: number): any)
+---@overload fun(event_name: "KeyRelease", identifier: any, func: fun(ply: garrysmod.Player, key: number): any)
+---@overload fun(event_name: "LoadGModSave", identifier: any, func: fun(data: string, map: string, timestamp: number): any)
+---@overload fun(event_name: "LoadGModSaveFailed", identifier: any, func: fun(reason: string, workshopid: string): any)
+---@overload fun(event_name: "MenuStart", identifier: any, func: fun(): any)
+---@overload fun(event_name: "MouthMoveAnimation", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "Move", identifier: any, func: fun(ply: garrysmod.Player, mv: garrysmod.MoveData):(boolean?))
+---@overload fun(event_name: "NeedsDepthPass", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "NetworkEntityCreated", identifier: any, func: fun(ent: garrysmod.Entity): any)
+---@overload fun(event_name: "NetworkIDValidated", identifier: any, func: fun(name: string, steamID: string, ownerID: string): any)
+---@overload fun(event_name: "NotifyShouldTransmit", identifier: any, func: fun(entity: garrysmod.Entity, shouldtransmit: boolean): any)
+---@overload fun(event_name: "OnAchievementAchieved", identifier: any, func: fun(ply: garrysmod.Player, achievement: number): any)
+---@overload fun(event_name: "OnChatTab", identifier: any, func: fun(text: string):(string?))
+---@overload fun(event_name: "OnCleanup", identifier: any, func: fun(name: string):(boolean?))
+---@overload fun(event_name: "OnClientLuaError", identifier: any, func: fun(error: string, ply: garrysmod.Player, stack: table, name: string): any)
+---@overload fun(event_name: "OnCloseCaptionEmit", identifier: any, func: fun(soundScript: string, duration: number, fromPlayer: boolean, fullText: string):(boolean?))
+---@overload fun(event_name: "OnContextMenuClose", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnContextMenuOpen", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnCrazyPhysics", identifier: any, func: fun(ent: garrysmod.Entity, physobj: garrysmod.Physics): any)
+---@overload fun(event_name: "OnDamagedByExplosion", identifier: any, func: fun(ply: garrysmod.Player, dmginfo: garrysmod.DamageInfo): any)
+---@overload fun(event_name: "OnEntityCreated", identifier: any, func: fun(entity: garrysmod.Entity): any)
+---@overload fun(event_name: "OnEntityWaterLevelChanged", identifier: any, func: fun(entity: garrysmod.Entity, old: number, new: number): any)
+---@overload fun(event_name: "OnGamemodeLoaded", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnLuaError", identifier: any, func: fun(error: string, realm: string, stack: table, name: string, id: string): any)
+---@overload fun(event_name: "OnNotifyAddonConflict", identifier: any, func: fun(addon1: string, addon2: string, fileName: string): any)
+---@overload fun(event_name: "OnNPCDropItem", identifier: any, func: fun(npc: garrysmod.NPC, item: garrysmod.Entity): any)
+---@overload fun(event_name: "OnNPCKilled", identifier: any, func: fun(npc: garrysmod.NPC, attacker: garrysmod.Entity, inflictor: garrysmod.Entity): any)
+---@overload fun(event_name: "OnPauseMenuBlockedTooManyTimes", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnPauseMenuShow", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "OnPermissionsChanged", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnPhysgunFreeze", identifier: any, func: fun(weapon: garrysmod.Entity, physobj: garrysmod.Physics, ent: garrysmod.Entity, ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "OnPhysgunPickup", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity): any)
+---@overload fun(event_name: "OnPhysgunReload", identifier: any, func: fun(physgun: garrysmod.Weapon, ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "OnPlayerChangedTeam", identifier: any, func: fun(ply: garrysmod.Player, oldTeam: number, newTeam: number): any)
+---@overload fun(event_name: "OnPlayerChat", identifier: any, func: fun(ply: garrysmod.Player, text: string, teamChat: boolean, isDead: boolean):(boolean?))
+---@overload fun(event_name: "OnPlayerHitGround", identifier: any, func: fun(player: garrysmod.Entity, inWater: boolean, onFloater: boolean, speed: number):(boolean?))
+---@overload fun(event_name: "OnPlayerJump", identifier: any, func: fun(player: garrysmod.Entity, speed: number): any)
+---@overload fun(event_name: "OnPlayerPhysicsDrop", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity, thrown: boolean): any)
+---@overload fun(event_name: "OnPlayerPhysicsPickup", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity): any)
+---@overload fun(event_name: "OnReloaded", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnScreenSizeChanged", identifier: any, func: fun(oldWidth: number, oldHeight: number, newWidth: number, newHeight: number): any)
+---@overload fun(event_name: "OnSpawnMenuClose", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnSpawnMenuOpen", identifier: any, func: fun(): any)
+---@overload fun(event_name: "OnTextEntryGetFocus", identifier: any, func: fun(panel: garrysmod.Panel): any)
+---@overload fun(event_name: "OnTextEntryLoseFocus", identifier: any, func: fun(panel: garrysmod.Panel): any)
+---@overload fun(event_name: "OnUndo", identifier: any, func: fun(name: string, customText: string):(boolean?))
+---@overload fun(event_name: "OnViewModelChanged", identifier: any, func: fun(viewmodel: garrysmod.Entity, oldModel: string, newModel: string): any)
+---@overload fun(event_name: "PhysgunDrop", identifier: any, func: fun(player: garrysmod.Player, entity: garrysmod.Entity): any)
+---@overload fun(event_name: "PhysgunPickup", identifier: any, func: fun(player: garrysmod.Player, entity: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "PlayerAmmoChanged", identifier: any, func: fun(ply: garrysmod.Player, ammoID: number, oldCount: number, newCount: number): any)
+---@overload fun(event_name: "PlayerAuthed", identifier: any, func: fun(ply: garrysmod.Player, steamid: string, uniqueid: string): any)
+---@overload fun(event_name: "PlayerBindPress", identifier: any, func: fun(ply: garrysmod.Player, bind: string, pressed: boolean, code: number):(boolean?))
+---@overload fun(event_name: "PlayerButtonDown", identifier: any, func: fun(ply: garrysmod.Player, button: integer): any)
+---@overload fun(event_name: "PlayerButtonUp", identifier: any, func: fun(ply: garrysmod.Player, button: integer): any)
+---@overload fun(event_name: "PlayerCanHearPlayersVoice", identifier: any, func: fun(listener: garrysmod.Player, talker: garrysmod.Player):(boolean?, boolean?))
+---@overload fun(event_name: "PlayerCanJoinTeam", identifier: any, func: fun(ply: garrysmod.Player, team: number):(boolean?))
+---@overload fun(event_name: "PlayerCanPickupItem", identifier: any, func: fun(ply: garrysmod.Player, item: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "PlayerCanPickupWeapon", identifier: any, func: fun(ply: garrysmod.Player, weapon: garrysmod.Weapon):(boolean?))
+---@overload fun(event_name: "PlayerCanSeePlayersChat", identifier: any, func: fun(text: string, teamOnly: boolean, listener: garrysmod.Player, speaker: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "PlayerChangedTeam", identifier: any, func: fun(ply: garrysmod.Player, oldTeam: number, newTeam: number): any)
+---@overload fun(event_name: "PlayerCheckLimit", identifier: any, func: fun(ply: garrysmod.Player, limitName: string, current: number, defaultMax: number):(boolean?))
+---@overload fun(event_name: "PlayerClassChanged", identifier: any, func: fun(ply: garrysmod.Player, newID: number): any)
+---@overload fun(event_name: "PlayerConnect", identifier: any, func: fun(name: string, ip: string): any)
+---@overload fun(event_name: "PlayerDeath", identifier: any, func: fun(victim: garrysmod.Player, inflictor: garrysmod.Entity, attacker: garrysmod.Entity): any)
+---@overload fun(event_name: "PlayerDeathSound", identifier: any, func: fun(ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "PlayerDeathThink", identifier: any, func: fun(ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "PlayerDisconnected", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerDriveAnimate", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerDroppedWeapon", identifier: any, func: fun(owner: (garrysmod.Player | garrysmod.NPC), wep: garrysmod.Weapon): any)
+---@overload fun(event_name: "PlayerEndVoice", identifier: any, func: fun(ply: garrysmod.Player, plyIndex: number): any)
+---@overload fun(event_name: "PlayerEnteredVehicle", identifier: any, func: fun(ply: garrysmod.Player, veh: garrysmod.Vehicle, role: number): any)
+---@overload fun(event_name: "PlayerFireAnimationEvent", identifier: any, func: fun(ply: garrysmod.Player, pos: garrysmod.Vector, ang: garrysmod.Angle, event: number, name: string):(boolean?))
+---@overload fun(event_name: "PlayerFootstep", identifier: any, func: fun(ply: garrysmod.Player, pos: garrysmod.Vector, foot: number, sound: string, volume: number, filter: garrysmod.RecipientFilter):(boolean?))
+---@overload fun(event_name: "PlayerFrozeObject", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity, physobj: garrysmod.Physics): any)
+---@overload fun(event_name: "PlayerHandleAnimEvent", identifier: any, func: fun(ply: garrysmod.Player, event: number, eventTime: number, cycle: number, type: number, options: string): any)
+---@overload fun(event_name: "PlayerHurt", identifier: any, func: fun(victim: garrysmod.Player, attacker: garrysmod.Entity, healthRemaining: number, damageTaken: number): any)
+---@overload fun(event_name: "PlayerInitialSpawn", identifier: any, func: fun(player: garrysmod.Player, transition: boolean): any)
+---@overload fun(event_name: "PlayerJoinTeam", identifier: any, func: fun(ply: garrysmod.Player, team: number): any)
+---@overload fun(event_name: "PlayerLeaveVehicle", identifier: any, func: fun(ply: garrysmod.Player, veh: garrysmod.Vehicle): any)
+---@overload fun(event_name: "PlayerLoadout", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerNoClip", identifier: any, func: fun(ply: garrysmod.Player, desiredState: boolean):(boolean?))
+---@overload fun(event_name: "PlayerPostThink", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerRequestTeam", identifier: any, func: fun(ply: garrysmod.Player, team: number): any)
+---@overload fun(event_name: "PlayerSay", identifier: any, func: fun(sender: garrysmod.Player, text: string, teamChat: boolean):(string?))
+---@overload fun(event_name: "PlayerSelectSpawn", identifier: any, func: fun(ply: garrysmod.Player, transition: boolean):(garrysmod.Entity?))
+---@overload fun(event_name: "PlayerSelectTeamSpawn", identifier: any, func: fun(team: number, ply: garrysmod.Player):(garrysmod.Entity?))
+---@overload fun(event_name: "PlayerSetHandsModel", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity): any)
+---@overload fun(event_name: "PlayerSetModel", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerShouldTakeDamage", identifier: any, func: fun(ply: garrysmod.Player, attacker: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "PlayerShouldTaunt", identifier: any, func: fun(ply: garrysmod.Player, act: number):(boolean?))
+---@overload fun(event_name: "PlayerSilentDeath", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerSpawn", identifier: any, func: fun(player: garrysmod.Player, transition: boolean): any)
+---@overload fun(event_name: "PlayerSpawnAsSpectator", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PlayerSpray", identifier: any, func: fun(sprayer: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "PlayerStartTaunt", identifier: any, func: fun(ply: garrysmod.Player, act: number, length: number): any)
+---@overload fun(event_name: "PlayerStartVoice", identifier: any, func: fun(ply: garrysmod.Player, plyIndex: number): any)
+---@overload fun(event_name: "PlayerStepSoundTime", identifier: any, func: fun(ply: garrysmod.Player, type: number, walking: boolean):(number?))
+---@overload fun(event_name: "PlayerSwitchFlashlight", identifier: any, func: fun(ply: garrysmod.Player, enabled: boolean):(boolean?))
+---@overload fun(event_name: "PlayerSwitchWeapon", identifier: any, func: fun(player: garrysmod.Player, oldWeapon: garrysmod.Weapon, newWeapon: garrysmod.Weapon):(boolean?))
+---@overload fun(event_name: "PlayerTick", identifier: any, func: fun(player: garrysmod.Player, mv: garrysmod.MoveData): any)
+---@overload fun(event_name: "PlayerTraceAttack", identifier: any, func: fun(ply: garrysmod.Player, dmginfo: garrysmod.DamageInfo, dir: garrysmod.Vector, trace: garrysmod.Trace.output):(boolean?))
+---@overload fun(event_name: "PlayerUnfrozeObject", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity, physobj: garrysmod.Physics): any)
+---@overload fun(event_name: "PlayerUse", identifier: any, func: fun(ply: garrysmod.Player, ent: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "PopulateMenuBar", identifier: any, func: fun(menubar: garrysmod.Panel): any)
+---@overload fun(event_name: "PostCleanupMap", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostDraw2DSkyBox", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostDrawEffects", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostDrawHUD", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostDrawOpaqueRenderables", identifier: any, func: fun(bDrawingDepth: boolean, bDrawingSkybox: boolean, isDraw3DSkybox: boolean): any)
+---@overload fun(event_name: "PostDrawPlayerHands", identifier: any, func: fun(hands: garrysmod.Entity, vm: garrysmod.Entity, ply: garrysmod.Player, weapon: garrysmod.Weapon, flags: number): any)
+---@overload fun(event_name: "PostDrawSkyBox", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostDrawTranslucentRenderables", identifier: any, func: fun(bDrawingDepth: boolean, bDrawingSkybox: boolean, isDraw3DSkybox: boolean): any)
+---@overload fun(event_name: "PostDrawViewModel", identifier: any, func: fun(viewmodel: garrysmod.Entity, player: garrysmod.Player, weapon: garrysmod.Weapon, flags: number): any)
+---@overload fun(event_name: "PostEntityFireBullets", identifier: any, func: fun(entity: garrysmod.Entity, data: garrysmod.FiredBullet):(boolean?))
+---@overload fun(event_name: "PostEntityTakeDamage", identifier: any, func: fun(ent: garrysmod.Entity, dmginfo: garrysmod.DamageInfo, wasDamageTaken: boolean): any)
+---@overload fun(event_name: "PostGamemodeLoaded", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostPlayerDeath", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "PostPlayerDraw", identifier: any, func: fun(ply: garrysmod.Player, flags: number): any)
+---@overload fun(event_name: "PostProcessPermitted", identifier: any, func: fun(effect_name: string):(boolean?))
+---@overload fun(event_name: "PostRender", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostRenderVGUI", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PostUndo", identifier: any, func: fun(undo: table, count: number): any)
+---@overload fun(event_name: "PreCleanupMap", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PreDrawEffects", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PreDrawHalos", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PreDrawHUD", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PreDrawOpaqueRenderables", identifier: any, func: fun(isDrawingDepth: boolean, isDrawSkybox: boolean, isDraw3DSkybox: boolean):(boolean?))
+---@overload fun(event_name: "PreDrawPlayerHands", identifier: any, func: fun(hands: garrysmod.Entity, vm: garrysmod.Entity, ply: garrysmod.Player, weapon: garrysmod.Weapon, flags: number):(boolean?))
+---@overload fun(event_name: "PreDrawSkyBox", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "PreDrawTranslucentRenderables", identifier: any, func: fun(isDrawingDepth: boolean, isDrawSkybox: boolean, isDraw3DSkybox: boolean):(boolean?))
+---@overload fun(event_name: "PreDrawViewModel", identifier: any, func: fun(vm: garrysmod.Entity, ply: garrysmod.Player, weapon: garrysmod.Weapon, flags: number):(boolean?))
+---@overload fun(event_name: "PreDrawViewModels", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PreGamemodeLoaded", identifier: any, func: fun(): any)
+---@overload fun(event_name: "PrePlayerDraw", identifier: any, func: fun(player: garrysmod.Player, flags: number):(boolean?))
+---@overload fun(event_name: "PreRegisterSENT", identifier: any, func: fun(ent: table, class: string):(boolean?))
+---@overload fun(event_name: "PreRegisterSWEP", identifier: any, func: fun(swep: table, class: string):(boolean?))
+---@overload fun(event_name: "PreRender", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "PreUndo", identifier: any, func: fun(undo: table):(boolean?))
+---@overload fun(event_name: "PreventScreenClicks", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "PropBreak", identifier: any, func: fun(attacker: garrysmod.Player, prop: garrysmod.Entity): any)
+---@overload fun(event_name: "RenderScene", identifier: any, func: fun(origin: garrysmod.Vector, angles: garrysmod.Angle, fov: number):(boolean?))
+---@overload fun(event_name: "RenderScreenspaceEffects", identifier: any, func: fun(): any)
+---@overload fun(event_name: "Restored", identifier: any, func: fun(): any)
+---@overload fun(event_name: "Saved", identifier: any, func: fun(): any)
+---@overload fun(event_name: "ScaleNPCDamage", identifier: any, func: fun(npc: garrysmod.NPC, hitgroup: number, dmginfo: garrysmod.DamageInfo): any)
+---@overload fun(event_name: "ScalePlayerDamage", identifier: any, func: fun(ply: garrysmod.Player, hitgroup: number, dmginfo: garrysmod.DamageInfo):(boolean?))
+---@overload fun(event_name: "ScoreboardHide", identifier: any, func: fun(): any)
+---@overload fun(event_name: "ScoreboardShow", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "SendDeathNotice", identifier: any, func: fun(attacker: garrysmod.Entity|string|nil, inflictor: string, victim: garrysmod.Entity|string, flags: number): any)
+---@overload fun(event_name: "SetPlayerSpeed", identifier: any, func: fun(ply: garrysmod.Player, walkSpeed: number, runSpeed: number): any)
+---@overload fun(event_name: "SetupMove", identifier: any, func: fun(ply: garrysmod.Player, mv: garrysmod.MoveData, cmd: garrysmod.UserCommand): any)
+---@overload fun(event_name: "SetupPlayerVisibility", identifier: any, func: fun(ply: garrysmod.Player, viewEntity: garrysmod.Entity): any)
+---@overload fun(event_name: "SetupSkyboxFog", identifier: any, func: fun(scale: number):(boolean?))
+---@overload fun(event_name: "SetupWorldFog", identifier: any, func: fun():(boolean?))
+---@overload fun(event_name: "ShouldCollide", identifier: any, func: fun(ent1: garrysmod.Entity, ent2: garrysmod.Entity):(boolean?))
+---@overload fun(event_name: "ShouldDrawLocalPlayer", identifier: any, func: fun(ply: garrysmod.Player):(boolean?))
+---@overload fun(event_name: "ShowHelp", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "ShowSpare1", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "ShowSpare2", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "ShowTeam", identifier: any, func: fun(ply: garrysmod.Player): any)
+---@overload fun(event_name: "ShutDown", identifier: any, func: fun(): any)
+---@overload fun(event_name: "SpawniconGenerated", identifier: any, func: fun(lastmodel: string, imagename: string, modelsleft: number): any)
+---@overload fun(event_name: "SpawnMenuCreated", identifier: any, func: fun(): any)
+---@overload fun(event_name: "StartChat", identifier: any, func: fun(isTeamChat: boolean):(boolean?))
+---@overload fun(event_name: "StartCommand", identifier: any, func: fun(ply: garrysmod.Player, ucmd: garrysmod.UserCommand): any)
+---@overload fun(event_name: "StartEntityDriving", identifier: any, func: fun(ent: garrysmod.Entity, ply: garrysmod.Player): any)
+---@overload fun(event_name: "StartGame", identifier: any, func: fun(): any)
+---@overload fun(event_name: "Think", identifier: any, func: fun(): any)
+---@overload fun(event_name: "Tick", identifier: any, func: fun(): any)
+---@overload fun(event_name: "TranslateActivity", identifier: any, func: fun(ply: garrysmod.Player, act: number):(number?))
+---@overload fun(event_name: "UpdateAnimation", identifier: any, func: fun(ply: garrysmod.Player, velocity: garrysmod.Vector, maxSeqGroundSpeed: number): any)
+---@overload fun(event_name: "VariableEdited", identifier: any, func: fun(ent: garrysmod.Entity, ply: garrysmod.Player, key: string, val: string, editor: table): any)
+---@overload fun(event_name: "VehicleMove", identifier: any, func: fun(ply: garrysmod.Player, veh: garrysmod.Vehicle, mv: garrysmod.MoveData): any)
+---@overload fun(event_name: "VGUIMousePressAllowed", identifier: any, func: fun(button: number):(boolean?))
+---@overload fun(event_name: "VGUIMousePressed", identifier: any, func: fun(pnl: garrysmod.Panel, mouseCode: number): any)
+---@overload fun(event_name: "WeaponEquip", identifier: any, func: fun(weapon: garrysmod.Weapon, owner: garrysmod.Player): any)
+---@overload fun(event_name: "WorkshopDownloadedFile", identifier: any, func: fun(id: number, title: string): any)
+---@overload fun(event_name: "WorkshopDownloadFile", identifier: any, func: fun(id: number, imageID: number, title: string, size: number): any)
+---@overload fun(event_name: "WorkshopDownloadProgress", identifier: any, func: fun(id: number, imageID: number, title: string, downloaded: number, expected: number): any)
+---@overload fun(event_name: "WorkshopDownloadTotals", identifier: any, func: fun(remain: number, total: number): any)
+---@overload fun(event_name: "WorkshopEnd", identifier: any, func: fun(): any)
+---@overload fun(event_name: "WorkshopExtractProgress", identifier: any, func: fun(id: number, ImageID: number, title: string, percent: number): any)
+---@overload fun(event_name: "WorkshopStart", identifier: any, func: fun(): any)
+---@overload fun(event_name: "WorkshopSubscriptionsChanged", identifier: any, func: fun(): any)
+---@overload fun(event_name: "WorkshopSubscriptionsMessage", identifier: any, func: fun(message: string): any)
+---@overload fun(event_name: "WorkshopSubscriptionsProgress", identifier: any, func: fun(num: number, max: number): any)
+function hook.Add( event_name, identifier, func ) end
+
+--- [SHARED AND MENU]
+---
+--- Calls all hooks associated with the given event until one returns something other than `nil`, and then returns that data.
+---
+--- In almost all cases, you should use [hook.Run](https://wiki.facepunch.com/gmod/hook.Run) instead - it calls hook.Call internally but supplies the gamemode table by itself, making your code neater.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/hook.Call)
+---
+---@param event_name string The event to call hooks for.
+---@param tbl? table If the gamemode is specified, the gamemode hook within will be called, otherwise not.
+---@param ...? any The arguments to be passed to the hooks.
+---@return any ... # Return data from called hooks. Limited to **6** return values.
+function hook.Call( event_name, tbl, ... ) end
+
+--- [SHARED AND MENU]
+---
+--- Returns a list of all the hooks registered with [hook.Add](https://wiki.facepunch.com/gmod/hook.Add).
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/hook.GetTable)
+---
+---@return table # A table of tables. See below for output example.
+function hook.GetTable() end
+
+--- [SHARED AND MENU]
+---
+--- Removes the hook with the supplied identifier from the given event.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/hook.Remove)
+---@param event_name string The event name.
+---@param identifier any The unique identifier of the hook to remove, usually a string.
+function hook.Remove( event_name, identifier ) end
+
+--- [SHARED AND MENU]
+---
+--- Calls all hooks associated with the given event **until** one returns something other than `nil` and then returns that data.
+---
+--- If no hook returns any data, it will try to call the `GAMEMODE:` alternative, if one exists.
+---
+--- This function internally calls [hook.Call](https://wiki.facepunch.com/gmod/hook.Call).
+---
+--- See also: [gamemode.Call](https://wiki.facepunch.com/gmod/gamemode.Call) - same as this, but does not call hooks if the gamemode hasn't defined the function.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/hook.Run)
+---
+---@param event_name string The event to call hooks for.
+---@param ... any The arguments to be passed to the hooks.
+---@return any ... # Return data from called hooks. Limited to **6** return values.
+function hook.Run( event_name, ... ) end
