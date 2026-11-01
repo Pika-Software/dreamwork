@@ -208,24 +208,24 @@ function uuid.v8(uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, 
 
 --- [SHARED AND MENU]
 ---
---- Returns a fast, process-unique identifier (24 lower-case hex digits).
+--- Returns a fast, process-unique identifier formatted as a UUID version 8.
 ---
---- It is not a UUID, layout: `ssssssssrrrrrrrrcccccccc`
+--- Layout: `ssssssss-rrrr-8rrr-Nrrr-rrrrcccccccc`
 --- * `s` - load time of the library in seconds, fixed per session.
---- * `r` - 32 random bits, fixed per session.
+--- * `N`, `r` - variant and 58 random bits, fixed per session.
 --- * `c` - 32-bit counter, increments on every call.
 ---
 --- Identifiers never repeat within the process, sort in creation order
 --- and practically never collide between sessions or machines.
 --- They are trivially predictable, never use them as secrets.
 ---
---- Use it for cache file names, temporary keys and similar, prefer `uuid.v7` when the value must be a standard UUID.
+--- Use it for cache file names, temporary keys and similar, prefer `uuid.v7` for record identifiers.
 ---
 --- ```lua
---- uuid.unique() -- e.g. "6902aa806ae3cad800000000"
---- uuid.unique() -- e.g. "6902aa806ae3cad800000001"
+--- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000000"
+--- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000001"
 --- ```
 ---
----@return string id The unique identifier.
+---@return string uuid_str A UUID v8 string.
 ---@nodiscard
 function uuid.unique() end

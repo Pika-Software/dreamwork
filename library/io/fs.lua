@@ -2,25 +2,39 @@
 
 --- [SHARED AND MENU]
 ---
---- Checks if a binary module is available and can be loaded.
+--- The file system library, objects over the virtual file system (see `dreamwork.vfs`).
 ---
----@param name string The binary module name.
----@return boolean installed `true` if binary module is available, `false` otherwise.
----@return string abs_path The absolute path to binary module.
-function lookupbinary(name) end
+---@class fs
+fs = {}
 
 --- [SHARED AND MENU]
 ---
---- Loads a binary module if available.
+--- The file object.
 ---
----@param name string The binary module name, for example: "chttp".
----@return boolean success `true` if binary module is successfully installed, `false` otherwise.
-function loadbinary(name) end
-
----@class fs.MountInfo
----@field writable boolean If `true` mount allows creating directories inside.
----@field writable_extensions table<string, boolean> The extension map of allowed extensions to write.
----@field deletable boolean If `true` mount allows deleting files and directories.
-
----@class File : Object
+---@class fs.File : Object
+---@field __class fs.FileClass
+---@field path string The absolute path of the file. **READ-ONLY**
 local File = {}
+
+---@class fs.FileClass : fs.File
+---@field __base fs.File
+---@overload fun(): fs.File
+local FileClass = {}
+
+fs.File = FileClass
+
+--- [SHARED AND MENU]
+---
+--- The directory object.
+---
+---@class fs.Directory : Object
+---@field __class fs.DirectoryClass
+---@field path string The absolute path of the directory. **READ-ONLY**
+local Directory = {}
+
+---@class fs.DirectoryClass : fs.Directory
+---@field __base fs.Directory
+---@overload fun(): fs.Directory
+local DirectoryClass = {}
+
+fs.Directory = DirectoryClass
