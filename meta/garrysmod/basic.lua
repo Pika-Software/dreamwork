@@ -77,6 +77,28 @@ function AddCSLuaFile( file_path ) end
 
 --- [SHARED AND MENU]
 ---
+--- Writes text to the console. Arguments are converted to strings and concatenated, with no separator and no trailing newline.
+---
+--- Use `\n` to end the line. For colored output, see `MsgC`.
+---
+---@param ... any Values to print.
+function Msg( ... ) end
+
+--- [SHARED AND MENU]
+---
+--- Writes colored text to the console.
+---
+--- A `Color` sets the color of the text that follows it, until the next `Color`. Other arguments are converted to strings and printed with no separator and no trailing newline.
+---
+--- ```lua
+--- MsgC( Color( 255, 0, 0 ), "Error: ", color_white, "something broke\n" )
+--- ```
+---
+---@param ... any | garrysmod.Color Colors and values to print.
+function MsgC( ... ) end
+
+--- [SHARED AND MENU]
+---
 --- Returns the current synchronous server uptime in seconds (to at least 4 decimal places).
 ---
 --- This value is affected by various factors such as:
