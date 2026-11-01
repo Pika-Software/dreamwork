@@ -94,7 +94,7 @@ function Command:isBlacklisted() end
 --- If the hook is currently running, the change is deferred and applied once
 --- the hook finishes running.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler console.Command.Callback
 function Command:attach(handler) end
 
 --- [SHARED AND MENU]
@@ -102,7 +102,7 @@ function Command:attach(handler) end
 --- Attaches a handler function to the hook that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler console.Command.Callback
 function Command:once(handler) end
 
 --- [SHARED AND MENU]
@@ -111,7 +111,7 @@ function Command:once(handler) end
 --- If the hook is currently running, the handler is replaced with a no-op and
 --- the actual removal is deferred until the hook finishes running.
 ---
----@param handler fun( client: garrysmod.Player, args: string[], argument_string: string )
+---@param handler console.Command.Callback
 function Command:detach(handler) end
 
 --- [SHARED AND MENU]

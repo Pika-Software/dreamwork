@@ -1,17 +1,82 @@
 ---@meta _
 
 
+---
+--- The value type of a console variable.
+---
 ---@alias console.VariableType "boolean" | "string" | "integer" | "number"
+
+---
+--- The value of a console variable, depends on its `console.VariableType`.
+---
 ---@alias console.VariableValue boolean | number | string | integer
 
+---
+--- Handler of a console command, called every time the command is executed.
+---
+--- Parameters:
+--- - `command`: the command that was executed.
+--- - `client`: the player who executed the command, `nil` when executed from the server console.
+--- - `args`: the parsed arguments.
+--- - `argument_string`: the raw argument string typed after the command name (surrounding quotes are stripped).
+---
+---@alias console.Command.Callback fun( command: console.Command, client: garrysmod.Player | nil, args: string[], argument_string: string )
 
----@alias console.Command.SimpleAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): string[]
----@alias console.Command.FullAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): boolean, string[]
+---
+--- Simple autocomplete callback.
+---
+--- Returns a list of suggestions, each one is the text that follows the command name,
+--- the command name and a space are prepended to every entry automatically.
+---
+--- Example: for command `my_cmd` returning `{ "foo", "bar" }` the console shows `my_cmd foo` and `my_cmd bar`.
+---
+--- Returning `nil` (or throwing an error) falls back to the engine's default behavior.
+---
+--- Parameters:
+--- - `command`: the command that is being autocompleted.
+--- - `argument_string`: the raw argument string typed after the command name.
+--- - `args`: the parsed arguments.
+---
+---@alias console.Command.SimpleAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): string[] | nil
+
+---
+--- Full autocomplete callback.
+---
+--- The first return value controls how the second one is treated:
+--- - `true`: the suggestions are **prefixed** with the command name and a space, same as in the simple callback.
+--- - `false`: the suggestions are passed to the engine **as is**, so each entry must already contain the full line (including the command name).
+---
+--- Returning `nil` (or throwing an error) falls back to the engine's default behavior.
+---
+--- Parameters:
+--- - `command`: the command that is being autocompleted.
+--- - `argument_string`: the raw argument string typed after the command name.
+--- - `args`: the parsed arguments.
+---
+---@alias console.Command.FullAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): boolean, string[] | nil
+
+---
+--- Autocomplete callback of a console command, either simple or full.
+---
+--- See `SimpleAutoComplete` and `FullAutoComplete` for the return value semantics.
+---
 ---@alias console.Command.AutoComplete console.Command.SimpleAutoComplete | console.Command.FullAutoComplete
 
 
+--- [SHARED AND MENU]
+---
+--- The console command object.
+---
 ---@class console.Command : Object
 local Command = {}
+
+---
+--- The autocomplete function of the console command.
+---
+--- Assigning a non-function value raises an error, assigning `nil` is not supported.
+---
+---@type console.Command.AutoComplete | nil
+Command.autocomplete = nil
 
 ---
 --- The name of the console command/variable.
@@ -91,7 +156,7 @@ Command.hidden = nil
 ---
 --- It's a server cvar, but we don't send the data since it's a password, etc.
 ---
---- Sends `1` if it's not bland/zero, `0` otherwise as value.
+--- Sends `1` if it's not blank/zero, `0` otherwise as value.
 ---
 --- **READ-ONLY**
 ---
@@ -193,7 +258,7 @@ Command.replicated = nil
 Command.demo = nil
 
 ---
---- Opposite of `DEMO`, ensures the cvar is not recorded in demos.
+--- Opposite of `demo`, ensures the cvar is not recorded in demos.
 ---
 --- **READ-ONLY**
 ---
@@ -371,7 +436,7 @@ CommandOptions.hidden = nil
 ---
 --- It's a server cvar, but we don't send the data since it's a password, etc.
 ---
---- Sends `1` if it's not bland/zero, `0` otherwise as value.
+--- Sends `1` if it's not blank/zero, `0` otherwise as value.
 ---
 ---@type boolean?
 CommandOptions.protected = nil
@@ -451,7 +516,7 @@ CommandOptions.replicated = nil
 CommandOptions.demo = nil
 
 ---
---- Opposite of `DEMO`, ensures the cvar is not recorded in demos.
+--- Opposite of `demo`, ensures the cvar is not recorded in demos.
 ---
 ---@type boolean?
 CommandOptions.dont_record = nil
@@ -565,6 +630,10 @@ VariableOptions.min = nil
 VariableOptions.max = nil
 
 
+--- [SHARED AND MENU]
+---
+--- The console variable object.
+---
 ---@class console.Variable : console.Command
 local Variable = {}
 

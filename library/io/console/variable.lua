@@ -201,7 +201,7 @@ function console.Variable.getBounds(name) end
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler Hook<T> | Mixin<T> | fun( value: T )
+---@param handler fun( variable: console.Variable<T>, value: T )
 function Variable:attach(handler) end
 
 --- [SHARED AND MENU]
@@ -211,7 +211,7 @@ function Variable:attach(handler) end
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler Hook<T> | Mixin<T> | fun( value: T )
+---@param handler fun( variable: console.Variable<T>, value: T )
 function Variable:once(handler) end
 
 --- [SHARED AND MENU]
@@ -220,7 +220,7 @@ function Variable:once(handler) end
 --- If the hook is currently running, the handler is replaced with a no-op and
 --- the actual removal is deferred until the hook finishes running.
 ---
----@param handler Hook<T> | Mixin<T> | fun( value: T )
+---@param handler fun( variable: console.Variable<T>, value: T )
 function Variable:detach(handler) end
 
 --- [SHARED AND MENU]
