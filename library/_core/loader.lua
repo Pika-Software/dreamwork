@@ -1019,10 +1019,20 @@ function os.exit() end
 ---
 ---@param bytecode string The luajit bytecode chunk.
 ---@param env table | nil The environment of compiled function.
----@return function | nil fn The compiled function.
----@return string | nil msg The error message.
+---@return function fn The compiled function.
 ---@nodiscard
 function loadbytecode(bytecode, env) end
+
+--- [SHARED AND MENU]
+---
+--- Loads a file as a lua code chunk in the specified environment
+--- and returns function as a compile result.
+---
+---@param file_path string The path to the file to read.
+---@param env table | nil The environment of compiled function.
+---@return function fn The compiled function.
+---@nodiscard
+function loadfile(file_path, env) end
 
 --- [SHARED AND MENU]
 ---
