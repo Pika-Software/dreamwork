@@ -384,3 +384,48 @@ function __AsyncFileSystemError:__init(error_id, is_writing) end
 ---@field __parent ErrorClass
 ---@overload fun( error_id: integer, is_writing: ( boolean | nil ) ): AsyncFileSystemError
 AsyncFileSystemError = {}
+
+--- [SHARED AND MENU]
+---
+--- An error raised when an HTTP request fails or its response has an unexpected status code.
+---
+--- `status` is `nil` when no response was received (connection, TLS, timeout, ...).
+---
+--- ```lua
+--- HTTPError( 404, "https://example.com/a" ) -- "HTTP 404 Not Found - Resource not found (url: https://example.com/a)"
+--- HTTPError( nil, "https://example.com/a", "Timeout was reached" ) -- "HTTP request failed: Timeout was reached (url: https://example.com/a)"
+--- HTTPError.Messages[ 429 ] -- "Too Many Requests - Rate limit exceeded"
+--- ```
+---
+---@class HTTPError : Error
+---@field __class HTTPErrorClass
+---@field __parent Error
+---@field message string | nil The reason of the failure, or extra details about the status code.
+---@field status integer | nil The response status code, `nil` if no response was received.
+---@field url string | nil The URL of the request.
+---@field Messages table<integer, string> The status code description lookup table.
+local __HTTPError = {}
+
+---@type table<integer, string>
+__HTTPError.Messages = nil
+
+---@param status integer | nil
+---@param url string | nil
+---@param message string | nil
+---@protected
+function __HTTPError:__init(status, url, message) end
+
+---@param error_message string | nil
+---@return string
+---@protected
+function __HTTPError:__message(error_message) end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `HTTPError` instances.
+---
+---@class HTTPErrorClass : HTTPError, ErrorClass
+---@field __base HTTPError
+---@field __parent ErrorClass
+---@overload fun( status: ( integer | nil ), url: ( string | nil ), message: ( string | nil ) ): HTTPError
+HTTPError = {}
