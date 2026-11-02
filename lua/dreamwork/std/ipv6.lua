@@ -48,23 +48,6 @@ local class             = std.class
 ---@field [ 8 ] integer The eighth group. <0-65535>
 local IPv6              = class.base( "IPv6", false )
 
----@param group1? integer The first group. <0-65535>
----@param group2? integer The second group. <0-65535>
----@param group3? integer The third group. <0-65535>
----@param group4? integer The fourth group. <0-65535>
----@param group5? integer The fifth group. <0-65535>
----@param group6? integer The sixth group. <0-65535>
----@param group7? integer The seventh group. <0-65535>
----@param group8? integer The eighth group. <0-65535>
----@return dreamwork.std.IPv6
----@protected
-function IPv6:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
-    return setmetatable( {
-        group1 or 0, group2 or 0, group3 or 0, group4 or 0,
-        group5 or 0, group6 or 0, group7 or 0, group8 or 0
-    }, IPv6 )
-end
-
 ---@protected
 ---@return string
 function IPv6:__tostring()
@@ -165,6 +148,23 @@ end
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): dreamwork.std.IPv6
 local IPv6Class = class.create( IPv6 )
 std.IPv6 = IPv6Class
+
+---@param group1? integer The first group. <0-65535>
+---@param group2? integer The second group. <0-65535>
+---@param group3? integer The third group. <0-65535>
+---@param group4? integer The fourth group. <0-65535>
+---@param group5? integer The fifth group. <0-65535>
+---@param group6? integer The sixth group. <0-65535>
+---@param group7? integer The seventh group. <0-65535>
+---@param group8? integer The eighth group. <0-65535>
+---@return dreamwork.std.IPv6
+---@protected
+function IPv6Class:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
+    return setmetatable( {
+        group1 or 0, group2 or 0, group3 or 0, group4 or 0,
+        group5 or 0, group6 or 0, group7 or 0, group8 or 0
+    }, IPv6 )
+end
 
 ---@param str string
 ---@param str_start integer

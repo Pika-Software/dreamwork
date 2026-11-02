@@ -16,6 +16,7 @@ local debug_getmetavalue = debug.getmetavalue
 local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
+local raw_type = raw.type
 
 local error = std.error
 
@@ -24,24 +25,29 @@ local error = std.error
 ---
 --- A library for creating classes, implementing inheritance, and working with the object model in Lua.
 ---
+--- A class consists of two tables:
+--- * **base** ( `class.base` ) - the metatable of every object, holds methods and metamethods;
+--- * **class** ( `class.create` ) - the callable table that creates objects, holds static fields.
+---
 ---@class dreamwork.std.class
 local class = {}
 std.class = class
 
 ---@alias dreamwork.std.Class.__inherited fun( parent: dreamwork.std.Class, child: dreamwork.std.Class )
----@alias dreamwork.std.Class.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object
+---@alias dreamwork.std.Class.__new fun( cls: dreamwork.std.Class, ...: any? ): dreamwork.std.Object | nil
 ---@alias dreamwork.std.Object.__init fun( obj: dreamwork.std.Object, ...: any? )
 
 --- [SHARED AND MENU]
 ---
---- A base for objects were created by `class` library.
+--- A base for objects that were created by `class` library.
 ---
 ---@class dreamwork.std.Object : metatable
 ---@field __type string The name of object type. **READ ONLY**
----@field __class? dreamwork.std.Class  The class of the object. **READ ONLY**
----@field __parent? dreamwork.std.Object The parent of the object. **READ ONLY**
+---@field __class? dreamwork.std.Class The class of the object. **READ ONLY**
+---@field __parent? dreamwork.std.Object The base of the parent class. **READ ONLY**
+---@field __private? boolean `true` if objects of this base are `userdata`. **READ ONLY**
 ---@field __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
----@field __new? dreamwork.std.Class.__new A function that will be called when a new class is created and allows you to replace the result.
+---@field private __template? userdata The userdata whose metatable is shared by all private objects.
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.std.Object
@@ -53,7 +59,7 @@ std.class = class
 ---@class dreamwork.std.Class : dreamwork.std.Object
 ---@field __base dreamwork.std.Object The base of the class. **READ ONLY**
 ---@field __parent? dreamwork.std.Class The parent of the class. **READ ONLY**
----@field __private boolean If the class is private. **READ ONLY**
+---@field __new? dreamwork.std.Class.__new A function that will be called instead of the default object creation, if it returns a non-`nil` value, it will be used as the result and `__init` will **not** be called.
 ---@field __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
 
 --- [SHARED AND MENU]
@@ -67,32 +73,35 @@ function std.isClass( value )
     if not isTable( value ) then return false end
 
     local base = raw_get( value, "__base" )
-    if base == nil then return false end
+    if not isTable( base ) then return false end
 
     return raw_get( base, "__class" ) == value
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the value is a object created by class.
+--- Checks if the value is an object created by a class.
 ---
----@param value any The value to check for being a object.
----@return boolean is_object `true` is `value` is a object created by class, `false` otherwise.
+--- Objects of a base that was never passed to `class.create` are not considered objects.
+---
+---@param value any The value to check for being an object.
+---@return boolean is_object `true` if `value` is an object created by a class, `false` otherwise.
 ---@nodiscard
 function std.isObject( value )
     local base = debug_getmetatable( value )
     if base == nil then return false end
 
-    return raw_get( base, "__class" ) ~= nil
+    local cls = raw_get( base, "__class" )
+    if not isTable( cls ) or raw_get( cls, "__base" ) ~= base then
+        return false
+    end
+
+    -- private template is not an object
+    return raw_get( base, "__template" ) ~= value
 end
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Class dreamwork.std.Class
-
----@type table<dreamwork.std.Object, userdata>
-local templates = {}
-
-std.gc.setTableRules( templates, true, false )
 
 ---@param obj dreamwork.std.Object The object to convert to a string.
 ---@return string str The string representation of the object.
@@ -105,9 +114,11 @@ do
 
     ---@type table<string, boolean>
     local non_inheritable = {
+        __template = true,
         __private = true,
         __parent = true,
         __class = true,
+        __index = true,
         __base = true,
         __type = true,
     }
@@ -116,9 +127,20 @@ do
     ---
     --- Creates a new class base ( metatable ).
     ---
+    --- If `parent` is given, methods are looked up through the parent base,
+    --- and metamethods ( `__*` keys ) of the parent base are **copied** into the new base.
+    ---
+    --- Notes:
+    --- * metamethods are copied once, at the moment of this call,
+    --- so the parent base must be fully defined before its children are created;
+    --- * `__index` is never copied, a parent with a custom `__index` function
+    --- requires the child to define its own `__index`;
+    --- * private objects are `userdata`, so they cannot store fields
+    --- and their data must be kept outside ( e.g. in a weak table ).
+    ---
     ---@param name string The name of the class.
-    ---@param private? boolean If the class is private.
-    ---@param parent? dreamwork.std.Class | unknown The parent of the class.
+    ---@param private? boolean If `true`, objects will be `userdata` instead of `table`.
+    ---@param parent? dreamwork.std.Class | unknown The parent class.
     ---@return dreamwork.std.Object base The base of the class.
     ---@nodiscard
     function class.base( name, private, parent )
@@ -132,7 +154,8 @@ do
                 error( "`userdata` metatable is missing, Lua environment is corrupted!" )
             end
 
-            templates[ base ] = template
+            -- template <-> base cycle, collectable together with the base
+            raw_set( base, "__template", template )
 
             raw_set( base, "__type", name )
             raw_set( base, "__private", true )
@@ -148,8 +171,12 @@ do
         ---@cast base dreamwork.std.Object
 
         if parent ~= nil then
+            if not isTable( parent ) then
+                error( "Parent must be a class.", 2 )
+            end
+
             local parent_base = raw_get( parent, "__base" )
-            if parent_base == nil then
+            if not isTable( parent_base ) then
                 error( "Parent class has no `__base` variable.", 2 )
             end
 
@@ -159,9 +186,11 @@ do
 
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
-                local uint8_1, uint8_2 = string_byte( key, 1, 2 )
-                if (uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]]) and not (key == "__index" and value == parent_base) and not non_inheritable[ key ] then
-                    base[ key ] = value
+                if raw_type( key ) == "string" and not non_inheritable[ key ] then
+                    local uint8_1, uint8_2 = string_byte( key, 1, 2 )
+                    if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
+                        base[ key ] = value
+                    end
                 end
             end
         end
@@ -198,7 +227,7 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Creates a new class object.
+    --- Creates a new class object without calling `__init`.
     ---
     ---@generic T : dreamwork.std.Object
     ---@param base T The base object, aka metatable.
@@ -207,7 +236,7 @@ do
     local function class_new( base )
         if raw_get( base, "__private" ) then
             ---@diagnostic disable-next-line: return-type-mismatch
-            return debug_newproxy( templates[ base ] )
+            return debug_newproxy( raw_get( base, "__template" ) )
         end
 
         local obj = {}
@@ -218,6 +247,7 @@ do
     class.new = class_new
 
     ---@param self dreamwork.std.Class The class.
+    ---@param ... any? Arguments to pass to `__new` and `__init`.
     ---@return dreamwork.std.Object obj The new object.
     ---@nodiscard
     function class__call( self, ... )
@@ -250,9 +280,21 @@ end
 ---
 --- Creates a new class from the given base.
 ---
+--- Static fields of the parent class ( including `__new` and `__inherited` ) are copied into the new class,
+--- then the parent's `__inherited` is called, if it exists.
+---
 ---@param base dreamwork.std.Object The base object, aka metatable.
 ---@return dreamwork.std.Class | unknown cls The class.
 function class.create( base )
+    if not isTable( base ) then
+        error( "Class base must be a table.", 2 )
+    end
+
+    local name = raw_get( base, "__type" )
+    if raw_type( name ) ~= "string" then
+        error( "Class base has no `__type` variable.", 2 )
+    end
+
     local cls = {}
 
     ---@type dreamwork.std.Class | nil
@@ -263,10 +305,14 @@ function class.create( base )
         ---@cast parent_base dreamwork.std.Object
         parent_class = raw_get( parent_base, "__class" )
 
-        if parent_class ~= nil then
-            for key, value in raw_pairs( parent_class ) do
-                cls[ key ] = value
-            end
+        if parent_class == nil then
+            std.errorf( 2, false, "Parent class of '%s' is not created, call `class.create` on the parent base first.", name )
+        end
+
+        ---@cast parent_class dreamwork.std.Class
+
+        for key, value in raw_pairs( parent_class ) do
+            cls[ key ] = value
         end
     end
 
@@ -277,7 +323,7 @@ function class.create( base )
         __metatable = base,
         __call = class__call,
         __tostring = __tostring,
-        __type = raw_get( base, "__type" ) .. "Class"
+        __type = name .. "Class"
     } )
 
     raw_set( cls, "__parent", parent_class )
@@ -296,15 +342,19 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the value is an instance of the given class.
+--- Checks if the value is an instance of the given class or any of its children.
 ---
----@param obj dreamwork.std.Object The object to check for being an instance of the given class.
----@param cls dreamwork.std.Class | dreamwork.std.Object The class to check against.
+---@param obj any The object to check for being an instance of the given class.
+---@param cls dreamwork.std.Class | dreamwork.std.Object The class or its base to check against.
 ---@return boolean is_instance `true` if `obj` is an instance of the given class, `false` otherwise.
 ---@nodiscard
 function class.isInherited( obj, cls )
+    if not isTable( cls ) then
+        error( "bad argument #2 to 'isInherited' (class or base expected)", 2 )
+    end
+
+    local cls_base = raw_get( cls, "__base" ) or cls
     local obj_base = debug_getmetatable( obj )
-    local cls_base = raw_get( cls, "__base" )
 
     while obj_base ~= nil do
         if obj_base == cls_base then

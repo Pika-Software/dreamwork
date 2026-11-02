@@ -12,10 +12,10 @@ local engine_hook = dreamwork_engine.hook
 local CurTime = CurTime
 local Hook = std.Hook
 
----@class dreamwork.std.Game : dreamwork.std.Object
-local Game = class.base( "Game", true )
+-- ---@class dreamwork.std.Game : dreamwork.std.Object
+-- local Game = class.base( "Game", true )
 
-local GameClass = class.base( "GameClass", false, Game )
+-- local GameClass = class.create( Game )
 
 --- [SHARED AND MENU]
 ---
