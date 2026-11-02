@@ -41,6 +41,7 @@ local isFunction = std.isFunction
 
 local Queue = std.Queue
 local AsyncError = std.AsyncError
+local RuntimeError = std.RuntimeError
 
 
 --- [SHARED AND MENU]
@@ -650,7 +651,7 @@ do
     ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
     ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
     ---@field protected result_value T The result value of the future.
-    ---@field protected error_value string The error value of the future.
+    ---@field protected error_value dreamwork.std.Error | nil The error value of the future.
     local Future = std.Future and std.Future.__base or class.base( "Future" )
 
     ---@protected
@@ -813,17 +814,26 @@ do
     --- Sets error of the Future, marks it as finished, and runs all callbacks
     --- if future is already finished, error will be thrown.
     ---
-    ---@param err string The error to fail the future with.
-    function Future:setError( err )
+    --- Strings and other values are wrapped into `error_class`, an `Error` without
+    --- a call stack captures the stack of the caller, an `Error` with one is kept as is.
+    ---
+    ---@see dreamwork.std.Future.error to retrieve error
+    ---
+    ---@param err string | dreamwork.std.Error The error to fail the future with.
+    ---@param error_class? dreamwork.std.ErrorClass The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
+    function Future:setError( err, error_class )
         if self.state ~= 0 then
             error( "future is already finished", 2, false )
         end
 
         self.state = 1
-        self.error_value = err
+        self.error_value = toError( err, error_class )
 
         self:runCallbacks()
     end
+
+    -- the stack of a wrapped error starts at the caller of `setError`
+    dreamwork.hideErrorFrame( Future.setError )
 
     --- [SHARED AND MENU]
     ---
@@ -844,20 +854,20 @@ do
     --- [SHARED AND MENU]
     ---
     --- Returns the future's error, if any:
-    --- * if cancelled, returns "future was cancelled"
-    --- * if still pending, returns "future is not finished"
+    --- * if cancelled, returns `RuntimeError` "future was cancelled"
+    --- * if still pending, returns `RuntimeError` "future is not finished"
     --- * if finished successfully, returns nil
     --- * if finished with an error, returns that error
     ---
     ---@see dreamwork.std.Future.setError
-    ---@return string | nil
+    ---@return dreamwork.std.Error | nil
     ---@nodiscard
     function Future:error()
         local state = self.state
         if state == 2 then
-            return "future was cancelled"
+            return RuntimeError( "future was cancelled" )
         elseif state == 0 then
-            return "future is not finished"
+            return RuntimeError( "future is not finished" )
         end
 
         return self.error_value
@@ -943,7 +953,7 @@ do
     ---@field __class dreamwork.std.futures.TaskClass
     ---@field __parent dreamwork.std.Future
     ---@field protected setResult fun( self: dreamwork.std.futures.Task<T>, result: T )
-    ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, error: self )
+    ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, err: string | dreamwork.std.Error, error_class?: dreamwork.std.ErrorClass )
     ---@field addCallback fun( self: dreamwork.std.futures.Task<T>, callback: fun( task: dreamwork.std.futures.Task<T> ) )
     local Task = std.Task and std.Task.__base or class.base( "Task", false, std.Future )
 
