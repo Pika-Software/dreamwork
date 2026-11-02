@@ -8,8 +8,8 @@ local math_range                  = math.range
 local string                      = std.string
 local string_len                  = string.len
 local string_format               = string.format
+local string_byte                 = string.byte
 local string_findByte             = string.findByte
-local string_toNumber             = string.toNumber
 
 local bit                         = std.bit
 local bit_bnot                    = bit.bnot
@@ -68,8 +68,7 @@ end
 ---@return integer d The fourth octet. <0-255>
 ---@nodiscard
 function ipv4.octets( ip_address )
-    local d, c, b, a = bytepack_writeUInt32( ip_address )
-    return a, b, c, d
+    return bytepack_writeUInt32( ip_address )
 end
 
 --- [SHARED AND MENU]
@@ -90,10 +89,10 @@ end
 ---@nodiscard
 local function fromOctets( a, b, c, d )
     return bytepack_readUInt32(
-        math_clamp( d, 0, 255 ),
-        math_clamp( c, 0, 255 ),
+        math_clamp( a, 0, 255 ),
         math_clamp( b, 0, 255 ),
-        math_clamp( a, 0, 255 )
+        math_clamp( c, 0, 255 ),
+        math_clamp( d, 0, 255 )
     )
 end
 
@@ -104,15 +103,17 @@ ipv4.fromOctets = fromOctets
 --- Parses an IPv4 address string with an optional CIDR prefix length, e.g. `192.168.0.1/24`.
 ---
 --- Each octet supports:
---- - **Hexadecimal**: prefixed with `0x` or `0X` (e.g., `0x7F`). Returns `0` if empty after prefix.
---- - **Octal**: prefixed with `0` followed by numbers (e.g., `0177`).
+--- - **Hexadecimal**: prefixed with `0x` or `0X` (e.g., `0x7F`), a bare `0x` is `0`.
+--- - **Octal**: prefixed with `0` followed by octal digits (e.g., `0177`).
 --- - **Decimal**: standard base-10 digits (e.g., `127`).
---- - **Empty/Missing**: returns `0` if the position is empty or invalid.
 ---
 --- Addresses with fewer than 4 octets are accepted, the last given octet becomes the last octet
 --- of the address, e.g. `127.1` is parsed as `127.0.0.1`.
 ---
---- Throws an error if an octet contains invalid characters, is out of range or there are more than 4 octets.
+--- The prefix length must be decimal digits only.
+---
+--- Throws an error if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
+--- or if the prefix length is empty, contains invalid characters or is greater than `32`.
 ---
 ---@param ipv4_str string The IPv4 address string to parse.
 ---@param start_position? integer The start position in the ipv4 string.
@@ -123,66 +124,109 @@ ipv4.fromOctets = fromOctets
 function ipv4.parse( ipv4_str, start_position, end_position )
     local start_index, end_index = math_range( string_len( ipv4_str ), start_position, end_position )
 
+    local prefix_length = 32
+
+    local cidr_position = string_findByte( ipv4_str, 0x2F --[[ / ]], start_index, end_index )
+    if cidr_position ~= nil then
+        if cidr_position == end_index then
+            std.errorf( 2, false, "ipv4 prefix length is empty" )
+        end
+
+        prefix_length = 0
+
+        for index = cidr_position + 1, end_index, 1 do
+            local uint8 = string_byte( ipv4_str, index, index )
+            if uint8 < 0x30 --[[ 0 ]] or uint8 > 0x39 --[[ 9 ]] then
+                std.errorf( 2, false, "invalid characters in ipv4 prefix length" )
+            end
+
+            prefix_length = prefix_length * 10 + (uint8 - 0x30)
+
+            if prefix_length > 32 then
+                std.errorf( 2, false, "ipv4 prefix length out of range, max 32" )
+            end
+        end
+
+        end_index = cidr_position - 1
+    end
+
     ---@type { [ 1 ]: integer, [ 2 ]: integer, [ 3 ]: integer, [ 4 ]: integer }
     local octets = { 0, 0, 0, 0 }
 
     ---@type integer
-    local octet_index = 1
+    local octet_count = 0
 
-    local cdir_position = string_findByte( ipv4_str, 0x2F --[[ / ]], start_index, end_index )
+    ::octet_parser::
 
-    ::parse_octet::
+    local dot_position = string_findByte( ipv4_str, 0x2E --[[ . ]], start_index, end_index )
 
-    local octet_position = string_findByte( ipv4_str, 0x2E --[[ . ]], start_index, end_index )
-
-    local octet_length
-    if octet_position == nil then
-        if cdir_position == nil then
-            octet_length = (end_index - start_index) + 1
-        else
-            octet_length = cdir_position - start_index
-        end
+    local octet_end
+    if dot_position == nil then
+        octet_end = end_index
     else
-        octet_length = octet_position - start_index
+        octet_end = dot_position - 1
     end
 
-    if octet_length > 0 then
-        local octet = string_toNumber( ipv4_str, nil, start_index, start_index + (octet_length - 1) )
-        if octet == nil then
-            std.errorf( 2, false, "invalid characters in ipv4 octet %d", octet_index )
-        elseif octet > 255 then
-            std.errorf( 2, false, "ipv4 octet %d out of range %d > 255", octet_index, octet )
-        elseif octet < 0 then
-            std.errorf( 2, false, "ipv4 octet %d cannot be negative", octet_index )
-        else
-            octets[ octet_index ] = math_clamp( octet, 0, 255 )
-        end
+    if octet_count == 4 then
+        std.errorf( 2, false, "too many ipv4 octets, max 4" )
+    end
 
-        if octet_position ~= nil then
-            if octet_index == 4 then
-                std.errorf( 2, false, "too many ipv4 octets, max 4" )
+    octet_count = octet_count + 1
+
+    if octet_end < start_index then
+        std.errorf( 2, false, "ipv4 octet %d is empty", octet_count )
+    end
+
+    local base, digits_start = 10, start_index
+
+    if octet_end > start_index and string_byte( ipv4_str, start_index, start_index ) == 0x30 --[[ 0 ]] then
+        local uint8 = string_byte( ipv4_str, start_index + 1, start_index + 1 )
+        if uint8 == 0x78 --[[ x ]] or uint8 == 0x58 --[[ X ]] then
+            base, digits_start = 16, start_index + 2
+        else
+            base, digits_start = 8, start_index + 1
+        end
+    end
+
+    local octet = 0
+
+    for index = digits_start, octet_end, 1 do
+        local uint8 = string_byte( ipv4_str, index, index )
+
+        local digit
+        if uint8 >= 0x30 --[[ 0 ]] and uint8 <= 0x39 --[[ 9 ]] then
+            digit = uint8 - 0x30
+        elseif base == 16 then
+            if uint8 >= 0x61 --[[ a ]] and uint8 <= 0x66 --[[ f ]] then
+                digit = uint8 - 0x57
+            elseif uint8 >= 0x41 --[[ A ]] and uint8 <= 0x46 --[[ F ]] then
+                digit = uint8 - 0x37
             end
-
-            start_index = octet_position + 1
-            octet_index = octet_index + 1
-
-            goto parse_octet
         end
-    else
-        octet_index = octet_index - 1
+
+        if digit == nil or digit >= base then
+            std.errorf( 2, false, "invalid characters in ipv4 octet %d", octet_count )
+        end
+
+        octet = octet * base + digit
+
+        if octet > 255 then
+            std.errorf( 2, false, "ipv4 octet %d out of range, max 255", octet_count )
+        end
     end
 
-    if octet_index ~= 4 then
-        octets[ 4 ], octets[ octet_index ] = octets[ octet_index ], 0
+    octets[ octet_count ] = octet
+
+    if dot_position ~= nil then
+        start_index = dot_position + 1
+        goto octet_parser
     end
 
-    local mask = 32
-
-    if cdir_position ~= nil then
-        mask = math_clamp( string_toNumber( ipv4_str, 10, cdir_position + 1, end_index ) or 32, 0, 32 )
+    if octet_count ~= 4 then
+        octets[ 4 ], octets[ octet_count ] = octets[ octet_count ], 0
     end
 
-    return fromOctets( octets[ 1 ], octets[ 2 ], octets[ 3 ], octets[ 4 ] ), mask
+    return bytepack_readUInt32( octets[ 1 ], octets[ 2 ], octets[ 3 ], octets[ 4 ] ), prefix_length
 end
 
 --- [SHARED AND MENU]
@@ -197,8 +241,7 @@ end
 ---@return string str The string representation of the IP address.
 ---@nodiscard
 function ipv4.toString( ip_address )
-    local d, c, b, a = bytepack_writeUInt32( ip_address )
-    return string_format( "%d.%d.%d.%d", a, b, c, d )
+    return string_format( "%d.%d.%d.%d", bytepack_writeUInt32( ip_address ) )
 end
 
 --- [SHARED AND MENU]
@@ -213,13 +256,15 @@ end
 ---@return string ptr The reverse DNS pointer of the IP address.
 ---@nodiscard
 function ipv4.reversePointer( ip_address )
-    local d, c, b, a = bytepack_writeUInt32( ip_address )
+    local a, b, c, d = bytepack_writeUInt32( ip_address )
     return string_format( "%d.%d.%d.%d.in-addr.arpa", d, c, b, a )
 end
 
 --- [SHARED AND MENU]
 ---
 --- Returns the subnet mask address for a given CIDR prefix length.
+---
+--- Prefix lengths out of the `0-32` range are clamped.
 ---
 --- ```lua
 --- ipv4.fromPrefix( 24 ) -- 0xFFFFFF00 (255.255.255.0)
@@ -229,7 +274,12 @@ end
 ---@return dreamwork.std.IPv4 mask_address The subnet mask address.
 ---@nodiscard
 function ipv4.fromPrefix( prefix_length )
-    return bit_unsign( bin_masks[ math_clamp( prefix_length, 0, 32 ) ] )
+    local mask = bin_masks[ math_clamp( prefix_length, 0, 32 ) ]
+    if mask == nil then
+        std.errorf( 2, false, "invalid ipv4 prefix length '%s', must be an integer", prefix_length )
+    end
+
+    return bit_unsign( mask )
 end
 
 --- [SHARED AND MENU]
@@ -241,12 +291,17 @@ end
 --- ```
 ---
 ---@param ip_address dreamwork.std.IPv4 The IP address.
----@param prefix_length integer The CIDR prefix length. <0-32>
+---@param prefix_length integer The CIDR prefix length. <0-32>, throws an error if out of range.
 ---@return dreamwork.std.IPv4 network_address The network (first) address.
 ---@return dreamwork.std.IPv4 broadcast_address The broadcast (last) address.
 ---@nodiscard
 local function cidr( ip_address, prefix_length )
-    local network_address   = bit_band( ip_address, bin_masks[ prefix_length ] )
+    local mask = bin_masks[ prefix_length ]
+    if mask == nil then
+        std.errorf( 2, false, "invalid ipv4 prefix length '%s', must be an integer in range 0-32", prefix_length )
+    end
+
+    local network_address   = bit_band( ip_address, mask )
     local broadcast_address = bit_bor( network_address, bin_inverted_masks[ prefix_length ] )
 
     return bit_unsign( network_address ), bit_unsign( broadcast_address )
@@ -422,12 +477,12 @@ do
         return ip_address == 0xFFFFFFFF
     end
 
-    ---@class dreamwork.std.ip.ipv4.NetworkVar
+    ---@class dreamwork.std.ipv4.NetworkVar
     ---@field [1] dreamwork.std.IPv4 The network address.
     ---@field [2] dreamwork.std.IPv4 The broadcast address.
 
     ---@param ranges string[]
-    ---@return dreamwork.std.ip.ipv4.NetworkVar[], integer
+    ---@return dreamwork.std.ipv4.NetworkVar[], integer
     local function network_ranges( ranges )
         local range_count = #ranges
         local result = {}
@@ -459,7 +514,6 @@ do
     local private_range_exceptions, exception_count = network_ranges( {
         "192.0.0.9/32",
         "192.0.0.10/32",
-        "100.64.0.0/10",
     } )
 
     --- [SHARED AND MENU]
@@ -469,7 +523,7 @@ do
     --- Follows the [IANA IPv4 Special-Purpose Address Registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml),
     --- the same way as Python's `ipaddress.IPv4Address.is_private`.
     ---
-    --- The shared address space (`100.64.0.0/10`) is neither private nor public.
+    --- The shared address space (`100.64.0.0/10`) is not considered private.
     ---
     ---@param ip_address dreamwork.std.IPv4 The IP address.
     ---@return boolean is_private `true` if the IP address is private, `false` otherwise.

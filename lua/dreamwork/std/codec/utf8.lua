@@ -667,9 +667,9 @@ utf8.pack = pack
 ---
 --- This functions similarly to `string.char`
 ---
----@param a integer The code points to encode.
----@param b integer The code points to encode.
----@param ... integer The code points to encode.
+---@param a ( integer | nil ) The code points to encode.
+---@param b ( integer | nil ) The code points to encode.
+---@param ... ( integer | nil ) The code points to encode.
 ---@return string utf8_string The UTF-8 string.
 ---@nodiscard
 function utf8.char( a, b, ... )
