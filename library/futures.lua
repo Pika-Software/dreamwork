@@ -342,7 +342,7 @@ function futures.collectTable(iterator, ...) end
 ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
 ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
 ---@field protected result_value T The result value of the future.
----@field protected error_value string The error value of the future.
+---@field protected error_value Error | nil The error value of the future.
 local __Future = {}
 
 ---@protected
@@ -416,8 +416,14 @@ function __Future:setResult(result) end
 --- Sets error of the Future, marks it as finished, and runs all callbacks
 --- if future is already finished, error will be thrown.
 ---
----@param err string The error to fail the future with.
-function __Future:setError(err) end
+--- Strings and other values are wrapped into `error_class`, an `Error` without
+--- a call stack captures the stack of the caller, an `Error` with one is kept as is.
+---
+---@see Future.error to retrieve error
+---
+---@param err string | Error The error to fail the future with.
+---@param error_class? ErrorClass The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
+function __Future:setError(err, error_class) end
 
 --- [SHARED AND MENU]
 ---
@@ -430,13 +436,13 @@ function __Future:cancel() end
 --- [SHARED AND MENU]
 ---
 --- Returns the future's error, if any:
---- * if cancelled, returns "future was cancelled"
---- * if still pending, returns "future is not finished"
+--- * if cancelled, returns `RuntimeError` "future was cancelled"
+--- * if still pending, returns `RuntimeError` "future is not finished"
 --- * if finished successfully, returns nil
 --- * if finished with an error, returns that error
 ---
 ---@see Future.setError
----@return string | nil
+---@return Error | nil
 ---@nodiscard
 function __Future:error() end
 
@@ -480,7 +486,7 @@ Future = {}
 ---@field __class futures.TaskClass
 ---@field __parent Future
 ---@field protected setResult fun( self: futures.Task<T>, result: T )
----@field protected setError fun( self: futures.Task<T>, error: self )
+---@field protected setError fun( self: futures.Task<T>, err: string | Error, error_class?: ErrorClass )
 ---@field addCallback fun( self: futures.Task<T>, callback: fun( task: futures.Task<T> ) )
 local __Task = {}
 
