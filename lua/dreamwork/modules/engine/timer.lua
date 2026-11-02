@@ -691,32 +691,38 @@ end
 
 do
 
-    ---@type function[]
-    local queue = { [ 0 ] = 0 }
+    ---@type table<integer, fun()>
+    local queue = {}
+
+    ---@type table<integer, fun()>
+    local spare_queue = {}
+
+    local queue_size = 0
 
     --- [SHARED AND MENU]
     ---
-    --- Calls a function once on the next engine `Tick`, before regular tick hooks (priority `-1000`).
-    ---
     --- Functions run in the order they were queued, with no arguments, and their return values are ignored.
     ---
-    --- Cheaper than `timer.simple( 0, fn )`, as no timer object is created.
+    --- Functions queued from inside a `nextTick` callback run on the following tick.
     ---
     ---@param fn fun() The function to call on the next tick.
-    function timer.nextTick( fn )
-        local queue_size = queue[ 0 ] + 1
+    function engine_timer.nextTick( fn )
+        queue_size = queue_size + 1
         queue[ queue_size ] = fn
-        queue[ 0 ] = queue_size
     end
 
-    engine_hook.catch( "Tick", "engine.timer.waitNextTick", function()
-        if queue[ 0 ] == 0 then return end
+    engine_hook.catch( "Tick", "engine.timer.nextTick", function()
+        local size = queue_size
+        if size == 0 then return end
 
-        for i = 1, queue[ 0 ], 1 do
-            queue[ i ]()
+        queue, spare_queue, queue_size = spare_queue, queue, 0
+
+        for i = 1, size, 1 do
+            local fn = spare_queue[ i ]
+            spare_queue[ i ] = nil
+
+            xpcall( fn, dreamwork_errorHandler )
         end
-
-        queue[ 0 ] = 0
-    end, -1000 )
+    end, 1000 )
 
 end

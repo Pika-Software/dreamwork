@@ -336,7 +336,7 @@ end
 do
 
     local Identifier_from64 = steam.Identifier.from64
-    local http_StatusCodes = std.http.StatusCodes
+    local HTTPError = std.HTTPError
     local json_deserialize = std.json.deserialize
     local http_request = std.http.request
     local string_lower = string.lower
@@ -383,7 +383,7 @@ do
             } )
 
             if http_response.status ~= 200 then
-                error( http_StatusCodes[ http_response.status ], 2 )
+                error( HTTPError( http_response.status, "https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1/" ), 2 )
             end
 
             local json_data = json_deserialize( http_response.body or "" )
@@ -474,7 +474,7 @@ do
         } )
 
         if http_response.status ~= 200 then
-            error( http_StatusCodes[ http_response.status ], 2 )
+            error( HTTPError( http_response.status, "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/" ), 2 )
         end
 
         local json_data = json_deserialize( http_response.body or "" )
