@@ -9,6 +9,7 @@ local std = dreamwork.std
 local setmetatable = std.setmetatable
 
 local raw = std.raw
+local raw_get = raw.get
 local raw_set = raw.set
 local raw_pairs = raw.pairs
 local raw_select = raw.select
@@ -689,6 +690,22 @@ do
         hook_handlers[ event_name ] = handlers
     end
 
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the number of handlers attached to an engine event.
+---
+---@param event_name string The name of the engine event.
+---@return integer handler_count The number of attached handlers.
+---@nodiscard
+function hook.count( event_name )
+    local handlers = raw_get( hook_handlers, event_name )
+    if handlers == nil then
+        return 0
+    end
+
+    return handlers[ 0 ]
 end
 
 --- [SHARED AND MENU]
