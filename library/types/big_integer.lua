@@ -42,7 +42,7 @@ local __BigInteger = {}
 --- Supports the standard arithmetic, comparison, and bitwise operators
 --- through metamethods.
 ---
----@class BigIntegerClass : BigInteger
+---@class BigIntegerClass : BigInteger, Class
 ---@field __base BigInteger
 ---@overload fun( value: ( BigInteger | string | integer | nil ), base: ( integer | nil ) ): BigInteger
 BigInteger = {}

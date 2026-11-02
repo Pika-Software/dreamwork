@@ -32,7 +32,7 @@ local __Angle3 = {}
 --- local zero = Angle3()
 --- ```
 ---
----@class Angle3Class : Angle3
+---@class Angle3Class : Angle3, Class
 ---@field __base Angle3
 ---@field zero Angle3 The shared zero angle `( 0, 0, 0 )`, **must not be modified**.
 ---@overload fun( pitch: number?, yaw: number?, roll: number? ): Angle3

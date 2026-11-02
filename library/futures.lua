@@ -338,7 +338,7 @@ function futures.collectTable(iterator, ...) end
 --- fut:cancel()
 --- ```
 ---@class Future<T> : Object
----@field __class futures.FutureClass
+---@field __class FutureClass
 ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
 ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
 ---@field protected result_value T The result value of the future.
@@ -467,7 +467,7 @@ function __Future:await() end
 ---
 --- The class used to create new `Future` instances.
 ---
----@class futures.FutureClass : Future
+---@class FutureClass : Future, Class
 ---@field __base Future
 ---@overload fun(): Future
 Future = {}
@@ -509,7 +509,7 @@ function __Task:__init(fn, ...) end
 --- end )
 --- ```
 ---
----@class futures.TaskClass : futures.Task
+---@class futures.TaskClass : futures.Task, FutureClass
 ---@field __base futures.Task
 ---@overload fun( fn: ( async fun( ...: any ): any ), ...: any ): futures.Task
 Task = {}
@@ -592,7 +592,7 @@ function __Channel:pop(force) end
 ---
 --- A channel is a queue-type class that can be used by multiple coroutines.
 ---
----@class futures.ChannelClass : futures.Channel
+---@class futures.ChannelClass : futures.Channel, Class
 ---@field __base futures.Channel
 ---@overload fun( maxsize: number? ): futures.Channel
 Channel = {}

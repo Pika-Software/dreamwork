@@ -129,7 +129,7 @@ function __Queue:iterator(from_tail) end
 ---
 --- The class used to create new `Queue` instances.
 ---
----@class QueueClass : Queue
+---@class QueueClass : Queue, Class
 ---@field __base Queue
 ---@overload fun(): Queue
 Queue = {}

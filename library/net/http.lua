@@ -22,7 +22,7 @@ function Cookies:get(name, url) end
 
 function Cookies:set(name, value, options) end
 
----@class CookiesClass : Cookies
+---@class CookiesClass : Cookies, Class
 ---@field __base Cookies
 ---@overload fun(): Cookies
 local CookiesClass = {}

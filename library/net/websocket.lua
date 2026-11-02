@@ -6,6 +6,6 @@ local WebSocket = {}
 
 function WebSocket:__init(url) end
 
----@class WebSocketClass : WebSocket
+---@class WebSocketClass : WebSocket, Class
 ---@field __base WebSocket
 local WebSocketClass = {}

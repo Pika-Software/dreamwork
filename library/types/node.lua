@@ -124,7 +124,7 @@ function __Node:size() end
 --- The class used to create new `Node` instances.
 ---
 ---@generic T
----@class NodeClass : Node
+---@class NodeClass : Node, Class
 ---@field __base Node
 ---@overload fun( value: T, parent: ( Node<T> | nil ) ): Node<T>
 Node = {}

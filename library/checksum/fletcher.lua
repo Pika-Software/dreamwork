@@ -47,7 +47,7 @@ function __Fletcher16:digest() end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
----@class Fletcher16Class : Fletcher16
+---@class Fletcher16Class : Fletcher16, Class
 ---@field __base Fletcher16
 ---@overload fun(): Fletcher16
 Fletcher16 = {}
@@ -111,7 +111,7 @@ function __Fletcher32:digest() end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
----@class Fletcher32Class : Fletcher32
+---@class Fletcher32Class : Fletcher32, Fletcher16Class
 ---@field __parent Fletcher16Class
 ---@field __base Fletcher32
 ---@overload fun(): Fletcher32

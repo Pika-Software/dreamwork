@@ -27,7 +27,7 @@ function __Version:__init(major, minor, patch, pre_release, build) end
 ---
 --- The class used to create new `Version` instances.
 ---
----@class VersionClass : Version
+---@class VersionClass : Version, Class
 ---@field __base Version
 ---@overload fun( major: integer?, minor: integer?, patch: integer?, pre_release: string?, build: string? ) : Version
 Version = {}

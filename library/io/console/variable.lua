@@ -41,7 +41,7 @@ function Variable:__init(options) end
 ---
 --- The console variable class.
 ---
----@class console.VariableClass : console.Variable
+---@class console.VariableClass : console.Variable, Class
 ---@field __base console.Variable
 ---@overload fun( options: console.VariableOptions ): console.Variable
 console.Variable = {}

@@ -15,7 +15,7 @@ function __Message:attach(fn) end
 ---@param pl garrysmod.Player?
 function __Message:send(data, pl, realm) end
 
----@class MessageClass : Message
+---@class MessageClass : Message, Class
 ---@field __base Message
 ---@overload fun( name: string ): Message
 Message = {}

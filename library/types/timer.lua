@@ -139,7 +139,7 @@ function __Timer:resume() end
 ---
 --- The class used to create new `Timer` instances.
 ---
----@class TimerClass : Timer
+---@class TimerClass : Timer, Class
 ---@field __base Timer
 ---@overload fun( interval: ( number | nil ), repetitions_total: ( integer | nil ), name: ( string | nil ) ): Timer
 Timer = {}

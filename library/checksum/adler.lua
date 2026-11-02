@@ -50,7 +50,7 @@ function __Adler32:digest() end
 ---
 --- [Adler32 Online](https://md5calc.com/hash/adler32)
 ---
----@class Adler32Class : Adler32
+---@class Adler32Class : Adler32, Class
 ---@field __base Adler32
 ---@overload fun(): Adler32
 Adler32 = {}

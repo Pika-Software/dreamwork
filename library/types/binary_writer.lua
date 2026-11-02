@@ -42,7 +42,7 @@ local __BinaryWriter = {}
 ---
 --- Optional data is converted to a string with `tostring`, the cursor is placed after it (append).
 ---
----@class BinaryWriterClass : BinaryWriter
+---@class BinaryWriterClass : BinaryWriter, Class
 ---@field __base BinaryWriter
 ---@overload fun( data?: any ): BinaryWriter
 BinaryWriter = {}

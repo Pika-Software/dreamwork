@@ -40,7 +40,7 @@ local __BinaryReader = {}
 ---
 --- Any value is converted to a string with `tostring`, so `BinaryReader( writer )` reads what the `BinaryWriter` wrote.
 ---
----@class BinaryReaderClass : BinaryReader
+---@class BinaryReaderClass : BinaryReader, Class
 ---@field __base BinaryReader
 ---@overload fun( data: any ): BinaryReader
 BinaryReader = {}

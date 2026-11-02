@@ -44,7 +44,7 @@ local __VMatrix = {}
 --- local transform = VMatrix.fromAngle3( Angle3( 0, 90, 0 ), Vector3( 0, 0, 64 ) )
 --- ```
 ---
----@class VMatrixClass : VMatrix
+---@class VMatrixClass : VMatrix, Class
 ---@field __base VMatrix
 ---@overload fun( ...: number? ): VMatrix
 VMatrix = {}

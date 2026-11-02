@@ -30,7 +30,7 @@ local __Vector3 = {}
 --- local zero = Vector3()
 --- ```
 ---
----@class Vector3Class : Vector3
+---@class Vector3Class : Vector3, Class
 ---@field __base Vector3
 ---@field origin Vector3 The shared zero vector `( 0, 0, 0 )`, **must not be modified**.
 ---@overload fun( x: number?, y: number?, z: number? ): Vector3

@@ -8,7 +8,7 @@ local __Gamemode = {}
 ---@protected
 function __Gamemode:__init() end
 
----@class GamemodeClass : Gamemode
+---@class GamemodeClass : Gamemode, Class
 ---@field __base Gamemode
 ---@overload fun(): Gamemode
 Gamemode = {}

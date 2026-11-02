@@ -40,7 +40,7 @@ local __Quaternion = {}
 --- local rotation = Quaternion.fromAngles( 0, 90, 0 )
 --- ```
 ---
----@class QuaternionClass : Quaternion
+---@class QuaternionClass : Quaternion, Class
 ---@field __base Quaternion
 ---@overload fun( r: number?, i: number?, j: number?, k: number? ): Quaternion
 Quaternion = {}

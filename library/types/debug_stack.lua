@@ -77,7 +77,7 @@ function Stack:capture(stack_level, head_skip, tail_skip, max_levels) end
 ---
 --- The class used to create new `debug.Stack` instances.
 ---
----@class debug.StackClass : Stack
+---@class debug.StackClass : Stack, Class
 ---@field __parent StackClass
 ---@field __base debug.Stack
 ---@overload fun(): debug.Stack

@@ -30,7 +30,7 @@ function Command:__newindex(key, value) end
 ---
 --- The console command class.
 ---
----@class console.CommandClass : Class
+---@class console.CommandClass : console.Command, Class
 ---@field __base console.Command
 ---@overload fun( options: console.CommandOptions ): console.Command
 console.Command = {}

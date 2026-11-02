@@ -8,7 +8,7 @@
 ---@field __class AudioStreamClass
 local __AudioStream = {}
 
----@class AudioStreamClass : AudioStream
+---@class AudioStreamClass : AudioStream, Class
 ---@field __base AudioStream
 ---@overload fun(): AudioStream
 AudioStream = {}

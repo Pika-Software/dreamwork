@@ -16,7 +16,7 @@ fs = {}
 ---@field path string The absolute path of the file. **READ-ONLY**
 local File = {}
 
----@class fs.FileClass : fs.File
+---@class fs.FileClass : fs.File, Class
 ---@field __base fs.File
 ---@overload fun(): fs.File
 local FileClass = {}
@@ -32,7 +32,7 @@ fs.File = FileClass
 ---@field path string The absolute path of the directory. **READ-ONLY**
 local Directory = {}
 
----@class fs.DirectoryClass : fs.Directory
+---@class fs.DirectoryClass : fs.Directory, Class
 ---@field __base fs.Directory
 ---@overload fun(): fs.Directory
 local DirectoryClass = {}

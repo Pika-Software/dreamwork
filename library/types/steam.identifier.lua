@@ -18,7 +18,7 @@ local Identifier = {}
 ---
 --- The class used to create new `steam.Identifier` instances.
 ---
----@class steam.IdentifierClass : steam.Identifier
+---@class steam.IdentifierClass : steam.Identifier, Class
 ---@field __base steam.Identifier
 ---@overload fun( universe?: steam.IdentifierUniverse, type?: steam.IdentifierType, id?: integer, instance?: integer ): steam.Identifier
 steam.Identifier = {}

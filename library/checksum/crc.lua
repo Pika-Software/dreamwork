@@ -59,7 +59,7 @@ function __CRC8:digest() end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class checksum.CRC8Class : checksum.CRC8
+---@class checksum.CRC8Class : checksum.CRC8, Class
 ---@field __base checksum.CRC8
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC8
 CRC8 = {}
@@ -146,7 +146,7 @@ function __CRC16:digest() end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class checksum.CRC16Class : checksum.CRC16
+---@class checksum.CRC16Class : checksum.CRC16, checksum.CRC8Class
 ---@field __parent checksum.CRC8Class
 ---@field __base checksum.CRC16
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC16
@@ -238,7 +238,7 @@ function __CRC32:digest() end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class checksum.CRC32Class : checksum.CRC32
+---@class checksum.CRC32Class : checksum.CRC32, checksum.CRC16Class
 ---@field __parent checksum.CRC16Class
 ---@field __base checksum.CRC32
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC32

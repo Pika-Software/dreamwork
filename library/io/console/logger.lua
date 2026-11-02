@@ -4,7 +4,6 @@
 ---
 --- The logger object.
 ---
----@alias Logger console.Logger
 ---@class console.Logger : Object
 ---@field __class console.LoggerClass
 ---@field title string The logger title.
@@ -18,7 +17,7 @@ local Logger = {}
 ---
 --- The logger class.
 ---
----@class console.LoggerClass : console.Logger
+---@class console.LoggerClass : console.Logger, Class
 ---@field __base console.Logger
 ---@overload fun( options: console.LoggerOptions? ) : console.Logger
 console.Logger = {}

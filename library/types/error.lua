@@ -79,7 +79,7 @@ function __Error:display() end
 ---
 --- The class used to create new `Error` instances.
 ---
----@class ErrorClass : Error
+---@class ErrorClass : Error, Class
 ---@field __base Error
 ---@overload fun( message: ( string | nil ) ): Error
 Error = {}
@@ -108,7 +108,7 @@ local __RuntimeError = {}
 ---
 --- The class used to create new `RuntimeError` instances.
 ---
----@class RuntimeErrorClass : RuntimeError
+---@class RuntimeErrorClass : RuntimeError, ErrorClass
 ---@field __base RuntimeError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ) ): RuntimeError
@@ -134,7 +134,7 @@ function __NotImplementedError:__message(error_message) end
 ---
 --- The class used to create new `NotImplementedError` instances.
 ---
----@class NotImplementedErrorClass : NotImplementedError
+---@class NotImplementedErrorClass : NotImplementedError, ErrorClass
 ---@field __base NotImplementedError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ) ): NotImplementedError
@@ -163,7 +163,7 @@ function __AsyncError:__frame(frame) end
 ---
 --- The class used to create new `AsyncError` instances.
 ---
----@class AsyncErrorClass : AsyncError
+---@class AsyncErrorClass : AsyncError, ErrorClass
 ---@field __base AsyncError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ) ): AsyncError
@@ -204,7 +204,7 @@ function __TypeError:__message() end
 ---
 --- The class used to create new `TypeError` instances.
 ---
----@class TypeErrorClass : TypeError
+---@class TypeErrorClass : TypeError, ErrorClass
 ---@field __base TypeError
 ---@field __parent ErrorClass
 ---@overload fun( index: integer, value: any, expected_type: string, value_name: ( string | nil ), function_name: ( string | nil ) ): TypeError
@@ -236,7 +236,7 @@ function __ValueError:__message(error_message) end
 ---
 --- The class used to create new `ValueError` instances.
 ---
----@class ValueErrorClass : ValueError
+---@class ValueErrorClass : ValueError, ErrorClass
 ---@field __base ValueError
 ---@field __parent ErrorClass
 ---@overload fun( value: any, message: ( string | nil ) ): ValueError
@@ -267,7 +267,7 @@ function __EndOfFileError:__message() end
 ---
 --- The class used to create new `EndOfFileError` instances.
 ---
----@class EndOfFileErrorClass : EndOfFileError
+---@class EndOfFileErrorClass : EndOfFileError, ErrorClass
 ---@field __base EndOfFileError
 ---@field __parent ErrorClass
 ---@overload fun( position: ( integer | nil ), expected: ( integer | nil ) ): EndOfFileError
@@ -299,7 +299,7 @@ function __DecodeError:__message(error_message) end
 ---
 --- The class used to create new `DecodeError` instances.
 ---
----@class DecodeErrorClass : DecodeError
+---@class DecodeErrorClass : DecodeError, ErrorClass
 ---@field __base DecodeError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ), position: ( integer | nil ) ): DecodeError
@@ -331,7 +331,7 @@ function __EncodeError:__message(error_message) end
 ---
 --- The class used to create new `EncodeError` instances.
 ---
----@class EncodeErrorClass : EncodeError
+---@class EncodeErrorClass : EncodeError, ErrorClass
 ---@field __base EncodeError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ), value: any ): EncodeError
@@ -350,7 +350,7 @@ local __CompileError = {}
 ---
 --- The class used to create new `CompileError` instances.
 ---
----@class CompileErrorClass : CompileError
+---@class CompileErrorClass : CompileError, ErrorClass
 ---@field __base CompileError
 ---@field __parent ErrorClass
 ---@overload fun(): CompileError
@@ -379,7 +379,7 @@ function __AsyncFileSystemError:__init(error_id, is_writing) end
 ---
 --- The class used to create new `AsyncFileSystemError` instances.
 ---
----@class AsyncFileSystemErrorClass : AsyncFileSystemError
+---@class AsyncFileSystemErrorClass : AsyncFileSystemError, ErrorClass
 ---@field __base AsyncFileSystemError
 ---@field __parent ErrorClass
 ---@overload fun( error_id: integer, is_writing: ( boolean | nil ) ): AsyncFileSystemError

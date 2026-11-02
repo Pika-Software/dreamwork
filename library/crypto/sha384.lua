@@ -22,7 +22,7 @@ local SHA384 = {}
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
 ---
----@class crypto.SHA384Class : crypto.SHA384, crypto.HashClass
+---@class crypto.SHA384Class : crypto.SHA384, crypto.SHA512Class
 ---@field __base crypto.SHA384
 ---@field digest fun( message: string, as_hex?: boolean ): string
 ---@field digest_size integer

@@ -161,7 +161,7 @@ function __Hook:await(type) end
 ---
 --- The class used to create new `Hook` instances.
 ---
----@class HookClass : Hook
+---@class HookClass : Hook, Class
 ---@field __base Hook
 ---@overload fun( name: string? ): Hook
 Hook = {}

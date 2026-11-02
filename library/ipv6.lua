@@ -70,7 +70,7 @@ function __IPv6:groups() end
 --- print( address ) -- 2001:db8::1
 --- ```
 ---
----@class IPv6Class : IPv6
+---@class IPv6Class : IPv6, Class
 ---@field __base IPv6
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): IPv6
 IPv6 = {}

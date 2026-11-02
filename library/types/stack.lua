@@ -127,7 +127,7 @@ function __Stack:iterator() end
 ---
 --- The class used to create new `Stack` instances.
 ---
----@class StackClass : Stack
+---@class StackClass : Stack, Class
 ---@field __base Stack
 ---@overload fun(): Stack
 Stack = {}

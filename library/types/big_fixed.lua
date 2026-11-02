@@ -31,7 +31,7 @@ local __BigFixed = {}
 ---
 --- Arbitrary-precision fixed-point decimal type, backed by `BigInteger`.
 ---
----@class BigFixedClass : BigFixed
+---@class BigFixedClass : BigFixed, Class
 ---@field __base BigFixed
 ---@field DEFAULT_SCALE integer
 ---@overload fun( value: ( BigFixed | BigInteger | string | number | nil ), scale: ( integer | nil ) ): BigFixed

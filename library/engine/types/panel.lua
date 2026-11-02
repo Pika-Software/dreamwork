@@ -9,7 +9,7 @@ function __Panel:__init() end
 
 ---@class PanelClass : Panel
 ---@field __base Panel
----@overload fun(): Panel
+---@overload fun(): garrysmod.Panel
 Panel = {}
 
 function Panel.getMain() end

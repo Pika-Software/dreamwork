@@ -56,9 +56,9 @@ local __XMLNode = {}
 --- print( root:get( "child[2].title" ) ) -- Test Title 2
 --- ```
 ---
----@class XMLNodeClass : XMLNode
+---@class XMLNodeClass : XMLNode, Class
 ---@field __base XMLNode
----@overload fun(name: string, attributes: (table<string, string> | nil), parent: (XMLNode | nil) ): XMLNode
+---@overload fun( name: string, attributes: ( table<string, string> | nil ), parent: ( XMLNode | nil ) ): XMLNode
 XMLNode = {}
 
 --- [SHARED AND MENU]

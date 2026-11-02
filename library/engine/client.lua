@@ -9,7 +9,7 @@ local Instance = {}
 ---@class Client : Object
 local Client = {}
 
----@class ClientClass : Client
+---@class ClientClass : Client, Class
 local ClientClass = {}
 
 function Client:__init(name, steam_id) end

@@ -68,7 +68,7 @@ function __Mixin:call(old_value, new_value, ...) end
 ---
 --- The class used to create new `Mixin` instances.
 ---
----@class MixinClass : Mixin
+---@class MixinClass : Mixin, Class
 ---@field __base Mixin
 ---@overload fun( name: ( string | nil ) ): Mixin
 Mixin = {}
