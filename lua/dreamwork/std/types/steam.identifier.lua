@@ -1,10 +1,16 @@
 local std = dreamwork.std
 
-local raw = std.raw
-local tonumber = raw.tonumber
-
 local math = std.math
 local math_floor = math.floor
+
+local raw = std.raw
+local raw_tonumber = raw.tonumber
+
+local rbit = raw.bit
+local rbit_bor = rbit.bor
+local rbit_band = rbit.band
+local rbit_lshift = rbit.lshift
+local rbit_rshift = rbit.rshift
 
 local string = std.string
 local string_len = string.len
@@ -16,17 +22,11 @@ local string_reverse = string.reverse
 local table = std.table
 local table_concat = table.concat
 
-local bit = std.bit
-local bit_bor = bit.bor
-local bit_band = bit.band
-local bit_lshift = bit.lshift
-local bit_rshift = bit.rshift
-
 local class = std.class
 
 local setmetatable = std.setmetatable
-local error = std.error
 local isNumber = std.isNumber
+local error = std.error
 
 
 ---@class dreamwork.std.steam
@@ -197,9 +197,9 @@ end
 ---@return string uint64_str SteamID as a 64-bit integer
 ---@nodiscard
 local function to64( object )
-    local high = bit_bor(
-        bit_lshift( universe2int[ object.universe ] or 0, 24 ),
-        bit_lshift( type2int[ object.type ] or 0, 20 ),
+    local high = rbit_bor(
+        rbit_lshift( universe2int[ object.universe ] or 0, 24 ),
+        rbit_lshift( type2int[ object.type ] or 0, 20 ),
         object.instance
     )
 
@@ -309,9 +309,9 @@ function IdentifierClass.from64( uint64_str )
     end
 
     return setmetatable( {
-        universe = int2universe[ bit_band( bit_rshift( high, 24 ), 0xFF ) ] or "Invalid",
-        type = int2type[ bit_band( bit_rshift( high, 20 ), 0xF ) ] or "Invalid",
-        instance = bit_band( high, 0xFFFFF ),
+        universe = int2universe[ rbit_band( rbit_rshift( high, 24 ), 0xFF ) ] or "Invalid",
+        type = int2type[ rbit_band( rbit_rshift( high, 20 ), 0xF ) ] or "Invalid",
+        instance = rbit_band( high, 0xFFFFF ),
         id = low
     }, Identifier )
 end
@@ -329,7 +329,7 @@ function IdentifierClass.isValidSteam2( steam2_str )
         return false
     end
 
-    local universe = tonumber( x, 10 )
+    local universe = raw_tonumber( x, 10 )
     if universe == nil or universe > 255 then -- 2 ^ 8 ( 8 bits )
         return false
     end
@@ -338,7 +338,7 @@ function IdentifierClass.isValidSteam2( steam2_str )
         return false
     end
 
-    local id = tonumber( z, 10 )
+    local id = raw_tonumber( z, 10 )
     if id == nil or id > 2147483648 then -- 2 ^ 31 ( 31 bits )
         return false
     end
@@ -359,12 +359,12 @@ function IdentifierClass.isValidSteam3( steam3_str )
         return false
     end
 
-    local universe = tonumber( universe_str, 10 )
+    local universe = raw_tonumber( universe_str, 10 )
     if universe == nil or universe > 255 then -- 2 ^ 8 ( 8 bits )
         return false
     end
 
-    local id = tonumber( id_str, 10 )
+    local id = raw_tonumber( id_str, 10 )
     if id == nil or id > 4294967296 then -- 2 ^ 32 ( 32 bits )
         return false
     end
@@ -386,7 +386,7 @@ function IdentifierClass.fromSteam2( steam2_str, allow_zero_universe )
         error( "steam identifier steam2 is invalid", 2 )
     end
 
-    local universe = tonumber( x, 10 )
+    local universe = raw_tonumber( x, 10 )
     if universe == 0 and not allow_zero_universe then
         universe = 1
     end
@@ -395,7 +395,7 @@ function IdentifierClass.fromSteam2( steam2_str, allow_zero_universe )
         universe = int2universe[ universe ] or "Invalid",
         type = "Individual",
         instance = 1,
-        id = (tonumber( z, 10 ) * 2) + (y == "1" and 1 or 0)
+        id = (raw_tonumber( z, 10 ) * 2) + (y == "1" and 1 or 0)
     }, Identifier )
 end
 
@@ -413,9 +413,9 @@ function IdentifierClass.fromSteam3( steam3_str )
     end
 
     return setmetatable( {
-        universe = int2universe[ tonumber( universe, 10 ) or 0 ] or "Invalid",
+        universe = int2universe[ raw_tonumber( universe, 10 ) or 0 ] or "Invalid",
         type = int2type[ letter2int[ letter ] or 0 ] or "Invalid",
         instance = 1,
-        id = tonumber( id, 10 ) or 0
+        id = raw_tonumber( id, 10 ) or 0
     }, Identifier )
 end

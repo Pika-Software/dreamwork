@@ -127,7 +127,7 @@ do
 end
 
 local dreamwork_load = dreamwork.load
-dreamwork_load( "loader.lua", true, true )
+dreamwork_load( "loader.lua", false, true )
 
 std.getmetatable = getmetatable
 std.setmetatable = setmetatable
@@ -3118,9 +3118,8 @@ do
 
     end
 
-    if LUA_CLIENT_MENU then
-        dreamwork_load( "std/gfx/window.lua" )
-    end
+    -- the server only sends it to clients
+    dreamwork_load( "std/gfx/window.lua", false, not LUA_CLIENT_MENU )
 
 end
 

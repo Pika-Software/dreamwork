@@ -109,7 +109,7 @@ setmetatable( network_names, {
 ---@return string[] networks The names of the registered networks.
 ---@return integer network_count The number of registered networks.
 ---@nodiscard
-function engine.getNetworks()
+function network.getNetworks()
     local networks, network_count = {}, 0
 
     for network_id = 1, network_limit, 1 do
@@ -132,9 +132,10 @@ end
 ---
 --- Checks if the network exists.
 ---
+---@param network_name string The name of the network.
 ---@return boolean exists `true` if the network exists, `false` otherwise.
 ---@nodiscard
-function engine.networkExists( network_name )
+function network.exists( network_name )
     return network_ids[ network_name ] ~= nil
 end
 
@@ -145,7 +146,7 @@ end
 ---@param network_name string The name of the network.
 ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
 ---@nodiscard
-function engine.networkGetID( network_name )
+function network.getID( network_name )
     return network_ids[ network_name ]
 end
 
@@ -156,7 +157,7 @@ end
 ---@param network_id integer The ID of the network message.
 ---@return string | nil network_name The name of the network message, or `nil` if the network message does not exist.
 ---@nodiscard
-function engine.networkGetName( network_id )
+function network.getName( network_id )
     return network_names[ network_id ]
 end
 
@@ -166,7 +167,7 @@ end
 ---
 ---@param network_name string The name of the network message.
 ---@return integer network_id The ID of the network message.
-function engine.networkRegister( network_name )
+function network.register( network_name )
     local network_id = network_ids[ network_name ]
     if network_id == nil then
         if not LUA_SERVER then
@@ -195,12 +196,14 @@ local net_WriteBool = glua_net.WriteBool
 local net_ReadUInt = glua_net.ReadUInt
 local net_ReadBit = glua_net.ReadBit
 
+---@type table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean )>
 local receivers = glua_net.Receivers or {}
 glua_net.Receivers = receivers
 
+--- Receivers are called as `fn( remaining_bits, sender, unreliable )`.
+---
 ---@param remaining_bits integer
 ---@param sender garrysmod.Player
----@diagnostic disable-next-line: duplicate-set-field
 function glua_net.Incoming( remaining_bits, sender )
     local network_id = net_ReadUInt( header_size )
     local unreliable = net_ReadBit() == 1
@@ -238,7 +241,7 @@ function glua_net.Incoming( remaining_bits, sender )
         return
     end
 
-    fn( remaining_bits, sender )
+    fn( remaining_bits, sender, unreliable )
 end
 
 if glua_net.Start ~= nil then
@@ -252,7 +255,7 @@ if glua_net.Start ~= nil then
                 error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
             end
 
-            dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [ID: %d, Name: %s, %s]", network_ids[ network_name ], network_name, (unreliable == true) and "UDP" or "TCP" )
+            dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Name: %s, %s]", network_name, (unreliable == true) and "UDP" or "TCP" )
             console_commandRun( "disconnect" )
             return
         end
