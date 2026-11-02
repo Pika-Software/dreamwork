@@ -22,18 +22,6 @@
 ---@field [ 8 ] integer The eighth group. <0-65535>
 local __IPv6 = {}
 
----@param group1? integer The first group. <0-65535>
----@param group2? integer The second group. <0-65535>
----@param group3? integer The third group. <0-65535>
----@param group4? integer The fourth group. <0-65535>
----@param group5? integer The fifth group. <0-65535>
----@param group6? integer The sixth group. <0-65535>
----@param group7? integer The seventh group. <0-65535>
----@param group8? integer The eighth group. <0-65535>
----@return IPv6
----@protected
-function __IPv6:__new(group1, group2, group3, group4, group5, group6, group7, group8) end
-
 ---@protected
 ---@return string
 function __IPv6:__tostring() end
@@ -86,6 +74,18 @@ function __IPv6:groups() end
 ---@field __base IPv6
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): IPv6
 IPv6 = {}
+
+---@param group1? integer The first group. <0-65535>
+---@param group2? integer The second group. <0-65535>
+---@param group3? integer The third group. <0-65535>
+---@param group4? integer The fourth group. <0-65535>
+---@param group5? integer The fifth group. <0-65535>
+---@param group6? integer The sixth group. <0-65535>
+---@param group7? integer The seventh group. <0-65535>
+---@param group8? integer The eighth group. <0-65535>
+---@return IPv6
+---@protected
+function IPv6:__new(group1, group2, group3, group4, group5, group6, group7, group8) end
 
 --- [SHARED AND MENU]
 ---

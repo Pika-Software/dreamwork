@@ -1,8 +1,5 @@
 ---@meta _
 
----@class Game : Object
-local Game = {}
-
 --- [SHARED AND MENU]
 ---
 --- The game library.

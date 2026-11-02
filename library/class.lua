@@ -4,23 +4,28 @@
 ---
 --- A library for creating classes, implementing inheritance, and working with the object model in Lua.
 ---
+--- A class consists of two tables:
+--- * **base** ( `class.base` ) - the metatable of every object, holds methods and metamethods;
+--- * **class** ( `class.create` ) - the callable table that creates objects, holds static fields.
+---
 ---@class class
 class = {}
 
 ---@alias Class.__inherited fun( parent: Class, child: Class )
----@alias Class.__new fun( cls: Class, ...: any? ): Object
+---@alias Class.__new fun( cls: Class, ...: any? ): Object | nil
 ---@alias Object.__init fun( obj: Object, ...: any? )
 
 --- [SHARED AND MENU]
 ---
---- A base for objects were created by `class` library.
+--- A base for objects that were created by `class` library.
 ---
 ---@class Object : metatable
 ---@field __type string The name of object type. **READ ONLY**
----@field __class? Class  The class of the object. **READ ONLY**
----@field __parent? Object The parent of the object. **READ ONLY**
+---@field __class? Class The class of the object. **READ ONLY**
+---@field __parent? Object The base of the parent class. **READ ONLY**
+---@field __private? boolean `true` if objects of this base are `userdata`. **READ ONLY**
 ---@field __init? Object.__init A function that will be called when creating a new object and should be used as the constructor.
----@field __new? Class.__new A function that will be called when a new class is created and allows you to replace the result.
+---@field private __template? userdata The userdata whose metatable is shared by all private objects.
 
 --- [SHARED AND MENU]
 ---
@@ -29,7 +34,7 @@ class = {}
 ---@class Class : Object
 ---@field __base Object The base of the class. **READ ONLY**
 ---@field __parent? Class The parent of the class. **READ ONLY**
----@field __private boolean If the class is private. **READ ONLY**
+---@field __new? Class.__new A function that will be called instead of the default object creation, if it returns a non-`nil` value, it will be used as the result and `__init` will **not** be called.
 ---@field __inherited? Class.__inherited The function that will be called when the class is inherited.
 
 --- [SHARED AND MENU]
@@ -43,10 +48,12 @@ function isClass(value) end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the value is a object created by class.
+--- Checks if the value is an object created by a class.
 ---
----@param value any The value to check for being a object.
----@return boolean is_object `true` is `value` is a object created by class, `false` otherwise.
+--- Objects of a base that was never passed to `class.create` are not considered objects.
+---
+---@param value any The value to check for being an object.
+---@return boolean is_object `true` if `value` is an object created by a class, `false` otherwise.
 ---@nodiscard
 function isObject(value) end
 
@@ -54,9 +61,20 @@ function isObject(value) end
 ---
 --- Creates a new class base ( metatable ).
 ---
+--- If `parent` is given, methods are looked up through the parent base,
+--- and metamethods ( `__*` keys ) of the parent base are **copied** into the new base.
+---
+--- Notes:
+--- * metamethods are copied once, at the moment of this call,
+--- so the parent base must be fully defined before its children are created;
+--- * `__index` is never copied, a parent with a custom `__index` function
+--- requires the child to define its own `__index`;
+--- * private objects are `userdata`, so they cannot store fields
+--- and their data must be kept outside ( e.g. in a weak table ).
+---
 ---@param name string The name of the class.
----@param private? boolean If the class is private.
----@param parent? Class | unknown The parent of the class.
+---@param private? boolean If `true`, objects will be `userdata` instead of `table`.
+---@param parent? Class | unknown The parent class.
 ---@return Object base The base of the class.
 ---@nodiscard
 function class.base(name, private, parent) end
@@ -76,7 +94,7 @@ function class.init(base, obj, ...) end
 
 --- [SHARED AND MENU]
 ---
---- Creates a new class object.
+--- Creates a new class object without calling `__init`.
 ---
 ---@generic T : Object
 ---@param base T The base object, aka metatable.
@@ -88,16 +106,19 @@ function class.new(base) end
 ---
 --- Creates a new class from the given base.
 ---
+--- Static fields of the parent class ( including `__new` and `__inherited` ) are copied into the new class,
+--- then the parent's `__inherited` is called, if it exists.
+---
 ---@param base Object The base object, aka metatable.
 ---@return Class | unknown cls The class.
 function class.create(base) end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the value is an instance of the given class.
+--- Checks if the value is an instance of the given class or any of its children.
 ---
----@param obj Object The object to check for being an instance of the given class.
----@param cls Class | Object The class to check against.
+---@param obj any The object to check for being an instance of the given class.
+---@param cls Class | Object The class or its base to check against.
 ---@return boolean is_instance `true` if `obj` is an instance of the given class, `false` otherwise.
 ---@nodiscard
 function class.isInherited(obj, cls) end
