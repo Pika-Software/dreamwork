@@ -3305,13 +3305,9 @@ do
 
 end
 
--- virtual file system library
 dreamwork_load( "modules/vfs.lua" )
+dreamwork_load( "modules/engine/http.lua" )
 
--- -- file system library
--- dreamwork_load( "std/io/fs.lua" )
-
--- sqlite library
 dreamwork_load( "std/db/sqlite.lua" )
 
 do
