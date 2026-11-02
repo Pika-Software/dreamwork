@@ -740,4 +740,146 @@ end
 ---@overload fun( error_id: integer, is_writing: ( boolean | nil ) ): dreamwork.std.AsyncFileSystemError
 std.AsyncFileSystemError = class.create( AsyncFileSystemError )
 
+--- [SHARED AND MENU]
+---
+--- An error raised when an HTTP request fails or its response has an unexpected status code.
+---
+--- `status` is `nil` when no response was received (connection, TLS, timeout, ...).
+---
+--- ```lua
+--- std.HTTPError( 404, "https://example.com/a" ) -- "HTTP 404 Not Found - Resource not found (url: https://example.com/a)"
+--- std.HTTPError( nil, "https://example.com/a", "Timeout was reached" ) -- "HTTP request failed: Timeout was reached (url: https://example.com/a)"
+--- std.HTTPError.Messages[ 429 ] -- "Too Many Requests - Rate limit exceeded"
+--- ```
+---
+---@class dreamwork.std.HTTPError : dreamwork.std.Error
+---@field __class dreamwork.std.HTTPErrorClass
+---@field __parent dreamwork.std.Error
+---@field message string | nil The reason of the failure, or extra details about the status code.
+---@field status integer | nil The response status code, `nil` if no response was received.
+---@field url string | nil The URL of the request.
+---@field Messages table<integer, string> The status code description lookup table.
+local HTTPError = class.base( "HTTPError", false, ErrorClass )
+
+do
+
+    ---@type table<integer, string>
+    local status_messages = {
+        [ 100 ] = "Continue - Request headers received, send the body",
+        [ 101 ] = "Switching Protocols - Server is switching to the protocol from the Upgrade header",
+        [ 102 ] = "Processing - Request received and is still being processed (WebDAV)",
+        [ 103 ] = "Early Hints - Preload hints sent before the final response",
+
+        [ 200 ] = "OK - Request succeeded",
+        [ 201 ] = "Created - Resource successfully created",
+        [ 202 ] = "Accepted - Request accepted but not completed",
+        [ 203 ] = "Non-Authoritative Information - Metadata comes from a third party copy",
+        [ 204 ] = "No Content - No content to send for this request",
+        [ 205 ] = "Reset Content - Client should reset the document view",
+        [ 206 ] = "Partial Content - Only part of the resource was returned",
+        [ 207 ] = "Multi-Status - Multiple status codes in the body (WebDAV)",
+        [ 208 ] = "Already Reported - Members were already listed in a previous reply (WebDAV)",
+        [ 226 ] = "IM Used - Instance manipulations applied to the resource",
+
+        [ 300 ] = "Multiple Choices - Multiple options available",
+        [ 301 ] = "Moved Permanently - Resource has been permanently moved",
+        [ 302 ] = "Found - Resource temporarily moved",
+        [ 303 ] = "See Other - See another URI using GET",
+        [ 304 ] = "Not Modified - Resource not modified since last request",
+        [ 305 ] = "Use Proxy - Deprecated, resource must be accessed through a proxy",
+        [ 307 ] = "Temporary Redirect - Resource temporarily moved, use original method",
+        [ 308 ] = "Permanent Redirect - Resource moved permanently, use original method",
+
+        [ 400 ] = "Bad Request - Malformed syntax or invalid request",
+        [ 401 ] = "Unauthorized - Authentication required",
+        [ 402 ] = "Payment Required - Payment is needed to access the resource",
+        [ 403 ] = "Forbidden - Server understood the request but refuses to authorize it",
+        [ 404 ] = "Not Found - Resource not found",
+        [ 405 ] = "Method Not Allowed - HTTP method not allowed",
+        [ 406 ] = "Not Acceptable - No acceptable representation available",
+        [ 407 ] = "Proxy Authentication Required - Authentication with the proxy required",
+        [ 408 ] = "Request Timeout - Client took too long",
+        [ 409 ] = "Conflict - Request conflicts with current state",
+        [ 410 ] = "Gone - Resource permanently unavailable",
+        [ 411 ] = "Length Required - Content-Length header required",
+        [ 412 ] = "Precondition Failed - Request preconditions not met",
+        [ 413 ] = "Content Too Large - Request body exceeds the server limit",
+        [ 414 ] = "URI Too Long - Request URI exceeds the server limit",
+        [ 415 ] = "Unsupported Media Type - Content type not supported",
+        [ 416 ] = "Range Not Satisfiable - Requested range is outside the resource",
+        [ 417 ] = "Expectation Failed - Expect header cannot be met",
+        [ 418 ] = "I'm a teapot - Server refuses to brew coffee with a teapot (RFC 2324)",
+        [ 421 ] = "Misdirected Request - Server cannot respond for this host",
+        [ 422 ] = "Unprocessable Content - Request is well-formed but has semantic errors",
+        [ 423 ] = "Locked - Resource is locked (WebDAV)",
+        [ 424 ] = "Failed Dependency - A previous request failed (WebDAV)",
+        [ 425 ] = "Too Early - Request might be replayed",
+        [ 426 ] = "Upgrade Required - Switch to another protocol",
+        [ 428 ] = "Precondition Required - Request must be conditional",
+        [ 429 ] = "Too Many Requests - Rate limit exceeded",
+        [ 431 ] = "Request Header Fields Too Large - Headers exceed the server limit",
+        [ 451 ] = "Unavailable For Legal Reasons - Resource blocked for legal reasons",
+
+        [ 500 ] = "Internal Server Error - Generic server error",
+        [ 501 ] = "Not Implemented - Server doesn't support requested feature",
+        [ 502 ] = "Bad Gateway - Invalid response from upstream server",
+        [ 503 ] = "Service Unavailable - Server temporarily overloaded or down",
+        [ 504 ] = "Gateway Timeout - Upstream server failed to respond in time",
+        [ 505 ] = "HTTP Version Not Supported - Unsupported HTTP version",
+        [ 506 ] = "Variant Also Negotiates - Server content negotiation misconfigured",
+        [ 507 ] = "Insufficient Storage - Server cannot store the representation (WebDAV)",
+        [ 508 ] = "Loop Detected - Infinite loop detected while processing (WebDAV)",
+        [ 510 ] = "Not Extended - Further extensions to the request are required",
+        [ 511 ] = "Network Authentication Required - Authentication to access the network required"
+    }
+
+    HTTPError.Messages = status_messages
+
+    ---@param status integer | nil
+    ---@param url string | nil
+    ---@param message string | nil
+    ---@protected
+    function HTTPError:__init( status, url, message )
+        self.status = status
+        self.url = url
+        self.message = message
+    end
+
+    ---@param error_message string | nil
+    ---@return string
+    ---@protected
+    function HTTPError:__message( error_message )
+        ---@type string
+        local message
+
+        local status = self.status
+        if status == nil then
+            message = "HTTP request failed: " .. (error_message or "no response received")
+        else
+            message = string_format( "HTTP %d %s", status, status_messages[ status ] or "Unknown Status" )
+            if error_message ~= nil then
+                message = message .. ": " .. error_message
+            end
+        end
+
+        local url = self.url
+        if url == nil then
+            return message
+        end
+
+        return string_format( "%s (url: %s)", message, url )
+    end
+
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `HTTPError` instances.
+---
+---@class dreamwork.std.HTTPErrorClass : dreamwork.std.HTTPError, dreamwork.std.ErrorClass
+---@field __base dreamwork.std.HTTPError
+---@field __parent dreamwork.std.ErrorClass
+---@overload fun( status: ( integer | nil ), url: ( string | nil ), message: ( string | nil ) ): dreamwork.std.HTTPError
+std.HTTPError = class.create( HTTPError )
+
 -- TODO: Error hashing to decrease spam ( __hash? )
