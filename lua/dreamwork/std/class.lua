@@ -48,6 +48,7 @@ std.class = class
 ---@field __private? boolean `true` if objects of this base are `userdata`. **READ ONLY**
 ---@field __init? dreamwork.std.Object.__init A function that will be called when creating a new object and should be used as the constructor.
 ---@field private __template? userdata The userdata whose metatable is shared by all private objects.
+---@field private __ancestors table<dreamwork.std.Object, boolean> The set of this base and all parent bases.
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias Object dreamwork.std.Object
@@ -60,7 +61,7 @@ std.class = class
 ---@field __base dreamwork.std.Object The base of the class. **READ ONLY**
 ---@field __parent? dreamwork.std.Class The parent of the class. **READ ONLY**
 ---@field __new? dreamwork.std.Class.__new A function that will be called instead of the default object creation, if it returns a non-`nil` value, it will be used as the result and `__init` will **not** be called.
----@field __inherited? dreamwork.std.Class.__inherited The function that will be called when the class is inherited.
+---@field __inherited? dreamwork.std.Class.__inherited The function that will be called when the class or any of its children is inherited, it is not copied to children.
 
 --- [SHARED AND MENU]
 ---
@@ -114,6 +115,7 @@ do
 
     ---@type table<string, boolean>
     local non_inheritable = {
+        __ancestors = true,
         __template = true,
         __private = true,
         __parent = true,
@@ -170,6 +172,10 @@ do
         base.__index = base
         ---@cast base dreamwork.std.Object
 
+        ---@type table<dreamwork.std.Object, boolean>
+        local ancestors = { [ base ] = true }
+        raw_set( base, "__ancestors", ancestors )
+
         if parent ~= nil then
             if not isTable( parent ) then
                 error( "Parent must be a class.", 2 )
@@ -183,6 +189,15 @@ do
             ---@cast parent_base dreamwork.std.Object
             base.__parent = parent_base
             setmetatable( base, { __index = parent_base } )
+
+            local parent_ancestors = raw_get( parent_base, "__ancestors" )
+            if parent_ancestors == nil then
+                ancestors[ parent_base ] = true
+            else
+                for ancestor in raw_pairs( parent_ancestors ) do
+                    ancestors[ ancestor ] = true
+                end
+            end
 
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
@@ -280,8 +295,8 @@ end
 ---
 --- Creates a new class from the given base.
 ---
---- Static fields of the parent class ( including `__new` and `__inherited` ) are copied into the new class,
---- then the parent's `__inherited` is called, if it exists.
+--- Static fields of the parent class ( including `__new`, except `__inherited` ) are copied into the new class,
+--- then `__inherited` of every ancestor class is called, from the direct parent up to the root.
 ---
 ---@param base dreamwork.std.Object The base object, aka metatable.
 ---@return dreamwork.std.Class | unknown cls The class.
@@ -311,8 +326,15 @@ function class.create( base )
 
         ---@cast parent_class dreamwork.std.Class
 
+        local parent_ancestors = raw_get( parent_base, "__ancestors" )
+        if parent_base == base or ( parent_ancestors ~= nil and parent_ancestors[ base ] ) then
+            std.errorf( 2, false, "Class '%s' cannot inherit from itself.", name )
+        end
+
         for key, value in raw_pairs( parent_class ) do
-            cls[ key ] = value
+            if key ~= "__inherited" then
+                cls[ key ] = value
+            end
         end
     end
 
@@ -329,12 +351,17 @@ function class.create( base )
     raw_set( cls, "__parent", parent_class )
     raw_set( cls, "__base", base )
 
-    if parent_class ~= nil then
+    ---@type dreamwork.std.Class | nil
+    local ancestor_class = parent_class
+
+    while ancestor_class ~= nil do
         ---@type dreamwork.std.Class.__inherited | nil
-        local inherited_fn = raw_get( parent_class, "__inherited" )
+        local inherited_fn = raw_get( ancestor_class, "__inherited" )
         if inherited_fn ~= nil then
-            inherited_fn( parent_class, cls )
+            inherited_fn( ancestor_class, cls )
         end
+
+        ancestor_class = raw_get( ancestor_class, "__parent" )
     end
 
     return cls
@@ -343,6 +370,8 @@ end
 --- [SHARED AND MENU]
 ---
 --- Checks if the value is an instance of the given class or any of its children.
+---
+--- Plain metatables ( not created by `class.base` ) only match directly, without inheritance.
 ---
 ---@param obj any The object to check for being an instance of the given class.
 ---@param cls dreamwork.std.Class | dreamwork.std.Object The class or its base to check against.
@@ -353,16 +382,13 @@ function class.isInherited( obj, cls )
         error( "bad argument #2 to 'isInherited' (class or base expected)", 2 )
     end
 
-    local cls_base = raw_get( cls, "__base" ) or cls
     local obj_base = debug_getmetatable( obj )
+    if obj_base == nil then return false end
 
-    while obj_base ~= nil do
-        if obj_base == cls_base then
-            return true
-        end
+    local cls_base = raw_get( cls, "__base" ) or cls
+    if obj_base == cls_base then return true end
 
-        obj_base = raw_get( obj_base, "__parent" )
-    end
-
-    return false
+    -- loop-free lookup, a loop here would split callers' traces
+    local ancestors = raw_get( obj_base, "__ancestors" )
+    return ancestors ~= nil and ancestors[ cls_base ] == true
 end
