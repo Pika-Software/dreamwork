@@ -100,9 +100,9 @@ function utf16.pack(utf16_codepoints, utf16_codepoint_count, lax, big_endian) en
 ---
 --- This functions similarly to `string.char`, use `utf16.pack` for big-endian strings.
 ---
----@param a integer The code points to encode.
----@param b integer The code points to encode.
----@param ... integer The code points to encode.
+---@param a ( integer | nil ) The code points to encode.
+---@param b ( integer | nil ) The code points to encode.
+---@param ... ( integer | nil ) The code points to encode.
 ---@return string utf16_string The UTF-16 string.
 ---@nodiscard
 function utf16.char(a, b, ...) end

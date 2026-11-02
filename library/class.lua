@@ -26,6 +26,7 @@ class = {}
 ---@field __private? boolean `true` if objects of this base are `userdata`. **READ ONLY**
 ---@field __init? Object.__init A function that will be called when creating a new object and should be used as the constructor.
 ---@field private __template? userdata The userdata whose metatable is shared by all private objects.
+---@field private __ancestors table<Object, boolean> The set of this base and all parent bases.
 
 --- [SHARED AND MENU]
 ---
@@ -35,7 +36,7 @@ class = {}
 ---@field __base Object The base of the class. **READ ONLY**
 ---@field __parent? Class The parent of the class. **READ ONLY**
 ---@field __new? Class.__new A function that will be called instead of the default object creation, if it returns a non-`nil` value, it will be used as the result and `__init` will **not** be called.
----@field __inherited? Class.__inherited The function that will be called when the class is inherited.
+---@field __inherited? Class.__inherited The function that will be called when the class or any of its children is inherited, it is not copied to children.
 
 --- [SHARED AND MENU]
 ---
@@ -106,8 +107,8 @@ function class.new(base) end
 ---
 --- Creates a new class from the given base.
 ---
---- Static fields of the parent class ( including `__new` and `__inherited` ) are copied into the new class,
---- then the parent's `__inherited` is called, if it exists.
+--- Static fields of the parent class ( including `__new`, except `__inherited` ) are copied into the new class,
+--- then `__inherited` of every ancestor class is called, from the direct parent up to the root.
 ---
 ---@param base Object The base object, aka metatable.
 ---@return Class | unknown cls The class.
@@ -116,6 +117,8 @@ function class.create(base) end
 --- [SHARED AND MENU]
 ---
 --- Checks if the value is an instance of the given class or any of its children.
+---
+--- Plain metatables ( not created by `class.base` ) only match directly, without inheritance.
 ---
 ---@param obj any The object to check for being an instance of the given class.
 ---@param cls Class | Object The class or its base to check against.

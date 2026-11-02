@@ -58,15 +58,17 @@ function ipv4.fromOctets(a, b, c, d) end
 --- Parses an IPv4 address string with an optional CIDR prefix length, e.g. `192.168.0.1/24`.
 ---
 --- Each octet supports:
---- - **Hexadecimal**: prefixed with `0x` or `0X` (e.g., `0x7F`). Returns `0` if empty after prefix.
---- - **Octal**: prefixed with `0` followed by numbers (e.g., `0177`).
+--- - **Hexadecimal**: prefixed with `0x` or `0X` (e.g., `0x7F`), a bare `0x` is `0`.
+--- - **Octal**: prefixed with `0` followed by octal digits (e.g., `0177`).
 --- - **Decimal**: standard base-10 digits (e.g., `127`).
---- - **Empty/Missing**: returns `0` if the position is empty or invalid.
 ---
 --- Addresses with fewer than 4 octets are accepted, the last given octet becomes the last octet
 --- of the address, e.g. `127.1` is parsed as `127.0.0.1`.
 ---
---- Throws an error if an octet contains invalid characters, is out of range or there are more than 4 octets.
+--- The prefix length must be decimal digits only.
+---
+--- Throws an error if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
+--- or if the prefix length is empty, contains invalid characters or is greater than `32`.
 ---
 ---@param ipv4_str string The IPv4 address string to parse.
 ---@param start_position? integer The start position in the ipv4 string.
@@ -106,6 +108,8 @@ function ipv4.reversePointer(ip_address) end
 ---
 --- Returns the subnet mask address for a given CIDR prefix length.
 ---
+--- Prefix lengths out of the `0-32` range are clamped.
+---
 --- ```lua
 --- ipv4.fromPrefix( 24 ) -- 0xFFFFFF00 (255.255.255.0)
 --- ```
@@ -124,7 +128,7 @@ function ipv4.fromPrefix(prefix_length) end
 --- ```
 ---
 ---@param ip_address IPv4 The IP address.
----@param prefix_length integer The CIDR prefix length. <0-32>
+---@param prefix_length integer The CIDR prefix length. <0-32>, throws an error if out of range.
 ---@return IPv4 network_address The network (first) address.
 ---@return IPv4 broadcast_address The broadcast (last) address.
 ---@nodiscard
@@ -262,7 +266,7 @@ function ipv4.isUnspecified(ip_address) end
 ---@nodiscard
 function ipv4.isBroadcast(ip_address) end
 
----@class ip.ipv4.NetworkVar
+---@class ipv4.NetworkVar
 ---@field [1] IPv4 The network address.
 ---@field [2] IPv4 The broadcast address.
 
@@ -273,7 +277,7 @@ function ipv4.isBroadcast(ip_address) end
 --- Follows the [IANA IPv4 Special-Purpose Address Registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml),
 --- the same way as Python's `ipaddress.IPv4Address.is_private`.
 ---
---- The shared address space (`100.64.0.0/10`) is neither private nor public.
+--- The shared address space (`100.64.0.0/10`) is not considered private.
 ---
 ---@param ip_address IPv4 The IP address.
 ---@return boolean is_private `true` if the IP address is private, `false` otherwise.

@@ -97,9 +97,9 @@ function utf32.pack(utf32_codepoints, utf32_codepoint_count, lax, big_endian) en
 ---
 --- This functions similarly to `string.char`, use `utf32.pack` for big-endian strings.
 ---
----@param a integer The code points to encode.
----@param b integer The code points to encode.
----@param ... integer The code points to encode.
+---@param a ( integer | nil ) The code points to encode.
+---@param b ( integer | nil ) The code points to encode.
+---@param ... ( integer | nil ) The code points to encode.
 ---@return string utf32_string The UTF-32 string.
 ---@nodiscard
 function utf32.char(a, b, ...) end
