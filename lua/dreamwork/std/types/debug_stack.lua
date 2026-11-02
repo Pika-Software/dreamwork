@@ -192,8 +192,10 @@ end
 ---
 --- The class used to create new `debug.Stack` instances.
 ---
----@class dreamwork.std.debug.StackClass : dreamwork.std.Stack
+---@class dreamwork.std.debug.StackClass : dreamwork.std.Stack, dreamwork.std.Class
 ---@field __parent dreamwork.std.StackClass
 ---@field __base dreamwork.std.debug.Stack
 ---@overload fun(): dreamwork.std.debug.Stack
 debug.Stack = class.create( Stack )
+
+-- TODO: move into engine with error handlers

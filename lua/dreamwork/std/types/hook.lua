@@ -543,7 +543,7 @@ end
 ---
 --- The class used to create new `Hook` instances.
 ---
----@class dreamwork.std.HookClass : dreamwork.std.Hook
+---@class dreamwork.std.HookClass : dreamwork.std.Hook, dreamwork.std.Class
 ---@field __base dreamwork.std.Hook
 ---@overload fun( name: string? ): dreamwork.std.Hook
 std.Hook = class.create( Hook )

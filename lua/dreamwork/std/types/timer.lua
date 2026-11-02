@@ -342,7 +342,7 @@ end
 ---
 --- The class used to create new `Timer` instances.
 ---
----@class dreamwork.std.TimerClass : dreamwork.std.Timer
+---@class dreamwork.std.TimerClass : dreamwork.std.Timer, dreamwork.std.Class
 ---@field __base dreamwork.std.Timer
 ---@overload fun( interval: ( number | nil ), repetitions_total: ( integer | nil ), name: ( string | nil ) ): dreamwork.std.Timer
 std.Timer = class.create( Timer )

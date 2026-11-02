@@ -54,7 +54,7 @@ function Fletcher16:update( raw_str )
             chunk_end = str_length
         end
 
-        local blocks_end = chunk_end - ( chunk_end - chunk_start + 1 ) % 8
+        local blocks_end = chunk_end - (chunk_end - chunk_start + 1) % 8
 
         for index = chunk_start, blocks_end, 8 do
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( raw_str, index, index + 7 )
@@ -93,7 +93,7 @@ end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
----@class dreamwork.std.Fletcher16Class : dreamwork.std.Fletcher16
+---@class dreamwork.std.Fletcher16Class : dreamwork.std.Fletcher16, dreamwork.std.Class
 ---@field __base dreamwork.std.Fletcher16
 ---@overload fun(): dreamwork.std.Fletcher16
 local Fletcher16Class = class.create( Fletcher16 )
@@ -165,13 +165,13 @@ function Fletcher32:update( raw_str )
 
     local pending = self.pending
     if pending ~= nil then
-        a = ( a + pending + string_byte( raw_str, 1, 1 ) * 0x100 ) % 0xFFFF
-        b = ( b + a ) % 0xFFFF
+        a = (a + pending + string_byte( raw_str, 1, 1 ) * 0x100) % 0xFFFF
+        b = (b + a) % 0xFFFF
         position = 2
     end
 
     -- last byte of the last complete 16-bit word
-    local words_end = str_length - ( str_length - position + 1 ) % 2
+    local words_end = str_length - (str_length - position + 1) % 2
 
     -- sums stay exact in doubles ( < 2^53 ), so modulo is only needed once per chunk
     for chunk_start = position, words_end, 0x1000 do
@@ -180,7 +180,7 @@ function Fletcher32:update( raw_str )
             chunk_end = words_end
         end
 
-        local blocks_end = chunk_end - ( chunk_end - chunk_start + 1 ) % 8
+        local blocks_end = chunk_end - (chunk_end - chunk_start + 1) % 8
 
         for index = chunk_start, blocks_end, 8 do
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( raw_str, index, index + 7 )
@@ -241,7 +241,7 @@ end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
----@class dreamwork.std.Fletcher32Class : dreamwork.std.Fletcher32
+---@class dreamwork.std.Fletcher32Class : dreamwork.std.Fletcher32, dreamwork.std.Fletcher16Class
 ---@field __parent dreamwork.std.Fletcher16Class
 ---@field __base dreamwork.std.Fletcher32
 ---@overload fun(): dreamwork.std.Fletcher32

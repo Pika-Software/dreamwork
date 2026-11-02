@@ -3,7 +3,7 @@
 ### 1. Define base class (basically a metatable for our cars)
 
 ```lua
----@class my_lib.Car : dreamwork.Object           <-- do not forget to inherit from dreamwork.std.Object
+---@class my_lib.Car : dreamwork.std.Object           <-- do not forget to inherit from dreamwork.std.Object
 ---@field __class my_lib.CarClass
 local Car = class.base( "Car" )
 
@@ -21,7 +21,7 @@ end
 ---
 --- The class used to create new `Car` instances.
 ---
----@class my_lib.CarClass : my_lib.Car      <-- do not forget to inherit from base
+---@class my_lib.CarClass : my_lib.Car, dreamwork.std.Class      <-- do not forget to inherit from base
 ---@field __base my_lib.Car
 ---@overload fun(): my_lib.Car
 local CarClass = class.create( Car )
@@ -49,7 +49,7 @@ local Truck = class.base( "Truck", false, std.Car )
 ---
 --- The class used to create new `Truck` instances.
 ---
----@class my_lib.TruckClass : my_libstd.Truck
+---@class my_lib.TruckClass : my_lib.Truck, my_lib.CarClass
 ---@field __base my_lib.Truck
 ---@field __parent my_lib.CarClass
 ---@overload fun(): my_lib.Truck
@@ -74,7 +74,7 @@ end
 ---
 --- The class used to create new `Template` instances.
 ---
----@class dreamwork.std.TemplateClass : dreamwork.std.Template
+---@class dreamwork.std.TemplateClass : dreamwork.std.Template, dreamwork.std.Class
 ---@field __base dreamwork.std.Template
 ---@overload fun(): dreamwork.std.Template
 local TemplateClass = class.create( Template )
@@ -89,7 +89,7 @@ local TemplateChild = class.base( "TemplateChild", false, std.Template )
 ---
 --- The class used to create new `TemplateChild` instances.
 ---
----@class dreamwork.std.TemplateChildClass : dreamwork.std.TemplateChild
+---@class dreamwork.std.TemplateChildClass : dreamwork.std.TemplateChild, dreamwork.std.TemplateClass
 ---@field __base dreamwork.std.TemplateChild
 ---@field __parent dreamwork.std.TemplateClass
 ---@overload fun(): TemplateChild

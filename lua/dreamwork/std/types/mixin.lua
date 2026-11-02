@@ -168,7 +168,7 @@ Mixin.__call = Mixin.call
 ---
 --- The class used to create new `Mixin` instances.
 ---
----@class dreamwork.std.MixinClass : dreamwork.std.Mixin
+---@class dreamwork.std.MixinClass : dreamwork.std.Mixin, dreamwork.std.Class
 ---@field __base dreamwork.std.Mixin
 ---@overload fun( name: ( string | nil ) ): dreamwork.std.Mixin
 std.Mixin = class.create( Mixin )

@@ -64,7 +64,7 @@ local BigFixed = class.base( "BigFixed", false, nil )
 ---
 --- Arbitrary-precision fixed-point decimal type, backed by `BigInteger`.
 ---
----@class dreamwork.std.BigFixedClass : dreamwork.std.BigFixed
+---@class dreamwork.std.BigFixedClass : dreamwork.std.BigFixed, dreamwork.std.Class
 ---@field __base dreamwork.std.BigFixed
 ---@field DEFAULT_SCALE integer
 ---@overload fun( value: ( dreamwork.std.BigFixed | dreamwork.std.BigInteger | string | number | nil ), scale: ( integer | nil ) ): dreamwork.std.BigFixed

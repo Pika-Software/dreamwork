@@ -236,7 +236,7 @@ end
 ---
 --- The class used to create new `Queue` instances.
 ---
----@class dreamwork.std.QueueClass : dreamwork.std.Queue
+---@class dreamwork.std.QueueClass : dreamwork.std.Queue, dreamwork.std.Class
 ---@field __base dreamwork.std.Queue
 ---@overload fun(): dreamwork.std.Queue
 std.Queue = class.create( Queue )

@@ -279,7 +279,7 @@ end
 ---
 --- The class used to create new `Error` instances.
 ---
----@class dreamwork.std.ErrorClass : dreamwork.std.Error
+---@class dreamwork.std.ErrorClass : dreamwork.std.Error, dreamwork.std.Class
 ---@field __base dreamwork.std.Error
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.Error
 local ErrorClass = std.Error or class.create( Error )
@@ -311,7 +311,7 @@ local RuntimeError = class.base( "RuntimeError", false, ErrorClass )
 ---
 --- The class used to create new `RuntimeError` instances.
 ---
----@class dreamwork.std.RuntimeErrorClass : dreamwork.std.RuntimeError
+---@class dreamwork.std.RuntimeErrorClass : dreamwork.std.RuntimeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.RuntimeError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.RuntimeError
@@ -359,7 +359,7 @@ end
 ---
 --- The class used to create new `NotImplementedError` instances.
 ---
----@class dreamwork.std.NotImplementedErrorClass : dreamwork.std.NotImplementedError
+---@class dreamwork.std.NotImplementedErrorClass : dreamwork.std.NotImplementedError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.NotImplementedError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.NotImplementedError
@@ -409,7 +409,7 @@ end
 ---
 --- The class used to create new `AsyncError` instances.
 ---
----@class dreamwork.std.AsyncErrorClass : dreamwork.std.AsyncError
+---@class dreamwork.std.AsyncErrorClass : dreamwork.std.AsyncError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.AsyncError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.AsyncError
@@ -487,7 +487,7 @@ end
 ---
 --- The class used to create new `TypeError` instances.
 ---
----@class dreamwork.std.TypeErrorClass : dreamwork.std.TypeError
+---@class dreamwork.std.TypeErrorClass : dreamwork.std.TypeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.TypeError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( index: integer, value: any, expected_type: string, value_name: ( string | nil ), function_name: ( string | nil ) ): dreamwork.std.TypeError
@@ -532,7 +532,7 @@ end
 ---
 --- The class used to create new `ValueError` instances.
 ---
----@class dreamwork.std.ValueErrorClass : dreamwork.std.ValueError
+---@class dreamwork.std.ValueErrorClass : dreamwork.std.ValueError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.ValueError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( value: any, message: ( string | nil ) ): dreamwork.std.ValueError
@@ -575,7 +575,7 @@ end
 ---
 --- The class used to create new `EndOfFileError` instances.
 ---
----@class dreamwork.std.EndOfFileErrorClass : dreamwork.std.EndOfFileError
+---@class dreamwork.std.EndOfFileErrorClass : dreamwork.std.EndOfFileError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.EndOfFileError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( position: ( integer | nil ), expected: ( integer | nil ) ): dreamwork.std.EndOfFileError
@@ -620,7 +620,7 @@ end
 ---
 --- The class used to create new `DecodeError` instances.
 ---
----@class dreamwork.std.DecodeErrorClass : dreamwork.std.DecodeError
+---@class dreamwork.std.DecodeErrorClass : dreamwork.std.DecodeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.DecodeError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ), position: ( integer | nil ) ): dreamwork.std.DecodeError
@@ -661,7 +661,7 @@ end
 ---
 --- The class used to create new `EncodeError` instances.
 ---
----@class dreamwork.std.EncodeErrorClass : dreamwork.std.EncodeError
+---@class dreamwork.std.EncodeErrorClass : dreamwork.std.EncodeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.EncodeError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ), value: any ): dreamwork.std.EncodeError
@@ -680,7 +680,7 @@ local CompileError = class.base( "CompileError" )
 ---
 --- The class used to create new `CompileError` instances.
 ---
----@class dreamwork.std.CompileErrorClass : dreamwork.std.CompileError
+---@class dreamwork.std.CompileErrorClass : dreamwork.std.CompileError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.CompileError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun(): dreamwork.std.CompileError
@@ -734,7 +734,7 @@ end
 ---
 --- The class used to create new `AsyncFileSystemError` instances.
 ---
----@class dreamwork.std.AsyncFileSystemErrorClass : dreamwork.std.AsyncFileSystemError
+---@class dreamwork.std.AsyncFileSystemErrorClass : dreamwork.std.AsyncFileSystemError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.AsyncFileSystemError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( error_id: integer, is_writing: ( boolean | nil ) ): dreamwork.std.AsyncFileSystemError

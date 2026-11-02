@@ -100,7 +100,7 @@ local BigInteger = class.base( "BigInteger", false, nil )
 --- Supports the standard arithmetic, comparison, and bitwise operators
 --- through metamethods.
 ---
----@class dreamwork.std.BigIntegerClass : dreamwork.std.BigInteger
+---@class dreamwork.std.BigIntegerClass : dreamwork.std.BigInteger, dreamwork.std.Class
 ---@field __base dreamwork.std.BigInteger
 ---@overload fun( value: ( dreamwork.std.BigInteger | string | integer | nil ), base: ( integer | nil ) ): dreamwork.std.BigInteger
 local BigIntegerClass = class.create( BigInteger )

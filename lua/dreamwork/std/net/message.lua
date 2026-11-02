@@ -99,7 +99,7 @@ function Message:send( data, pl, realm )
     end
 end
 
----@class dreamwork.std.MessageClass : dreamwork.std.Message
+---@class dreamwork.std.MessageClass : dreamwork.std.Message, dreamwork.std.Class
 ---@field __base dreamwork.std.Message
 ---@overload fun( name: string ): dreamwork.std.Message
 local MessageClass = std.class.create( Message )

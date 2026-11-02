@@ -27,7 +27,7 @@ local SHA384 = class.base( "SHA384", false, crypto.SHA512 )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
 ---
----@class dreamwork.std.crypto.SHA384Class : dreamwork.std.crypto.SHA384, dreamwork.std.crypto.HashClass
+---@class dreamwork.std.crypto.SHA384Class : dreamwork.std.crypto.SHA384, dreamwork.std.crypto.SHA512Class
 ---@field __base dreamwork.std.crypto.SHA384
 ---@field digest fun( message: string, as_hex?: boolean ): string
 ---@field digest_size integer

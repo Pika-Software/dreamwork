@@ -257,7 +257,7 @@ end
 ---
 --- The class used to create new `Version` instances.
 ---
----@class dreamwork.std.VersionClass : dreamwork.std.Version
+---@class dreamwork.std.VersionClass : dreamwork.std.Version, dreamwork.std.Class
 ---@field __base dreamwork.std.Version
 ---@overload fun( major: integer?, minor: integer?, patch: integer?, pre_release: string?, build: string? ) : dreamwork.std.Version
 local VersionClass = class.create( Version )

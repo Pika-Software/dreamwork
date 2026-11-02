@@ -275,7 +275,7 @@ end
 --- The class used to create new `Node` instances.
 ---
 ---@generic T
----@class dreamwork.std.NodeClass : dreamwork.std.Node
+---@class dreamwork.std.NodeClass : dreamwork.std.Node, dreamwork.std.Class
 ---@field __base dreamwork.std.Node
 ---@overload fun( value: T, parent: ( dreamwork.std.Node<T> | nil ) ): dreamwork.std.Node<T>
 std.Node = class.create( Node )

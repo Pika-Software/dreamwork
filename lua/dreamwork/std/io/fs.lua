@@ -40,7 +40,7 @@ std.fs = fs
 ---@field path string The absolute path of the file. **READ-ONLY**
 local File = class.base( "File", false )
 
----@class dreamwork.std.fs.FileClass : dreamwork.std.fs.File
+---@class dreamwork.std.fs.FileClass : dreamwork.std.fs.File, dreamwork.std.Class
 ---@field __base dreamwork.std.fs.File
 ---@overload fun(): dreamwork.std.fs.File
 local FileClass = class.create( File )
@@ -55,7 +55,7 @@ fs.File = FileClass
 ---@field path string The absolute path of the directory. **READ-ONLY**
 local Directory = class.base( "Directory", false )
 
----@class dreamwork.std.fs.DirectoryClass : dreamwork.std.fs.Directory
+---@class dreamwork.std.fs.DirectoryClass : dreamwork.std.fs.Directory, dreamwork.std.Class
 ---@field __base dreamwork.std.fs.Directory
 ---@overload fun(): dreamwork.std.fs.Directory
 local DirectoryClass = class.create( Directory )

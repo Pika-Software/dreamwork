@@ -20,6 +20,6 @@ function WebSocket:__init( url )
     self.url = url
 end
 
----@class dreamwork.std.WebSocketClass : dreamwork.std.WebSocket
+---@class dreamwork.std.WebSocketClass : dreamwork.std.WebSocket, dreamwork.std.Class
 ---@field __base dreamwork.std.WebSocket
 local WebSocketClass = class.create( WebSocket )

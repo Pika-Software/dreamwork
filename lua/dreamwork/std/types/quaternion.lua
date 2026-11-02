@@ -98,7 +98,7 @@ local Quaternion = class.base( "Quaternion", false )
 --- local rotation = std.Quaternion.fromAngles( 0, 90, 0 )
 --- ```
 ---
----@class dreamwork.std.QuaternionClass : dreamwork.std.Quaternion
+---@class dreamwork.std.QuaternionClass : dreamwork.std.Quaternion, dreamwork.std.Class
 ---@field __base dreamwork.std.Quaternion
 ---@overload fun( r: number?, i: number?, j: number?, k: number? ): dreamwork.std.Quaternion
 local QuaternionClass = class.create( Quaternion )

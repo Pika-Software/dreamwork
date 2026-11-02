@@ -105,7 +105,7 @@ local Angle3 = class.base( "Angle3", false )
 --- local zero = std.Angle3()
 --- ```
 ---
----@class dreamwork.std.Angle3Class : dreamwork.std.Angle3
+---@class dreamwork.std.Angle3Class : dreamwork.std.Angle3, dreamwork.std.Class
 ---@field __base dreamwork.std.Angle3
 ---@field zero dreamwork.std.Angle3 The shared zero angle `( 0, 0, 0 )`, **must not be modified**.
 ---@overload fun( pitch: number?, yaw: number?, roll: number? ): dreamwork.std.Angle3

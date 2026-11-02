@@ -102,7 +102,7 @@ local VMatrix = class.base( "VMatrix", false )
 --- local transform = std.VMatrix.fromAngle3( std.Angle3( 0, 90, 0 ), std.Vector3( 0, 0, 64 ) )
 --- ```
 ---
----@class dreamwork.std.VMatrixClass : dreamwork.std.VMatrix
+---@class dreamwork.std.VMatrixClass : dreamwork.std.VMatrix, dreamwork.std.Class
 ---@field __base dreamwork.std.VMatrix
 ---@overload fun( ...: number? ): dreamwork.std.VMatrix
 local VMatrixClass = class.create( VMatrix )

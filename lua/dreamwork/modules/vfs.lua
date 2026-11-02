@@ -671,7 +671,7 @@ function Node:__init( name, mount, relative_path, is_directory )
     end
 end
 
----@class dreamwork.vfs.NodeClass : dreamwork.vfs.Node
+---@class dreamwork.vfs.NodeClass : dreamwork.vfs.Node, dreamwork.std.Class
 ---@field __base dreamwork.vfs.Node
 ---@overload fun( name: string, mount: dreamwork.vfs.Mount | nil, relative_path: string, is_directory: boolean ): dreamwork.vfs.Node
 local NodeClass = class.create( Node )

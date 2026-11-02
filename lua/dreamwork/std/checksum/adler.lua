@@ -56,7 +56,7 @@ function Adler32:update( raw_str )
             chunk_end = str_length
         end
 
-        local blocks_end = chunk_end - ( chunk_end - chunk_start + 1 ) % 8
+        local blocks_end = chunk_end - (chunk_end - chunk_start + 1) % 8
 
         for index = chunk_start, blocks_end, 8 do
             local uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 = string_byte( raw_str, index, index + 7 )
@@ -95,7 +95,7 @@ end
 ---
 --- [Adler32 Online](https://md5calc.com/hash/adler32)
 ---
----@class dreamwork.std.Adler32Class : dreamwork.std.Adler32
+---@class dreamwork.std.Adler32Class : dreamwork.std.Adler32, dreamwork.std.Class
 ---@field __base dreamwork.std.Adler32
 ---@overload fun(): dreamwork.std.Adler32
 local Adler32Class = class.create( Adler32 )

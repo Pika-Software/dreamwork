@@ -122,7 +122,7 @@ gc_setTableRules( names, true, false )
 ---@class dreamwork.std.Client : dreamwork.std.Object
 local Client = std.class.base( "Client", true )
 
----@class dreamwork.std.ClientClass : dreamwork.std.Client
+---@class dreamwork.std.ClientClass : dreamwork.std.Client, dreamwork.std.Class
 local ClientClass = std.class.create( Client )
 -- std.Client = ClientClass
 

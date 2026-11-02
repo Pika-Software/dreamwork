@@ -30,7 +30,7 @@ end
 
 ---@class dreamwork.std.PanelClass : dreamwork.std.Panel
 ---@field __base dreamwork.std.Panel
----@overload fun(): Panel
+---@overload fun(): garrysmod.Panel
 local PanelClass = std.class.create( Panel )
 std.Panel = PanelClass
 

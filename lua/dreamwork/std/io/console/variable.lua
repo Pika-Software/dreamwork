@@ -458,7 +458,7 @@ end
 ---
 --- The console variable class.
 ---
----@class dreamwork.std.console.VariableClass : dreamwork.std.console.Variable
+---@class dreamwork.std.console.VariableClass : dreamwork.std.console.Variable, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Variable
 ---@overload fun( options: dreamwork.std.console.VariableOptions ): dreamwork.std.console.Variable
 local VariableClass = class.create( Variable )

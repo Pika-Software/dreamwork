@@ -204,7 +204,7 @@ end
 ---
 --- The class used to create new `Stack` instances.
 ---
----@class dreamwork.std.StackClass : dreamwork.std.Stack
+---@class dreamwork.std.StackClass : dreamwork.std.Stack, dreamwork.std.Class
 ---@field __base dreamwork.std.Stack
 ---@overload fun(): dreamwork.std.Stack
 std.Stack = class.create( Stack )

@@ -211,7 +211,7 @@ do
         self[ name ] = cookie
     end
 
-    ---@class dreamwork.std.CookiesClass : dreamwork.std.Cookies
+    ---@class dreamwork.std.CookiesClass : dreamwork.std.Cookies, dreamwork.std.Class
     ---@field __base dreamwork.std.Cookies
     ---@overload fun(): dreamwork.std.Cookies
     local CookiesClass = std.class.create( Cookies )

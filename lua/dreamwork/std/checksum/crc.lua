@@ -390,7 +390,7 @@ end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class dreamwork.std.checksum.CRC8Class : dreamwork.std.checksum.CRC8
+---@class dreamwork.std.checksum.CRC8Class : dreamwork.std.checksum.CRC8, dreamwork.std.Class
 ---@field __base dreamwork.std.checksum.CRC8
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC8
 local CRC8Class = class.create( CRC8 )
@@ -551,7 +551,7 @@ end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class dreamwork.std.checksum.CRC16Class : dreamwork.std.checksum.CRC16
+---@class dreamwork.std.checksum.CRC16Class : dreamwork.std.checksum.CRC16, dreamwork.std.checksum.CRC8Class
 ---@field __parent dreamwork.std.checksum.CRC8Class
 ---@field __base dreamwork.std.checksum.CRC16
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC16
@@ -715,7 +715,7 @@ end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
----@class dreamwork.std.checksum.CRC32Class : dreamwork.std.checksum.CRC32
+---@class dreamwork.std.checksum.CRC32Class : dreamwork.std.checksum.CRC32, dreamwork.std.checksum.CRC16Class
 ---@field __parent dreamwork.std.checksum.CRC16Class
 ---@field __base dreamwork.std.checksum.CRC32
 ---@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC32

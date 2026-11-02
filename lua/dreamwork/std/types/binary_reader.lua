@@ -82,7 +82,7 @@ local BinaryReader = class.base( "BinaryReader", false, nil )
 ---
 --- Any value is converted to a string with `tostring`, so `BinaryReader( writer )` reads what the `BinaryWriter` wrote.
 ---
----@class dreamwork.std.BinaryReaderClass : dreamwork.std.BinaryReader
+---@class dreamwork.std.BinaryReaderClass : dreamwork.std.BinaryReader, dreamwork.std.Class
 ---@field __base dreamwork.std.BinaryReader
 ---@overload fun( data: any ): dreamwork.std.BinaryReader
 local BinaryReaderClass = class.create( BinaryReader )

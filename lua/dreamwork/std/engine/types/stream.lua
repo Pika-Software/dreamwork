@@ -10,7 +10,7 @@ local std = dreamwork.std
 ---@field __class dreamwork.std.AudioStreamClass
 local AudioStream = std.class.base( "AudioStream" )
 
----@class dreamwork.std.AudioStreamClass : dreamwork.std.AudioStream
+---@class dreamwork.std.AudioStreamClass : dreamwork.std.AudioStream, dreamwork.std.Class
 ---@field __base dreamwork.std.AudioStream
 ---@overload fun(): dreamwork.std.AudioStream
 local AudioStreamClass = std.class.create( AudioStream )

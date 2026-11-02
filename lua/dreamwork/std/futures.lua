@@ -646,7 +646,7 @@ do
     --- fut:cancel()
     --- ```
     ---@class dreamwork.std.Future<T> : dreamwork.std.Object
-    ---@field __class dreamwork.std.futures.FutureClass
+    ---@field __class dreamwork.std.FutureClass
     ---@field protected callbacks function[] The list of callbacks that will be called when future is done.
     ---@field protected state `0` | `1` | `2` `0` - PENDING, `1` - FINISHED, `2` - CANCELLED.
     ---@field protected result_value T The result value of the future.
@@ -924,7 +924,7 @@ do
     ---
     --- The class used to create new `Future` instances.
     ---
-    ---@class dreamwork.std.futures.FutureClass : dreamwork.std.Future
+    ---@class dreamwork.std.FutureClass : dreamwork.std.Future, dreamwork.std.Class
     ---@field __base dreamwork.std.Future
     ---@overload fun(): dreamwork.std.Future
     std.Future = class.create( Future )
@@ -984,7 +984,7 @@ do
     --- end )
     --- ```
     ---
-    ---@class dreamwork.std.futures.TaskClass : dreamwork.std.futures.Task
+    ---@class dreamwork.std.futures.TaskClass : dreamwork.std.futures.Task, dreamwork.std.FutureClass
     ---@field __base dreamwork.std.futures.Task
     ---@overload fun( fn: ( async fun( ...: any ): any ), ...: any ): dreamwork.std.futures.Task
     std.Task = class.create( Task )
@@ -1163,7 +1163,7 @@ do
     ---
     --- A channel is a queue-type class that can be used by multiple coroutines.
     ---
-    ---@class dreamwork.std.futures.ChannelClass : dreamwork.std.futures.Channel
+    ---@class dreamwork.std.futures.ChannelClass : dreamwork.std.futures.Channel, dreamwork.std.Class
     ---@field __base dreamwork.std.futures.Channel
     ---@overload fun( maxsize: number? ): dreamwork.std.futures.Channel
     std.Channel = class.create( Channel )

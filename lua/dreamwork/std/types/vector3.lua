@@ -81,7 +81,7 @@ local Vector3 = class.base( "Vector3", false )
 --- local zero = std.Vector3()
 --- ```
 ---
----@class dreamwork.std.Vector3Class : dreamwork.std.Vector3
+---@class dreamwork.std.Vector3Class : dreamwork.std.Vector3, dreamwork.std.Class
 ---@field __base dreamwork.std.Vector3
 ---@field origin dreamwork.std.Vector3 The shared zero vector `( 0, 0, 0 )`, **must not be modified**.
 ---@overload fun( x: number?, y: number?, z: number? ): dreamwork.std.Vector3

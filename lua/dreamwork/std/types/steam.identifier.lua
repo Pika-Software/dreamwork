@@ -95,7 +95,7 @@ local Identifier = class.base( "Identifier" )
 ---
 --- The class used to create new `steam.Identifier` instances.
 ---
----@class dreamwork.std.steam.IdentifierClass : dreamwork.std.steam.Identifier
+---@class dreamwork.std.steam.IdentifierClass : dreamwork.std.steam.Identifier, dreamwork.std.Class
 ---@field __base dreamwork.std.steam.Identifier
 ---@overload fun( universe?: dreamwork.std.steam.IdentifierUniverse, type?: dreamwork.std.steam.IdentifierType, id?: integer, instance?: integer ): dreamwork.std.steam.Identifier
 local IdentifierClass = class.create( Identifier )

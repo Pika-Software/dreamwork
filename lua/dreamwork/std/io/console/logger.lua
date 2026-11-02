@@ -41,7 +41,6 @@ local console = std.console
 ---
 --- The logger object.
 ---
----@alias Logger dreamwork.std.console.Logger
 ---@class dreamwork.std.console.Logger : dreamwork.std.Object
 ---@field __class dreamwork.std.console.LoggerClass
 ---@field title string The logger title.
@@ -55,7 +54,7 @@ local Logger = class.base( "console.Logger" )
 ---
 --- The logger class.
 ---
----@class dreamwork.std.console.LoggerClass : dreamwork.std.console.Logger
+---@class dreamwork.std.console.LoggerClass : dreamwork.std.console.Logger, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Logger
 ---@overload fun( options: dreamwork.std.console.LoggerOptions? ) : dreamwork.std.console.Logger
 console.Logger = class.create( Logger )

@@ -87,9 +87,9 @@ local XMLNode = class.base( "XMLNode", false )
 --- print( root:get( "child[2].title" ) ) -- Test Title 2
 --- ```
 ---
----@class dreamwork.std.XMLNodeClass : dreamwork.std.XMLNode
+---@class dreamwork.std.XMLNodeClass : dreamwork.std.XMLNode, dreamwork.std.Class
 ---@field __base dreamwork.std.XMLNode
----@overload fun(name: string, attributes: (table<string, string> | nil), parent: (dreamwork.std.XMLNode | nil) ): dreamwork.std.XMLNode
+---@overload fun( name: string, attributes: ( table<string, string> | nil ), parent: ( dreamwork.std.XMLNode | nil ) ): dreamwork.std.XMLNode
 local XMLNodeClass = class.create( XMLNode )
 std.XMLNode = XMLNodeClass
 

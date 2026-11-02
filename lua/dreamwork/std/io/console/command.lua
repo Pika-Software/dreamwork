@@ -145,7 +145,7 @@ end
 ---
 --- The console command class.
 ---
----@class dreamwork.std.console.CommandClass : dreamwork.std.Class
+---@class dreamwork.std.console.CommandClass : dreamwork.std.console.Command, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Command
 ---@overload fun( options: dreamwork.std.console.CommandOptions ): dreamwork.std.console.Command
 local CommandClass = class.create( Command )

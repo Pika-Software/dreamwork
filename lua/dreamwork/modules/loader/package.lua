@@ -27,7 +27,7 @@
 -- ---@field commands table
 -- local Package = class.base( "Package", true )
 
--- ---@class dreamwork.std.PackageClass : dreamwork.std.Package
+-- ---@class dreamwork.std.PackageClass : dreamwork.std.Package, dreamwork.std.Class
 -- ---@field __base dreamwork.std.Package
 -- ---@overload fun( name: string, version: ( string | dreamwork.std.Version ) ): dreamwork.std.Package
 -- local PackageClass = class.create( Package )

@@ -83,7 +83,7 @@ do
     ---
     --- Color proxy class, call it to create a new `dreamwork.engine.ColorProxy`.
     ---
-    ---@class dreamwork.engine.ColorProxyClass : dreamwork.engine.ColorProxy
+    ---@class dreamwork.engine.ColorProxyClass : dreamwork.engine.ColorProxy, dreamwork.std.Class
     ---@overload fun( r: number, g: number, b: number, a: number ): dreamwork.engine.ColorProxy
     dreamwork_engine.ColorProxy = class.create( ColorProxy )
 
@@ -150,7 +150,7 @@ do
         ---
         --- Vector proxy class, call it to create a new `dreamwork.engine.Vector3Proxy`.
         ---
-        ---@class dreamwork.engine.Vector3ProxyClass : dreamwork.engine.Vector3Proxy
+        ---@class dreamwork.engine.Vector3ProxyClass : dreamwork.engine.Vector3Proxy, dreamwork.std.Class
         ---@overload fun( x?: number, y?: number, z?: number ): dreamwork.engine.Vector3Proxy
         dreamwork_engine.Vector3Proxy = class.create( Vector3Proxy )
 
@@ -219,7 +219,7 @@ do
         ---
         --- Angle proxy class, call it to create a new `dreamwork.engine.Angle3Proxy`.
         ---
-        ---@class dreamwork.engine.Angle3ProxyClass : dreamwork.engine.Angle3Proxy
+        ---@class dreamwork.engine.Angle3ProxyClass : dreamwork.engine.Angle3Proxy, dreamwork.std.Class
         ---@overload fun( pitch?: number, yaw?: number, roll?: number ): dreamwork.engine.Angle3Proxy
         dreamwork_engine.Angle3Proxy = class.create( Angle3Proxy )
 
@@ -294,7 +294,7 @@ do
         ---
         --- Matrix proxy class, call it to create a new `dreamwork.engine.VMatrixProxy`.
         ---
-        ---@class dreamwork.engine.VMatrixProxyClass : dreamwork.engine.VMatrixProxy
+        ---@class dreamwork.engine.VMatrixProxyClass : dreamwork.engine.VMatrixProxy, dreamwork.std.Class
         ---@overload fun(): dreamwork.engine.VMatrixProxy
         dreamwork_engine.VMatrixProxy = class.create( VMatrixProxy )
 

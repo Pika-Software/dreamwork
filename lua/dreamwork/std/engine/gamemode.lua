@@ -12,7 +12,7 @@ function Gamemode:__init()
 
 end
 
----@class dreamwork.std.GamemodeClass : dreamwork.std.Gamemode
+---@class dreamwork.std.GamemodeClass : dreamwork.std.Gamemode, dreamwork.std.Class
 ---@field __base dreamwork.std.Gamemode
 ---@overload fun(): Gamemode
 local GamemodeClass = std.class.create( Gamemode )

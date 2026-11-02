@@ -144,7 +144,7 @@ end
 --- print( address ) -- 2001:db8::1
 --- ```
 ---
----@class dreamwork.std.IPv6Class : dreamwork.std.IPv6
+---@class dreamwork.std.IPv6Class : dreamwork.std.IPv6, dreamwork.std.Class
 ---@field __base dreamwork.std.IPv6
 ---@overload fun( group1: integer?, group2: integer?, group3: integer?, group4: integer?, group5: integer?, group6: integer?, group7: integer?, group8: integer? ): dreamwork.std.IPv6
 local IPv6Class = class.create( IPv6 )
