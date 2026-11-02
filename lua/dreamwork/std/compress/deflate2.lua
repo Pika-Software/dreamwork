@@ -1343,7 +1343,7 @@ do
                 sinfl.bitcnt = 0
 
                 if len > (e - inIndex) or len == 0 then
-                    return concat( out, "" )
+                    return concat( out, "", 0 )
                 end
 
                 out[ o ] = sub( inStr, inIndex + 1, inIndex + len )
