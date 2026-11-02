@@ -340,6 +340,27 @@ event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name
     end
 end
 
+---
+---  The first handler that returns a non-`nil` value stops the chain.
+---
+---@param handlers dreamwork.engine.hook.Handler[]
+---@param network_id integer The ID of the network.
+---@param unreliable boolean `true` if the message was sent unreliably.
+---@param remaining_bits integer The number of bits left after the header.
+---@param sender garrysmod.Player | nil The player who sent the message, `nil` on the client.
+---@return boolean | nil is_complete `true` if a handler took care of the whole message.
+---@return integer | nil block_size The number of bits the handler has read.
+event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
+    for i = 1, handlers[ 0 ], 1 do
+        local is_complete, block_size = handlers[ i ]( network_id, unreliable, remaining_bits, sender )
+        if is_complete ~= nil then
+            return is_complete, block_size
+        end
+    end
+
+    return nil
+end
+
 if LUA_SERVER then
     event_handlers[ "hltv_rank_camera" ] = handler_gameevent
     event_handlers[ "hltv_rank_entity" ] = handler_gameevent

@@ -3,6 +3,7 @@ local dreamwork_engine = dreamwork.engine
 
 local engine_hook = dreamwork_engine.hook
 local hook_call = engine_hook.call
+local hook_count = engine_hook.count
 
 local engine_console = dreamwork_engine.console
 local console_commandRun = engine_console.commandRun
@@ -210,11 +211,13 @@ function glua_net.Incoming( remaining_bits, sender )
 
     remaining_bits = remaining_bits - full_header_size
 
-    local is_complete, block_size = hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
-    if is_complete == true then return end
+    if hook_count( "dreamwork.network.message.incoming" ) ~= 0 then
+        local is_complete, block_size = hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
+        if is_complete == true then return end
 
-    if block_size ~= nil then
-        remaining_bits = remaining_bits - block_size
+        if block_size ~= nil then
+            remaining_bits = remaining_bits - block_size
+        end
     end
 
     local network_name = network_names[ network_id ]

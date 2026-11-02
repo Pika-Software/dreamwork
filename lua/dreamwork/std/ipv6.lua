@@ -351,7 +351,7 @@ end
 ---@param b dreamwork.std.IPv6
 ---@return (`-1` | `0` | `1`)
 local function compare( a, b )
-    for i = 1, 8 do
+    for i = 1, 8, 1 do
         if a[ i ] < b[ i ] then
             return -1
         elseif a[ i ] > b[ i ] then
