@@ -1,5 +1,32 @@
 ---@meta garrysmod
 
+
+--- `true` if the code is running in the menu state (menu Lua VM), `false` otherwise.
+---
+--- The menu state is a separate Lua VM from the client and server ones, so `CLIENT` and `SERVER` are both `false` there.
+---@type boolean
+MENU_DLL = nil
+
+--- `true` if the code is running on the client realm, `false` otherwise.
+---@type boolean
+CLIENT = nil
+
+--- `true` if the code is running on the server realm, `false` otherwise.
+---@type boolean
+SERVER = nil
+
+--- The current Garry's Mod version number, e.g. `240101`.
+---
+--- Can be `nil` on a state where it is not yet available.
+---@type integer | nil
+VERSION = nil
+
+--- The Garry's Mod branch the game is running on, e.g. `"unknown"`, `"dev"`, `"prerelease"`, `"x86-64"`.
+---
+--- Can be `nil` on a state where it is not yet available.
+---@type string | nil
+BRANCH = nil
+
 --- Orthographic projection borders for `CameraData`.
 ---
 --- Each field is the distance of that border from the view position;
@@ -151,3 +178,11 @@ function CompileString( code, identifier, handleError ) end
 ---@param slot integer The location on the right hand screen to write the debug info to. Starts at 0, no upper limit.
 ---@param info string The debugging information to be written to the screen.
 function DebugInfo( slot, info ) end
+
+--- [SHARED AND MENU]
+---
+--- Returns whether the given value is a `table`.
+---
+---@param value any The value to check.
+---@return boolean is_table `true` if the value is a table, `false` otherwise.
+function istable( value ) end

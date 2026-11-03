@@ -42,21 +42,15 @@ end
 ---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
 
----@diagnostic disable-next-line: assign-type-mismatch, undefined-global
 std.GAME_VERSION = VERSION or 0
-
----@diagnostic disable-next-line: undefined-global
 std.GAME_BRANCH = BRANCH or "unknown"
 
----@diagnostic disable-next-line: undefined-global
 local LUA_MENU = MENU_DLL == true
 std.LUA_MENU = LUA_MENU
 
----@diagnostic disable-next-line: undefined-global
 local LUA_CLIENT = CLIENT == true and not LUA_MENU
 std.LUA_CLIENT = LUA_CLIENT
 
----@diagnostic disable-next-line: undefined-global
 local LUA_SERVER = SERVER == true and not LUA_MENU
 std.LUA_SERVER = LUA_SERVER
 
@@ -181,7 +175,6 @@ if std.getfenv == nil then
     local debug_getf = debug.getf
     local raw_type = raw.type
 
-    ---@diagnostic disable-next-line: undefined-global
     local _G = _G or _ENV
 
     --- [SHARED AND MENU]
@@ -191,7 +184,6 @@ if std.getfenv == nil then
     ---@param location integer | function Can be a Lua `function` or a `number` that specifies the function at that stack level.
     ---@return table fenv Specified function environment.
     ---@nodiscard
-    ---@diagnostic disable-next-line: duplicate-set-field
     function std.getfenv( location )
         ---@type function | nil
         local func
@@ -247,7 +239,6 @@ if std.setfenv == nil then
     ---@param location integer | F Can be a Lua `function` or a `number` that specifies the function at that stack level.
     ---@param env table The environment table to set.
     ---@return F location The function with the updated environment.
-    ---@diagnostic disable-next-line: duplicate-set-field
     std.setfenv = setfenv or debug.setfenv or function( location, env )
         local func
 
@@ -275,8 +266,6 @@ if std.setfenv == nil then
 
 end
 
----@type fun( value: any ): boolean
----@diagnostic disable-next-line: undefined-global
 local isTable = istable
 
 if isTable == nil then
@@ -752,8 +741,7 @@ end
 --- The global environment table (outside of DreamWork).
 ---
 ---@type _G
----@diagnostic disable-next-line: undefined-global
-std.global = std.getfenv( 1 ) or _G or _ENV
+std.global = std.getfenv( 1 )
 
 dreamwork_load( "std/os.lua" )
 
@@ -1522,12 +1510,12 @@ do
         local Scheme = std.getmetatable( color_scheme ) or {}
         setmetatable( color_scheme, Scheme )
 
+        ---@return string
         ---@protected
         function Scheme:__tostring()
             return string_format( "ColorScheme: %p", self )
         end
 
-        ---@diagnostic disable-next-line: undefined-global
         local NamedColor = NamedColor or debug_fempty
 
         local tmp = { r = 255, g = 255, b = 255, a = 255 }
@@ -1539,7 +1527,6 @@ do
 
             if isString( name ) then
                 ---@cast name string
-                ---@diagnostic disable-next-line: redundant-parameter
                 local engine_color = NamedColor( name ) or tmp
                 color = color_fromRGB( engine_color.r, engine_color.g, engine_color.b )
             elseif isNumber( name ) then
@@ -2199,7 +2186,6 @@ do
     --- Prints the given arguments to the console.
     ---
     ---@param ... any The arguments to print.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function std.print( ... )
         local arg_count = raw_select( "#", ... )
         if arg_count == 0 then
@@ -3011,6 +2997,7 @@ do
 
         ---@diagnostic disable-next-line: cast-type-mismatch
         ---@cast result string | nil
+
         error( result or "unknown error", 2 )
     end
 
@@ -3093,16 +3080,12 @@ logger:info( "%d game(s) and %d add-on(s) mounted to game.", dreamwork_engine.mo
 std.FRAME_TIME = 1 / 60
 std.FPS = 60
 
----@diagnostic disable-next-line: undefined-global
-if LUA_CLIENT and CurTime ~= nil then
+if LUA_CLIENT then
 
-    ---@diagnostic disable-next-line: undefined-global
-    local CurTime = CurTime
-
-    local last_call = CurTime()
+    local last_call = dreamwork_getUpTime()
 
     engine_hook.catch( "PreRender", "dreamwork.frame_counter", function()
-        local elapsed_time = CurTime()
+        local elapsed_time = dreamwork_getUpTime()
 
         local frame_time = elapsed_time - last_call
         last_call = elapsed_time

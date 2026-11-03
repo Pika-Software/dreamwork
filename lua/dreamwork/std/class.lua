@@ -50,9 +50,6 @@ std.class = class
 ---@field private __template? userdata The userdata whose metatable is shared by all private objects.
 ---@field private __ancestors table<dreamwork.std.Object, boolean> The set of this base and all parent bases.
 
----@diagnostic disable-next-line: duplicate-doc-alias
----@alias Object dreamwork.std.Object
-
 --- [SHARED AND MENU]
 ---
 --- A general structure for every class that created with `class` library.
@@ -100,9 +97,6 @@ function std.isObject( value )
     -- private template is not an object
     return raw_get( base, "__template" ) ~= value
 end
-
----@diagnostic disable-next-line: duplicate-doc-alias
----@alias Class dreamwork.std.Class
 
 ---@param obj dreamwork.std.Object The object to convert to a string.
 ---@return string str The string representation of the object.
@@ -285,7 +279,6 @@ do
             end
         end
 
-        ---@diagnostic disable-next-line: return-type-mismatch
         return obj
     end
 
@@ -327,7 +320,7 @@ function class.create( base )
         ---@cast parent_class dreamwork.std.Class
 
         local parent_ancestors = raw_get( parent_base, "__ancestors" )
-        if parent_base == base or ( parent_ancestors ~= nil and parent_ancestors[ base ] ) then
+        if parent_base == base or (parent_ancestors ~= nil and parent_ancestors[ base ]) then
             std.errorf( "Class '%s' cannot inherit from itself.", name )
         end
 
