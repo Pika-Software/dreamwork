@@ -1,11 +1,9 @@
 ---@class dreamwork.engine
 local dreamwork_engine = dreamwork.engine
+local engine_nextTick = dreamwork_engine.nextTick
 
-local dreamwork_errorHandler = dreamwork.errorHandler
+local exceptions_call = dreamwork.exceptions.call
 local dreamwork_Logger = dreamwork.Logger
-
-local engine_timer = dreamwork_engine.timer
-local timer_nextTick = engine_timer.nextTick
 
 local std = dreamwork.std
 
@@ -98,14 +96,14 @@ do
         return true
     end
 
-    timer_nextTick( function()
+    engine_nextTick( function()
         make_request = client_fn
 
         for i = 1, request_queue[ 0 ], 1 do
             local options = request_queue[ i ]
             request_queue[ i ] = nil
 
-            local success, result = xpcall( client_fn, dreamwork_errorHandler, options )
+            local success, result = exceptions_call( client_fn, options )
             if success and not result then
                 options.failed( "failed to connect to '" .. client_name .. "' http client" )
             end

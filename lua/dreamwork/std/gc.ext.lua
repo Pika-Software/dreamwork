@@ -72,7 +72,7 @@ end
 function gc.setup( tbl, type_name, instruction )
     local tables = track_list[ type_name ]
     if tables == nil then
-        errorf( 2, false, "unknown gc type '%s'", type_name )
+        errorf( "unknown gc type '%s'", type_name )
     end
 
     tables[ tbl ] = instruction or false
@@ -87,7 +87,7 @@ end
 function gc.unsetup( tbl, type_name )
     local tables = track_list[ type_name ]
     if tables == nil then
-        errorf( 2, false, "unknown gc type '%s'", type_name )
+        errorf( "unknown gc type '%s'", type_name )
     end
 
     tables[ tbl ] = nil

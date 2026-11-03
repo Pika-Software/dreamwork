@@ -1,4 +1,4 @@
-local dreamwork_errorHandler = dreamwork.errorHandler
+local exceptions_call = dreamwork.exceptions.call
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
@@ -41,7 +41,6 @@ local class = std.class
 
 local type = std.type
 local error = std.error
-local xpcall = std.xpcall
 local tostring = std.tostring
 local toboolean = std.toboolean
 local represent = std.represent
@@ -403,7 +402,7 @@ function Variable:__init( options )
         end
 
         local default_type = type( str_default )
-        if default_type ~= cvar_type then
+        if default_type ~= cvar_type and not (default_type == "integer" and cvar_type == "number") then
             error( string_format( "default type (%s) does not match variable type (%s)", default_type, cvar_type ), 3 )
         end
 
@@ -841,7 +840,7 @@ engine_hook.catch( "dreamwork.console.variable.change", "variable.change", funct
     values[ variable ] = old_value
 
     local hook = hooks[ variable ]
-    xpcall( hook.call, dreamwork_errorHandler, hook, variable, new_value )
+    exceptions_call( hook.call, hook, variable, new_value )
 
     values[ variable ] = new_value
 end, -1000 )

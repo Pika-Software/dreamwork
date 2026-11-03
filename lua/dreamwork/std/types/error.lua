@@ -1,16 +1,42 @@
+local error = error
+
 local dreamwork_engine = dreamwork.engine
+local dreamwork_detour = dreamwork.detour
+
+local engine_hook = dreamwork_engine.hook
 
 local engine_console = dreamwork_engine.console
 local console_messageColored = engine_console.messageColored
 
+---@class dreamwork.exceptions
+local dreamwork_exceptions = dreamwork.exceptions
+local exceptions_report = dreamwork_exceptions.report
+local exceptions_isHiddenFrame = dreamwork_exceptions.isHiddenFrame
+local exceptions_hide = dreamwork_exceptions.hide
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_select = raw.select
+
+local math = std.math
+local math_max = math.max
+
 local debug = std.debug
 local debug_Stack = debug.Stack
+local debug_getinfo = debug.getinfo
+local debug_calledby = debug.calledby
 
 local string = std.string
+local string_match = string.match
 local string_format = string.format
+
+local coroutine = std.coroutine
+local coroutine_running = coroutine.running
+
+local pcall = std.pcall
+local xpcall = std.xpcall
 
 local unicode = std.unicode
 
@@ -24,6 +50,8 @@ local class = std.class
 
 local represent = std.represent
 local tostring = std.tostring
+local isString = std.isString
+local isClass = std.isClass
 local type = std.type
 local is = std.is
 
@@ -36,6 +64,94 @@ local COLOR_MONA_LISA   = color_Scheme.mona_lisa
 local COLOR_LIGHT_GRAY  = color_Scheme.light_gray
 local COLOR_ERROR       = color_Scheme.error
 
+
+---@type fun( error_value: any, stack_level: integer? )
+local glua_error
+
+---@type fun( stack: dreamwork.std.debug.Stack, skip: integer )
+local capture_stack
+
+do
+
+    --- Level passed to the last `error` call, read by `capture_stack` only when
+    --- the original `error` is the frame that raised the error.
+    ---
+    ---@type integer
+    local pending_level = 1
+
+    ---@param fn fun( value: any, stack_level: ( integer | nil ) )
+    ---@param value any
+    ---@param stack_level integer | nil
+    dreamwork_detour.attach( function( fn, value, stack_level )
+        pending_level = stack_level or 1
+        return fn( value, stack_level )
+    end, nil, "error" )
+
+    glua_error = dreamwork_detour.shadow( error ) or error
+
+    exceptions_hide(
+    -- protected calls sit between two Lua frames and carry nothing useful
+        pcall,
+        xpcall,
+
+        -- raisers are already skipped at the top of the stack, listed so they never show up anywhere else
+        glua_error,
+        raw.assert
+    )
+
+    --- Captures the call stack of an error into `stack`.
+    ---
+    --- The walk starts at the caller of `capture_stack` and skips leading C frames
+    --- (the C function that raised the error: `error`, `assert`, `string.rep`, ...) and
+    --- hidden frames (`std.error`, error handlers, ...), so the innermost frame is always
+    --- the Lua code that raised the error, no matter how many handlers or tail calls sit in between.
+    ---
+    --- Then `skip` more frames are skipped to honour the error level, and everything from there
+    --- to the bottom of the current thread is captured, except hidden frames (`pcall`, `xpcall`, ...),
+    --- other C frames such as `table.sort` stay in the stack.
+    ---
+    ---@param stack dreamwork.std.debug.Stack
+    ---@param skip integer
+    function capture_stack( stack, skip )
+        local level = 2
+
+        ::frame_walker::
+
+        local info = debug_getinfo( level, "Sf" )
+        if info == nil then return end
+
+        if info.func == glua_error then
+            -- raised by a plain `error( value, level )`, so honour its level
+            skip = math_max( 0, pending_level - 1 )
+            pending_level = 1
+        elseif not (info.what == "C" or exceptions_isHiddenFrame( info )) then
+            goto level_skipper
+        end
+
+        level = level + 1
+        goto frame_walker
+
+        ::level_skipper::
+
+        if skip > 0 then
+            info = debug_getinfo( level + 1, "Sf" )
+
+            if info ~= nil then
+                level = level + 1
+
+                if not exceptions_isHiddenFrame( info ) then
+                    skip = skip - 1
+                end
+
+                goto level_skipper
+            end
+        end
+
+        stack:capture( level )
+        stack:filter( exceptions_isHiddenFrame )
+    end
+
+end
 
 --- [SHARED AND MENU]
 ---
@@ -126,26 +242,15 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Captures the current call stack into this error, merging it into
---- whatever frames are already stored (see `dreamwork.std.debug.Stack:capture`).
+--- Captures the call stack of the calling function into the error, replacing the previous one.
 ---
----@param stack_level? integer  Levels to skip to reach the caller (same as before).
----@param head_skip? integer    Constant frames to drop from the innermost end (e.g. 1 for the bare `error` C frame).
----@param tail_skip? integer    Constant frames to drop from the outermost end (e.g. your xpcall/wrapper frames).
-function Error:capture( stack_level, head_skip, tail_skip )
-    if stack_level == nil then
-        stack_level = 2
-    else
-        stack_level = stack_level + 1
-    end
-
-    local stack = self.stack
-    if stack == nil then
-        stack = debug_Stack()
-        self.stack = stack
-    end
-
-    stack:capture( stack_level, head_skip, tail_skip )
+--- Hidden frames are left out, the same way `std.error` captures them.
+---
+---@param stack_level? integer The level of the first captured frame, `1` (the caller) by default.
+function Error:capture( stack_level )
+    local stack = debug_Stack()
+    self.stack = stack
+    capture_stack( stack, math_max( 0, (stack_level or 1) - 1 ) )
 end
 
 do
@@ -203,6 +308,16 @@ do
             console_messageColored( tostring( top_frame.currentline or -1 ), COLOR_SPRAY )
             console_messageColored( "\n", COLOR_SUVA_GRAY )
 
+            console_messageColored( "         in ", COLOR_SUVA_GRAY )
+
+            local thread = top_frame.thread
+            if thread ~= nil then
+                console_messageColored( represent( top_frame.thread ) .. "\n", COLOR_SPRAY )
+                return
+            end
+
+            console_messageColored( "main\n", COLOR_LIGHT_GRAY )
+
             -- TODO: Add error source, aka addon/package/folder in basic error throw info
             -- create std.File.get( path_to_file ).mount / `whereis` alternative
 
@@ -259,6 +374,15 @@ do
             console_messageColored( ":", COLOR_SUVA_GRAY )
             console_messageColored( tostring( frame.currentline or -1 ) .. "\n", COLOR_SPRAY )
 
+            local thread = frame.thread
+            if thread == nil then
+                console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
+                console_messageColored( "main\n", COLOR_LIGHT_GRAY )
+            else
+                console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
+                console_messageColored( string_format( "%p\n", thread ), COLOR_SPRAY )
+            end
+
             local frame_fn = self.__frame
             if frame_fn ~= nil then
                 frame_fn( self, frame )
@@ -285,6 +409,7 @@ end
 local ErrorClass = std.Error or class.create( Error )
 std.Error = ErrorClass
 
+
 --- [SHARED AND MENU]
 ---
 --- Returns whether the given value is an error.
@@ -292,9 +417,11 @@ std.Error = ErrorClass
 ---@param value any
 ---@return boolean is_error
 ---@nodiscard
-function std.isError( value )
+local function isError( value )
     return is( value, ErrorClass )
 end
+
+std.isError             = isError
 
 --- [SHARED AND MENU]
 ---
@@ -305,7 +432,7 @@ end
 ---@field __class dreamwork.std.RuntimeErrorClass
 ---@field __parent dreamwork.std.Error
 ---@field message string | nil The error message to display.
-local RuntimeError = class.base( "RuntimeError", false, ErrorClass )
+local RuntimeError      = class.base( "RuntimeError", false, ErrorClass )
 
 --- [SHARED AND MENU]
 ---
@@ -315,7 +442,360 @@ local RuntimeError = class.base( "RuntimeError", false, ErrorClass )
 ---@field __base dreamwork.std.RuntimeError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.RuntimeError
-std.RuntimeError = class.create( RuntimeError )
+local RuntimeErrorClass = class.create( RuntimeError )
+std.RuntimeError        = RuntimeErrorClass
+
+--- [SHARED AND MENU]
+---
+--- Converts any error value into an `Error` and captures its call stack if it has none yet.
+---
+--- Can be passed to `xpcall` directly as a message handler.
+---
+---@param error_value any The error value to convert.
+---@param error_class? dreamwork.std.ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+---@return dreamwork.std.Error error_object
+---@nodiscard
+local function to_error( error_value, error_class )
+    ---@type dreamwork.std.Error
+    local error_object
+
+    if error_class == nil then
+        ---@diagnostic disable-next-line: cast-local-type
+        error_class = RuntimeErrorClass
+    end
+
+    if isError( error_value ) then
+        ---@cast error_value dreamwork.std.Error
+        error_object = error_value
+
+        if not error_object:isEmpty() then
+            return error_object
+        end
+    elseif error_value == nil then
+        error_object = error_class( "unknown error" )
+    elseif isString( error_value ) then
+        ---@cast error_value string
+        error_object = error_class( string_match( error_value, "^[^\n]-:%d+: (.*)$" ) or error_value )
+    else
+        error_object = error_class( tostring( error_value ) )
+    end
+
+    local stack = debug_Stack()
+    error_object.stack = stack
+    capture_stack( stack, 0 )
+
+    return error_object
+end
+
+std.toError = to_error
+
+do
+
+    -- below gmod specific error output function, that get message/value from engine and return new message (possibly can be string only)
+    local function engine_error_handler( error_value )
+        if error_value == dreamwork_exceptions.Sentinel then
+            return error_value
+        end
+
+        local result = exceptions_report( to_error( error_value ) )
+        if isString( result ) then
+            return result
+        end
+
+        return tostring( error_value )
+    end
+
+    exceptions_hide( engine_error_handler )
+    std._R[ 1 ] = engine_error_handler
+
+end
+
+do
+
+    local exceptions_tostring = dreamwork_exceptions.tostring
+
+    ---@param error_value any
+    local function display_error( error_value )
+        if not isError( error_value ) then
+            error_value = to_error( error_value )
+        end
+
+        ---@cast error_value dreamwork.std.Error
+        error_value:display()
+    end
+
+    exceptions_hide( display_error )
+
+    engine_hook.catch( "dreamwork.lua.error", "console.display", function( error_value )
+        -- this runs inside error handlers, where a second error would replace the original one,
+        -- so the conversion is protected as well, not only the display
+        local success, display_failure = pcall( display_error, error_value )
+        if not success then
+            raw.print( "[dreamwork] failed to display an error: " .. exceptions_tostring( display_failure ) )
+            raw.print( "[dreamwork] original error: " .. exceptions_tostring( error_value ) )
+        end
+
+        return dreamwork_exceptions.Sentinel
+    end, 1000 )
+
+end
+
+--- [SHARED AND MENU]
+---
+--- `xpcall` message handler for errors that are going to be rethrown.
+---
+--- Works like `toError`, but values that are neither errors nor strings
+--- (signals like `ACTION_CANCEL`) are returned as is, so rethrowing them keeps their identity,
+--- the same way `std.error` throws them.
+---
+---@param error_value any The error value to handle.
+---@return dreamwork.std.Error | any error_object
+---@nodiscard
+function dreamwork_exceptions.catch( error_value )
+    if error_value == nil or isString( error_value ) or isError( error_value ) then
+        return to_error( error_value )
+    end
+
+    return error_value
+end
+
+--- [SHARED AND MENU]
+---
+--- `xpcall` message handler that converts the error into an `Error`, displays it and returns it.
+---
+---@param error_value any The error value to handle.
+---@return dreamwork.std.Error error_object
+local function error_handler( error_value )
+    local error_object = to_error( error_value )
+    exceptions_report( error_object )
+    return error_object
+end
+
+dreamwork_exceptions.handler = error_handler
+
+--- [SHARED AND MENU]
+---
+--- Calls the function in protected mode, errors are displayed and do not propagate.
+---
+--- Same as `xpcall( fn, dreamwork.exceptions.handler, ... )`, use it for callbacks
+--- whose errors must not break the caller (hooks, timers, network receivers, ...).
+---
+---@param fn function The function to call.
+---@param ... any The arguments to pass to the function.
+---@return boolean success `true` if the function did not raise an error.
+---@return any ... The function results on success, the displayed `Error` otherwise.
+function dreamwork_exceptions.call( fn, ... )
+    return xpcall( fn, error_handler, ... )
+end
+
+--- [SHARED AND MENU]
+---
+--- Converts any error value into an error of this class, see `std.toError`.
+---
+--- Values that already are an `Error` are returned as is, keeping their own class.
+---
+---@param value any The error value to convert.
+---@return dreamwork.std.Error error_object
+---@nodiscard
+function Error:from( value )
+    return to_error( value, self.__class )
+end
+
+--- [SHARED AND MENU]
+---
+--- Calls the function in protected mode, converting a raised error into an `Error`.
+---
+--- Unlike `pcall`, the error value is always an `Error` with the call stack of the place it was raised,
+--- signals like `ACTION_CANCEL` are converted too, use `xpcall` with `dreamwork.exceptions.catch` to keep them.
+---
+---@param fn function The function to call.
+---@param ... any The arguments to pass to the function.
+---@return boolean success `true` if the function did not raise an error.
+---@return any ... The function results on success, the `Error` otherwise.
+function std.try( fn, ... )
+    return xpcall( fn, to_error, ... )
+end
+
+local std_error
+do
+
+    --- Converts the value into an `Error` and makes sure it carries a call stack.
+    ---
+    --- An `Error` without frames gets the current stack, one captured in another
+    --- thread (e.g. inside a resumed coroutine) gets the frames leading here added below it.
+    ---
+    ---@param value any
+    ---@param stack_level integer | nil
+    ---@return dreamwork.std.Error error_object
+    local function prepare_error( value, stack_level )
+        ---@type dreamwork.std.Error
+        local error_object
+
+        if isError( value ) then
+            ---@cast value dreamwork.std.Error
+            error_object = value
+        elseif value == nil then
+            error_object = RuntimeErrorClass( "unknown error" )
+        elseif isString( value ) then
+            ---@cast value string
+            error_object = RuntimeErrorClass( value )
+        else
+            error_object = RuntimeErrorClass( tostring( value ) )
+        end
+
+        local skip = math_max( 0, (stack_level or 1) - 1 )
+
+        local stack = error_object.stack
+        if stack == nil then
+            stack = debug_Stack()
+            error_object.stack = stack
+            capture_stack( stack, skip )
+        elseif stack.size == 0 then
+            capture_stack( stack, skip )
+        elseif stack[ 1 ].thread ~= coroutine_running() then
+            local outer_stack = debug_Stack()
+            capture_stack( outer_stack, skip )
+
+            for i = 1, stack.size, 1 do
+                outer_stack:push( stack[ i ] )
+            end
+
+            error_object.stack = outer_stack
+        end
+
+        return error_object
+    end
+
+    exceptions_hide( prepare_error )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Displays the error with its call stack without throwing it, the current code keeps running.
+    ---
+    ---@param value? any The error value to display.
+    ---@param stack_level? integer The stack level the error is blamed on.
+    ---@return dreamwork.std.Error error_object The displayed error.
+    function std.warn( value, stack_level )
+        local error_object = prepare_error( value, stack_level )
+        exceptions_report( error_object )
+        return error_object
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Throws an error with the specified message and level.
+    ---
+    --- An `Error` that already has a call stack is rethrown as is; if it was captured in another
+    --- thread (e.g. inside a resumed coroutine) the frames leading here are added below it.
+    --- Call `Error:reset` before throwing the same object again to capture a fresh stack.
+    ---
+    --- Values that are neither errors nor strings (signals like `ACTION_CANCEL`) are thrown as is
+    --- inside protected calls and coroutines, so they keep their identity.
+    ---
+    ---@param value? any The error value to throw.
+    ---@param stack_level? integer The stack level to throw the error.
+    function std_error( value, stack_level )
+        local is_protected = coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall )
+
+        if is_protected and not (value == nil or isString( value ) or isError( value )) then
+            return glua_error( value, 0 )
+        end
+
+        local error_object = prepare_error( value, stack_level )
+
+        if is_protected then
+            return glua_error( error_object, 0 )
+        end
+
+        exceptions_report( error_object )
+        return glua_error( dreamwork_exceptions.Sentinel, 0 )
+    end
+
+    std.error = std_error
+
+end
+
+--- [SHARED AND MENU]
+---
+--- Throws an error with a formatted message, blamed on the caller of the function that calls `errorf`.
+---
+--- Use `std.error( string.format( fmt, ... ), stack_level )` to pick another level.
+---
+---@param fmt string The error message format.
+---@param ... any The error message arguments to format/interpolate.
+function std.errorf( fmt, ... )
+    return std_error( string_format( fmt, ... ), 2 )
+end
+
+--- [SHARED AND MENU]
+---
+--- Throws an error if the value is `false` or `nil`, otherwise returns all its arguments, like `assert`.
+---
+--- The message can be:
+--- * `nil`, which throws `"assertion failed!"`;
+--- * a string, formatted with the remaining arguments when there are any;
+--- * an `Error`, which is thrown as is;
+--- * an error class, created with the string formatted from the remaining arguments.
+---
+--- ```lua
+--- local file = std.assert( open( path ), "cannot open '%s'", path )
+--- std.assert( size >= 0, ValueError, "size must be positive, got %d", size )
+--- ```
+---
+---@generic T
+---@param value T The value to check.
+---@param message? string | dreamwork.std.Error | dreamwork.std.ErrorClass The error message, error object or error class.
+---@param ... any The message format arguments.
+---@return T value
+---@return any ...
+function std.assert( value, message, ... )
+    if value then
+        return value, message, ...
+    end
+
+    if message == nil then
+        return std_error( "assertion failed!", 1 )
+    elseif isString( message ) then
+        ---@cast message string
+
+        if raw_select( "#", ... ) == 0 then
+            return std_error( message, 1 )
+        end
+
+        return std_error( string_format( message, ... ), 1 )
+    elseif isClass( message ) then
+        ---@cast message dreamwork.std.ErrorClass
+
+        if raw_select( "#", ... ) == 0 then
+            return std_error( message(), 1 )
+        end
+
+        return std_error( message( string_format( ... ) ), 1 )
+    end
+
+    return std_error( message, 1 )
+end
+
+exceptions_hide(
+-- std functions
+    to_error,
+    std_error,
+
+    std.try,
+    std.warn,
+    std.errorf,
+    std.assert,
+
+    -- error class methods
+    Error.from,
+    Error.capture,
+
+    -- exceptions functions
+    dreamwork_exceptions.call,
+    dreamwork_exceptions.catch,
+    error_handler
+)
+
 
 --- [SHARED AND MENU]
 ---
@@ -375,35 +855,6 @@ std.NotImplementedError = class.create( NotImplementedError )
 ---@field __parent dreamwork.std.Error
 ---@field message string | nil The error message to display.
 local AsyncError = class.base( "AsyncError", false, ErrorClass )
-
----@param top_frame dreamwork.std.debug.StackLevel | nil
----@protected
-function AsyncError:__head( top_frame )
-    console_messageColored( "         in ", COLOR_SUVA_GRAY )
-
-    if top_frame ~= nil then
-        local thread = top_frame.thread
-        if thread ~= nil then
-            console_messageColored( represent( top_frame.thread ) .. "\n", COLOR_SPRAY )
-            return
-        end
-    end
-
-    console_messageColored( "main\n", COLOR_LIGHT_GRAY )
-end
-
----@param frame dreamwork.std.debug.StackLevel
----@protected
-function AsyncError:__frame( frame )
-    local thread = frame.thread
-    if thread == nil then
-        console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
-        console_messageColored( "main\n", COLOR_LIGHT_GRAY )
-    else
-        console_messageColored( "     thread: ", COLOR_SUVA_GRAY )
-        console_messageColored( string_format( "%p\n", thread ), COLOR_SPRAY )
-    end
-end
 
 --- [SHARED AND MENU]
 ---

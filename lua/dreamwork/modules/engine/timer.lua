@@ -2,9 +2,12 @@
 local dreamwork_engine = dreamwork.engine
 if dreamwork_engine.timer ~= nil then return end
 
-local dreamwork_errorHandler = dreamwork.errorHandler
 local dreamwork_getUpTime = dreamwork.getUpTime
 local engine_hook = dreamwork_engine.hook
+
+local dreamwork_exceptions = dreamwork.exceptions
+local exceptions_call = dreamwork_exceptions.call
+local exceptions_hide = dreamwork_exceptions.hide
 
 local std = dreamwork.std
 
@@ -20,7 +23,6 @@ local math = std.math
 local math_max = math.max
 local math_huge = math.huge
 
-local xpcall = std.xpcall
 
 
 ---
@@ -212,10 +214,10 @@ do
         local handler = handlers[ name ]
         if handlerIsType[ handler ] then
             ---@cast handler dreamwork.std.Hook
-            xpcall( handler.call, dreamwork_errorHandler, handler )
+            exceptions_call( handler.call, handler )
         else
             ---@cast handler fun()
-            xpcall( handler, dreamwork_errorHandler )
+            exceptions_call( handler )
         end
 
         -- the callback can restart, stop or remove the timer
@@ -226,7 +228,7 @@ do
         end
     end
 
-    dreamwork.hideErrorFrame( timer_call )
+    exceptions_hide( timer_call )
 
     local function tick()
         if heap_size == 0 then return end
@@ -686,43 +688,5 @@ else
     function engine_timer.simple( delay, fn )
         timer_Simple( delay, fn )
     end
-
-end
-
-do
-
-    ---@type table<integer, fun()>
-    local queue = {}
-
-    ---@type table<integer, fun()>
-    local spare_queue = {}
-
-    local queue_size = 0
-
-    --- [SHARED AND MENU]
-    ---
-    --- Functions run in the order they were queued, with no arguments, and their return values are ignored.
-    ---
-    --- Functions queued from inside a `nextTick` callback run on the following tick.
-    ---
-    ---@param fn fun() The function to call on the next tick.
-    function engine_timer.nextTick( fn )
-        queue_size = queue_size + 1
-        queue[ queue_size ] = fn
-    end
-
-    engine_hook.catch( "Tick", "engine.timer.nextTick", function()
-        local size = queue_size
-        if size == 0 then return end
-
-        queue, spare_queue, queue_size = spare_queue, queue, 0
-
-        for i = 1, size, 1 do
-            local fn = spare_queue[ i ]
-            spare_queue[ i ] = nil
-
-            xpcall( fn, dreamwork_errorHandler )
-        end
-    end, 1000 )
 
 end

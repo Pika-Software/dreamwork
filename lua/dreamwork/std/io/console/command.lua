@@ -1,4 +1,4 @@
-local dreamwork_errorHandler = dreamwork.errorHandler
+local exceptions_call = dreamwork.exceptions.call
 local dreamwork_engine = dreamwork.engine
 
 local engine_hook = dreamwork_engine.hook
@@ -301,7 +301,7 @@ engine_hook.catch( "dreamwork.console.command.execute", "console.handle", functi
     -- TODO: review this after client class will be created
 
     local hook = hooks[ command ]
-    xpcall( hook.call, dreamwork_errorHandler, hook, command, client, args, argument_string )
+    exceptions_call( hook.call, hook, command, client, args, argument_string )
 
     return true
 end, -500 )
@@ -316,7 +316,7 @@ engine_hook.catch( "dreamwork.console.command.autocomplete", "console.autocomple
     local fn = autocomplete[ command ]
     if fn == nil then return end
 
-    local success, value1, value2 = xpcall( fn, dreamwork_errorHandler, command, argument_string, args )
+    local success, value1, value2 = exceptions_call( fn, command, argument_string, args )
     if not success or value1 == nil then return end
 
     if value1 == false then

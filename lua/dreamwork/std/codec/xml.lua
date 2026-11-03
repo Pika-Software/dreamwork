@@ -1653,7 +1653,7 @@ do
 
             if active_node == nil then
                 if text_first ~= nil then
-                    std.errorf( 2, false, "XML parsing failed, text outside of the root element at position %d", text_first )
+                    std.errorf( "XML parsing failed, text outside of the root element at position %d", text_first )
                     return nil
                 end
             else
@@ -1666,7 +1666,7 @@ do
 
         if tag_start == nil then
             if active_node ~= nil then
-                std.errorf( 2, false, "XML parsing failed, incomplete XML, tag '%s' is not closed.", active_node.name )
+                std.errorf( "XML parsing failed, incomplete XML, tag '%s' is not closed.", active_node.name )
                 return nil
             end
 
@@ -1679,7 +1679,7 @@ do
         if b1 == 0x3F --[[ ? ]] then
             local _, pi_end = string_find( xml_str, "?>", tag_start + 2, true )
             if pi_end == nil then
-                std.errorf( 2, false, "XML parsing failed, processing instruction is not closed at position %d", tag_start )
+                std.errorf( "XML parsing failed, processing instruction is not closed at position %d", tag_start )
                 return nil
             end
 
@@ -1692,7 +1692,7 @@ do
             if b2 == 0x2D --[[ - ]] and b3 == 0x2D --[[ - ]] then
                 local _, comment_end = string_find( xml_str, "-->", tag_start + 4, true )
                 if comment_end == nil then
-                    std.errorf( 2, false, "XML parsing failed, comment is not closed at position %d", tag_start )
+                    std.errorf( "XML parsing failed, comment is not closed at position %d", tag_start )
                     return nil
                 end
 
@@ -1706,12 +1706,12 @@ do
 
                 local cdata_start, cdata_end = string_find( xml_str, "]]>", tag_start + 9, true )
                 if cdata_start == nil then
-                    std.errorf( 2, false, "XML parsing failed, CDATA is not closed at position %d", tag_start )
+                    std.errorf( "XML parsing failed, CDATA is not closed at position %d", tag_start )
                     return nil
                 end
 
                 if active_node == nil then
-                    std.errorf( 2, false, "XML parsing failed, CDATA outside of the root element at position %d", tag_start )
+                    std.errorf( "XML parsing failed, CDATA outside of the root element at position %d", tag_start )
                     return nil
                 end
 
@@ -1736,7 +1736,7 @@ do
                 end
 
                 if doctype_end == nil then
-                    std.errorf( 2, false, "XML parsing failed, DOCTYPE is not closed at position %d", tag_start )
+                    std.errorf( "XML parsing failed, DOCTYPE is not closed at position %d", tag_start )
                     return nil
                 end
 
@@ -1757,7 +1757,7 @@ do
                 goto analyze_loop
             end
 
-            std.errorf( 2, false, "XML parsing failed, unknown markup declaration at position %d", tag_start )
+            std.errorf( "XML parsing failed, unknown markup declaration at position %d", tag_start )
             return nil
         end
 
@@ -1765,7 +1765,7 @@ do
 
             local _, name_end, closing, tag_name = string_find( xml_str, "^(/?)([%w_:%.%-\128-\255]+)", tag_start + 1 )
             if name_end == nil then
-                std.errorf( 2, false, "XML parsing failed, invalid tag name at position %d", tag_start )
+                std.errorf( "XML parsing failed, invalid tag name at position %d", tag_start )
                 return nil
             end
 
@@ -1790,14 +1790,14 @@ do
             if attribute_end ~= nil then
                 local value_end = string_find( xml_str, quote, attribute_end + 1, true )
                 if value_end == nil then
-                    std.errorf( 2, false, "XML parsing failed, attribute '%s' value is not closed at position %d", attribute_key, attribute_end )
+                    std.errorf( "XML parsing failed, attribute '%s' value is not closed at position %d", attribute_key, attribute_end )
                     return nil
                 end
 
                 if tag_attributes == nil then
                     tag_attributes = {}
                 elseif tag_attributes[ attribute_key ] ~= nil then
-                    std.errorf( 2, false, "XML parsing failed, duplicate attribute '%s' at position %d", attribute_key, attribute_end )
+                    std.errorf( "XML parsing failed, duplicate attribute '%s' at position %d", attribute_key, attribute_end )
                     return nil
                 end
 
@@ -1816,16 +1816,16 @@ do
 
             local _, tag_end, self_closing = string_find( xml_str, "^%s*(/?)>", cursor )
             if tag_end == nil then
-                std.errorf( 2, false, "XML parsing failed, malformed tag '%s' at position %d", tag_name, tag_start )
+                std.errorf( "XML parsing failed, malformed tag '%s' at position %d", tag_name, tag_start )
                 return nil
             end
 
             if closing == "/" then
                 if tag_attributes ~= nil or self_closing == "/" then
-                    std.errorf( 2, false, "XML parsing failed, malformed end tag '%s' at position %d", tag_name, tag_start )
+                    std.errorf( "XML parsing failed, malformed end tag '%s' at position %d", tag_name, tag_start )
                     return nil
                 elseif active_node == nil or active_node.name ~= tag_name then
-                    std.errorf( 2, false, "XML parsing failed, unmatched tag '%s' at position %d", tag_name, tag_start )
+                    std.errorf( "XML parsing failed, unmatched tag '%s' at position %d", tag_name, tag_start )
                     return nil
                 end
 
@@ -1834,7 +1834,7 @@ do
                 preserve = keep_whitespace or (active_node ~= nil and preserving[ active_node ] == true)
             else
                 if active_node == nil and root_node ~= nil then
-                    std.errorf( 2, false, "XML parsing failed, multiple root elements, '%s' at position %d", tag_name, tag_start )
+                    std.errorf( "XML parsing failed, multiple root elements, '%s' at position %d", tag_name, tag_start )
                     return nil
                 end
 

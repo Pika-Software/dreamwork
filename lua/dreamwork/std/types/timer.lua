@@ -1,3 +1,5 @@
+local dreamwork_exceptions = dreamwork.exceptions
+
 local dreamwork_engine = dreamwork.engine
 local engine_timer = dreamwork_engine.timer
 
@@ -106,7 +108,7 @@ do
         end
     end
 
-    dreamwork.hideErrorFrame( timer_call )
+    dreamwork_exceptions.hide( timer_call )
 
     ---@param interval number | nil
     ---@param repetition_count integer | nil

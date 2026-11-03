@@ -1,8 +1,7 @@
----@class dreamwork
-local dreamwork = dreamwork
-local dreamwork_catchError = dreamwork.catchError
-local dreamwork_errorHandler = dreamwork.errorHandler
-local dreamwork_isErrorFrameHidden = dreamwork.isErrorFrameHidden
+local dreamwork_exceptions = dreamwork.exceptions
+local exceptions_catchError = dreamwork_exceptions.catch
+local exceptions_errorHandler = dreamwork_exceptions.handler
+local exceptions_isHiddenFrame = dreamwork_exceptions.isHiddenFrame
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -29,6 +28,8 @@ local coroutine_running = coroutine.running
 local class = std.class
 
 local len = std.len
+local try = std.try
+local warn = std.warn
 local copy = std.copy
 local error = std.error
 local xpcall = std.xpcall
@@ -152,7 +153,7 @@ local function stack_handler( error_value )
     return toError( error_value, AsyncError )
 end
 
-dreamwork.hideErrorFrame( stack_handler )
+dreamwork_exceptions.hide( stack_handler )
 
 do
 
@@ -186,9 +187,9 @@ do
             return false
         end
 
-        local ok, error_object = xpcall( fn, toError, ... )
+        local ok, error_object = try( fn, ... )
         if not ok then
-            dreamwork_errorHandler( with_spawn_stack( co, error_object ) )
+            exceptions_errorHandler( with_spawn_stack( co, error_object ) )
         end
 
         return true
@@ -215,7 +216,7 @@ do
         with_spawn_stack( co, value )
 
         if not call_listener( co, false, value ) then
-            dreamwork_errorHandler( value )
+            exceptions_errorHandler( value )
         end
     end
 
@@ -225,9 +226,11 @@ do
         return async_thread_result( coroutine_running(), xpcall( fn, stack_handler, ... ) )
     end
 
-    dreamwork.hideErrorFrame( async_thread_result )
-    dreamwork.hideErrorFrame( call_listener )
-    dreamwork.hideErrorFrame( async_thread )
+    dreamwork_exceptions.hide(
+        async_thread_result,
+        call_listener,
+        async_thread
+    )
 
     --- [SHARED AND MENU]
     ---
@@ -276,11 +279,11 @@ do
         end
 
         co_stack:capture( 2, 0, 0, 2 )
-        co_stack:filter( dreamwork_isErrorFrameHidden )
+        co_stack:filter( exceptions_isHiddenFrame )
 
         local ok, error_value = coroutine_resume( new_co, target, ... )
         if not ok then
-            error( error_value, 2, false )
+            error( error_value, 2 )
         end
 
         return new_co
@@ -291,7 +294,7 @@ end
 ---@async
 local function handle_pending( value, ... )
     if value == ACTION_CANCEL then
-        return error( ACTION_CANCEL, 2, false )
+        return error( ACTION_CANCEL, 2 )
     end
 
     return value, ...
@@ -382,7 +385,7 @@ function futures.cancel( co )
         ---@diagnostic disable-next-line: await-in-sync
         coroutine_yield( ACTION_CANCEL )
     elseif status == "running" then
-        error( ACTION_CANCEL, 2, false )
+        error( ACTION_CANCEL, 2 )
     end
 end
 
@@ -433,11 +436,11 @@ local function handle_yield( ok, value, ... )
     end
 
     if value == ACTION_CANCEL then
-        return error( ACTION_CANCEL, 2, false )
+        return error( ACTION_CANCEL, 2 )
     elseif value == ACTION_RESUME then
         return ...
     elseif value ~= nil then
-        return error( "invalid yield action: " .. tostring( value ), 2, false )
+        return error( "invalid yield action: " .. tostring( value ), 2 )
     end
 
     -- caller probably went sleeping
@@ -459,7 +462,7 @@ do
         local listener = AsyncListeners[ coroutine_running() ]
         if listener == nil then
             -- whaat? we don't have a listener?!
-            error( ACTION_CANCEL, 2, false )
+            error( ACTION_CANCEL, 2 )
         end
 
         return handle_yield( futures_transfer( listener, RESULT_YIELD, ... ) )
@@ -485,18 +488,18 @@ local function async_iteratable_thread( fn, ... )
             futures_transfer( listener, RESULT_ERROR, err )
         end
     elseif not ok then
-        error( err, 2, false )
+        error( err, 2 )
     end
 end
 
-dreamwork.hideErrorFrame( async_iteratable_thread )
+dreamwork_exceptions.hide( async_iteratable_thread )
 
 ---@async
 ---@param co thread
 ---@param ok boolean
 local function handle_anext( co, ok, value, ... )
     if not ok then
-        return error( value, 2, false )
+        return error( value, 2 )
     end
 
     if value == RESULT_YIELD then
@@ -504,7 +507,7 @@ local function handle_anext( co, ok, value, ... )
     elseif value == RESULT_END then
         return -- return nothing so for loop with be stopped
     elseif value == RESULT_ERROR then
-        return error( ..., 2, false )
+        return error( ..., 2 )
     elseif value ~= nil then
         error( string_format( "invalid anext result: %s", tostring( value ) ), 2 )
     end
@@ -719,10 +722,10 @@ do
         local signal
 
         for i = 1, callbacks[ 0 ], 1 do
-            local success, error_value = xpcall( callbacks[ i ], dreamwork_catchError, self )
+            local success, error_value = xpcall( callbacks[ i ], exceptions_catchError, self )
             if not success then
                 if isError( error_value ) then
-                    error( error_value, 2, true )
+                    warn( error_value )
                 elseif signal == nil then
                     signal = error_value
                 end
@@ -730,7 +733,7 @@ do
         end
 
         if signal ~= nil then
-            error( signal, 2, false )
+            error( signal, 2 )
         end
     end
 
@@ -800,7 +803,7 @@ do
     ---@param result T The value to resolve the future with.
     function Future:setResult( result )
         if self.state ~= 0 then
-            error( "future is already finished", 2, false )
+            error( "future is already finished", 2 )
         end
 
         self.state = 1
@@ -823,7 +826,7 @@ do
     ---@param error_class? dreamwork.std.ErrorClass The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
     function Future:setError( err, error_class )
         if self.state ~= 0 then
-            error( "future is already finished", 2, false )
+            error( "future is already finished", 2 )
         end
 
         self.state = 1
@@ -833,7 +836,7 @@ do
     end
 
     -- the stack of a wrapped error starts at the caller of `setError`
-    dreamwork.hideErrorFrame( Future.setError )
+    dreamwork_exceptions.hide( Future.setError )
 
     --- [SHARED AND MENU]
     ---
@@ -887,9 +890,9 @@ do
         local state = self.state
 
         if state == 2 then
-            error( "future was cancelled", 2, false )
+            error( "future was cancelled", 2 )
         elseif state == 0 then
-            error( "future is not finished", 2, false )
+            error( "future is not finished", 2 )
         end
 
         local error_value = self.error_value
@@ -897,7 +900,7 @@ do
             return self.result_value
         end
 
-        error( error_value, 2, false )
+        error( error_value, 2 )
     end
 
     --- [SHARED AND MENU]
@@ -913,7 +916,7 @@ do
         if self.state == 0 then
             local co = coroutine_running()
             if co == nil then
-                error( "`Future:await` cannot be called outside async context.", 2, false )
+                error( "`Future:await` cannot be called outside async context.", 2 )
             end
 
             self:addCallback( function()
@@ -924,7 +927,7 @@ do
         end
 
         if self.state == 0 then
-            error( "future hasn't changed it's state wtf???", 2, false )
+            error( "future hasn't changed it's state wtf???", 2 )
         end
 
         return self:result()
@@ -1020,7 +1023,7 @@ do
     ---@param max_size number? Maximum size of the channel.
     function Channel:__init( max_size )
         if max_size and max_size < 0 then
-            error( "`max_size` must be greater or equal to 0", 2, false )
+            error( "`max_size` must be greater or equal to 0", 2 )
         end
 
         self.max_size = max_size or 0
@@ -1109,7 +1112,7 @@ do
         if force ~= true then
             local co = coroutine_running()
             if co == nil then
-                error( "`Channel:push` cannot be called outside async context without `force`.", 2, false )
+                error( "`Channel:push` cannot be called outside async context without `force`.", 2 )
             end
 
             while (self:isFull() and not self.closed) do
@@ -1144,7 +1147,7 @@ do
         if force ~= true then
             local co = coroutine_running()
             if co == nil then
-                error( "`Channel:pop` cannot be called outside async context without `force`.", 2, false )
+                error( "`Channel:pop` cannot be called outside async context without `force`.", 2 )
             end
 
             while self:isEmpty() and not self.closed do
@@ -1229,7 +1232,7 @@ function futures.all( awaitables )
     end
 
     cancelList( awaitables )
-    error( result, 2, false )
+    error( result, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -1244,7 +1247,7 @@ end
 function futures.any( futureList )
     local co = coroutine_running()
     if co == nil then
-        error( "`futures.any` cannot be called outside async context.", 2, false )
+        error( "`futures.any` cannot be called outside async context.", 2 )
     end
 
     ---@type boolean
@@ -1279,7 +1282,7 @@ end
 function futures.sleep( seconds )
     local co = coroutine_running()
     if co == nil then
-        error( "`futures.sleep` cannot be called outside async context.", 2, false )
+        error( "`futures.sleep` cannot be called outside async context.", 2 )
     end
 
     ---@cast co thread

@@ -7,7 +7,7 @@ local hook_catch = engine_hook.catch
 local hook_call = engine_hook.call
 
 local dreamwork_getUpTime = dreamwork.getUpTime
-local error_handler = dreamwork.errorHandler
+local exceptions_call = dreamwork.exceptions.call
 
 local detour = dreamwork.detour
 
@@ -75,7 +75,6 @@ local Future = std.Future
 
 local isNumber = std.isNumber
 local isString = std.isString
-local xpcall = std.xpcall
 local error = std.error
 
 
@@ -225,7 +224,7 @@ do
 
             local callback = job.callback
             if callback ~= nil then
-                xpcall( callback, error_handler, job.path, status )
+                exceptions_call( callback, job.path, status )
             end
 
             -- the callback could not write into the file before, its job is behind `next_job`
@@ -246,7 +245,7 @@ do
 
                 callback = job.callback
                 if callback ~= nil then
-                    xpcall( callback, error_handler, job.path, status )
+                    exceptions_call( callback, job.path, status )
                 end
             end
         end
@@ -298,7 +297,7 @@ do
                 end
 
                 local status = fn( file_path, data, callback and function( _, write_status )
-                    xpcall( callback, error_handler, file_path, write_status )
+                    exceptions_call( callback, file_path, write_status )
                 end, true )
 
                 if isNumber( status ) and status < 0 then

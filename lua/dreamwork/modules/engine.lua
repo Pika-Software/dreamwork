@@ -7,9 +7,6 @@ local getfenv = std.getfenv
 local debug = std.debug
 local debug_initmetatable = debug.initmetatable
 
-local LUA_CLIENT = std.LUA_CLIENT
-local LUA_SERVER = std.LUA_SERVER
-local LUA_MENU = std.LUA_MENU
 
 --- [SHARED AND MENU]
 ---
@@ -19,7 +16,7 @@ local LUA_MENU = std.LUA_MENU
 --- and engine-backed modules such as console, hooks, networking and timers.
 ---
 ---@class dreamwork.engine
-local engine = {}
+local engine = dreamwork.engine or {}
 dreamwork.engine = engine
 
 --- [SHARED AND MENU]

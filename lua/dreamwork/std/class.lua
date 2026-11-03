@@ -279,7 +279,7 @@ do
             ---@type dreamwork.std.Object | nil
             local base = raw_get( self, "__base" )
             if base == nil then
-                std.errorf( 2, false, "Class '%s' variable `__base` is missing, class creation failed.", self )
+                std.errorf( "Class '%s' variable `__base` is missing, class creation failed.", self )
             else
                 obj = class_init( base, class_new( base ), ... )
             end
@@ -321,14 +321,14 @@ function class.create( base )
         parent_class = raw_get( parent_base, "__class" )
 
         if parent_class == nil then
-            std.errorf( 2, false, "Parent class of '%s' is not created, call `class.create` on the parent base first.", name )
+            std.errorf( "Parent class of '%s' is not created, call `class.create` on the parent base first.", name )
         end
 
         ---@cast parent_class dreamwork.std.Class
 
         local parent_ancestors = raw_get( parent_base, "__ancestors" )
         if parent_base == base or ( parent_ancestors ~= nil and parent_ancestors[ base ] ) then
-            std.errorf( 2, false, "Class '%s' cannot inherit from itself.", name )
+            std.errorf( "Class '%s' cannot inherit from itself.", name )
         end
 
         for key, value in raw_pairs( parent_class ) do

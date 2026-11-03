@@ -156,10 +156,8 @@ local raw_tonumber = raw.tonumber
 ---
 ---@param value? any The error value to throw.
 ---@param stack_level? integer The stack level to throw the error.
----@param dont_break? boolean If `true`, the error will not break the current stack.
-function std.error( value, stack_level, dont_break )
-    ---@diagnostic disable-next-line: redundant-parameter
-    return error( value, stack_level, dont_break )
+function std.error( value, stack_level )
+    return error( value, stack_level )
 end
 
 -- debug library
@@ -313,21 +311,6 @@ local debug_getmetatable = debug.getmetatable
 raw.getmetatable = debug_getmetatable
 raw.setmetatable = debug.setmetatable
 
----@class dreamwork.meta
-local dreamwork_meta = debug_getmetatable( dreamwork )
-if dreamwork_meta == nil then
-    local hidden_functions = {}
-    gc.setTableRules( hidden_functions, true, false )
-
-    ---@class dreamwork.meta : metatable
-    ---@field hidden_error_frames table<function, (true | nil)> Functions whose frames never appear in an error call stack.
-    dreamwork_meta = {
-        hidden_error_frames = hidden_functions
-    }
-
-    debug.setmetatable( dreamwork, dreamwork_meta )
-end
-
 --- [SHARED AND MENU]
 ---
 --- Returns the value of the given key in the metatable of the given value.
@@ -376,8 +359,6 @@ do
     end
 
 end
-
-local tostring = std.tostring
 
 --- [SHARED AND MENU]
 ---
@@ -803,6 +784,7 @@ dreamwork_load( "std/ascii.lua" )
 dreamwork_load( "std/string.lua" )
 
 dreamwork_load( "modules/engine.lua" )
+dreamwork_load( "modules/exceptions.lua" )
 
 ---@class dreamwork.std.string
 local string = std.string
@@ -812,12 +794,6 @@ local string_sub, string_len = string.sub, string.len
 local string_char, string_byte = string.char, string.byte
 
 std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
-
----@return string
----@protected
-function dreamwork_meta:__represent()
-    return string_format( "%s: %p [%s]", dreamwork.Prefix, self, std.jit.version or string_format( "Lua %s", std.LUA_VERSION ) )
-end
 
 do
 
@@ -1810,365 +1786,14 @@ do
 end
 
 dreamwork_load( "std/types/error.lua" )
+error = std.error
+
+dreamwork_load( "modules/engine/utils.lua" )
+
 dreamwork_load( "std/codec/pack.lua" )
 
 dreamwork_load( "std/types/binary_reader.lua" )
 dreamwork_load( "std/types/binary_writer.lua" )
-
-do
-
-    local coroutine_running = coroutine.running
-
-    local debug_calledby = debug.calledby
-    local debug_getinfo = debug.getinfo
-
-    local debug_Stack = debug.Stack
-    local isError = std.isError
-
-    local RuntimeError = std.RuntimeError
-
-    --- Message handed back to the engine once dreamwork has displayed the error itself.
-    local ERROR_SENTINEL = "The original error message was caught by dreamwork, see above for details about the error."
-
-    local hidden_functions = dreamwork_meta.hidden_error_frames
-
-    --- [SHARED AND MENU]
-    ---
-    --- Hides the given function from error call stacks.
-    ---
-    --- Use it for internal dispatchers and wrappers (hook runners, timer callers, ...)
-    --- whose frames carry no useful information for whoever reads the error.
-    ---
-    ---@param fn function The function to hide.
-    function dreamwork.hideErrorFrame( fn )
-        hidden_functions[ fn ] = true
-    end
-
-    --- Level passed to the last `_G.error` call, read by `capture_stack` only when
-    --- the original `error` is the frame that raised the error.
-    ---
-    ---@type integer
-    local pending_level = 1
-
-    ---@param fn fun( value: any, stack_level: ( integer | nil ) )
-    ---@param value any
-    ---@param stack_level integer | nil
-    dreamwork.detour.attach( function( fn, value, stack_level )
-        pending_level = stack_level or 1
-        return fn( value, stack_level )
-    end, _G, "error" )
-
-    local glua_error = dreamwork.detour.shadow( error ) or error
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks whether the frame belongs to a hidden function and is left out of error call stacks.
-    ---
-    --- Pass it to `debug.Stack:filter` to clean up a stack captured by hand.
-    ---
-    ---@param frame dreamwork.std.debug.StackLevel The frame to check.
-    ---@return boolean is_hidden
-    ---@nodiscard
-    local function is_hidden_frame( frame )
-        return hidden_functions[ frame.func ] ~= nil
-    end
-
-    dreamwork.isErrorFrameHidden = is_hidden_frame
-
-    --- Captures the call stack of an error into `stack`.
-    ---
-    --- The walk starts at the caller of `capture_stack` and skips leading C frames
-    --- (the C function that raised the error: `error`, `assert`, `string.rep`, ...) and
-    --- hidden frames (`std.error`, error handlers, ...), so the innermost frame is always
-    --- the Lua code that raised the error, no matter how many handlers or tail calls sit in between.
-    ---
-    --- Then `skip` more frames are skipped to honour the error level, and everything from there
-    --- to the bottom of the current thread is captured, except hidden frames (`pcall`, `xpcall`, ...),
-    --- other C frames such as `table.sort` stay in the stack.
-    ---
-    ---@param stack dreamwork.std.debug.Stack
-    ---@param skip integer
-    local function capture_stack( stack, skip )
-        local level = 2
-
-        while true do
-            local info = debug_getinfo( level, "Sf" )
-            if info == nil then return end
-
-            local fn = info.func
-            if fn == glua_error then
-                -- raised by a plain `error( value, level )`, so honour its level
-                skip = math_max( 0, pending_level - 1 )
-                pending_level = 1
-            elseif info.what ~= "C" and hidden_functions[ fn ] == nil then
-                break
-            end
-
-            level = level + 1
-        end
-
-        while skip > 0 do
-            local info = debug_getinfo( level + 1, "Sf" )
-            if info == nil then break end
-
-            level = level + 1
-
-            if hidden_functions[ info.func ] == nil then
-                skip = skip - 1
-            end
-        end
-
-        stack:capture( level )
-        stack:filter( is_hidden_frame )
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Converts any error value into an `Error` and captures its call stack if it has none yet.
-    ---
-    --- Can be passed to `xpcall` directly as a message handler.
-    ---
-    ---@param error_value any The error value to convert.
-    ---@param error_class? dreamwork.std.ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
-    ---@return dreamwork.std.Error error_object
-    ---@nodiscard
-    local function to_error( error_value, error_class )
-        ---@type dreamwork.std.Error
-        local error_object
-
-        if error_class == nil then
-            ---@diagnostic disable-next-line: cast-local-type
-            error_class = RuntimeError
-        end
-
-        if isError( error_value ) then
-            ---@cast error_value dreamwork.std.Error
-            error_object = error_value
-
-            if not error_object:isEmpty() then
-                return error_object
-            end
-        elseif error_value == nil then
-            error_object = error_class( "unknown error" )
-        elseif isString( error_value ) then
-            ---@cast error_value string
-            error_object = error_class( string_match( error_value, "^[^\n]-:%d+: (.*)$" ) or error_value )
-        else
-            error_object = error_class( tostring( error_value ) )
-        end
-
-        local stack = debug_Stack()
-        error_object.stack = stack
-        capture_stack( stack, 0 )
-
-        return error_object
-    end
-
-    std.toError = to_error
-
-    --- [SHARED AND MENU]
-    ---
-    --- `xpcall` message handler for errors that are going to be rethrown.
-    ---
-    --- Works like `toError`, but values that are neither errors nor strings
-    --- (signals like `ACTION_CANCEL`) are returned as is, so rethrowing them keeps their identity,
-    --- the same way `std.error` throws them.
-    ---
-    ---@param error_value any The error value to handle.
-    ---@return dreamwork.std.Error | any error_object
-    ---@nodiscard
-    local function catch_error( error_value )
-        if error_value == nil or isString( error_value ) or isError( error_value ) then
-            return to_error( error_value )
-        end
-
-        return error_value
-    end
-
-    dreamwork.catchError = catch_error
-
-    --- Passes the error to the `dreamwork.lua.error` handlers, which display it.
-    ---
-    ---@param error_object dreamwork.std.Error
-    ---@return any result
-    local function report( error_object )
-        return engine_hook.call( "dreamwork.lua.error", error_object )
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- `xpcall` message handler that converts the error into an `Error`, displays it and returns it.
-    ---
-    ---@param error_value any The error value to handle.
-    ---@return dreamwork.std.Error error_object
-    local function error_handler( error_value )
-        local error_object = to_error( error_value )
-        report( error_object )
-        return error_object
-    end
-
-    dreamwork.errorHandler = error_handler
-
-    ---@param value any
-    ---@return string
-    local function safe_tostring( value )
-        local success, str = pcall( raw.tostring, value )
-        return success and str or "<value that cannot be converted to string>"
-    end
-
-    -- below gmod specific error output function, that get message/value from engine and return new message (possibly can be string only)
-    local function engine_error_handler( error_value )
-        if error_value == ERROR_SENTINEL then
-            return error_value
-        end
-
-        local result = report( to_error( error_value ) )
-        if isString( result ) then
-            return result
-        end
-
-        return tostring( error_value )
-    end
-
-    std._R[ 1 ] = engine_error_handler
-    hidden_functions[ engine_error_handler ] = true
-
-    ---@param error_value any
-    local function display_error( error_value )
-        if not isError( error_value ) then
-            error_value = to_error( error_value )
-        end
-
-        error_value:display()
-    end
-
-    hidden_functions[ display_error ] = true
-
-    engine_hook.catch( "dreamwork.lua.error", "console.display", function( error_value )
-        -- this runs inside error handlers, where a second error would replace the original one,
-        -- so the conversion is protected as well, not only the display
-        local success, display_failure = pcall( display_error, error_value )
-        if not success then
-            raw.print( "[dreamwork] failed to display an error: " .. safe_tostring( display_failure ) )
-            raw.print( "[dreamwork] original error: " .. safe_tostring( error_value ) )
-        end
-
-        return ERROR_SENTINEL
-    end, 1000 )
-
-    --- [SHARED AND MENU]
-    ---
-    --- Throws an error with the specified message and level.
-    ---
-    --- An `Error` that already has a call stack is rethrown as is; if it was captured in another
-    --- thread (e.g. inside a resumed coroutine) the frames leading here are added below it.
-    --- Call `Error:reset` before throwing the same object again to capture a fresh stack.
-    ---
-    ---@param value? any The error value to throw.
-    ---@param stack_level? integer The stack level to throw the error.
-    ---@param dont_break? boolean If `true`, the error is displayed without breaking the current stack.
-    local function std_error( value, stack_level, dont_break )
-        ---@type dreamwork.std.Error
-        local error_object
-
-        if isError( value ) then
-            ---@cast value dreamwork.std.Error
-            error_object = value
-        elseif value == nil then
-            error_object = RuntimeError( "unknown error" )
-        elseif isString( value ) then
-            ---@cast value string
-            error_object = RuntimeError( value )
-        elseif not dont_break and (coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall )) then
-            return glua_error( value, 0 )
-        else
-            error_object = RuntimeError( tostring( value ) )
-        end
-
-        local skip = math_max( 0, (stack_level or 1) - 1 )
-
-        local stack = error_object.stack
-        if stack == nil then
-            stack = debug_Stack()
-            error_object.stack = stack
-            capture_stack( stack, skip )
-        elseif stack.size == 0 then
-            capture_stack( stack, skip )
-        elseif stack[ 1 ].thread ~= coroutine_running() then
-            local outer_stack = debug_Stack()
-            capture_stack( outer_stack, skip )
-
-            for i = 1, stack.size, 1 do
-                outer_stack:push( stack[ i ] )
-            end
-
-            error_object.stack = outer_stack
-        end
-
-        if dont_break then
-            report( error_object )
-            return
-        end
-
-        if coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall ) then
-            return glua_error( error_object, 0 )
-        end
-
-        report( error_object )
-        return glua_error( ERROR_SENTINEL, 0 )
-    end
-
-    std.error = std_error
-    error = std_error
-
-    --- [SHARED AND MENU]
-    ---
-    --- Throws an error with the specified message and level.
-    ---
-    ---@param stack_level? integer The stack level to throw the error.
-    ---@param dont_break? boolean If `true`, the error will not break the current stack.
-    ---@param fmt string The error message to throw.
-    ---@param ... any The error message arguments to format/interpolate.
-    function std.errorf( stack_level, dont_break, fmt, ... )
-        return std_error( string_format( fmt, ... ), stack_level, dont_break )
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Throws an error if the given expression is false.
-    ---
-    ---@param expression boolean The expression to check.
-    ---@param fmt string The error message to throw.
-    ---@param ... any The error message arguments to format/interpolate.
-    function std.assert( expression, fmt, ... )
-        if expression then return end
-
-        return std_error( string_format( fmt, ... ), 1, false )
-    end
-
-    hidden_functions[ std.errorf ] = true
-    hidden_functions[ std.assert ] = true
-
-    hidden_functions[ to_error ] = true
-    hidden_functions[ catch_error ] = true
-    hidden_functions[ std_error ] = true
-    hidden_functions[ error_handler ] = true
-
-    -- protected calls sit between two Lua frames and carry nothing useful
-    hidden_functions[ pcall ] = true
-    hidden_functions[ xpcall ] = true
-
-    ---@diagnostic disable-next-line: undefined-global
-    local glua_ProtectedCall = ProtectedCall
-    if glua_ProtectedCall ~= nil then
-        hidden_functions[ glua_ProtectedCall ] = true
-    end
-
-    -- raisers are already skipped at the top of the stack, listed so they never show up anywhere else
-    hidden_functions[ glua_error ] = true
-    hidden_functions[ raw.assert ] = true
-
-end
 
 do
 
@@ -2812,8 +2437,10 @@ dreamwork_load( "modules/engine/timer.lua" )
 
 do
 
-    local dreamwork_errorHandler = dreamwork.errorHandler
-    local timer                  = dreamwork_engine.timer
+    local dreamwork_exceptions = dreamwork.exceptions
+    local exceptions_call      = dreamwork_exceptions.call
+
+    local timer                = dreamwork_engine.timer
 
     do
 
@@ -2839,13 +2466,13 @@ do
             timeout_arguments[ timeout_id ] = nil
 
             if args == nil then
-                xpcall( fn, dreamwork_errorHandler )
+                exceptions_call( fn )
             else
-                xpcall( fn, dreamwork_errorHandler, table_unpack( args, 1, args[ 0 ] ) )
+                exceptions_call( fn, table_unpack( args, 1, args[ 0 ] ) )
             end
         end
 
-        dreamwork.hideErrorFrame( timeout_call )
+        dreamwork_exceptions.hide( timeout_call )
 
         --- [SHARED AND MENU]
         ---

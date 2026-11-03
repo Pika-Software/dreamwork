@@ -175,9 +175,9 @@ local function parse_number( str, str_start, str_end, stack_level )
     stack_level = stack_level + 1
 
     if str_start > str_end then
-        std.errorf( stack_level, false, "ipv6 group at position %d is empty", str_start )
+        std.error( string_format( "ipv6 group at position %d is empty", str_start ), stack_level )
     elseif (str_end - str_start) > 3 then
-        std.errorf( stack_level, false, "ipv6 group %d:%d is too long, max 4 hex digits", str_start, str_end )
+        std.error( string_format( "ipv6 group %d:%d is too long, max 4 hex digits", str_start, str_end ), stack_level )
     end
 
     local integer = 0
@@ -192,7 +192,7 @@ local function parse_number( str, str_start, str_end, stack_level )
         elseif uint8 >= 0x41 --[[ A ]] and uint8 <= 0x46 --[[ F ]] then
             uint8 = uint8 - 0x37
         else
-            std.errorf( stack_level, false, "invalid characters in ipv6 group %d:%d", str_start, str_end )
+            std.error( string_format( "invalid characters in ipv6 group %d:%d", str_start, str_end ), stack_level )
         end
 
         integer = integer * 16 + uint8
@@ -263,7 +263,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position )
     local cidr_position = string_findByte( ipv6_str, 0x2F --[[ / ]], start_index, end_index )
     if cidr_position ~= nil then
         if cidr_position == end_index then
-            std.errorf( 2, false, "ipv6 prefix length is empty" )
+            std.errorf( "ipv6 prefix length is empty" )
         end
 
         prefix_length = 0
@@ -271,13 +271,13 @@ function IPv6Class.parse( ipv6_str, start_position, end_position )
         for index = cidr_position + 1, end_index, 1 do
             local uint8 = string_byte( ipv6_str, index, index )
             if uint8 < 0x30 --[[ 0 ]] or uint8 > 0x39 --[[ 9 ]] then
-                std.errorf( 2, false, "invalid characters in ipv6 prefix length" )
+                std.errorf( "invalid characters in ipv6 prefix length" )
             end
 
             prefix_length = prefix_length * 10 + (uint8 - 0x30)
 
             if prefix_length > 128 then
-                std.errorf( 2, false, "ipv6 prefix length out of range, max 128" )
+                std.errorf( "ipv6 prefix length out of range, max 128" )
             end
         end
 
@@ -297,7 +297,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position )
     if double_colon_start == 0 then
         local groups, group_count = parse_group( ipv6_str, start_index, end_index, 2 )
         if group_count ~= 8 then
-            std.errorf( 2, false, "ipv6 address must have strictly 8 groups, got %d", group_count )
+            std.errorf( "ipv6 address must have strictly 8 groups, got %d", group_count )
         end
 
         setmetatable( groups, IPv6 )
@@ -308,7 +308,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position )
     for index = double_colon_start + 1, end_index - 1, 1 do
         local uint8_1, uint8_2 = string_byte( ipv6_str, index, index + 1 )
         if uint8_1 == 0x3A --[[ : ]] and uint8_2 == 0x3A --[[ : ]] then
-            std.errorf( 2, false, "ipv6 address can contain only one '::'" )
+            std.errorf( "ipv6 address can contain only one '::'" )
         end
     end
 
@@ -317,7 +317,7 @@ function IPv6Class.parse( ipv6_str, start_position, end_position )
 
     local total_group_count               = left_group_count + right_group_count
     if total_group_count > 7 then
-        std.errorf( 2, false, "too many ipv6 groups, max 7 with '::'" )
+        std.errorf( "too many ipv6 groups, max 7 with '::'" )
     end
 
     ---@type integer[]
@@ -451,7 +451,7 @@ end
 local function fromPrefix( prefix )
     local mask = prefix_masks[ prefix ]
     if mask == nil then
-        std.errorf( 2, false, "invalid ipv6 prefix length '%s', must be an integer in range 0-128", prefix )
+        std.errorf( "invalid ipv6 prefix length '%s', must be an integer in range 0-128", prefix )
     end
 
     return setmetatable( {
@@ -480,7 +480,7 @@ IPv6Class.fromPrefix = fromPrefix
 function IPv6:cidr( prefix_length )
     local mask = prefix_masks[ prefix_length ]
     if mask == nil then
-        std.errorf( 2, false, "invalid ipv6 prefix length '%s', must be an integer in range 0-128", prefix_length )
+        std.errorf( "invalid ipv6 prefix length '%s', must be an integer in range 0-128", prefix_length )
     end
 
     local network_address   = {}

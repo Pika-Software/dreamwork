@@ -129,7 +129,7 @@ function ipv4.parse( ipv4_str, start_position, end_position )
     local cidr_position = string_findByte( ipv4_str, 0x2F --[[ / ]], start_index, end_index )
     if cidr_position ~= nil then
         if cidr_position == end_index then
-            std.errorf( 2, false, "ipv4 prefix length is empty" )
+            std.errorf( "ipv4 prefix length is empty" )
         end
 
         prefix_length = 0
@@ -137,13 +137,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
         for index = cidr_position + 1, end_index, 1 do
             local uint8 = string_byte( ipv4_str, index, index )
             if uint8 < 0x30 --[[ 0 ]] or uint8 > 0x39 --[[ 9 ]] then
-                std.errorf( 2, false, "invalid characters in ipv4 prefix length" )
+                std.errorf( "invalid characters in ipv4 prefix length" )
             end
 
             prefix_length = prefix_length * 10 + (uint8 - 0x30)
 
             if prefix_length > 32 then
-                std.errorf( 2, false, "ipv4 prefix length out of range, max 32" )
+                std.errorf( "ipv4 prefix length out of range, max 32" )
             end
         end
 
@@ -168,13 +168,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
     end
 
     if octet_count == 4 then
-        std.errorf( 2, false, "too many ipv4 octets, max 4" )
+        std.errorf( "too many ipv4 octets, max 4" )
     end
 
     octet_count = octet_count + 1
 
     if octet_end < start_index then
-        std.errorf( 2, false, "ipv4 octet %d is empty", octet_count )
+        std.errorf( "ipv4 octet %d is empty", octet_count )
     end
 
     local base, digits_start = 10, start_index
@@ -205,13 +205,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
         end
 
         if digit == nil or digit >= base then
-            std.errorf( 2, false, "invalid characters in ipv4 octet %d", octet_count )
+            std.errorf( "invalid characters in ipv4 octet %d", octet_count )
         end
 
         octet = octet * base + digit
 
         if octet > 255 then
-            std.errorf( 2, false, "ipv4 octet %d out of range, max 255", octet_count )
+            std.errorf( "ipv4 octet %d out of range, max 255", octet_count )
         end
     end
 
@@ -276,7 +276,7 @@ end
 function ipv4.fromPrefix( prefix_length )
     local mask = bin_masks[ math_clamp( prefix_length, 0, 32 ) ]
     if mask == nil then
-        std.errorf( 2, false, "invalid ipv4 prefix length '%s', must be an integer", prefix_length )
+        std.errorf( "invalid ipv4 prefix length '%s', must be an integer", prefix_length )
     end
 
     return bit_unsign( mask )
@@ -298,7 +298,7 @@ end
 local function cidr( ip_address, prefix_length )
     local mask = bin_masks[ prefix_length ]
     if mask == nil then
-        std.errorf( 2, false, "invalid ipv4 prefix length '%s', must be an integer in range 0-32", prefix_length )
+        std.errorf( "invalid ipv4 prefix length '%s', must be an integer in range 0-32", prefix_length )
     end
 
     local network_address   = bit_band( ip_address, mask )
