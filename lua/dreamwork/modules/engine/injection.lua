@@ -60,21 +60,9 @@ do
     ---@class garrysmod.hook
     local glua_hook = glua_library( "hook" )
 
-    local hook_Call = glua_hook.Call
-    if hook_Call == nil then
-        function glua_hook.Call( event_name, _, ... )
-            return hook_call( event_name, ... )
-        end
-    else
-        function glua_hook.Call( event_name, tbl, ... )
-            local a, b, c, d = hook_call( event_name, ... )
-            if a == nil then
-                return hook_Call( event_name, tbl, ... )
-            end
-
-            return a, b, c, d
-        end
-    end
+    detour.simple( function( event_name, _, ... )
+        return hook_call( event_name, ... )
+    end, glua_hook, "Call" )
 
 end
 
@@ -141,7 +129,6 @@ if LUA_SERVER or LUA_CLIENT then
             ---@param name string
             ---@return table | nil
             ---@nodiscard
-            ---@diagnostic disable-next-line: duplicate-set-field
             function gamemode.Get( name )
                 local tbl = gamemodes[ name ]
                 return hook_call( "dreamwork.gamemode.select", name, tbl ) or tbl
@@ -152,7 +139,6 @@ if LUA_SERVER or LUA_CLIENT then
                 ---@param gm table
                 ---@param name string
                 ---@param base_name string
-                ---@diagnostic disable-next-line: duplicate-set-field
                 function gamemode.Register( gm, name, base_name )
                     gamemodes[ name ] = {
                         FolderName = gm.FolderName,
@@ -168,7 +154,6 @@ if LUA_SERVER or LUA_CLIENT then
 
             ---@param name string
             ---@return table | nil
-            ---@diagnostic disable-next-line: duplicate-set-field
             detour.attach( function( fn, name )
                 ---@diagnostic disable-next-line: need-check-nil
                 local tbl = fn( name )
