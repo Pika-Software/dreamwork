@@ -28,9 +28,9 @@ function sqlite.escape(str, no_quotes) end
 ---
 --- Executes a raw SQL query.
 ---
----@param str sqlite.Query The SQL query to execute.
+---@param query_str sqlite.Query The SQL query to execute.
 ---@return sqlite.QueryRow[] | nil result The result of the query.
-function sqlite.rawQuery(str) end
+function sqlite.rawQuery(query_str) end
 
 --- [SHARED AND MENU]
 ---
@@ -91,10 +91,10 @@ sqlite.Blob = {}
 ---
 --- `sql.Query` returns SQL `NULL` as the string `"NULL"`, so a text value that is exactly `"NULL"` is read as `null` too, store such data as a blob.
 ---
----@param str sqlite.Query The SQL query to execute.
+---@param query_str sqlite.Query The SQL query to execute.
 ---@param ... sqlite.QueryValue The parameters to use in the query.
 ---@return sqlite.QueryRow[] | nil result The result of the query.
-function sqlite.query(str, ...) end
+function sqlite.query(query_str, ...) end
 
 --- [SHARED AND MENU]
 ---
