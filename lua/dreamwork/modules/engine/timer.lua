@@ -24,7 +24,6 @@ local math_max = math.max
 local math_huge = math.huge
 
 
-
 ---
 --- Named timers ticked by garry's mod `timer` or the `Think` hook.
 ---
@@ -654,39 +653,45 @@ function engine_timer.resume( name )
     return true
 end
 
-if timer.Simple == nil then
+do
 
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the function once after the delay.
-    ---
-    ---@param delay number The delay in seconds.
-    ---@param fn fun() The function to call.
-    function engine_timer.simple( delay, fn )
-        simple_count = simple_count + 1
+    ---@class garrysmod.timer
+    local glua_timer = dreamwork_engine.requireLibrary( "timer" )
+    local timer_Simple = glua_timer.Simple
 
-        local name = "dreamwork.engine.timer.simple." .. simple_count
+    if timer_Simple == nil then
 
-        engine_timer.create( name, delay, 1, function()
-            engine_timer.remove( name )
-            return fn()
-        end )
+        --- [SHARED AND MENU]
+        ---
+        --- Calls the function once after the delay.
+        ---
+        ---@param delay number The delay in seconds.
+        ---@param fn fun() The function to call.
+        function engine_timer.simple( delay, fn )
+            simple_count = simple_count + 1
 
-        restart( name )
-    end
+            local name = "dreamwork.engine.timer.simple." .. simple_count
 
-else
+            engine_timer.create( name, delay, 1, function()
+                engine_timer.remove( name )
+                return fn()
+            end )
 
-    local timer_Simple = timer.Simple
+            restart( name )
+        end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the function once after the delay.
-    ---
-    ---@param delay number The delay in seconds.
-    ---@param fn fun() The function to call.
-    function engine_timer.simple( delay, fn )
-        timer_Simple( delay, fn )
+    else
+
+        --- [SHARED AND MENU]
+        ---
+        --- Calls the function once after the delay.
+        ---
+        ---@param delay number The delay in seconds.
+        ---@param fn fun() The function to call.
+        function engine_timer.simple( delay, fn )
+            timer_Simple( delay, fn )
+        end
+
     end
 
 end

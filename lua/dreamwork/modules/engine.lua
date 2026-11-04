@@ -7,6 +7,10 @@ local getfenv = std.getfenv
 local debug = std.debug
 local debug_initmetatable = debug.initmetatable
 
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_SERVER = std.LUA_SERVER
+local LUA_MENU = std.LUA_MENU
+
 
 --- [SHARED AND MENU]
 ---
@@ -47,46 +51,50 @@ function engine.requireLibrary( name, stack_level )
     return library
 end
 
---- The metatable of the engine `Entity` class, the base of all other entity classes.
----
----@class garrysmod.Entity
-local Entity = debug_initmetatable( "Entity" )
-engine.Entity = Entity
+if LUA_CLIENT or LUA_SERVER then
 
---- The metatable of the engine `Player` class.
----
----@class garrysmod.Player : garrysmod.Entity
-local Player = debug_initmetatable( "Player" )
-engine.Player = Player
-Player.__parent = Entity
+    --- The metatable of the engine `Entity` class, the base of all other entity classes.
+    ---
+    ---@class garrysmod.Entity
+    local Entity = debug_initmetatable( "Entity" )
+    engine.Entity = Entity
 
---- The metatable of the engine `Weapon` class.
----
----@class garrysmod.Weapon : garrysmod.Entity
-local Weapon = debug_initmetatable( "Weapon" )
-engine.Weapon = Weapon
-Weapon.__parent = Entity
+    --- The metatable of the engine `Player` class.
+    ---
+    ---@class garrysmod.Player : garrysmod.Entity
+    local Player = debug_initmetatable( "Player" )
+    engine.Player = Player
+    Player.__parent = Entity
 
---- The metatable of the engine `Vehicle` class.
----
----@class garrysmod.Vehicle : garrysmod.Entity
-local Vehicle = debug_initmetatable( "Vehicle" )
-engine.Vehicle = Vehicle
-Vehicle.__parent = Entity
+    --- The metatable of the engine `Weapon` class.
+    ---
+    ---@class garrysmod.Weapon : garrysmod.Entity
+    local Weapon = debug_initmetatable( "Weapon" )
+    engine.Weapon = Weapon
+    Weapon.__parent = Entity
 
---- The metatable of the engine `NPC` class.
----
----@class garrysmod.NPC : garrysmod.Entity
-local NPC = debug_initmetatable( "NPC" )
-NPC.__parent = Entity
-engine.NPC = NPC
+    --- The metatable of the engine `Vehicle` class.
+    ---
+    ---@class garrysmod.Vehicle : garrysmod.Entity
+    local Vehicle = debug_initmetatable( "Vehicle" )
+    engine.Vehicle = Vehicle
+    Vehicle.__parent = Entity
 
---- The metatable of the engine `NextBot` class.
----
----@class garrysmod.NextBot : garrysmod.Entity
-local NextBot = debug_initmetatable( "NextBot" )
-engine.NextBot = NextBot
-NextBot.__parent = Entity
+    --- The metatable of the engine `NPC` class.
+    ---
+    ---@class garrysmod.NPC : garrysmod.Entity
+    local NPC = debug_initmetatable( "NPC" )
+    NPC.__parent = Entity
+    engine.NPC = NPC
+
+    --- The metatable of the engine `NextBot` class.
+    ---
+    ---@class garrysmod.NextBot : garrysmod.Entity
+    local NextBot = debug_initmetatable( "NextBot" )
+    engine.NextBot = NextBot
+    NextBot.__parent = Entity
+
+end
 
 --- The metatable of the engine `Vector` class.
 ---
@@ -111,6 +119,15 @@ engine.VMatrix = VMatrix
 ---@class garrysmod.console.Variable
 local ConsoleVariable = debug_initmetatable( "ConVar" )
 engine.ConsoleVariable = ConsoleVariable
+
+
+if LUA_CLIENT or LUA_MENU then
+    --- The metatable of the engine `Panel` class.
+    ---
+    ---@class garrysmod.Panel
+    local Panel = debug_initmetatable( "Panel" )
+    engine.Panel = Panel
+end
 
 dreamwork_load( "modules/engine/hook.lua" )
 
