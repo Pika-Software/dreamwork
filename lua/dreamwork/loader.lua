@@ -14,6 +14,8 @@ if dreamwork == nil then
     ---@field engine dreamwork.engine Engine linking interface: glue between the framework and the host engine's native API.
     dreamwork = {
         Version = "0.1.0",
+        License = "GPL-3.0",
+        DevTeam = "Pika Software",
         ---@diagnostic disable-next-line: missing-fields
         engine = {},
         ---@diagnostic disable-next-line: missing-fields
@@ -775,11 +777,12 @@ dreamwork_load( "modules/engine.lua" )
 
 ---@class dreamwork.std.string
 local string = std.string
+local string_byte = string.byte
 local string_match = string.match
 local string_format = string.format
 local string_sub, string_len = string.sub, string.len
-local string_char, string_byte = string.char, string.byte
 
+dreamwork.Copyright = string_format( "%s - Copyright (c) 2023-%s %s. Licensed under %s.", dreamwork.Prefix, os.date( "!%Y" ), dreamwork.DevTeam, dreamwork.License )
 std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
 
 do
@@ -2874,8 +2877,8 @@ do
             "┊  GitHub: https://github.com/Pika-Software                                            ",
             "┊  Discord: https://discord.gg/Gzak99XGvv                                              ",
             "┊  Website: https://p1ka.eu                                                            ",
-            "┊  Developers: Pika Software                                                           ",
-            "┊  License: MIT                                                                        ",
+            "┊  DevTeam: %s                                                                         ",
+            "┊  License: %s                                                                         ",
             "╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       "
         }
     else
@@ -2904,8 +2907,8 @@ do
             "|=| -  GitHub:   https://github.com/Pika-Software  /  `                           ",
             "|<| - Discord:   https://discord.gg/Gzak99XGvv    /                               ",
             "|=| - Website:   https://p1ka.eu                 /                                ",
-            "|<| - DevTeam:   Pika Software                  /                                 ",
-            "|=| - License:   MIT                           /                                  ",
+            "|<| - DevTeam:   %s   /                                 ",
+            "|=| - License:   %s  /                                  ",
             "|>|___________________________________________/                                   "
         }
     end
@@ -2913,7 +2916,8 @@ do
     local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
     local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
 
-    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", std.unicode.pad( splash, 50, " ", true, true ) ) )
+    local unicode_pad = std.unicode.pad
+    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", unicode_pad( splash, 50 ), unicode_pad( dreamwork.DevTeam, 28, false, true ), unicode_pad( dreamwork.License, 28, false, true ) ) )
 
 end
 

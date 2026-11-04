@@ -381,14 +381,15 @@ if file_AsyncWrite == nil or file_AsyncAppend == nil then
     file_AsyncWrite, file_AsyncAppend = nil, nil
 end
 
--- the engine reports top level directories of some search paths ('materials' in 'cstrike') as missing
--- even though they are listed, so the listing is the source of truth for names without a parent
----@param name string
+-- the engine reports directories that have no files of their own as missing even though they are listed,
+-- top level ones of some search paths ('materials' in 'cstrike') and vpk ones ('materials/games' in 'MOD'),
+-- so the listing is the source of truth
+---@param relative_path string
 ---@param search_path string
 ---@return boolean exists
 ---@return boolean is_directory
-local function probe_root( name, search_path )
-    local files, directories = driver_Find( name, search_path )
+local function probe_listing( relative_path, search_path )
+    local files, directories = driver_Find( relative_path, search_path )
     if directories ~= nil and directories[ 1 ] ~= nil then
         return true, true
     end
@@ -404,12 +405,11 @@ local function file_Exists( relative_path, search_path )
         return true
     end
 
-    if string_byte( relative_path, 1, 1 ) == nil or
-        string_containsByte( relative_path, 0x2F --[[ / ]] ) then
+    if string_byte( relative_path, 1, 1 ) == nil then
         return false
     end
 
-    return (probe_root( relative_path, search_path ))
+    return (probe_listing( relative_path, search_path ))
 end
 
 ---@param relative_path string
@@ -420,11 +420,11 @@ local function file_IsDir( relative_path, search_path )
         return true
     end
 
-    if relative_path == "" or string_containsByte( relative_path, 0x2F --[[ / ]] ) then
+    if relative_path == "" then
         return false
     end
 
-    local _, is_directory = probe_root( relative_path, search_path )
+    local _, is_directory = probe_listing( relative_path, search_path )
     return is_directory
 end
 

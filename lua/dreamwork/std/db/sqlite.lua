@@ -94,8 +94,8 @@ sqlite.escape = escape
 local function query_raw( str )
     -- blob literals can make queries megabytes long
     local str_length = string_len( str )
-    if str_length > 256 then
-        dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( str, 1, 256 ) .. "... (+" .. (str_length - 256) .. " bytes)" )
+    if str_length > 64 then
+        dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( str, 1, 64 ) .. "... (+" .. (str_length - 64) .. " bytes)" )
     else
         dreamwork_Logger:debug( "Executing SQL query: " .. str )
     end

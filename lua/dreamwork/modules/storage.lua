@@ -16,7 +16,6 @@ local std = dreamwork.std
 local isTable = std.isTable
 local isNumber = std.isNumber
 local isString = std.isString
-local isCallable = std.isCallable
 
 local raw = std.raw
 local raw_pairs = raw.pairs
@@ -25,6 +24,8 @@ local raw_tostring = raw.tostring
 
 local string = std.string
 local string_len = string.len
+local string_gsub = string.gsub
+local string_trim = string.trim
 local string_format = string.format
 
 local table_concat = std.table.concat
@@ -570,40 +571,42 @@ do
 
     ---@class dreamwork.storage.Migration
     ---@field name string The unique name/version of the migration.
-    ---@field execute fun( query: fun( str: string, ...: any ): table[] | nil ) Applies the migration, runs inside a transaction with `query` bound to it.
+    ---@field queries string[] The SQL queries of the migration, executed in order inside a single transaction.
 
     ---@type dreamwork.storage.Migration[]
     local migrations = {
         {
             name = "0.1.0",
-            execute = function()
-                --- added key-value store
-                sqlite_rawQuery( "CREATE TABLE 'dreamwork.storage' (key TEXT UNIQUE, value BLOB)" )
+            queries = {
+                -- added key-value store
+                "CREATE TABLE 'dreamwork.storage' (key TEXT UNIQUE, value BLOB)",
 
                 -- http_cache add primary key
-                sqlite_rawQuery( "DROP TABLE IF EXISTS 'dreamwork.storage.http'" )
+                "DROP TABLE IF EXISTS 'dreamwork.storage.http'",
 
-                sqlite_rawQuery( [[CREATE TABLE 'dreamwork.storage.http' (
-                    url TEXT PRIMARY KEY,
-                    etag TEXT,
-                    timestamp INTEGER,
-                    content BLOB
-                )]] )
+                [[
+                    CREATE TABLE 'dreamwork.storage.http' (
+                        url TEXT PRIMARY KEY,
+                        etag TEXT,
+                        timestamp INTEGER,
+                        content BLOB
+                    )
+                ]],
 
-                --- initial file table
-                sqlite_rawQuery( [[
+                -- initial file table
+                [[
                     CREATE TABLE 'dreamwork.storage.files' (
                         path TEXT PRIMARY KEY,
                         size INTEGER NOT NULL CHECK(size >= 0),
                         timestamp INTEGER,
                         hash BLOB
                     )
-                ]] )
+                ]],
 
-                sqlite_rawQuery( "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)" )
+                "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)",
 
                 -- `UNIQUE` leads with the parent ID, so its index also serves lookups by repository / package
-                sqlite_rawQuery( [[
+                [[
                     CREATE TABLE 'dreamwork.packages' (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
@@ -612,17 +615,17 @@ do
                         repositoryID INTEGER NOT NULL REFERENCES 'dreamwork.repositories' (id) ON DELETE CASCADE,
                         UNIQUE( repositoryID, name )
                     )
-                ]] )
+                ]],
 
-                sqlite_rawQuery( [[
+                [[
                     CREATE TABLE 'dreamwork.package_versions' (
                         version TEXT NOT NULL,
                         metadata TEXT,
                         packageID INTEGER NOT NULL REFERENCES 'dreamwork.packages' (id) ON DELETE CASCADE,
                         UNIQUE( packageID, version )
                     )
-                ]] )
-            end
+                ]]
+            }
         }
     }
 
@@ -630,12 +633,20 @@ do
     local migration_indexes = {}
 
     for i = 1, #migrations, 1 do
-        local migration_name = migrations[ i ].name
+        local migration = migrations[ i ]
+        local migration_name = migration.name
+
         if migration_indexes[ migration_name ] ~= nil then
             error( string_format( "Database migration '%s' is defined more than once.", migration_name ) )
         end
 
         migration_indexes[ migration_name ] = i
+
+        -- collapse multi-line queries into one line, so they read well in the debug log
+        local queries = migration.queries
+        for j = 1, #queries, 1 do
+            queries[ j ] = string_trim( string_gsub( queries[ j ], "[%s\n]+", " " ) )
+        end
     end
 
     --- [SHARED AND MENU]
@@ -662,14 +673,16 @@ do
     ---@param migration dreamwork.storage.Migration The migration to run.
     ---@return boolean is_success Always `true`, on failure an error is thrown.
     local function migrate_by_table( migration )
-        assert( isCallable( migration.execute ), "Database migration '%s' has no 'execute' function.", migration.name )
+        local queries = migration.queries
+        assert( isTable( queries ), "Database migration '%s' has no 'queries' table.", migration.name )
         dreamwork.Logger:info( "Applying database migration '%s'...", migration.name )
-
-        local execute = migration.execute
 
         -- the migration record is written in the same transaction, so a crash can't leave it unrecorded
         local success, error_object = pcall( sqlite_transaction, function( query )
-            execute( query )
+            for i = 1, #queries, 1 do
+                sqlite_rawQuery( queries[ i ] )
+            end
+
             query( "insert into 'dreamwork.storage.migrations' (name, timestamp) values (?, ?)", migration.name, time_now( "ms", false ) )
         end )
 
