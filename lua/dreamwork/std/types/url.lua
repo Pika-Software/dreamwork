@@ -71,11 +71,33 @@ local IPv6                   = std.IPv6
 ---
 --- A parsed URL, see the [URL Standard](https://url.spec.whatwg.org/).
 ---
---- Fields are computed from the internal state on access and can be assigned,
---- assigned values are parsed the same way the browser `URL` setters do,
---- invalid values are ignored.
+--- Fields are computed from the internal state on access (and cached until it changes)
+--- and can be assigned, assigned values are parsed the same way the browser `URL` setters do:
+--- an invalid value is ignored and leaves the URL unchanged. The only exception is `href`,
+--- assigning an invalid URL to it throws an error.
+---
+--- `scheme`, `username`, `password`, `hostname`, `port`, `path`, `query` and `fragment`
+--- mirror the parts of the internal state, see `URL.State`.
 ---
 --- `tostring( url )` returns `url.href`.
+---
+--- ```
+--- https://user:pass@example.com:8080/a/b?x=1#top
+--- \___/   \__/ \__/ \_________/ \__/\__/ \_/ \_/
+---   |      |    |        |       |    |   |   |
+---   |      |    |        |       |    |   |   +--- fragment  (hash = "#" .. fragment)
+---   |      |    |        |       |    |   +------- query  (search = "?" .. query)
+---   |      |    |        |       |    +----------- pathname
+---   |      |    |        |       +---------------- port
+---   |      |    |        +------------------------ hostname
+---   |      |    +--------------------------------- password
+---   |      +-------------------------------------- username
+---   +--------------------------------------------- protocol  (scheme .. ":")
+---
+--- host   = hostname .. ":" .. port  ->  "example.com:8080"
+--- origin = scheme "://" host        ->  "https://example.com:8080"
+--- href   = the whole string
+--- ```
 ---
 --- ```lua
 --- local url = std.URL( "https://user:pass@example.com:8080/a/b?x=1#top" )
@@ -90,33 +112,35 @@ local IPv6                   = std.IPv6
 --- url.href     -- "https://user:pass@example.com/a/b?x=1#top"
 --- ```
 ---
----@class dreamwork.std.URL : dreamwork.std.Object, dreamwork.std.URL.State
+---@class dreamwork.std.URL : dreamwork.std.Object
 ---@field __class dreamwork.std.URLClass
----@field state dreamwork.std.URL.State The internal state, prefer the fields below.
----@field href string The whole serialized URL, assigning it re-parses the URL and throws on invalid input.
+---@field state dreamwork.std.URL.State The internal parsed state, prefer the fields below.
+---@field href string The whole serialized URL, assigning it re-parses the URL and throws if the new value is invalid.
 ---@field origin string? *Read-only.* The `scheme://host:port` origin, `nil` for schemes without one (e.g. `file:`, `data:`).
----@field protocol string? The scheme followed by `":"`, e.g. `"https:"`.
----@field username string? The percent-encoded username, `nil` if not given.
----@field password string? The percent-encoded password, `nil` if not given.
----@field host string The hostname followed by `":port"` when the port is not the default one, `""` if there is no host.
----@field hostname string? The serialized host: a lowercase ASCII domain, a dotted IPv4 address or an IPv6 address in brackets.
+---@field protocol string? The scheme followed by `":"`, e.g. `"https:"`, `nil` if there is no scheme.
+---@field scheme string? The lowercase scheme without the `":"`, e.g. `"https"`.
+---@field username string? The percent-encoded username, `nil` if not given. Ignored for URLs without a host and for `file:` URLs.
+---@field password string? The percent-encoded password, `nil` if not given. Ignored for URLs without a host and for `file:` URLs.
+---@field host string The `hostname`, followed by `":port"` when the port is not the default one, `""` if there is no host.
+---@field hostname string? The serialized host: a lowercase ASCII domain, a dotted IPv4 address or an IPv6 address in brackets, `nil` if there is no host.
 ---@field port integer? The port, `nil` when it is not given or is the default port of the scheme.
----@field pathname string? The path, e.g. `"/a/b"`, opaque paths (`mailto:`, `data:`) are returned as is.
----@field query string? The percent-encoded query without the leading `"?"`.
----@field search string The query with a leading `"?"`, `""` if the query is empty.
----@field searchParams dreamwork.std.URL.SearchParams The query as a list of name-value pairs, changes to it update the URL.
----@field fragment string? The percent-encoded fragment without the leading `"#"`.
----@field hash string The fragment with a leading `"#"`, `""` if the fragment is empty.
+---@field path string | string[] | nil The raw path from the state: a list of percent-encoded segments, or a string for opaque paths (`mailto:`, `data:`). Use `pathname` for the serialized form.
+---@field pathname string The serialized path, e.g. `"/a/b"`, `""` if there is none. Opaque paths are returned as is.
+---@field query string? The percent-encoded query without the leading `"?"`, `nil` if there is no query.
+---@field search string The query with a leading `"?"`, `""` if the query is missing or empty.
+---@field searchParams dreamwork.std.URL.SearchParams *Read-only.* The query as a list of name-value pairs, changes to it update the URL.
+---@field fragment string? The percent-encoded fragment without the leading `"#"`, `nil` if there is no fragment.
+---@field hash string The fragment with a leading `"#"`, `""` if the fragment is missing or empty.
 local URL                    = class.base( "URL" )
 
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `URL` instances.
 ---
---- Calling the class parses `url`, relative URLs are resolved against `base`,
+--- Calling the class parses `url`, a relative `url` is resolved against `base`,
 --- which can be a string or another `URL`.
 ---
---- Throws an error if `url` is invalid or is relative and `base` is not given,
+--- Throws an error if `url` (or `base`) is invalid, or if `url` is relative and `base` is not given,
 --- use `URL.canParse` to check without throwing.
 ---
 --- ```lua
@@ -142,7 +166,11 @@ std.URL                      = URLClass
 ---
 --- A list of query parameters, stored as `{ name, value }` pairs in order.
 ---
---- Names may repeat, a pair without `=` in the query has an empty value.
+--- Names may repeat. Pairs are parsed as `application/x-www-form-urlencoded`:
+--- empty segments are skipped, a pair without `=` gets an empty value.
+---
+--- Serializing always writes `name=value` and encodes spaces as `+`,
+--- so `"flag"` becomes `"flag="`.
 ---
 --- When taken from `url.searchParams`, every change is written back to the URL.
 ---
@@ -160,8 +188,8 @@ std.URL                      = URLClass
 ---
 ---@class dreamwork.std.URL.SearchParams : dreamwork.std.Object
 ---@field __class dreamwork.std.URL.SearchParamsClass
----@field url dreamwork.std.URL | nil The URL this list belongs to, `nil` for standalone lists.
----@field [ integer ] { [ 1 ]: string, [ 2 ]: string | nil } The name-value pairs.
+---@field url dreamwork.std.URL | nil The URL this list writes changes back to, `nil` for standalone lists.
+---@field [ integer ] { [ 1 ]: string, [ 2 ]: string | nil } The `{ name, value }` pairs, in order.
 local SearchParams           = class.base( "URLSearchParams" )
 
 --- [SHARED AND MENU]
@@ -169,7 +197,9 @@ local SearchParams           = class.base( "URLSearchParams" )
 --- The class used to create new `URL.SearchParams` instances.
 ---
 --- Calling the class creates a list from a query string (a leading `"?"` is skipped,
---- `"+"` is decoded as a space) or from a list of `{ name, value }` pairs.
+--- `"+"` is decoded as a space) or from a list of `{ name, value }` pairs (copied shallowly:
+--- the pair tables are shared). The optional `url` links the list to a URL, you rarely need it,
+--- use `url.searchParams` instead.
 ---
 --- ```lua
 --- std.URL.SearchParams( "?a=1&b=x+y" ):get( "b" ) -- "x y"
@@ -185,10 +215,10 @@ URLClass.SearchParams        = SearchParamsClass
 
 --- [SHARED AND MENU]
 ---
---- Checks if the given value is a `URLSearchParams`.
+--- Checks if the given value is a `URL.SearchParams`.
 ---
 ---@param value any The value to check.
----@return boolean result Returns `true` if the value is a `URLSearchParams`, otherwise `false`.
+---@return boolean result Returns `true` if the value is a `URL.SearchParams`, otherwise `false`.
 ---@nodiscard
 local function isURLSearchParams( value )
     return debug_getmetatable( value ) == SearchParams
@@ -201,7 +231,7 @@ std.isURLSearchParams = isURLSearchParams
 --- Checks if the given value is a `URL`.
 ---
 ---@param value any The value to check.
----@return boolean result Returns `true` if the value is a URL, otherwise `false`.
+---@return boolean result Returns `true` if the value is a `URL`, otherwise `false`.
 ---@nodiscard
 local function isURL( value )
     return debug_getmetatable( value ) == URL
@@ -793,6 +823,7 @@ local function parse_host_string( str, start_position, end_position, is_special 
     return ascii_domain
 end
 
+-- IPv4 as a dotted string, IPv6 in brackets, domains and opaque hosts as is
 ---@param host string | dreamwork.std.IPv4 | dreamwork.std.IPv6 | nil
 ---@return string | nil
 local function serialize_host( host )
@@ -808,6 +839,7 @@ local function serialize_host( host )
     return host
 end
 
+-- the default port of a special scheme (`true` for `file`), `nil` for non-special schemes
 ---@param state dreamwork.std.URL.State
 ---@return integer | boolean | nil
 local function get_special( state )
@@ -821,6 +853,12 @@ local parse_relative, parse_relative_slash, parse_special_authority_ignore_slash
 local parse_host, parse_port, parse_file, parse_file_slash, parse_file_host
 local parse_path_start, parse_path, parse_opaque_path, parse_query, parse_fragment
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State | nil
+---@param state_override? boolean
 function parse_scheme( state, str, start_position, end_position, base, state_override )
     -- scheme start state
     if start_position <= end_position and ascii_isAlpha( string_byte( str, start_position, start_position ) ) then
@@ -891,6 +929,11 @@ function parse_scheme( state, str, start_position, end_position, base, state_ove
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State | nil
 function parse_no_scheme( state, str, start_position, end_position, base )
     local starts_with_fragment = string_byte( str, start_position, start_position ) == 0x23 --[[ # ]]
     local base_has_opaque_path = base ~= nil and isString( base.path )
@@ -912,6 +955,12 @@ function parse_no_scheme( state, str, start_position, end_position, base )
     return parse_relative( state, str, start_position, end_position, base, SPECIAL_SCHEMES[ base.scheme ] )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State
+---@param is_special integer | boolean | nil
 function parse_special_relative_or_authority( state, str, start_position, end_position, base, is_special )
     local uint8_1, uint8_2 = string_byte( str, start_position, start_position + 1 )
     if uint8_1 == 0x2F --[[ / ]] and uint8_2 == 0x2F --[[ / ]] then
@@ -923,6 +972,10 @@ function parse_special_relative_or_authority( state, str, start_position, end_po
     return parse_relative( state, str, start_position, end_position, base, is_special )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
 function parse_path_or_authority( state, str, start_position, end_position )
     if string_byte( str, start_position, start_position ) == 0x2F --[[ / ]] then
         return parse_authority( state, str, start_position + 1, end_position )
@@ -931,6 +984,12 @@ function parse_path_or_authority( state, str, start_position, end_position )
     return parse_path( state, str, start_position, end_position )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State
+---@param is_special integer | boolean | nil
 function parse_relative( state, str, start_position, end_position, base, is_special )
     state.scheme = base.scheme
 
@@ -945,7 +1004,11 @@ function parse_relative( state, str, start_position, end_position, base, is_spec
     state.hostname = base.hostname
     state.port = base.port
 
-    local path = base.path and table_shallowCopy( base.path ) or {}
+    -- special and file bases always have a list path, opaque bases were rejected by `parse_no_scheme`
+    local base_path = base.path
+    ---@cast base_path string[] | nil
+
+    local path = base_path and table_shallowCopy( base_path ) or {}
     state.path = path
 
     if uint8 == nil then
@@ -965,6 +1028,12 @@ function parse_relative( state, str, start_position, end_position, base, is_spec
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State
+---@param is_special integer | boolean | nil
 function parse_relative_slash( state, str, start_position, end_position, base, is_special )
     local uint8 = string_byte( str, start_position, start_position )
     if is_special and (uint8 == 0x2F --[[ / ]] or uint8 == 0x5C --[[ \ ]]) then
@@ -982,6 +1051,11 @@ function parse_relative_slash( state, str, start_position, end_position, base, i
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special integer | boolean | nil
 function parse_special_authority_ignore_slashes( state, str, start_position, end_position, is_special )
     for position = start_position, end_position, 1 do
         local uint8 = string_byte( str, position, position )
@@ -993,6 +1067,11 @@ function parse_special_authority_ignore_slashes( state, str, start_position, end
     error( "Invalid URL: Missing host" )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special? integer | boolean
 function parse_authority( state, str, start_position, end_position, is_special )
     local path_end_position = end_position
 
@@ -1039,6 +1118,12 @@ function parse_authority( state, str, start_position, end_position, is_special )
     return parse_path_start( state, str, end_position + 1, path_end_position, is_special )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special integer | boolean | nil
+---@param state_override? "host" | "hostname"
 function parse_host( state, str, start_position, end_position, is_special, state_override )
     if state_override and is_special == true then
         return parse_file_host( state, str, start_position, end_position, state_override )
@@ -1081,6 +1166,12 @@ function parse_host( state, str, start_position, end_position, is_special, state
     state.hostname = parse_host_string( str, start_position, end_position, is_special )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param default_port integer | boolean | nil
+---@param state_override? boolean | "host" | "hostname"
 function parse_port( state, str, start_position, end_position, default_port, state_override )
     if start_position > end_position then
         return
@@ -1122,6 +1213,11 @@ function parse_port( state, str, start_position, end_position, default_port, sta
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State | nil
 function parse_file( state, str, start_position, end_position, base )
     state.scheme = "file"
     state.hostname = ""
@@ -1137,7 +1233,11 @@ function parse_file( state, str, start_position, end_position, base )
 
     state.hostname = base.hostname
 
-    local path = base.path and table_shallowCopy( base.path ) or {}
+    -- special and file bases always have a list path, opaque bases were rejected by `parse_no_scheme`
+    local base_path = base.path
+    ---@cast base_path string[] | nil
+
+    local path = base_path and table_shallowCopy( base_path ) or {}
     state.path = path
 
     if uint8 == nil then
@@ -1162,6 +1262,11 @@ function parse_file( state, str, start_position, end_position, base )
     return parse_path( state, str, start_position, end_position, true, path )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param base dreamwork.std.URL.State | nil
 function parse_file_slash( state, str, start_position, end_position, base )
     local uint8 = string_byte( str, start_position, start_position )
     if uint8 == 0x2F --[[ / ]] or uint8 == 0x5C --[[ \ ]] then
@@ -1174,6 +1279,8 @@ function parse_file_slash( state, str, start_position, end_position, base )
         state.hostname = base.hostname
 
         local base_path = base.path
+        ---@cast base_path string[]
+
         if isTable( base_path ) and not starts_with_windows_drive_letter( str, start_position, end_position ) and is_windows_drive_letter( base_path[ 1 ], true ) then
             path[ 1 ] = base_path[ 1 ]
         end
@@ -1182,6 +1289,11 @@ function parse_file_slash( state, str, start_position, end_position, base )
     return parse_path( state, str, start_position, end_position, true, path )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param state_override? "host" | "hostname"
 function parse_file_host( state, str, start_position, end_position, state_override )
     local position = start_position
 
@@ -1216,6 +1328,12 @@ function parse_file_host( state, str, start_position, end_position, state_overri
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special integer | boolean | nil
+---@param state_override? boolean
 function parse_path_start( state, str, start_position, end_position, is_special, state_override )
     local uint8 = start_position <= end_position and string_byte( str, start_position, start_position ) or nil
 
@@ -1241,6 +1359,13 @@ function parse_path_start( state, str, start_position, end_position, is_special,
     end
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special? integer | boolean
+---@param segments? string[]
+---@param state_override? boolean
 function parse_path( state, str, start_position, end_position, is_special, segments, state_override )
     if segments == nil then
         segments = {}
@@ -1305,6 +1430,10 @@ function parse_path( state, str, start_position, end_position, is_special, segme
     state.path = segments
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
 function parse_opaque_path( state, str, start_position, end_position )
     for position = start_position, end_position, 1 do
         local uint8 = string_byte( str, position, position )
@@ -1322,6 +1451,12 @@ function parse_opaque_path( state, str, start_position, end_position )
     state.path = percent_encode( string_sub( str, start_position, end_position ), C0_CONTROL_WHITELIST, true )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
+---@param is_special? integer | boolean
+---@param state_override? boolean
 function parse_query( state, str, start_position, end_position, is_special, state_override )
     if not state_override then
         local fragment_position = string_findByte( str, 0x23 --[[ # ]], start_position, end_position )
@@ -1334,11 +1469,15 @@ function parse_query( state, str, start_position, end_position, is_special, stat
     state.query = percent_encode( string_sub( str, start_position, end_position ), is_special and SPECIAL_QUERY_WHITELIST or QUERY_WHITELIST, true )
 end
 
+---@param state dreamwork.std.URL.State
+---@param str string
+---@param start_position integer
+---@param end_position integer
 function parse_fragment( state, str, start_position, end_position )
     state.fragment = percent_encode( string_sub( str, start_position, end_position ), FRAGMENT_WHITELIST, true )
 end
 
----@param state table
+---@param state dreamwork.std.URL.State
 ---@param str string
 ---@param base string | dreamwork.std.URL | dreamwork.std.URL.State | nil
 ---@return dreamwork.std.URL.State
@@ -1391,6 +1530,7 @@ local function parse_query_string( str, search_params )
     end
 end
 
+-- strings are returned as is, a list is written as `name=value` pairs joined with `&`
 ---@param query string | dreamwork.std.URL.SearchParams | nil
 ---@return string | nil
 local function serialize_query( query )
@@ -1553,6 +1693,7 @@ local STATE_FIELDS = {
     fragment = true
 }
 
+-- drops the cached serialized fields, called after every change of the state
 ---@param url dreamwork.std.URL
 local function reset_cache( url )
     raw_set( url, "_href", nil )
@@ -1573,6 +1714,7 @@ local function cache_value( url, key, value )
     return value
 end
 
+-- writes the changed list back to the URL it belongs to
 ---@param search_params dreamwork.std.URL.SearchParams
 local function update( search_params )
     local url = search_params.url
@@ -1648,7 +1790,7 @@ end
 --- Appends a name-value pair to the end of the list.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value of the parameter, `nil` is the same as `""`.
+---@param value? string The value of the parameter, `nil` is serialized the same as `""`.
 function SearchParams:append( name, value )
     self[ #self + 1 ] = { name, value }
     update( self )
@@ -1750,7 +1892,7 @@ end
 --- ```
 ---
 ---@param name string The name of the parameter.
----@param value? string The new value.
+---@param value? string The new value, `nil` is serialized the same as `""`.
 function SearchParams:set( name, value )
     for index = 1, #self, 1 do
         local pair = self[ index ]
@@ -1774,7 +1916,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Sorts the pairs by name, pairs with the same name keep their relative order.
+--- Sorts the pairs by name in byte order (stable), pairs with the same name keep their relative order.
 ---
 --- ```lua
 --- local params = std.URL.SearchParams( "b=1&a=2&b=0" )
@@ -1800,7 +1942,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns an iterator over the name-value pairs.
+--- Returns an iterator over the name-value pairs, in order.
 ---
 --- ```lua
 --- for name, value in url.searchParams:iterator() do
@@ -1808,7 +1950,7 @@ end
 --- end
 --- ```
 ---
----@return fun(): string | nil, string | nil iterator The iterator function.
+---@return fun(): string?, string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:iterator()
     local index = 0
@@ -1825,9 +1967,9 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns an iterator over the names, names that repeat are returned every time.
+--- Returns an iterator over the names, a name that repeats is returned every time.
 ---
----@return fun(): string | nil iterator The iterator function.
+---@return fun(): string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:keys()
     local index = 0
@@ -1846,7 +1988,7 @@ end
 ---
 --- Returns an iterator over the values, a `nil` value gives `""`.
 ---
----@return fun(): string | nil iterator The iterator function.
+---@return fun(): string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:values()
     local index = 0
@@ -1861,6 +2003,7 @@ function SearchParams:values()
     end
 end
 
+-- URLs without a host and `file:` URLs can't have credentials or a port
 ---@param state dreamwork.std.URL.State
 ---@return boolean
 local function cannot_have_credentials( state )
@@ -1869,6 +2012,7 @@ local function cannot_have_credentials( state )
 end
 
 ---@param key string
+---@return string | integer | string[] | dreamwork.std.URL.SearchParams | nil
 ---@protected
 function URL:__index( key )
     local state = raw_get( self, "state" )
@@ -2081,7 +2225,7 @@ end
 ---
 --- Parses a URL string into a plain state table, without creating a `URL` object.
 ---
---- Same rules as calling `URL`, throws an error if the URL is invalid.
+--- Follows the same rules as calling `URL`, throws an error if the URL is invalid.
 ---
 --- ```lua
 --- local state = std.URL.parse( "https://example.com:8080/a/b?q" )
@@ -2090,7 +2234,8 @@ end
 --- state.path     -- { "a", "b" }
 --- ```
 ---
----@see dreamwork.std.URL
+---@see dreamwork.std.URLClass.canParse
+---@see dreamwork.std.URLClass.serialize
 ---
 ---@param url string The URL string to parse.
 ---@param base? string | dreamwork.std.URL The base URL that relative URLs are resolved against.
@@ -2104,6 +2249,8 @@ end
 ---
 --- Checks if a URL string can be parsed, without throwing an error.
 ---
+--- Returns the parsed state on success, so the string doesn't need to be parsed twice.
+---
 --- ```lua
 --- std.URL.canParse( "https://example.com" ) -- true, state
 --- std.URL.canParse( "/path" )                -- false, "...Invalid URL: Missing scheme"
@@ -2113,7 +2260,7 @@ end
 ---@param url string The URL string to check.
 ---@param base? string | dreamwork.std.URL The base URL that relative URLs are resolved against.
 ---@return boolean success `true` if the URL is valid, otherwise `false`.
----@return dreamwork.std.URL.State | string state_or_error The parsed URL state, or the error message if the URL is invalid.
+---@return dreamwork.std.URL.State | string state_or_error The parsed URL state on success, otherwise the error message.
 ---@nodiscard
 function URLClass.canParse( url, base )
     return pcall( parse, {}, url, base )
