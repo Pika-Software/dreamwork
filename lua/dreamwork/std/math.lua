@@ -529,12 +529,13 @@ end
 ---@return number approached The approached value.
 ---@nodiscard
 function math.approach( current, target, change )
-    local diff = target - current
-    if diff < 0 then
-        return current - math_min( -diff, change )
+    if current < target then
+        return math_min( current + math_abs( change ), target )
+    elseif current > target then
+        return math_max( current - math_abs( change ), target )
     end
 
-    return math_max( current - math_abs( change ), target )
+    return target
 end
 
 --- [SHARED AND MENU]
