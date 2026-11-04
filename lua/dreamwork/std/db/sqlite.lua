@@ -12,8 +12,10 @@ local raw_pairs = raw.pairs
 local raw_select = raw.select
 
 local string = std.string
+local string_len = string.len
+local string_sub = string.sub
 local string_match = string.match
-local string_lower = string.lower
+local string_format = string.format
 local string_replace = string.replace
 local string_interpolateByte = string.interpolateByte
 
@@ -21,13 +23,20 @@ local isBoolean = std.isBoolean
 local isNumber = std.isNumber
 local isString = std.isString
 
-local null = std.null
+local class = std.class
+local class_isInherited = class.isInherited
 
-local tostring = std.tostring
-local toError = std.toError
-local xpcall = std.xpcall
-local error = std.error
+local base16 = std.base16
+local base16_encode = base16.encode
+local base16_decode = base16.decode
+
+local try = std.try
 local type = std.type
+local error = std.error
+local tonumber = std.tonumber
+local tostring = std.tostring
+
+local null = std.null
 
 
 --- [SHARED AND MENU]
@@ -35,7 +44,7 @@ local type = std.type
 --- The local SQLite library wrapper.
 ---
 ---@class dreamwork.std.sqlite
-local sqlite = std.sqlite or {}
+local sqlite = {}
 std.sqlite = sqlite
 
 --- [SHARED AND MENU]
@@ -83,7 +92,13 @@ sqlite.escape = escape
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
 local function query_raw( str )
-    dreamwork_Logger:debug( "Executing SQL query: " .. str )
+    -- blob literals can make queries megabytes long
+    local str_length = string_len( str )
+    if str_length > 256 then
+        dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( str, 1, 256 ) .. "... (+" .. (str_length - 256) .. " bytes)" )
+    else
+        dreamwork_Logger:debug( "Executing SQL query: " .. str )
+    end
 
     ---@type dreamwork.std.sqlite.QueryRow[] | false | nil
     local result = sql_Query( str )
@@ -98,29 +113,70 @@ sqlite.rawQuery = query_raw
 
 --- [SHARED AND MENU]
 ---
---- Checks if a table exists in the database.
+--- Checks if a schema object ( table, index, view or trigger ) exists in the database.
 ---
----@param name string The name of the table to check.
----@return boolean exist `true` if the table exists, `false` otherwise.
+--- Names are compared case-insensitively, like SQLite identifiers.
+---
+--- Only the main database is checked, objects created with `CREATE TEMP` are not found.
+---
+--- Indexes that SQLite creates implicitly for `UNIQUE` / `PRIMARY KEY` constraints are named `sqlite_autoindex_<table>_<n>` and count as indexes.
+---
+--- Both arguments are escaped, so any string is safe to pass. A `nil` or empty `kind_name` never matches, and an unknown `kind_type` simply returns `false`.
+---
+--- ```lua
+--- sqlite.isExists( "dreamwork.storage" )           -- any type
+--- sqlite.isExists( "dreamwork.storage", "table" )  -- tables only
+--- sqlite.isExists( "my_index", "index" )           -- indexes only
+--- ```
+---
+---@param kind_name string The name of the schema object.
+---@param kind_type? dreamwork.std.sqlite.ObjectType The type of the schema object, any type if `nil`.
+---@return boolean is_exists `true` if a schema object with the given name ( and type ) exists, `false` otherwise.
 ---@nodiscard
-function sqlite.tableExists( name )
-    return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='table'" ) ~= nil
+function sqlite.isExists( kind_name, kind_type )
+    if kind_type == nil then
+        return query_raw( string_format( "select 1 from sqlite_master where name=%s collate nocase limit 1", escape( kind_name ) ) ) ~= nil
+    end
+
+    return query_raw( string_format( "select 1 from sqlite_master where name=%s collate nocase and type=%s limit 1", escape( kind_name ), escape( kind_type ) ) ) ~= nil
 end
 
 --- [SHARED AND MENU]
 ---
---- Checks if an index exists in the database.
+--- A blob query parameter.
 ---
----@param name string The name of the index to check.
----@return boolean exist `true` if the index exists, `false` otherwise.
----@nodiscard
-function sqlite.indexExists( name )
-    return query_raw( "select name from sqlite_master where name=" .. escape( name ) .. " and type='index'" ) ~= nil
+--- Blobs are written as hex literals, so they may contain any bytes, including null bytes.
+---
+--- `sql.Query` cuts blob results at the first null byte,
+--- so read them back as `hex( column )` and decode with `sqlite.cast` using the `"blob"` type.
+---
+---@class dreamwork.std.sqlite.Blob : dreamwork.std.Object
+---@field __class dreamwork.std.sqlite.BlobClass
+---@field data string The raw bytes of the blob.
+local Blob = class.base( "Blob", false, nil )
+
+---@param data string
+---@protected
+function Blob:__init( data )
+    self.data = data
 end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new `Blob` instances.
+---
+---@class dreamwork.std.sqlite.BlobClass : dreamwork.std.sqlite.Blob, dreamwork.std.Class
+---@field __base dreamwork.std.sqlite.Blob
+---@overload fun( data: string ) : dreamwork.std.sqlite.Blob
+sqlite.Blob = class.create( Blob )
 
 --- [SHARED AND MENU]
 ---
 --- Executes a SQL query with parameters.
+---
+--- `NULL` values in the result are replaced with `std.null`.
+---
+--- `sql.Query` returns SQL `NULL` as the string `"NULL"`, so a text value that is exactly `"NULL"` is read as `std.null` too, store such data as a blob.
 ---
 ---@param str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
@@ -142,8 +198,11 @@ local function query( str, ... )
         elseif isNumber( value ) then
             ---@cast value number
             variables[ index ] = tostring( value )
+        elseif class_isInherited( value, Blob ) then
+            ---@cast value dreamwork.std.sqlite.Blob
+            variables[ index ] = "X'" .. base16_encode( value.data ) .. "'"
         else
-            std.errorf( 2, false, "bad argument #%s to \'%s\' ('%s' expected, got '%s')", index, "sqlite.query", "boolean | integer | number | string | nil", type( value ) )
+            std.errorf( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", index, "sqlite.query", "boolean | integer | number | string | dreamwork.std.sqlite.Blob | nil", type( value ) )
         end
     end
 
@@ -155,8 +214,7 @@ local function query( str, ... )
     for j = 1, #result, 1 do
         local row = result[ j ]
         for key, value in raw_pairs( row ) do
-            ---@cast value string
-            if isString( value ) and string_lower( value ) == "null" then
+            if value == "NULL" then
                 row[ key ] = null
             end
         end
@@ -212,7 +270,8 @@ sqlite.queryFirst = query_first
 function sqlite.queryValue( str, ... )
     local result = query_first( str, ... )
     if result ~= nil then
-        return raw_next( result )
+        local _, value = raw_next( result )
+        return value
     end
 
     return nil
@@ -220,15 +279,48 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Converts the string values of a result row to the specified types, in-place.
+---
+--- `std.null` values are kept as is, except for `"blob"` columns, since `hex( NULL )` is an empty string.
+---
+---@param row dreamwork.std.sqlite.QueryRow | nil The row to convert.
+---@param column_types table<string, dreamwork.std.sqlite.ColumnType> The column names mapped to their types.
+---@return dreamwork.std.sqlite.QueryRow | nil row The same row.
+function sqlite.cast( row, column_types )
+    if row == nil then
+        return nil
+    end
+
+    for column_name, column_type in raw_pairs( column_types ) do
+        local value = row[ column_name ]
+        if isString( value ) then
+            ---@cast value string
+            if column_type == "number" then
+                row[ column_name ] = tonumber( value, 10 )
+            elseif column_type == "boolean" then
+                row[ column_name ] = value ~= "0"
+            elseif column_type == "blob" then
+                row[ column_name ] = base16_decode( value )
+            elseif column_type ~= "string" then
+                std.errorf( "unknown column type '%s' for column '%s'", column_type, column_name )
+            end
+        end
+    end
+
+    return row
+end
+
+--- [SHARED AND MENU]
+---
 --- Executes a transaction of SQL queries in one block.
 ---
----@generic V
----@param fn fun( query_fn: ( fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): ( dreamwork.std.sqlite.QueryRow[] | nil ) ) ): V The function to execute all SQL queries in one transaction.
+---@generic V: any | nil
+---@param fn fun( query_fn: ( fun( str: dreamwork.std.sqlite.Query, ...: dreamwork.std.sqlite.QueryValue ): ( dreamwork.std.sqlite.QueryRow[] | nil ) ) ): ( V | nil ) The function to execute all SQL queries in one transaction.
 ---@return V value The result of function execution.
 function sqlite.transaction( fn )
     query_raw( "begin" )
 
-    local ok, result = xpcall( fn, toError, query )
+    local ok, result = try( fn, query )
     if ok then
         query_raw( "commit" )
         return result
