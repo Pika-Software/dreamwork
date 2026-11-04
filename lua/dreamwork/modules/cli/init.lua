@@ -33,6 +33,8 @@ local math = std.math
 local math_ceil = math.ceil
 local math_floor = math.floor
 
+local LUA_SERVER = std.LUA_SERVER
+
 local dreamwork_load = dreamwork.load
 
 
@@ -40,13 +42,15 @@ local dreamwork_load = dreamwork.load
 ---
 --- Command-line interface of Dreamwork.
 ---
+--- The server one is `dreamwork_sci` (server console interface), the client and menu one is `dreamwork_cci` (client console interface).
+---
 ---@class dreamwork.cli
 local cli = dreamwork.cli or {}
 dreamwork.cli = cli
 
 local console_command = console_Command( {
-    name = "dreamwork",
-    description = "Dreamwork command-line interface."
+    name = LUA_SERVER and "dreamwork_sci" or "dreamwork_cci",
+    description = LUA_SERVER and "Dreamwork server console interface." or "Dreamwork client console interface."
 } )
 
 cli.Command = console_command
@@ -138,7 +142,21 @@ local function print_help( page )
     end
 end
 
+--- Players can send server console commands too, so on the server only the console and the listen server host are accepted.
+---
+---@param client garrysmod.Player | nil
+---@return boolean
+local function is_allowed( client )
+    if not LUA_SERVER or client == nil or not client:IsValid() then
+        return true
+    end
+
+    return client:IsListenServerHost()
+end
+
 console_command:attach( function( self, client, args, argument_string )
+    if not is_allowed( client ) then return end
+
     -- no command is a fallback to the first page of `help`
     local name = args[ 1 ] or "help"
 
@@ -243,3 +261,4 @@ cli.register( "help", {
 } )
 
 dreamwork_load( "modules/cli/commands/debug.lua" )
+dreamwork_load( "modules/cli/commands/http_client.lua" )

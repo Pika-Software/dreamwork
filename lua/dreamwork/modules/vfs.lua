@@ -1,7 +1,5 @@
 local dreamwork_engine = dreamwork.engine
 
-local engine_mounts = dreamwork_engine.mounts
-
 local engine_hook = dreamwork_engine.hook
 local hook_catch = engine_hook.catch
 local hook_call = engine_hook.call

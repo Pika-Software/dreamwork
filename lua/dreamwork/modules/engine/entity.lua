@@ -1,10 +1,10 @@
 ---@class dreamwork.engine
 local dreamwork_engine = dreamwork.engine
-local detour = dreamwork.detour
 
 local engine_hook = dreamwork_engine.hook
 local hook_call = engine_hook.call
 
+local detour = dreamwork.detour
 
 --- [SHARED AND MENU]
 ---
@@ -32,10 +32,12 @@ if ents.GetAll == nil then
     end
 end
 
+local ents_GetAll = ents.GetAll
+
 --- The entity list as of the last registry update.
 ---
 ---@type garrysmod.Entity[]
-local entity_list = ents.GetAll()
+local entity_list = ents_GetAll()
 
 --- The number of entities in `entity_list`.
 ---
@@ -59,7 +61,7 @@ end
 ---
 ---@param is_player boolean `true` if the change was caused by a player entity.
 detour.before( function( is_player )
-    local new_entities = ents.GetAll()
+    local new_entities = ents_GetAll()
     local new_count = #new_entities
 
     local has_changes = false
@@ -92,7 +94,7 @@ detour.before( function( is_player )
     if has_changes then
         hook_call( "dreamwork.entity.registry", new_entities, new_count )
     end
-end, _G, "InvalidateInternalEntityCache" )
+end, nil, "InvalidateInternalEntityCache" )
 
 --- [SHARED AND MENU]
 ---

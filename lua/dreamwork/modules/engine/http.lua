@@ -20,7 +20,7 @@ local loadbinary = std.loadbinary
 ---
 ---@class dreamwork.engine.http
 ---@field ClientName "reqwest" | "chttp" | "garrysmod" | "" The name of the loaded HTTP client, empty if none was found.
----@field UserAgent string The default `User-Agent` header value, applied to `reqwest` requests that don't set one.
+---@field UserAgent string The default `User-Agent` header value, applied by `std.http.client` to requests that don't set one.
 local http = {
     UserAgent = "DreamWork/" .. dreamwork.Version .. " - Garry's Mod/" .. std.GAME_VERSION
 }
@@ -40,22 +40,11 @@ local client_fn
 if loadbinary( "reqwest" ) then
     local reqwest = reqwest
 
-    ---@type table<dreamwork.std.http.RequestHeader, string>
-    local default_headers = {
-        [ "User-Agent" ] = http.UserAgent,
-    }
-
-    --- Adds the default `User-Agent` header and sends the request through `reqwest`.
+    --- Sends the request through `reqwest`, which returns nothing.
     ---
     ---@param options gm_reqwest.Request
     ---@return boolean success Always `true`, `reqwest` reports errors via `options.failed`.
     function client_fn( options )
-        if options.headers == nil then
-            options.headers = default_headers
-        elseif options.headers[ "User-Agent" ] == nil then
-            options.headers[ "User-Agent" ] = http.UserAgent
-        end
-
         reqwest( options )
         return true
     end

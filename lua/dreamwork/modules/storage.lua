@@ -1,14 +1,17 @@
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
+--- [SHARED AND MENU]
+---
+--- A persistent SQLite-backed storage with an in-memory read cache.
+---
+--- Every write goes to the database first and then to the cache, reads are served from the cache and fall back to the database.
+---
 ---@class dreamwork.storage
 local storage = {}
 dreamwork.storage = storage
 
 local std = dreamwork.std
-
-local assert = std.assert
-local pcall = std.pcall
 
 local isTable = std.isTable
 local isNumber = std.isNumber
@@ -18,11 +21,13 @@ local isCallable = std.isCallable
 local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
-
-local console = std.console
+local raw_tostring = raw.tostring
 
 local string = std.string
 local string_len = string.len
+local string_format = string.format
+
+local table_concat = std.table.concat
 
 local json = std.json
 local json_serialize, json_deserialize = json.serialize, json.deserialize
@@ -39,53 +44,77 @@ local time_now = time.now
 local time_tick = time.tick
 
 local error = std.error
-local tostring = std.tostring
+local pcall = std.pcall
+local assert = std.assert
 local tonumber = std.tonumber
 
----@type table<string, dreamwork.std.sqlite.ColumnType>
-local value_types = { value = "blob" }
+local LUA_SERVER = std.LUA_SERVER
 
---- [SHARED AND MENU]
----
---- Returns the value for the specified key.
----
----@param key string The key of the value.
----@return string | nil value The value, or `nil` if the key does not exist.
----@nodiscard
-function storage.read( key )
-    local row = sqlite_cast( sqlite_queryFirst( "SELECT hex( value ) AS value FROM 'dreamwork.storage' WHERE key=?", key ), value_types )
-    if row == nil then
-        return nil
+
+do
+
+    ---@type table<string, dreamwork.std.sqlite.ColumnType>
+    local value_types = { value = "blob" }
+
+    ---@type table<string, string>
+    local cache = {}
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the value stored under the specified key.
+    ---
+    --- The value is read from the cache, on a miss it is loaded from the database and cached.
+    ---
+    ---@param key string The key of the value.
+    ---@return string | nil value The stored value, or `nil` if the key does not exist.
+    ---@nodiscard
+    function storage.read( key )
+        ---@type string
+        local value = cache[ key ]
+        if value ~= nil then
+            return value
+        end
+
+        local row = sqlite_cast( sqlite_queryFirst( "SELECT hex( value ) AS value FROM 'dreamwork.storage' WHERE key=?", key ), value_types )
+        if row == nil then
+            return nil
+        end
+
+        local row_value = raw_tostring( row.value )
+        cache[ key ] = row_value
+
+        ---@type string
+        return row_value
     end
 
-    ---@type string
-    return row.value
+    --- [SHARED AND MENU]
+    ---
+    --- Stores the value under the specified key, replacing the previous one.
+    ---
+    --- Values are stored as blobs, so they may contain any bytes.
+    ---
+    ---@param key string The key of the value.
+    ---@param value string The value to store.
+    function storage.write( key, value )
+        sqlite_query( "INSERT INTO 'dreamwork.storage' (key, value) VALUES (?, ?) ON CONFLICT( key ) DO UPDATE SET value = excluded.value", key, SQLiteBlob( value ) )
+        cache[ key ] = value
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the value stored under the specified key, does nothing if the key does not exist.
+    ---
+    ---@param key string The key of the value.
+    function storage.delete( key )
+        sqlite_query( "DELETE FROM 'dreamwork.storage' WHERE key=?", key )
+        cache[ key ] = nil
+    end
+
 end
 
 --- [SHARED AND MENU]
 ---
---- Sets the value for the specified key.
----
---- Values are stored as blobs, so they may contain any bytes.
----
----@param key string The key of the value.
----@param value string The value to store.
-function storage.write( key, value )
-    sqlite_query( "INSERT INTO 'dreamwork.storage' (key, value) VALUES (?, ?) ON CONFLICT( key ) DO UPDATE SET value = excluded.value", key, SQLiteBlob( value ) )
-end
-
---- [SHARED AND MENU]
----
---- Removes the value for the specified key.
----
----@param key string The key of the value.
-function storage.delete( key )
-    sqlite_query( "DELETE FROM 'dreamwork.storage' WHERE key=?", key )
-end
-
---- [SHARED AND MENU]
----
---- Returns the JSON-deserialized value for the specified key.
+--- Returns the value stored under the specified key, deserialized from JSON.
 ---
 --- Raises a `DecodeError` if the stored value is not valid JSON.
 ---
@@ -103,113 +132,119 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Sets the value for the specified key, serialized as JSON.
+--- Stores the value under the specified key, serialized as JSON.
 ---
 --- Raises an `EncodeError` if the value cannot be serialized.
 ---
 ---@param key string The key of the value.
----@param value dreamwork.std.json.Value The value to store.
+---@param value dreamwork.std.json.Value The value to serialize and store.
 function storage.writeJSON( key, value )
     storage.write( key, json_serialize( value ) )
 end
 
 do
 
-    local http_cache_size = console.Variable( {
-        name = "dreamwork.http.cache_size",
-        description = "The maximum size of cached content in KB, used for etag caching in http library.",
-        replicated = not std.LUA_MENU,
-        archive = std.LUA_MENU_SERVER,
-        type = "integer",
-        default = 50,
-        min = 0,
-        max = 16384
-    } )
-
-    local http_cache_total_size = console.Variable( {
-        name = "dreamwork.http.cache_total_size",
-        description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
-        replicated = not std.LUA_MENU,
-        archive = std.LUA_MENU_SERVER,
-        type = "integer",
-        default = 8192,
-        min = 0,
-        max = 1048576
-    } )
-
-    local http_cache_lifetime = console.Variable( {
-        name = "dreamwork.http.cache_lifetime",
-        description = "The number of days cached content is kept for, 0 keeps it forever.",
-        replicated = not std.LUA_MENU,
-        archive = std.LUA_MENU_SERVER,
-        type = "integer",
-        default = 30,
-        min = 0,
-        max = 3650
-    } )
-
     --- [SHARED AND MENU]
     ---
-    --- A cache storage for http requests.
+    --- A cache of HTTP responses, keyed by URL and validated by ETag.
+    ---
+    --- Size and lifetime limits are controlled by `storage.http.config`, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
     ---
     ---@class dreamwork.storage.http
     local http = {}
     storage.http = http
 
+    ---@class dreamwork.storage.http.Config
+    ---@field cache_size integer The maximum size of a cached response in KB.
+    ---@field cache_total_size integer The maximum total size of all cached responses in KB, the oldest entries are removed first.
+    ---@field cache_lifetime integer The number of days cached responses are kept for, `0` keeps them forever.
+
+    ---@type dreamwork.storage.http.Config
+    local config = {
+        cache_size = 50,
+        cache_total_size = 8192,
+        cache_lifetime = 30
+    }
+
+    http.config = config
+
     ---@class dreamwork.storage.http.Record
-    ---@field etag string
-    ---@field content string
+    ---@field etag string The ETag of the cached response.
+    ---@field content string The cached response body.
 
     ---@type table<string, dreamwork.std.sqlite.ColumnType>
     local record_types = { content = "blob" }
 
+    ---@type table<string, dreamwork.storage.http.Record>
+    local cache = {}
+
     --- [SHARED AND MENU]
     ---
-    --- Gets the cached content for the specified URL.
+    --- Returns the cached response for the specified URL.
     ---
-    ---@param url string
-    ---@return dreamwork.storage.http.Record | nil record The cached record, or `nil` if not found.
+    --- The returned record is shared with the in-memory cache, do not modify it.
+    ---
+    ---@param url string The URL of the cached response.
+    ---@return dreamwork.storage.http.Record | nil record The cached record, or `nil` if the URL is not cached.
     ---@nodiscard
     function http.read( url )
-        return sqlite_cast( sqlite_queryFirst( "SELECT etag, hex( content ) AS content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url ), record_types )
+        ---@type dreamwork.storage.http.Record | nil
+        local record = cache[ url ]
+        if record ~= nil then
+            return record
+        end
+
+        record = sqlite_cast( sqlite_queryFirst( "SELECT etag, hex( content ) AS content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url ), record_types )
+        if record ~= nil then
+            cache[ url ] = record
+        end
+
+        return record
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Sets the cached content for the specified URL.
+    --- Caches the response for the specified URL, replacing the previous one.
     ---
-    ---@param url string The URL to cache.
-    ---@param etag string The ETag key for the cached content.
-    ---@param content string The cached content.
-    ---@param ignore_errors? boolean Whether to ignore errors when writing to the cache.
+    --- Raises an error if the content is larger than `config.cache_size`.
+    ---
+    ---@param url string The URL of the response.
+    ---@param etag string The ETag of the response.
+    ---@param content string The response body.
+    ---@param ignore_errors? boolean If `true`, too large content is silently skipped instead of raising an error.
     function http.write( url, etag, content, ignore_errors )
-        -- do not cache content that are larger than MAX_SIZE
-        if string_len( content ) > (http_cache_size.value * 1024) then
+        -- do not cache content that is larger than `config.cache_size`
+        local content_size, max_size = string_len( content ), config.cache_size * 1024
+        if content_size > max_size then
             if ignore_errors then
                 return
             end
 
-            error( "content is too large", 2 )
+            error( string_format( "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http_client cache_size).", url, content_size, max_size ), 2 )
         end
 
         sqlite_query( "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content", url, etag, time_now( "ms", false ), SQLiteBlob( content ) )
+        cache[ url ] = { etag = etag, content = content }
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Removes the cached content for the specified URL.
+    --- Removes the cached response for the specified URL, does nothing if the URL is not cached.
     ---
-    ---@param url string The URL to remove.
+    ---@param url string The URL of the cached response.
     function http.delete( url )
         sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE url=?", url )
+        cache[ url ] = nil
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Removes expired cache entries, then the oldest ones until the total size fits `dreamwork.http.cache_total_size`.
+    --- Removes entries older than `config.cache_lifetime`, then the oldest ones until the total size fits `config.cache_total_size`.
+    ---
+    --- Clears the in-memory cache, so the remaining entries are reloaded from the database on demand.
     ---
     function http.prune()
-        local lifetime = http_cache_lifetime.value
+        local lifetime = config.cache_lifetime
         if lifetime > 0 then
             sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE timestamp < ?", time_now( "ms", false ) - lifetime * 86400000 )
         end
@@ -222,7 +257,10 @@ do
                     FROM 'dreamwork.storage.http'
                 ) WHERE total_size > ?
             )
-        ]], http_cache_total_size.value * 1024 )
+        ]], config.cache_total_size * 1024 )
+
+        -- rows were removed in bulk, so the cache cannot be trusted anymore
+        cache = {}
     end
 
 end
@@ -231,57 +269,74 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- A storage for file hashes.
+    --- A storage of file records (size, timestamp and hash), used to detect changed files.
     ---
-    ---@class dreamwork.files
+    ---@class dreamwork.storage.files
     local files = {}
     storage.files = files
 
     ---@class dreamwork.storage.files.Record
-    ---@field path string
-    ---@field size number
-    ---@field timestamp number
-    ---@field hash string
+    ---@field path string The path to the file.
+    ---@field size integer The size of the file in bytes.
+    ---@field timestamp integer The modification timestamp of the file.
+    ---@field hash string The hash of the file, as it was written.
 
     ---@type table<string, dreamwork.std.sqlite.ColumnType>
     local record_types = { size = "number", timestamp = "number", hash = "blob" }
+
+    ---@type table<string, dreamwork.storage.files.Record>
+    local cache = {}
 
     --- [SHARED AND MENU]
     ---
     --- Returns the file record for the specified path.
     ---
+    --- The returned record is shared with the in-memory cache, do not modify it.
+    ---
     ---@param file_path string The path to the file.
-    ---@return dreamwork.storage.files.Record | nil data The file record, or `nil` if not found.
+    ---@return dreamwork.storage.files.Record | nil record The file record, or `nil` if the path is not stored.
     ---@nodiscard
     function files.read( file_path )
-        ---@diagnostic disable-next-line: return-type-mismatch
-        return sqlite_cast( sqlite_queryFirst( "SELECT path, size, timestamp, hex( hash ) AS hash FROM 'dreamwork.storage.files' WHERE path=?", file_path ), record_types )
+        local record = cache[ file_path ]
+        if record ~= nil then
+            return record
+        end
+
+        ---@diagnostic disable-next-line: cast-local-type
+        record = sqlite_cast( sqlite_queryFirst( "SELECT path, size, timestamp, hex( hash ) AS hash FROM 'dreamwork.storage.files' WHERE path=?", file_path ), record_types )
+        if record ~= nil then
+            cache[ file_path ] = record
+        end
+
+        return record
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Writes the file record for the specified path.
+    --- Stores the file record for the specified path, replacing the previous one.
     ---
     ---@param file_path string The path to the file.
     ---@param file_size integer The size of the file in bytes.
-    ---@param file_timestamp integer The timestamp of the file.
+    ---@param file_timestamp integer The modification timestamp of the file.
     ---@param file_hash string The hash of the file (SHA256/MD5), raw or hex digest.
     function files.write( file_path, file_size, file_timestamp, file_hash )
         sqlite_query( "INSERT INTO 'dreamwork.storage.files' (path, size, timestamp, hash) VALUES (?, ?, ?, ?) ON CONFLICT( path ) DO UPDATE SET size = excluded.size, timestamp = excluded.timestamp, hash = excluded.hash", file_path, file_size, file_timestamp, SQLiteBlob( file_hash ) )
+        cache[ file_path ] = { path = file_path, size = file_size, timestamp = file_timestamp, hash = file_hash }
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Removes the file record for the specified path.
+    --- Removes the file record for the specified path, does nothing if the path is not stored.
     ---
     ---@param file_path string The path to the file.
     function files.delete( file_path )
         sqlite_query( "DELETE FROM 'dreamwork.storage.files' WHERE path=?", file_path )
+        cache[ file_path ] = nil
     end
 
 end
 
-if std.LUA_SERVER then
+if LUA_SERVER then
 
     --- [SERVER]
     ---
@@ -381,7 +436,7 @@ if std.LUA_SERVER then
     local function resolve_repository_id( value )
         local repository_id = get_repository_id( value )
         if repository_id == nil then
-            error( "Invalid repository '" .. tostring( value ) .. "' was given as #1 argument.", 3 )
+            error( string_format( "Repository '%s' does not exist.", value ), 3 )
         end
 
         return repository_id
@@ -514,8 +569,8 @@ end
 do
 
     ---@class dreamwork.storage.Migration
-    ---@field name string
-    ---@field execute fun( query: fun( str: string, ...: any ): table[] | nil )
+    ---@field name string The unique name/version of the migration.
+    ---@field execute fun( query: fun( str: string, ...: any ): table[] | nil ) Applies the migration, runs inside a transaction with `query` bound to it.
 
     ---@type dreamwork.storage.Migration[]
     local migrations = {
@@ -544,13 +599,6 @@ do
                         hash BLOB
                     )
                 ]] )
-            end
-        },
-        {
-            name = "0.1.1",
-            execute = function()
-                --- repositories and packages, server only
-                if not std.LUA_SERVER then return end
 
                 sqlite_rawQuery( "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)" )
 
@@ -584,7 +632,7 @@ do
     for i = 1, #migrations, 1 do
         local migration_name = migrations[ i ].name
         if migration_indexes[ migration_name ] ~= nil then
-            error( "Database migration '" .. migration_name .. "' is defined twice." )
+            error( string_format( "Database migration '%s' is defined more than once.", migration_name ) )
         end
 
         migration_indexes[ migration_name ] = i
@@ -592,10 +640,10 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Checks if a migration exists and returns `true` or `false`.
+    --- Checks if a migration with the specified name is defined.
     ---
     ---@param name string The name/version of the migration.
-    ---@return boolean is_exists `true` if migration exists, `false` otherwise.
+    ---@return boolean is_exists `true` if the migration is defined, `false` otherwise.
     ---@nodiscard
     local function is_migration_exists( name )
         return migration_indexes[ name ] ~= nil
@@ -605,13 +653,17 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Runs a migration using specified migration table.
+    --- Runs the specified migration in a transaction and records it in the migration history.
+    ---
+    --- The migration history is not checked, so the migration runs even if it was already applied.
+    ---
+    --- On failure the transaction is rolled back and the error is rethrown.
     ---
     ---@param migration dreamwork.storage.Migration The migration to run.
     ---@return boolean is_success Always `true`, on failure an error is thrown.
     local function migrate_by_table( migration )
-        assert( isCallable( migration.execute ), "Database migration failed: '%s' does not have an 'execute' function.", migration.name )
-        dreamwork.Logger:info( "Running migration '" .. tostring( migration.name ) .. "'..." )
+        assert( isCallable( migration.execute ), "Database migration '%s' has no 'execute' function.", migration.name )
+        dreamwork.Logger:info( "Applying database migration '%s'...", migration.name )
 
         local execute = migration.execute
 
@@ -626,7 +678,7 @@ do
         end
 
         -- rethrown as is, the error already carries the stack of where the migration failed
-        dreamwork.Logger:error( "Database migration '%s' failed.", migration.name )
+        dreamwork.Logger:error( "Database migration '%s' failed, its changes were rolled back.", migration.name )
         error( error_object, 2 )
     end
 
@@ -634,7 +686,7 @@ do
 
     --- Runs all migrations up to `last_index` that are not in the migration history yet, in definition order.
     ---
-    ---@param last_index integer
+    ---@param last_index integer The index of the last migration to run.
     local function migrate_until( last_index )
         ---@type table<string, boolean>
         local finished_migrations = {}
@@ -650,23 +702,47 @@ do
             end
         end
 
+        ---@type dreamwork.storage.Migration[]
+        local pending_migrations = {}
+        local pending_count = 0
+
         for i = 1, last_index, 1 do
             local migration = migrations[ i ]
             if not finished_migrations[ migration.name ] then
-                migrate_by_table( migration )
+                pending_count = pending_count + 1
+                pending_migrations[ pending_count ] = migration
             end
+        end
+
+        if pending_count == 0 then
+            return
+        end
+
+        ---@type string[]
+        local pending_names = {}
+
+        for i = 1, pending_count, 1 do
+            pending_names[ i ] = "\"" .. pending_migrations[ i ].name .. "\""
+        end
+
+        dreamwork.Logger:info( "Found %d pending database migration%s: %s", pending_count, pending_count == 1 and "" or "s", table_concat( pending_names, " -> ", 1, pending_count ) )
+
+        for i = 1, pending_count, 1 do
+            migrate_by_table( pending_migrations[ i ] )
         end
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Runs all pending migrations up to and including the specified one.
+    --- Runs all pending migrations up to and including the specified one, in definition order.
     ---
-    ---@param name string The name/version of the migration.
+    --- Raises an error if the migration is not defined.
+    ---
+    ---@param name string The name/version of the last migration to run.
     function storage.migrateByName( name )
         local last_index = migration_indexes[ name ]
         if last_index == nil then
-            error( "Database migration failed: '" .. tostring( name ) .. "' does not exist.", 2 )
+            error( string_format( "Database migration '%s' does not exist.", name ), 2 )
         end
 
         migrate_until( last_index )
@@ -674,7 +750,7 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Runs all pending migrations.
+    --- Runs all pending migrations, in definition order.
     ---
     function storage.migrate()
         migrate_until( #migrations )
@@ -682,8 +758,10 @@ do
 
 end
 
----@param ... string
----@return table<string, dreamwork.std.sqlite.QueryRow> | nil
+--- Returns the current values of the specified pragmas, pragmas without a result are omitted.
+---
+---@param ... string The names of the pragmas.
+---@return table<string, string | number> values
 local function pragma_read( ... )
     local keys = { ... }
     local key_count = select( "#", ... )
@@ -705,15 +783,17 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Initializes the database.
+--- Initializes the database: tunes the SQLite pragmas and runs all pending migrations.
+---
+--- The HTTP cache is pruned by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`), once its saved limits are applied.
 ---
 function storage.init()
-    dreamwork.Logger:info( "Preparing the database to begin migration..." )
+    dreamwork.Logger:info( "Initializing the database..." )
     time_tick()
 
     local pragma_values = pragma_read( "foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint" )
     if pragma_values ~= nil then
-        if (tonumber( pragma_values.foreign_keys or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.foreign_keys, 10 ) or 0) == 0 then
             sqlite_rawQuery( "pragma foreign_keys = 1" )
         end
 
@@ -721,11 +801,11 @@ function storage.init()
             sqlite_rawQuery( "pragma journal_mode = wal" )
         end
 
-        if (tonumber( pragma_values.synchronous or 0, 10 ) or 0) ~= 1 then
+        if (tonumber( pragma_values.synchronous, 10 ) or 0) ~= 1 then
             sqlite_rawQuery( "pragma synchronous = normal" )
         end
 
-        if (tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) > 100 then
+        if (tonumber( pragma_values.wal_autocheckpoint, 10 ) or 0) > 100 then
             sqlite_rawQuery( "pragma wal_autocheckpoint = 100" )
         end
     end
@@ -734,14 +814,13 @@ function storage.init()
     engine_hook.catch( "ShutDown", "dreamwork.sqlite", function()
         local success, error_message = pcall( sqlite_rawQuery, "pragma wal_checkpoint(TRUNCATE)" )
         if not success then
-            dreamwork.Logger:error( "Failed to truncate WAL journal: %s", error_message )
+            dreamwork.Logger:error( "Failed to truncate the SQLite WAL journal on shutdown: %s", error_message )
         end
     end, -1000 )
 
     sqlite_rawQuery( "CREATE TABLE IF NOT EXISTS 'dreamwork.storage.migrations' (name TEXT, timestamp INTEGER)" )
 
     storage.migrate()
-    storage.http.prune()
 
-    dreamwork.Logger:info( "Migration completed, time spent: %.2f ms.", time_tick( "ms" ) )
+    dreamwork.Logger:info( "Database initialized in %.2f ms.", time_tick( "ms" ) )
 end
