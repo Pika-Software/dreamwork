@@ -186,3 +186,25 @@ function DebugInfo( slot, info ) end
 ---@param value any The value to check.
 ---@return boolean is_table `true` if the value is a table, `false` otherwise.
 function istable( value ) end
+
+--- [CLIENT AND MENU]
+---
+--- Gets the width of the game's window (in pixels).
+---
+--- > **NOTE**: `ScrW()` returns the width from the current viewport, this can be changed via
+--- > [render.SetViewPort](https://wiki.facepunch.com/gmod/render.SetViewPort), inside Render Targets and
+--- > `cam.Start` contexts.
+---
+---@return number width The width of the game's window in pixels.
+function ScrW() end
+
+--- [CLIENT AND MENU]
+---
+--- Gets the height of the game's window (in pixels).
+---
+--- > **NOTE**: `ScrH()` returns the height from the current viewport, this can be changed via
+--- > [render.SetViewPort](https://wiki.facepunch.com/gmod/render.SetViewPort), inside Render Targets and
+--- > `cam.Start` contexts.
+---
+---@return number height The height of the game's window in pixels.
+function ScrH() end

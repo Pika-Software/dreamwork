@@ -21,7 +21,7 @@ if LUA_CLIENT then
 
     local cam_Start = cam.Start or debug_fempty
 
-    ---@type RenderCamData
+    ---@type garrysmod.RenderCamData
     local view = {
         type = "2D"
     }

@@ -2733,9 +2733,6 @@ do
 
     end
 
-    -- the server only sends it to clients
-    dreamwork_load( "std/gfx/window.lua", false, not LUA_CLIENT_MENU )
-
 end
 
 dreamwork_load( "std/io/console.lua" )
@@ -2801,6 +2798,7 @@ do
         "Why are we always looking for more ♪",
         "Never forget to finish your Task's!",
         "They'll wait for me to give it up ♪",
+        "This distance is getting shorter...",
         "I don't care who I'm meant to be ♪",
         "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
@@ -2816,6 +2814,7 @@ do
         "Dream + Framework = <3",
         "We need more packages!",
         "Pew-pew-pew-pew-pew! ♪",
+        "Do you feel it too?",
         "Play SOMA sometime;",
         "Where's fireworks!?",
         "Let the sun arise ♪",
@@ -2824,6 +2823,7 @@ do
         "Faster than ever.",
         "Love Wins Again ♪",
         "Made with love <3",
+        "Thin Distance ♪",
         "I burn my sky ♪",
         "Blazing fast ☄",
         "Ancient Tech ♪",

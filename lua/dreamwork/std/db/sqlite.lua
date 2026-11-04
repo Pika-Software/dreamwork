@@ -14,6 +14,8 @@ local raw_select = raw.select
 local string = std.string
 local string_len = string.len
 local string_sub = string.sub
+local string_gsub = string.gsub
+local string_trim = string.trim
 local string_match = string.match
 local string_format = string.format
 local string_replace = string.replace
@@ -89,19 +91,19 @@ sqlite.escape = escape
 ---
 --- Executes a raw SQL query.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
+---@param query_str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
-local function query_raw( str )
+local function query_raw( query_str )
     -- blob literals can make queries megabytes long
-    local str_length = string_len( str )
+    local str_length = string_len( query_str )
     if str_length > 64 then
-        dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( str, 1, 64 ) .. "... (+" .. (str_length - 64) .. " bytes)" )
+        dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( query_str, 1, 64 ) .. "... (+" .. (str_length - 64) .. " bytes)" )
     else
-        dreamwork_Logger:debug( "Executing SQL query: " .. str )
+        dreamwork_Logger:debug( "Executing SQL query: " .. query_str )
     end
 
     ---@type dreamwork.std.sqlite.QueryRow[] | false | nil
-    local result = sql_Query( str )
+    local result = sql_Query( query_str )
     if result == false then
         error( sql.m_strError, 2 )
     end
@@ -178,10 +180,10 @@ sqlite.Blob = class.create( Blob )
 ---
 --- `sql.Query` returns SQL `NULL` as the string `"NULL"`, so a text value that is exactly `"NULL"` is read as `std.null` too, store such data as a blob.
 ---
----@param str dreamwork.std.sqlite.Query The SQL query to execute.
+---@param query_str dreamwork.std.sqlite.Query The SQL query to execute.
 ---@param ... dreamwork.std.sqlite.QueryValue The parameters to use in the query.
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
-local function query( str, ... )
+local function query( query_str, ... )
     ---@type string[]
     local variables = {}
 
@@ -206,7 +208,7 @@ local function query( str, ... )
         end
     end
 
-    local result = query_raw( string_interpolateByte( str, 0x3F --[[ ? ]], variables ) )
+    local result = query_raw( string_interpolateByte( string_trim( (string_gsub( query_str, "[%s\n]+", " " )) ), 0x3F --[[ ? ]], variables ) )
     if result == nil then
         return nil
     end

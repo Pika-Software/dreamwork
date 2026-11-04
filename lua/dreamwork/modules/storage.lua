@@ -1,5 +1,6 @@
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
+local dreamwork_Logger = dreamwork.Logger
 
 --- [SHARED AND MENU]
 ---
@@ -641,12 +642,6 @@ do
         end
 
         migration_indexes[ migration_name ] = i
-
-        -- collapse multi-line queries into one line, so they read well in the debug log
-        local queries = migration.queries
-        for j = 1, #queries, 1 do
-            queries[ j ] = string_trim( string_gsub( queries[ j ], "[%s\n]+", " " ) )
-        end
     end
 
     --- [SHARED AND MENU]
@@ -675,7 +670,7 @@ do
     local function migrate_by_table( migration )
         local queries = migration.queries
         assert( isTable( queries ), "Database migration '%s' has no 'queries' table.", migration.name )
-        dreamwork.Logger:info( "Applying database migration '%s'...", migration.name )
+        dreamwork_Logger:info( "Applying database migration '%s'...", migration.name )
 
         -- the migration record is written in the same transaction, so a crash can't leave it unrecorded
         local success, error_object = pcall( sqlite_transaction, function( query )
@@ -691,7 +686,7 @@ do
         end
 
         -- rethrown as is, the error already carries the stack of where the migration failed
-        dreamwork.Logger:error( "Database migration '%s' failed, its changes were rolled back.", migration.name )
+        dreamwork_Logger:error( "Database migration '%s' failed, its changes were rolled back.", migration.name )
         error( error_object, 2 )
     end
 
@@ -738,7 +733,7 @@ do
             pending_names[ i ] = "\"" .. pending_migrations[ i ].name .. "\""
         end
 
-        dreamwork.Logger:info( "Found %d pending database migration%s: %s", pending_count, pending_count == 1 and "" or "s", table_concat( pending_names, " -> ", 1, pending_count ) )
+        dreamwork_Logger:info( "Found %d pending database migration%s: %s", pending_count, pending_count == 1 and "" or "s", table_concat( pending_names, " -> ", 1, pending_count ) )
 
         for i = 1, pending_count, 1 do
             migrate_by_table( pending_migrations[ i ] )
@@ -801,7 +796,7 @@ end
 --- The HTTP cache is pruned by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`), once its saved limits are applied.
 ---
 function storage.init()
-    dreamwork.Logger:info( "Initializing the database..." )
+    dreamwork_Logger:info( "Initializing the database..." )
     time_tick()
 
     local pragma_values = pragma_read( "foreign_keys", "journal_mode", "synchronous", "wal_autocheckpoint" )
@@ -827,7 +822,7 @@ function storage.init()
     engine_hook.catch( "ShutDown", "dreamwork.sqlite", function()
         local success, error_message = pcall( sqlite_rawQuery, "pragma wal_checkpoint(TRUNCATE)" )
         if not success then
-            dreamwork.Logger:error( "Failed to truncate the SQLite WAL journal on shutdown: %s", error_message )
+            dreamwork_Logger:error( "Failed to truncate the SQLite WAL journal on shutdown: %s", error_message )
         end
     end, -1000 )
 
@@ -835,5 +830,5 @@ function storage.init()
 
     storage.migrate()
 
-    dreamwork.Logger:info( "Database initialized in %.2f ms.", time_tick( "ms" ) )
+    dreamwork_Logger:info( "Database initialized in %.2f ms.", time_tick( "ms" ) )
 end
