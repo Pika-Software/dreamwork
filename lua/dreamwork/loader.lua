@@ -2923,6 +2923,9 @@ dreamwork_load( "modules/engine/http.lua" )
 
 dreamwork_load( "std/db/sqlite.lua" )
 
+dreamwork_load( "modules/storage.lua" )
+-- dreamwork_load( "std/net/http.lua" )
+
 do
 
     local HolyLib = HolyLib

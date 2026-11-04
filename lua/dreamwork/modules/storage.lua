@@ -2,7 +2,7 @@ local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
 ---@class dreamwork.storage
-local storage = dreamwork.storage or {}
+local storage = {}
 dreamwork.storage = storage
 
 local std = dreamwork.std
@@ -10,15 +10,26 @@ local std = dreamwork.std
 local assert = std.assert
 local pcall = std.pcall
 
+local isTable = std.isTable
+local isNumber = std.isNumber
 local isString = std.isString
 local isCallable = std.isCallable
+
+local raw = std.raw
+local raw_pairs = raw.pairs
+local raw_tonumber = raw.tonumber
 
 local console = std.console
 
 local string = std.string
 local string_len = string.len
 
+local json = std.json
+local json_serialize, json_deserialize = json.serialize, json.deserialize
+
 local sqlite = std.sqlite
+local SQLiteBlob = sqlite.Blob
+local sqlite_cast = sqlite.cast
 local sqlite_transaction = sqlite.transaction
 local sqlite_query, sqlite_rawQuery = sqlite.query, sqlite.rawQuery
 local sqlite_queryFirst, sqlite_queryValue = sqlite.queryFirst, sqlite.queryValue
@@ -27,30 +38,79 @@ local time = std.time
 local time_now = time.now
 local time_tick = time.tick
 
-local tonumber = std.tonumber
 local error = std.error
+local tostring = std.tostring
+local tonumber = std.tonumber
 
+---@type table<string, dreamwork.std.sqlite.ColumnType>
+local value_types = { value = "blob" }
 
 --- [SHARED AND MENU]
 ---
 --- Returns the value for the specified key.
 ---
----@param key string
----@return string
+---@param key string The key of the value.
+---@return string | nil value The value, or `nil` if the key does not exist.
 ---@nodiscard
 function storage.read( key )
+    local row = sqlite_cast( sqlite_queryFirst( "SELECT hex( value ) AS value FROM 'dreamwork.storage' WHERE key=?", key ), value_types )
+    if row == nil then
+        return nil
+    end
+
     ---@type string
-    return sqlite_queryValue( "SELECT VALUE FROM 'dreamwork.store' WHERE key=?", key )
+    return row.value
 end
 
 --- [SHARED AND MENU]
 ---
 --- Sets the value for the specified key.
 ---
----@param key string
----@param value string
+--- Values are stored as blobs, so they may contain any bytes.
+---
+---@param key string The key of the value.
+---@param value string The value to store.
 function storage.write( key, value )
-    sqlite_query( "INSERT OR REPLACE INTO 'dreamwork.store' VALUES (?, ?)", key, value )
+    sqlite_query( "INSERT INTO 'dreamwork.storage' (key, value) VALUES (?, ?) ON CONFLICT( key ) DO UPDATE SET value = excluded.value", key, SQLiteBlob( value ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Removes the value for the specified key.
+---
+---@param key string The key of the value.
+function storage.delete( key )
+    sqlite_query( "DELETE FROM 'dreamwork.storage' WHERE key=?", key )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the JSON-deserialized value for the specified key.
+---
+--- Raises a `DecodeError` if the stored value is not valid JSON.
+---
+---@param key string The key of the value.
+---@return dreamwork.std.json.Value | nil value The value, or `nil` if the key does not exist.
+---@nodiscard
+function storage.readJSON( key )
+    local value = storage.read( key )
+    if value == nil then
+        return nil
+    end
+
+    return json_deserialize( value )
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets the value for the specified key, serialized as JSON.
+---
+--- Raises an `EncodeError` if the value cannot be serialized.
+---
+---@param key string The key of the value.
+---@param value dreamwork.std.json.Value The value to store.
+function storage.writeJSON( key, value )
+    storage.write( key, json_serialize( value ) )
 end
 
 do
@@ -66,6 +126,28 @@ do
         max = 16384
     } )
 
+    local http_cache_total_size = console.Variable( {
+        name = "dreamwork.http.cache_total_size",
+        description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
+        replicated = not std.LUA_MENU,
+        archive = std.LUA_MENU_SERVER,
+        type = "integer",
+        default = 8192,
+        min = 0,
+        max = 1048576
+    } )
+
+    local http_cache_lifetime = console.Variable( {
+        name = "dreamwork.http.cache_lifetime",
+        description = "The number of days cached content is kept for, 0 keeps it forever.",
+        replicated = not std.LUA_MENU,
+        archive = std.LUA_MENU_SERVER,
+        type = "integer",
+        default = 30,
+        min = 0,
+        max = 3650
+    } )
+
     --- [SHARED AND MENU]
     ---
     --- A cache storage for http requests.
@@ -74,15 +156,22 @@ do
     local http = {}
     storage.http = http
 
+    ---@class dreamwork.storage.http.Record
+    ---@field etag string
+    ---@field content string
+
+    ---@type table<string, dreamwork.std.sqlite.ColumnType>
+    local record_types = { content = "blob" }
+
     --- [SHARED AND MENU]
     ---
     --- Gets the cached content for the specified URL.
     ---
     ---@param url string
-    ---@return table?
+    ---@return dreamwork.storage.http.Record | nil record The cached record, or `nil` if not found.
     ---@nodiscard
     function http.read( url )
-        return sqlite_queryFirst( "SELECT etag, content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url )
+        return sqlite_cast( sqlite_queryFirst( "SELECT etag, hex( content ) AS content FROM 'dreamwork.storage.http' WHERE url=? LIMIT 1", url ), record_types )
     end
 
     --- [SHARED AND MENU]
@@ -103,16 +192,37 @@ do
             error( "content is too large", 2 )
         end
 
-        -- we are unable to store null bytes in sqlite
-        if string.containsByte( content, 0x00 ) then
-            if ignore_errors then
-                return
-            end
+        sqlite_query( "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content", url, etag, time_now( "ms", false ), SQLiteBlob( content ) )
+    end
 
-            error( "null bytes are not allowed", 2 )
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the cached content for the specified URL.
+    ---
+    ---@param url string The URL to remove.
+    function http.delete( url )
+        sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE url=?", url )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes expired cache entries, then the oldest ones until the total size fits `dreamwork.http.cache_total_size`.
+    ---
+    function http.prune()
+        local lifetime = http_cache_lifetime.value
+        if lifetime > 0 then
+            sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE timestamp < ?", time_now( "ms", false ) - lifetime * 86400000 )
         end
 
-        sqlite_query( "INSERT OR REPLACE INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?)", url, etag, time_now( "ms", false ), content )
+        -- running total from the newest entry, everything past the limit goes
+        sqlite_query( [[
+            DELETE FROM 'dreamwork.storage.http' WHERE url IN (
+                SELECT url FROM (
+                    SELECT url, SUM( length( CAST( content AS BLOB ) ) ) OVER ( ORDER BY timestamp DESC, url ) AS total_size
+                    FROM 'dreamwork.storage.http'
+                ) WHERE total_size > ?
+            )
+        ]], http_cache_total_size.value * 1024 )
     end
 
 end
@@ -130,7 +240,11 @@ do
     ---@class dreamwork.storage.files.Record
     ---@field path string
     ---@field size number
-    ---@field os_time number
+    ---@field timestamp number
+    ---@field hash string
+
+    ---@type table<string, dreamwork.std.sqlite.ColumnType>
+    local record_types = { size = "number", timestamp = "number", hash = "blob" }
 
     --- [SHARED AND MENU]
     ---
@@ -140,16 +254,8 @@ do
     ---@return dreamwork.storage.files.Record | nil data The file record, or `nil` if not found.
     ---@nodiscard
     function files.read( file_path )
-        local result = sqlite_queryFirst( "SELECT * FROM 'dreamwork.storage.files' WHERE path=?", file_path )
-        if result ~= nil then
-            return {
-                path = result.path,
-                size = tonumber( result.size, 10 ) or -1,
-                time = tonumber( result.os_time, 10 ) or 0
-            }
-        end
-
-        return nil
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return sqlite_cast( sqlite_queryFirst( "SELECT path, size, timestamp, hex( hash ) AS hash FROM 'dreamwork.storage.files' WHERE path=?", file_path ), record_types )
     end
 
     --- [SHARED AND MENU]
@@ -159,188 +265,257 @@ do
     ---@param file_path string The path to the file.
     ---@param file_size integer The size of the file in bytes.
     ---@param file_timestamp integer The timestamp of the file.
-    ---@param file_hash string The hash of the file (SHA256/MD5).
+    ---@param file_hash string The hash of the file (SHA256/MD5), raw or hex digest.
     function files.write( file_path, file_size, file_timestamp, file_hash )
-        sqlite_query( "INSERT OR REPLACE INTO 'dreamwork.storage.files' (path, size, timestamp, hash) VALUES (?, ?, ?, ?)", file_path, file_size, file_timestamp, file_hash )
+        sqlite_query( "INSERT INTO 'dreamwork.storage.files' (path, size, timestamp, hash) VALUES (?, ?, ?, ?) ON CONFLICT( path ) DO UPDATE SET size = excluded.size, timestamp = excluded.timestamp, hash = excluded.hash", file_path, file_size, file_timestamp, SQLiteBlob( file_hash ) )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the file record for the specified path.
+    ---
+    ---@param file_path string The path to the file.
+    function files.delete( file_path )
+        sqlite_query( "DELETE FROM 'dreamwork.storage.files' WHERE path=?", file_path )
     end
 
 end
 
--- --- repositories
--- if std.LUA_SERVER then
+if std.LUA_SERVER then
 
---     ---@class dreamwork.repositories
---     local repositories = {}
+    --- [SERVER]
+    ---
+    --- A storage for package repositories, the packages they provide and the versions of these packages.
+    ---
+    ---@class dreamwork.repositories
+    local repositories = {}
+    dreamwork.repositories = repositories
 
---     --- [SERVER]
---     ---
---     --- Returns a list of all repositories
---     ---
---     ---@return table lst The list of repositories.
---     function repositories.getRepositories()
---         return sqlite_query( "select * from 'dreamwork.repositories'" ) or {}
---     end
+    ---@class dreamwork.repositories.Repository
+    ---@field id integer The repository ID.
+    ---@field url string The repository URL.
 
---     --- [SERVER]
---     ---
---     --- Adds a new repository to the database.
---     ---
---     ---@param url string
---     function repositories.addRepository( url )
---         -- sadly gmod's sqlite does not support returning clause :(
---         return sqlite_queryFirst( "insert or ignore into 'dreamwork.repositories' (url) values (?); select * from 'dreamwork.repositories' where url=?", url, url )
---     end
+    ---@class dreamwork.repositories.PackageVersion
+    ---@field version string The version of the package.
+    ---@field metadata string | dreamwork.std.null The metadata of the version.
 
---     local getRepositoryID
---     do
+    ---@class dreamwork.repositories.Package
+    ---@field id integer The package ID.
+    ---@field name string The package name, unique within its repository.
+    ---@field url string The package URL.
+    ---@field type integer The package type.
+    ---@field repositoryID integer The ID of the repository that provides the package.
+    ---@field versions dreamwork.repositories.PackageVersion[] The versions of the package.
 
---         --- [SERVER]
---         ---
---         --- Returns the repository ID for the specified repository.
---         ---@param value table | number | string The repository to get the ID for.
---         ---@return number? id The repository ID, or `nil` if the repository does not exist.
---         function getRepositoryID( value )
---             if isTable( value ) then
---                 ---@cast value table
---                 return value.id or getRepositoryID( value.url )
---             elseif isNumber( value ) then
---                 ---@cast value number
---                 return value
---             elseif isString( value ) then
---                 ---@cast value string
---                 ---@type number
---                 return sqlite_queryValue( "select id from 'dreamwork.repositories' where url=?", value )
---             end
---         end
+    ---@class dreamwork.repositories.PackageInfo
+    ---@field name string The package name, unique within its repository.
+    ---@field url string The package URL.
+    ---@field type integer The package type.
+    ---@field versions? dreamwork.repositories.PackageVersion[] The versions of the package, all old versions are replaced.
 
---     end
+    ---@alias dreamwork.repositories.RepositoryValue dreamwork.repositories.Repository | integer | string
 
---     --- [SERVER]
---     ---
---     --- Removes the specified repository from the database.
---     ---
---     ---@param repository table | number | string The repository to remove.
---     function repositories.removeRepository( repository )
---         local repository_id = getRepositoryID( repository )
---         if repository_id == nil then
---             error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
---         end
+    ---@type table<string, dreamwork.std.sqlite.ColumnType>
+    local repository_types = { id = "number" }
 
---         local repositoryIDStr = tostring( repository_id )
+    ---@type table<string, dreamwork.std.sqlite.ColumnType>
+    local package_types = { id = "number", type = "number", repositoryID = "number" }
 
---         sqlite_transaction( function()
---             -- delete all versions, packages and repository
---             local packages = sqlite_query( "select id from 'dreamwork.packages' where repositoryID=?", repositoryIDStr )
---             if packages == nil then return end
+    --- [SERVER]
+    ---
+    --- Returns a list of all repositories.
+    ---
+    ---@return dreamwork.repositories.Repository[] list The list of repositories.
+    ---@nodiscard
+    function repositories.getRepositories()
+        local rows = sqlite_query( "SELECT id, url FROM 'dreamwork.repositories' ORDER BY id" )
+        if rows == nil then
+            return {}
+        end
 
---             for i = 1, #packages do
---                 local packageID = packages[ i ].id
---                 sqlite_query( "delete from 'dreamwork.package_versions' where packageID=?; delete from 'dreamwork.packages' where id=?", packageID, packageID )
---             end
+        for i = 1, #rows, 1 do
+            sqlite_cast( rows[ i ], repository_types )
+        end
 
---             sqlite_query( "delete from 'dreamwork.repositories' where id=?", repositoryIDStr )
---         end )
---     end
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return rows
+    end
 
---     --- [SERVER]
---     ---
---     --- Returns the package for the specified repository and name.
---     ---
---     ---@param repository table | number | string The repository to get the package from.
---     ---@param name string The name of the package to get.
---     ---@return table? pkg The package, or `nil` if the package does not exist.
---     function repositories.getPackage( repository, name )
---         local repository_id = getRepositoryID( repository )
---         if repository_id == nil then
---             error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
---         end
+    --- [SERVER]
+    ---
+    --- Adds a new repository to the database, an existing repository with the same URL is kept as is.
+    ---
+    ---@param url string The repository URL.
+    ---@return dreamwork.repositories.Repository repository The added or existing repository.
+    function repositories.addRepository( url )
+        -- gmod's sqlite is older than the `RETURNING` clause
+        sqlite_query( "INSERT INTO 'dreamwork.repositories' (url) VALUES (?) ON CONFLICT( url ) DO NOTHING", url )
 
---         local pkg = sqlite_queryFirst( "select * from 'dreamwork.packages' where name=? and repositoryID=?", name, tostring( repository_id ) )
---         if pkg == nil then return end
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return sqlite_cast( sqlite_queryFirst( "SELECT id, url FROM 'dreamwork.repositories' WHERE url=?", url ), repository_types )
+    end
 
---         pkg.versions = sqlite_query( "select version, metadata from 'dreamwork.package_versions' where packageID=?", pkg.id )
---         return pkg
---     end
+    --- Returns the repository ID for the specified repository.
+    ---
+    ---@param value dreamwork.repositories.RepositoryValue The repository, its ID or its URL.
+    ---@return integer | nil id The repository ID, or `nil` if the repository does not exist.
+    local function get_repository_id( value )
+        if isTable( value ) then
+            ---@cast value dreamwork.repositories.Repository
+            return value.id or get_repository_id( value.url )
+        elseif isNumber( value ) then
+            ---@cast value integer
+            return value
+        elseif isString( value ) then
+            ---@cast value string
+            return raw_tonumber( sqlite_queryValue( "SELECT id FROM 'dreamwork.repositories' WHERE url=?", value ) )
+        end
 
---     --- [SERVER]
---     ---
---     --- Returns a list of packages for the specified repository.
---     ---
---     ---@param repository table | number | string The repository to get the packages from.
---     ---@return table lst The list of packages.
---     function repositories.getPackages( repository )
---         local repository_id = getRepositoryID( repository )
---         if repository_id == nil then
---             error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
---         end
+        return nil
+    end
 
---         local packages = sqlite_query( "select * from 'dreamwork.packages' where repositoryID=?", tostring( repository_id ) )
+    --- Returns the repository ID for the specified repository, or throws an error if it does not exist.
+    ---
+    ---@param value dreamwork.repositories.RepositoryValue The repository, its ID or its URL.
+    ---@return integer id The repository ID.
+    local function resolve_repository_id( value )
+        local repository_id = get_repository_id( value )
+        if repository_id == nil then
+            error( "Invalid repository '" .. tostring( value ) .. "' was given as #1 argument.", 3 )
+        end
 
---         if packages == nil then
---             return {}
---         end
+        return repository_id
+    end
 
---         -- fetch versions for each package
---         for i = 1, #packages do
---             local pkg = packages[ i ]
---             pkg.versions = sqlite_query( "select version, metadata from 'dreamwork.package_versions' where packageID=?", pkg.id )
---         end
+    --- [SERVER]
+    ---
+    --- Removes the specified repository from the database, together with all its packages and their versions.
+    ---
+    ---@param repository dreamwork.repositories.RepositoryValue The repository to remove, its ID or its URL.
+    function repositories.removeRepository( repository )
+        -- packages and versions are removed by `ON DELETE CASCADE`
+        sqlite_query( "DELETE FROM 'dreamwork.repositories' WHERE id=?", resolve_repository_id( repository ) )
+    end
 
---         return packages
---     end
+    --- [SERVER]
+    ---
+    --- Returns the package for the specified repository and name.
+    ---
+    ---@param repository dreamwork.repositories.RepositoryValue The repository to get the package from, its ID or its URL.
+    ---@param name string The name of the package to get.
+    ---@return dreamwork.repositories.Package | nil pkg The package, or `nil` if the package does not exist.
+    ---@nodiscard
+    function repositories.getPackage( repository, name )
+        local pkg = sqlite_cast( sqlite_queryFirst( "SELECT id, name, url, type, repositoryID FROM 'dreamwork.packages' WHERE repositoryID=? AND name=?", resolve_repository_id( repository ), name ), package_types )
+        if pkg == nil then
+            return nil
+        end
 
---     --- [SERVER]
---     ---
---     --- Updates the packages for the specified repository.
---     ---
---     ---@param repository table | number | string The repository to update.
---     ---@param packages table The packages to update.
---     function repositories.updateRepository( repository, packages )
---         local repository_id = getRepositoryID( repository )
---         if repository_id == nil then
---             error( "Invalid repository '" .. tostring( repository ) .. "' was given as #1 argument.", 2 )
---         end
+        pkg.versions = sqlite_query( "SELECT version, metadata FROM 'dreamwork.package_versions' WHERE packageID=?", pkg.id ) or {}
 
---         local repositoryIDStr = tostring( repository_id )
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return pkg
+    end
 
---         local oldPackages = sqlite_query( "select id, name from 'dreamwork.packages' where repositoryID=?", repositoryIDStr ) or {}
---         for i = 1, #oldPackages do
---             local package = oldPackages[ i ]
---             oldPackages[ package.name ] = package.id
---         end
+    --- [SERVER]
+    ---
+    --- Returns a list of packages for the specified repository.
+    ---
+    ---@param repository dreamwork.repositories.RepositoryValue The repository to get the packages from, its ID or its URL.
+    ---@return dreamwork.repositories.Package[] list The list of packages.
+    ---@nodiscard
+    function repositories.getPackages( repository )
+        local repository_id = resolve_repository_id( repository )
 
---         return sqlite_transaction( function()
---             for name, pkg in pairs( packages ) do
---                 sqlite_query( "insert or replace into 'dreamwork.packages' (name, url, type, repositoryID) values (?, ?, ?, ?)", pkg.name, pkg.url, pkg.type, repositoryIDStr )
+        local packages = sqlite_query( "SELECT id, name, url, type, repositoryID FROM 'dreamwork.packages' WHERE repositoryID=?", repository_id )
+        if packages == nil then
+            return {}
+        end
 
---                 local packageID = sqlite_queryValue( "select id from 'dreamwork.packages' where name=? and repositoryID=?", pkg.name, repositoryIDStr )
---                 sqlite_query( "delete from 'dreamwork.package_versions' where packageID=?", packageID )
+        ---@type table<integer, dreamwork.repositories.PackageVersion[]>
+        local package_versions = {}
 
---                 local versions = pkg.versions
---                 for i = 1, #versions do
---                     local package = versions[ i ]
---                     sqlite_query( "insert into 'dreamwork.package_versions' (version, metadata, packageID) values (?, ?, ?)", package.version, package.metadata, packageID )
---                 end
+        for i = 1, #packages, 1 do
+            local pkg = sqlite_cast( packages[ i ], package_types )
+            ---@cast pkg dreamwork.repositories.Package
 
---                 oldPackages[ name ] = nil
---             end
+            local versions = {}
+            pkg.versions = versions
+            package_versions[ pkg.id ] = versions
+        end
 
---             -- remove old packages
---             for _, id in pairs( oldPackages ) do
---                 sqlite_query( "delete from 'dreamwork.package_versions' where packageID=?; delete from 'dreamwork.packages' where id=?", id, id )
---             end
---         end )
---     end
+        -- all versions in one query instead of one query per package
+        local rows = sqlite_query( "SELECT v.packageID AS packageID, v.version AS version, v.metadata AS metadata FROM 'dreamwork.package_versions' AS v JOIN 'dreamwork.packages' AS p ON p.id = v.packageID WHERE p.repositoryID=?", repository_id )
+        if rows ~= nil then
+            for i = 1, #rows, 1 do
+                local row = rows[ i ]
 
---     dreamwork.repositories = repositories
+                local versions = package_versions[ raw_tonumber( row.packageID ) ]
+                versions[ #versions + 1 ] = { version = row.version, metadata = row.metadata }
+            end
+        end
 
--- end
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return packages
+    end
+
+    --- [SERVER]
+    ---
+    --- Replaces the packages of the specified repository.
+    ---
+    --- Packages that are not in `packages` are removed, existing packages keep their IDs.
+    ---
+    ---@param repository dreamwork.repositories.RepositoryValue The repository to update, its ID or its URL.
+    ---@param packages dreamwork.repositories.PackageInfo[] | table<any, dreamwork.repositories.PackageInfo> The new packages of the repository.
+    function repositories.updateRepository( repository, packages )
+        local repository_id = resolve_repository_id( repository )
+
+        sqlite_transaction( function( query )
+            -- IDs stay as returned by sqlite, they are only used as keys and query parameters
+            ---@type table<string, boolean>
+            local kept_packages = {}
+
+            for _, pkg in raw_pairs( packages ) do
+                -- upsert instead of `REPLACE`, so the package keeps its ID and its versions are not orphaned
+                query( "INSERT INTO 'dreamwork.packages' (name, url, type, repositoryID) VALUES (?, ?, ?, ?) ON CONFLICT( repositoryID, name ) DO UPDATE SET url = excluded.url, type = excluded.type", pkg.name, pkg.url, pkg.type, repository_id )
+
+                -- the row always exists after the upsert above
+                local package_id = sqlite_queryValue( "SELECT id FROM 'dreamwork.packages' WHERE repositoryID=? AND name=?", repository_id, pkg.name )
+                ---@cast package_id string
+
+                kept_packages[ package_id ] = true
+
+                query( "DELETE FROM 'dreamwork.package_versions' WHERE packageID=?", package_id )
+
+                local versions = pkg.versions
+                if versions ~= nil then
+                    for i = 1, #versions, 1 do
+                        local package_version = versions[ i ]
+                        query( "INSERT INTO 'dreamwork.package_versions' (version, metadata, packageID) VALUES (?, ?, ?) ON CONFLICT( packageID, version ) DO UPDATE SET metadata = excluded.metadata", package_version.version, package_version.metadata, package_id )
+                    end
+                end
+            end
+
+            -- remove packages that are gone, their versions are removed by `ON DELETE CASCADE`
+            local rows = query( "SELECT id FROM 'dreamwork.packages' WHERE repositoryID=?", repository_id )
+            if rows ~= nil then
+                for i = 1, #rows, 1 do
+                    local package_id = rows[ i ].id
+                    if not kept_packages[ package_id ] then
+                        query( "DELETE FROM 'dreamwork.packages' WHERE id=?", package_id )
+                    end
+                end
+            end
+        end )
+    end
+
+end
 
 do
 
     ---@class dreamwork.storage.Migration
     ---@field name string
-    ---@field execute fun( self: dreamwork.storage.Migration )
+    ---@field execute fun( query: fun( str: string, ...: any ): table[] | nil )
 
     ---@type dreamwork.storage.Migration[]
     local migrations = {
@@ -360,34 +535,6 @@ do
                     content BLOB
                 )]] )
 
-                --- initial repositories and packages
-                -- if std.LUA_SERVER then
-                --     sqlite_rawQuery( "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)" )
-                --     sqlite_rawQuery( [[
-                --         CREATE TABLE 'dreamwork.packages' (
-                --             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                --             name TEXT NOT NULL,
-                --             url TEXT NOT NULL,
-                --             type INT NOT NULL,
-                --             repositoryID INTEGER,
-
-                --             FOREIGN KEY(repositoryID) REFERENCES 'dreamwork.repositories' (id)
-                --             UNIQUE(name, repositoryID) ON CONFLICT REPLACE
-                --         )
-                --     ]] )
-
-                --     sqlite_rawQuery( [[
-                --         CREATE TABLE 'dreamwork.package_versions' (
-                --             version TEXT NOT NULL,
-                --             metadata TEXT,
-                --             packageID INTEGER NOT NULL,
-
-                --             FOREIGN KEY(packageID) REFERENCES 'dreamwork.packages' (id)
-                --             UNIQUE(version, packageID) ON CONFLICT REPLACE
-                --         )
-                --     ]] )
-                -- end
-
                 --- initial file table
                 sqlite_rawQuery( [[
                     CREATE TABLE 'dreamwork.storage.files' (
@@ -398,8 +545,50 @@ do
                     )
                 ]] )
             end
+        },
+        {
+            name = "0.1.1",
+            execute = function()
+                --- repositories and packages, server only
+                if not std.LUA_SERVER then return end
+
+                sqlite_rawQuery( "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)" )
+
+                -- `UNIQUE` leads with the parent ID, so its index also serves lookups by repository / package
+                sqlite_rawQuery( [[
+                    CREATE TABLE 'dreamwork.packages' (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        url TEXT NOT NULL,
+                        type INTEGER NOT NULL,
+                        repositoryID INTEGER NOT NULL REFERENCES 'dreamwork.repositories' (id) ON DELETE CASCADE,
+                        UNIQUE( repositoryID, name )
+                    )
+                ]] )
+
+                sqlite_rawQuery( [[
+                    CREATE TABLE 'dreamwork.package_versions' (
+                        version TEXT NOT NULL,
+                        metadata TEXT,
+                        packageID INTEGER NOT NULL REFERENCES 'dreamwork.packages' (id) ON DELETE CASCADE,
+                        UNIQUE( packageID, version )
+                    )
+                ]] )
+            end
         }
     }
+
+    ---@type table<string, integer>
+    local migration_indexes = {}
+
+    for i = 1, #migrations, 1 do
+        local migration_name = migrations[ i ].name
+        if migration_indexes[ migration_name ] ~= nil then
+            error( "Database migration '" .. migration_name .. "' is defined twice." )
+        end
+
+        migration_indexes[ migration_name ] = i
+    end
 
     --- [SHARED AND MENU]
     ---
@@ -409,13 +598,7 @@ do
     ---@return boolean is_exists `true` if migration exists, `false` otherwise.
     ---@nodiscard
     local function is_migration_exists( name )
-        for i = 1, #migrations, 1 do
-            if migrations[ i ].name == name then
-                return true
-            end
-        end
-
-        return false
+        return migration_indexes[ name ] ~= nil
     end
 
     storage.isMigrationExists = is_migration_exists
@@ -425,62 +608,76 @@ do
     --- Runs a migration using specified migration table.
     ---
     ---@param migration dreamwork.storage.Migration The migration to run.
-    ---@return boolean is_success `true` if successful, `false` if failed.
+    ---@return boolean is_success Always `true`, on failure an error is thrown.
     local function migrate_by_table( migration )
         assert( isCallable( migration.execute ), "Database migration failed: '%s' does not have an 'execute' function.", migration.name )
         dreamwork.Logger:info( "Running migration '" .. tostring( migration.name ) .. "'..." )
 
-        local success, error_object = pcall( sqlite_transaction, migration.execute, migration )
+        local execute = migration.execute
+
+        -- the migration record is written in the same transaction, so a crash can't leave it unrecorded
+        local success, error_object = pcall( sqlite_transaction, function( query )
+            execute( query )
+            query( "insert into 'dreamwork.storage.migrations' (name, timestamp) values (?, ?)", migration.name, time_now( "ms", false ) )
+        end )
+
         if success then
-            sqlite_query( "insert into 'dreamwork.storage.migrations' (name, timestamp) values (?, ?)", migration.name, time_now() )
             return true
         end
 
         -- rethrown as is, the error already carries the stack of where the migration failed
         dreamwork.Logger:error( "Database migration '%s' failed.", migration.name )
         error( error_object, 2 )
-        return false
     end
 
     storage.migrateByTable = migrate_by_table
 
-    --- [SHARED AND MENU]
+    --- Runs all migrations up to `last_index` that are not in the migration history yet, in definition order.
     ---
-    --- Runs a migration by its name.
-    ---
-    ---@param name string
-    function storage.migrateByName( name )
+    ---@param last_index integer
+    local function migrate_until( last_index )
         ---@type table<string, boolean>
         local finished_migrations = {}
 
-        ---@type dreamwork.storage.Migration[] | nil
-        ---@diagnostic disable-next-line: assign-type-mismatch
         local history = sqlite_rawQuery( "select name from 'dreamwork.storage.migrations'" )
         if history ~= nil then
             for i = 1, #history, 1 do
-                ---@type string
-                ---@diagnostic disable-next-line: assign-type-mismatch
                 local history_name = history[ i ].name
                 if isString( history_name ) then
+                    ---@cast history_name string
                     finished_migrations[ history_name ] = true
                 end
             end
         end
 
-        -- find if given migration name exists
-        if not is_migration_exists( name ) then
-            error( "Database migration failed: '" .. name .. "' does not exist.", 2 )
-        end
-
-        -- first execute migrations
-        for i = 1, #migrations, 1 do
+        for i = 1, last_index, 1 do
             local migration = migrations[ i ]
-            local migration_name = migration.name
-
-            if not (finished_migrations[ migration_name ] or migrate_by_table( migration )) or migration_name == name then
-                break
+            if not finished_migrations[ migration.name ] then
+                migrate_by_table( migration )
             end
         end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Runs all pending migrations up to and including the specified one.
+    ---
+    ---@param name string The name/version of the migration.
+    function storage.migrateByName( name )
+        local last_index = migration_indexes[ name ]
+        if last_index == nil then
+            error( "Database migration failed: '" .. tostring( name ) .. "' does not exist.", 2 )
+        end
+
+        migrate_until( last_index )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Runs all pending migrations.
+    ---
+    function storage.migrate()
+        migrate_until( #migrations )
     end
 
 end
@@ -491,22 +688,16 @@ local function pragma_read( ... )
     local keys = { ... }
     local key_count = select( "#", ... )
 
-    local query_segments = {}
-
-    for i = 1, key_count, 1 do
-        query_segments[ i ] = "pragma " .. keys[ i ]
-    end
-
-    local pragma_values = sqlite_rawQuery( table.concat( query_segments, ";", 1, key_count ) )
-    if pragma_values == nil then
-        return nil
-    end
-
     local results = {}
 
+    -- one query per pragma, so a pragma without a result row can't shift the others
     for i = 1, key_count, 1 do
         local key = keys[ i ]
-        results[ key ] = pragma_values[ i ][ key ]
+
+        local rows = sqlite_rawQuery( "pragma " .. key )
+        if rows ~= nil and rows[ 1 ] ~= nil then
+            results[ key ] = rows[ 1 ][ key ]
+        end
     end
 
     return results
@@ -530,25 +721,27 @@ function storage.init()
             sqlite_rawQuery( "pragma journal_mode = wal" )
         end
 
-        if (tonumber( pragma_values.synchronous or 0, 10 ) or 0) == 0 then
+        if (tonumber( pragma_values.synchronous or 0, 10 ) or 0) ~= 1 then
             sqlite_rawQuery( "pragma synchronous = normal" )
         end
 
-        if (tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) == 1000 then
+        if (tonumber( pragma_values.wal_autocheckpoint or 0, 10 ) or 0) > 100 then
             sqlite_rawQuery( "pragma wal_autocheckpoint = 100" )
         end
     end
 
     -- truncate WAL journal on shutdown
     engine_hook.catch( "ShutDown", "dreamwork.sqlite", function()
-        if sqlite.query( "pragma wal_checkpoint(TRUNCATE)" ) == false then
-            dreamwork.Logger:error( "Failed to truncate WAL journal: %s", sqlite.getLastError() )
+        local success, error_message = pcall( sqlite_rawQuery, "pragma wal_checkpoint(TRUNCATE)" )
+        if not success then
+            dreamwork.Logger:error( "Failed to truncate WAL journal: %s", error_message )
         end
     end, -1000 )
 
     sqlite_rawQuery( "CREATE TABLE IF NOT EXISTS 'dreamwork.storage.migrations' (name TEXT, timestamp INTEGER)" )
 
-    storage.migrateByName( dreamwork.Version )
+    storage.migrate()
+    storage.http.prune()
 
-    dreamwork.Logger:info( "Migration completed, time spent: %.2f ms.", time_tick() )
+    dreamwork.Logger:info( "Migration completed, time spent: %.2f ms.", time_tick( "ms" ) )
 end
