@@ -774,6 +774,7 @@ dreamwork_load( "std/ascii.lua" )
 dreamwork_load( "std/string.lua" )
 
 dreamwork_load( "modules/engine.lua" )
+local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std.string
 local string = std.string
@@ -1486,6 +1487,20 @@ dreamwork_load( "modules/engine/injection.lua" )
 
 dreamwork_load( "modules/engine/console.lua" )
 
+if os.exit == nil then
+
+    local engine_console = dreamwork_engine.console
+
+    --- [SHARED AND MENU]
+    ---
+    --- Calls the ISO C function exit to terminate the host program.
+    ---
+    function os.exit()
+        engine_console.commandRun( "_restart" )
+    end
+
+end
+
 ---@class dreamwork.std.color
 local color_lib = std.color
 
@@ -1653,7 +1668,6 @@ end
 
 dreamwork_load( "std/coroutine.ext.lua" )
 
-local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 local engine_console = dreamwork_engine.console
 
@@ -2663,31 +2677,24 @@ dreamwork_load( "std/types/mixin.lua" )
 dreamwork_load( "std/types/hook.lua" )
 dreamwork_load( "std/types/timer.lua" )
 
-if dreamwork.TickTimer0_05 == nil then
-    local timer = std.Timer( 0.05, 0, dreamwork.Prefix .. "::TickTimer0_05" )
-    dreamwork.TickTimer0_05 = timer
-    timer:start()
-end
+if dreamwork.TickTimer == nil then
 
-if dreamwork.TickTimer0_1 == nil then
-    local timer = std.Timer( 0.1, 0, dreamwork.Prefix .. "::TickTimer0_1" )
-    dreamwork.TickTimer0_1 = timer
-    timer:start()
-end
+    ---@type table<number, dreamwork.std.Timer>
+    local timers = {}
 
-if dreamwork.TickTimer0_25 == nil then
-    local timer = std.Timer( 0.25, 0, dreamwork.Prefix .. "::TickTimer0_25" )
-    dreamwork.TickTimer0_25 = timer
-    timer:start()
-end
+    setmetatable( timers, {
+        ---@param interval number
+        __index = function( self, interval )
+            local timer = std.Timer( interval, 0, dreamwork.Prefix .. "::TickTimer" .. string.gsub( raw.tostring( interval ), "[^%d]*", "_" ) )
+            self[ interval ] = timer
+            timer:start()
+            return timer
+        end
+    } )
 
-if dreamwork.TickTimer1 == nil then
-    local timer = std.Timer( 1, 0, dreamwork.Prefix .. "::TickTimer1" )
-    dreamwork.TickTimer1 = timer
-    timer:start()
-end
+    dreamwork.TickTimer = timers
 
-dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
+end
 
 do
 
@@ -2696,20 +2703,21 @@ do
     ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
     ---@field SYSTEM_BATTERY_LEVEL garrysmod.system.BatteryPower The battery level, from `0` to `100`.
 
-    local glua_system = system or {}
-
-    std.SYSTEM_COUNTRY = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
-
-    std.SYSTEM_HAS_BATTERY = false
-    std.SYSTEM_BATTERY_LEVEL = 100
-
+    ---@type garrysmod.system
+    local glua_system         = dreamwork_engine.requireLibrary( "system" )
     local system_BatteryPower = glua_system.BatteryPower
+
+    std.SYSTEM_COUNTRY        = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
+
+    std.SYSTEM_HAS_BATTERY    = false
+    std.SYSTEM_BATTERY_LEVEL  = 100
+
     if system_BatteryPower ~= nil then
 
         ---@type number
         local previous_value
 
-        dreamwork.TickTimer1:attach( function()
+        dreamwork.TickTimer[ 1.5 ]:attach( function()
             local value = system_BatteryPower() or 255
             if previous_value == value then return end
 
@@ -2735,21 +2743,10 @@ do
 
 end
 
+dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
 dreamwork_load( "std/io/console.lua" )
 
 local console = std.console
-
-if os.exit == nil then
-
-    --- [SHARED AND MENU]
-    ---
-    --- Calls the ISO C function exit to terminate the host program.
-    ---
-    function os.exit()
-        console.Command.run( "_restart" )
-    end
-
-end
 
 local developer = console.Variable.get( "developer", "integer" )
 std.DEVELOPER = developer.value
@@ -2924,10 +2921,27 @@ end
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "modules/engine/http.lua" )
 
-dreamwork_load( "std/db/sqlite.lua" )
+dreamwork_load( "modules/engine/material.lua" )
+dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
+-- dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
 
+dreamwork_load( "std/gfx/window.lua", false, not LUA_CLIENT_MENU )
+
+dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )
+
+-- dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
+-- dreamwork_load( "modules/engine/websocket.lua" )
+
 dreamwork_load( "std/net/http.lua" )
+dreamwork_load( "std/net/websocket.lua" )
+dreamwork_load( "std/net/network.lua", false, LUA_MENU )
+
+dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
+
+dreamwork.storage.init()
+
+dreamwork_load( "modules/cli/init.lua" )
 
 do
 
@@ -3142,16 +3156,6 @@ end
 function std.require( modname, ... )
     -- TODO: reimplement
 end
-
-dreamwork_load( "modules/engine/material.lua" )
-dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
-dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
-
-dreamwork_load( "std/net/network.lua", false, LUA_MENU )
-
-dreamwork.storage.init()
-
-dreamwork_load( "modules/cli/init.lua" )
 
 local total_memory = gc.getMemory()
 logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (dreamwork_getUpTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )

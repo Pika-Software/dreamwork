@@ -1,22 +1,16 @@
----@class dreamwork.GModSystemLib
----@field IsWindowed fun(): boolean
----@field FlashWindow fun()
----@diagnostic disable-next-line: undefined-global
-local glua_system = system or {}
-local system_IsWindowed = glua_system.IsWindowed or function() return true end
-local system_FlashWindow = glua_system.FlashWindow or function() print( "dw: window flash" ) end
+---@class dreamwork.engine
+local dreamwork_engine = dreamwork.engine
 
----@type fun(): number
----@diagnostic disable-next-line: undefined-global
-local ScrW = ScrW or function() return 0 end
-
----@type fun(): number
----@diagnostic disable-next-line: undefined-global
-local ScrH = ScrH or function() return 0 end
+---@type garrysmod.system
+local glua_system = dreamwork_engine.requireLibrary( "system" )
+local system_HasFocus = glua_system.HasFocus
 
 
 ---@class dreamwork.std
 local std = dreamwork.std
+
+local debug = std.debug
+local debug_fempty = debug.fempty
 
 
 --- [CLIENT AND MENU]
@@ -47,30 +41,36 @@ if window.SizeChanged == nil then
 
 end
 
-window.isWindowed = system_IsWindowed
-window.flash = system_FlashWindow
-
---- [CLIENT AND MENU]
----
---- Returns whether the game window is fullscreen.
----
----@return boolean is_on `true` if the game window is fullscreen, `false` if not.
----@nodiscard
-function window.isFullscreen()
-    return not system_IsWindowed()
-end
-
-local system_HasFocus = glua_system.HasFocus
 if system_HasFocus ~= nil then
 
     local has_focus = system_HasFocus()
     window.focus = has_focus
 
-    dreamwork.TickTimer0_05:attach( function()
+    dreamwork.TickTimer[ 0.25 ]:attach( function()
         if has_focus ~= system_HasFocus() then
             has_focus = not has_focus
             window.focus = has_focus
         end
-    end, "dreamwork::window_focus" )
+    end )
+
+end
+
+window.flash = glua_system.FlashWindow or debug_fempty
+
+do
+
+    local system_IsWindowed = glua_system.IsWindowed or function() return true end
+    window.isWindowed = system_IsWindowed
+
+
+    --- [CLIENT AND MENU]
+    ---
+    --- Returns whether the game window is fullscreen.
+    ---
+    ---@return boolean is_on `true` if the game window is fullscreen, `false` if not.
+    ---@nodiscard
+    function window.isFullscreen()
+        return not system_IsWindowed()
+    end
 
 end
