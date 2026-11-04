@@ -1,82 +1,133 @@
 local dreamwork_engine = dreamwork.engine
 
 local dreamwork_getUpTime = dreamwork.getUpTime
-
-local engine_network = dreamwork_engine.network
+local exceptions_call = dreamwork.exceptions.call
 
 local engine_hook = dreamwork_engine.hook
-local hook_call = engine_hook.call
+
+local engine_network = dreamwork_engine.network
+local network_register = engine_network.register
+local network_getID = engine_network.getID
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local raw = std.raw
+local std_len = std.len
+
+local Hook = std.Hook
+
+local console_Variable = std.console.Variable
 
 local gc = std.gc
+local gc_setTableRules = gc.setTableRules
+
+local raw = std.raw
+local raw_type = raw.type
+local raw_pairs = raw.pairs
+local raw_index = raw.index
+local raw_tonumber = raw.tonumber
 
 local math = std.math
 local math_ceil = math.ceil
 local math_floor = math.floor
+local math_max = math.max
+local math_min = math.min
 
 local string = std.string
 local string_len = string.len
+local string_lower = string.lower
+local string_format = string.format
+local string_sub = string.sub
 
-local crc16_digest = std.CRC16.digest
+local table = std.table
+local table_concat = table.concat
+local table_remove = table.remove
 
-local LUA_CLIENT = std.LUA_CLIENT
+local class = std.class
+
+local CRC32 = std.CRC32
+local crc32_digest = CRC32.digest
+
 local LUA_SERVER = std.LUA_SERVER
+
+local logger = dreamwork.Logger
+
+---@class garrysmod.net
+local glua_net = dreamwork_engine.requireLibrary( "net" )
+
+local net_Start = glua_net.Start
+local net_WriteUInt = glua_net.WriteUInt
+local net_WriteData = glua_net.WriteData
+local net_ReadUInt = glua_net.ReadUInt
+local net_ReadData = glua_net.ReadData
+
+local receivers = glua_net.Receivers or {}
+glua_net.Receivers = receivers
 
 
 --[[
 
-        Transmission Header
+        Message Layout ( after the engine header )
 
-           is complex
-         /  ( 1 bit )  \
-        /               \
-        true            false
-        |               |
-        total segments  segment
-        ( 24 bit )
+        opcode ( 3 bit )
         |
-        segment
+        +-- SINGLE  ( reliable )    data
+        +-- BEGIN   ( reliable )    transfer id ( 8 bit ), size ( 32 bit ), crc32 ( 32 bit ), segment size ( 16 bit )
+        +-- SEGMENT ( unreliable )  transfer id ( 8 bit ), index ( 24 bit ), data
+        +-- CANCEL  ( reliable )    transfer id ( 8 bit )
+        +-- ACCEPT  ( reliable )    transfer id ( 8 bit )
+        +-- ACK     ( unreliable )  transfer id ( 8 bit ), first missing index ( 24 bit ), word count ( 4 bit ), words ( 32 bit each )
+        +-- FINISH  ( reliable )    transfer id ( 8 bit )
+        +-- REJECT  ( reliable )    transfer id ( 8 bit )
 
         Transmission Loop
 
-  Sender            Receiver
-    |                   |
-    |               await data
-    |                   |
-    | Segment sent (UDP)|   -> -> -> ( index, data )        [ sender have to repeat attepts of sending data block with specified timeout, if checksum not received or mismatch ]
-    | - - > - - - > - - |
-    |                   |                 \ | /
-await respond           |                  \|/
-    |                   |                   |
-    | Segment info (UDP)|
-    | - - < - - - < - - |   <- <- <- ( index, checksum )           [ receiver have to respond with data block checksum with specified timeout, if next data block not received, final block must be empty ( \0 ) ]
-    |                   |
+  Sender                    Receiver
+    |                           |
+    | - - - - BEGIN - - - - - > |   size + crc32 of the whole data
+    | < - - - ACCEPT  - - - - - |   or REJECT if the receiver doesn't want it
+    |                           |
+    | - - - - SEGMENT - - - - > |   up to `window` segments in flight, paced over the rtt
+    | - - - - SEGMENT - - - - > |
+    | < - - - ACK - - - - - - - |   one per tick: everything before the first missing segment
+    | - - - - SEGMENT - - - - > |   is received, plus a bitmap of the received segments after it,
+    | < - - - ACK - - - - - - - |   so a lost ack is covered by the next one
+    |           ...             |
+    |                           |   segments that are not acknowledged in time are sent again,
+    |                           |   holes behind newer acknowledged segments are sent again sooner
+    |           ...             |
+    | < - - - FINISH  - - - - - |   all segments received and crc32 matches
+    |                           |
+
+    Small data ( fits in one message ) is sent as a single reliable SINGLE message.
+
+    Transfers to the same peer are queued, one runs at a time.
 
 --]]
 
+local OP_SINGLE = 0
+local OP_BEGIN = 1
+local OP_SEGMENT = 2
+local OP_CANCEL = 3
+local OP_ACCEPT = 4
+local OP_ACK = 5
+local OP_FINISH = 6
+local OP_REJECT = 7
+
 ---
 --- in bits
 ---
 ---@type integer
-local internal_header = 8 +   -- unknown magical byte
-    engine_network.HeaderSize -- header ( network id ) + unreliable
+local opcode_size = 3
 
----
---- net limit - header
 ---
 --- in bits
 ---
 ---@type integer
-local max_package_size = ((64 * 1024) - 1) * 8 - internal_header
+local transfer_id_size = 8
 
 ---
---- ( 2 ^ segment_index_size - 1 ) * segment size = max transmittion size in kbytes
----
---- 24 bit with 1 kb segment ~= 16gb is absolute limit ( im pretty sure nobody will need more data, its more that total game size in 8 times )
+--- 24 bit with 1 kb segment ~= 16gb, but the size field limits it to 4gb anyway
 ---
 --- in bits
 ---
@@ -84,154 +135,815 @@ local max_package_size = ((64 * 1024) - 1) * 8 - internal_header
 local segment_index_size = 24
 
 ---
---- segment size - header
+--- in bits
+---
+---@type integer
+local ack_words_size = 4
+
+---
+--- 8 words, 256 segments after the first missing one
+---
+---@type integer
+local max_ack_words = 8
+
+---
+--- unknown magical byte + engine header ( network id + unreliable ) + opcode
 ---
 --- in bits
 ---
 ---@type integer
-local max_segment_size = ((1 * 1024) - 1) * 8 - internal_header - segment_index_size
+local message_header_size = 8 + engine_network.HeaderSize + opcode_size
 
 ---
 --- in bytes
 ---
 ---@type integer
-local size_per_segment = math_floor( max_segment_size / 8 )
+local single_capacity = math_floor( (((64 * 1024) - 1) * 8 - message_header_size) / 8 )
+
+---
+--- in bits
+---
+---@type integer
+local segment_size_size = 16
+
+---
+--- the default segment size, fits into 1 kb message
+---
+--- in bytes
+---
+---@type integer
+local default_segment_size = math_floor( (((1 * 1024) - 1) * 8 - message_header_size - transfer_id_size - segment_index_size) / 8 )
 
 ---
 --- in bytes
 ---
 ---@type integer
-local header_free_space = math_floor( (max_package_size - (segment_index_size + 1 --[[ is complex message (boolean) ]])) / 8 )
+local min_segment_size = 256
 
--- TODO: all network messages are byte strings, that will mean that it will fully builded before send and them fully received before perform readers
+---
+--- the segment message must fit into the message limit
+---
+--- in bytes
+---
+---@type integer
+local max_segment_size = math_min( single_capacity - math_ceil( (transfer_id_size + segment_index_size) / 8 ), 0xFFFF )
+
+---
+--- the fallback data rate if the client has no `rate` info
+---
+--- in bytes per second
+---
+---@type integer
+local default_rate = 30000
+
+---
+--- in seconds
+---
+---@type number
+local ack_refresh_interval = 0.1
+
+---
+--- the reliable stream is slow ( ~77 kb/s measured over steam p2p, the segmented path did ~800 kb/s )
+--- and blocks the control messages behind it, so only small data is sent as a single message
+---
+--- in bytes
+---
+---@type integer
+local single_threshold = 8 * 1024
+
+---
+--- singles share the reliable channel buffer, a burst over it disconnects the peer
+--- ( 8 x 60 kb in one tick were enough ), so singles are limited by a token bucket per peer,
+--- data that doesn't fit is segmented and queued instead
+---
+--- in bytes
+---
+---@type integer
+local single_burst = 64 * 1024
+
+---
+--- the part of the peer data rate that refills the single bucket
+---
+---@type number
+local single_refill_share = 0.25
+
+---
+--- the refill is capped near the measured reliable stream speed
+---
+--- in bytes per second
+---
+---@type integer
+local single_refill_limit = 48 * 1024
+
+---
+--- how much faster than `window / srtt` the segments are paced,
+--- so the window can still grow
+---
+---@type number
+local pacing_gain = 1.25
+
+---
+--- in bytes
+---
+---@type integer
+local max_transfer_size = 0xFFFFFFFF
+
+---
+--- The prefix that makes network names unique enough.
+---
+--- NOTE: must not contain `\0`, the engine string table cuts names at it.
+---
+---@type string
+local name_prefix = "\255\128\64"
+
 ---@class dreamwork.std.Network : dreamwork.std.Object
 ---@field __class dreamwork.std.NetworkClass
----@field id integer
----@field name string
----@field receiver boolean
----@field receiving boolean
----@field sending boolean
----@field timeout number
-local Network = std.class.base( "Network", true )
+---@field id integer The engine ID of the network.
+---@field name string The name of the network.
+---@field receiver boolean `true` if the network accepts incoming messages.
+---@field timeout number The number of seconds without any progress after which a transfer is aborted.
+---@field window integer The maximum number of segments in flight.
+---@field segment integer The size of outgoing segments in bytes.
+---@field limit integer The maximum size of an incoming message in bytes.
+local Network = class.base( "Network", true )
 
----@class dreamwork.std.NetworkClass : dreamwork.std.Network
+---@class dreamwork.std.NetworkClass : dreamwork.std.Network, dreamwork.std.Class
 ---@field __base dreamwork.std.Network
 ---@overload fun( name: string, can_receive?: boolean ): dreamwork.std.Network
-local NetworkClass = std.class.create( Network )
+local NetworkClass = class.create( Network )
 std.Network = NetworkClass
 
+---@alias dreamwork.std.Network.ReceiveFn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, sender: garrysmod.Player | nil )
+---@alias dreamwork.std.Network.ProgressFn fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
+---@alias dreamwork.std.Network.StreamFn fun( network: dreamwork.std.Network, sender: garrysmod.Player | nil, chunk: string | nil, offset: integer, total: integer, success: boolean | nil )
+---@alias dreamwork.std.Network.FinishFn fun( network: dreamwork.std.Network, success: boolean, peer: garrysmod.Player | nil )
+
 ---@type table<dreamwork.std.Network, string>
-local network_to_identifier = {}
-gc.setTableRules( network_to_identifier, true, false )
+local network_identifiers = {}
 
 ---@type table<dreamwork.std.Network, integer>
-local network_to_index = {}
-gc.setTableRules( network_to_index, false, true )
+local network_ids = {}
 
----@type table<integer, dreamwork.std.Network>
-local index_to_network = {}
-gc.setTableRules( index_to_network, false, true )
+---@type table<dreamwork.std.Network, string>
+local network_names = {}
 
 ---@type table<dreamwork.std.Network, boolean>
 local receive_allowed = {}
-gc.setTableRules( receive_allowed, true, false )
-
----@class dreamwork.std.Network.Callback
----@field name string
----@field fn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, index: integer, total: integer )
----@field once boolean
----@type table<dreamwork.std.Network, dreamwork.std.Network.Callback[]>
-local receive_callbacks = {}
-gc.setTableRules( receive_callbacks, true, false )
-
----@param fn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, index: integer, total: integer )
----@param identifier? string
----@param once? boolean
-function Network:attach( fn, identifier, once )
-    local callbacks = receive_callbacks[ self ]
-    local callback_count = callbacks[ 0 ]
-
-    if identifier == nil then
-        identifier = "nil"
-    end
-
-    for i = 1, callback_count, 1 do
-        local callback = callbacks[ i ]
-        if callback.name == identifier then
-            callback.fn = fn
-            callback.once = once == true
-            return
-        end
-    end
-
-    callback_count = callback_count + 1
-
-    callbacks[ callback_count ] = {
-        once = once == true,
-        name = identifier,
-        fn = fn
-    }
-
-    callbacks[ 0 ] = callback_count
-end
-
----@param identifier? string
-function Network:detach( identifier )
-    local callbacks = receive_callbacks[ self ]
-    local callback_count = callbacks[ 0 ]
-
-    if identifier == nil then
-        identifier = "nil"
-    end
-
-    for i = 1, callback_count, 1 do
-        local callback = callbacks[ i ]
-        if callback.name == identifier then
-            callbacks[ 0 ] = callback_count - 1
-            table.remove( callbacks, i )
-            break
-        end
-    end
-end
-
----@param network dreamwork.std.Network
----@param segments string[]
----@param index integer
----@param total integer
-local function perform_callbacks( network, segments, index, total )
-    local callbacks = receive_callbacks[ network ]
-
-    local reader = std.BinaryReader()
-    reader:open( table.concat( segments, "", 1, index ) )
-
-    for i = 1, callbacks[ 0 ], 1 do
-        reader:seek( 0 )
-        callbacks[ i ].fn( network, reader, index, total )
-    end
-
-    -- reader:close()
-end
 
 ---@type table<dreamwork.std.Network, number>
 local timeouts = {}
-gc.setTableRules( timeouts, true, false )
 
--- ---@type table<dreamwork.std.Network, boolean>
--- local network_receiving = {}
--- gc.setTableRules( network_receiving, true, false )
--- ---@type table<dreamwork.std.Network, boolean>
--- local network_sending = {}
--- gc.setTableRules( network_sending, true, false )
+---@type table<dreamwork.std.Network, integer>
+local windows = {}
+
+---@type table<dreamwork.std.Network, integer>
+local limits = {}
+
+---@type table<dreamwork.std.Network, integer>
+local segment_sizes = {}
+
+---@type table<dreamwork.std.Network, dreamwork.std.Hook>
+local receive_hooks = {}
+
+---@type table<dreamwork.std.Network, dreamwork.std.Hook>
+local progress_hooks = {}
+
+---@type table<dreamwork.std.Network, dreamwork.std.Hook>
+local stream_hooks = {}
+
+---@type table<string, dreamwork.std.Network>
+local networks = {}
+
+---@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: garrysmod.Player | nil )
+local network_receive
+
+--- Calls the hook, errors of the handlers are reported without breaking the transfer state.
+---
+---@param hook dreamwork.std.Hook
+---@param ... any
+local function hook_call( hook, ... )
+    if std_len( hook ) ~= 0 then
+        exceptions_call( hook.call, hook, ... )
+    end
+end
+
+--- [SHARED]
+---
+--- Attaches a handler that is called when a message is fully received.
+---
+--- If the handler is already attached, it will not be attached twice.
+---
+---@param handler dreamwork.std.Network.ReceiveFn
+function Network:attach( handler )
+    receive_hooks[ self ]:attach( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Attaches a handler that automatically detaches
+--- itself right before being invoked, so it only ever runs once.
+---
+---@param handler dreamwork.std.Network.ReceiveFn
+function Network:once( handler )
+    receive_hooks[ self ]:once( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Detaches a previously attached receive handler.
+---
+---@param handler dreamwork.std.Network.ReceiveFn
+function Network:detach( handler )
+    receive_hooks[ self ]:detach( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Removes every receive handler.
+---
+function Network:clear()
+    receive_hooks[ self ]:clear()
+end
+
+--- [SHARED]
+---
+--- Waits for the next fully received message.
+---
+---@return dreamwork.std.Network network The network.
+---@return dreamwork.std.BinaryReader reader The reader of the message.
+---@return garrysmod.Player | nil sender The sender, `nil` on the client.
+---@async
+function Network:await()
+    return receive_hooks[ self ]:await( "peek" )
+end
+
+--- [SHARED]
+---
+--- Attaches a handler that receives incoming data in order, chunk by chunk, while it arrives.
+---
+--- `chunk` is the data starting at the zero-based byte `offset`,
+--- after the last chunk the handler is called once more with `chunk = nil` and `success`,
+--- `success` is `false` if the transfer failed ( timed out, cancelled or checksum mismatch ),
+--- the chunks received before it should be discarded then.
+---
+--- If a network has only stream handlers, the received data is not kept in memory.
+---
+---@param handler dreamwork.std.Network.StreamFn
+function Network:stream( handler )
+    stream_hooks[ self ]:attach( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Detaches a previously attached stream handler.
+---
+---@param handler dreamwork.std.Network.StreamFn
+function Network:unstream( handler )
+    stream_hooks[ self ]:detach( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Attaches a handler that is called on every transfer progress, both incoming and outgoing.
+---
+---@param handler dreamwork.std.Network.ProgressFn
+function Network:watch( handler )
+    progress_hooks[ self ]:attach( "peek", handler )
+end
+
+--- [SHARED]
+---
+--- Detaches a previously attached progress handler.
+---
+---@param handler dreamwork.std.Network.ProgressFn
+function Network:unwatch( handler )
+    progress_hooks[ self ]:detach( "peek", handler )
+end
+
+---@param network dreamwork.std.Network
+---@param data string
+---@param sender garrysmod.Player | nil
+local function perform_callbacks( network, data, sender )
+    local hook = receive_hooks[ network ]
+    if std_len( hook ) == 0 then
+        if std_len( stream_hooks[ network ] ) ~= 0 then return end
+
+        logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], string_len( data ) )
+        return
+    end
+
+    exceptions_call( hook.call, hook, network, std.BinaryReader( data ), sender )
+end
+
+---@param network dreamwork.std.Network
+---@param peer garrysmod.Player | nil
+---@param is_outgoing boolean
+---@param done_bytes integer
+---@param total_bytes integer
+local function perform_progress( network, peer, is_outgoing, done_bytes, total_bytes )
+    hook_call( progress_hooks[ network ], network, peer, is_outgoing, done_bytes, total_bytes )
+end
+
+--- The key of the server in the per-peer tables on the client.
+local server_key = "server"
+
+---@param peer garrysmod.Player | nil
+---@return string
+local function peer_tostring( peer )
+    if peer == nil then
+        return "server"
+    end
+
+    return string_format( "%s [%s]", peer:Nick(), peer:SteamID() )
+end
+
+---@param peer garrysmod.Player | nil
+---@return boolean
+local function peer_valid( peer )
+    return peer == nil or peer:IsValid()
+end
+
+---@type fun( peer: garrysmod.Player | nil )
+local message_send
+
+--- Returns the data rate of the channel to the peer.
+---
+---@type fun( peer: garrysmod.Player | nil ): integer
+local peer_rate
+
+--- Returns the round trip time the acks see ( the engine latency + one tick ), `nil` if unknown.
+---
+---@type fun( peer: garrysmod.Player | nil ): number | nil
+local peer_latency
+
+--- Returns the number of bytes written to the reliable stream of the peer in the current tick, `0` if unknown.
+---
+---@type fun( peer: garrysmod.Player | nil ): integer
+local peer_reliable_written
+
+--- Returns `true` if the channel to the peer is choking.
+---
+---@type fun( peer: garrysmod.Player | nil ): boolean
+local peer_choked
+
+if LUA_SERVER then
+
+    ---@type dreamwork.std.console.Variable<integer>
+    local sv_maxrate = console_Variable.get( "sv_maxrate", "integer" )
+
+    ---@type dreamwork.std.console.Variable<integer>
+    local sv_minrate = console_Variable.get( "sv_minrate", "integer" )
+
+    -- HolyLib `gameserver` module, gives access to the net channels of the clients
+    ---@diagnostic disable-next-line: undefined-global
+    local glua_gameserver = gameserver
+
+    if glua_gameserver == nil or glua_gameserver.GetClient == nil then
+
+        ---@param peer garrysmod.Player
+        ---@return integer
+        function peer_rate( peer )
+            local rate = peer:GetInfoNum( "rate", default_rate )
+
+            local max_rate = sv_maxrate.value
+            if max_rate > 0 and rate > max_rate then
+                rate = max_rate
+            end
+
+            local min_rate = sv_minrate.value
+            if rate < min_rate then
+                rate = min_rate
+            end
+
+            return rate
+        end
+
+        function peer_latency()
+            return nil
+        end
+
+        function peer_reliable_written()
+            return 0
+        end
+
+        function peer_choked()
+            return false
+        end
+
+    else
+
+        local gameserver_GetTickInterval = glua_gameserver.GetTickInterval
+        local gameserver_GetClient = glua_gameserver.GetClient
+
+        local FLOW_OUTGOING = glua_gameserver.FLOW_OUTGOING
+
+        ---@class dreamwork.std.Network.GameClient
+        ---@field client holylib.CGameClient The HolyLib `GameClient`.
+        ---@field reliable holylib.bf_write The reliable stream ( `bf_write` ) of the client.
+
+        ---@type table<garrysmod.Player, dreamwork.std.Network.GameClient>
+        local game_clients = {}
+        gc_setTableRules( game_clients, true, false )
+
+        ---@param peer garrysmod.Player
+        ---@return dreamwork.std.Network.GameClient | nil
+        local function game_client( peer )
+            local entry = game_clients[ peer ]
+            if entry ~= nil and entry.client:IsValid() then
+                return entry
+            end
+
+            local client = gameserver_GetClient( peer:EntIndex() - 1 )
+            if client == nil or not client:IsValid() then
+                return nil
+            end
+
+            entry = {
+                client = client,
+                reliable = client:GetStreamReliable()
+            }
+
+            game_clients[ peer ] = entry
+            return entry
+        end
+
+        ---@param peer garrysmod.Player
+        ---@return integer
+        function peer_rate( peer )
+            local entry = game_client( peer )
+            if entry == nil then
+                return default_rate
+            end
+
+            -- already limited by `sv_maxrate` and `sv_minrate`
+            return entry.client:GetRate()
+        end
+
+        ---@param peer garrysmod.Player
+        ---@return number | nil
+        function peer_latency( peer )
+            local entry = game_client( peer )
+            if entry == nil then
+                return nil
+            end
+
+            local latency = entry.client:GetAvgLatency( FLOW_OUTGOING )
+            if latency == nil or latency <= 0 then
+                return nil
+            end
+
+            return latency + gameserver_GetTickInterval()
+        end
+
+        ---@param peer garrysmod.Player
+        ---@return integer
+        function peer_reliable_written( peer )
+            local entry = game_client( peer )
+            if entry == nil then
+                return 0
+            end
+
+            return entry.reliable:GetNumBytesWritten()
+        end
+
+        ---@param peer garrysmod.Player
+        ---@return boolean
+        function peer_choked( peer )
+            local entry = game_client( peer )
+            return entry ~= nil and entry.client:GetChokedPackets() ~= 0
+        end
+
+    end
+
+else
+
+    ---@type dreamwork.std.console.Variable<integer>
+    local rate_variable = console_Variable.get( "rate", "integer" )
+
+    ---@return integer
+    function peer_rate()
+        return rate_variable.value
+    end
+
+    function peer_latency()
+        return nil
+    end
+
+    function peer_reliable_written()
+        return 0
+    end
+
+    function peer_choked()
+        return false
+    end
+
+end
+
+if LUA_SERVER then
+
+    local net_Send = glua_net.Send
+
+    ---@param peer garrysmod.Player
+    function message_send( peer )
+        net_Send( peer )
+    end
+
+else
+
+    local net_SendToServer = glua_net.SendToServer
+
+    function message_send()
+        net_SendToServer()
+    end
+
+end
+
+---@class dreamwork.std.Network.Bucket
+---@field tokens number
+---@field time number
+
+---@type table<garrysmod.Player | string, dreamwork.std.Network.Bucket>
+local single_buckets = {}
+gc_setTableRules( single_buckets, true, false )
+
+---@param peer garrysmod.Player | nil
+---@param key garrysmod.Player | string
+---@param size integer
+---@return boolean allowed `true` if the data can be sent as a single message right now.
+local function single_allowed( peer, key, size )
+    local now = dreamwork_getUpTime()
+
+    local bucket = single_buckets[ key ]
+    if bucket == nil then
+        bucket = { tokens = single_burst, time = now }
+        single_buckets[ key ] = bucket
+    else
+        bucket.tokens = math_min( bucket.tokens + (now - bucket.time) * math_min( peer_rate( peer ) * single_refill_share, single_refill_limit ), single_burst )
+        bucket.time = now
+    end
+
+    if bucket.tokens < size then
+        return false
+    end
+
+    bucket.tokens = bucket.tokens - size
+    return true
+end
+
+---@type fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, weight: integer, reason: string, ...: any )
+local violation
+
+---@type fun( peer: garrysmod.Player | nil, size: integer ): string | nil
+local client_admit
+
+---@type fun( peer: garrysmod.Player | nil, size: integer )
+local client_release
+
+if LUA_SERVER then
+
+    ---
+    --- strikes over it kick the client
+    ---
+    ---@type integer
+    local max_strikes = 32
+
+    ---
+    --- strikes forgiven per second
+    ---
+    ---@type number
+    local strike_decay = 2
+
+    ---
+    --- incoming transfers from one client over all networks
+    ---
+    ---@type integer
+    local max_client_transfers = 16
+
+    ---
+    --- incoming bytes from one client over all networks
+    ---
+    ---@type integer
+    local max_client_bytes = 256 * 1024 * 1024
+
+    ---
+    --- new transfers per second from one client
+    ---
+    ---@type number
+    local begin_rate = 32
+
+    ---@type integer
+    local begin_burst = 64
+
+    ---@class dreamwork.std.Network.Client
+    ---@field strikes number
+    ---@field strike_time number
+    ---@field transfers integer
+    ---@field bytes integer
+    ---@field begins number
+    ---@field begin_time number
+
+    ---@type table<garrysmod.Player, dreamwork.std.Network.Client>
+    local clients = {}
+    gc_setTableRules( clients, true, false )
+
+    ---@param peer garrysmod.Player
+    ---@return dreamwork.std.Network.Client
+    local function client_get( peer )
+        local client = clients[ peer ]
+        if client == nil then
+            local now = dreamwork_getUpTime()
+
+            client = {
+                strikes = 0,
+                strike_time = now,
+                transfers = 0,
+                bytes = 0,
+                begins = begin_burst,
+                begin_time = now
+            }
+
+            clients[ peer ] = client
+        end
+
+        return client
+    end
+
+    function violation( network, peer, weight, reason, ... )
+        if peer == nil then return end
+
+        local client = client_get( peer )
+        local now = dreamwork_getUpTime()
+
+        local strikes = math_max( client.strikes - (now - client.strike_time) * strike_decay, 0 ) + weight
+        client.strikes = strikes
+        client.strike_time = now
+
+        local message = string_format( reason, ... )
+        logger:warn( "%s violated the protocol of network '%s': %s [%.0f/%d strikes]", peer_tostring( peer ), network_names[ network ], message, strikes, max_strikes )
+
+        if strikes > max_strikes and peer:IsValid() then
+            clients[ peer ] = nil
+            peer:Kick( string_format( "Network protocol violation: %s", message ) )
+        end
+    end
+
+    function client_admit( peer, size )
+        ---@cast peer garrysmod.Player
+        local client = client_get( peer )
+        local now = dreamwork_getUpTime()
+
+        local begins = math_min( client.begins + (now - client.begin_time) * begin_rate, begin_burst )
+        client.begin_time = now
+
+        if begins < 1 then
+            client.begins = begins
+            return "too many new transfers"
+        end
+
+        client.begins = begins - 1
+
+        if client.transfers >= max_client_transfers then
+            return string_format( "too many transfers at once, the limit is %d", max_client_transfers )
+        end
+
+        if client.bytes + size > max_client_bytes then
+            return string_format( "too many bytes at once, the limit is %d bytes", max_client_bytes )
+        end
+
+        client.transfers = client.transfers + 1
+        client.bytes = client.bytes + size
+        return nil
+    end
+
+    function client_release( peer, size )
+        local client = clients[ peer ]
+        if client == nil then return end
+
+        client.transfers = math_max( client.transfers - 1, 0 )
+        client.bytes = math_max( client.bytes - size, 0 )
+    end
+
+else
+
+    function violation( network, _, _, reason, ... )
+        logger:warn( "The server violated the protocol of network '%s': %s", network_names[ network ], string_format( reason, ... ) )
+    end
+
+    function client_admit()
+        return nil
+    end
+
+    function client_release()
+    end
+
+end
+
+---@param network dreamwork.std.Network
+---@param opcode integer
+---@param unreliable boolean
+local function message_start( network, opcode, unreliable )
+    net_Start( network_identifiers[ network ], unreliable )
+    net_WriteUInt( opcode, opcode_size )
+end
+
+--- Writes 32-bit unsigned integers in two halves, `WriteUInt` casts through a signed integer on some builds.
+---
+---@param value integer
+local function write_uint32( value )
+    net_WriteUInt( math_floor( value / 0x10000 ), 16 )
+    net_WriteUInt( value % 0x10000, 16 )
+end
+
+---@return integer
+local function read_uint32()
+    return net_ReadUInt( 16 ) * 0x10000 + net_ReadUInt( 16 )
+end
+
+---@param network dreamwork.std.Network
+---@param opcode integer
+---@param transfer_id integer
+---@param peer garrysmod.Player | nil
+local function send_control( network, opcode, transfer_id, peer )
+    message_start( network, opcode, false )
+    net_WriteUInt( transfer_id, transfer_id_size )
+    message_send( peer )
+end
+
+---@class dreamwork.std.Network.Outgoing
+---@field network dreamwork.std.Network
+---@field peer garrysmod.Player | nil
+---@field key garrysmod.Player | string
+---@field id integer
+---@field data string
+---@field size integer
+---@field segment_size integer
+---@field count integer
+---@field acked boolean[]
+---@field sent_at number[]
+---@field resent boolean[]
+---@field resent_count integer
+---@field acked_count integer
+---@field acked_bytes integer
+---@field base integer The first unacknowledged segment.
+---@field highest integer The highest acknowledged segment.
+---@field window number
+---@field slow_start boolean
+---@field srtt number | nil
+---@field srtt_seeded boolean | nil `true` while `srtt` is the handshake sample.
+---@field rto number
+---@field loss_time number
+---@field credit number The number of segments that can be sent right now, refilled by pacing.
+---@field pump_time number
+---@field accepted boolean
+---@field activity number
+---@field start_time number
+---@field callback dreamwork.std.Network.FinishFn | nil
+
+---@class dreamwork.std.Network.Incoming
+---@field network dreamwork.std.Network
+---@field peer garrysmod.Player | nil
+---@field key garrysmod.Player | string
+---@field id integer
+---@field size integer
+---@field segment_size integer
+---@field count integer
+---@field checksum integer
+---@field buffered boolean `true` if the segments are kept for the receive handlers.
+---@field crc dreamwork.std.checksum.CRC32 | nil The running checksum of the delivered data, if not buffered.
+---@field segments string[]
+---@field received_flags boolean[]
+---@field received integer
+---@field received_bytes integer
+---@field base integer The first missing segment, everything before it is delivered.
+---@field highest integer The highest received segment.
+---@field ack_pending boolean
+---@field ack_time number
+---@field activity number
+---@field start_time number
+
+---@class dreamwork.std.Network.Queued
+---@field data string
+---@field callback dreamwork.std.Network.FinishFn | nil
+
+---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Outgoing>>
+local outgoing = {}
+
+---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Incoming>>
+local incoming = {}
+
+---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Queued[]>>
+local queues = {}
+
+---@type table<dreamwork.std.Network.Outgoing, boolean>
+local active_outgoing = {}
+
+---@type table<dreamwork.std.Network.Incoming, boolean>
+local active_incoming = {}
+
+---@type integer
+local transfer_counter = 0
+
 do
-
-    ---@type table<string, dreamwork.std.Network>
-    local networks = {}
-    gc.setTableRules( networks, false, true )
-
-    ---@type table<dreamwork.std.Network, string>
-    local names = {}
-    gc.setTableRules( names, true, false )
-
 
     ---@param name string
     ---@return dreamwork.std.Network | nil object
@@ -242,657 +954,986 @@ do
 
     ---@return string
     ---@protected
-    function Network:__tostring()
-        return string.format( "Network: %p [%d][%s]", self, self.id, self.name )
+    function Network:__represent()
+        return string_format( "Network: %p [%d][%s]", self, network_ids[ self ], network_names[ self ] )
     end
 
     ---@param name string
+    ---@param can_receive? boolean
     ---@protected
     function Network:__init( name, can_receive )
-        -- here we add some signature to network name to be sure that it will be unique enough
-        local network_name = "\255\128\64\0" .. name
+        local network_name = name_prefix .. name
 
-        network_to_identifier[ self ] = network_name
-
+        ---@type integer | nil
         local network_id
 
         if LUA_SERVER then
-            network_id = engine.networkRegister( network_name )
+            network_id = network_register( network_name )
         else
-            network_id = engine.networkGetID( network_name )
+            network_id = network_getID( network_name )
         end
 
         if network_id == nil then
-            error( "failed to register network, unknown error", 3 )
+            error( string_format( "Network '%s' is not registered on the server, create it on the server first.", name ), 3 )
         end
 
-        network_to_index[ self ] = network_id
-        index_to_network[ network_id ] = self
-
-        names[ self ] = name
+        network_identifiers[ self ] = network_name
+        network_ids[ self ] = network_id
+        network_names[ self ] = name
         networks[ name ] = self
 
         receive_allowed[ self ] = can_receive == true
+        timeouts[ self ] = 15.0
+        windows[ self ] = 64
+        limits[ self ] = 64 * 1024 * 1024
+        segment_sizes[ self ] = default_segment_size
 
-        receive_callbacks[ self ] = { [ 0 ] = 0 }
-        -- network_receiving[ self ] = false
-        -- network_sending[ self ] = false
-        timeouts[ self ] = 1.0
+        receive_hooks[ self ] = Hook( "Network::" .. name .. "::receive" )
+        progress_hooks[ self ] = Hook( "Network::" .. name .. "::progress" )
+        stream_hooks[ self ] = Hook( "Network::" .. name .. "::stream" )
+
+        local outgoing_states = {}
+        gc_setTableRules( outgoing_states, true, false )
+        outgoing[ self ] = outgoing_states
+
+        local incoming_states = {}
+        gc_setTableRules( incoming_states, true, false )
+        incoming[ self ] = incoming_states
+
+        local queue_lists = {}
+        gc_setTableRules( queue_lists, true, false )
+        queues[ self ] = queue_lists
+
+        ---@param remaining_bits integer
+        ---@param sender garrysmod.Player | nil
+        receivers[ string_lower( network_name ) ] = function( remaining_bits, sender )
+            network_receive( self, remaining_bits, sender )
+        end
     end
 
-    do
+    ---@type table<string, table<dreamwork.std.Network, any>>
+    local key_to_table = {
+        name = network_names,
+        id = network_ids,
+        receiver = receive_allowed,
+        timeout = timeouts,
+        window = windows,
+        limit = limits,
+        segment = segment_sizes
+    }
 
-        local raw_index = raw.index
-
-        ---@typa table<string, table<dreamwork.std.Network, any>>
-        local key_to_table = {
-            [ "name" ] = names,
-            [ "timeout" ] = timeouts,
-            [ "receiver" ] = receive_allowed,
-            -- [ "receiving" ] = network_receiving,
-            -- [ "sending" ] = network_sending,
-            [ "id" ] = network_to_index
-        }
-
-        ---@param key string
-        ---@protected
-        function Network:__index( key )
-            local tbl = key_to_table[ key ]
-            if tbl ~= nil then
-                return tbl[ self ]
-            end
-
-            return raw_index( Network, key )
+    ---@param key string
+    ---@protected
+    function Network:__index( key )
+        local tbl = key_to_table[ key ]
+        if tbl ~= nil then
+            return tbl[ self ]
         end
 
+        return raw_index( Network, key )
     end
 
     ---@param key string
     ---@param value any
     ---@protected
     function Network:__newindex( key, value )
-        if key == "timeout" then
-            timeouts[ self ] = math.max( raw.tonumber( value or 1.0, 10 ) or 1.0, 0.1 )
-        elseif key == "receiver" then
+        if key == "receiver" then
             receive_allowed[ self ] = value == true
-        end
-
-        error( "attempt to modify read-only object", 2 )
-    end
-
-end
-
-if LUA_SERVER then
-
-    ---@class dreamwork.std.Network.Thread
-    ---@field owner garrysmod.Player | nil
-    ---@field value thread
-    ---@field time number
-    ---@type dreamwork.std.Network.Thread[]
-    local outgoing_activity = { [ 0 ] = 0 }
-
-    ---@type table<garrysmod.Player, table<integer, thread>>
-    local outgoing_transmissions = {}
-
-    setmetatable( outgoing_transmissions, {
-        __index = function( self, pl )
-            local threads = {}
-            self[ pl ] = threads
-            return threads
-        end,
-        __mode = "k"
-    } )
-
-    engine_hook.catch( "Tick", "network.writer", function()
-        local time_used = dreamwork_getUpTime()
-
-        for i = outgoing_activity[ 0 ], 1, -1 do
-            local thread_data = outgoing_activity[ i ]
-            if time_used > thread_data.time then
-                local client = thread_data.client
-                if client:IsValid() then
-                    coroutine.resume( thread_data.thread, false )
-                else
-                    dreamwork.Logger:warn( "Transmission '%s' terminated, client '%s' disconnected.", thread_data.thread, client )
-                    outgoing_activity[ 0 ] = outgoing_activity[ 0 ] - 1
-                    table.remove( outgoing_activity, i )
-                end
-            end
-        end
-    end )
-
-    ---@param network dreamwork.std.Network
-    ---@param client garrysmod.Player
-    local function update_outgoing( network, client )
-        local network_id = network_to_index[ network ]
-
-        local thread = outgoing_transmissions[ client ][ network_id ]
-        if thread == nil then
-            error( "Failed to update outgoing transmission, thread not found", 2 )
-        end
-
-        local thread_count = outgoing_activity[ 0 ]
-
-        for i = thread_count, 1, -1 do
-            if outgoing_activity[ i ].thread == thread then
-                outgoing_activity[ i ].time = dreamwork_getUpTime() + (hook_call( "NetworkTimeout", network ) or network.timeout)
-                return
-            end
-        end
-
-        thread_count = thread_count + 1
-        outgoing_activity[ 0 ] = thread_count
-
-        outgoing_activity[ thread_count ] = {
-            thread = thread,
-            time = dreamwork_getUpTime() + network.timeout,
-            client = client
-        }
-    end
-
-    ---@param client garrysmod.Player
-    ---@param network dreamwork.std.Network
-    local function kill_outgoing( network, client )
-        local network_id = network_to_index[ network ]
-
-        local outgoing_thread = outgoing_transmissions[ client ][ network_id ]
-        if outgoing_thread == nil then return end
-
-        outgoing_transmissions[ client ][ network_id ] = nil
-
-        local thread_count = outgoing_activity[ 0 ]
-
-        for i = thread_count, 1, -1 do
-            if outgoing_activity[ i ].thread == outgoing_thread then
-                outgoing_activity[ 0 ] = thread_count - 1
-                table.remove( outgoing_activity, i )
-                break
-            end
-        end
-    end
-
-    local function abort_transmission( network, client )
-        if not network_sending[ network ] then return end
-
-        network_sending[ network ] = false
-
-        kill_outgoing( network, client )
-
-        net.Start( network_to_identifier[ network ], false )
-        net.Send( client )
-    end
-
-    ---@param network dreamwork.std.Network
-    ---@param client garrysmod.Player
-    ---@param segments string[]
-    ---@param total_segments integer
-    ---@async
-    local function complex_transmission( network, client, segments, total_segments )
-        local network_name = network_to_identifier[ network ]
-
-        network_sending[ network ] = true
-
-        net.Start( network_name, false )
-
-        net.WriteBool( true )
-        net.WriteUInt( total_segments, segment_index_size )
-
-        net.Send( client )
-
-        dreamwork.Logger:info( "Sended a handshake for a new transmission, waiting for confirmation... [complex: yes, id: %d, target: %s]", network_to_index[ network ], client )
-
-        local checksum = std.CRC32()
-
-        local segment_checksum = 0
-        local index = 0
-        local segment
-
-        ::next_segment::
-
-        index = index + 1
-        segment = segments[ index ]
-
-        segment_checksum = crc16_digest( segment )
-        checksum:update( segment )
-
-        ::send_segment::
-
-        net.Start( network_name, true )
-
-        net.WriteUInt( index, segment_index_size )
-        net.WriteData( segment )
-
-        net.Send( client )
-
-        dreamwork.Logger:debug( "Sended segment %d/%d [%d bytes, target: %s, segment checksum: 0x%x]", index, total_segments, string_len( segment ), client, segment_checksum )
-
-        update_outgoing( network, client )
-
-        local persisted = coroutine.yield()
-
-        if persisted then
-            if index ~= net.ReadUInt( segment_index_size ) then
-                dreamwork.Logger:warn( "wrong segment index" )
-                goto send_segment
-            end
-
-            if segment_checksum ~= net.ReadUInt( 16 ) then
-                dreamwork.Logger:warn( "wrong segment checksum" )
-                goto send_segment
-            end
-
-            dreamwork.Logger:info( "delivered segment %d/%d [%d bytes]", index, total_segments, string_len( segment ) )
-
-            if index < total_segments then
-                goto next_segment
-            end
-
-            abort_transmission( network, client )
-
-            dreamwork.Logger:info( "transmission finished, delivered %d bytes, checksum: 0x%x", string_len( table.concat( segments ) ), checksum:digest() )
-            return
-        end
-
-        dreamwork.Logger:warn( "timeout" )
-        goto send_segment
-    end
-
-    ---@param network dreamwork.std.Network
-    ---@param data string
-    ---@param client garrysmod.Player
-    local function transmit( network, data, client )
-        print()
-        dreamwork.Logger:info( "Started transmission for %s", client )
-
-        local length = string_len( data )
-        dreamwork.Logger:debug( "total size %d bytes", length )
-
-        if header_free_space < length then
-            if network_sending[ network ] then
-                abort_transmission( network, client )
-            end
-
-            local segments, segment_count = string.divide( data, size_per_segment )
-            dreamwork.Logger:debug( "transmitting %d segments by %d bytes", segment_count, size_per_segment )
-
-            local outgoing_thread = coroutine.create( complex_transmission )
-            outgoing_transmissions[ client ][ network_to_index[ network ] ] = outgoing_thread
-
-            local success, err_msg = coroutine.resume( outgoing_thread, network, client, segments, segment_count )
-            if success then
-                network_sending[ network ] = true
-            else
-                error( err_msg, 2 )
-            end
-
-            return
-        end
-
-        net.Start( network_to_identifier[ network ], false )
-
-        net.WriteBool( false )
-        net.WriteData( data )
-
-        net.Send( client )
-
-        dreamwork.Logger:info( "transmission finished" )
-    end
-
-    ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.BinaryWriter )
-    ---@param client garrysmod.Player
-    ---@return thread | nil
-    function Network:transmit( fn, client )
-        local writer = std.BinaryWriter()
-        writer:open()
-
-        fn( self, writer )
-
-        transmit( self, writer:compile(), client )
-    end
-
-    ---@param network_id integer
-    ---@param unreliable boolean
-    ---@param remaining_bits integer
-    ---@param sender garrysmod.Player | nil
-    engine_hook.catch( "dreamwork.network.message.incoming", "network.server.handler", function( network_id, unreliable, remaining_bits, sender )
-        local networks = outgoing_transmissions[ sender ]
-        if networks ~= nil and unreliable then
-            local outgoing_thread = networks[ network_id ]
-            if outgoing_thread ~= nil then
-                local success, err_msg = coroutine.resume( outgoing_thread, true )
-                if not success then
-                    dreamwork.Logger:error( "Failed to resume transmission: %s", err_msg )
-                end
-
-                return true
-            end
-        end
-
-        return false
-    end, -1000 )
-
-end
-
----@class dreamwork.std.Network.Transmission.Segment
----@field segments string[]>
----@field checksum dreamwork.std.checksum.CRC16
----@field total integer
-if LUA_CLIENT then
-
-    ---@type table<integer, thread>
-    local incoming_transmissions = {}
-    gc.setTableRules( incoming_transmissions, false, true )
-
-    ---@type dreamwork.std.Network.Thread[]
-    local incoming_activity = { [ 0 ] = 0 }
-
-    engine.hookCatch( "Think", "network.reader", function()
-        local time_used = dreamwork_getUpTime()
-
-        for i = 1, incoming_activity[ 0 ], 1 do
-            local thread_data = incoming_activity[ i ]
-            if time_used > thread_data.time then
-                coroutine.resume( thread_data.value, false )
-            end
-        end
-    end )
-
-    ---@param network dreamwork.std.Network
-    ---@param value thread
-    local function update_incoming( network, value )
-        local thread_count = incoming_activity[ 0 ]
-
-        for i = thread_count, 1, -1 do
-            if incoming_activity[ i ].value == value then
-                incoming_activity[ i ].time = dreamwork_getUpTime() + network.timeout
-                return
-            end
-        end
-
-        thread_count = thread_count + 1
-        incoming_activity[ 0 ] = thread_count
-
-        incoming_activity[ thread_count ] = {
-            value = value,
-            time = dreamwork_getUpTime() + network.timeout
-        }
-    end
-
-    ---@param network_id integer
-    local function kill_incoming( network_id )
-        local incoming_thread = incoming_transmissions[ network_id ]
-        if incoming_thread == nil then return end
-
-        incoming_transmissions[ network_id ] = nil
-
-        local thread_count = incoming_activity[ 0 ]
-
-        for i = thread_count, 1, -1 do
-            if incoming_activity[ i ].value == incoming_thread then
-                incoming_activity[ 0 ] = thread_count - 1
-                table.remove( incoming_activity, i )
-                break
-            end
-        end
-    end
-
-    ---@param network dreamwork.std.Network
-    ---@param network_name string
-    ---@param segment_index integer
-    ---@param segment_checksum integer
-    local function send_checksum( network, network_name, segment_index, segment_checksum )
-        net.Start( network_name, true )
-
-        net.WriteUInt( segment_index, segment_index_size )
-        net.WriteUInt( segment_checksum, 16 )
-
-        net.SendToServer()
-
-        update_incoming( network, coroutine.running() )
-    end
-
-    local function abort_receiving( network )
-        if not network_receiving[ network ] then return end
-
-        network_receiving[ network ] = false
-
-        kill_incoming( network_to_index[ network ] )
-    end
-
-    ---@param network dreamwork.std.Network
-    ---@param total_segments integer
-    local function complex_receiving( network, total_segments )
-        local network_name = network_to_identifier[ network ]
-        local checksum = std.CRC32()
-
-        ---@type string[]
-        local segments = {}
-
-        ---@type integer
-        local segment_checksum = 0
-
-        ---@type string | nil
-        local segment = nil
-
-        ---@type integer
-        local segment_index = 0
-
-        ::await_response::
-
-        local persisted, message_length, index = coroutine.yield( checksum )
-
-        if persisted then
-            if segment == nil then
-                segment_index = index
-            elseif index ~= segment_index then
-                segments[ segment_index ] = segment
-                checksum:update( segment )
-
-                dreamwork.Logger:debug( "delivered segment %d/%d [%d bytes, checksum: 0x%x]", segment_index, total_segments, string_len( segment ), segment_checksum )
-
-                perform_callbacks( network, segments, segment_index, total_segments )
-
-                if index == 0 then
-                    goto await_response
-                end
-
-                segment_index = index
-            end
-
-            segment = net.ReadData( math_ceil( message_length / 8 ) )
-            segment_checksum = crc16_digest( segment )
-
-            send_checksum( network, network_name, segment_index, segment_checksum )
+        elseif key == "timeout" then
+            timeouts[ self ] = math_max( raw_tonumber( value, 10 ) or 15.0, 1.0 )
+        elseif key == "window" then
+            windows[ self ] = math_max( math_min( math_floor( raw_tonumber( value, 10 ) or 64 ), 256 ), 1 )
+        elseif key == "limit" then
+            limits[ self ] = math_max( math_min( math_floor( raw_tonumber( value, 10 ) or 0 ), max_transfer_size ), 0 )
+        elseif key == "segment" then
+            segment_sizes[ self ] = math_max( math_min( math_floor( raw_tonumber( value, 10 ) or default_segment_size ), max_segment_size ), min_segment_size )
         else
-            send_checksum( network, network_name, segment_index, segment_checksum )
-            dreamwork.Logger:warn( "timeout" )
+            error( "attempt to modify read-only object", 2 )
         end
-
-        goto await_response
     end
 
-    ---@param network_id integer
-    ---@param unreliable boolean
-    ---@param message_length integer
-    engine.hookCatch( "dreamwork.network.message.incoming", "network.client.handler", function( network_id, unreliable, message_length )
-        local network = index_to_network[ network_id ]
-        if network == nil then return false end
+end
 
-        if not receive_allowed[ network ] then
-            dreamwork.Logger:warn( "Server attempted to send a message to a network that is not receiving, disconnecting... [id: %d]", network_id )
-            return false
+---@param state dreamwork.std.Network.Outgoing | dreamwork.std.Network.Incoming
+---@param index integer
+---@return integer length
+local function segment_length( state, index )
+    local count = state.count
+    if index == count then
+        return state.size - (count - 1) * state.segment_size
+    end
+
+    return state.segment_size
+end
+
+---@type fun( network: dreamwork.std.Network, data: string, peer: garrysmod.Player | nil, key: garrysmod.Player | string, callback: dreamwork.std.Network.FinishFn | nil )
+local transmit_start
+
+---@param network dreamwork.std.Network
+---@param key garrysmod.Player | string
+---@param peer garrysmod.Player | nil
+local function transmit_next( network, key, peer )
+    local queue = queues[ network ][ key ]
+    if queue == nil then return end
+
+    -- singles finish right away, so keep going until a segmented transfer takes the slot
+    while outgoing[ network ][ key ] == nil do
+        local queued = table_remove( queue, 1 )
+        if queued == nil then
+            queues[ network ][ key ] = nil
+            return
         end
 
-        if network_receiving[ network ] then
-            local incoming_thread = incoming_transmissions[ network_id ]
-            if incoming_thread == nil then
-                dreamwork.Logger:error( "Thread not found, possibly a memory corruption, disconnecting... [complex: yes, id: %d]", network_id )
-                abort_receiving( network )
-                return true
-            end
+        transmit_start( network, queued.data, peer, key, queued.callback )
+    end
+end
 
-            if unreliable then
-                local success, err_msg = coroutine.resume( incoming_thread, true, message_length, net.ReadUInt( segment_index_size ) )
-                if not success then
-                    dreamwork.Logger:error( "Failed to resume transmission: %s", err_msg )
-                    abort_receiving( network )
+---@param network dreamwork.std.Network
+---@param key garrysmod.Player | string
+---@param peer garrysmod.Player | nil
+local function queue_flush( network, key, peer )
+    local queue = queues[ network ][ key ]
+    if queue == nil then return end
+
+    queues[ network ][ key ] = nil
+
+    for i = 1, #queue, 1 do
+        local callback = queue[ i ].callback
+        if callback ~= nil then
+            exceptions_call( callback, network, false, peer )
+        end
+    end
+end
+
+---@param state dreamwork.std.Network.Outgoing
+---@param success boolean
+local function outgoing_finish( state, success )
+    active_outgoing[ state ] = nil
+
+    local network, key, peer = state.network, state.key, state.peer
+
+    local states = outgoing[ network ]
+    if states[ key ] == state then
+        states[ key ] = nil
+    end
+
+    -- the next one starts first, so new transfers from the callback are queued behind it
+    if peer_valid( peer ) then
+        transmit_next( network, key, peer )
+    else
+        queue_flush( network, key, peer )
+    end
+
+    local callback = state.callback
+    if callback ~= nil then
+        exceptions_call( callback, network, success, peer )
+    end
+end
+
+---@param state dreamwork.std.Network.Outgoing
+---@param reason string
+local function outgoing_cancel( state, reason )
+    if peer_valid( state.peer ) then
+        send_control( state.network, OP_CANCEL, state.id, state.peer )
+    end
+
+    logger:warn( "Transmission #%d of network '%s' to %s was cancelled: %s [%d/%d segments, %d resent]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.acked_count, state.count, state.resent_count )
+    outgoing_finish( state, false )
+end
+
+---@param state dreamwork.std.Network.Incoming
+local function incoming_detach( state )
+    active_incoming[ state ] = nil
+
+    local states = incoming[ state.network ]
+    if states[ state.key ] == state then
+        states[ state.key ] = nil
+    end
+
+    client_release( state.peer, state.size )
+end
+
+---@param state dreamwork.std.Network.Incoming
+---@param success boolean
+local function incoming_close( state, success )
+    incoming_detach( state )
+
+    local network = state.network
+
+    hook_call( stream_hooks[ network ], network, state.peer, nil, state.received_bytes, state.size, success )
+end
+
+---@param state dreamwork.std.Network.Incoming
+---@param reason string
+local function incoming_reject( state, reason )
+    if peer_valid( state.peer ) then
+        send_control( state.network, OP_REJECT, state.id, state.peer )
+    end
+
+    logger:warn( "Receiving #%d of network '%s' from %s was aborted: %s [%d/%d segments]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.received, state.count )
+    incoming_close( state, false )
+end
+
+---@param state dreamwork.std.Network.Outgoing
+---@param index integer
+local function send_segment( state, index )
+    local offset = (index - 1) * state.segment_size
+    local length = segment_length( state, index )
+
+    message_start( state.network, OP_SEGMENT, true )
+    net_WriteUInt( state.id, transfer_id_size )
+    net_WriteUInt( index, segment_index_size )
+    net_WriteData( string_sub( state.data, offset + 1, offset + length ), length )
+    message_send( state.peer )
+end
+
+---@param state dreamwork.std.Network.Outgoing
+---@param now number
+local function outgoing_pump( state, now )
+    local acked, sent_at, resent = state.acked, state.sent_at, state.resent
+    local highest = state.highest
+    local rto = state.rto
+
+    -- a hole behind newer acknowledged segments is most likely lost
+    local srtt = state.srtt
+    local fast_rto = (srtt == nil) and rto or math_min( srtt * 1.5, rto )
+
+    local lost = false
+
+    -- the channel can't send more right now, whatever is written would be dropped,
+    -- the window isn't cut, choke happens without congestion too and real losses cut it anyway
+    if peer_choked( state.peer ) then
+        state.pump_time = now
+        return
+    end
+
+    -- pacing, the window is spread over the rtt instead of a burst in one tick,
+    -- and never faster than the data rate of the channel
+    local window = state.window
+    local elapsed = now - state.pump_time
+    state.pump_time = now
+
+    local credit = state.credit
+    if srtt == nil then
+        credit = window
+    else
+        credit = credit + math_min( window * pacing_gain * elapsed / srtt, peer_rate( state.peer ) * elapsed / state.segment_size )
+    end
+
+    if credit > window then
+        credit = window
+    end
+
+    for index = state.base, math_min( state.base + math_floor( window ) - 1, state.count ), 1 do
+        if credit < 1 then break end
+
+        if not acked[ index ] then
+            local time = sent_at[ index ]
+            if time == nil or (now - time) >= ((index < highest) and fast_rto or rto) then
+                credit = credit - 1
+
+                if time ~= nil then
+                    resent[ index ] = true
+                    state.resent_count = state.resent_count + 1
+                    lost = true
                 end
 
-                return true
+                send_segment( state, index )
+                sent_at[ index ] = now
             end
-
-            local success, checksum = coroutine.resume( incoming_thread, true, 0, 0 )
-
-            if success then
-                ---@cast checksum dreamwork.std.checksum.CRC32
-                dreamwork.Logger:debug( "Transmission finished, completing... [complex: yes, id: %d, checksum: 0x%x]", network_id, checksum:digest() )
-            else
-                ---@cast checksum string
-                dreamwork.Logger:error( "Failed to finish transmission: %s", checksum )
-            end
-
-            abort_receiving( network )
-
-            return true
         end
+    end
 
-        if message_length == 0 then
-            dreamwork.Logger:error( "Sender sended abort message without transmission, ignoring... [complex: yes, id: %d]", network_id )
-            return false
-        end
+    state.credit = credit
 
-        local is_complex = net.ReadBool()
-        message_length = message_length - 1
-
-        if unreliable then
-            dreamwork.Logger:error( "Server attempted to send a data segment without a handshake, disconnecting... [complex: %s, id: %d]", is_complex and "yes" or "no", network_id )
-            return true
-        end
-
-        if is_complex then
-            if network_receiving[ network ] then
-                abort_receiving( network )
-            end
-
-            local total_segments = net.ReadUInt( segment_index_size )
-            message_length = message_length - segment_index_size
-
-            dreamwork.Logger:debug( "Received a handshake for a new transmission, preparing to receive... [complex: yes, id: %d, segments: %d]", network_id, total_segments )
-
-            local incoming_thread = coroutine.create( complex_receiving )
-            incoming_transmissions[ network_id ] = incoming_thread
-
-            local success, err_msg = coroutine.resume( incoming_thread, network, total_segments )
-            if success then
-                network_receiving[ network ] = true
-            else
-                dreamwork.Logger:error( "Failed to resume transmission: %s", err_msg )
-            end
-
-            return true
-        end
-
-        dreamwork.Logger:info( "Received a handshake for a new transmission, preparing to receive... [complex: %s, id: %d]", is_complex and "yes" or "no", network_id )
-        perform_callbacks( network, { [ 0 ] = 1, net.ReadData( math_ceil( message_length / 8 ) ) }, 1, 1 )
-
-        return true
-    end, -1000 )
-
+    -- one window cut per rto, many segments time out together
+    if lost and (now - state.loss_time) >= rto then
+        state.loss_time = now
+        state.slow_start = false
+        state.window = math_max( state.window * 0.5, 1 )
+        state.rto = math_min( rto * 1.5, 3.0 )
+    end
 end
 
-local n = NetworkClass( "test", LUA_CLIENT )
+---@param state dreamwork.std.Network.Incoming
+---@param now number
+local function send_ack( state, now )
+    state.ack_pending = false
+    state.ack_time = now
 
-if SERVER then
+    local base, received_flags = state.base, state.received_flags
 
-    concommand.Add( "testss", function( pl )
-        if std.DEVELOPER == 0 then return end
+    local word_count = math_min( math_ceil( (state.highest - base) / 32 ), max_ack_words )
+    if word_count < 0 then
+        word_count = 0
+    end
 
-        n:transmit( function( self, writer )
-            local data = file.Read( "moff3.jpg", "GAME" )
-            dreamwork.Logger:info( "sending: %d bytes", #data )
-            writer:writeCountedString( data, 32 )
-        end, pl )
-    end )
+    message_start( state.network, OP_ACK, true )
+    net_WriteUInt( state.id, transfer_id_size )
+    net_WriteUInt( base, segment_index_size )
+    net_WriteUInt( word_count, ack_words_size )
 
-else
+    local index = base + 1
 
-    local start_time
+    for _ = 1, word_count, 1 do
+        local word, bit_value = 0, 1
 
-    local fraction = 0
+        for _ = 1, 32, 1 do
+            if received_flags[ index ] then
+                word = word + bit_value
+            end
 
-    local material
-
-    local time_history = { [ 0 ] = 0 }
-
-    local speed_str = ""
-
-    local total_seg, cur_seg = 1, 1
-    local last_segment_time = 0
-
-    timer.Create( "speeddy", 1, 0, function()
-        local history_size = time_history[ 0 ]
-
-        if history_size > 1 then
-            local average = (time_history[ history_size - 1 ] + time_history[ history_size ]) * 0.5
-            speed_str = string.format( "per segment: %.2fs\nremaining: %.2fs\n%.2fkb/s", average, average * (total_seg - cur_seg), ((1 / average) * size_per_segment) / 125 )
-        end
-    end )
-
-    n:attach( function( self, reader, index, total )
-        total_seg, cur_seg = total, index
-
-        if index == 1 then
-            start_time = os.clock()
+            index = index + 1
+            bit_value = bit_value * 2
         end
 
-        local time = os.clock()
+        write_uint32( word )
+    end
 
-        local history_size = time_history[ 0 ] + 1
-        time_history[ history_size ] = time - last_segment_time
-        time_history[ 0 ] = history_size
-
-        last_segment_time = time
-
-        fraction = math.clamp( index / total, 0, 1 )
-
-        -- dreamwork.Logger:debug( "received segment %d/%d, took %f s", index, total, std.time.tick() )
-        if index == total then
-            local data = reader:readCountedString( 32 ) or ""
-            dreamwork.Logger:info( "transmission finished, received %d bytes, took %f s", #data, os.clock() - start_time )
-
-            local file_name = std.uuid.v7() .. ".png"
-
-            file.Write( file_name, data )
-
-            material = Material( "data/" .. file_name )
-        end
-    end )
-
-    hook.Add( "HUDPaint", "YEEE", function()
-        if fraction == 0 then return end
-
-        local x = ScrW() - 512
-
-        surface.SetDrawColor( 33, 33, 33, 200 )
-        surface.DrawRect( x, 0, 256, 320 )
-
-        surface.DrawRect( x + 16, 16, 224, 32 )
-        surface.DrawRect( x + 16, 64, 224, 240 )
-
-        if material ~= nil then
-            surface.SetDrawColor( 255, 255, 255 )
-            surface.SetMaterial( material )
-            surface.DrawTexturedRect( x + 16, 64, 224, 240 )
-        end
-
-        surface.SetDrawColor( 100, 100, 255 )
-        surface.DrawRect( x + 16, 16, 224 * fraction, 32 )
-
-        draw.DrawText( speed_str, "DermaLarge", x, 320, color_white, TEXT_ALIGN_LEFT )
-    end )
-
+    message_send( state.peer )
 end
 
--- engine.hookCatch( "dreamwork.network.message.incoming", "logs", function( network_id, unreliable, message_length )
---     dreamwork.Logger:debug( "Received message, id: %d, unreliable: %s, message_length: %d", network_id, unreliable and "true" or "false", message_length )
--- end, 1 )
+---@param network dreamwork.std.Network
+---@param data string
+---@param peer garrysmod.Player | nil
+---@param key garrysmod.Player | string
+---@param callback dreamwork.std.Network.FinishFn | nil
+function transmit_start( network, data, peer, key, callback )
+    local size = string_len( data )
+
+    if size == 0 or (size <= single_threshold and (peer_reliable_written( peer ) + size) <= single_burst and single_allowed( peer, key, size )) then
+        message_start( network, OP_SINGLE, false )
+
+        if size ~= 0 then
+            net_WriteData( data, size )
+        end
+
+        message_send( peer )
+
+        logger:debug( "Sent %d bytes to %s using network '%s'.", size, peer_tostring( peer ), network_names[ network ] )
+        perform_progress( network, peer, true, size, size )
+
+        if callback ~= nil then
+            exceptions_call( callback, network, true, peer )
+        end
+
+        return
+    end
+
+    transfer_counter = (transfer_counter + 1) % 256
+
+    local segment_size = segment_sizes[ network ]
+    local now = dreamwork_getUpTime()
+
+    ---@type dreamwork.std.Network.Outgoing
+    local state = {
+        network = network,
+        peer = peer,
+        key = key,
+        id = transfer_counter,
+        data = data,
+        size = size,
+        segment_size = segment_size,
+        count = math_ceil( size / segment_size ),
+        acked = {},
+        sent_at = {},
+        resent = {},
+        resent_count = 0,
+        acked_count = 0,
+        acked_bytes = 0,
+        base = 1,
+        highest = 0,
+        window = 4,
+        slow_start = true,
+        rto = 0.5,
+        loss_time = 0,
+        credit = 0,
+        pump_time = now,
+        accepted = false,
+        activity = now,
+        start_time = now,
+        callback = callback
+    }
+
+    outgoing[ network ][ key ] = state
+    active_outgoing[ state ] = true
+
+    message_start( network, OP_BEGIN, false )
+    net_WriteUInt( state.id, transfer_id_size )
+    write_uint32( size )
+    write_uint32( crc32_digest( data ) )
+    net_WriteUInt( segment_size, segment_size_size )
+    message_send( peer )
+
+    logger:debug( "Transmission #%d of network '%s' to %s started, %d bytes in %d segments.", state.id, network_names[ network ], peer_tostring( peer ), size, state.count )
+end
+
+---@param network dreamwork.std.Network
+---@param data string
+---@param peer garrysmod.Player | nil
+---@param callback dreamwork.std.Network.FinishFn | nil
+local function transmit( network, data, peer, callback )
+    local key = peer or server_key
+
+    if outgoing[ network ][ key ] == nil then
+        transmit_start( network, data, peer, key, callback )
+        return
+    end
+
+    local queue = queues[ network ][ key ]
+    if queue == nil then
+        queue = {}
+        queues[ network ][ key ] = queue
+    end
+
+    queue[ #queue + 1 ] = {
+        data = data,
+        callback = callback
+    }
+end
+
+---@param network dreamwork.std.Network
+---@param data string
+---@param target garrysmod.Player | garrysmod.Player[] | nil
+---@param callback dreamwork.std.Network.FinishFn | nil
+local function transmit_to( network, data, target, callback )
+    if string_len( data ) > max_transfer_size then
+        error( string_format( "Transmission is too large, %d bytes is more than the limit of %d bytes.", string_len( data ), max_transfer_size ), 3 )
+    end
+
+    if not LUA_SERVER then
+        transmit( network, data, nil, callback )
+    elseif target == nil then
+        error( "Target player is required on the server.", 3 )
+    elseif raw_type( target ) == "table" then
+        ---@cast target garrysmod.Player[]
+        for i = 1, #target, 1 do
+            transmit( network, data, target[ i ], callback )
+        end
+    else
+        ---@cast target garrysmod.Player
+        transmit( network, data, target, callback )
+    end
+end
+
+--- [SHARED]
+---
+--- Sends the data to the target.
+---
+--- Small data is sent as a single reliable message,
+--- larger data is split into segments and streamed with acknowledgements.
+---
+--- If the target is already receiving a transmission from this network, the data is queued behind it.
+---
+---@param data string The data to send.
+---@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
+---@param callback? dreamwork.std.Network.FinishFn The callback that is called when the transmission is finished or failed.
+function Network:send( data, target, callback )
+    transmit_to( self, data, target, callback )
+end
+
+--- [SHARED]
+---
+--- Builds the data with a binary writer and sends it to the target.
+---
+---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.BinaryWriter ) The function that writes the data.
+---@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
+---@param callback? dreamwork.std.Network.FinishFn The callback that is called when the transmission is finished or failed.
+function Network:transmit( fn, target, callback )
+    local writer = std.BinaryWriter()
+    fn( self, writer )
+    transmit_to( self, writer:compile(), target, callback )
+end
+
+--- [SHARED]
+---
+--- Cancels the outgoing transmission to the target and all queued ones.
+---
+---@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@return boolean cancelled `true` if anything was cancelled.
+function Network:abort( target )
+    local key = (LUA_SERVER and target) or server_key
+    local peer = LUA_SERVER and target or nil
+
+    local had_queue = queues[ self ][ key ] ~= nil
+    queue_flush( self, key, peer )
+
+    local state = outgoing[ self ][ key ]
+    if state == nil then
+        return had_queue
+    end
+
+    outgoing_cancel( state, "aborted" )
+    return true
+end
+
+--- [SHARED]
+---
+--- Checks if the network is sending data to the target.
+---
+---@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@return boolean is_sending
+---@nodiscard
+function Network:isSending( target )
+    return outgoing[ self ][ (LUA_SERVER and target) or server_key ] ~= nil
+end
+
+--- [SHARED]
+---
+--- Checks if the network is receiving data from the sender.
+---
+---@param sender? garrysmod.Player The sender player, required on the server, ignored on the client.
+---@return boolean is_receiving
+---@nodiscard
+function Network:isReceiving( sender )
+    return incoming[ self ][ (LUA_SERVER and sender) or server_key ] ~= nil
+end
+
+---@type table<integer, fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, key: garrysmod.Player | string, transfer_id: integer, remaining_bits: integer )>
+local handlers = {}
+
+-- receiver side
+
+handlers[ OP_BEGIN ] = function( network, peer, key, transfer_id, remaining_bits )
+    if remaining_bits < (64 + segment_size_size) then
+        violation( network, peer, 8, "malformed BEGIN" )
+        return
+    end
+
+    local size = read_uint32()
+    local checksum = read_uint32()
+    local segment_size = net_ReadUInt( segment_size_size )
+
+    local previous = incoming[ network ][ key ]
+    if previous ~= nil then
+        logger:debug( "Receiving #%d of network '%s' from %s was replaced by #%d.", previous.id, network_names[ network ], peer_tostring( peer ), transfer_id )
+        incoming_close( previous, false )
+    end
+
+    if not receive_allowed[ network ] then
+        send_control( network, OP_REJECT, transfer_id, peer )
+        violation( network, peer, 4, "transfer to a network that is not receiving" )
+        return
+    end
+
+    if segment_size < min_segment_size or segment_size > max_segment_size or math_ceil( size / segment_size ) > 0xFFFFFF then
+        send_control( network, OP_REJECT, transfer_id, peer )
+        violation( network, peer, 8, "invalid segment size of %d bytes", segment_size )
+        return
+    end
+
+    if size == 0 or size > limits[ network ] then
+        send_control( network, OP_REJECT, transfer_id, peer )
+        violation( network, peer, 4, "transfer of %d bytes, the limit is %d bytes", size, limits[ network ] )
+        return
+    end
+
+    local admit_error = client_admit( peer, size )
+    if admit_error ~= nil then
+        send_control( network, OP_REJECT, transfer_id, peer )
+        violation( network, peer, 1, admit_error )
+        return
+    end
+
+    -- without receive handlers the data is only streamed, so it isn't kept
+    local buffered = std_len( receive_hooks[ network ] ) ~= 0 or std_len( stream_hooks[ network ] ) == 0
+
+    local now = dreamwork_getUpTime()
+
+    ---@type dreamwork.std.Network.Incoming
+    local state = {
+        network = network,
+        peer = peer,
+        key = key,
+        id = transfer_id,
+        size = size,
+        segment_size = segment_size,
+        count = math_ceil( size / segment_size ),
+        checksum = checksum,
+        buffered = buffered,
+        crc = (not buffered) and CRC32() or nil,
+        segments = {},
+        received_flags = {},
+        received = 0,
+        received_bytes = 0,
+        base = 1,
+        highest = 0,
+        ack_pending = false,
+        ack_time = now,
+        activity = now,
+        start_time = now
+    }
+
+    incoming[ network ][ key ] = state
+    active_incoming[ state ] = true
+
+    send_control( network, OP_ACCEPT, transfer_id, peer )
+
+    logger:debug( "Receiving #%d of network '%s' from %s started, %d bytes in %d segments.", transfer_id, network_names[ network ], peer_tostring( peer ), size, state.count )
+end
+
+handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bits )
+    -- stale segments of a finished or replaced transfer are expected
+    local state = incoming[ network ][ key ]
+    if state == nil or state.id ~= transfer_id then return end
+
+    if remaining_bits < segment_index_size then
+        violation( network, peer, 8, "malformed SEGMENT" )
+        return
+    end
+
+    local index = net_ReadUInt( segment_index_size )
+
+    local count = state.count
+    if index < 1 or index > count then
+        violation( network, peer, 4, "segment %d is out of range [1, %d]", index, count )
+        return
+    end
+
+    -- duplicates mean the sender missed an ack
+    state.ack_pending = true
+
+    local received_flags = state.received_flags
+    if received_flags[ index ] then return end
+
+    local length = math_floor( (remaining_bits - segment_index_size) / 8 )
+
+    if length ~= segment_length( state, index ) then
+        violation( network, peer, 4, "segment %d has a wrong size of %d bytes", index, length )
+        return
+    end
+
+    local segments = state.segments
+
+    received_flags[ index ] = true
+    segments[ index ] = net_ReadData( length )
+
+    local received = state.received + 1
+    state.received = received
+    state.received_bytes = state.received_bytes + length
+    state.activity = dreamwork_getUpTime()
+
+    if index > state.highest then
+        state.highest = index
+    end
+
+    -- in-order delivery to the stream handlers
+    local base = state.base
+    if index == base then
+        local stream_hook = stream_hooks[ network ]
+        local buffered, crc = state.buffered, state.crc
+
+        repeat
+            hook_call( stream_hook, network, peer, segments[ base ], (base - 1) * state.segment_size, state.size )
+
+            if not buffered then
+                ---@cast crc dreamwork.std.checksum.CRC32
+                crc:update( segments[ base ] )
+                segments[ base ] = nil
+            end
+
+            base = base + 1
+        until not received_flags[ base ]
+
+        state.base = base
+    end
+
+    perform_progress( network, peer, false, state.received_bytes, state.size )
+
+    if received ~= count then return end
+
+    -- the closing call of the streams must know the result, so it is called below
+    incoming_detach( state )
+
+    ---@type string | nil
+    local data
+
+    ---@type integer
+    local data_checksum
+
+    if state.buffered then
+        data = table_concat( segments, "", 1, count )
+        data_checksum = crc32_digest( data )
+    else
+        data_checksum = state.crc:digest()
+    end
+
+    local success = data_checksum == state.checksum
+
+    if success then
+        send_control( network, OP_FINISH, transfer_id, peer )
+        logger:debug( "Receiving #%d of network '%s' from %s finished, %d bytes in %.2f seconds.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, state.activity - state.start_time )
+    else
+        send_control( network, OP_REJECT, transfer_id, peer )
+        logger:error( "Receiving #%d of network '%s' from %s failed, checksum mismatch.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+    end
+
+    hook_call( stream_hooks[ network ], network, peer, nil, state.received_bytes, state.size, success )
+
+    if success and data ~= nil then
+        perform_callbacks( network, data, peer )
+    end
+end
+
+handlers[ OP_CANCEL ] = function( network, peer, key, transfer_id )
+    local state = incoming[ network ][ key ]
+    if state == nil or state.id ~= transfer_id then return end
+
+    logger:debug( "Receiving #%d of network '%s' from %s was cancelled by the sender.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+    incoming_close( state, false )
+end
+
+-- sender side
+
+handlers[ OP_ACCEPT ] = function( network, peer, key, transfer_id )
+    local state = outgoing[ network ][ key ]
+    if state == nil or state.id ~= transfer_id then return end
+
+    local now = dreamwork_getUpTime()
+
+    state.accepted = true
+    state.activity = now
+    state.pump_time = now
+
+    -- the first rtt comes from the engine or the handshake, so pacing and rto don't start blind,
+    -- the handshake went through the reliable stream that can be clogged, so the first real sample replaces it
+    local srtt = peer_latency( peer ) or (now - state.start_time)
+    state.srtt = srtt
+    state.srtt_seeded = true
+    state.rto = math_min( math_max( srtt * 2 + 0.03, 0.06 ), 3.0 )
+
+    -- the first window goes out right away
+    state.credit = state.window
+end
+
+---@param state dreamwork.std.Network.Outgoing
+---@param index integer
+---@return number | nil sent_at The time the segment was sent, if it is a valid rtt sample.
+local function outgoing_ack( state, index )
+    local acked = state.acked
+    if acked[ index ] then return nil end
+
+    acked[ index ] = true
+
+    state.acked_count = state.acked_count + 1
+    state.acked_bytes = state.acked_bytes + segment_length( state, index )
+
+    if index > state.highest then
+        state.highest = index
+    end
+
+    -- karn's algorithm, resent segments give ambiguous samples
+    if state.resent[ index ] then
+        return nil
+    end
+
+    return state.sent_at[ index ]
+end
+
+handlers[ OP_ACK ] = function( network, peer, key, transfer_id, remaining_bits )
+    local state = outgoing[ network ][ key ]
+    if state == nil or state.id ~= transfer_id or remaining_bits < (segment_index_size + ack_words_size) then return end
+
+    local ack_base = net_ReadUInt( segment_index_size )
+    local word_count = net_ReadUInt( ack_words_size )
+
+    local count = state.count
+    if ack_base < 1 or ack_base > count + 1 or word_count > max_ack_words or remaining_bits < (segment_index_size + ack_words_size + word_count * 32) then return end
+
+    local acked_count = state.acked_count
+
+    ---@type number
+    local sample_time = 0
+
+    for index = state.base, ack_base - 1, 1 do
+        local sent_at = outgoing_ack( state, index )
+        if sent_at ~= nil and sent_at > sample_time then
+            sample_time = sent_at
+        end
+    end
+
+    for word_index = 0, word_count - 1, 1 do
+        local word = read_uint32()
+        local index = ack_base + 1 + word_index * 32
+
+        while word ~= 0 and index <= count do
+            local bit_value = word % 2
+            word = (word - bit_value) * 0.5
+
+            if bit_value == 1 then
+                local sent_at = outgoing_ack( state, index )
+                if sent_at ~= nil and sent_at > sample_time then
+                    sample_time = sent_at
+                end
+            end
+
+            index = index + 1
+        end
+    end
+
+    local newly_acked = state.acked_count - acked_count
+    if newly_acked == 0 then return end
+
+    local now = dreamwork_getUpTime()
+    state.activity = now
+
+    -- the newest segment gives the freshest sample
+    if sample_time ~= 0 then
+        local sample = now - sample_time
+
+        local srtt = state.srtt
+        if srtt == nil or state.srtt_seeded then
+            srtt = sample
+            state.srtt_seeded = false
+        else
+            srtt = srtt * 0.875 + sample * 0.125
+        end
+
+        state.srtt = srtt
+        state.rto = math_min( math_max( srtt * 2 + 0.03, 0.06 ), 3.0 )
+    end
+
+    local window = state.window
+    if state.slow_start then
+        window = window + newly_acked
+    else
+        window = window + newly_acked / window
+    end
+
+    state.window = math_min( window, windows[ network ] )
+
+    local acked, base = state.acked, state.base
+    while acked[ base ] do
+        base = base + 1
+    end
+
+    state.base = base
+
+    perform_progress( network, peer, true, state.acked_bytes, state.size )
+end
+
+handlers[ OP_FINISH ] = function( network, peer, key, transfer_id )
+    local state = outgoing[ network ][ key ]
+    if state == nil or state.id ~= transfer_id then return end
+
+    local elapsed = dreamwork_getUpTime() - state.start_time
+    logger:debug( "Transmission #%d of network '%s' to %s finished, %d bytes in %.2f seconds (%.2f KiB/s), window %.1f, srtt %.0f ms, %d/%d segments resent.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, elapsed, (state.size / 1024) / math_max( elapsed, 0.001 ), state.window, (state.srtt or 0) * 1000, state.resent_count, state.count )
+
+    outgoing_finish( state, true )
+end
+
+handlers[ OP_REJECT ] = function( network, peer, key, transfer_id )
+    local state = outgoing[ network ][ key ]
+    if state == nil or state.id ~= transfer_id then return end
+
+    logger:warn( "Transmission #%d of network '%s' to %s was rejected by the receiver.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+    outgoing_finish( state, false )
+end
+
+---@param network dreamwork.std.Network
+---@param remaining_bits integer
+---@param sender garrysmod.Player | nil
+function network_receive( network, remaining_bits, sender )
+    if not LUA_SERVER then
+        sender = nil
+    end
+
+    if remaining_bits < opcode_size then
+        violation( network, sender, 8, "empty message" )
+        return
+    end
+
+    local opcode = net_ReadUInt( opcode_size )
+    remaining_bits = remaining_bits - opcode_size
+
+    if opcode == OP_SINGLE then
+        if not receive_allowed[ network ] then
+            violation( network, sender, 4, "message to a network that is not receiving" )
+            return
+        end
+
+        local length = math_floor( remaining_bits / 8 )
+
+        if length > limits[ network ] then
+            violation( network, sender, 4, "message of %d bytes, the limit is %d bytes", length, limits[ network ] )
+            return
+        end
+
+        local data = (length == 0) and "" or net_ReadData( length )
+
+        perform_progress( network, sender, false, length, length )
+
+        local stream_hook = stream_hooks[ network ]
+        hook_call( stream_hook, network, sender, data, 0, length )
+        hook_call( stream_hook, network, sender, nil, length, length, true )
+
+        perform_callbacks( network, data, sender )
+        return
+    end
+
+    if remaining_bits < transfer_id_size then
+        violation( network, sender, 8, "malformed message" )
+        return
+    end
+
+    local transfer_id = net_ReadUInt( transfer_id_size )
+
+    handlers[ opcode ]( network, sender, sender or server_key, transfer_id, remaining_bits - transfer_id_size )
+end
+
+---@type dreamwork.std.Network.Outgoing[] | dreamwork.std.Network.Incoming[]
+local tick_states = {}
+
+engine_hook.catch( "Tick", "dreamwork.std.Network", function()
+    local now = dreamwork_getUpTime()
+
+    -- callbacks can start new transfers, so the sets are not modified while iterating
+    local state_count = 0
+
+    for state in raw_pairs( active_outgoing ) do
+        state_count = state_count + 1
+        tick_states[ state_count ] = state
+    end
+
+    for i = 1, state_count, 1 do
+        local state = tick_states[ i ]
+        tick_states[ i ] = nil
+
+        ---@cast state dreamwork.std.Network.Outgoing
+
+        if not active_outgoing[ state ] then
+            -- removed by a callback of another state
+        elseif not peer_valid( state.peer ) then
+            outgoing_finish( state, false )
+        elseif (now - state.activity) > timeouts[ state.network ] then
+            outgoing_cancel( state, "timed out" )
+        elseif state.accepted then
+            outgoing_pump( state, now )
+        end
+    end
+
+    state_count = 0
+
+    for state in raw_pairs( active_incoming ) do
+        state_count = state_count + 1
+        tick_states[ state_count ] = state
+    end
+
+    for i = 1, state_count, 1 do
+        local state = tick_states[ i ]
+        tick_states[ i ] = nil
+
+        ---@cast state dreamwork.std.Network.Incoming
+
+        if not active_incoming[ state ] then
+            -- removed by a callback of another state
+        elseif not peer_valid( state.peer ) then
+            incoming_close( state, false )
+        elseif (now - state.activity) > timeouts[ state.network ] then
+            incoming_reject( state, "timed out" )
+        elseif state.ack_pending or (state.received ~= 0 and (now - state.ack_time) >= ack_refresh_interval) then
+            -- the refresh repairs lost acks without waiting for the sender to resend
+            send_ack( state, now )
+        end
+    end
+end )

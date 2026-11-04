@@ -3147,6 +3147,8 @@ dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
 
+dreamwork_load( "std/net/network.lua", false, LUA_MENU )
+
 dreamwork.storage.init()
 
 dreamwork_load( "modules/cli/init.lua" )
