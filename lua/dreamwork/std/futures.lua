@@ -2,12 +2,10 @@ local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_catchError = dreamwork_exceptions.catch
 local exceptions_errorHandler = dreamwork_exceptions.handler
 local exceptions_isHiddenFrame = dreamwork_exceptions.isHiddenFrame
+local exceptions_Stack = dreamwork_exceptions.Stack
 
 ---@class dreamwork.std
 local std = dreamwork.std
-
-local debug = std.debug
-local debug_Stack = debug.Stack
 
 local gc = std.gc
 local gc_setTableRules = gc.setTableRules
@@ -64,7 +62,7 @@ std.futures = futures
 ---@field ACTION_RESUME dreamwork.std.Symbol
 ---@field Listeners table<thread, function>
 ---@field AsyncListeners table<thread, thread>
----@field Stacks table<thread, dreamwork.std.debug.Stack>
+---@field Stacks table<thread, dreamwork.exceptions.Stack>
 ---@field Threads table<thread, thread>
 dreamwork.Future = dreamwork.Future or {
     RESULT_YIELD = std.Symbol( "FUTURE_RESULT_YIELD" ),
@@ -80,7 +78,7 @@ dreamwork.Future = dreamwork.Future or {
     ---@type table<thread, thread>
     AsyncListeners = {},
 
-    ---@type table<thread, dreamwork.std.debug.Stack>
+    ---@type table<thread, dreamwork.exceptions.Stack>
     Stacks = {},
 }
 
@@ -103,7 +101,7 @@ local Stacks = dreamwork_Future.Stacks
 
 std.setmetatable( Stacks, {
     __index = function( self, thread )
-        local stack = debug_Stack()
+        local stack = exceptions_Stack()
         self[ thread ] = stack
         return stack
     end,
@@ -128,7 +126,7 @@ futures.running = coroutine_running
 --- Returns the debug stack tracked for the current coroutine,
 --- or `nil` if called outside of a coroutine.
 ---
----@return dreamwork.std.debug.Stack | nil
+---@return dreamwork.exceptions.Stack | nil
 ---@nodiscard
 function futures.stack()
     local co = coroutine_running()

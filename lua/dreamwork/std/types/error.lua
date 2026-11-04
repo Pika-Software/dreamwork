@@ -13,6 +13,7 @@ local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_report = dreamwork_exceptions.report
 local exceptions_isHiddenFrame = dreamwork_exceptions.isHiddenFrame
 local exceptions_hide = dreamwork_exceptions.hide
+local exceptions_Stack = dreamwork_exceptions.Stack
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -24,7 +25,6 @@ local math = std.math
 local math_max = math.max
 
 local debug = std.debug
-local debug_Stack = debug.Stack
 local debug_getinfo = debug.getinfo
 local debug_calledby = debug.calledby
 
@@ -68,7 +68,7 @@ local COLOR_ERROR       = color_Scheme.error
 ---@type fun( error_value: any, stack_level: integer? )
 local glua_error
 
----@type fun( stack: dreamwork.std.debug.Stack, skip: integer )
+---@type fun( stack: dreamwork.exceptions.Stack, skip: integer )
 local capture_stack
 
 do
@@ -110,7 +110,7 @@ do
     --- to the bottom of the current thread is captured, except hidden frames (`pcall`, `xpcall`, ...),
     --- other C frames such as `table.sort` stay in the stack.
     ---
-    ---@param stack dreamwork.std.debug.Stack
+    ---@param stack dreamwork.exceptions.Stack
     ---@param skip integer
     function capture_stack( stack, skip )
         local level = 2
@@ -157,18 +157,18 @@ end
 ---
 --- The base error object used throughout `dreamwork`.
 ---
---- An `Error` wraps a `dreamwork.std.debug.Stack` of call frames captured
+--- An `Error` wraps a `dreamwork.exceptions.Stack` of call frames captured
 --- at (or before) the point the error was raised, and provides helpers to
 --- turn that stack into a human-readable string (`toString`/`__tostring`)
 --- or print it directly to the console with colors (`display`).
 ---
 ---@class dreamwork.std.Error : dreamwork.std.Object
 ---@field __class dreamwork.std.ErrorClass
----@field stack dreamwork.std.debug.Stack | nil The captured call stack this error carries.
+---@field stack dreamwork.exceptions.Stack | nil The captured call stack this error carries.
 ---@field message string | nil The error message to display. Defaults to `"unknown error"` if omitted.
 ---@field protected __message fun( self: dreamwork.std.Error, error_message: ( string | nil ) ): string
----@field protected __head fun( self: dreamwork.std.Error, frame: ( dreamwork.std.debug.StackLevel | nil ) )
----@field protected __frame fun( self: dreamwork.std.Error, frame: dreamwork.std.debug.StackLevel )
+---@field protected __head fun( self: dreamwork.std.Error, frame: ( dreamwork.exceptions.StackLevel | nil ) )
+---@field protected __frame fun( self: dreamwork.std.Error, frame: dreamwork.exceptions.StackLevel )
 ---@field protected __tail fun( self: dreamwork.std.Error )
 ---@operator concat( any ): string
 local Error = std.Error and std.Error.__base or class.base( "Error", false, nil )
@@ -248,7 +248,7 @@ end
 ---
 ---@param stack_level? integer The level of the first captured frame, `1` (the caller) by default.
 function Error:capture( stack_level )
-    local stack = debug_Stack()
+    local stack = exceptions_Stack()
     self.stack = stack
     capture_stack( stack, math_max( 0, (stack_level or 1) - 1 ) )
 end
@@ -311,12 +311,11 @@ do
             console_messageColored( "         in ", COLOR_SUVA_GRAY )
 
             local thread = top_frame.thread
-            if thread ~= nil then
-                console_messageColored( represent( top_frame.thread ) .. "\n", COLOR_SPRAY )
-                return
+            if thread == nil then
+                console_messageColored( "main\n", COLOR_LIGHT_GRAY )
+            else
+                console_messageColored( represent( thread ) .. "\n", COLOR_SPRAY )
             end
-
-            console_messageColored( "main\n", COLOR_LIGHT_GRAY )
 
             -- TODO: Add error source, aka addon/package/folder in basic error throw info
             -- create std.File.get( path_to_file ).mount / `whereis` alternative
@@ -337,7 +336,7 @@ do
         for index = 1, stack_size, 1 do
             console_messageColored( "  " .. index, COLOR_SANDSTONE )
 
-            ---@type dreamwork.std.debug.StackLevel
+            ---@type dreamwork.exceptions.StackLevel
             local frame = stack[ (stack_size - index) + 1 ]
 
             ---@type string | nil
@@ -480,7 +479,7 @@ local function to_error( error_value, error_class )
         error_object = error_class( tostring( error_value ) )
     end
 
-    local stack = debug_Stack()
+    local stack = exceptions_Stack()
     error_object.stack = stack
     capture_stack( stack, 0 )
 
@@ -647,13 +646,13 @@ do
 
         local stack = error_object.stack
         if stack == nil then
-            stack = debug_Stack()
+            stack = exceptions_Stack()
             error_object.stack = stack
             capture_stack( stack, skip )
         elseif stack.size == 0 then
             capture_stack( stack, skip )
         elseif stack[ 1 ].thread ~= coroutine_running() then
-            local outer_stack = debug_Stack()
+            local outer_stack = exceptions_Stack()
             capture_stack( outer_stack, skip )
 
             for i = 1, stack.size, 1 do

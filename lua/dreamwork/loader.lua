@@ -772,7 +772,6 @@ dreamwork_load( "std/ascii.lua" )
 dreamwork_load( "std/string.lua" )
 
 dreamwork_load( "modules/engine.lua" )
-dreamwork_load( "modules/exceptions.lua" )
 
 ---@class dreamwork.std.string
 local string = std.string
@@ -1425,7 +1424,7 @@ dreamwork_load( "std/codec/unicode.lua" )
 dreamwork_load( "std/codec/percent.lua" )
 dreamwork_load( "std/codec/punycode.lua" )
 
-dreamwork_load( "std/types/debug_stack.lua" )
+dreamwork_load( "modules/exceptions.lua" )
 dreamwork_load( "modules/engine/mounts.lua" )
 
 do
