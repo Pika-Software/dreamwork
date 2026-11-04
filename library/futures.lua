@@ -1,8 +1,5 @@
 ---@meta _
 
----@class dreamwork
-local dreamwork = {}
-
 --- [SHARED AND MENU]
 ---
 --- This library provides Python-like futures for asynchronous programming,
@@ -21,9 +18,8 @@ futures = {}
 ---@field ACTION_RESUME Symbol
 ---@field Listeners table<thread, function>
 ---@field AsyncListeners table<thread, thread>
----@field Stacks table<thread, debug.Stack>
+---@field Stacks table<thread, dreamwork.exceptions.Stack>
 ---@field Threads table<thread, thread>
-dreamwork.Future = {}
 
 --- [SHARED AND MENU]
 ---
@@ -43,7 +39,7 @@ futures.running = coroutine.running
 --- Returns the debug stack tracked for the current coroutine,
 --- or `nil` if called outside of a coroutine.
 ---
----@return debug.Stack | nil
+---@return dreamwork.exceptions.Stack | nil
 ---@nodiscard
 function futures.stack() end
 

@@ -1,7 +1,38 @@
 ---@meta _
 
 
----@class http.RequestMethod
+---
+--- A cookie stored in `http.CookieJar`, see [RFC 6265](https://www.rfc-editor.org/rfc/rfc6265#section-5.3).
+---
+---@class http.Cookie
+---@field name string The cookie name.
+---@field value string The cookie value, as sent by the server.
+---@field domain string The lowercase domain the cookie belongs to, without a leading `"."`.
+---@field path string The path the cookie is sent for, always starts with `"/"`.
+---@field host_only boolean `true` if the cookie is only sent to `domain` itself, `false` if subdomains get it too.
+---@field secure boolean `true` if the cookie is only sent over `https://`.
+---@field http_only boolean The `HttpOnly` attribute, kept for completeness, it has no effect here.
+---@field same_site string | nil The lowercase `SameSite` attribute, kept for completeness, it has no effect here.
+---@field expires integer | nil The Unix timestamp (seconds) the cookie expires at, `nil` for session cookies.
+---@field created integer The creation order, earlier cookies are sent first when paths are equally long.
+
+---
+--- The options for `CookieJar:set`.
+---
+---@class http.CookieOptions
+---@field url? string | URL The URL the cookie is set for, `domain` and `path` are taken from it when not given.
+---@field domain? string The domain, the cookie is also sent to its subdomains. Required if `url` is not given.
+---@field path? string The path, defaults to the directory of `url` or `"/"`.
+---@field expires? integer The Unix timestamp (seconds) the cookie expires at.
+---@field max_age? integer The lifetime in seconds, takes precedence over `expires`.
+---@field secure? boolean Only send the cookie over `https://`.
+---@field http_only? boolean The `HttpOnly` attribute.
+---@field same_site? "strict" | "lax" | "none" The `SameSite` attribute.
+
+---
+--- The HTTP request method.
+---
+---@alias http.RequestMethod
 ---| "HEAD" # Same as `GET`, but only retrieves headers (no body).
 ---| "GET" # Retrieve data from a server.
 ---| "POST" # Send data to the server to create a resource.
@@ -10,13 +41,36 @@
 ---| "DELETE" # Remove a resource from the server.
 ---| "OPTIONS" # Describe communication options for the target resource.
 
+---
+--- An in-memory cache entry of a request made with `Request.cache`.
+---
+---@class http.client.SessionCache
+---@field identifier string The cache key, a JSON of the request's method, url (with query parameters), body, content type and headers (without the cookie jar and etag ones).
+---@field future Future The future of the cached request, awaited by repeated identical requests.
+---@field start number The time (in seconds, `time.elapsed`) when the request was cached.
+---@field age number The lifetime of the cache entry in seconds, may be shortened by the response's `max-age`.
 
+---
+--- Credentials for `http.Request.auth`.
+---
+--- `token` is sent as `Bearer <token>`, otherwise `username` and `password` as `Basic` authentication.
+---
+---@class http.Auth
+---@field username? string The username for `Basic` authentication.
+---@field password? string The password for `Basic` authentication.
+---@field token? string The token for `Bearer` authentication.
+
+---
+--- The URL of a request as a string.
+---
 ---@alias http.RequestURL
 ---| "http://" # Default protocol.
 ---| "https://" # Default secure protocol.
 ---| string # Absolute URL as a string.
 
-
+---
+--- The media type of a request body, sent as the `Content-Type` header.
+---
 ---@alias http.ContentType
 ---| "text/plain; charset=utf-8"
 ---| "text/html; charset=utf-8"
@@ -43,30 +97,14 @@
 ---| "video/webm"
 ---| string
 
-
+---
+--- The key-value parameters of a request, sent in the URL query or as a form body.
+---
 ---@alias http.Parameters table<string, string>
 
-
----@alias http.SharedHeader
----| "Content-Type" # Indicates the original media type of the resource (e.g., application/json; charset=UTF-8).
----| "Content-Length" # Indicates the size of the message body sent to the recipient in bytes.
----| "Content-Encoding" # Used to determine what compression algorithm has been applied to the payload.
----| "Content-Language" # Describes the intended natural language(s) for the audience of the enclosed body.
-
-
----@alias http.SecurityHeader
----| "Content-Security-Policy" # Restricts the resources (like JavaScript, CSS, Images) that the browser is allowed to load for a given page.
----| "Strict-Transport-Security" # Forces the browser to communicate with the server exclusively over secure HTTPS.
----| "X-Content-Type-Options" # Setting this to nosniff prevents browsers from MIME-sniffing away from the declared Content-Type.
----| "Transfer-Encoding" # Specifies the form of encoding used to safely transfer the payload.
-
-
----@alias http.CacheHeader
----| "Cache-Control" # Directives for caching mechanisms in both requests and responses (e.g., no-cache, max-age=3600).
----| "ETag" # A unique identifier for a specific version of a resource, used to make caching more efficient.
----| "Connection" # Controls whether the network connection stays open after the current transaction finishes (e.g., keep-alive).
-
-
+---
+--- Well-known request header names.
+---
 ---@alias http.RequestHeader
 ---| "Host" # The domain name of the server and the TCP port number (mandatory in HTTP/1.1).
 ---| "User-Agent" # Identifies the client application, operating system, and browser vendor.
@@ -76,26 +114,49 @@
 ---| "Accept-Encoding" # Details the data compression algorithms (like gzip or deflate) the client supports.
 ---| "Cookie" # Sends stored HTTP cookies previously delivered by the server via Set-Cookie.
 ---| "Referer" # Contains the address of the previous web page from which a link to the current page was followed.
----| http.SharedHeader
+---| "Content-Type" # Indicates the media type of the request body (e.g., application/json; charset=UTF-8).
+---| "Content-Length" # Indicates the size of the request body in bytes.
+---| "Content-Encoding" # Used to determine what compression algorithm has been applied to the request body.
+---| "Content-Language" # Describes the intended natural language(s) for the audience of the request body.
+---| "Cache-Control" # Directives for caching mechanisms (e.g., no-cache, max-age=3600).
+---| "Connection" # Controls whether the network connection stays open after the current transaction finishes (e.g., keep-alive).
 ---| string
 
+---
+--- The key-value table of request headers.
+---
 ---@alias http.RequestHeaders table<http.RequestHeader, string>
 
-
+---
+--- Well-known response header names, always lowercase.
+---
 ---@alias http.ResponseHeader
----| "Server" # Contains information about the software used by the originating server to handle the request.
----| "Set-Cookie" # Used to send cookies from the server to the client so the client can store them.
----| "Location" # Used during redirections to indicate the URL the client should visit next.
----| "WWW-Authenticate" # Defines the authentication method that should be used to gain access to a resource.
----| "Retry-After" # Tells the client how long to wait before making another request (often used with 503 or 429 status codes).
----| http.SharedHeader
----| http.SecurityHeader
+---| "server" # Contains information about the software used by the originating server to handle the request.
+---| "set-cookie" # Used to send cookies from the server to the client so the client can store them.
+---| "location" # Used during redirections to indicate the URL the client should visit next.
+---| "www-authenticate" # Defines the authentication method that should be used to gain access to a resource.
+---| "retry-after" # Tells the client how long to wait before making another request (often used with 503 or 429 status codes).
+---| "content-type" # Indicates the original media type of the resource (e.g., application/json; charset=UTF-8).
+---| "content-length" # Indicates the size of the message body sent to the recipient in bytes.
+---| "content-encoding" # Used to determine what compression algorithm has been applied to the payload.
+---| "content-language" # Describes the intended natural language(s) for the audience of the enclosed body.
+---| "content-security-policy" # Restricts the resources (like JavaScript, CSS, Images) that the browser is allowed to load for a given page.
+---| "strict-transport-security" # Forces the browser to communicate with the server exclusively over secure HTTPS.
+---| "x-content-type-options" # Setting this to nosniff prevents browsers from MIME-sniffing away from the declared `content-type`.
+---| "transfer-encoding" # Specifies the form of encoding used to safely transfer the payload.
+---| "cache-control" # Directives for caching mechanisms (e.g., no-cache, max-age=3600).
+---| "etag" # A unique identifier for a specific version of a resource, used to make caching more efficient.
+---| "connection" # Controls whether the network connection stays open after the current transaction finishes (e.g., keep-alive).
 ---| string
 
-
+---
+--- The key-value table of response headers.
+---
 ---@alias http.ResponseHeaders table<http.ResponseHeader, string>
 
-
+---
+--- The HTTP response status code.
+---
 ---@alias http.ResponseCode
 ---| 100 # continue
 ---| 101 # switching protocols
@@ -162,30 +223,38 @@
 ---| 511 # network authentication required
 
 
---- [SHARED AND MENU]
 ---
---- Options table for `http.Request` function.
+--- Options table for `http.client.request` function.
 ---
 ---@class http.Request
 local Request = {}
 
+---
 --- Request method.
 ---
 ---@type http.RequestMethod | nil
 Request.method = nil
 
+---
 --- Request URL.
 ---
----@type http.RequestURL
+---@type http.RequestURL | URL
 Request.url = nil
 
+---
 --- KeyValue table for parameters.
 ---
---- This is only applicable to the following Request methods: **HEAD**, **GET**, **POST**
+--- Appended to the URL query for **GET**, **HEAD** and **OPTIONS**,
+--- or sent as an `application/x-www-form-urlencoded` body for other methods (unless `body` is set,
+--- any other `content_type` is an error).
 ---
----@type http.Parameters | nil
+--- `URL.SearchParams` keep repeated names and their order, plain tables are sorted by name
+--- and pairs with non-string names or values are skipped.
+---
+---@type http.Parameters | URL.SearchParams | nil
 Request.parameters = nil
 
+---
 --- Body string for POST data.
 ---
 --- If set, will override parameters.
@@ -193,59 +262,105 @@ Request.parameters = nil
 ---@type string?
 Request.body = nil
 
+---
+--- A value serialized as the JSON body, cannot be used together with `body`.
+---
+--- Sets `content_type` to `"application/json; charset=utf-8"` unless it is given.
+---
+---@type json.Value | nil
+Request.json = nil
+
+---
 --- Content type for body.
 ---
 ---@type http.ContentType | nil
 Request.content_type = "text/plain; charset=utf-8"
 
+---
 --- KeyValue table for headers.
 ---
 ---@type http.RequestHeaders | nil
 Request.headers = nil
 
+---
 --- The timeout for the connection in seconds.
 ---
---- The default timeout is 60 seconds.
+--- Defaults to `http.client.config.timeout`, set by `http_client timeout` (`10` seconds).
 ---
 --- `0` means no timeout.
 ---
----@type integer | nil
-Request.timeout = 60
+--- The request also fails on the Lua side one second after the timeout,
+--- so a client that never calls back can't hang the coroutine.
+---
+---@type number | nil
+Request.timeout = 10
 
+---
 --- Whether to cache the Response.
 ---
 ---@type boolean | nil
 Request.cache = false
 
+---
 --- The cache time to live for the Request.
 ---
 ---@type number | nil
 Request.cache_ttl = nil
 
---- Whether to use ETag caching.
+---
+--- Whether to use ETag caching, only applies to `GET` requests.
 ---
 ---@type boolean | nil
 Request.etag = false
 
-
---- [SHARED AND MENU]
 ---
---- The success callback.
+--- The credentials sent as the `Authorization` header, unless it is already in `headers`.
+---
+---@type http.Auth | nil
+Request.auth = nil
+
+---
+--- The cookie jar, matching cookies are sent in the `Cookie` header
+--- (after the one from `headers`) and `set-cookie` from the response is stored in it.
+---
+--- Cookies set by redirect responses are only stored with `chttp`, where redirects are followed in Lua,
+--- `reqwest` and `HTTP` follow redirects on their own. `reqwest` also passes only the last `Set-Cookie` header.
+---
+---@type http.CookieJar | nil
+Request.cookies = nil
+
+---
+--- The most redirects followed in Lua, more fail the request with `"too many redirects"`.
+---
+--- Defaults to `http.client.config.max_redirects`, set by `http_client max_redirects` (`10` redirects).
+---
+--- Only applies when redirects are followed in Lua, with `cookies` and the `chttp` client,
+--- other clients follow redirects on their own with their own limits.
+---
+---@type integer | nil
+Request.max_redirects = 10
+
+
+---
+--- The response of a finished request.
 ---
 ---@class http.Response
 local Response = {}
 
+---
 --- The Response status code.
 ---
 ---@type integer
 Response.status = nil
 
+---
 --- The Response body.
 ---
 ---@type string
 Response.body = nil
 
---- The Response headers.
 ---
----@type http.RequestHeaders
+--- The Response headers, names are lowercase.
+---
+---@type http.ResponseHeaders
 Response.headers = nil

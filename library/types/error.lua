@@ -1,21 +1,24 @@
 ---@meta _
 
+---@class dreamwork.exceptions
+local dreamwork_exceptions = {}
+
 --- [SHARED AND MENU]
 ---
 --- The base error object used throughout `dreamwork`.
 ---
---- An `Error` wraps a `debug.Stack` of call frames captured
+--- An `Error` wraps a `dreamwork.exceptions.Stack` of call frames captured
 --- at (or before) the point the error was raised, and provides helpers to
 --- turn that stack into a human-readable string (`toString`/`__tostring`)
 --- or print it directly to the console with colors (`display`).
 ---
 ---@class Error : Object
 ---@field __class ErrorClass
----@field stack debug.Stack | nil The captured call stack this error carries.
+---@field stack dreamwork.exceptions.Stack | nil The captured call stack this error carries.
 ---@field message string | nil The error message to display. Defaults to `"unknown error"` if omitted.
 ---@field protected __message fun( self: Error, error_message: ( string | nil ) ): string
----@field protected __head fun( self: Error, frame: ( debug.StackLevel | nil ) )
----@field protected __frame fun( self: Error, frame: debug.StackLevel )
+---@field protected __head fun( self: Error, frame: ( dreamwork.exceptions.StackLevel | nil ) )
+---@field protected __frame fun( self: Error, frame: dreamwork.exceptions.StackLevel )
 ---@field protected __tail fun( self: Error )
 ---@operator concat( any ): string
 local __Error = {}
@@ -56,13 +59,12 @@ function __Error:reset() end
 
 --- [SHARED AND MENU]
 ---
---- Captures the current call stack into this error, merging it into
---- whatever frames are already stored (see `debug.Stack:capture`).
+--- Captures the call stack of the calling function into the error, replacing the previous one.
 ---
----@param stack_level? integer  Levels to skip to reach the caller (same as before).
----@param head_skip? integer    Constant frames to drop from the innermost end (e.g. 1 for the bare `error` C frame).
----@param tail_skip? integer    Constant frames to drop from the outermost end (e.g. your xpcall/wrapper frames).
-function __Error:capture(stack_level, head_skip, tail_skip) end
+--- Hidden frames are left out, the same way `error` captures them.
+---
+---@param stack_level? integer The level of the first captured frame, `1` (the caller) by default.
+function __Error:capture(stack_level) end
 
 --- [SHARED AND MENU]
 ---
@@ -116,6 +118,133 @@ RuntimeError = {}
 
 --- [SHARED AND MENU]
 ---
+--- Converts any error value into an `Error` and captures its call stack if it has none yet.
+---
+--- Can be passed to `xpcall` directly as a message handler.
+---
+---@param error_value any The error value to convert.
+---@param error_class? ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+---@return Error error_object
+---@nodiscard
+function toError(error_value, error_class) end
+
+--- [SHARED AND MENU]
+---
+--- `xpcall` message handler for errors that are going to be rethrown.
+---
+--- Works like `toError`, but values that are neither errors nor strings
+--- (signals like `ACTION_CANCEL`) are returned as is, so rethrowing them keeps their identity,
+--- the same way `error` throws them.
+---
+---@param error_value any The error value to handle.
+---@return Error | any error_object
+---@nodiscard
+function dreamwork_exceptions.catch(error_value) end
+
+--- [SHARED AND MENU]
+---
+--- `xpcall` message handler that converts the error into an `Error`, displays it and returns it.
+---
+---@param error_value any The error value to handle.
+---@return Error error_object
+function dreamwork_exceptions.handler(error_value) end
+
+--- [SHARED AND MENU]
+---
+--- Calls the function in protected mode, errors are displayed and do not propagate.
+---
+--- Same as `xpcall( fn, dreamwork.exceptions.handler, ... )`, use it for callbacks
+--- whose errors must not break the caller (hooks, timers, network receivers, ...).
+---
+---@param fn function The function to call.
+---@param ... any The arguments to pass to the function.
+---@return boolean success `true` if the function did not raise an error.
+---@return any ... The function results on success, the displayed `Error` otherwise.
+function dreamwork_exceptions.call(fn, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Converts any error value into an error of this class, see `toError`.
+---
+--- Values that already are an `Error` are returned as is, keeping their own class.
+---
+---@param value any The error value to convert.
+---@return Error error_object
+---@nodiscard
+function __Error:from(value) end
+
+--- [SHARED AND MENU]
+---
+--- Calls the function in protected mode, converting a raised error into an `Error`.
+---
+--- Unlike `pcall`, the error value is always an `Error` with the call stack of the place it was raised,
+--- signals like `ACTION_CANCEL` are converted too, use `xpcall` with `dreamwork.exceptions.catch` to keep them.
+---
+---@param fn function The function to call.
+---@param ... any The arguments to pass to the function.
+---@return boolean success `true` if the function did not raise an error.
+---@return any ... The function results on success, the `Error` otherwise.
+function try(fn, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Displays the error with its call stack without throwing it, the current code keeps running.
+---
+---@param value? any The error value to display.
+---@param stack_level? integer The stack level the error is blamed on.
+---@return Error error_object The displayed error.
+function warn(value, stack_level) end
+
+--- [SHARED AND MENU]
+---
+--- Throws an error with the specified message and level.
+---
+--- An `Error` that already has a call stack is rethrown as is; if it was captured in another
+--- thread (e.g. inside a resumed coroutine) the frames leading here are added below it.
+--- Call `Error:reset` before throwing the same object again to capture a fresh stack.
+---
+--- Values that are neither errors nor strings (signals like `ACTION_CANCEL`) are thrown as is
+--- inside protected calls and coroutines, so they keep their identity.
+---
+---@param value? any The error value to throw.
+---@param stack_level? integer The stack level to throw the error.
+function error(value, stack_level) end
+
+--- [SHARED AND MENU]
+---
+--- Throws an error with a formatted message, blamed on the caller of the function that calls `errorf`.
+---
+--- Use `error( string.format( fmt, ... ), stack_level )` to pick another level.
+---
+---@param fmt string The error message format.
+---@param ... any The error message arguments to format/interpolate.
+function errorf(fmt, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Throws an error if the value is `false` or `nil`, otherwise returns all its arguments, like `assert`.
+---
+--- The message can be:
+--- * `nil`, which throws `"assertion failed!"`;
+--- * a string, formatted with the remaining arguments when there are any;
+--- * an `Error`, which is thrown as is;
+--- * an error class, created with the string formatted from the remaining arguments.
+---
+--- ```lua
+--- local file = assert( open( path ), "cannot open '%s'", path )
+--- assert( size >= 0, ValueError, "size must be positive, got %d", size )
+--- ```
+---
+---@generic T
+---@param value T The value to check.
+---@param message? string | Error | ErrorClass The error message, error object or error class.
+---@param ... any The message format arguments.
+---@return T value
+---@return any ...
+function assert(value, message, ...) end
+
+--- [SHARED AND MENU]
+---
 --- An error raised when a called feature, method, or function
 --- has not been implemented yet.
 ---
@@ -150,14 +279,6 @@ NotImplementedError = {}
 ---@field __parent Error
 ---@field message string | nil The error message to display.
 local __AsyncError = {}
-
----@param top_frame debug.StackLevel | nil
----@protected
-function __AsyncError:__head(top_frame) end
-
----@param frame debug.StackLevel
----@protected
-function __AsyncError:__frame(frame) end
 
 --- [SHARED AND MENU]
 ---

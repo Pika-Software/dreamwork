@@ -4,11 +4,33 @@
 ---
 --- A parsed URL, see the [URL Standard](https://url.spec.whatwg.org/).
 ---
---- Fields are computed from the internal state on access and can be assigned,
---- assigned values are parsed the same way the browser `URL` setters do,
---- invalid values are ignored.
+--- Fields are computed from the internal state on access (and cached until it changes)
+--- and can be assigned, assigned values are parsed the same way the browser `URL` setters do:
+--- an invalid value is ignored and leaves the URL unchanged. The only exception is `href`,
+--- assigning an invalid URL to it throws an error.
+---
+--- `scheme`, `username`, `password`, `hostname`, `port`, `path`, `query` and `fragment`
+--- mirror the parts of the internal state, see `URL.State`.
 ---
 --- `tostring( url )` returns `url.href`.
+---
+--- ```
+--- https://user:pass@example.com:8080/a/b?x=1#top
+--- \___/   \__/ \__/ \_________/ \__/\__/ \_/ \_/
+---   |      |    |        |       |    |   |   |
+---   |      |    |        |       |    |   |   +--- fragment  (hash = "#" .. fragment)
+---   |      |    |        |       |    |   +------- query  (search = "?" .. query)
+---   |      |    |        |       |    +----------- pathname
+---   |      |    |        |       +---------------- port
+---   |      |    |        +------------------------ hostname
+---   |      |    +--------------------------------- password
+---   |      +-------------------------------------- username
+---   +--------------------------------------------- protocol  (scheme .. ":")
+---
+--- host   = hostname .. ":" .. port  ->  "example.com:8080"
+--- origin = scheme "://" host        ->  "https://example.com:8080"
+--- href   = the whole string
+--- ```
 ---
 --- ```lua
 --- local url = URL( "https://user:pass@example.com:8080/a/b?x=1#top" )
@@ -23,33 +45,35 @@
 --- url.href     -- "https://user:pass@example.com/a/b?x=1#top"
 --- ```
 ---
----@class URL : Object, URL.State
+---@class URL : Object
 ---@field __class URLClass
----@field state URL.State The internal state, prefer the fields below.
----@field href string The whole serialized URL, assigning it re-parses the URL and throws on invalid input.
+---@field state URL.State The internal parsed state, prefer the fields below.
+---@field href string The whole serialized URL, assigning it re-parses the URL and throws if the new value is invalid.
 ---@field origin string? *Read-only.* The `scheme://host:port` origin, `nil` for schemes without one (e.g. `file:`, `data:`).
----@field protocol string? The scheme followed by `":"`, e.g. `"https:"`.
----@field username string? The percent-encoded username, `nil` if not given.
----@field password string? The percent-encoded password, `nil` if not given.
----@field host string The hostname followed by `":port"` when the port is not the default one, `""` if there is no host.
----@field hostname string? The serialized host: a lowercase ASCII domain, a dotted IPv4 address or an IPv6 address in brackets.
+---@field protocol string? The scheme followed by `":"`, e.g. `"https:"`, `nil` if there is no scheme.
+---@field scheme string? The lowercase scheme without the `":"`, e.g. `"https"`.
+---@field username string? The percent-encoded username, `nil` if not given. Ignored for URLs without a host and for `file:` URLs.
+---@field password string? The percent-encoded password, `nil` if not given. Ignored for URLs without a host and for `file:` URLs.
+---@field host string The `hostname`, followed by `":port"` when the port is not the default one, `""` if there is no host.
+---@field hostname string? The serialized host: a lowercase ASCII domain, a dotted IPv4 address or an IPv6 address in brackets, `nil` if there is no host.
 ---@field port integer? The port, `nil` when it is not given or is the default port of the scheme.
----@field pathname string? The path, e.g. `"/a/b"`, opaque paths (`mailto:`, `data:`) are returned as is.
----@field query string? The percent-encoded query without the leading `"?"`.
----@field search string The query with a leading `"?"`, `""` if the query is empty.
----@field searchParams URL.SearchParams The query as a list of name-value pairs, changes to it update the URL.
----@field fragment string? The percent-encoded fragment without the leading `"#"`.
----@field hash string The fragment with a leading `"#"`, `""` if the fragment is empty.
+---@field path string | string[] | nil The raw path from the state: a list of percent-encoded segments, or a string for opaque paths (`mailto:`, `data:`). Use `pathname` for the serialized form.
+---@field pathname string The serialized path, e.g. `"/a/b"`, `""` if there is none. Opaque paths are returned as is.
+---@field query string? The percent-encoded query without the leading `"?"`, `nil` if there is no query.
+---@field search string The query with a leading `"?"`, `""` if the query is missing or empty.
+---@field searchParams URL.SearchParams *Read-only.* The query as a list of name-value pairs, changes to it update the URL.
+---@field fragment string? The percent-encoded fragment without the leading `"#"`, `nil` if there is no fragment.
+---@field hash string The fragment with a leading `"#"`, `""` if the fragment is missing or empty.
 local __URL = {}
 
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `URL` instances.
 ---
---- Calling the class parses `url`, relative URLs are resolved against `base`,
+--- Calling the class parses `url`, a relative `url` is resolved against `base`,
 --- which can be a string or another `URL`.
 ---
---- Throws an error if `url` is invalid or is relative and `base` is not given,
+--- Throws an error if `url` (or `base`) is invalid, or if `url` is relative and `base` is not given,
 --- use `URL.canParse` to check without throwing.
 ---
 --- ```lua
@@ -74,7 +98,11 @@ URL = {}
 ---
 --- A list of query parameters, stored as `{ name, value }` pairs in order.
 ---
---- Names may repeat, a pair without `=` in the query has an empty value.
+--- Names may repeat. Pairs are parsed as `application/x-www-form-urlencoded`:
+--- empty segments are skipped, a pair without `=` gets an empty value.
+---
+--- Serializing always writes `name=value` and encodes spaces as `+`,
+--- so `"flag"` becomes `"flag="`.
 ---
 --- When taken from `url.searchParams`, every change is written back to the URL.
 ---
@@ -92,8 +120,8 @@ URL = {}
 ---
 ---@class URL.SearchParams : Object
 ---@field __class URL.SearchParamsClass
----@field url URL | nil The URL this list belongs to, `nil` for standalone lists.
----@field [ integer ] { [ 1 ]: string, [ 2 ]: string | nil } The name-value pairs.
+---@field url URL | nil The URL this list writes changes back to, `nil` for standalone lists.
+---@field [ integer ] { [ 1 ]: string, [ 2 ]: string | nil } The `{ name, value }` pairs, in order.
 local SearchParams = {}
 
 --- [SHARED AND MENU]
@@ -101,7 +129,9 @@ local SearchParams = {}
 --- The class used to create new `URL.SearchParams` instances.
 ---
 --- Calling the class creates a list from a query string (a leading `"?"` is skipped,
---- `"+"` is decoded as a space) or from a list of `{ name, value }` pairs.
+--- `"+"` is decoded as a space) or from a list of `{ name, value }` pairs (copied shallowly:
+--- the pair tables are shared). The optional `url` links the list to a URL, you rarely need it,
+--- use `url.searchParams` instead.
 ---
 --- ```lua
 --- URL.SearchParams( "?a=1&b=x+y" ):get( "b" ) -- "x y"
@@ -118,10 +148,10 @@ URL.SearchParams = SearchParamsClass
 
 --- [SHARED AND MENU]
 ---
---- Checks if the given value is a `URLSearchParams`.
+--- Checks if the given value is a `URL.SearchParams`.
 ---
 ---@param value any The value to check.
----@return boolean result Returns `true` if the value is a `URLSearchParams`, otherwise `false`.
+---@return boolean result Returns `true` if the value is a `URL.SearchParams`, otherwise `false`.
 ---@nodiscard
 function isURLSearchParams(value) end
 
@@ -130,7 +160,7 @@ function isURLSearchParams(value) end
 --- Checks if the given value is a `URL`.
 ---
 ---@param value any The value to check.
----@return boolean result Returns `true` if the value is a URL, otherwise `false`.
+---@return boolean result Returns `true` if the value is a `URL`, otherwise `false`.
 ---@nodiscard
 function isURL(value) end
 
@@ -152,7 +182,7 @@ function SearchParams:__represent() end
 --- Appends a name-value pair to the end of the list.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value of the parameter, `nil` is the same as `""`.
+---@param value? string The value of the parameter, `nil` is serialized the same as `""`.
 function SearchParams:append(name, value) end
 
 --- [SHARED AND MENU]
@@ -212,12 +242,12 @@ function SearchParams:has(name, value) end
 --- ```
 ---
 ---@param name string The name of the parameter.
----@param value? string The new value.
+---@param value? string The new value, `nil` is serialized the same as `""`.
 function SearchParams:set(name, value) end
 
 --- [SHARED AND MENU]
 ---
---- Sorts the pairs by name, pairs with the same name keep their relative order.
+--- Sorts the pairs by name in byte order (stable), pairs with the same name keep their relative order.
 ---
 --- ```lua
 --- local params = URL.SearchParams( "b=1&a=2&b=0" )
@@ -228,7 +258,7 @@ function SearchParams:sort() end
 
 --- [SHARED AND MENU]
 ---
---- Returns an iterator over the name-value pairs.
+--- Returns an iterator over the name-value pairs, in order.
 ---
 --- ```lua
 --- for name, value in url.searchParams:iterator() do
@@ -236,15 +266,15 @@ function SearchParams:sort() end
 --- end
 --- ```
 ---
----@return fun(): string | nil, string | nil iterator The iterator function.
+---@return fun(): string?, string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:iterator() end
 
 --- [SHARED AND MENU]
 ---
---- Returns an iterator over the names, names that repeat are returned every time.
+--- Returns an iterator over the names, a name that repeats is returned every time.
 ---
----@return fun(): string | nil iterator The iterator function.
+---@return fun(): string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:keys() end
 
@@ -252,11 +282,12 @@ function SearchParams:keys() end
 ---
 --- Returns an iterator over the values, a `nil` value gives `""`.
 ---
----@return fun(): string | nil iterator The iterator function.
+---@return fun(): string? iterator The iterator function, returns `nil` when the list ends.
 ---@nodiscard
 function SearchParams:values() end
 
 ---@param key string
+---@return string | integer | string[] | URL.SearchParams | nil
 ---@protected
 function __URL:__index(key) end
 
@@ -282,7 +313,7 @@ function __URL:__init(str, base) end
 ---
 --- Parses a URL string into a plain state table, without creating a `URL` object.
 ---
---- Same rules as calling `URL`, throws an error if the URL is invalid.
+--- Follows the same rules as calling `URL`, throws an error if the URL is invalid.
 ---
 --- ```lua
 --- local state = URL.parse( "https://example.com:8080/a/b?q" )
@@ -291,7 +322,8 @@ function __URL:__init(str, base) end
 --- state.path     -- { "a", "b" }
 --- ```
 ---
----@see URL
+---@see URLClass.canParse
+---@see URLClass.serialize
 ---
 ---@param url string The URL string to parse.
 ---@param base? string | URL The base URL that relative URLs are resolved against.
@@ -303,6 +335,8 @@ function URL.parse(url, base) end
 ---
 --- Checks if a URL string can be parsed, without throwing an error.
 ---
+--- Returns the parsed state on success, so the string doesn't need to be parsed twice.
+---
 --- ```lua
 --- URL.canParse( "https://example.com" ) -- true, state
 --- URL.canParse( "/path" )                -- false, "...Invalid URL: Missing scheme"
@@ -312,7 +346,7 @@ function URL.parse(url, base) end
 ---@param url string The URL string to check.
 ---@param base? string | URL The base URL that relative URLs are resolved against.
 ---@return boolean success `true` if the URL is valid, otherwise `false`.
----@return URL.State | string state_or_error The parsed URL state, or the error message if the URL is invalid.
+---@return URL.State | string state_or_error The parsed URL state on success, otherwise the error message.
 ---@nodiscard
 function URL.canParse(url, base) end
 

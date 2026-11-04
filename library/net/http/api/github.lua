@@ -7,6 +7,16 @@
 ---@class http.github
 http.github = {}
 
+---@class http.github.Config
+---@field token string The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens
+
+--- [SHARED AND MENU]
+---
+--- The settings of the Github API library, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
+---
+---@type http.github.Config
+http.github.config = nil
+
 --- [SHARED AND MENU]
 ---
 --- Sends a request to the Github API.
@@ -15,7 +25,7 @@ http.github = {}
 ---@param pathname string The path to send the request to.
 ---@param headers? table The headers to send with the request.
 ---@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response.
+---@param do_cache? boolean Whether to cache the response, only applies to `GET` requests, `true` by default.
 ---@return http.Response response The response.
 ---@nodiscard
 ---@async
