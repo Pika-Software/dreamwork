@@ -298,13 +298,13 @@ function unicode.wrap(utf8_string, max_width, start_position, end_position, lax)
 ---
 ---@param utf8_string string The UTF-8 string to pad.
 ---@param desired_width integer The target width, in columns, that the result should reach.
+---@param left boolean? Whether to add padding on the left side. Defaults to `true`.
+---@param right boolean? Whether to add padding on the right side. Defaults to `true`.
 ---@param padding string? The string to pad with, repeated as needed. Defaults to a single space.
----@param left boolean? Whether to add padding on the left side.
----@param right boolean? Whether to add padding on the right side.
 ---@param lax boolean? Whether to lax the UTF-8 validity check.
 ---@return string result The padded string, or `utf8_string` unchanged if no padding was needed or requested.
 ---@nodiscard
-function unicode.pad(utf8_string, desired_width, padding, left, right, lax) end
+function unicode.pad(utf8_string, desired_width, left, right, padding, lax) end
 
 --- [SHARED AND MENU]
 ---
