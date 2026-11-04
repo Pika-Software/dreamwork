@@ -2,7 +2,7 @@ local std = dreamwork.std
 
 ---@class dreamwork.std.http
 local http = std.http
-local http_request = http.request
+local http_request = http.client.request
 
 local json = std.json
 local json_deserialize = json.deserialize
@@ -20,44 +20,49 @@ local time = std.time
 local time_now = time.now
 local time_elapsed = time.elapsed
 
-local tostring = std.tostring
+local futures = std.futures
+local futures_sleep = futures.sleep
+
 local error = std.error
-local sleep = std.sleep
+local pairs = std.pairs
+local tostring = std.tostring
 
-
----@type string
-local api_token
-do
-
-    ---@type dreamwork.std.console.Variable<string>
-    local variable = std.console.Variable( {
-        name = "dreamwork.github.token",
-        description = "https://github.com/settings/tokens",
-        protected = true,
-        type = "string",
-        hidden = true
-    } )
-
-    variable:attach( function( _, value )
-        api_token = value
-    end )
-
-    ---@diagnostic disable-next-line: cast-local-type
-    api_token = variable.value
-
-end
 
 --- [SHARED AND MENU]
 ---
 --- The Github API library.
 ---
 ---@class dreamwork.std.http.github
-local github = http.github or {}
+local github = {}
 http.github = github
+
+---@class dreamwork.std.http.github.Config
+---@field token string The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens
+
+--- [SHARED AND MENU]
+---
+--- The settings of the Github API library, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
+---
+---@type dreamwork.std.http.github.Config
+local config = {
+    token = ""
+}
+
+github.config = config
 
 -- https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
 local next_mutation_time = 0
 local ratelimit_reset_time = 0
+
+--- Requests with these methods are sent at least one second apart, as GitHub asks for.
+---
+---@type table<string, boolean>
+local mutative_methods = {
+    [ "POST" ] = true,
+    [ "PATCH" ] = true,
+    [ "PUT" ] = true,
+    [ "DELETE" ] = true
+}
 
 --- [SHARED AND MENU]
 ---
@@ -67,25 +72,22 @@ local ratelimit_reset_time = 0
 ---@param pathname string The path to send the request to.
 ---@param headers? table The headers to send with the request.
 ---@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response.
+---@param do_cache? boolean Whether to cache the response, only applies to `GET` requests, `true` by default.
 ---@return dreamwork.std.http.Response response The response.
 ---@nodiscard
 ---@async
 local function request( method, pathname, headers, body, do_cache )
-    if headers == nil then
-        headers = {}
-    end
+    -- copied, so the caller's table is not changed
+    ---@type dreamwork.std.http.RequestHeaders
+    local request_headers = {
+        Accept = "application/vnd.github+json",
+        [ "X-GitHub-Api-Version" ] = "2022-11-28"
+    }
 
-    if headers.Authorization == nil and api_token ~= "" then
-        headers.Authorization = "Bearer " .. api_token
-    end
-
-    if headers.Accept == nil then
-        headers.Accept = "application/vnd.github+json"
-    end
-
-    if headers[ "X-GitHub-Api-Version" ] == nil then
-        headers[ "X-GitHub-Api-Version" ] = "2022-11-28"
+    if headers ~= nil then
+        for name, value in pairs( headers ) do
+            request_headers[ name ] = value
+        end
     end
 
     local href = "https://api.github.com" .. pathname
@@ -94,36 +96,42 @@ local function request( method, pathname, headers, body, do_cache )
     if ratelimit_reset_time > current_time then
         local diff = ratelimit_reset_time - current_time
         if diff < 30 then
-            sleep( diff )
+            futures_sleep( diff )
         else
             error( "Github API rate limit exceeded (" .. href .. ")" )
         end
     end
 
-    -- Rate limit mutative requests
-    if method > 1 and method < 6 then
+    -- Rate limit mutative requests, `time.elapsed` counts in seconds
+    if mutative_methods[ method ] then
         local diff = next_mutation_time - time_elapsed()
         if diff > 0 then
-            next_mutation_time = next_mutation_time + 1000
-            sleep( diff )
+            next_mutation_time = next_mutation_time + 1
+            futures_sleep( diff )
         else
-            next_mutation_time = time_elapsed() + 1000
+            next_mutation_time = time_elapsed() + 1
         end
     end
 
+    -- the response of a mutative request must never be served from the cache
+    local use_cache = do_cache ~= false and method == "GET"
+
     -- i believe there is no reason to implement queue, since requests are queued by the engine
-    ---@diagnostic disable-next-line: missing-fields
     local result = http_request( {
         url = href,
         method = method,
-        headers = headers,
+        headers = request_headers,
+        -- the client skips it if `headers` already has an `Authorization`
+        auth = config.token ~= "" and { token = config.token } or nil,
         body = body,
-        etag = do_cache ~= false,
-        cache = do_cache ~= false
+        etag = use_cache,
+        cache = use_cache
     } )
 
-    if (result.status == 429 or result.status == 403) and headers[ "x-ratelimit-remaining" ] == "0" then
-        local ratelimit_reset = raw_tonumber( headers[ "x-ratelimit-reset" ], 10 )
+    local result_headers = result.headers
+
+    if (result.status == 429 or result.status == 403) and result_headers[ "x-ratelimit-remaining" ] == "0" then
+        local ratelimit_reset = raw_tonumber( result_headers[ "x-ratelimit-reset" ], 10 )
         if ratelimit_reset == nil then
             error( "Github API rate limit exceeded (" .. tostring( result.status ) .. ") (" .. href .. ")" )
         else
@@ -280,11 +288,11 @@ end
 ---@nodiscard
 ---@async
 function github.getTree( owner, repo, tree_sha, recursive )
-    return templateRequest( "GET", "/repos/{owner}/{repo}/git/trees/{tree_sha}?recursive={recursive}", {
+    -- GitHub treats any value of `recursive` as true, even `false`
+    return templateRequest( "GET", recursive == true and "/repos/{owner}/{repo}/git/trees/{tree_sha}?recursive=1" or "/repos/{owner}/{repo}/git/trees/{tree_sha}", {
         owner = owner,
         repo = repo,
-        tree_sha = tree_sha,
-        recursive = recursive == true
+        tree_sha = tree_sha
     } )
 end
 
@@ -356,11 +364,12 @@ end
 ---@nodiscard
 ---@async
 function github.fetchZip( owner, repo, ref )
-    local result = templateRequest( "GET", "/repos/{owner}/{repo}/zipball/{ref}", {
+    -- the body is a zip archive, so `apiRequest` would fail to parse it as JSON
+    local result = request( "GET", template( "/repos/{owner}/{repo}/zipball/{ref}", {
         owner = owner,
         repo = repo,
         ref = ref
-    } )
+    } ), nil, nil, false )
 
     if result.status ~= 200 then
         error( "failed to fetch zipball (" .. tostring( owner ) .. "/" .. tostring( repo ) .. "/" .. tostring( ref ) .. ") from Github API (" .. tostring( result.status ) .. ")" )
