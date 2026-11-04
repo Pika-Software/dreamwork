@@ -599,6 +599,12 @@ function represent(value) end
 
 --- [SHARED AND MENU]
 ---
+--- Calls the ISO C function exit to terminate the host program.
+---
+function os.exit() end
+
+--- [SHARED AND MENU]
+---
 --- A table containing named colors.
 ---
 --- Also takes colors from `resource/ClientScheme.res` if available. [CLIENT/MENU?]
@@ -971,12 +977,6 @@ SYSTEM_HAS_BATTERY = nil
 ---
 ---@type garrysmod.system.BatteryPower
 SYSTEM_BATTERY_LEVEL = nil
-
---- [SHARED AND MENU]
----
---- Calls the ISO C function exit to terminate the host program.
----
-function os.exit() end
 
 --- [SHARED AND MENU]
 ---

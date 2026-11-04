@@ -1,9 +1,7 @@
 ---@meta _
 
----@class dreamwork.GModSystemLib
----@field IsWindowed fun(): boolean
----@field FlashWindow fun()
-local glua_system = {}
+---@class dreamwork.engine
+local dreamwork_engine = {}
 
 --- [CLIENT AND MENU]
 ---
