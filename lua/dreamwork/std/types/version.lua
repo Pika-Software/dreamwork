@@ -253,6 +253,12 @@ function Version:__init( major, minor, patch, pre_release, build )
     self.build = build
 end
 
+---@return boolean
+---@protected
+function Version:__isvalid()
+    return self.major <= 0x3ff and self.minor <= 0x7ff and self.patch <= 0x7ff
+end
+
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Version` instances.

@@ -35,6 +35,7 @@ local table_isSequential = table.isSequential
 local len = std.len
 local null = std.null
 local error = std.error
+local isTable = std.isTable
 local isString = std.isString
 
 local DecodeError = std.DecodeError
@@ -304,21 +305,24 @@ end
 ---
 ---@param json_str string The JSON string to deserialize.
 ---@param max_depth? integer The maximum nesting depth, default is `512`.
----@return dreamwork.std.json.Value json_value The deserialized value.
+---@return dreamwork.std.json.Array | dreamwork.std.json.Object json_value The deserialized value.
 function json.deserialize( json_str, max_depth )
     local uint8_1, uint8_2, uint8_3 = string_byte( json_str, 1, 3 )
 
-    local value, end_position = parseValue(
-        json_str,
-        (uint8_1 == 0xEF and uint8_2 == 0xBB and uint8_3 == 0xBF) and 4 or 1, -- skip UTF-8 BOM
-        1,
-        max_depth or MAX_DEPTH
-    )
+    local start = (uint8_1 == 0xEF and uint8_2 == 0xBB and uint8_3 == 0xBF) and 4 or 1 -- skip UTF-8 BOM
+
+    local value, end_position = parseValue( json_str, start, 1, max_depth or MAX_DEPTH )
 
     local trailing = string_find( json_str, "[^ \t\r\n]", end_position )
     if trailing ~= nil then
         error( DecodeError( "unexpected trailing data", trailing ), 2 )
     end
+
+    if not isTable( value ) then
+        error( DecodeError( "invalid json, root must be an object or an array", string_find( json_str, "[^ \t\r\n]", start ) or start ), 2 )
+    end
+
+    ---@cast value dreamwork.std.json.Array | dreamwork.std.json.Object
 
     return value
 end

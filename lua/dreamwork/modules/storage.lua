@@ -121,7 +121,7 @@ end
 --- Raises a `DecodeError` if the stored value is not valid JSON.
 ---
 ---@param key string The key of the value.
----@return dreamwork.std.json.Value | nil value The value, or `nil` if the key does not exist.
+---@return dreamwork.std.json.Object | dreamwork.std.json.Array | nil value The value, or `nil` if the key does not exist.
 ---@nodiscard
 function storage.readJSON( key )
     local value = storage.read( key )

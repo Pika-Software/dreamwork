@@ -11,10 +11,7 @@ local vgui_Create  = glua_vgui.CreateX or glua_vgui.Create
 
 local std          = dreamwork.std
 
-local debug        = std.debug
-local debug_fempty = debug.fempty
-
-local error        = std.error
+local error = std.error
 
 
 --- [CLIENT AND MENU]
@@ -30,14 +27,23 @@ gui.getWidth  = glua_ScrW or function() return 0 end
 gui.getHeight = glua_ScrH or function() return 0 end
 
 
-gui.panelCreate  = vgui_Create or function()
+---@alias dreamwork.engine.gui.panelCreate
+---| fun( classname: "HTML", parent: garrysmod.Panel?, name: string? ): ( garrysmod.HTML | nil )
+---| fun( classname: "Awesomium", parent: garrysmod.Panel?, name: string? ): ( garrysmod.Awesomium | nil )
+---| fun( classname: "Chromium", parent: garrysmod.Panel?, name: string? ): ( garrysmod.Chromium | nil )
+---| fun( classname: string, parent: garrysmod.Panel?, name: string? ): ( garrysmod.Panel | nil )
+
+---@type dreamwork.engine.gui.panelCreate
+gui.panelCreate = vgui_Create or function()
     error( "panel creation is not available", 2 )
 end
 
+---@type fun( panel: garrysmod.Panel )
 gui.panelDestroy = engine_Panel.Remove or function()
     error( "panel destroy is not available", 2 )
 end
 
+---@type fun( panel: garrysmod.Panel ): boolean
 gui.panelIsValid = engine_Panel.IsValid or function()
     return false
 end
