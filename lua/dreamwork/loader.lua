@@ -2972,29 +2972,33 @@ end
 do
 
     ---@type fun( bytecode: string ): function | nil
-    local load_bytecode
+    local compile_bytecode
 
-    local load = load or loadstring
-    if load ~= nil and jit.isFFI( load ) then
-        function load_bytecode( bytecode )
-            return load( bytecode, "=(load)", "b" )
-        end
+    -- https://github.com/unknown-gd/gm_bytecode
+    if std.loadbinary( "bytecode" ) and isFunction( load_bytecode ) then
+        logger:info( "'bytecode' was loaded & connected as LuaJIT bytecode compiler." )
+        compile_bytecode = load_bytecode
+    else
 
-        logger:debug( "Native bytecode compilation is available, skipping custom implementation." )
-    end
+        -- right now is broken in holylib so no bytecode :c
 
-    -- https://github.com/willox/gmbc
-    if load_bytecode == nil then
-        if std.loadbinary( "gmbc" ) then
-            logger:info( "'gmbc' was loaded & connected as LuaJIT bytecode compiler." )
-            load_bytecode = gmbc_load_bytecode
-        else
-            function load_bytecode()
+        -- local load = load or loadstring
+        -- if load ~= nil and jit.isFFI( load ) then
+        --     function compile_bytecode( bytecode )
+        --         return load( bytecode, "=(load)", "b" )
+        --     end
+
+        --     logger:debug( "Native bytecode compilation is available, skipping custom implementation." )
+        -- end
+
+        if compile_bytecode == nil then
+            function compile_bytecode()
                 return error( "bytecode compilation not available.", 1 )
             end
 
             logger:warn( "'gmbc' is missing, bytecode compilation not available." )
         end
+
     end
 
     --- [SHARED AND MENU]
@@ -3008,8 +3012,8 @@ do
     ---@return function fn The compiled function.
     ---@nodiscard
     function std.loadbytecode( bytecode, env )
-        local success, result = pcall( load_bytecode, bytecode )
-        if success and result ~= nil then
+        local success, result = pcall( compile_bytecode, bytecode )
+        if success and isFunction( result ) then
             ---@cast result function
             setfenv( result, env or getfenv( 2 ) )
             return result
