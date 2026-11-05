@@ -1075,6 +1075,7 @@ function Panel:SetConVar( convar ) end
 ---
 ---@param alignment garrysmod.Panel.ContentAlignment The direction of the content, based on the number pad.
 function Panel:SetContentAlignment( alignment ) end
+
 --- [CLIENT AND MENU]
 ---
 --- Sets the appearance of the cursor. You can find a list of all available cursors with image previews

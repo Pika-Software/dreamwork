@@ -1364,6 +1364,66 @@ end
 
 do
 
+    local isInteger = std.isInteger
+    local next = std.next
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the next non-integer key–value pair in the table `tbl`.
+    ---
+    --- Integer keys (the array part) are skipped; only hash/map keys are yielded.
+    ---
+    ---@generic K, V
+    ---@param tbl table<K, V>
+    ---@param key K | nil
+    ---@return K, V
+    ---@nodiscard
+    local function knext( tbl, key )
+        local value
+
+        ::knext_loop::
+
+        key, value = next( tbl, key )
+
+        if isInteger( key ) then
+            goto knext_loop
+        end
+
+        return key, value
+    end
+
+    std.knext = knext
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns two values (an iterator function and the table `tbl`) so that the construction
+    --- ```lua
+    ---     local t = { "a", "b", foo = 1, bar = 2 }
+    ---
+    ---     for k, v in kpairs( t ) do
+    ---         print( k, v )
+    ---     end
+    ---
+    ---     -- foo    1
+    ---     -- bar    2
+    --- ```
+    --- will iterate over the non-integer key–value pairs of table `t` (the hash/map part).
+    ---
+    --- Integer keys are skipped; use [ipairs](command:extension.lua.doc?["en-us/51/manual.html/pdf-ipairs"]) for the array part.
+    ---
+    ---@generic K, V
+    ---@param tbl table<K, V>
+    ---@return fun( table: table<K, V>, key: ( K | nil ) ): K, V
+    ---@return table<K, V>
+    ---@nodiscard
+    function std.kpairs( tbl )
+        return knext, tbl
+    end
+
+end
+
+do
+
     local CompileString = CompileString
 
     local getfenv = std.getfenv
