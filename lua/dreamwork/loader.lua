@@ -691,17 +691,15 @@ local math_min, math_max = math.min, math.max
 
 do
 
-    ---@alias dreamwork.std.RangeIterator fun( break_point: integer, index: integer ): integer | nil
-
-    ---@type table<integer, dreamwork.std.RangeIterator>
+    ---@type table<integer, function>
     local range_iterators = {
         [ 0 ] = debug_fempty
     }
 
     setmetatable( range_iterators, {
-        ---@param self table<integer, dreamwork.std.RangeIterator>
+        ---@param self table<integer, function>
         ---@param step_size integer
-        ---@return dreamwork.std.RangeIterator
+        ---@return function
         __index = function( self, step_size )
             local math_fn = (step_size < 0) and math_max or math_min
 
@@ -728,7 +726,7 @@ do
     ---@param from integer The starting value of the range.
     ---@param to integer The ending value of the range (inclusive).
     ---@param step? integer The amount to step by each iteration. Defaults to `1`. Can be negative to count down.
-    ---@return dreamwork.std.RangeIterator iterator The iterator function to be used with a generic `for` loop.
+    ---@return fun( break_point: integer, index: integer ): integer | nil iterator The iterator function to be used with a generic `for` loop.
     ---@return integer to The final value, passed through as the loop's invariant state.
     ---@return integer start The initial value, passed to the iterator on the first call.
     ---@nodiscard
