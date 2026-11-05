@@ -1,0 +1,276 @@
+---@meta _
+
+--- [CLIENT AND MENU]
+---
+--- Physical quantity kind used by `unit`.
+---
+--- Conversion is only allowed between units that share the same measure;
+--- crossing measures (for example mass → volume) raises `ValueError`.
+---
+---@alias unit.Measure
+---| "length" # Distance, including CSS reference lengths at 96 DPI (`px`, `pt`, `pc`, `q`).
+---| "mass" # Mass / weight.
+---| "volume" # Volume / capacity.
+---| "area" # Surface area.
+---| "temperature" # Thermodynamic temperature (`C` / `K` / `F` / `R`).
+---| "time" # Duration.
+---| "angle" # Plane angle.
+---| "speed" # Linear speed / velocity.
+---| "digital" # Digital information size (SI bit/byte and IEC bit/byte).
+
+--- [CLIENT AND MENU]
+---
+--- Unit system name within a measure.
+---
+--- Examples: `"metric"`, `"imperial"`, `"SI"`, `"bit"`, `"byte"`, `"IECBit"`, `"IECByte"`.
+--- Cross-system conversion uses per-measure anchor ratios or transforms.
+---
+---@alias unit.System string
+
+--- [CLIENT AND MENU]
+---
+--- Unit abbreviations registered in `unit` (convert-units style).
+---
+--- Live viewport lengths (`vmin`, `vw`, …) are not part of this library;
+--- resolve those with `PixelMap`.
+---
+---@alias unit.Type
+---|# Length — metric (anchor: meter)
+---| "nm" # Nanometer.
+---| "um" # Micrometer; ASCII alias of `μm`.
+---| "μm" # Micrometer.
+---| "mm" # Millimeter.
+---| "cm" # Centimeter.
+---| "dm" # Decimeter.
+---| "m" # Meter.
+---| "km" # Kilometer.
+---| "q" # Quarter-millimeter (`0.25` mm / CSS `q`).
+---| "pc" # Pica (`1/6` in at 96 DPI).
+---| "pt" # Point (`1/72` in at 96 DPI).
+---| "px" # CSS reference pixel (`1/96` in).
+---|# Length — imperial (anchor: foot)
+---| "mil" # Thou; `1/1000` inch.
+---| "in" # Inch.
+---| "yd" # Yard.
+---| "ft-us" # US survey foot.
+---| "ft" # International foot.
+---| "fathom" # Fathom.
+---| "mi" # Statute mile.
+---| "nMi" # Nautical mile.
+---|# Mass — metric (anchor: gram)
+---| "mcg" # Microgram.
+---| "mg" # Milligram.
+---| "g" # Gram.
+---| "kg" # Kilogram.
+---| "mt" # Metric tonne.
+---|# Mass — imperial (anchor: pound)
+---| "oz" # Ounce.
+---| "lb" # Pound.
+---| "st" # Stone.
+---| "t" # US short ton.
+---|# Volume — metric (anchor: litre)
+---| "mm3" # Cubic millimeter.
+---| "cm3" # Cubic centimeter.
+---| "dm3" # Cubic decimeter (equal to `1` litre).
+---| "ml" # Millilitre.
+---| "cl" # Centilitre.
+---| "dl" # Decilitre.
+---| "l" # Litre.
+---| "kl" # Kilolitre.
+---| "Ml" # Megalitre.
+---| "Gl" # Gigalitre.
+---| "m3" # Cubic meter.
+---| "km3" # Cubic kilometer.
+---| "krm" # Swedish kryddmått (`1` ml).
+---| "tsk" # Swedish tesked (`5` ml).
+---| "msk" # Swedish matsked (`15` ml).
+---| "kkp" # Swedish kaffekopp (`150` ml).
+---| "glas" # Swedish glas (`200` ml).
+---| "kanna" # Swedish kanna (`2.617` l).
+---|# Volume — imperial (anchor: fluid ounce)
+---| "tsp" # Teaspoon.
+---| "Tbs" # Tablespoon.
+---| "in3" # Cubic inch.
+---| "fl-oz" # US fluid ounce.
+---| "cup" # US cup.
+---| "pnt" # US pint.
+---| "qt" # US quart.
+---| "gal" # US gallon.
+---| "ft3" # Cubic foot.
+---| "yd3" # Cubic yard.
+---|# Area — metric (anchor: square meter)
+---| "nm2" # Square nanometer.
+---| "um2" # Square micrometer; ASCII alias of `μm2`.
+---| "μm2" # Square micrometer.
+---| "mm2" # Square millimeter.
+---| "cm2" # Square centimeter.
+---| "dm2" # Square decimeter.
+---| "m2" # Square meter.
+---| "a" # Are (`100` m²).
+---| "ha" # Hectare.
+---| "km2" # Square kilometer.
+---|# Area — imperial (anchor: square foot)
+---| "in2" # Square inch.
+---| "yd2" # Square yard.
+---| "ft2" # Square foot.
+---| "ac" # Acre.
+---| "mi2" # Square mile.
+---|# Temperature — metric
+---| "C" # Degree Celsius.
+---| "K" # Kelvin.
+---|# Temperature — imperial
+---| "F" # Degree Fahrenheit.
+---| "R" # Degree Rankine.
+---|# Time — SI (anchor: second)
+---| "ns" # Nanosecond.
+---| "mu" # Microsecond.
+---| "ms" # Millisecond.
+---| "s" # Second.
+---| "min" # Minute.
+---| "h" # Hour.
+---| "d" # Day.
+---| "week" # Week.
+---| "month" # Mean Gregorian month (`year / 12`).
+---| "year" # Mean Gregorian year (`365.25` days).
+---| "decade" # Ten years.
+---| "century" # One hundred years.
+---|# Angle — SI (anchor: degree)
+---| "rad" # Radian.
+---| "deg" # Degree.
+---| "grad" # Gradian.
+---| "arcmin" # Arcminute.
+---| "arcsec" # Arcsecond.
+---|# Speed — metric (anchor: km/h)
+---| "m/s" # Metre per second.
+---| "km/h" # Kilometre per hour.
+---| "mm/h" # Millimeter per hour.
+---|# Speed — imperial (anchor: mph)
+---| "mph" # Mile per hour.
+---| "knot" # Nautical mile per hour.
+---| "ft/s" # Foot per second.
+---| "ft/min" # Foot per minute.
+---| "in/h" # Inch per hour.
+---|# Digital — SI bit (anchor: bit)
+---| "bit" # Bit.
+---| "kb" # Kilobit (`10^3` bits).
+---| "Mb" # Megabit (`10^6` bits).
+---| "Gb" # Gigabit (`10^9` bits).
+---| "Tb" # Terabit (`10^12` bits).
+---|# Digital — SI byte (anchor: byte)
+---| "byte" # Byte (`8` bits).
+---| "kB" # Kilobyte (`10^3` bytes).
+---| "MB" # Megabyte (`10^6` bytes).
+---| "GB" # Gigabyte (`10^9` bytes).
+---| "TB" # Terabyte (`10^12` bytes).
+---|# Digital — IEC bit (anchor: kibibit)
+---| "Kib" # Kibibit (`2^10` bits).
+---| "Mib" # Mebibit (`2^20` bits).
+---| "Gib" # Gibibit (`2^30` bits).
+---| "Tib" # Tebibit (`2^40` bits).
+---|# Digital — IEC byte (anchor: kibibyte)
+---| "KiB" # Kibibyte (`2^10` bytes).
+---| "MiB" # Mebibyte (`2^20` bytes).
+---| "GiB" # Gibibyte (`2^30` bytes).
+---| "TiB" # Tebibyte (`2^40` bytes).
+
+--- [CLIENT AND MENU]
+---
+--- Static unit conversion library (convert-units style, no object allocation).
+---
+--- Units belong to a measure and a system. Conversion scales through each
+--- system's anchor, applies optional `anchor_shift` (temperature), then bridges
+--- systems when needed.
+---
+--- ```lua
+--- unit.convert( 1, "l", "ml" )   -- 1000
+--- unit.convert( 1, "lb", "kg" )  -- ~0.4536
+--- unit.convert( 100, "C", "F" )  -- 212
+---
+--- local value, abbr = unit.parse( "10cm" ) -- 10, "cm"
+---
+--- unit.measures()               -- { "length", "mass", ... }, count
+--- unit.possibilities( "mass" )  -- { "mcg", "mg", ... }, count
+--- ```
+---
+---@class unit
+unit = {}
+
+--- [CLIENT AND MENU]
+---
+--- Internal definition of one registered unit abbreviation.
+---
+---@class unit.Definition
+---@field measure unit.Measure The measure this unit belongs to.
+---@field system unit.System The unit system inside that measure (for example `"metric"`).
+---@field to_anchor number Multiplier from this unit into the system's anchor unit (`value * to_anchor`).
+---@field anchor_shift number | nil Additive shift around the system anchor; used by temperature (`K`, `R`).
+
+--- [CLIENT AND MENU]
+---
+--- Converts `value` from `from_unit` into `to_unit` within one measure.
+---
+--- Raises `ValueError` when either abbreviation is unknown, the measures differ,
+--- or no system bridge exists between the two systems.
+---
+--- ```lua
+--- unit.convert( 1, "l", "ml" )  -- 1000
+--- unit.convert( 100, "C", "F" ) -- 212
+--- unit.convert( 1, "lb", "kg" ) -- ~0.4536
+--- ```
+---
+---@param value number The numeric magnitude expressed in `from_unit`.
+---@param from_unit unit.Type | string The source unit abbreviation.
+---@param to_unit unit.Type | string The destination unit abbreviation.
+---@return number converted The value expressed in `to_unit`.
+---@nodiscard
+function unit.convert(value, from_unit, to_unit) end
+
+--- [CLIENT AND MENU]
+---
+--- Parses a quantity string such as `"10cm"`, `"1.5ft-us"`, or `"100C"`.
+---
+--- Raises `ValueError` with `"missing magnitude"`, `"missing unit type"`, or
+--- `"unsupported unit"` when the descriptor cannot be parsed.
+---
+--- ```lua
+--- local value, abbr = unit.parse( "10cm" ) -- 10, "cm"
+--- ```
+---
+---@param descriptor string The quantity string to parse (`"<number><unit>"`).
+---@return number magnitude The numeric part of the descriptor.
+---@return unit.Type unit_type The unit abbreviation.
+---@nodiscard
+function unit.parse(descriptor) end
+
+--- [CLIENT AND MENU]
+---
+--- Returns a copy of the configured measure names in registration order.
+---
+--- ```lua
+--- local measures, count = unit.measures()
+--- -- measures = { "length", "mass", "volume", ... }
+--- ```
+---
+---@return unit.Measure[] measures A new list of configured measure names (1-based, no `[0]` length slot).
+---@return integer measure_count The number of measure names in the returned list.
+---@nodiscard
+function unit.measures() end
+
+--- [CLIENT AND MENU]
+---
+--- Lists unit abbreviations available for conversion.
+---
+--- When `measure` is set, only that measure's units are returned.
+--- When omitted, every configured unit across all measures is returned.
+--- An unknown measure raises `ValueError`.
+---
+--- ```lua
+--- local mass_units, count = unit.possibilities( "mass" ) -- { "mcg", "mg", "g", ... }, count
+--- local all_units = unit.possibilities()                 -- every configured unit
+--- ```
+---
+---@param measure? unit.Measure Optional measure filter.
+---@return unit.Type[] unit_types A new list of matching unit abbreviations (1-based, no `[0]` length slot).
+---@return integer unit_count The number of matching unit abbreviations.
+---@nodiscard
+function unit.possibilities(measure) end
