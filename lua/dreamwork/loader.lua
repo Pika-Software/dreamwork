@@ -1791,6 +1791,7 @@ end
 dreamwork_load( "std/types/error.lua" )
 error = std.error
 
+dreamwork_load( "std/unit.lua" )
 dreamwork_load( "modules/engine/utils.lua" )
 
 dreamwork_load( "std/codec/pack.lua" )
@@ -2926,9 +2927,10 @@ dreamwork_load( "modules/engine/http.lua" )
 
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
--- dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
+dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
 
-dreamwork_load( "std/gfx/window.lua", false, not LUA_CLIENT_MENU )
+dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
+dreamwork_load( "std/types/pixel_map.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )

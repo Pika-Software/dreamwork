@@ -56,6 +56,7 @@ gc_setTableRules( flags, true, false )
 local hooks = {}
 
 setmetatable( hooks, {
+    ---@param command dreamwork.std.console.Command
     __index = function( self, command )
         local hook = Hook( represent( command ) )
         self[ command ] = hook

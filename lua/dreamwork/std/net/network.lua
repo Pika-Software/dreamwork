@@ -988,9 +988,9 @@ do
         limits[ self ] = 64 * 1024 * 1024
         segment_sizes[ self ] = default_segment_size
 
-        receive_hooks[ self ] = Hook( "Network::" .. name .. "::receive" )
-        progress_hooks[ self ] = Hook( "Network::" .. name .. "::progress" )
-        stream_hooks[ self ] = Hook( "Network::" .. name .. "::stream" )
+        receive_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::receive" )
+        progress_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::progress" )
+        stream_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::stream" )
 
         local outgoing_states = {}
         gc_setTableRules( outgoing_states, true, false )

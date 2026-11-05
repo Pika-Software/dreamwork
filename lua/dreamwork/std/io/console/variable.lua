@@ -274,6 +274,7 @@ setmetatable( maxs, {
 local hooks = {}
 
 setmetatable( hooks, {
+    ---@param variable dreamwork.std.console.Variable
     __index = function( self, variable )
         local hook = Hook( represent( variable ) )
         self[ variable ] = hook
