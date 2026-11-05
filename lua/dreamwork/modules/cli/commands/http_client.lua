@@ -6,7 +6,6 @@ local storage_http_prune = storage_http.prune
 
 local http = std.http
 local http_client_config = http.client.config
-local http_github_config = http.github.config
 local storage_http_config = storage_http.config
 
 
@@ -85,15 +84,6 @@ dreamwork_cli.settings( {
             min = 0,
             max = 3650,
             on_change = storage_http_prune
-        },
-        {
-            name = "github_token",
-            key = "dreamwork.github.token",
-            description = "The Github API token, see https://github.com/settings/tokens",
-            target = http_github_config,
-            field = "token",
-            type = "string",
-            secret = true
         }
     }
 } )

@@ -36,6 +36,9 @@ local string_match = string.match
 local string_format = string.format
 local string_escape = string.escape
 
+local futures = std.futures
+local futures_sleep = futures.sleep
+
 -- `dreamwork.vfs` functions are called with `stack_level` 1, so their errors blame `pcall` and have no position
 local pcall = std.pcall
 
@@ -225,6 +228,7 @@ do
             print_node( child_vfs_path, name, is_directory )
 
             if is_directory then
+                futures_sleep( 0.05 )
                 print_children( child_vfs_path, prefix .. (is_last and "   " or "│  "), depth + 1, max_depth )
             end
         end
@@ -294,11 +298,10 @@ do
             end
 
             cli_printHeader( {
-                vfs_path,
                 describe_mount( vfs_path ),
                 string_format( "%d directories, %d files, %s", directory_count, file_count, cli_formatBytes( total_size ) ),
                 depth_line
-            } )
+            }, vfs_path )
 
             flush()
         end,
@@ -355,7 +358,7 @@ vfs_group:register( "read", {
             size_line = string_format( "%d of %d bytes shown", shown_length, data_length )
         end
 
-        cli_printHeader( { vfs_path, size_line } )
+        cli_printHeader( { size_line }, vfs_path )
 
         cli_write( "```" .. path_getExtension( vfs_path ) .. "\n", COLOR_BRANCH )
         cli_write( string_escape( data, false ), colors.value )
@@ -455,14 +458,14 @@ do
                 return
             end
 
-            local header = { vfs_path, string_format( "%s, %d bytes", exists and "replaced" or "created", string_len( content ) ) }
+            local header = { string_format( "%s, %d bytes", exists and "replaced" or "created", string_len( content ) ) }
 
             if old_content == nil then
-                header[ 3 ] = "The previous content could not be read, no diff."
+                header[ 2 ] = "The previous content could not be read, no diff."
             elseif string_len( old_content ) > DIFF_LIMIT then
-                header[ 3 ] = string_format( "The previous content is larger than %d bytes, no diff.", DIFF_LIMIT )
+                header[ 2 ] = string_format( "The previous content is larger than %d bytes, no diff.", DIFF_LIMIT )
             else
-                cli_printHeader( header )
+                cli_printHeader( header, vfs_path )
 
                 cli_write( "```" .. path_getExtension( vfs_path ) .. "\n", COLOR_BRANCH )
 
@@ -478,7 +481,7 @@ do
                 return
             end
 
-            cli_printBox( header )
+            cli_printBox( header, vfs_path )
         end,
         on_type = complete_first_path
     } )
@@ -514,7 +517,7 @@ do
             end
 
             if not read_success then
-                cli_printBox( { vfs_path, "deleted", "The content could not be read, no diff." } )
+                cli_printBox( { "deleted", "The content could not be read, no diff." }, vfs_path )
                 return
             end
 
@@ -522,16 +525,16 @@ do
 
             local old_length = string_len( old_content )
 
-            local header = { vfs_path, string_format( "deleted, %d bytes", old_length ) }
+            local header = { string_format( "deleted, %d bytes", old_length ) }
 
             if old_length > DIFF_LIMIT then
-                header[ 3 ] = string_format( "The content is larger than %d bytes, no diff.", DIFF_LIMIT )
-                cli_printBox( header )
+                header[ 2 ] = string_format( "The content is larger than %d bytes, no diff.", DIFF_LIMIT )
+                cli_printBox( header, vfs_path )
                 return
             end
 
             -- the deleted file is diffed against an empty string
-            cli_printHeader( header )
+            cli_printHeader( header, vfs_path )
 
             cli_write( "```" .. path_getExtension( vfs_path ) .. "\n", COLOR_BRANCH )
 

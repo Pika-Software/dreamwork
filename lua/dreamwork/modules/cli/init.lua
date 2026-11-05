@@ -26,6 +26,7 @@ local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
+local tostring = std.tostring
 
 local string = std.string
 local string_sub = string.sub
@@ -77,7 +78,7 @@ dreamwork.cli = cli
 ---@class dreamwork.cli.Command
 ---@field description? string The description shown by `help`.
 ---@field usage? string The arguments shown by `help`, e.g. `[path] [max_depth]`.
----@field on_run fun( self: dreamwork.cli.Command, args: string[], argument_string: string ) Called with the arguments after the name of the command.
+---@field on_run async fun( self: dreamwork.cli.Command, args: string[], argument_string: string ) Called with the arguments after the name of the command, always inside `futures.run`.
 ---@field on_type? fun( self: dreamwork.cli.Command, args: string[], argument_string: string ): string[] | nil Returns the suggestions for the typed arguments, each one replaces the whole `argument_string`.
 
 --- [SHARED AND MENU]
@@ -150,6 +151,8 @@ do
     ---@field top_right string
     ---@field bottom_left string
     ---@field bottom_right string
+    ---@field middle_left string
+    ---@field middle_right string
     ---@field horizontal string
     ---@field vertical string
 
@@ -171,12 +174,14 @@ do
         box_style = {
             top_left = "┌", top_right = "┐",
             bottom_left = "└", bottom_right = "┘",
+            middle_left = "├", middle_right = "┤",
             horizontal = "─", vertical = "│"
         }
     else
         box_style = {
             top_left = "+", top_right = "+",
             bottom_left = "+", bottom_right = "+",
+            middle_left = "+", middle_right = "+",
             horizontal = "-", vertical = "|"
         }
     end
@@ -256,22 +261,35 @@ do
     ---
     --- Prints the lines inside of the box, the width is taken from the longest line, lines longer than `cli.BOX_WIDTH` are wrapped.
     ---
+    --- When `title` is given, it fills a separated top part of the box.
+    ---
     --- The dedicated server console uses box-drawing characters, the in-game console draws them with a wider fallback font,
     --- so it gets an ASCII border.
     ---
     --- ```
     --- ┌───────────────┐    +---------------+
+    --- │ title         │    | title         |
+    --- ├───────────────┤    +---------------+
     --- │ first line    │    | first line    |
     --- │ second line   │    | second line   |
     --- └───────────────┘    +---------------+
     --- ```
     ---
     ---@param lines string[] The lines, without new lines.
+    ---@param title? string The title shown in the separated top part of the box.
     ---@param color? dreamwork.std.Color The color of the text, `cli.colors.name` if `nil`.
     ---@param border_color? dreamwork.std.Color The color of the border, `cli.colors.description` if `nil`.
-    function cli.printBox( lines, color, border_color )
+    function cli.printBox( lines, title, color, border_color )
         color = color or colors.name
         border_color = border_color or colors.description
+
+        ---@type string[]
+        local title_lines = {}
+        local title_count = 0
+
+        if title ~= nil and title ~= "" then
+            title_lines, title_count = wrap( title, BOX_WIDTH )
+        end
 
         ---@type string[]
         local wrapped = {}
@@ -284,8 +302,19 @@ do
         lines = wrapped
 
         ---@type integer[]
+        local title_widths = {}
+        ---@type integer[]
         local widths = {}
         local max_width = 0
+
+        for index = 1, title_count, 1 do
+            local width = text_width( title_lines[ index ] )
+            title_widths[ index ] = width
+
+            if width > max_width then
+                max_width = width
+            end
+        end
 
         for index = 1, line_count, 1 do
             local width = text_width( lines[ index ] )
@@ -301,6 +330,16 @@ do
 
         write( box_style.top_left .. horizontal .. box_style.top_right .. "\n", border_color )
 
+        for index = 1, title_count, 1 do
+            write( vertical .. " ", border_color )
+            write( title_lines[ index ] .. string_rep( " ", max_width - title_widths[ index ] ), color )
+            write( " " .. vertical .. "\n", border_color )
+        end
+
+        if title_count ~= 0 and line_count ~= 0 then
+            write( box_style.middle_left .. horizontal .. box_style.middle_right .. "\n", border_color )
+        end
+
         for index = 1, line_count, 1 do
             write( vertical .. " ", border_color )
             write( lines[ index ] .. string_rep( " ", max_width - widths[ index ] ), color )
@@ -315,10 +354,11 @@ do
     --- Prints the lines inside of the box with an empty line after it, separates the header from the content.
     ---
     ---@param lines string[] The lines, without new lines.
+    ---@param title? string The title shown in the separated top part of the box.
     ---@param color? dreamwork.std.Color The color of the text, `cli.colors.name` if `nil`.
     ---@param border_color? dreamwork.std.Color The color of the border, `cli.colors.description` if `nil`.
-    function cli.printHeader( lines, color, border_color )
-        cli.printBox( lines, color, border_color )
+    function cli.printHeader( lines, title, color, border_color )
+        cli.printBox( lines, title, color, border_color )
         write( "\n" )
     end
 
@@ -733,14 +773,14 @@ function Group:printHelp( page )
     end
 
     ---@type string[]
-    local header = { "Usage: " .. self.path .. " <command> [arguments]" }
+    local header = {}
 
     if self.description ~= nil then
-        header[ 2 ] = self.description
+        header[ 1 ] = self.description
     end
 
     header[ #header + 1 ] = string_format( "Page %d/%d, %d commands", page, page_count, name_count )
-    cli.printHeader( header )
+    cli.printHeader( header, "Usage: " .. self.path .. " <command> [arguments]" )
 
     local first = (page - 1) * HELP_PAGE_SIZE + 1
     local last = first + HELP_PAGE_SIZE - 1
@@ -748,11 +788,13 @@ function Group:printHelp( page )
         last = name_count
     end
 
+    local number_width = string_len( raw_tostring( last ) )
+
     for index = first, last, 1 do
         local name = names[ index ]
         local command = commands[ name ]
 
-        console_message( "  " )
+        console_message( string_format( "  %" .. number_width .. "d. ", index ) )
         console_messageColored( name, colors.name )
 
         local usage = command.usage
@@ -794,16 +836,17 @@ function Group:printUsage( name )
     end
 
     local usage = command.usage
+    local title = usage == nil and ("Usage: " .. self.path .. " " .. name) or ("Usage: " .. self.path .. " " .. name .. " " .. usage)
 
     ---@type string[]
-    local lines = { usage == nil and ("Usage: " .. self.path .. " " .. name) or ("Usage: " .. self.path .. " " .. name .. " " .. usage) }
+    local lines = {}
 
     local description = command.description
     if description ~= nil then
-        lines[ 2 ] = description
+        lines[ 1 ] = description
     end
 
-    cli.printBox( lines )
+    cli.printBox( lines, title )
 end
 
 ---@param args string[]
@@ -896,6 +939,8 @@ local function is_allowed( client )
     return client:IsListenServerHost()
 end
 
+local futures_run = std.futures.run
+
 local console_command = console_Command( {
     name = LUA_SERVER and "dreamwork_sci" or "dreamwork_cci",
     description = LUA_SERVER and "Dreamwork server console interface." or "Dreamwork client console interface."
@@ -913,8 +958,13 @@ cli.root = root
 
 console_command:attach( function( _, client, args, argument_string )
     if is_allowed( client ) then
-        root:on_run( args, argument_string )
-        console_messageColored( "\n" .. dreamwork.Copyright .. "\n\n", colors.description )
+        futures_run( root.on_run, function( ok, err )
+            if not ok then
+                cli.error( "%s", tostring( err ) )
+            end
+
+            console_messageColored( "\n" .. dreamwork.Copyright .. "\n\n", colors.description )
+        end, root, args, argument_string )
     end
 end )
 
@@ -1192,15 +1242,15 @@ do
             local list = self.list
 
             ---@type string[]
-            local header = { "Usage: " .. self.path .. " " .. self.usage }
+            local header = {}
 
             local description = self.description
             if description ~= nil then
-                header[ 2 ] = description
+                header[ 1 ] = description
             end
 
             header[ #header + 1 ] = string_format( "%d settings", #list )
-            cli.printHeader( header )
+            cli.printHeader( header, "Usage: " .. self.path .. " " .. self.usage )
 
             for index = 1, #list, 1 do
                 print_setting( list[ index ] )
@@ -1309,3 +1359,4 @@ end
 
 dreamwork_load( "modules/cli/commands/vfs.lua" )
 dreamwork_load( "modules/cli/commands/http_client.lua" )
+dreamwork_load( "modules/cli/commands/github.lua" )
