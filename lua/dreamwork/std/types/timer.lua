@@ -46,11 +46,10 @@ local class = std.class
 local uuid = std.uuid
 local uuid_unique = uuid.unique
 
-local represent = std.represent
 local tonumber = std.tonumber
 local type = std.type
 
-local Hook = std.Hook
+local Emitter = std.Emitter
 
 ---@type table<dreamwork.std.Timer, string>
 local names = {}
@@ -62,17 +61,8 @@ gc_setTableRules( names, true, false )
 local objects = {}
 gc_setTableRules( objects, false, true )
 
----@type table<dreamwork.std.Timer, dreamwork.std.Hook>
-local hooks = {}
-
-setmetatable( hooks, {
-    __index = function( self, timer )
-        local hook = Hook( represent( timer ) )
-        self[ timer ] = hook
-        return hook
-    end,
-    __mode = "k"
-} )
+--- Timer `"tick"` handlers.
+local events = Emitter( "Timer" )
 
 ---@alias dreamwork.std.Timer.state
 ---| `0` # Timer stopped.
@@ -83,7 +73,7 @@ setmetatable( hooks, {
 ---
 --- The timer object.
 ---
----@class dreamwork.std.Timer : dreamwork.std.Hook
+---@class dreamwork.std.Timer : dreamwork.std.Object
 ---@field __class dreamwork.std.TimerClass
 ---@field name string The internal name of the timer. **Read-only.**
 ---@field state dreamwork.std.Timer.state The current state of the timer. **Read-only.**
@@ -104,7 +94,7 @@ do
     local function timer_call( name )
         local timer = objects[ name ]
         if timer ~= nil then
-            hooks[ timer ]:call( timer )
+            events:emit( timer, "tick", timer )
         end
     end
 
@@ -255,55 +245,50 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every run of the timer, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler fun( timer: dreamwork.std.Timer )
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The callback or callable object.
 function Timer:attach( handler )
-    hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "tick", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next run of the timer calls it.
 ---
----@param handler fun( timer: dreamwork.std.Timer )
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The callback or callable object.
 function Timer:once( handler )
-    hooks[ self ]:once( "peek", handler )
+    events:once( self, "tick", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( timer: dreamwork.std.Timer )
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Timer:detach( handler )
-    hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "tick", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the timer, pending handlers of a running call are skipped.
 ---
 function Timer:clear()
-    hooks[ self ]:clear()
+    events:clear( self )
 end
 
 --- [SHARED AND MENU]
 ---
---- Waits for the next call of the timer.
+--- Waits for the next run of the timer.
 ---
+---@return dreamwork.std.Timer timer
 ---@async
 function Timer:await()
-    return hooks[ self ]:await( "peek" )
+    return events:await( self, "tick" )
 end
 
 --- [SHARED AND MENU]

@@ -1,4 +1,3 @@
-local exceptions_call = dreamwork.exceptions.call
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
@@ -43,10 +42,9 @@ local type = std.type
 local error = std.error
 local tostring = std.tostring
 local toboolean = std.toboolean
-local represent = std.represent
 local setmetatable = std.setmetatable
 
-local Hook = std.Hook
+local Emitter = std.Emitter
 
 
 ---@class garrysmod.console.Variable
@@ -270,18 +268,8 @@ setmetatable( maxs, {
     __mode = "k"
 } )
 
----@type table<dreamwork.std.console.Variable, dreamwork.std.Hook<dreamwork.std.console.VariableValue>>
-local hooks = {}
-
-setmetatable( hooks, {
-    ---@param variable dreamwork.std.console.Variable
-    __index = function( self, variable )
-        local hook = Hook( represent( variable ) )
-        self[ variable ] = hook
-        return hook
-    end,
-    __mode = "k"
-} )
+--- Variable `"change"` handlers.
+local events = Emitter( "console.Variable" )
 
 ---@type table<string, dreamwork.std.console.Variable>
 local variables = {}
@@ -762,50 +750,47 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every change of the variable, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
+--- While they run `variable.value` still holds the old value, the new one is passed as `value`.
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The callback or callable object.
 function Variable:attach( handler )
-    hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "change", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next change calls it.
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The callback or callable object.
 function Variable:once( handler )
-    hooks[ self ]:once( "peek", handler )
+    events:once( self, "change", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T )
+---@generic T
+---@param self dreamwork.std.console.Variable<T>
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Variable:detach( handler )
-    hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "change", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the variable, pending handlers of a running change are skipped.
 ---
 function Variable:clear()
-    hooks[ self ]:clear()
+    events:clear( self )
 end
 
 --- [SHARED AND MENU]
@@ -814,10 +799,11 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
+---@return dreamwork.std.console.Variable<T> variable
 ---@return T new_value
 ---@async
 function Variable:await()
-    return hooks[ self ]:await( "peek" )
+    return events:await( self, "change" )
 end
 
 ---@param str_name string
@@ -840,8 +826,7 @@ engine_hook.catch( "dreamwork.console.variable.change", "variable.change", funct
 
     values[ variable ] = old_value
 
-    local hook = hooks[ variable ]
-    exceptions_call( hook.call, hook, variable, new_value )
+    events:emit( variable, "change", variable, new_value )
 
     values[ variable ] = new_value
 end, -1000 )

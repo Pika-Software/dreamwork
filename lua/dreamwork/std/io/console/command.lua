@@ -35,10 +35,8 @@ local class = std.class
 local type = std.type
 local error = std.error
 local tostring = std.tostring
-local represent = std.represent
-local setmetatable = std.setmetatable
 
-local Hook = std.Hook
+local Emitter = std.Emitter
 
 ---@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, string>
 local names = {}
@@ -52,18 +50,8 @@ gc_setTableRules( descriptions, true, false )
 local flags = {}
 gc_setTableRules( flags, true, false )
 
----@type table<dreamwork.std.console.Command, dreamwork.std.Hook>
-local hooks = {}
-
-setmetatable( hooks, {
-    ---@param command dreamwork.std.console.Command
-    __index = function( self, command )
-        local hook = Hook( represent( command ) )
-        self[ command ] = hook
-        return hook
-    end,
-    __mode = "k"
-} )
+--- Command `"execute"` handlers.
+local events = Emitter( "console.Command" )
 
 ---@type table<string, dreamwork.std.console.Command>
 local commands = {}
@@ -234,55 +222,53 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every execution of the command, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler dreamwork.std.console.Command.Callback
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The callback or callable object.
 function Command:attach( handler )
-    hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "execute", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next execution calls it.
 ---
----@param handler dreamwork.std.console.Command.Callback
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The callback or callable object.
 function Command:once( handler )
-    hooks[ self ]:once( "peek", handler )
+    events:once( self, "execute", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler dreamwork.std.console.Command.Callback
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Command:detach( handler )
-    hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "execute", handler )
 end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the command, pending handlers of a running execution are skipped.
 ---
 function Command:clear()
-    hooks[ self ]:clear()
+    events:clear( self )
 end
 
 --- [SHARED AND MENU]
 ---
 --- Waits for the console command to be executed.
 ---
+---@return dreamwork.std.console.Command command
+---@return garrysmod.Player | nil client
+---@return string[] args
+---@return string argument_string
 ---@async
 function Command:await()
-    return hooks[ self ]:await( "peek" )
+    return events:await( self, "execute" )
 end
 
 ---@param client garrysmod.Player | nil
@@ -301,8 +287,7 @@ engine_hook.catch( "dreamwork.console.command.execute", "console.handle", functi
 
     -- TODO: review this after client class will be created
 
-    local hook = hooks[ command ]
-    exceptions_call( hook.call, hook, command, client, args, argument_string )
+    events:emit( command, "execute", command, client, args, argument_string )
 
     return true
 end, -500 )

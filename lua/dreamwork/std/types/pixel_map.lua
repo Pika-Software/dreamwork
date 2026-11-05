@@ -1,6 +1,3 @@
-local dreamwork_exceptions = dreamwork.exceptions
-local exceptions_call = dreamwork_exceptions.call
-
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
@@ -18,7 +15,6 @@ local math_min, math_max = math.min, math.max
 
 local string = std.string
 local string_match = string.match
-local string_format = string.format
 
 local gc = std.gc
 local gc_setTableRules = gc.setTableRules
@@ -28,10 +24,10 @@ local class = std.class
 local window = std.window
 
 local error = std.error
-local type = std.type
 
 local ValueError = std.ValueError
-local Hook = std.Hook
+local Emitter = std.Emitter
+local Future = std.Future
 
 
 --- [CLIENT AND MENU]
@@ -164,11 +160,8 @@ local pixel_cache = {}
 local map_aliases = {}
 gc_setTableRules( map_aliases, true, false )
 
---- Weak keys: each `PixelMap` -> its resize `Hook`.
----
----@type table<dreamwork.std.PixelMap, dreamwork.std.Hook>
-local hooks = {}
-gc_setTableRules( hooks, true, false )
+--- PixelMap `"resize"` handlers.
+local events = Emitter( "PixelMap" )
 
 --- [CLIENT AND MENU]
 ---
@@ -210,7 +203,6 @@ local PixelMap = class.base( "PixelMap", true )
 function PixelMap:__init( definitions )
     local aliases = {}
     map_aliases[ self ] = aliases
-    hooks[ self ] = Hook( string_format( "%s: %p", type( self ), self ) )
 
     for alias, descriptor in raw_pairs( definitions ) do
         local pixels, error_message = descriptor_to_pixels( descriptor )
@@ -242,27 +234,30 @@ end
 --- Attaches a handler that runs after this map's pixel values are refreshed
 --- on screen resize.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+--- Attaching the same handler twice is a no-op, handlers run in protected mode.
+---
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The callback or callable object.
 function PixelMap:attach( handler )
-    hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "resize", handler )
 end
 
 --- [CLIENT AND MENU]
 ---
 --- Attaches a one-shot resize handler that detaches itself before running.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The callback or callable object.
 function PixelMap:once( handler )
-    hooks[ self ]:once( "peek", handler )
+    events:once( self, "resize", handler )
 end
 
 --- [CLIENT AND MENU]
 ---
 --- Detaches a previously attached resize handler.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function PixelMap:detach( handler )
-    hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "resize", handler )
 end
 
 --- [CLIENT AND MENU]
@@ -270,7 +265,7 @@ end
 --- Removes every resize handler attached to this map.
 ---
 function PixelMap:clear()
-    hooks[ self ]:clear()
+    events:clear( self )
 end
 
 --- [CLIENT AND MENU]
@@ -284,7 +279,15 @@ end
 ---@return integer new_height
 ---@async
 function PixelMap:await()
-    return hooks[ self ]:await( "peek" )
+    -- five values, `Emitter:await` returns at most four
+    local future = Future()
+
+    events:once( self, "resize", function( ... )
+        future:setResult( { ... } )
+    end )
+
+    local result = future:await()
+    return result[ 1 ], result[ 2 ], result[ 3 ], result[ 4 ], result[ 5 ]
 end
 
 --- [CLIENT AND MENU]
@@ -327,7 +330,7 @@ engine_hook.catch( "OnScreenSizeChanged", "dreamwork.PixelMap::Update", function
         pixel_cache[ descriptor ] = descriptor_to_pixels( descriptor )
     end
 
-    for pixel_map, hook in raw_pairs( hooks ) do
-        exceptions_call( hook.call, hook, pixel_map, old_width, old_height, new_width, new_height )
+    for pixel_map in raw_pairs( map_aliases ) do
+        events:emit( pixel_map, "resize", pixel_map, old_width, old_height, new_width, new_height )
     end
 end )

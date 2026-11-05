@@ -12,9 +12,8 @@ local network_getID = engine_network.getID
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local std_len = std.len
 
-local Hook = std.Hook
+local Emitter = std.Emitter
 
 local console_Variable = std.console.Variable
 
@@ -302,14 +301,8 @@ local limits = {}
 ---@type table<dreamwork.std.Network, integer>
 local segment_sizes = {}
 
----@type table<dreamwork.std.Network, dreamwork.std.Hook>
-local receive_hooks = {}
-
----@type table<dreamwork.std.Network, dreamwork.std.Hook>
-local progress_hooks = {}
-
----@type table<dreamwork.std.Network, dreamwork.std.Hook>
-local stream_hooks = {}
+--- Network `"receive"`, `"stream"` and `"progress"` handlers.
+local events = Emitter( "Network" )
 
 ---@type table<string, dreamwork.std.Network>
 local networks = {}
@@ -317,25 +310,15 @@ local networks = {}
 ---@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: garrysmod.Player | nil )
 local network_receive
 
---- Calls the hook, errors of the handlers are reported without breaking the transfer state.
----
----@param hook dreamwork.std.Hook
----@param ... any
-local function hook_call( hook, ... )
-    if std_len( hook ) ~= 0 then
-        exceptions_call( hook.call, hook, ... )
-    end
-end
-
 --- [SHARED]
 ---
 --- Attaches a handler that is called when a message is fully received.
 ---
 --- If the handler is already attached, it will not be attached twice.
 ---
----@param handler dreamwork.std.Network.ReceiveFn
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The callback or callable object.
 function Network:attach( handler )
-    receive_hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "receive", handler )
 end
 
 --- [SHARED]
@@ -343,18 +326,19 @@ end
 --- Attaches a handler that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler dreamwork.std.Network.ReceiveFn
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The callback or callable object.
 function Network:once( handler )
-    receive_hooks[ self ]:once( "peek", handler )
+    events:once( self, "receive", handler )
 end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached receive handler.
 ---
----@param handler dreamwork.std.Network.ReceiveFn
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Network:detach( handler )
-    receive_hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "receive", handler )
 end
 
 --- [SHARED]
@@ -362,7 +346,7 @@ end
 --- Removes every receive handler.
 ---
 function Network:clear()
-    receive_hooks[ self ]:clear()
+    events:clear( self, "receive" )
 end
 
 --- [SHARED]
@@ -374,7 +358,7 @@ end
 ---@return garrysmod.Player | nil sender The sender, `nil` on the client.
 ---@async
 function Network:await()
-    return receive_hooks[ self ]:await( "peek" )
+    return events:await( self, "receive" )
 end
 
 --- [SHARED]
@@ -388,51 +372,52 @@ end
 ---
 --- If a network has only stream handlers, the received data is not kept in memory.
 ---
----@param handler dreamwork.std.Network.StreamFn
+---@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook The callback or callable object.
 function Network:stream( handler )
-    stream_hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "stream", handler )
 end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached stream handler.
 ---
----@param handler dreamwork.std.Network.StreamFn
+---@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Network:unstream( handler )
-    stream_hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "stream", handler )
 end
 
 --- [SHARED]
 ---
 --- Attaches a handler that is called on every transfer progress, both incoming and outgoing.
 ---
----@param handler dreamwork.std.Network.ProgressFn
+---@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook The callback or callable object.
 function Network:watch( handler )
-    progress_hooks[ self ]:attach( "peek", handler )
+    events:attach( self, "progress", handler )
 end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached progress handler.
 ---
----@param handler dreamwork.std.Network.ProgressFn
+---@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Network:unwatch( handler )
-    progress_hooks[ self ]:detach( "peek", handler )
+    return events:detach( self, "progress", handler )
 end
 
 ---@param network dreamwork.std.Network
 ---@param data string
 ---@param sender garrysmod.Player | nil
 local function perform_callbacks( network, data, sender )
-    local hook = receive_hooks[ network ]
-    if std_len( hook ) == 0 then
-        if std_len( stream_hooks[ network ] ) ~= 0 then return end
+    if events:count( network, "receive" ) == 0 then
+        if events:count( network, "stream" ) ~= 0 then return end
 
         logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], string_len( data ) )
         return
     end
 
-    exceptions_call( hook.call, hook, network, std.BinaryReader( data ), sender )
+    events:emit( network, "receive", network, std.BinaryReader( data ), sender )
 end
 
 ---@param network dreamwork.std.Network
@@ -441,7 +426,7 @@ end
 ---@param done_bytes integer
 ---@param total_bytes integer
 local function perform_progress( network, peer, is_outgoing, done_bytes, total_bytes )
-    hook_call( progress_hooks[ network ], network, peer, is_outgoing, done_bytes, total_bytes )
+    events:emit( network, "progress", network, peer, is_outgoing, done_bytes, total_bytes )
 end
 
 --- The key of the server in the per-peer tables on the client.
@@ -988,10 +973,6 @@ do
         limits[ self ] = 64 * 1024 * 1024
         segment_sizes[ self ] = default_segment_size
 
-        receive_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::receive" )
-        progress_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::progress" )
-        stream_hooks[ self ] = Hook( "dreamwork.Network::[" .. name .. "]::stream" )
-
         local outgoing_states = {}
         gc_setTableRules( outgoing_states, true, false )
         outgoing[ self ] = outgoing_states
@@ -1160,7 +1141,7 @@ local function incoming_close( state, success )
 
     local network = state.network
 
-    hook_call( stream_hooks[ network ], network, state.peer, nil, state.received_bytes, state.size, success )
+    events:emit( network, "stream", network, state.peer, nil, state.received_bytes, state.size, success )
 end
 
 ---@param state dreamwork.std.Network.Incoming
@@ -1536,7 +1517,7 @@ handlers[ OP_BEGIN ] = function( network, peer, key, transfer_id, remaining_bits
     end
 
     -- without receive handlers the data is only streamed, so it isn't kept
-    local buffered = std_len( receive_hooks[ network ] ) ~= 0 or std_len( stream_hooks[ network ] ) == 0
+    local buffered = events:count( network, "receive" ) ~= 0 or events:count( network, "stream" ) == 0
 
     local now = dreamwork_getUpTime()
 
@@ -1620,11 +1601,10 @@ handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bi
     -- in-order delivery to the stream handlers
     local base = state.base
     if index == base then
-        local stream_hook = stream_hooks[ network ]
         local buffered, crc = state.buffered, state.crc
 
         repeat
-            hook_call( stream_hook, network, peer, segments[ base ], (base - 1) * state.segment_size, state.size )
+            events:emit( network, "stream", network, peer, segments[ base ], (base - 1) * state.segment_size, state.size )
 
             if not buffered then
                 ---@cast crc dreamwork.std.checksum.CRC32
@@ -1668,7 +1648,7 @@ handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bi
         logger:error( "Receiving #%d of network '%s' from %s failed, checksum mismatch.", transfer_id, network_names[ network ], peer_tostring( peer ) )
     end
 
-    hook_call( stream_hooks[ network ], network, peer, nil, state.received_bytes, state.size, success )
+    events:emit( network, "stream", network, peer, nil, state.received_bytes, state.size, success )
 
     if success and data ~= nil then
         perform_callbacks( network, data, peer )
@@ -1863,9 +1843,8 @@ function network_receive( network, remaining_bits, sender )
 
         perform_progress( network, sender, false, length, length )
 
-        local stream_hook = stream_hooks[ network ]
-        hook_call( stream_hook, network, sender, data, 0, length )
-        hook_call( stream_hook, network, sender, nil, length, length, true )
+        events:emit( network, "stream", network, sender, data, 0, length )
+        events:emit( network, "stream", network, sender, nil, length, length, true )
 
         perform_callbacks( network, data, sender )
         return
