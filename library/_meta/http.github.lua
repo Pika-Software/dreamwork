@@ -783,3 +783,48 @@ do
     blob.node_id = nil
 
 end
+
+
+--- [SHARED AND MENU]
+---
+--- A GitHub release asset.
+---
+---@class http.github.Release.Asset
+---@field id integer The asset id, used by `github.fetchReleaseAsset`.
+---@field name string The file name.
+---@field size integer The size in bytes.
+---@field content_type string The MIME type.
+---@field download_count integer The number of downloads.
+---@field browser_download_url string The public download URL.
+
+--- [SHARED AND MENU]
+---
+--- A GitHub release.
+---
+---@class http.github.Release
+---@field id integer The release id.
+---@field tag_name string The tag of the release.
+---@field name? string The release title.
+---@field body? string The release notes in Markdown.
+---@field draft boolean Whether the release is a draft.
+---@field prerelease boolean Whether the release is a pre-release.
+---@field created_at string The ISO 8601 creation time.
+---@field published_at? string The ISO 8601 publication time.
+---@field zipball_url string The API URL of the ZIP archive.
+---@field tarball_url string The API URL of the TAR archive.
+---@field html_url string The web page of the release.
+---@field author http.github.User The publisher.
+---@field assets http.github.Release.Asset[] The attached files.
+
+--- [SHARED AND MENU]
+---
+--- A GitHub commit.
+---
+---@class http.github.Commit
+---@field sha string The SHA-1 of the commit.
+---@field html_url string The web page of the commit.
+---@field commit table The git data: `message`, `author`, `committer`, `tree`.
+---@field author? http.github.User The GitHub account of the author.
+---@field committer? http.github.User The GitHub account of the committer.
+---@field parents table[] The parent commits (`sha`, `url`).
+---@field files? table[] The changed files, only for a single commit.

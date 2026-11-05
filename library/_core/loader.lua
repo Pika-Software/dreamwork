@@ -338,8 +338,6 @@ function inext(tbl, index) end
 ---@nodiscard
 function ipairs(t) end
 
----@alias RangeIterator fun( break_point: integer, index: integer ): integer | nil
-
 --- [SHARED AND MENU]
 ---
 --- Creates a stateless numeric `for`-loop iterator that steps from `from` to `to`
@@ -351,7 +349,7 @@ function ipairs(t) end
 ---@param from integer The starting value of the range.
 ---@param to integer The ending value of the range (inclusive).
 ---@param step? integer The amount to step by each iteration. Defaults to `1`. Can be negative to count down.
----@return RangeIterator iterator The iterator function to be used with a generic `for` loop.
+---@return fun( break_point: integer, index: integer ): integer | nil iterator The iterator function to be used with a generic `for` loop.
 ---@return integer to The final value, passed through as the loop's invariant state.
 ---@return integer start The initial value, passed to the iterator on the first call.
 ---@nodiscard
