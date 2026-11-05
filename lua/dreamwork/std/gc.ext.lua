@@ -10,7 +10,7 @@ local raw = std.raw
 local raw_set = raw.set
 local raw_next = raw.next
 
-local is = std.is
+local isType = std.isType
 local errorf = std.errorf
 
 
@@ -127,7 +127,7 @@ do
             object_destroyed( "EntityID", index )
         end
 
-        if is( entity, engine_Player ) then
+        if isType( entity, engine_Player ) then
             ---@cast entity garrysmod.Player
 
             object_destroyed( "Player", entity )

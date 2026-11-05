@@ -52,8 +52,8 @@ local represent = std.represent
 local tostring = std.tostring
 local isString = std.isString
 local isClass = std.isClass
+local isType = std.isType
 local type = std.type
-local is = std.is
 
 
 local COLOR_WHITE_SMOKE = color_Scheme.white_smoke
@@ -417,7 +417,7 @@ std.Error = ErrorClass
 ---@return boolean is_error
 ---@nodiscard
 local function isError( value )
-    return is( value, ErrorClass )
+    return isType( value, ErrorClass )
 end
 
 std.isError             = isError

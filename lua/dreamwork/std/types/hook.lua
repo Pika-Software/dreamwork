@@ -17,9 +17,9 @@ local string_format = string.format
 
 local class = std.class
 
+local isType = std.isType
 local xpcall = std.xpcall
 local error = std.error
-local is = std.is
 
 local Future = std.Future
 
@@ -234,7 +234,7 @@ local function contains_parent( self, parent )
     for i = 1, peeks[ 0 ], 1 do
         ---@type dreamwork.std.Hook<any>
         local value = peeks[ i ]
-        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+        if isType( value, Hook ) and (value == parent or contains_parent( value, parent )) then
             return true
         end
     end
@@ -243,7 +243,7 @@ local function contains_parent( self, parent )
     for i = 1, providers[ 0 ], 1 do
         ---@type dreamwork.std.Hook<any>
         local value = providers[ i ]
-        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+        if isType( value, Hook ) and (value == parent or contains_parent( value, parent )) then
             return true
         end
     end
@@ -252,7 +252,7 @@ local function contains_parent( self, parent )
     for i = 1, mixins[ 0 ], 1 do
         ---@type dreamwork.std.Hook<any>
         local value = mixins[ i ]
-        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+        if isType( value, Hook ) and (value == parent or contains_parent( value, parent )) then
             return true
         end
     end
@@ -261,7 +261,7 @@ local function contains_parent( self, parent )
     for i = 1, observers[ 0 ], 1 do
         ---@type dreamwork.std.Hook<any>
         local value = observers[ i ]
-        if is( value, Hook ) and (value == parent or contains_parent( value, parent )) then
+        if isType( value, Hook ) and (value == parent or contains_parent( value, parent )) then
             return true
         end
     end
@@ -288,7 +288,7 @@ end
 ---@overload fun( self: dreamwork.std.Hook<T>, type: "mixin", handler: fun( old_value: ( T | nil ), new_value: T, ...: any ): ( T | nil ), priority: ( integer | nil ) )
 ---@overload fun( self: dreamwork.std.Hook<T>, type: "observe", handler: fun( value: T, ...: any ), priority: ( integer | nil ) )
 function Hook:attach( type, handler, priority )
-    if is( handler, Hook ) and ---@cast handler dreamwork.std.Hook<any>
+    if isType( handler, Hook ) and ---@cast handler dreamwork.std.Hook<any>
         contains_parent( handler, self ) then
         error( "attempt to create circular hook reference", 2 )
     end

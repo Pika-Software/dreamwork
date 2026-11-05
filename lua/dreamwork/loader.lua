@@ -916,7 +916,7 @@ do
     ---@param value any The parent class/metatable to check against.
     ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
     ---@nodiscard
-    function std.is( object, value )
+    function std.isType( object, value )
         if isClass( value ) then
             if isInherited( object, value ) then
                 return true
@@ -1804,7 +1804,7 @@ do
     local debug_getinfo = debug.getinfo
 
     local equal = std.equal
-    local is = std.is
+    local isType = std.isType
 
     local ValueError = std.ValueError
     local TypeError = std.TypeError
@@ -1828,7 +1828,7 @@ do
             local expected = raw_select( i, ... )
             if isString( expected ) then
                 if expected == value_type then return end
-            elseif equal( expected, value ) or is( value, expected ) then
+            elseif equal( expected, value ) or isType( value, expected ) then
                 return
             end
         end
@@ -2780,6 +2780,7 @@ do
         variables.username = std.DEVELOPER ~= 0 and "develoer" or "stranger"
     end
 
+    ---@type string[]
     local splashes = {
         "We'll Sandblast these walls and paint them again ♪",
         ";fix these broken wings, then show me how to fly ♪",
@@ -2800,23 +2801,27 @@ do
         "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
         "I'm tired of these darker days ♪",
-        "Don't worry, {username} :>",
-        "Big Brother is watching you",
+        "You my light in the darkness ♪",
+        "...shooting star in the sky ♪",
         "As we build it once agai1n ♪",
         "I'm turning the lights on ♪",
+        "Big Brother is watching you",
+        "Don't worry, {username} :>",
         "I'm calling out for help ♪",
         "I'll make you a promise.",
         "Flying over rooftops...",
-        "Hello, {username}!",
         "Dream + Framework = <3",
         "We need more packages!",
+        "You my reason to try ♪",
         "Pew-pew-pew-pew-pew! ♪",
+        "I'm watching you o///o",
         "Do you feel it too?",
         "Play SOMA sometime;",
         "Where's fireworks!?",
         "Let the sun arise ♪",
+        "so sHow me heAVEn ♪",
         "Looking For More ♪",
-        "I'm watching you.",
+        "Hello, {username}!",
         "Faster than ever.",
         "Love Wins Again ♪",
         "Made with love <3",
@@ -2837,8 +2842,6 @@ do
         "Data Loss ♪",
         "Sandblast ♪",
         "Now on LLS!",
-        "That's me!",
-        "I see you.",
         "Light Up ♪",
         "Majesty ♪",
         "Eat Me ♪",

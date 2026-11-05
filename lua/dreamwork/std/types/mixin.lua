@@ -13,8 +13,8 @@ local string_format = string.format
 local class = std.class
 
 local isCallable = std.isCallable
+local isType = std.isType
 local pcall = std.pcall
-local is = std.is
 
 --- [SHARED AND MENU]
 ---
@@ -54,7 +54,7 @@ local function contains_parent( self, handlers, parent )
     for i = 1, handlers[ 0 ], 1 do
         ---@type dreamwork.std.Mixin<any>
         local value = handlers[ i ]
-        if is( value, Mixin ) and (value == parent or not contains_parent( value, value.handlers, parent )) then
+        if isType( value, Mixin ) and (value == parent or not contains_parent( value, value.handlers, parent )) then
             return false
         end
     end
@@ -82,7 +82,7 @@ function Mixin:attach( mixer )
 
     local handlers = self.handlers
 
-    if is( mixer, Mixin ) and ---@cast mixer dreamwork.std.Mixin<any>
+    if isType( mixer, Mixin ) and ---@cast mixer dreamwork.std.Mixin<any>
         contains_parent( mixer, handlers, self ) then
         raw_error( "attempt to create a circular Mixin", 2 )
     end
