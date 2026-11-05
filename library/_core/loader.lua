@@ -421,7 +421,7 @@ function isInstance(object, ...) end
 ---@param value any The parent class/metatable to check against.
 ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
 ---@nodiscard
-function is(object, value) end
+function isType(object, value) end
 
 --- `true` if the game is running on OSX.
 ---
