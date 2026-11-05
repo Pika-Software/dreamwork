@@ -46,7 +46,7 @@ game.owned = nil
 
 
 ---@class dreamwork.TimerAPI
----@field Adjust fun( identifier: string, delay: number, repetitions: ( integer | nil ), fn: ( function | nil ) ): boolean
+---@field Adjust fun( identifier: string, delay: number, repetitions: integer?, fn: function? ): boolean
 ---@field Create fun( identifier: string, delay: number, repetitions: integer, fn: function )
 ---@field Exists fun( identifier: string ): boolean
 ---@field Remove fun( identifier: string )
