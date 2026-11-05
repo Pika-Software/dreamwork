@@ -285,7 +285,7 @@ function debug.setfenv( object, env ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.sethook)
 ---
----@overload fun(hook: (async fun(...):...), mask: hookmask, count?: integer)
+---@overload fun(hook: (async fun(...):...), mask: hookmask, count: integer?)
 ---@overload fun(thread: thread):...
 ---@overload fun(...):...
 ---@param thread thread The thread to set the hook on. Defaults to the running thread when omitted (see the overloads).
@@ -368,7 +368,7 @@ function debug.setuservalue( udata, value ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.traceback)
 ---
----@overload fun(message?: any, level?: integer): string
+---@overload fun(message: any?, level: integer?): string
 ---@param thread   thread The thread to produce a traceback of. Defaults to the running thread when omitted (see the overload).
 ---@param message? any A message to prepend to the traceback.
 ---@param level?   integer The stack level to start the traceback at. Defaults to `1`.

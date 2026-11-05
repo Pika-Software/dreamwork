@@ -28,18 +28,22 @@ vgui = {}
 ---@param parent garrysmod.Panel? Panel to parent to. Defaults to `nil`.
 ---@param name string? Custom name of the created panel for scripting/debugging purposes. Can be retrieved with [Panel:GetName](https://wiki.facepunch.com/gmod/Panel:GetName). Defaults to `nil`.
 ---@return garrysmod.Panel | nil panel The created panel, or `nil` if creation failed for whatever reason.
+---@overload fun( classname: "HTML", parent: garrysmod.Panel?, name: string? ): ( garrysmod.HTML | nil )
+---@overload fun( classname: "Awesomium", parent: garrysmod.Panel?, name: string? ): ( garrysmod.Awesomium | nil )
+---@overload fun( classname: "Chromium", parent: garrysmod.Panel?, name: string? ): ( garrysmod.Chromium | nil )
 function vgui.Create( classname, parent, name ) end
 
 --- [CLIENT AND MENU]
 ---
 --- Creates an engine panel.
 ---
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param class string Class of the panel to create.
 ---@param parent garrysmod.Panel? If specified, parents created panel to given one. Defaults to `nil`.
 ---@param name string? Name of the created panel. Defaults to `nil`.
 ---@return garrysmod.Panel created Created panel.
+---@overload fun( class: "HTML", parent: garrysmod.Panel?, name: string? ): garrysmod.HTML
+---@overload fun( class: "Awesomium", parent: garrysmod.Panel?, name: string? ): garrysmod.Awesomium
+---@overload fun( class: "Chromium", parent: garrysmod.Panel?, name: string? ): garrysmod.Chromium
 function vgui.CreateX( class, parent, name ) end
 
 --- [CLIENT AND MENU]

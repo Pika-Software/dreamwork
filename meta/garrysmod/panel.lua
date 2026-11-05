@@ -574,7 +574,7 @@ function Panel:HasHierarchicalFocus() end
 --- Returns whether the panel is a descendent of the given panel.
 ---
 ---@param parent_panel garrysmod.Panel
----@return boolean value True if the panel is contained within parentPanel.
+---@return boolean value `true` if the panel is contained within parentPanel.
 function Panel:HasParent( parent_panel ) end
 
 --- [CLIENT AND MENU]
@@ -673,7 +673,7 @@ function Panel:IsMarkedForDeletion() end
 --- Returns whether the panel was made modal or not. See
 --- [Panel:DoModal](https://wiki.facepunch.com/gmod/Panel:DoModal).
 ---
----@return boolean value True if the panel is modal.
+---@return boolean value `true` if the panel is modal.
 function Panel:IsModal() end
 
 --- [CLIENT AND MENU]
@@ -704,7 +704,7 @@ function Panel:IsPopup() end
 ---
 --- Returns if the panel is valid and not marked for deletion.
 ---
----@return boolean value True if the object is valid.
+---@return boolean value `true` if the object is valid.
 function Panel:IsValid() end
 
 --- [CLIENT AND MENU]
@@ -736,8 +736,6 @@ function Panel:KillFocus() end
 ---
 --- > DEPRECATED: No longer does anything.
 ---
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param path string The path to load the controls from.
 function Panel:LoadControlsFromFile( path ) end
 
@@ -746,8 +744,6 @@ function Panel:LoadControlsFromFile( path ) end
 --- Loads controls(positions, etc) from given data. This is what the default options menu uses.
 ---
 --- > DEPRECATED: No longer does anything.
----
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param data string The data to load controls from. Format unknown.
 function Panel:LoadControlsFromString( data ) end
@@ -826,21 +822,6 @@ function Panel:MoveToFront() end
 
 --- [CLIENT AND MENU]
 ---
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
----@param object_name string
-function Panel:NewObject( object_name ) end
-
---- [CLIENT AND MENU]
----
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
----@param object_name string
----@param callback_name string
-function Panel:NewObjectCallback( object_name, callback_name ) end
-
---- [CLIENT AND MENU]
----
 --- Sets whether this panel's drawings should be clipped within the parent panel's bounds.
 --- See [render.SetScissorRect](https://wiki.facepunch.com/gmod/render.SetScissorRect) if you wish to
 --- set the clipping rect instead.
@@ -896,8 +877,6 @@ function Panel:Paste() end
 ---
 --- Installs Lua defined functions into the panel.
 ---
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
 function Panel:Prepare() end
 
 --- [CLIENT]
@@ -948,7 +927,7 @@ function Panel:RequestFocus() end
 --- Resets all text fades in a [RichText](https://wiki.facepunch.com/gmod/RichText) element made with
 --- [Panel:InsertFade](https://wiki.facepunch.com/gmod/Panel:InsertFade).
 ---
----@param hold boolean True to reset fades, false otherwise.
+---@param hold boolean `true` to reset fades, false otherwise.
 ---@param expired_only boolean Any value equating to `true` will reset fades only on text segments that are completely faded out.
 ---@param new_sustain number The new sustain value of each faded text segment. Set to -1 to keep the old sustain value.
 function Panel:ResetAllFades( hold, expired_only, new_sustain ) end
@@ -1033,8 +1012,6 @@ function Panel:SetAutoDelete( auto_delete ) end
 --- [CLIENT AND MENU]
 ---
 --- Sets the background color of the panel.
----
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param r number The red channel of the color.
 ---@param g number The green channel of the color.
@@ -1161,8 +1138,6 @@ function Panel:SetExpensiveShadow( distance, color ) end
 --- Sets the foreground color of the panel.
 --- For labels, this is the color of their text.
 ---
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param r number The red channel of the color.
 ---@param g number The green channel of the color.
 ---@param b number The blue channel of the color.
@@ -1286,7 +1261,7 @@ function Panel:SetPaintBorderEnabled( paint_border ) end
 --- Enables or disables painting of the panel manually with
 --- [Panel:PaintManual](https://wiki.facepunch.com/gmod/Panel:PaintManual).
 ---
----@param painted_manually boolean True if the panel should be painted manually.
+---@param painted_manually boolean `true` if the panel should be painted manually.
 function Panel:SetPaintedManually( painted_manually ) end
 
 --- [CLIENT AND MENU]
@@ -1488,7 +1463,7 @@ function Panel:SetUnderlineFont( font_name ) end
 --- Works for [RichText](https://wiki.facepunch.com/gmod/RichText) and
 --- [TextEntry](https://wiki.facepunch.com/gmod/TextEntry).
 ---
----@param display boolean? True to display the vertical text scroll bar, false to hide it. Defaults to `false`.
+---@param display boolean? `true` to display the vertical text scroll bar, false to hide it. Defaults to `false`.
 function Panel:SetVerticalScrollbarEnabled( display ) end
 
 --- [CLIENT AND MENU]
@@ -1522,7 +1497,7 @@ function Panel:SetWorldClicker( enable ) end
 --- [Panel:SizeToContents](https://wiki.facepunch.com/gmod/Panel:SizeToContents) will not set the
 --- correct height.
 ---
----@param wrap boolean `True` to enable text wrapping, `false` otherwise.
+---@param wrap boolean `true` to enable text wrapping, `false` otherwise.
 function Panel:SetWrap( wrap ) end
 
 --- [CLIENT AND MENU]
@@ -1609,36 +1584,48 @@ function Panel:Valid() end
 --- * `.mp3`
 --- * `.swf`
 ---
+--- Engine HTML panel. Overridable document / JS hooks are fields so instance assignments
+--- (e.g. `function panel:OnDocumentReady`) are not flagged as duplicate definitions.
+---
 ---@class garrysmod.HTML : garrysmod.Panel
+---@field ConsoleMessage fun( self: garrysmod.HTML, msg: string?, file: string?, line_nr: number?, severity: string? )? Called for `console.*` from the page.
+---@field OnBeginLoadingDocument fun( self: garrysmod.HTML, url: string )? Called when the panel begins loading a page.
+---@field OnCallback fun( self: garrysmod.HTML, library: string, name: string, arguments: any[] ): any? Called when a `NewObjectCallback` JS function is invoked; return values are forwarded to JS.
+---@field OnChangeAddressBar fun( self: garrysmod.HTML, url: string )? Called when the panel's address changes.
+---@field OnChangeTargetURL fun( self: garrysmod.HTML, url: string )? Called when the hovered link target URL changes.
+---@field OnChangeTitle fun( self: garrysmod.HTML, new_title: string )? Called when the document title changes.
+---@field OnChildViewCreated fun( self: garrysmod.HTML, source_url: string, target_url: string, is_popup: boolean )? Called when the page opens a child view / popup.
+---@field OnDocumentReady fun( self: garrysmod.HTML, url: string )? Called when the panel's DOM is ready for JavaScript.
+---@field OnFinishLoadingDocument fun( self: garrysmod.HTML, url: string )? Called when the page finishes loading.
+---@field OnRemove fun( self: garrysmod.HTML )? Called when the panel is removed.
 local HTML = {}
 
 --- [CLIENT AND MENU]
 ---
---- Deprecated alias of [HTML](https://wiki.facepunch.com/gmod/HTML). Base panel for elements using the
---- Awesomium UI engine.
+--- Creates a JavaScript object / library name in the HTML panel for use with
+--- [HTML:NewObjectCallback](https://wiki.facepunch.com/gmod/Panel:NewObjectCallback).
 ---
---- > **DEPRECATED**: You should be using [HTML](https://wiki.facepunch.com/gmod/HTML), which this is an
---- > alias of.
+--- Only meaningful on [HTML](https://wiki.facepunch.com/gmod/HTML) / CEF panels (no-op elsewhere).
+--- Pair with `HTML.OnCallback` to receive calls from JavaScript.
 ---
---- > **NOTE**: On the `x86-64` beta this panel isn't actually Awesomium, it's the same as `HTML`
---- > (`HtmlPanel`).
----
----@class garrysmod.Awesomium : garrysmod.HTML
+---@param object_name string JavaScript object name to create (e.g. `"console"`, `"dreamwork"`).
+function HTML:NewObject( object_name ) end
 
 --- [CLIENT AND MENU]
 ---
---- Chromium Embedded Framework (CEF) HTML panel classname (`"Chromium"`). Shares the same engine API as
---- [HTML](https://wiki.facepunch.com/gmod/HTML).
+--- Registers a JavaScript function on an object previously created with
+--- [HTML:NewObject](https://wiki.facepunch.com/gmod/Panel:NewObject). When JS calls it, the engine
+--- invokes `HTML.OnCallback`.
 ---
---- See [HTML Web Engine](https://wiki.facepunch.com/gmod/HTML_Web_Engine).
+--- Only meaningful on [HTML](https://wiki.facepunch.com/gmod/HTML) / CEF panels (no-op elsewhere).
 ---
----@class garrysmod.Chromium : garrysmod.HTML
+---@param object_name string JavaScript object name (must already exist via `NewObject`).
+---@param callback_name string Method name to expose on that object.
+function HTML:NewObjectCallback( object_name, callback_name ) end
 
 --- [CLIENT AND MENU]
 ---
 --- Used to run commands within an HTML window.
----
---- > INTERNAL: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param cmd string The command to be run.
 function HTML:Exec( cmd ) end
@@ -1768,77 +1755,22 @@ function HTML:UpdateHTMLTexture() end
 
 --- [CLIENT AND MENU]
 ---
---- Called when the page inside the HTML window runs the `console.log` javascript function.
+--- Deprecated alias of [HTML](https://wiki.facepunch.com/gmod/HTML). Base panel for elements using the
+--- Awesomium UI engine.
 ---
---- On the x86-64 beta, it's called for all built-in `console.*` javascript functions.
+--- > **DEPRECATED**: You should be using [HTML](https://wiki.facepunch.com/gmod/HTML), which this is an
+--- > alias of.
 ---
---- Overwriting this function in any way will disable default behavior of printing the message to the
---- in-game console.
+--- > **NOTE**: On the `x86-64` beta this panel isn't actually Awesomium, it's the same as `HTML`
+--- > (`HtmlPanel`).
 ---
----@param msg string The message to be logged (or Lua code to be executed; see above).
----@param file string The message source file, if any.
----@param line_nr number The line number in the file the message was output from.
----@param severity string The severity of the message. Possible values are: `"log"`, `"warn"`, `"error"`, `"debug"`.
-function HTML:ConsoleMessage( msg, file, line_nr, severity ) end
+---@class garrysmod.Awesomium : garrysmod.HTML
 
---- [CLIENT]
+--- [CLIENT AND MENU]
 ---
---- Called when this panel begins loading a page.
+--- Chromium Embedded Framework (CEF) HTML panel classname (`"Chromium"`). Shares the same engine API as
+--- [HTML](https://wiki.facepunch.com/gmod/HTML).
 ---
----@param url string The URL of the current page.
-function HTML:OnBeginLoadingDocument( url ) end
-
---- [CLIENT]
+--- See [HTML Web Engine](https://wiki.facepunch.com/gmod/HTML_Web_Engine).
 ---
---- Called by the engine when a callback function is called.
----
----@param library string Library name of the JS function that was called.
----@param name string Name of the JS function that was called.
----@param arguments table Table containing all arguments passed to the JS function.
----@return boolean suppress Return `true` to suppress default engine action.
-function HTML:OnCallback( library, name, arguments ) end
-
---- [CLIENT]
----
---- Called when this panel's address changes.
----
----@param url string The URL of the new page.
-function HTML:OnChangeAddressBar( url ) end
-
---- [CLIENT]
----
---- Called by HTML panels when the target URL of the frame has changed, this happens when you hover over
---- a link.
----
----@param url string New target URL.
-function HTML:OnChangeTargetURL( url ) end
-
---- [CLIENT]
----
---- Called by HTML panels when the title of the loaded page has been changed.
----
----@param new_title string The new title of the page.
-function HTML:OnChangeTitle( new_title ) end
-
---- [CLIENT]
----
---- Called by HTML panels when the page attempts to open a new child view (such as a popup or new tab).
----
----@param source_url string The URL of the page requesting to create a child.
----@param target_url string The URL of the requested child.
----@param is_popup boolean `true` if the requested view is a popup.
-function HTML:OnChildViewCreated( source_url, target_url, is_popup ) end
-
---- [CLIENT]
----
---- Called by HTML panels when the panel's DOM has been set up. You can run JavaScript in here.
----
----@param url string The URL of the current page.
-function HTML:OnDocumentReady( url ) end
-
---- [CLIENT]
----
---- Called when this panel successfully loads a page.
----
----@param url string The URL of the current page.
-function HTML:OnFinishLoadingDocument( url ) end
+---@class garrysmod.Chromium : garrysmod.HTML

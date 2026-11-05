@@ -289,7 +289,7 @@ function Material:Recompute() end
 
 --- [MENU]
 ---
---- **INTERNAL**: This is used by the Background to change the image.
+--- This is used by the Background to change the image.
 ---
 --- Changes the material into the given image.
 ---

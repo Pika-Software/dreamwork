@@ -47,8 +47,6 @@ function matproxy.Add( proxy ) end
 
 --- [CLIENT]
 ---
---- **INTERNAL**: This is used internally - although you're able to use it you probably shouldn't.
----
 --- Called by the engine from `OnBind`. Calls the `bind` method of the Lua material proxy.
 ---
 ---@param uname string The name of the active material proxy instance.
@@ -57,8 +55,6 @@ function matproxy.Add( proxy ) end
 function matproxy.Call( uname, material, entity ) end
 
 --- [CLIENT]
----
---- **INTERNAL**: This is used internally - although you're able to use it you probably shouldn't.
 ---
 --- Called by the engine from `OnBind`. Creates an active instance of the proxy and calls its `init` method.
 ---
@@ -69,8 +65,6 @@ function matproxy.Call( uname, material, entity ) end
 function matproxy.Init( name, uname, material, key_values ) end
 
 --- [CLIENT]
----
---- **INTERNAL**: This is used internally - although you're able to use it you probably shouldn't.
 ---
 --- Called by the engine to determine if a certain material proxy is registered in Lua.
 ---

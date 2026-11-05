@@ -146,7 +146,7 @@ function getmetatable( object ) end
 ---
 ---@generic T: table, V
 ---@param t T The table (array) to iterate over.
----@return fun(table: V[], i?: integer):integer, V
+---@return fun(table: V[], i: integer?):integer, V
 ---@return T
 ---@return integer i
 function ipairs( t ) end
@@ -278,7 +278,7 @@ function next( table, index ) end
 ---
 ---@generic T: table, K, V
 ---@param t T The table to iterate over.
----@return fun(table: table<K, V>, index?: K):K, V
+---@return fun(table: table<K, V>, index: K?):K, V
 ---@return T
 function pairs( t ) end
 
@@ -952,7 +952,7 @@ do
     --- compatibility.
     ---
     ---@generic K, V
-    ---@type fun( self: table<K, V> ): fun( tbl: table<K, V>, key: ( K | nil ) ): ( K | nil ), ( V | nil )
+    ---@type fun( self: table<K, V> ): fun( tbl: table<K, V>, key: K? ): ( K | nil ), ( V | nil )
     metatable.__pairs = nil
 
     ---

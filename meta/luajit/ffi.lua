@@ -4,8 +4,8 @@
 ---@field [string] function
 
 ---@class ffi.ctype*: userdata
----@overload fun(init?: any, ...): ffi.cdata*
----@overload fun(nelem?: integer, init?: any, ...): ffi.cdata*
+---@overload fun(init: any?, ...): ffi.cdata*
+---@overload fun(nelem: integer?, init: any?, ...): ffi.cdata*
 local ctype
 
 ---@class ffi.cdecl*: string

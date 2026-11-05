@@ -8,7 +8,7 @@
 --- > NOTE: The major advantages of the net library are the large size limit (64kb/message) and the ability to send data backwards - from the client to the server.
 ---
 ---@class garrysmod.net
----@field Receivers table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean? )>
+---@field Receivers table<string, fun( remaining_bits: integer, sender: garrysmod.Player?, unreliable: boolean? )>
 net = {}
 
 --- [SHARED]
@@ -168,7 +168,7 @@ function net.ReadVector() end
 --- Each net message has a length limit of **64KB**!
 ---
 ---@param messageName string The message name to hook to.
----@param callback fun( bit_count: integer, sender: ( garrysmod.Player | nil ) ) The function to be called if the specified message was received.
+---@param callback fun( bit_count: integer, sender: garrysmod.Player? ) The function to be called if the specified message was received.
 function net.Receive( messageName, callback ) end
 
 --- [SERVER]

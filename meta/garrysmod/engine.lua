@@ -236,16 +236,12 @@ function engine.TickInterval() end
 
 --- [CLIENT]
 ---
---- **INTERNAL**: This is used internally - although you're able to use it you probably shouldn't.
----
 --- Returns video recording settings set by `video.Record`. Used by Demo-To-Video feature.
 ---
 ---@return table settings The video recording settings, see `VideoData` structure.
 function engine.VideoSettings() end
 
 --- [CLIENT]
----
---- **INTERNAL**: Do not use.
 ---
 --- Saves a duplication as a file.
 ---
@@ -254,8 +250,6 @@ function engine.VideoSettings() end
 function engine.WriteDupe( dupe, jpeg ) end
 
 --- [CLIENT]
----
---- **INTERNAL**: Do not use.
 ---
 --- Stores savedata into the game (can be loaded using the LoadGame menu).
 ---

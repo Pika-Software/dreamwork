@@ -157,8 +157,6 @@ function Entity:BecomeRagdollOnClient() end
 ---
 --- Dispatches blocked events to this entity's blocked handler. This function is only useful when interacting with entities like func_movelinear.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param entity garrysmod.Entity The entity that is blocking us
 function Entity:Blocked( entity ) end
 
@@ -915,8 +913,6 @@ function Entity:GetCollisionGroup() end
 ---
 --- Returns the color the entity is set to without using a color object.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't. Internally used to implement [Entity:GetColor](https://wiki.facepunch.com/gmod/Entity:GetColor).
----
 ---@return integer r The red channel.
 ---@return integer g The green channel.
 ---@return integer b The blue channel.
@@ -979,8 +975,6 @@ function Entity:GetCycle() end
 ---
 --- Get an angle stored in the datatable of the entity.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return garrysmod.Angle value Requested angle.
 function Entity:GetDTAngle( key ) end
@@ -990,8 +984,6 @@ function Entity:GetDTAngle( key ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Get a boolean stored in the datatable of the entity.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return boolean value Requested boolean.
@@ -1003,8 +995,6 @@ function Entity:GetDTBool( key ) end
 ---
 --- Returns an entity stored in the datatable of the entity.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return garrysmod.Entity value Requested entity.
 function Entity:GetDTEntity( key ) end
@@ -1014,8 +1004,6 @@ function Entity:GetDTEntity( key ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Get a float stored in the datatable of the entity.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return number value Requested float.
@@ -1027,8 +1015,6 @@ function Entity:GetDTFloat( key ) end
 ---
 --- Get an integer stored in the datatable of the entity.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return integer value 32-bit signed integer
 function Entity:GetDTInt( key ) end
@@ -1039,8 +1025,6 @@ function Entity:GetDTInt( key ) end
 ---
 --- Get a string stored in the datatable of the entity.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 3. Specifies what key to grab from datatable.
 ---@return string value Requested string.
 function Entity:GetDTString( key ) end
@@ -1050,8 +1034,6 @@ function Entity:GetDTString( key ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Get a vector stored in the datatable of the entity.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31. Specifies what key to grab from datatable.
 ---@return garrysmod.Vector value Requested vector.
@@ -1693,7 +1675,7 @@ function Entity:GetNetworkedString( key, fallback ) end
 ---
 --- Retrieves a networked value at specified index on the entity that is set by [Entity:SetNetworkedVar](https://wiki.facepunch.com/gmod/Entity:SetNetworkedVar).
 ---
----@deprecated 
+---@deprecated
 ---@param key string The key that is associated with the value
 ---@param fallback any? The value to return if we failed to retrieve the value. (If it isn't set)
 ---@return any networked_var The value associated with the key
@@ -3545,7 +3527,6 @@ function Entity:SetCollisionGroup( group ) end
 ---
 --- Sets the color of an entity without usage of a [Global.Color](https://wiki.facepunch.com/gmod/Global.Color) object.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't. Used internally to implement [Entity:SetColor](https://wiki.facepunch.com/gmod/Entity:SetColor).
 ---
 ---@param r integer The red channel.
 ---@param g integer The green channel.
@@ -3579,8 +3560,6 @@ function Entity:SetCycle( value ) end
 ---
 --- Sets the specified angle on the entity's datatable.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31.
 ---@param value garrysmod.Angle The angle to write on the entity's datatable.
 function Entity:SetDTAngle( key, value ) end
@@ -3590,8 +3569,6 @@ function Entity:SetDTAngle( key, value ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Sets the specified bool on the entity's datatable.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31.
 ---@param value boolean The boolean to write on the entity's metatable.
@@ -3603,8 +3580,6 @@ function Entity:SetDTBool( key, value ) end
 ---
 --- Sets the specified entity on this entity's datatable.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31.
 ---@param value garrysmod.Entity The entity to write on this entity's datatable.
 function Entity:SetDTEntity( key, value ) end
@@ -3615,8 +3590,6 @@ function Entity:SetDTEntity( key, value ) end
 ---
 --- Sets the specified float on the entity's datatable.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 31.
 ---@param value number The float to write on the entity's datatable.
 function Entity:SetDTFloat( key, value ) end
@@ -3626,8 +3599,6 @@ function Entity:SetDTFloat( key, value ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Sets the specified integer on the entity's datatable.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31.
 ---@param value integer The integer to write on the entity's datatable. This will be cast to a 32-bit signed integer internally.
@@ -3641,8 +3612,6 @@ function Entity:SetDTInt( key, value ) end
 ---
 --- > NOTE: The length of these strings are capped at 512 characters.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
----
 ---@param key integer Goes from 0 to 3.
 ---@param value string The string to write on the entity's datatable, can't be more than 512 characters per string.
 function Entity:SetDTString( key, value ) end
@@ -3652,8 +3621,6 @@ function Entity:SetDTString( key, value ) end
 --- This is called internally by the [Entity:NetworkVar](https://wiki.facepunch.com/gmod/Entity:NetworkVar) system, you can use this in cases where using NetworkVar is not possible.
 ---
 --- Sets the specified vector on the entity's datatable.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param key integer Goes from 0 to 31.
 ---@param value garrysmod.Vector The vector to write on the entity's datatable.
@@ -4316,7 +4283,7 @@ function Entity:SetNetworkedString( key, value ) end
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
----@deprecated 
+---@deprecated
 ---@param key string The key to associate the value with
 ---@param value any The value to set
 function Entity:SetNetworkedVar( key, value ) end
@@ -4976,8 +4943,6 @@ function Entity:SetSurroundingBoundsType( bounds ) end
 --- [SHARED]
 ---
 --- Changes the table that can be accessed by indexing an entity. Each entity starts with its own table by default.
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param data table Table for the entity to use
 function Entity:SetTable( data ) end

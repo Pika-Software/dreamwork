@@ -20,7 +20,7 @@
 ---| fun( relative_path: string, mount: string, status: garrysmod.file.AsyncStatus )
 
 ---@alias garrysmod.file.AsyncReadCallback
----| fun( relative_path: string, mount: string, status: garrysmod.file.AsyncStatus, data: ( string | nil ) )
+---| fun( relative_path: string, mount: string, status: garrysmod.file.AsyncStatus, data: string? )
 
 ---@alias garrysmod.file.AccessType
 ---| "rb" # read-only, binary

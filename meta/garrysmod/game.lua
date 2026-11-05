@@ -67,7 +67,7 @@ function game.AddParticles( file_path ) end
 
 --- [SHARED]
 ---
---- **INTERNAL**: Consider using `game.GetAmmoTypes` and `game.GetAmmoData` instead.
+--- Consider using `game.GetAmmoTypes` and `game.GetAmmoData` instead.
 ---
 --- Called by the engine to retrieve the ammo types.
 ---

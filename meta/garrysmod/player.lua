@@ -1385,7 +1385,7 @@ function Player:SetCanZoom( can_zoom ) end
 ---
 --- Sets the player's class id.
 ---
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't. Use [player_manager.SetPlayerClass](https://wiki.facepunch.com/gmod/player_manager.SetPlayerClass) instead.
+--- Use [player_manager.SetPlayerClass](https://wiki.facepunch.com/gmod/player_manager.SetPlayerClass) instead.
 ---
 ---@param class_id integer The class id the player is being set with.
 function Player:SetClassID( class_id ) end
@@ -1422,8 +1422,6 @@ function Player:SetDeaths( death_count ) end
 --- Sets the driving entity and driving mode.
 ---
 --- Use [drive.PlayerStartDriving](https://wiki.facepunch.com/gmod/drive.PlayerStartDriving) instead, see [Entity Driving](https://wiki.facepunch.com/gmod/Entity_Driving).
----
---- > WARNING: This is used internally - although you're able to use it you probably shouldn't.
 ---
 ---@param driving_entity garrysmod.Entity? The entity the player should drive. Defaults to `NULL`.
 ---@param driving_mode integer The driving mode index.
