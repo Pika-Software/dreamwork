@@ -21,7 +21,7 @@ json = {}
 ---
 ---@param json_str string The JSON string to deserialize.
 ---@param max_depth? integer The maximum nesting depth, default is `512`.
----@return json.Value json_value The deserialized value.
+---@return json.Array | json.Object json_value The deserialized value.
 function json.deserialize(json_str, max_depth) end
 
 --- [SHARED AND MENU]

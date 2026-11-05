@@ -23,6 +23,10 @@ local __Version = {}
 ---@protected
 function __Version:__init(major, minor, patch, pre_release, build) end
 
+---@return boolean
+---@protected
+function __Version:__isvalid() end
+
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Version` instances.
