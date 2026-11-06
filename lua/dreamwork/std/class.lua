@@ -16,9 +16,9 @@ local debug_getmetavalue = debug.getmetavalue
 local raw = std.raw
 local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
-local raw_type = raw.type
 
 local error = std.error
+local isString = std.isString
 
 
 --- [SHARED AND MENU]
@@ -195,7 +195,7 @@ do
 
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
-                if raw_type( key ) == "string" and not non_inheritable[ key ] then
+                if isString( key ) and not non_inheritable[ key ] then
                     local uint8_1, uint8_2 = string_byte( key, 1, 2 )
                     if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
                         base[ key ] = value
@@ -299,7 +299,7 @@ function class.create( base )
     end
 
     local name = raw_get( base, "__type" )
-    if raw_type( name ) ~= "string" then
+    if not isString( name ) then
         error( "Class base has no `__type` variable.", 2 )
     end
 

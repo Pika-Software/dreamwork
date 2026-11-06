@@ -4,7 +4,6 @@ local std = dreamwork.std
 local ffi = std.ffi
 
 local raw = std.raw
-local raw_type = raw.type
 
 local rbit = raw.bit
 local rbit_band, rbit_bor = rbit.band, rbit.bor
@@ -34,14 +33,14 @@ local error = std.error
 local lzw = {}
 std.lzw = lzw
 
+local empty_table = {}
+
 ---@param options dreamwork.std.lzw.Options | nil
 ---@return dreamwork.std.lzw.Format | nil format
 ---@return nil | string error_message
 local function get_format( options )
     if options == nil then
-        options = {}
-    elseif raw_type( options ) ~= "table" then
-        return nil, "options must be a table"
+        options = empty_table
     end
 
     local bit_order = options.bit_order
@@ -50,7 +49,7 @@ local function get_format( options )
     end
 
     local literal_bits = options.literal_bits or 8
-    if not (raw_type( literal_bits ) == "number" and literal_bits % 1 == 0 and literal_bits >= 1 and literal_bits <= 8) then
+    if not (literal_bits % 1 == 0 and literal_bits >= 1 and literal_bits <= 8) then
         return nil, "options.literal_bits must be an integer from 1 to 8"
     end
 
@@ -76,7 +75,7 @@ local function get_format( options )
     end
 
     local max_width = options.max_width or 16
-    if not (raw_type( max_width ) == "number" and max_width % 1 == 0 and max_width >= min_width and max_width <= 16) then
+    if not (max_width % 1 == 0 and max_width >= min_width and max_width <= 16) then
         return nil, "options.max_width must be an integer from " .. min_width .. " to 16"
     end
 
@@ -89,10 +88,6 @@ local function get_format( options )
 
     local alphabet = options.alphabet
     if alphabet ~= nil then
-        if raw_type( alphabet ) ~= "string" then
-            return nil, "options.alphabet must be a string"
-        end
-
         local alphabet_length = string_len( alphabet )
 
         symbol_bits = 1
@@ -121,7 +116,7 @@ local function get_format( options )
         end
 
         if pad ~= false then
-            if not (raw_type( pad ) == "string" and string_len( pad ) == 1) then
+            if string_len( pad ) ~= 1 then
                 return nil, "options.pad must be a single character or false"
             end
 

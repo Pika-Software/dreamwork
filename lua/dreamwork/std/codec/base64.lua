@@ -149,6 +149,7 @@ variants.jwt = variants.urlsafe
 ---
 ---@class dreamwork.std.base64.Options : dreamwork.std.base64.Variant
 ---@field variant "standard" | "urlsafe" | "mime" | "jwt" | "custom" | nil The base64 variant to use, default is `"standard"`.
+---@field alphabet dreamwork.std.base64.Alphabet | nil The 64-character alphabet used for encoding and decoding.
 
 --- Resolves the options without modifying them.
 ---

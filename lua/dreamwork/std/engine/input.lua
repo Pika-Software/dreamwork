@@ -1,6 +1,8 @@
 local _G = _G
 
-local dreamwork = _G.dreamwork
+local dreamwork = dreamwork
+local dreamwork_Logger = dreamwork.Logger
+
 local glua_gui = _G.gui
 local glua_vgui = _G.vgui
 local glua_input = _G.input
@@ -399,17 +401,17 @@ if std.LUA_CLIENT_SERVER then
     if std.LUA_CLIENT then
         local available
         if std.loadbinary( "rekinect" ) then
-            dreamwork.Logger:info( "'rekinect' was loaded & connected as Kinect API." )
+            dreamwork_Logger:info( "'rekinect' was loaded & connected as Kinect API." )
             available = true
         elseif motionsensor ~= nil then
-            dreamwork.Logger:info( "Native Kinect API was connected." )
+            dreamwork_Logger:info( "Native Kinect API was connected." )
             available = true
         else
-            dreamwork.Logger:warn( "Kinect API is not available." )
+            dreamwork_Logger:warn( "Kinect API is not available." )
         end
 
         if available and motionsensor.IsAvailable() then
-            dreamwork.Logger:info( "Supported Kinect sensor was detected and connected to the client." )
+            dreamwork_Logger:info( "Supported Kinect sensor was detected and connected to the client." )
         end
     end
 

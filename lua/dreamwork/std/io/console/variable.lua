@@ -16,11 +16,11 @@ local console_variableExists = engine_console.variableExists
 local LUA_SERVER = std.LUA_SERVER
 
 local debug = std.debug
+local debug_getmetatable = debug.getmetatable
 
 local raw = std.raw
 local raw_get = raw.get
 local raw_set = raw.set
-local raw_type = raw.type
 local raw_index = raw.index
 local raw_tonumber = raw.tonumber
 
@@ -45,6 +45,9 @@ local toboolean = std.toboolean
 local setmetatable = std.setmetatable
 
 local Emitter = std.Emitter
+local Boolean = std.Boolean
+local Number = std.Number
+local String = std.String
 
 
 ---@class garrysmod.console.Variable
@@ -658,14 +661,15 @@ do
             error( "replicated convar is cannot be changed by client.", 2 )
         end
 
-        local cvar_type = raw_type( value )
-        if cvar_type == "boolean" then
+        local cvar_metatable = debug_getmetatable( value )
+
+        if cvar_metatable == Boolean then
             ---@cast value boolean
             console_commandRun( name, value and "1" or "0" )
-        elseif cvar_type == "string" then
+        elseif cvar_metatable == String then
             ---@cast value string
             console_commandRun( name, value )
-        elseif cvar_type == "number" then
+        elseif cvar_metatable == Number then
             ---@cast value number | integer
 
             if (value % 1) == 0 then

@@ -163,6 +163,8 @@ dreamwork_load( "std/debug.lua" )
 local debug = std.debug
 local debug_fempty = debug.fempty
 
+local raw_type = raw.type
+
 -- garbage collector
 dreamwork_load( "std/gc.lua" )
 
@@ -175,7 +177,6 @@ if std.getfenv == nil then
 
     local debug_getupvalue = debug.getupvalue
     local debug_getf = debug.getf
-    local raw_type = raw.type
 
     local _G = _G or _ENV
 
@@ -231,7 +232,6 @@ if std.setfenv == nil then
     local debug_getupvalue = debug.getupvalue
     local debug_setupvalue = debug.setupvalue
     local debug_getf = debug.getf
-    local raw_type = raw.type
 
     --- [SHARED AND MENU]
     ---
@@ -271,8 +271,6 @@ end
 local isTable = istable
 
 if isTable == nil then
-
-    local raw_type = raw.type
 
     --- [SHARED AND MENU]
     ---
@@ -770,6 +768,7 @@ local table_unpack = table.unpack
 
 dreamwork_load( "std/ascii.lua" )
 dreamwork_load( "std/string.lua" )
+dreamwork_load( "std/coroutine.lua" )
 
 dreamwork_load( "modules/engine.lua" )
 local dreamwork_engine = dreamwork.engine
@@ -872,67 +871,6 @@ dreamwork_load( "std/types/symbol.lua" )
 ---
 ---@class dreamwork.std.null : dreamwork.std.Symbol
 std.null = std.Symbol( "null" )
-
--- class library
-dreamwork_load( "std/class.lua" )
-
-do
-
-    local isInherited = std.class.isInherited
-    local isClass = std.isClass
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the value is an instance of the given parent.
-    ---
-    ---@param object any The object to check for being an instance of the given parent.
-    ---@param ... any The parent classes/metatables to check against.
-    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
-    ---@nodiscard
-    function std.isInstance( object, ... )
-        local metatable = debug_getmetatable( object )
-
-        for i = 1, raw_select( "#", ... ) do
-            local parent = raw_select( i, ... )
-            if isClass( parent ) then
-                if isInherited( object, parent ) then
-                    return true
-                end
-            elseif metatable == parent then
-                return true
-            end
-        end
-
-        return false
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the value is an instance of the given parent.
-    ---
-    ---@param object any The object to check for being an instance of the given parent.
-    ---@param value any The parent class/metatable to check against.
-    ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
-    ---@nodiscard
-    function std.isType( object, value )
-        if isClass( value ) then
-            if isInherited( object, value ) then
-                return true
-            end
-        elseif debug_getmetatable( object ) == value then
-            return true
-        end
-
-        return false
-    end
-
-end
-
-dreamwork_load( "std/coroutine.lua" )
-
-dreamwork_load( "std/types/stack.lua" )
-dreamwork_load( "std/types/queue.lua" )
-dreamwork_load( "std/types/node.lua" )
 
 do
 
@@ -1309,53 +1247,106 @@ do
 
 end
 
+-- class library
+dreamwork_load( "std/class.lua" )
+
+do
+
+    local isInherited = std.class.isInherited
+    local isClass = std.isClass
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param ... any The parent classes/metatables to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
+    ---@nodiscard
+    function std.isInstance( object, ... )
+        local metatable = debug_getmetatable( object )
+
+        for i = 1, raw_select( "#", ... ) do
+            local parent = raw_select( i, ... )
+            if isClass( parent ) then
+                if isInherited( object, parent ) then
+                    return true
+                end
+            elseif metatable == parent then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param value any The parent class/metatable to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+    ---@nodiscard
+    function std.isType( object, value )
+        if isClass( value ) then
+            if isInherited( object, value ) then
+                return true
+            end
+        elseif debug_getmetatable( object ) == value then
+            return true
+        end
+
+        return false
+    end
+
+end
+
+dreamwork_load( "std/types/stack.lua" )
+dreamwork_load( "std/types/queue.lua" )
+dreamwork_load( "std/types/node.lua" )
+
 local isFunction = std.isFunction
 local isString = std.isString
 local isNumber = std.isNumber
 
-do
+if ffi == nil then
 
-    local raw_type = raw.type
+    --- [SHARED AND MENU]
+    ---
+    --- Returns a string representing the name of the type of the passed object.
+    ---
+    ---@param value any The value to get the type of.
+    ---@return type type_name The type name of the given value.
+    ---@nodiscard
+    function std.type( value )
+        if isNumber( value ) and (value % 1) == 0 then
+            return "integer"
+        end
 
-    if ffi == nil then
+        return debug_getmetavalue( value, "__type" ) or
+            raw_type( value )
+    end
 
-        --- [SHARED AND MENU]
-        ---
-        --- Returns a string representing the name of the type of the passed object.
-        ---
-        ---@param value any The value to get the type of.
-        ---@return type type_name The type name of the given value.
-        ---@nodiscard
-        function std.type( value )
-            if isNumber( value ) and (value % 1) == 0 then
+else
+
+    function std.type( value )
+        local name = raw_type( value )
+        if name == "number" then
+            if value % 1 == 0 then
                 return "integer"
             end
 
-            return debug_getmetavalue( value, "__type" ) or
-                raw_type( value )
+            return name
         end
 
-    else
-
-        function std.type( value )
-            local name = raw_type( value )
-            if name == "number" then
-                if value % 1 == 0 then
-                    return "integer"
-                end
-
-                return name
-            end
-
-            ---@type metatable | nil
-            local metatable = debug_getmetatable( value )
-            if metatable == nil then
-                return name
-            end
-
-            return raw_get( metatable, "__type" ) or name
+        ---@type metatable | nil
+        local metatable = debug_getmetatable( value )
+        if metatable == nil then
+            return name
         end
 
+        return raw_get( metatable, "__type" ) or name
     end
 
 end

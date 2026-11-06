@@ -2,6 +2,7 @@
 local dreamwork = dreamwork
 
 local dreamwork_engine = dreamwork.engine
+local dreamwork_Logger = dreamwork.Logger
 local engine_hook = dreamwork_engine.hook
 
 ---@class dreamwork.std
@@ -44,8 +45,6 @@ local Network = std.Network
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
-
-local logger = dreamwork.Logger
 
 
 --- Max Lua payload accepted from the bridge / network (matches the native bridge).
@@ -170,7 +169,7 @@ local function report_error( fmt, ... )
         message = string_format( fmt, table_unpack( { ... }, 1, arg_count ) )
     end
 
-    logger:error( "MCP: %s", message )
+    dreamwork_Logger:error( "MCP: %s", message )
     events:emit( mcp, "error", message, context )
 end
 
@@ -751,7 +750,7 @@ if LUA_SERVER then
 
         local tool = command.tool or "exec_lua_code"
         events:emit( mcp, "command", tool, command )
-        logger:debug( "MCP: command tool=%s state=%s request=%s target=%s", tool, tostring( command.state ), request_id or "-", tostring( command.target or "-" ) )
+        dreamwork_Logger:debug( "MCP: command tool=%s state=%s request=%s target=%s", tool, tostring( command.state ), request_id or "-", tostring( command.target or "-" ) )
 
         if tool == "gmod_status" then
             return
@@ -763,14 +762,14 @@ if LUA_SERVER then
             end
 
             request_screenshot( command )
-            logger:debug( "MCP: screenshot requested (target=%s, request=%s).", command.target, request_id or "-" )
+            dreamwork_Logger:debug( "MCP: screenshot requested (target=%s, request=%s).", command.target, request_id or "-" )
             return
         end
 
         if tool == "gmod_players" then
             local players = mcp.get_players()
             mcp.respond_result( request_id, true, players )
-            logger:debug( "MCP: gmod_players returned %d player(s) (request=%s).", #players, request_id or "-" )
+            dreamwork_Logger:debug( "MCP: gmod_players returned %d player(s) (request=%s).", #players, request_id or "-" )
             return
         end
 
@@ -781,7 +780,7 @@ if LUA_SERVER then
                 command.limit
             )
             mcp.respond_result( request_id, true, snapshot )
-            logger:debug( "MCP: gmod_entities returned %d entit%s%s (request=%s).", #snapshot.entities, #snapshot.entities == 1 and "y" or "ies", snapshot.truncated and ", truncated" or "", request_id or "-" )
+            dreamwork_Logger:debug( "MCP: gmod_entities returned %d entit%s%s (request=%s).", #snapshot.entities, #snapshot.entities == 1 and "y" or "ies", snapshot.truncated and ", truncated" or "", request_id or "-" )
             return
         end
 
@@ -801,7 +800,7 @@ if LUA_SERVER then
                     request_id = request_id
                 } )
             else
-                logger:debug( "MCP: ran server Lua (tool=%s, request=%s, %d bytes).", tool, request_id or "-", string_len( command.code ) )
+                dreamwork_Logger:debug( "MCP: ran server Lua (tool=%s, request=%s, %d bytes).", tool, request_id or "-", string_len( command.code ) )
             end
 
             return
@@ -823,7 +822,7 @@ if LUA_SERVER then
                 request_id = request_id
             } )
         else
-            logger:debug( "MCP: queued client Lua (tool=%s, target=%s, request=%s, %d bytes).", tool, command.target, request_id or "-", string_len( command.code ) )
+            dreamwork_Logger:debug( "MCP: queued client Lua (tool=%s, target=%s, request=%s, %d bytes).", tool, command.target, request_id or "-", string_len( command.code ) )
         end
     end
 
@@ -950,10 +949,10 @@ if LUA_SERVER then
                 end
 
                 poll_timer:start()
-                logger:info( "MCP: bridge enabled (polling every %.2fs).", POLL_INTERVAL )
+                dreamwork_Logger:info( "MCP: bridge enabled (polling every %.2fs).", POLL_INTERVAL )
             else
                 pcall( bridge.setStatus, true, "Garry's Mod is connected." )
-                logger:info( "MCP: bridge already running, status set to connected." )
+                dreamwork_Logger:info( "MCP: bridge already running, status set to connected." )
             end
 
             return true
@@ -963,7 +962,7 @@ if LUA_SERVER then
             pcall( bridge.setStatus, false, "MCP is disabled." )
         end
 
-        logger:info( "MCP: bridge disabled (commands will be rejected until re-enabled)." )
+        dreamwork_Logger:info( "MCP: bridge disabled (commands will be rejected until re-enabled)." )
         return true
     end
 
@@ -1039,7 +1038,7 @@ if LUA_SERVER then
         if not shutdown_ok then
             report_error( "failed to shut down native bridge: %s", shutdown_error )
         else
-            logger:info( "MCP: native bridge shut down." )
+            dreamwork_Logger:info( "MCP: native bridge shut down." )
         end
     end
 
@@ -1058,7 +1057,7 @@ if LUA_SERVER then
             if ply == entity then
                 clear_pending_exec( request_id )
                 respond_lua_raw( request_id, false, "Client disconnected." )
-                logger:debug( "MCP: cancelled pending Lua result (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
+                dreamwork_Logger:debug( "MCP: cancelled pending Lua result (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
             end
         end
 
@@ -1066,7 +1065,7 @@ if LUA_SERVER then
             if ply == entity then
                 clear_pending_screenshot( request_id )
                 respond_screenshot( request_id, false, "Client disconnected." )
-                logger:debug( "MCP: cancelled pending screenshot (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
+                dreamwork_Logger:debug( "MCP: cancelled pending screenshot (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
             end
         end
     end )
@@ -1090,9 +1089,9 @@ if LUA_SERVER then
     local status_ok, status = pcall( bridge.getStatus )
     if status_ok and isTable( status ) then
         running = bridge.isRunning() == true
-        logger:info( "MCP: bridge module ready (listener %s, status='%s').", running and "running" or "stopped", tostring( status.message or "" ) )
+        dreamwork_Logger:info( "MCP: bridge module ready (listener %s, status='%s').", running and "running" or "stopped", tostring( status.message or "" ) )
     else
-        logger:info( "MCP: bridge module ready (unknown-gd/gm_mcp)." )
+        dreamwork_Logger:info( "MCP: bridge module ready (unknown-gd/gm_mcp)." )
     end
 
 end
@@ -1311,7 +1310,7 @@ if LUA_CLIENT then
         end
 
         attach_client_receiver( channel )
-        logger:info( "MCP: client handlers ready (network='%s', allow_exec=%s, allow_capture=%s).", channel.name, tostring( config.allow_exec ), tostring( config.allow_capture ) )
+        dreamwork_Logger:info( "MCP: client handlers ready (network='%s', allow_exec=%s, allow_capture=%s).", channel.name, tostring( config.allow_exec ), tostring( config.allow_capture ) )
         return true
     end
 
@@ -1323,7 +1322,7 @@ if LUA_CLIENT then
             end
 
             if not try_bind_network( true ) then
-                logger:debug( "MCP: client handlers idle (server did not register network 'dreamwork.mcp')." )
+                dreamwork_Logger:debug( "MCP: client handlers idle (server did not register network 'dreamwork.mcp')." )
             end
         end )
     end

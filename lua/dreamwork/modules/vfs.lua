@@ -1,4 +1,5 @@
 local dreamwork_engine = dreamwork.engine
+local dreamwork_Logger = dreamwork.Logger
 
 local engine_hook = dreamwork_engine.hook
 local hook_catch = engine_hook.catch
@@ -6,7 +7,6 @@ local hook_call = engine_hook.call
 
 local dreamwork_getUpTime = dreamwork.getUpTime
 local exceptions_call = dreamwork.exceptions.call
-local logger = dreamwork.Logger
 
 local detour = dreamwork.detour
 
@@ -170,7 +170,7 @@ do
     for i = 1, 2, 1 do
         local name = queue[ i ]
         if std.loadbinary( name ) then
-            logger:info( "'%s' was loaded & connected as file system driver.", name )
+            dreamwork_Logger:info( "'%s' was loaded & connected as file system driver.", name )
             driver_name = name
             break
         end
@@ -1414,9 +1414,9 @@ local function memory_notice( directory, vfs_path )
     memory_noticed[ key ] = true
 
     if mount == nil then
-        logger:debug( "'%s' has no search path, writes into intermediate directories are kept in memory.", vfs_path )
+        dreamwork_Logger:debug( "'%s' has no search path, writes into intermediate directories are kept in memory.", vfs_path )
     else
-        logger:debug( "'%s' is read-only, writes into '%s' mounted at '%s' are kept in memory.", vfs_path, mount.search_path, mount.path )
+        dreamwork_Logger:debug( "'%s' is read-only, writes into '%s' mounted at '%s' are kept in memory.", vfs_path, mount.search_path, mount.path )
     end
 end
 
@@ -1762,7 +1762,7 @@ local function whiteout_node( node, mount, recursive )
 
     if not whiteout_noticed[ mount ] then
         whiteout_noticed[ mount ] = true
-        logger:debug( "'%s' cannot be deleted from '%s' mounted at '%s', it is hidden by a whiteout in memory.", vfs_path, mount.search_path, mount.path )
+        dreamwork_Logger:debug( "'%s' cannot be deleted from '%s' mounted at '%s', it is hidden by a whiteout in memory.", vfs_path, mount.search_path, mount.path )
     end
 
     watchdog_change( "dreamwork.vfs.deleted", vfs_path, is_directory )

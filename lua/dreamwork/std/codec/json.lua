@@ -3,7 +3,6 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_get = raw.get
-local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
 
@@ -34,12 +33,17 @@ local table_isSequential = table.isSequential
 
 local len = std.len
 local null = std.null
+local type = std.type
 local error = std.error
 local isTable = std.isTable
 local isString = std.isString
 
 local DecodeError = std.DecodeError
 local EncodeError = std.EncodeError
+
+local Boolean = std.Boolean
+local Number = std.Number
+local String = std.String
 
 
 --- [SHARED AND MENU]
@@ -464,28 +468,28 @@ local function convertObject( value )
         end
     end
 
-    error( EncodeError( "unable to serialize " .. raw_type( value ) .. " value", value ), 2 )
+    error( EncodeError( string_format( "unable to serialize '%s' value", type( value ) ), value ), 2 )
 end
 
 ---@param key any
 ---@return string
 local function convertKey( key )
-    local key_type = raw_type( key )
-    if key_type == "number" then
-        return encodeNumber( key )
-    elseif key_type == "boolean" then
-        return key and "true" or "false"
-    end
-
     local metatable = debug_getmetatable( key )
+
     if metatable ~= nil then
+        if metatable == Number then
+            return encodeNumber( key )
+        elseif metatable == Boolean then
+            return key and "true" or "false"
+        end
+
         local to_string = raw_get( metatable, "__tostring" )
         if to_string ~= nil then
             return to_string( key )
         end
     end
 
-    error( EncodeError( "unable to use " .. key_type .. " value as an object key", key ), 3 )
+    error( EncodeError( string_format( "unable to use '%s' value as an object key", type( key ) ), key ), 3 )
 end
 
 --- Appends `value` to `buffer` and returns the new buffer size.
@@ -498,19 +502,19 @@ end
 ---@param pretty boolean
 ---@return integer buffer_size
 local function serializeValue( buffer, buffer_size, value, depth, max_depth, pretty )
-    local value_type = raw_type( value )
+    local value_metatable = debug_getmetatable( value )
 
-    if value_type == "string" then
+    if value_metatable == String then
         ---@cast value string
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = quote( value )
         return buffer_size
-    elseif value_type == "number" then
+    elseif value_metatable == Number then
         ---@cast value number
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = encodeNumber( value )
         return buffer_size
-    elseif value_type == "boolean" then
+    elseif value_metatable == Boolean then
         ---@cast value boolean
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = value and "true" or "false"
@@ -520,7 +524,7 @@ local function serializeValue( buffer, buffer_size, value, depth, max_depth, pre
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = "null"
         return buffer_size
-    elseif value_type ~= "table" or isCustomObject( value ) then
+    elseif not isTable( value ) or isCustomObject( value ) then
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = convertObject( value )
         return buffer_size

@@ -1,6 +1,7 @@
 local dreamwork_getUpTime = dreamwork.getUpTime
 local dreamwork_storage = dreamwork.storage
 local dreamwork_engine = dreamwork.engine
+local dreamwork_Logger = dreamwork.Logger
 
 local engine_http = dreamwork_engine.http
 
@@ -10,8 +11,6 @@ local http_request = engine_http.request
 local storage_http = dreamwork_storage.http
 local storage_write = storage_http.write
 local storage_read = storage_http.read
-
-local Logger = dreamwork.Logger
 
 local std = dreamwork.std
 
@@ -698,7 +697,7 @@ local function send_request( options, redirects )
         future:setError( HTTPError( nil, url_string, reason_ext or reason ) )
     end
 
-    Logger:debug( "%s HTTP request to '%s', using '%s', with timeout %f seconds.", method, url_string, http_ClientName, timeout )
+    dreamwork_Logger:debug( "%s HTTP request to '%s', using '%s', with timeout %f seconds.", method, url_string, http_ClientName, timeout )
 
     -- armed before sending, the client may call back synchronously
     if timeout > 0 then

@@ -1,4 +1,5 @@
 local dreamwork_engine = dreamwork.engine
+local dreamwork_Logger = dreamwork.Logger
 
 local dreamwork_getUpTime = dreamwork.getUpTime
 local exceptions_call = dreamwork.exceptions.call
@@ -12,16 +13,10 @@ local network_getID = engine_network.getID
 ---@class dreamwork.std
 local std = dreamwork.std
 
-
-local Emitter = std.Emitter
-
-local console_Variable = std.console.Variable
-
 local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
-local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_index = raw.index
 local raw_tonumber = raw.tonumber
@@ -34,7 +29,6 @@ local math_min = math.min
 
 local string = std.string
 local string_len = string.len
-local string_lower = string.lower
 local string_format = string.format
 local string_sub = string.sub
 
@@ -42,14 +36,22 @@ local table = std.table
 local table_concat = table.concat
 local table_remove = table.remove
 
+local console = std.console
+local console_Variable = console.Variable
+
 local class = std.class
 
 local CRC32 = std.CRC32
 local crc32_digest = CRC32.digest
 
+local isTable = std.isTable
+
+local Emitter = std.Emitter
+local BinaryReader = std.BinaryReader
+local BinaryWriter = std.BinaryWriter
+
 local LUA_SERVER = std.LUA_SERVER
 
-local logger = dreamwork.Logger
 
 ---@class garrysmod.net
 local glua_net = dreamwork_engine.requireLibrary( "net" )
@@ -307,7 +309,7 @@ local events = Emitter( "Network" )
 ---@type table<string, dreamwork.std.Network>
 local networks = {}
 
----@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: garrysmod.Player | nil )
+---@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: ( garrysmod.Player | nil ) )
 local network_receive
 
 --- [SHARED]
@@ -413,11 +415,11 @@ local function perform_callbacks( network, data, sender )
     if events:count( network, "receive" ) == 0 then
         if events:count( network, "stream" ) ~= 0 then return end
 
-        logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], string_len( data ) )
+        dreamwork_Logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], string_len( data ) )
         return
     end
 
-    events:emit( network, "receive", network, std.BinaryReader( data ), sender )
+    events:emit( network, "receive", network, BinaryReader( data ), sender )
 end
 
 ---@param network dreamwork.std.Network
@@ -764,7 +766,7 @@ if LUA_SERVER then
         client.strike_time = now
 
         local message = string_format( reason, ... )
-        logger:warn( "%s violated the protocol of network '%s': %s [%.0f/%d strikes]", peer_tostring( peer ), network_names[ network ], message, strikes, max_strikes )
+        dreamwork_Logger:warn( "%s violated the protocol of network '%s': %s [%.0f/%d strikes]", peer_tostring( peer ), network_names[ network ], message, strikes, max_strikes )
 
         if strikes > max_strikes and peer:IsValid() then
             clients[ peer ] = nil
@@ -811,7 +813,7 @@ if LUA_SERVER then
 else
 
     function violation( network, _, _, reason, ... )
-        logger:warn( "The server violated the protocol of network '%s': %s", network_names[ network ], string_format( reason, ... ) )
+        dreamwork_Logger:warn( "The server violated the protocol of network '%s': %s", network_names[ network ], string_format( reason, ... ) )
     end
 
     function client_admit()
@@ -1118,7 +1120,7 @@ local function outgoing_cancel( state, reason )
         send_control( state.network, OP_CANCEL, state.id, state.peer )
     end
 
-    logger:warn( "Transmission #%d of network '%s' to %s was cancelled: %s [%d/%d segments, %d resent]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.acked_count, state.count, state.resent_count )
+    dreamwork_Logger:warn( "Transmission #%d of network '%s' to %s was cancelled: %s [%d/%d segments, %d resent]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.acked_count, state.count, state.resent_count )
     outgoing_finish( state, false )
 end
 
@@ -1151,7 +1153,7 @@ local function incoming_reject( state, reason )
         send_control( state.network, OP_REJECT, state.id, state.peer )
     end
 
-    logger:warn( "Receiving #%d of network '%s' from %s was aborted: %s [%d/%d segments]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.received, state.count )
+    dreamwork_Logger:warn( "Receiving #%d of network '%s' from %s was aborted: %s [%d/%d segments]", state.id, network_names[ state.network ], peer_tostring( state.peer ), reason, state.received, state.count )
     incoming_close( state, false )
 end
 
@@ -1291,7 +1293,7 @@ function transmit_start( network, data, peer, key, callback )
 
         message_send( peer )
 
-        logger:debug( "Sent %d bytes to %s using network '%s'.", size, peer_tostring( peer ), network_names[ network ] )
+        dreamwork_Logger:debug( "Sent %d bytes to %s using network '%s'.", size, peer_tostring( peer ), network_names[ network ] )
         perform_progress( network, peer, true, size, size )
 
         if callback ~= nil then
@@ -1346,7 +1348,7 @@ function transmit_start( network, data, peer, key, callback )
     net_WriteUInt( segment_size, segment_size_size )
     message_send( peer )
 
-    logger:debug( "Transmission #%d of network '%s' to %s started, %d bytes in %d segments.", state.id, network_names[ network ], peer_tostring( peer ), size, state.count )
+    dreamwork_Logger:debug( "Transmission #%d of network '%s' to %s started, %d bytes in %d segments.", state.id, network_names[ network ], peer_tostring( peer ), size, state.count )
 end
 
 ---@param network dreamwork.std.Network
@@ -1386,7 +1388,7 @@ local function transmit_to( network, data, target, callback )
         transmit( network, data, nil, callback )
     elseif target == nil then
         error( "Target player is required on the server.", 3 )
-    elseif raw_type( target ) == "table" then
+    elseif isTable( target ) then
         ---@cast target garrysmod.Player[]
         for i = 1, #target, 1 do
             transmit( network, data, target[ i ], callback )
@@ -1421,7 +1423,7 @@ end
 ---@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
 ---@param callback dreamwork.std.Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function Network:transmit( fn, target, callback )
-    local writer = std.BinaryWriter()
+    local writer = BinaryWriter()
     fn( self, writer )
     transmit_to( self, writer:compile(), target, callback )
 end
@@ -1487,7 +1489,7 @@ handlers[ OP_BEGIN ] = function( network, peer, key, transfer_id, remaining_bits
 
     local previous = incoming[ network ][ key ]
     if previous ~= nil then
-        logger:debug( "Receiving #%d of network '%s' from %s was replaced by #%d.", previous.id, network_names[ network ], peer_tostring( peer ), transfer_id )
+        dreamwork_Logger:debug( "Receiving #%d of network '%s' from %s was replaced by #%d.", previous.id, network_names[ network ], peer_tostring( peer ), transfer_id )
         incoming_close( previous, false )
     end
 
@@ -1550,7 +1552,7 @@ handlers[ OP_BEGIN ] = function( network, peer, key, transfer_id, remaining_bits
 
     send_control( network, OP_ACCEPT, transfer_id, peer )
 
-    logger:debug( "Receiving #%d of network '%s' from %s started, %d bytes in %d segments.", transfer_id, network_names[ network ], peer_tostring( peer ), size, state.count )
+    dreamwork_Logger:debug( "Receiving #%d of network '%s' from %s started, %d bytes in %d segments.", transfer_id, network_names[ network ], peer_tostring( peer ), size, state.count )
 end
 
 handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bits )
@@ -1642,10 +1644,10 @@ handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bi
 
     if success then
         send_control( network, OP_FINISH, transfer_id, peer )
-        logger:debug( "Receiving #%d of network '%s' from %s finished, %d bytes in %.2f seconds.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, state.activity - state.start_time )
+        dreamwork_Logger:debug( "Receiving #%d of network '%s' from %s finished, %d bytes in %.2f seconds.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, state.activity - state.start_time )
     else
         send_control( network, OP_REJECT, transfer_id, peer )
-        logger:error( "Receiving #%d of network '%s' from %s failed, checksum mismatch.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+        dreamwork_Logger:error( "Receiving #%d of network '%s' from %s failed, checksum mismatch.", transfer_id, network_names[ network ], peer_tostring( peer ) )
     end
 
     events:emit( network, "stream", network, peer, nil, state.received_bytes, state.size, success )
@@ -1659,7 +1661,7 @@ handlers[ OP_CANCEL ] = function( network, peer, key, transfer_id )
     local state = incoming[ network ][ key ]
     if state == nil or state.id ~= transfer_id then return end
 
-    logger:debug( "Receiving #%d of network '%s' from %s was cancelled by the sender.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+    dreamwork_Logger:debug( "Receiving #%d of network '%s' from %s was cancelled by the sender.", transfer_id, network_names[ network ], peer_tostring( peer ) )
     incoming_close( state, false )
 end
 
@@ -1797,7 +1799,7 @@ handlers[ OP_FINISH ] = function( network, peer, key, transfer_id )
     if state == nil or state.id ~= transfer_id then return end
 
     local elapsed = dreamwork_getUpTime() - state.start_time
-    logger:debug( "Transmission #%d of network '%s' to %s finished, %d bytes in %.2f seconds (%.2f KiB/s), window %.1f, srtt %.0f ms, %d/%d segments resent.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, elapsed, (state.size / 1024) / math_max( elapsed, 0.001 ), state.window, (state.srtt or 0) * 1000, state.resent_count, state.count )
+    dreamwork_Logger:debug( "Transmission #%d of network '%s' to %s finished, %d bytes in %.2f seconds (%.2f KiB/s), window %.1f, srtt %.0f ms, %d/%d segments resent.", transfer_id, network_names[ network ], peer_tostring( peer ), state.size, elapsed, (state.size / 1024) / math_max( elapsed, 0.001 ), state.window, (state.srtt or 0) * 1000, state.resent_count, state.count )
 
     outgoing_finish( state, true )
 end
@@ -1806,7 +1808,7 @@ handlers[ OP_REJECT ] = function( network, peer, key, transfer_id )
     local state = outgoing[ network ][ key ]
     if state == nil or state.id ~= transfer_id then return end
 
-    logger:warn( "Transmission #%d of network '%s' to %s was rejected by the receiver.", transfer_id, network_names[ network ], peer_tostring( peer ) )
+    dreamwork_Logger:warn( "Transmission #%d of network '%s' to %s was rejected by the receiver.", transfer_id, network_names[ network ], peer_tostring( peer ) )
     outgoing_finish( state, false )
 end
 
