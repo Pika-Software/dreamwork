@@ -25,8 +25,6 @@ local raw_tostring = raw.tostring
 
 local string = std.string
 local string_len = string.len
-local string_gsub = string.gsub
-local string_trim = string.trim
 local string_format = string.format
 
 local table_concat = std.table.concat
@@ -273,11 +271,11 @@ do
     ---
     --- A storage of file records (size, timestamp and hash), used to detect changed files.
     ---
-    ---@class dreamwork.storage.files
-    local files = {}
-    storage.files = files
+    ---@class dreamwork.storage.file
+    local file = {}
+    storage.file = file
 
-    ---@class dreamwork.storage.files.Record
+    ---@class dreamwork.storage.file.Record
     ---@field path string The path to the file.
     ---@field size integer The size of the file in bytes.
     ---@field timestamp integer The modification timestamp of the file.
@@ -286,7 +284,7 @@ do
     ---@type table<string, dreamwork.std.sqlite.ColumnType>
     local record_types = { size = "number", timestamp = "number", hash = "blob" }
 
-    ---@type table<string, dreamwork.storage.files.Record>
+    ---@type table<string, dreamwork.storage.file.Record>
     local cache = {}
 
     --- [SHARED AND MENU]
@@ -296,9 +294,9 @@ do
     --- The returned record is shared with the in-memory cache, do not modify it.
     ---
     ---@param file_path string The path to the file.
-    ---@return dreamwork.storage.files.Record | nil record The file record, or `nil` if the path is not stored.
+    ---@return dreamwork.storage.file.Record | nil record The file record, or `nil` if the path is not stored.
     ---@nodiscard
-    function files.read( file_path )
+    function file.read( file_path )
         local record = cache[ file_path ]
         if record ~= nil then
             return record
@@ -321,7 +319,7 @@ do
     ---@param file_size integer The size of the file in bytes.
     ---@param file_timestamp integer The modification timestamp of the file.
     ---@param file_hash string The hash of the file (SHA256/MD5), raw or hex digest.
-    function files.write( file_path, file_size, file_timestamp, file_hash )
+    function file.write( file_path, file_size, file_timestamp, file_hash )
         sqlite_query( "INSERT INTO 'dreamwork.storage.files' (path, size, timestamp, hash) VALUES (?, ?, ?, ?) ON CONFLICT( path ) DO UPDATE SET size = excluded.size, timestamp = excluded.timestamp, hash = excluded.hash", file_path, file_size, file_timestamp, SQLiteBlob( file_hash ) )
         cache[ file_path ] = { path = file_path, size = file_size, timestamp = file_timestamp, hash = file_hash }
     end
@@ -331,7 +329,7 @@ do
     --- Removes the file record for the specified path, does nothing if the path is not stored.
     ---
     ---@param file_path string The path to the file.
-    function files.delete( file_path )
+    function file.delete( file_path )
         sqlite_query( "DELETE FROM 'dreamwork.storage.files' WHERE path=?", file_path )
         cache[ file_path ] = nil
     end
