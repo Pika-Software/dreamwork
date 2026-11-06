@@ -2982,44 +2982,17 @@ do
 
 end
 
-dreamwork_load( "modules/vfs.lua" )
-dreamwork_load( "modules/engine/http.lua" )
-
-dreamwork_load( "modules/engine/material.lua" )
-dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
-dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
-
-dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
-dreamwork_load( "std/types/pixel_map.lua", false, LUA_SERVER )
-
-dreamwork_load( "std/db/sqlite.lua" )
-dreamwork_load( "modules/storage.lua" )
-
-dreamwork.storage.init()
-
-dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
-
-dreamwork_load( "std/net/http.lua" )
-dreamwork_load( "std/net/websocket.lua" )
-dreamwork_load( "std/net/network.lua", false, LUA_MENU )
-
-dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
-
--- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
-if LUA_SERVER then
-    if std.lookupbinary( "mcp" ) then
-        if std.loadbinary( "mcp" ) then
-            dreamwork_load( "modules/mcp.lua" )
-            logger:info( "'mcp' was loaded & connected as MCP bridge." )
-        else
-            logger:warn( "'mcp' binary is present but failed to load." )
-        end
+if ffi ~= nil then
+    if not ffi.SANDBOXED then
+        logger:warn( "FFI is in unsafe mode, raw memory access is enabled and FFI fast paths are used." )
+    elseif ffi.string ~= nil then
+        logger:warn( "FFI is in safe mode (sandboxed), `ffi.C` and `ffi.load` are disabled, raw memory functions are emulated with `string.buffer`." )
+    else
+        logger:warn( "FFI is in safe mode (sandboxed), raw memory access is disabled and FFI fast paths fall back to pure Lua." )
     end
-elseif LUA_CLIENT then
-    dreamwork_load( "modules/mcp.lua" )
 end
 
-dreamwork_load( "modules/cli/init.lua" )
+dreamwork_load( "modules/vfs.lua" )
 
 do
 
@@ -3037,15 +3010,42 @@ do
 
 end
 
-if ffi ~= nil then
-    if not ffi.SANDBOXED then
-        logger:warn( "FFI is in unsafe mode, raw memory access is enabled and FFI fast paths are used." )
-    elseif ffi.string ~= nil then
-        logger:warn( "FFI is in safe mode (sandboxed), `ffi.C` and `ffi.load` are disabled, raw memory functions are emulated with `string.buffer`." )
-    else
-        logger:warn( "FFI is in safe mode (sandboxed), raw memory access is disabled and FFI fast paths fall back to pure Lua." )
+dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
+
+dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
+dreamwork_load( "std/types/pixel_map.lua", false, LUA_SERVER )
+
+dreamwork_load( "std/db/sqlite.lua" )
+dreamwork_load( "modules/storage.lua" )
+
+dreamwork.storage.init()
+
+dreamwork_load( "modules/engine/http.lua" )
+dreamwork_load( "std/net/http.lua" )
+
+dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
+-- dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
+
+-- dreamwork_load( "modules/engine/websocket.lua" )
+-- dreamwork_load( "std/net/websocket.lua" )
+
+dreamwork_load( "std/net/network.lua", false, LUA_MENU )
+
+dreamwork_load( "modules/engine/material.lua" )
+dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
+dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
+
+-- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
+if LUA_SERVER then
+    if std.loadbinary( "mcp" ) then
+        dreamwork_load( "modules/mcp.lua" )
+        logger:info( "'mcp' was loaded & connected as MCP bridge." )
     end
+elseif LUA_CLIENT and dreamwork.vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
+    dreamwork_load( "modules/mcp.lua" )
 end
+
+dreamwork_load( "modules/cli/init.lua" )
 
 do
 
