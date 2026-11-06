@@ -1024,10 +1024,10 @@ end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-setmetatable)
 ---
----@generic K, V
----@param tbl table<K, V> The table to set the metatable of.
----@param metatable metatable<K, V>? The new metatable, or `nil` to remove it.
----@return metatable<K, V> table The given `table`.
+---@generic T
+---@param tbl T The table to set the metatable of.
+---@param metatable metatable | table | nil The new metatable, or `nil` to remove it.
+---@return T table The given `table`.
 function setmetatable( tbl, metatable ) end
 
 --- [SHARED AND MENU]
