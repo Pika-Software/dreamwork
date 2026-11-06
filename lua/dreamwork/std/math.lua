@@ -3,6 +3,9 @@ local glua_math = math
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_select = raw.select
+
 local len = std.len
 
 local debug = std.debug
@@ -988,9 +991,27 @@ function math.fdiv( a, b )
     local fn = debug_getmetavalue( a, "__idiv" )
     if fn == nil then
         return math_floor( a / b )
-    else
-        return fn( a, b )
     end
+
+    return fn( a, b )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the arithmetic mean of the given numbers.
+---
+---@param ... number The numbers to average.
+---@return number average The arithmetic mean of the given numbers.
+---@nodiscard
+function math.average( ... )
+    local arg_count = raw_select( "#", ... )
+    local x = 0
+
+    for i = 1, arg_count, 1 do
+        x = x + raw_select( i, ... )
+    end
+
+    return x / arg_count
 end
 
 -- Source code of functions
