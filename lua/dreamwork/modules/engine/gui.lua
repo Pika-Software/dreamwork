@@ -1,4 +1,5 @@
 local glua_ScrW, glua_ScrH = ScrW, ScrH
+local glua_OpenFolder      = OpenFolder
 
 ---@class dreamwork.engine
 local dreamwork_engine     = dreamwork.engine
@@ -6,12 +7,12 @@ local engine_Panel         = dreamwork_engine.Panel
 
 
 ---@type garrysmod.vgui
-local glua_vgui    = dreamwork_engine.requireLibrary( "vgui" )
-local vgui_Create  = glua_vgui.CreateX or glua_vgui.Create
+local glua_vgui   = dreamwork_engine.requireLibrary( "vgui" )
+local vgui_Create = glua_vgui.CreateX or glua_vgui.Create
 
-local std          = dreamwork.std
+local std         = dreamwork.std
 
-local error = std.error
+local error       = std.error
 
 
 --- [CLIENT AND MENU]
@@ -46,4 +47,9 @@ end
 ---@type fun( panel: garrysmod.Panel ): boolean
 gui.panelIsValid = engine_Panel.IsValid or function()
     return false
+end
+
+---@type fun( path: string )
+gui.openFolder = glua_OpenFolder or function()
+    error( "folder opening is not available", 2 )
 end
