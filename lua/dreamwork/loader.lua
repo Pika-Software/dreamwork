@@ -3002,6 +3002,20 @@ dreamwork_load( "std/net/http.lua" )
 dreamwork_load( "std/net/websocket.lua" )
 dreamwork_load( "std/net/network.lua", false, LUA_MENU )
 
+-- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
+if LUA_SERVER then
+    if std.lookupbinary( "mcp" ) then
+        if std.loadbinary( "mcp" ) then
+            dreamwork_load( "modules/mcp.lua" )
+            logger:info( "'mcp' was loaded & connected as MCP bridge." )
+        else
+            logger:warn( "'mcp' binary is present but failed to load." )
+        end
+    end
+elseif LUA_CLIENT then
+    dreamwork_load( "modules/mcp.lua" )
+end
+
 dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 
 dreamwork.storage.init()

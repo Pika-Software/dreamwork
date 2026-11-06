@@ -1360,3 +1360,4 @@ end
 dreamwork_load( "modules/cli/commands/vfs.lua" )
 dreamwork_load( "modules/cli/commands/http_client.lua" )
 dreamwork_load( "modules/cli/commands/github.lua" )
+dreamwork_load( "modules/cli/commands/mcp.lua", false, not std.LUA_CLIENT_SERVER )
