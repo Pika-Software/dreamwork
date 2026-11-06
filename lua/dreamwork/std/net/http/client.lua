@@ -525,8 +525,12 @@ local function send_request( options, redirects )
     end
 
     -- user-agent header, read on every request, so changes to `engine.http.UserAgent` apply
-    if not has_user_agent then
-        headers[ "User-Agent" ] = engine_http.UserAgent
+    if http_ClientName == "garrysmod" then
+        headers[ "User-Agent" ] = nil
+    else
+        if not has_user_agent then
+            headers[ "User-Agent" ] = engine_http.UserAgent
+        end
     end
 
     -- cookie header
