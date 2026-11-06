@@ -30,7 +30,7 @@ Network = {}
 ---
 --- If the handler is already attached, it will not be attached twice.
 ---
----@param handler Network.ReceiveFn | Hook The callback or callable object.
+---@param handler Network.ReceiveFn | Hook | Event The callback or callable object.
 function __Network:attach(handler) end
 
 --- [SHARED]
@@ -38,14 +38,14 @@ function __Network:attach(handler) end
 --- Attaches a handler that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler Network.ReceiveFn | Hook The callback or callable object.
+---@param handler Network.ReceiveFn | Hook | Event The callback or callable object.
 function __Network:once(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached receive handler.
 ---
----@param handler Network.ReceiveFn | Hook The exact handler reference.
+---@param handler Network.ReceiveFn | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function __Network:detach(handler) end
 
@@ -76,14 +76,14 @@ function __Network:await() end
 ---
 --- If a network has only stream handlers, the received data is not kept in memory.
 ---
----@param handler Network.StreamFn | Hook The callback or callable object.
+---@param handler Network.StreamFn | Hook | Event The callback or callable object.
 function __Network:stream(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached stream handler.
 ---
----@param handler Network.StreamFn | Hook The exact handler reference.
+---@param handler Network.StreamFn | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function __Network:unstream(handler) end
 
@@ -91,14 +91,14 @@ function __Network:unstream(handler) end
 ---
 --- Attaches a handler that is called on every transfer progress, both incoming and outgoing.
 ---
----@param handler Network.ProgressFn | Hook The callback or callable object.
+---@param handler Network.ProgressFn | Hook | Event The callback or callable object.
 function __Network:watch(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached progress handler.
 ---
----@param handler Network.ProgressFn | Hook The exact handler reference.
+---@param handler Network.ProgressFn | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function __Network:unwatch(handler) end
 

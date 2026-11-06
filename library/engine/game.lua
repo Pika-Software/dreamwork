@@ -39,12 +39,12 @@ function game.setMount(appID, value) end
 
 --- [SHARED AND MENU]
 ---
---- A hook that is called every tick.
+--- An event that is called every tick.
 ---
 game.OnTick = nil
 
 --- [SHARED]
 ---
---- A hook that is called when the game is shutting down.
+--- An event that is called when the game is shutting down.
 ---
 game.OnShutDown = nil

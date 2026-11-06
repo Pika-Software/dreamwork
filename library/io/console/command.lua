@@ -91,21 +91,21 @@ function Command:isBlacklisted() end
 ---
 --- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler console.Command.Callback | Hook The callback or callable object.
+---@param handler console.Command.Callback | Hook | Event The callback or callable object.
 function Command:attach(handler) end
 
 --- [SHARED AND MENU]
 ---
 --- Attaches a one-shot handler, detached right before the next execution calls it.
 ---
----@param handler console.Command.Callback | Hook The callback or callable object.
+---@param handler console.Command.Callback | Hook | Event The callback or callable object.
 function Command:once(handler) end
 
 --- [SHARED AND MENU]
 ---
 --- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler console.Command.Callback | Hook The exact handler reference.
+---@param handler console.Command.Callback | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Command:detach(handler) end
 

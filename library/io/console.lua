@@ -28,6 +28,12 @@ function console.toggle() end
 
 --- [SHARED AND MENU]
 ---
+--- An event that is called with the new visibility when the console is shown or hidden.
+---
+console.Visibility = nil
+
+--- [SHARED AND MENU]
+---
 --- Writes a message to the console.
 ---
 ---@param ... string | Color The message to write to the console.

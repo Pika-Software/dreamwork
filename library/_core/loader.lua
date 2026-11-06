@@ -401,26 +401,6 @@ function tohex(value, desired_length) end
 ---@class null : Symbol
 null = {}
 
---- [SHARED AND MENU]
----
---- Checks if the value is an instance of the given parent.
----
----@param object any The object to check for being an instance of the given parent.
----@param ... any The parent classes/metatables to check against.
----@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
----@nodiscard
-function isInstance(object, ...) end
-
---- [SHARED AND MENU]
----
---- Checks if the value is an instance of the given parent.
----
----@param object any The object to check for being an instance of the given parent.
----@param value any The parent class/metatable to check against.
----@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
----@nodiscard
-function isType(object, value) end
-
 --- `true` if the game is running on OSX.
 ---
 ---@type boolean
@@ -561,6 +541,26 @@ Thread.__type = "thread"
 ---@return boolean is_thread
 ---@nodiscard
 function isThread(value) end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is an instance of the given parent.
+---
+---@param object any The object to check for being an instance of the given parent.
+---@param ... any The parent classes/metatables to check against.
+---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
+---@nodiscard
+function isInstance(object, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is an instance of the given parent.
+---
+---@param object any The object to check for being an instance of the given parent.
+---@param value any The parent class/metatable to check against.
+---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+---@nodiscard
+function isType(object, value) end
 
 --- [SHARED AND MENU]
 ---

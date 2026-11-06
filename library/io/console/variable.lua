@@ -199,7 +199,7 @@ function console.Variable.getBounds(name) end
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler fun( variable: console.Variable<T>, value: T ) | Hook The callback or callable object.
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook | Event The callback or callable object.
 function Variable:attach(handler) end
 
 --- [SHARED AND MENU]
@@ -208,7 +208,7 @@ function Variable:attach(handler) end
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler fun( variable: console.Variable<T>, value: T ) | Hook The callback or callable object.
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook | Event The callback or callable object.
 function Variable:once(handler) end
 
 --- [SHARED AND MENU]
@@ -217,7 +217,7 @@ function Variable:once(handler) end
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler fun( variable: console.Variable<T>, value: T ) | Hook The exact handler reference.
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Variable:detach(handler) end
 

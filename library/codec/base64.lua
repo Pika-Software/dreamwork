@@ -43,6 +43,7 @@ function base64.alphabet(alphabet_str) end
 ---
 ---@class base64.Options : base64.Variant
 ---@field variant "standard" | "urlsafe" | "mime" | "jwt" | "custom" | nil The base64 variant to use, default is `"standard"`.
+---@field alphabet base64.Alphabet | nil The 64-character alphabet used for encoding and decoding.
 
 --- [SHARED AND MENU]
 ---

@@ -74,21 +74,21 @@ function __Timer:isRunning() end
 ---
 --- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler fun( timer: Timer ) | Hook The callback or callable object.
+---@param handler fun( timer: Timer ) | Hook | Event The callback or callable object.
 function __Timer:attach(handler) end
 
 --- [SHARED AND MENU]
 ---
 --- Attaches a one-shot handler, detached right before the next run of the timer calls it.
 ---
----@param handler fun( timer: Timer ) | Hook The callback or callable object.
+---@param handler fun( timer: Timer ) | Hook | Event The callback or callable object.
 function __Timer:once(handler) end
 
 --- [SHARED AND MENU]
 ---
 --- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( timer: Timer ) | Hook The exact handler reference.
+---@param handler fun( timer: Timer ) | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function __Timer:detach(handler) end
 

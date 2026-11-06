@@ -1,8 +1,8 @@
 ---@meta _
 
---- A function, or a callable object such as a `Hook` (called through its `__call` metamethod).
+--- A function, or a callable object such as a `Hook` or an `Event` (called through its `__call` metamethod).
 ---
----@alias Emitter.Handler function | Hook
+---@alias Emitter.Handler function | Hook | Event
 
 --- One event's handlers: `[0]` is the count, `[1..n]` the handlers in attach order.
 ---
