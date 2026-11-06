@@ -182,7 +182,7 @@ local function schedule_reconnect( socket )
     local reconnect = options_by_socket[ socket ].reconnect
     if reconnect == nil then return end
 
-    local attempt = ( reconnect_attempts[ socket ] or 0 ) + 1
+    local attempt = (reconnect_attempts[ socket ] or 0) + 1
     if attempt > reconnect.attempts then
         reconnect_attempts[ socket ] = nil
         return
@@ -190,7 +190,7 @@ local function schedule_reconnect( socket )
 
     reconnect_attempts[ socket ] = attempt
 
-    local delay = math_min( reconnect.delay * 2 ^ ( attempt - 1 ), reconnect.max_delay )
+    local delay = math_min( reconnect.delay * 2 ^ (attempt - 1), reconnect.max_delay )
 
     reconnect_timeouts[ socket ] = setTimeout( function()
         reconnect_timeouts[ socket ] = nil
@@ -394,7 +394,6 @@ function connect( socket )
 
     return true
 end
-
 
 --- [SHARED AND MENU]
 ---
@@ -600,6 +599,7 @@ function WebSocket:close( force )
     end
 
     if status == STATUS_CLOSING then return end
+
     connection.status = STATUS_CLOSING
 
     local handle = connection.handle
