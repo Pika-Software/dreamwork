@@ -25,8 +25,8 @@ function base16.encode(raw_str) end
 --- Pairs that are not valid hex digits and a trailing odd character are copied as-is, use `base16.validate` to reject them.
 ---
 ---@param base16_str string The base16 string to decode.
----@param start_position? integer The start position of the base16 string, default is `1`.
----@param end_position? integer The end position of the base16 string, default is the length of the base16 string.
+---@param start_position integer? The start position of the base16 string, default is `1`.
+---@param end_position integer? The end position of the base16 string, default is the length of the base16 string.
 ---@return string raw_str The decoded string.
 ---@nodiscard
 function base16.decode(base16_str, start_position, end_position) end

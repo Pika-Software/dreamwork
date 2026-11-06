@@ -71,8 +71,8 @@ function ipv4.fromOctets(a, b, c, d) end
 --- or if the prefix length is empty, contains invalid characters or is greater than `32`.
 ---
 ---@param ipv4_str string The IPv4 address string to parse.
----@param start_position? integer The start position in the ipv4 string.
----@param end_position? integer The end position in the ipv4 string.
+---@param start_position integer? The start position in the ipv4 string.
+---@param end_position integer? The end position in the ipv4 string.
 ---@return IPv4 ip_address The parsed IP address.
 ---@return integer prefix_length The CIDR prefix length. <0-32>, `32` if not specified.
 ---@nodiscard

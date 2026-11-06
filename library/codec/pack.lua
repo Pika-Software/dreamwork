@@ -36,7 +36,7 @@ pack = {}
 --- Valid values without loss of precision: `0` - `255`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 1-byte integer.
 ---@nodiscard
 function pack.readUInt8(str, index) end
@@ -59,7 +59,7 @@ function pack.writeUInt8(value) end
 --- Valid values without loss of precision: `-128` - `127`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 1-byte integer.
 ---@nodiscard
 function pack.readInt8(str, index) end
@@ -82,7 +82,7 @@ function pack.writeInt8(value) end
 --- Valid values without loss of precision: `0` - `65535`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 2-byte integer.
 ---@nodiscard
 function pack.readUInt16BE(str, index) end
@@ -105,7 +105,7 @@ function pack.writeUInt16BE(value) end
 --- Valid values without loss of precision: `-32768` - `32767`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 2-byte integer.
 ---@nodiscard
 function pack.readInt16BE(str, index) end
@@ -128,7 +128,7 @@ function pack.writeInt16BE(value) end
 --- Valid values without loss of precision: `0` - `65535`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 2-byte integer.
 ---@nodiscard
 function pack.readUInt16LE(str, index) end
@@ -151,7 +151,7 @@ function pack.writeUInt16LE(value) end
 --- Valid values without loss of precision: `-32768` - `32767`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 2-byte integer.
 ---@nodiscard
 function pack.readInt16LE(str, index) end
@@ -174,7 +174,7 @@ function pack.writeInt16LE(value) end
 --- Valid values without loss of precision: `0` - `16777215`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 3-byte integer.
 ---@nodiscard
 function pack.readUInt24BE(str, index) end
@@ -197,7 +197,7 @@ function pack.writeUInt24BE(value) end
 --- Valid values without loss of precision: `-8388608` - `8388607`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 3-byte integer.
 ---@nodiscard
 function pack.readInt24BE(str, index) end
@@ -220,7 +220,7 @@ function pack.writeInt24BE(value) end
 --- Valid values without loss of precision: `0` - `16777215`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 3-byte integer.
 ---@nodiscard
 function pack.readUInt24LE(str, index) end
@@ -243,7 +243,7 @@ function pack.writeUInt24LE(value) end
 --- Valid values without loss of precision: `-8388608` - `8388607`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 3-byte integer.
 ---@nodiscard
 function pack.readInt24LE(str, index) end
@@ -266,7 +266,7 @@ function pack.writeInt24LE(value) end
 --- Valid values without loss of precision: `0` - `4294967295`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 4-byte integer.
 ---@nodiscard
 function pack.readUInt32BE(str, index) end
@@ -289,7 +289,7 @@ function pack.writeUInt32BE(value) end
 --- Valid values without loss of precision: `-2147483648` - `2147483647`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 4-byte integer.
 ---@nodiscard
 function pack.readInt32BE(str, index) end
@@ -312,7 +312,7 @@ function pack.writeInt32BE(value) end
 --- Valid values without loss of precision: `0` - `4294967295`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 4-byte integer.
 ---@nodiscard
 function pack.readUInt32LE(str, index) end
@@ -335,7 +335,7 @@ function pack.writeUInt32LE(value) end
 --- Valid values without loss of precision: `-2147483648` - `2147483647`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 4-byte integer.
 ---@nodiscard
 function pack.readInt32LE(str, index) end
@@ -358,7 +358,7 @@ function pack.writeInt32LE(value) end
 --- Valid values without loss of precision: `0` - `1099511627775`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 5-byte integer.
 ---@nodiscard
 function pack.readUInt40BE(str, index) end
@@ -381,7 +381,7 @@ function pack.writeUInt40BE(value) end
 --- Valid values without loss of precision: `-549755813888` - `549755813887`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 5-byte integer.
 ---@nodiscard
 function pack.readInt40BE(str, index) end
@@ -404,7 +404,7 @@ function pack.writeInt40BE(value) end
 --- Valid values without loss of precision: `0` - `1099511627775`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 5-byte integer.
 ---@nodiscard
 function pack.readUInt40LE(str, index) end
@@ -427,7 +427,7 @@ function pack.writeUInt40LE(value) end
 --- Valid values without loss of precision: `-549755813888` - `549755813887`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 5-byte integer.
 ---@nodiscard
 function pack.readInt40LE(str, index) end
@@ -450,7 +450,7 @@ function pack.writeInt40LE(value) end
 --- Valid values without loss of precision: `0` - `281474976710655`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 6-byte integer.
 ---@nodiscard
 function pack.readUInt48BE(str, index) end
@@ -473,7 +473,7 @@ function pack.writeUInt48BE(value) end
 --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 6-byte integer.
 ---@nodiscard
 function pack.readInt48BE(str, index) end
@@ -496,7 +496,7 @@ function pack.writeInt48BE(value) end
 --- Valid values without loss of precision: `0` - `281474976710655`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 6-byte integer.
 ---@nodiscard
 function pack.readUInt48LE(str, index) end
@@ -519,7 +519,7 @@ function pack.writeUInt48LE(value) end
 --- Valid values without loss of precision: `-140737488355328` - `140737488355327`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 6-byte integer.
 ---@nodiscard
 function pack.readInt48LE(str, index) end
@@ -544,7 +544,7 @@ function pack.writeInt48LE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 7-byte integer.
 ---@nodiscard
 function pack.readUInt56BE(str, index) end
@@ -569,7 +569,7 @@ function pack.writeUInt56BE(value) end
 --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 7-byte integer.
 ---@nodiscard
 function pack.readInt56BE(str, index) end
@@ -594,7 +594,7 @@ function pack.writeInt56BE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 7-byte integer.
 ---@nodiscard
 function pack.readUInt56LE(str, index) end
@@ -619,7 +619,7 @@ function pack.writeUInt56LE(value) end
 --- Valid values without loss of precision: `-36028797018963968` - `36028797018963967`
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 7-byte integer.
 ---@nodiscard
 function pack.readInt56LE(str, index) end
@@ -644,7 +644,7 @@ function pack.writeInt56LE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 8-byte integer.
 ---@nodiscard
 function pack.readUInt64BE(str, index) end
@@ -671,7 +671,7 @@ function pack.writeUInt64BE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 8-byte integer.
 ---@nodiscard
 function pack.readInt64BE(str, index) end
@@ -698,7 +698,7 @@ function pack.writeInt64BE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The unsigned 8-byte integer.
 ---@nodiscard
 function pack.readUInt64LE(str, index) end
@@ -725,7 +725,7 @@ function pack.writeUInt64LE(value) end
 --- All values above will have problems when working with them.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer value The signed 8-byte integer.
 ---@nodiscard
 function pack.readInt64LE(str, index) end
@@ -748,7 +748,7 @@ function pack.writeInt64LE(value) end
 --- Reads single precision (4-byte, 32 bit) floating point number from big endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return number value The floating point number.
 ---@nodiscard
 function pack.readFloatBE(str, index) end
@@ -767,7 +767,7 @@ function pack.writeFloatBE(value) end
 --- Reads single precision (4-byte, 32 bit) floating point number from little endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return number value The floating point number.
 ---@nodiscard
 function pack.readFloatLE(str, index) end
@@ -786,7 +786,7 @@ function pack.writeFloatLE(value) end
 --- Reads double precision (8-byte, 64 bit) floating point number from big endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return number value The floating point number.
 ---@nodiscard
 function pack.readDoubleBE(str, index) end
@@ -805,7 +805,7 @@ function pack.writeDoubleBE(value) end
 --- Reads double precision (8-byte, 64 bit) floating point number from little endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return number value The floating point number.
 ---@nodiscard
 function pack.readDoubleLE(str, index) end
@@ -824,7 +824,7 @@ function pack.writeDoubleLE(value) end
 --- Reads 2-byte (16 bit) DOS time from big endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer hours The number of hours.
 ---@return integer minutes The number of minutes.
 ---@return integer seconds The number of seconds, **will be rounded**.
@@ -836,7 +836,7 @@ function pack.readTimeBE(str, index) end
 --- Reads 2-byte (16 bit) DOS time from little endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer hours The number of hours.
 ---@return integer minutes The number of minutes.
 ---@return integer seconds The number of seconds, **will be rounded**.
@@ -847,9 +847,9 @@ function pack.readTimeLE(str, index) end
 ---
 --- Writes 2-byte (16 bit) DOS time as big endian bytes.
 ---
----@param hours? integer The number of hours.
----@param minutes? integer The number of minutes.
----@param seconds? integer The number of seconds, **will be rounded**.
+---@param hours integer? The number of hours.
+---@param minutes integer? The number of minutes.
+---@param seconds integer? The number of seconds, **will be rounded**.
 ---@return string data The 2-byte string.
 ---@nodiscard
 function pack.writeTimeBE(hours, minutes, seconds) end
@@ -858,9 +858,9 @@ function pack.writeTimeBE(hours, minutes, seconds) end
 ---
 --- Writes 2-byte (16 bit) DOS time as little endian bytes.
 ---
----@param hours? integer The number of hours.
----@param minutes? integer The number of minutes.
----@param seconds? integer The number of seconds, **will be rounded**.
+---@param hours integer? The number of hours.
+---@param minutes integer? The number of minutes.
+---@param seconds integer? The number of seconds, **will be rounded**.
 ---@return string data The 2-byte string.
 ---@nodiscard
 function pack.writeTimeLE(hours, minutes, seconds) end
@@ -870,7 +870,7 @@ function pack.writeTimeLE(hours, minutes, seconds) end
 --- Reads 2-byte (16 bit) DOS date from big endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer day The day.
 ---@return integer month The month.
 ---@return integer year The year.
@@ -882,7 +882,7 @@ function pack.readDateBE(str, index) end
 --- Reads 2-byte (16 bit) DOS date from little endian bytes of the string.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return integer day The day.
 ---@return integer month The month.
 ---@return integer year The year.
@@ -893,9 +893,9 @@ function pack.readDateLE(str, index) end
 ---
 --- Writes 2-byte (16 bit) DOS date as big endian bytes.
 ---
----@param day? integer The day.
----@param month? integer The month.
----@param year? integer The year.
+---@param day integer? The day.
+---@param month integer? The month.
+---@param year integer? The year.
 ---@return string data The 2-byte string.
 ---@nodiscard
 function pack.writeDateBE(day, month, year) end
@@ -904,9 +904,9 @@ function pack.writeDateBE(day, month, year) end
 ---
 --- Writes 2-byte (16 bit) DOS date as little endian bytes.
 ---
----@param day? integer The day.
----@param month? integer The month.
----@param year? integer The year.
+---@param day integer? The day.
+---@param month integer? The month.
+---@param year integer? The year.
 ---@return string data The 2-byte string.
 ---@nodiscard
 function pack.writeDateLE(day, month, year) end
@@ -916,8 +916,8 @@ function pack.writeDateLE(day, month, year) end
 --- Reads the string of a fixed size.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
----@param length? integer The size of the string in bytes, the rest of the data by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
+---@param length integer? The size of the string in bytes, the rest of the data by default.
 ---@return string data The string.
 ---@nodiscard
 function pack.readFixedString(str, index, length) end
@@ -947,7 +947,7 @@ function pack.writeFixedString(data, length) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@param terminator integer The terminator byte (`0` - `255`).
 ---@return string data The bytes before the terminator.
 ---@return integer data_length The number of bytes read, including the terminator if it was found.
@@ -972,7 +972,7 @@ function pack.writeTerminatedString(data, terminator) end
 --- Reads C-style string, the null terminator (`\0`) is required.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return string data The bytes before the null terminator.
 ---@return integer data_length The number of bytes read, including the null terminator.
 ---@nodiscard
@@ -995,7 +995,7 @@ function pack.writeNullTerminatedString(data) end
 --- or the rest of the data if there is no `\n`.
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte (`1`-based), `1` by default.
+---@param index integer? The index of the first byte (`1`-based), `1` by default.
 ---@return string line The line without `\r\n` or `\n`.
 ---@return integer data_length The number of bytes read, including `\r\n` or `\n`.
 ---@nodiscard
@@ -1021,9 +1021,9 @@ function pack.writeLineTerminatedString(data) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param index? integer The index of the first byte of the length (`1`-based), `1` by default.
+---@param index integer? The index of the first byte of the length (`1`-based), `1` by default.
 ---@param length_size integer The size of the length in bytes (`1` - `8`).
----@param is_little_endian? boolean `true` if the length is little endian, `false` by default.
+---@param is_little_endian boolean? `true` if the length is little endian, `false` by default.
 ---@return string data The string.
 ---@return integer data_length The number of bytes read, including the length.
 ---@nodiscard
@@ -1041,7 +1041,7 @@ function pack.readCountedString(str, index, length_size, is_little_endian) end
 ---
 ---@param data string The string to write.
 ---@param length_size integer The size of the length in bytes (`1` - `8`).
----@param is_little_endian? boolean `true` to write the length as little endian, `false` by default.
+---@param is_little_endian boolean? `true` to write the length as little endian, `false` by default.
 ---@return string data The counted string.
 ---@nodiscard
 function pack.writeCountedString(data, length_size, is_little_endian) end
@@ -1055,7 +1055,7 @@ function pack.writeCountedString(data, length_size, is_little_endian) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the bit (`0`-based), `0` by default.
 ---@return 0 | 1 value The bit.
 ---@nodiscard
 function pack.readBit(str, bit_position) end
@@ -1065,7 +1065,7 @@ function pack.readBit(str, bit_position) end
 --- Reads one bit from the string as a boolean, same as `net.ReadBool`.
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the bit (`0`-based), `0` by default.
 ---@return boolean value `true` if the bit is `1`.
 ---@nodiscard
 function pack.readBoolean(str, bit_position) end
@@ -1079,7 +1079,7 @@ function pack.readBoolean(str, bit_position) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the first bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the first bit (`0`-based), `0` by default.
 ---@param byte_count integer The number of bytes to read.
 ---@return integer ... The bytes.
 ---@nodiscard
@@ -1102,9 +1102,9 @@ function pack.readBytes(str, bit_position, byte_count) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the first bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the first bit (`0`-based), `0` by default.
 ---@param bit_count integer The size of the integer in bits (`1` - `64`).
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer value The unsigned integer.
 ---@nodiscard
 function pack.readUInt(str, bit_position, bit_count, is_little_endian) end
@@ -1122,9 +1122,9 @@ function pack.readUInt(str, bit_position, bit_count, is_little_endian) end
 --- ```
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the first bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the first bit (`0`-based), `0` by default.
 ---@param bit_count integer The size of the integer in bits (`1` - `64`).
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer value The signed integer.
 ---@nodiscard
 function pack.readInt(str, bit_position, bit_count, is_little_endian) end
@@ -1134,10 +1134,10 @@ function pack.readInt(str, bit_position, bit_count, is_little_endian) end
 --- Reads unsigned fixed-point number (`m` integer bits and `n` fractional bits) from any bit position of the string.
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the first bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the first bit (`0`-based), `0` by default.
 ---@param m integer The number of integer bits.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return number value The unsigned fixed-point number.
 ---@nodiscard
 function pack.readUnsignedFixedPoint(str, bit_position, m, n, is_little_endian) end
@@ -1148,10 +1148,10 @@ function pack.readUnsignedFixedPoint(str, bit_position, m, n, is_little_endian) 
 --- from any bit position of the string.
 ---
 ---@param str string The string to read from.
----@param bit_position? integer The position of the first bit (`0`-based), `0` by default.
+---@param bit_position integer? The position of the first bit (`0`-based), `0` by default.
 ---@param m integer The number of integer bits, including the sign bit.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return number value The signed fixed-point number.
 ---@nodiscard
 function pack.readFixedPoint(str, bit_position, m, n, is_little_endian) end

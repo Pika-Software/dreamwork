@@ -86,8 +86,8 @@ function __BinaryReader:open(data) end
 --- reader:seek( -1, true ) --> the last byte
 --- ```
 ---
----@param position? integer The new position, negative positions count back from the end, `0` by default.
----@param as_bytes? boolean `true` if `position` is in bytes, `false` (bits) by default.
+---@param position integer? The new position, negative positions count back from the end, `0` by default.
+---@param as_bytes boolean? `true` if `position` is in bytes, `false` (bits) by default.
 ---@return integer position The new position in bits.
 function __BinaryReader:seek(position, as_bytes) end
 
@@ -95,7 +95,7 @@ function __BinaryReader:seek(position, as_bytes) end
 ---
 --- Returns the cursor position.
 ---
----@param as_bytes? boolean `true` to return the number of whole bytes before the cursor, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the number of whole bytes before the cursor, `false` (bits) by default.
 ---@return integer position The cursor position.
 ---@nodiscard
 function __BinaryReader:tell(as_bytes) end
@@ -104,7 +104,7 @@ function __BinaryReader:tell(as_bytes) end
 ---
 --- Returns the size of the data.
 ---
----@param as_bytes? boolean `true` to return the size in bytes, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the size in bytes, `false` (bits) by default.
 ---@return integer size The size of the data.
 ---@nodiscard
 function __BinaryReader:size(as_bytes) end
@@ -113,8 +113,8 @@ function __BinaryReader:size(as_bytes) end
 ---
 --- Moves the cursor relative to its position, clamped to the data.
 ---
----@param length? integer The distance to move, negative to move back, `1` by default.
----@param as_bytes? boolean `true` if `length` is in bytes, `false` (bits) by default.
+---@param length integer? The distance to move, negative to move back, `1` by default.
+---@param as_bytes boolean? `true` if `length` is in bytes, `false` (bits) by default.
 ---@return integer position The new position in bits.
 function __BinaryReader:skip(length, as_bytes) end
 
@@ -127,7 +127,7 @@ function __BinaryReader:skip(length, as_bytes) end
 --- reader:align() --> 8
 --- ```
 ---
----@param bit_boundary? integer The boundary in bits, `8` (byte) by default.
+---@param bit_boundary integer? The boundary in bits, `8` (byte) by default.
 ---@return integer position The new position in bits.
 function __BinaryReader:align(bit_boundary) end
 
@@ -135,7 +135,7 @@ function __BinaryReader:align(bit_boundary) end
 ---
 --- Checks if the cursor is at a multiple of `bit_boundary`.
 ---
----@param bit_boundary? integer The boundary in bits, `8` (byte) by default.
+---@param bit_boundary integer? The boundary in bits, `8` (byte) by default.
 ---@return boolean is_aligned `true` if the cursor is aligned.
 ---@nodiscard
 function __BinaryReader:isAligned(bit_boundary) end
@@ -152,7 +152,7 @@ function __BinaryReader:isEndOfFile() end
 ---
 --- Returns the size of the data after the cursor.
 ---
----@param as_bytes? boolean `true` to return the number of whole bytes left, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the number of whole bytes left, `false` (bits) by default.
 ---@return integer remaining The size of the data left to read.
 ---@nodiscard
 function __BinaryReader:remaining(as_bytes) end
@@ -225,7 +225,7 @@ function __BinaryReader:readBoolean() end
 --- ```
 ---
 ---@param bit_count integer The size of the integer in bits (`1` - `64`), `0` reads nothing and returns `0`.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer value The unsigned integer.
 ---@nodiscard
 function __BinaryReader:readUInt(bit_count, is_little_endian) end
@@ -277,7 +277,7 @@ function __BinaryReader:readUInt(bit_count, is_little_endian) end
 --- all values above will have problems when working with them.
 ---
 ---@param bit_count integer The size of the integer in bits (`1` - `64`), `0` reads nothing and returns `0`.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer value The signed integer.
 ---@nodiscard
 function __BinaryReader:readInt(bit_count, is_little_endian) end
@@ -288,7 +288,7 @@ function __BinaryReader:readInt(bit_count, is_little_endian) end
 ---
 --- Every byte is a separate return value, so use `read` for large amounts of data.
 ---
----@param byte_count? integer The number of bytes, all whole bytes left by default.
+---@param byte_count integer? The number of bytes, all whole bytes left by default.
 ---@return integer ... The bytes.
 ---@nodiscard
 function __BinaryReader:readBytes(byte_count) end
@@ -297,7 +297,7 @@ function __BinaryReader:readBytes(byte_count) end
 ---
 --- Reads bytes as a string, the cursor doesn't have to be aligned.
 ---
----@param byte_count? integer The number of bytes, all whole bytes left by default.
+---@param byte_count integer? The number of bytes, all whole bytes left by default.
 ---@return string data The bytes.
 ---@nodiscard
 function __BinaryReader:read(byte_count) end
@@ -353,7 +353,7 @@ function __BinaryReader:readLine() end
 --- Throws `EndOfFileError` if the string is cut, the cursor stays after the length in that case.
 ---
 ---@param bit_count integer The size of the length in bits (`1` - `64`).
----@param is_little_endian? boolean `true` if the length is little endian, `false` by default.
+---@param is_little_endian boolean? `true` if the length is little endian, `false` by default.
 ---@return string data The string.
 ---@return integer data_length The size of the string in bytes.
 ---@nodiscard
@@ -381,7 +381,7 @@ function __BinaryReader:readCountedString(bit_count, is_little_endian) end
 ---
 ---@param m integer The number of integer bits.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return number value The unsigned fixed-point number.
 ---@nodiscard
 function __BinaryReader:readUnsignedFixedPoint(m, n, is_little_endian) end
@@ -404,7 +404,7 @@ function __BinaryReader:readUnsignedFixedPoint(m, n, is_little_endian) end
 ---
 ---@param m integer The number of integer bits, including the sign bit.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return number value The signed fixed-point number.
 ---@nodiscard
 function __BinaryReader:readFixedPoint(m, n, is_little_endian) end
@@ -422,7 +422,7 @@ function __BinaryReader:readFixedPoint(m, n, is_little_endian) end
 ---
 --- Range: `1.1754944e-38` - `3.4028235e38` (normal), integers are exact up to `16777216`.
 ---
----@param is_little_endian? boolean `true` for little endian (as `net.ReadFloat`), `false` by default.
+---@param is_little_endian boolean? `true` for little endian (as `net.ReadFloat`), `false` by default.
 ---@return number value The float.
 ---@nodiscard
 function __BinaryReader:readFloat(is_little_endian) end
@@ -440,7 +440,7 @@ function __BinaryReader:readFloat(is_little_endian) end
 ---
 --- Range: `2.2250738585072014e-308` - `1.7976931348623157e308` (normal), Lua numbers are doubles, so nothing is lost.
 ---
----@param is_little_endian? boolean `true` for little endian (as `net.ReadDouble`), `false` by default.
+---@param is_little_endian boolean? `true` for little endian (as `net.ReadDouble`), `false` by default.
 ---@return number value The double.
 ---@nodiscard
 function __BinaryReader:readDouble(is_little_endian) end
@@ -456,7 +456,7 @@ function __BinaryReader:readDouble(is_little_endian) end
 --- | 10 - 5  | minutes     | `0` - `59`                      |
 --- | 4 - 0   | seconds / 2 | `0` - `29` (`0` - `58` seconds) |
 ---
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer hours The number of hours.
 ---@return integer minutes The number of minutes.
 ---@return integer seconds The number of seconds, always even.
@@ -474,7 +474,7 @@ function __BinaryReader:readTime(is_little_endian) end
 --- | 8 - 5  | month       | `1` - `12`                    |
 --- | 4 - 0  | day         | `1` - `31`                    |
 ---
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 ---@return integer day The day.
 ---@return integer month The month.
 ---@return integer year The year.

@@ -269,7 +269,7 @@ function unit.measures() end
 --- local all_units = unit.possibilities()                 -- every configured unit
 --- ```
 ---
----@param measure? unit.Measure Optional measure filter.
+---@param measure unit.Measure? Optional measure filter.
 ---@return unit.Type[] unit_types A new list of matching unit abbreviations (1-based, no `[0]` length slot).
 ---@return integer unit_count The number of matching unit abbreviations.
 ---@nodiscard

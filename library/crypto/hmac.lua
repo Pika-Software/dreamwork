@@ -43,8 +43,8 @@ function crypto.hmac.pads(key, block_size) end
 ---@param message string The message to compute hmac for.
 ---@param outer string The outer pad.
 ---@param inner string The inner pad.
----@param digest_fn fun( data: string, as_hex?: boolean ): string The hash function to use.
----@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
+---@param digest_fn fun( data: string, as_hex: boolean? ): string The hash function to use.
+---@param as_hex boolean? `true` if the result should be a hex string, `false` otherwise.
 ---@return string hmac_str The hmac string of the message.
 ---@nodiscard
 function crypto.hmac.digestWithPads(message, outer, inner, digest_fn, as_hex) end
@@ -55,9 +55,9 @@ function crypto.hmac.digestWithPads(message, outer, inner, digest_fn, as_hex) en
 ---
 ---@param message string The message to compute hmac for.
 ---@param key string The key to use.
----@param digest_fn fun( data: string, as_hex?: boolean ): string The hash function to use.
+---@param digest_fn fun( data: string, as_hex: boolean? ): string The hash function to use.
 ---@param block_size integer The block size of the hash function.
----@param as_hex? boolean `true` if the result should be a hex string, `false` otherwise.
+---@param as_hex boolean? `true` if the result should be a hex string, `false` otherwise.
 ---@return string hmac_str The hmac string of the message.
 ---@nodiscard
 function crypto.hmac.digest(message, key, digest_fn, block_size, as_hex) end
@@ -67,7 +67,7 @@ function crypto.hmac.digest(message, key, digest_fn, block_size, as_hex) end
 --- Returns a function that computes hmac using the given hash class.
 ---
 ---@param hash crypto.HashClass The hash class to use, e.g. `crypto.SHA256`.
----@return fun( message: string, key: string, as_hex?: boolean ): string
+---@return fun( message: string, key: string, as_hex: boolean? ): string
 ---@nodiscard
 function crypto.hmac.preset(hash) end
 

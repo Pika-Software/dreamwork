@@ -58,7 +58,7 @@ function __Queue:__serialize(writer, ...) end
 ---@generic T
 ---@param self Queue<T>
 ---@param reader BinaryReader The reader.
----@param value_class? Class The class of the values, can be omitted if every value is `nil`.
+---@param value_class Class? The class of the values, can be omitted if every value is `nil`.
 ---@param ... any The arguments passed to `__deserialize` of every value.
 ---@protected
 function __Queue:__deserialize(reader, value_class, ...) end
@@ -87,7 +87,7 @@ function __Queue:clear() end
 ---
 ---@generic T
 ---@param self Queue<T>
----@param from_tail? boolean If `true`, returns the value at the back of the queue.
+---@param from_tail boolean? If `true`, returns the value at the back of the queue.
 ---@return T | nil value The value at the front of the queue, or `nil` if the queue is empty.
 ---@nodiscard
 function __Queue:peek(from_tail) end
@@ -99,7 +99,7 @@ function __Queue:peek(from_tail) end
 ---@generic T
 ---@param self Queue<T>
 ---@param value T The value to append.
----@param to_head? boolean If `true`, appends the value to the front of the queue.
+---@param to_head boolean? If `true`, appends the value to the front of the queue.
 function __Queue:push(value, to_head) end
 
 --- [SHARED AND MENU]
@@ -108,7 +108,7 @@ function __Queue:push(value, to_head) end
 ---
 ---@generic T
 ---@param self Queue<T>
----@param from_tail? boolean If `true`, removes and returns the value at the front of the queue.
+---@param from_tail boolean? If `true`, removes and returns the value at the front of the queue.
 ---@return T | nil value The value at the back of the queue or the front if `from_tail` is `true`, or `nil` if the queue is empty.
 function __Queue:pop(from_tail) end
 
@@ -118,7 +118,7 @@ function __Queue:pop(from_tail) end
 ---
 ---@generic T
 ---@param self Queue<T>
----@param from_tail? boolean If `true`, returns an iterator for the back of the queue.
+---@param from_tail boolean? If `true`, returns an iterator for the back of the queue.
 ---@return fun( queue: Queue<T>, from_tail: boolean ): T iterator The iterator function.
 ---@return Queue<T> queue The queue being iterated over.
 ---@return boolean from_tail `true` if the iterator is for the back of the queue.

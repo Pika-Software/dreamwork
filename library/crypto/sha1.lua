@@ -36,7 +36,7 @@ local SHA1 = {}
 ---
 ---@class crypto.SHA1Class : crypto.SHA1, crypto.HashClass
 ---@field __base crypto.SHA1
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: crypto.SHA1
@@ -82,7 +82,7 @@ function SHA1:update(str) end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA1 string of the message.
 ---@nodiscard
 function SHA1:digest(as_hex) end
@@ -95,7 +95,7 @@ function SHA1:digest(as_hex) end
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute SHA1 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA1 string of the message.
 ---@nodiscard
 function crypto.SHA1.digest(message, as_hex) end

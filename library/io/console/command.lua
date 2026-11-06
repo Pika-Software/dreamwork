@@ -87,37 +87,31 @@ function Command:isBlacklisted() end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every execution of the command, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler console.Command.Callback
+---@param handler console.Command.Callback | Hook The callback or callable object.
 function Command:attach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next execution calls it.
 ---
----@param handler console.Command.Callback
+---@param handler console.Command.Callback | Hook The callback or callable object.
 function Command:once(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler console.Command.Callback
+---@param handler console.Command.Callback | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Command:detach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the command, pending handlers of a running execution are skipped.
 ---
 function Command:clear() end
 
@@ -125,5 +119,9 @@ function Command:clear() end
 ---
 --- Waits for the console command to be executed.
 ---
+---@return console.Command command
+---@return garrysmod.Player | nil client
+---@return string[] args
+---@return string argument_string
 ---@async
 function Command:await() end

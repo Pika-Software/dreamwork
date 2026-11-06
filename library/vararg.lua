@@ -70,8 +70,8 @@ function vararg.set(index, value, ...) end
 ---
 --- Positions outside the argument list are clamped to its bounds.
 ---
----@param start_position? integer The first position to include.
----@param end_position? integer The last position to include.
+---@param start_position integer? The first position to include.
+---@param end_position integer? The last position to include.
 ---@param ... any The argument list to slice.
 ---@return any ... The selected portion of the argument list.
 ---@nodiscard

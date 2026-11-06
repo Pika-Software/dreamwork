@@ -78,21 +78,24 @@ function __PixelMap:__index(key) end
 --- Attaches a handler that runs after this map's pixel values are refreshed
 --- on screen resize.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+--- Attaching the same handler twice is a no-op, handlers run in protected mode.
+---
+---@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook The callback or callable object.
 function __PixelMap:attach(handler) end
 
 --- [CLIENT AND MENU]
 ---
 --- Attaches a one-shot resize handler that detaches itself before running.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+---@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook The callback or callable object.
 function __PixelMap:once(handler) end
 
 --- [CLIENT AND MENU]
 ---
 --- Detaches a previously attached resize handler.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+---@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function __PixelMap:detach(handler) end
 
 --- [CLIENT AND MENU]

@@ -32,7 +32,7 @@
 ---
 ---@param tbl table The table to clean up.
 ---@param type_name gc.Type The type of objects used as keys in the table.
----@param instruction? gc.Instruction The function that maps the destroyed object to the key, by default the object itself is the key.
+---@param instruction gc.Instruction? The function that maps the destroyed object to the key, by default the object itself is the key.
 function gc.setup(tbl, type_name, instruction) end
 
 --- [SHARED]

@@ -92,6 +92,6 @@ function gc.getTableRules(tbl) end
 --- Sets the garbage-collector rules for the given table.
 ---
 ---@param tbl table The table to set the rules for.
----@param key? boolean `true` if key collection is allowed, `false` otherwise.
----@param value? boolean `true` if value collection is allowed, `false` otherwise.
+---@param key boolean? `true` if key collection is allowed, `false` otherwise.
+---@param value boolean? `true` if value collection is allowed, `false` otherwise.
 function gc.setTableRules(tbl, key, value) end

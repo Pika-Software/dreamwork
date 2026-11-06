@@ -74,8 +74,8 @@ function isObject(value) end
 --- and their data must be kept outside ( e.g. in a weak table ).
 ---
 ---@param name string The name of the class.
----@param private? boolean If `true`, objects will be `userdata` instead of `table`.
----@param parent? Class | unknown The parent class.
+---@param private boolean? If `true`, objects will be `userdata` instead of `table`.
+---@param parent ( Class | unknown )? The parent class.
 ---@return Object base The base of the class.
 ---@nodiscard
 function class.base(name, private, parent) end

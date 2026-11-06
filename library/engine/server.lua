@@ -149,8 +149,8 @@ function server.kill() end
 --- This message will be displayed in the console, chat or HUD.
 ---
 ---@param message string The message to print.
----@param in_chat? boolean `true` to print the message in chat, `false` to print it in the console only.
----@param in_hud? boolean `true` to print the message in the HUD (center of the screen), `false` to not print it.
+---@param in_chat boolean? `true` to print the message in chat, `false` to print it in the console only.
+---@param in_hud boolean? `true` to print the message in the HUD (center of the screen), `false` to not print it.
 function server.message(message, in_chat, in_hud) end
 
 ---@type fun( message: string )

@@ -16,7 +16,7 @@ local __Network = {}
 
 ---@class NetworkClass : Network, Class
 ---@field __base Network
----@overload fun( name: string, can_receive?: boolean ): Network
+---@overload fun( name: string, can_receive: boolean? ): Network
 Network = {}
 
 ---@alias Network.ReceiveFn fun( network: Network, reader: BinaryReader, sender: garrysmod.Player | nil )
@@ -30,7 +30,7 @@ Network = {}
 ---
 --- If the handler is already attached, it will not be attached twice.
 ---
----@param handler Network.ReceiveFn
+---@param handler Network.ReceiveFn | Hook The callback or callable object.
 function __Network:attach(handler) end
 
 --- [SHARED]
@@ -38,14 +38,15 @@ function __Network:attach(handler) end
 --- Attaches a handler that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler Network.ReceiveFn
+---@param handler Network.ReceiveFn | Hook The callback or callable object.
 function __Network:once(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached receive handler.
 ---
----@param handler Network.ReceiveFn
+---@param handler Network.ReceiveFn | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function __Network:detach(handler) end
 
 --- [SHARED]
@@ -75,28 +76,30 @@ function __Network:await() end
 ---
 --- If a network has only stream handlers, the received data is not kept in memory.
 ---
----@param handler Network.StreamFn
+---@param handler Network.StreamFn | Hook The callback or callable object.
 function __Network:stream(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached stream handler.
 ---
----@param handler Network.StreamFn
+---@param handler Network.StreamFn | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function __Network:unstream(handler) end
 
 --- [SHARED]
 ---
 --- Attaches a handler that is called on every transfer progress, both incoming and outgoing.
 ---
----@param handler Network.ProgressFn
+---@param handler Network.ProgressFn | Hook The callback or callable object.
 function __Network:watch(handler) end
 
 --- [SHARED]
 ---
 --- Detaches a previously attached progress handler.
 ---
----@param handler Network.ProgressFn
+---@param handler Network.ProgressFn | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function __Network:unwatch(handler) end
 
 ---@class Network.GameClient
@@ -181,7 +184,7 @@ function Network:__new(name) end
 function __Network:__represent() end
 
 ---@param name string
----@param can_receive? boolean
+---@param can_receive boolean?
 ---@protected
 function __Network:__init(name, can_receive) end
 
@@ -204,8 +207,8 @@ function __Network:__newindex(key, value) end
 --- If the target is already receiving a transmission from this network, the data is queued behind it.
 ---
 ---@param data string The data to send.
----@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
----@param callback? Network.FinishFn The callback that is called when the transmission is finished or failed.
+---@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param callback Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function __Network:send(data, target, callback) end
 
 --- [SHARED]
@@ -213,15 +216,15 @@ function __Network:send(data, target, callback) end
 --- Builds the data with a binary writer and sends it to the target.
 ---
 ---@param fn fun( network: Network, writer: BinaryWriter ) The function that writes the data.
----@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
----@param callback? Network.FinishFn The callback that is called when the transmission is finished or failed.
+---@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param callback Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function __Network:transmit(fn, target, callback) end
 
 --- [SHARED]
 ---
 --- Cancels the outgoing transmission to the target and all queued ones.
 ---
----@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
 ---@return boolean cancelled `true` if anything was cancelled.
 function __Network:abort(target) end
 
@@ -229,7 +232,7 @@ function __Network:abort(target) end
 ---
 --- Checks if the network is sending data to the target.
 ---
----@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
 ---@return boolean is_sending
 ---@nodiscard
 function __Network:isSending(target) end
@@ -238,7 +241,7 @@ function __Network:isSending(target) end
 ---
 --- Checks if the network is receiving data from the sender.
 ---
----@param sender? garrysmod.Player The sender player, required on the server, ignored on the client.
+---@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
 ---@return boolean is_receiving
 ---@nodiscard
 function __Network:isReceiving(sender) end

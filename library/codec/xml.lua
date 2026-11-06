@@ -201,7 +201,7 @@ function __XMLNode:remove(key) end
 ---
 --- Text of a text-only node is returned with an empty key `""`, text next to child nodes with key `1`, list items are returned one by one with the list key.
 ---
----@param key? string The key to iterate over, with dot-separated keys for nested values.
+---@param key string? The key to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | nil ), ( string | XMLNode ) ) fn The iterator function, which returns key-value pairs for the node at the given key.
 ---@nodiscard
 function __XMLNode:iterator(key) end
@@ -222,7 +222,7 @@ function __XMLNode:iterator(key) end
 --- end
 --- ```
 ---
----@param key? string The key of the node to iterate over, with dot-separated keys for nested values.
+---@param key string? The key of the node to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | integer | nil ), ( string | XMLNode ) ) fn The iterator function.
 ---@nodiscard
 function __XMLNode:children(key) end
@@ -233,9 +233,9 @@ function __XMLNode:children(key) end
 ---
 --- Children are written in document order, pretty formatting adds whitespace to the text, so use compact output for exact data.
 ---
----@param pretty? boolean Whether to use pretty formatting (indentation and newlines).
----@param name? string The name of the node.
----@param level? number The indentation level.
+---@param pretty boolean? Whether to use pretty formatting (indentation and newlines).
+---@param name string? The name of the node.
+---@param level number? The indentation level.
 ---@return string str The XML string representation of this node.
 ---@nodiscard
 function __XMLNode:toString(pretty, name, level) end
@@ -263,7 +263,7 @@ function __XMLNode:__represent() end
 --- Converts a table to an XML node structure.
 ---
 ---@param tbl table The table to convert to an XML node.
----@param name? string The name of the root node.
+---@param name string? The name of the root node.
 ---@return XMLNode root_node The root node of the XML tree.
 ---@nodiscard
 function XMLNode.fromTable(tbl, name) end
@@ -279,7 +279,7 @@ function XMLNode.fromTable(tbl, name) end
 --- Line breaks are normalized to `\n`, attribute values are normalized as XML requires, character references and entities declared in the internal DOCTYPE subset are decoded.
 ---
 ---@param xml_str string The XML string to parse.
----@param keep_whitespace? boolean Whether to keep all whitespace in text, defaults to `false`.
+---@param keep_whitespace boolean? Whether to keep all whitespace in text, defaults to `false`.
 ---@return XMLNode | nil root_node The root node, or `nil` if the string has no elements.
 ---@nodiscard
 function XMLNode.fromString(xml_str, keep_whitespace) end

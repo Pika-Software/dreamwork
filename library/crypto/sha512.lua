@@ -24,7 +24,7 @@ local SHA512 = {}
 ---
 ---@class crypto.SHA512Class : crypto.SHA512, crypto.HashClass
 ---@field __base crypto.SHA512
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: crypto.SHA512
@@ -72,7 +72,7 @@ function SHA512:update(str) end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA512 string of the message.
 ---@nodiscard
 function SHA512:digest(as_hex) end
@@ -85,7 +85,7 @@ function SHA512:digest(as_hex) end
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute SHA512 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA512 string of the message.
 ---@nodiscard
 function crypto.SHA512.digest(message, as_hex) end

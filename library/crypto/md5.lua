@@ -35,7 +35,7 @@ local MD5 = {}
 ---
 ---@class crypto.MD5Class : crypto.MD5, crypto.HashClass
 ---@field __base crypto.MD5
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: crypto.MD5
@@ -81,7 +81,7 @@ function MD5:update(str) end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The MD5 string of the message.
 ---@nodiscard
 function MD5:digest(as_hex) end
@@ -94,7 +94,7 @@ function MD5:digest(as_hex) end
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute MD5 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The MD5 string of the message.
 ---@nodiscard
 function crypto.MD5.digest(message, as_hex) end

@@ -385,7 +385,7 @@ function bit.maj(a, b, c) end
 ---
 ---@generic T: integer | { __le: function, __sub: function }
 ---@param x T The integer to get the sign of.
----@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@param bit_count integer? The amount of bits to unsign to, `32` by default.
 ---@return T result The sign of the integer: 1 for positive, 0 for zero, -1 for negative.
 ---@nodiscard
 function bit.sign(x, bit_count) end
@@ -396,7 +396,7 @@ function bit.sign(x, bit_count) end
 ---
 ---@generic T: integer | { __lt: function, __add: function }
 ---@param x T The integer to get the unsigned value of.
----@param bit_count? integer The amount of bits to unsign to, `32` by default.
+---@param bit_count integer? The amount of bits to unsign to, `32` by default.
 ---@return T result The unsigned value of the integer.
 ---@nodiscard
 function bit.unsign(x, bit_count) end

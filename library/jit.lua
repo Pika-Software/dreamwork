@@ -63,7 +63,7 @@ jit.options = debug.fempty
 --- For C functions returns `jit.funcinfo.c` (address, upvalues count and `ffid` for builtin fast functions).
 ---
 ---@param location function | integer The function or the stack level to get the main function from.
----@param position? integer The bytecode position (program counter) inside the function.
+---@param position integer? The bytecode position (program counter) inside the function.
 ---@return jit.funcinfo.c | jit.funcinfo.lua info The function information.
 ---@nodiscard
 function jit.getfinfo(location, position) end

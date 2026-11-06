@@ -49,7 +49,7 @@ function CookieJar:__represent() end
 --- Without `url` the first not expired cookie with this name is returned.
 ---
 ---@param name string The cookie name.
----@param url? string | URL The URL the cookie would be sent to.
+---@param url ( string | URL )? The URL the cookie would be sent to.
 ---@return http.Cookie | nil cookie The cookie, or `nil` if there is none.
 ---@nodiscard
 function CookieJar:get(name, url) end
@@ -75,14 +75,14 @@ function CookieJar:set(name, value, options) end
 --- Removes every cookie with the given name, only from `domain` if it is given.
 ---
 ---@param name string The cookie name.
----@param domain? string The domain to remove the cookie from.
+---@param domain string? The domain to remove the cookie from.
 function CookieJar:delete(name, domain) end
 
 --- [SHARED AND MENU]
 ---
 --- Removes every cookie, or only the session ones (without `expires`).
 ---
----@param session_only? boolean If `true`, only session cookies are removed.
+---@param session_only boolean? If `true`, only session cookies are removed.
 function CookieJar:clear(session_only) end
 
 --- [SHARED AND MENU]

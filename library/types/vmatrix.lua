@@ -552,7 +552,7 @@ function __VMatrix:setScale(vector) end
 ---
 --- Same as `VMatrix:IsRotationMatrix` in Garry's Mod, translation is ignored.
 ---
----@param tolerance? number The tolerance, defaults to `1e-3`.
+---@param tolerance number? The tolerance, defaults to `1e-3`.
 ---@return boolean is_rotation_matrix `true` if the matrix is a rotation matrix, `false` otherwise.
 ---@nodiscard
 function __VMatrix:isRotationMatrix(tolerance) end
@@ -573,7 +573,7 @@ function __VMatrix:toQuaternion() end
 ---
 ---@param t number The interpolation factor for translation, scale and the fourth row, `0` keeps the matrix, `1` sets it to the target.
 ---@param target VMatrix The target matrix.
----@param t_angle? number The interpolation factor for rotation, defaults to `t`.
+---@param t_angle number? The interpolation factor for rotation, defaults to `t`.
 ---@return VMatrix matrix The same matrix, interpolated.
 function __VMatrix:lerp(t, target, t_angle) end
 
@@ -584,7 +584,7 @@ function __VMatrix:lerp(t, target, t_angle) end
 --- Same as `AngleMatrix` in Source engine.
 ---
 ---@param angle Angle3 The angle.
----@param translation? Vector3 The translation, defaults to `( 0, 0, 0 )`.
+---@param translation Vector3? The translation, defaults to `( 0, 0, 0 )`.
 ---@return VMatrix matrix The new matrix.
 ---@nodiscard
 function VMatrix.fromAngle3(angle, translation) end
@@ -596,7 +596,7 @@ function VMatrix.fromAngle3(angle, translation) end
 --- Same as `QuaternionMatrix` in Source engine, works with non-unit quaternions.
 ---
 ---@param quaternion Quaternion The quaternion.
----@param translation? Vector3 The translation, defaults to `( 0, 0, 0 )`.
+---@param translation Vector3? The translation, defaults to `( 0, 0, 0 )`.
 ---@return VMatrix matrix The new matrix.
 ---@nodiscard
 function VMatrix.fromQuaternion(quaternion, translation) end

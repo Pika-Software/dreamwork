@@ -17,7 +17,7 @@ level = {}
 --- Checks if a map/level exists.
 ---
 ---@param name string The map/level name in maps/*.bsp folder.
----@param gamePath? string An optional argument specifying the search location, as an example for addon searches.
+---@param gamePath string? An optional argument specifying the search location, as an example for addon searches.
 ---@return boolean
 ---@nodiscard
 function level.exists(name, gamePath) end

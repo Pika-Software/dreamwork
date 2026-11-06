@@ -51,7 +51,7 @@ function sqlite.rawQuery(query_str) end
 --- ```
 ---
 ---@param kind_name string The name of the schema object.
----@param kind_type? sqlite.ObjectType The type of the schema object, any type if `nil`.
+---@param kind_type sqlite.ObjectType? The type of the schema object, any type if `nil`.
 ---@return boolean is_exists `true` if a schema object with the given name ( and type ) exists, `false` otherwise.
 ---@nodiscard
 function sqlite.isExists(kind_name, kind_type) end

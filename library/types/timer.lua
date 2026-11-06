@@ -9,7 +9,7 @@
 ---
 --- The timer object.
 ---
----@class Timer : Hook
+---@class Timer : Object
 ---@field __class TimerClass
 ---@field name string The internal name of the timer. **Read-only.**
 ---@field state Timer.state The current state of the timer. **Read-only.**
@@ -70,44 +70,39 @@ function __Timer:isRunning() end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every run of the timer, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler fun( timer: Timer )
+---@param handler fun( timer: Timer ) | Hook The callback or callable object.
 function __Timer:attach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next run of the timer calls it.
 ---
----@param handler fun( timer: Timer )
+---@param handler fun( timer: Timer ) | Hook The callback or callable object.
 function __Timer:once(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( timer: Timer )
+---@param handler fun( timer: Timer ) | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function __Timer:detach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the timer, pending handlers of a running call are skipped.
 ---
 function __Timer:clear() end
 
 --- [SHARED AND MENU]
 ---
---- Waits for the next call of the timer.
+--- Waits for the next run of the timer.
 ---
+---@return Timer timer
 ---@async
 function __Timer:await() end
 

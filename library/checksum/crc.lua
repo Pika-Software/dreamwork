@@ -20,11 +20,11 @@ local __CRC8 = {}
 
 __CRC8.DigestSize = 1
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function __CRC8:__init(poly, init, ref_in, ref_out, xor_out) end
 
@@ -61,7 +61,7 @@ function __CRC8:digest() end
 ---
 ---@class checksum.CRC8Class : checksum.CRC8, Class
 ---@field __base checksum.CRC8
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC8
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): checksum.CRC8
 CRC8 = {}
 
 --- [SHARED AND MENU]
@@ -69,11 +69,11 @@ CRC8 = {}
 --- Calculates the CRC-8 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value of checksum.
----@param ref_in? boolean `true` if input checksum is reversed, otherwise `false`.
----@param ref_out? boolean `true` if output checksum is reversed, otherwise `false`.
----@param xor_out? integer The value to be XORed with output checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value of checksum.
+---@param ref_in boolean? `true` if input checksum is reversed, otherwise `false`.
+---@param ref_out boolean? `true` if output checksum is reversed, otherwise `false`.
+---@param xor_out integer? The value to be XORed with output checksum.
 ---@return integer checksum The CRC-8 checksum, which is greater or equal to 0, and less than 2^8 (0x100).
 ---@nodiscard
 function CRC8.digest(raw_str, poly, init, ref_in, ref_out, xor_out) end
@@ -114,11 +114,11 @@ local __CRC16 = {}
 
 __CRC16.DigestSize = 2
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function __CRC16:__init(poly, init, ref_in, ref_out, xor_out) end
 
@@ -149,7 +149,7 @@ function __CRC16:digest() end
 ---@class checksum.CRC16Class : checksum.CRC16, checksum.CRC8Class
 ---@field __parent checksum.CRC8Class
 ---@field __base checksum.CRC16
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC16
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): checksum.CRC16
 CRC16 = {}
 
 CRC16.ROHC = nil
@@ -161,11 +161,11 @@ CRC16.CDMA2000 = nil
 --- Calculates the CRC-16 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value is used to calculate checksum.
----@param ref_in? boolean Whether to reflect the input data before processing.
----@param ref_out? boolean Whether to reflect the output data after processing.
----@param xor_out? integer The XOR value is used to calculate checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value is used to calculate checksum.
+---@param ref_in boolean? Whether to reflect the input data before processing.
+---@param ref_out boolean? Whether to reflect the output data after processing.
+---@param xor_out integer? The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-16 checksum, which is greater or equal to 0, and less than 2^16 (0x10000).
 ---@nodiscard
 function CRC16.digest(raw_str, poly, init, ref_in, ref_out, xor_out) end
@@ -206,11 +206,11 @@ local __CRC32 = {}
 
 __CRC32.DigestSize = 4
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function __CRC32:__init(poly, init, ref_in, ref_out, xor_out) end
 
@@ -241,7 +241,7 @@ function __CRC32:digest() end
 ---@class checksum.CRC32Class : checksum.CRC32, checksum.CRC16Class
 ---@field __parent checksum.CRC16Class
 ---@field __base checksum.CRC32
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): checksum.CRC32
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): checksum.CRC32
 CRC32 = {}
 
 CRC32.MAXIM = nil
@@ -255,11 +255,11 @@ CRC32.USB = nil
 --- Calculates the CRC-32 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value is used to calculate checksum.
----@param ref_in? boolean Whether to reflect the input data before processing.
----@param ref_out? boolean Whether to reflect the output data after processing.
----@param xor_out? integer The XOR value is used to calculate checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value is used to calculate checksum.
+---@param ref_in boolean? Whether to reflect the input data before processing.
+---@param ref_out boolean? Whether to reflect the output data after processing.
+---@param xor_out integer? The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
 ---@nodiscard
 function CRC32.digest(raw_str, poly, init, ref_in, ref_out, xor_out) end

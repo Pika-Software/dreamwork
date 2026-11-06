@@ -12,8 +12,8 @@ raw.bit = {}
 ---@field bshift fun( x: integer, disp: integer ): integer
 ---@field brotate fun( x: integer, disp: integer ): integer
 ---@field btest fun( x: integer, ...: integer ): boolean
----@field extract fun( x: integer, field: integer, width?: integer ): integer
----@field replace fun( x: integer, extract: integer, field: integer, width?: integer ): integer
+---@field extract fun( x: integer, field: integer, width: integer? ): integer
+---@field replace fun( x: integer, extract: integer, field: integer, width: integer? ): integer
 local glua_bit = {}
 
 --- [SHARED AND MENU]
@@ -261,7 +261,7 @@ function raw.bit.reverse(x, bit_count) end
 ---
 ---@generic T: integer | ffi.cdata*
 ---@param x T The unsigned integer to convert.
----@param bit_count? integer The bit width of the integer, `32` by default.
+---@param bit_count integer? The bit width of the integer, `32` by default.
 ---@return T result The signed value of the integer.
 ---@nodiscard
 function raw.bit.sign(x, bit_count) end
@@ -279,7 +279,7 @@ function raw.bit.sign(x, bit_count) end
 ---
 ---@generic T: integer | ffi.cdata*
 ---@param x T The signed integer to convert.
----@param bit_count? integer The bit width of the integer, `32` by default.
+---@param bit_count integer? The bit width of the integer, `32` by default.
 ---@return T result The unsigned value of the integer.
 ---@nodiscard
 function raw.bit.unsign(x, bit_count) end

@@ -63,7 +63,7 @@ function __Error:reset() end
 ---
 --- Hidden frames are left out, the same way `error` captures them.
 ---
----@param stack_level? integer The level of the first captured frame, `1` (the caller) by default.
+---@param stack_level integer? The level of the first captured frame, `1` (the caller) by default.
 function __Error:capture(stack_level) end
 
 --- [SHARED AND MENU]
@@ -123,7 +123,7 @@ RuntimeError = {}
 --- Can be passed to `xpcall` directly as a message handler.
 ---
 ---@param error_value any The error value to convert.
----@param error_class? ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+---@param error_class ErrorClass? The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
 ---@return Error error_object
 ---@nodiscard
 function toError(error_value, error_class) end
@@ -190,8 +190,8 @@ function try(fn, ...) end
 ---
 --- Displays the error with its call stack without throwing it, the current code keeps running.
 ---
----@param value? any The error value to display.
----@param stack_level? integer The stack level the error is blamed on.
+---@param value any? The error value to display.
+---@param stack_level integer? The stack level the error is blamed on.
 ---@return Error error_object The displayed error.
 function warn(value, stack_level) end
 
@@ -206,8 +206,8 @@ function warn(value, stack_level) end
 --- Values that are neither errors nor strings (signals like `ACTION_CANCEL`) are thrown as is
 --- inside protected calls and coroutines, so they keep their identity.
 ---
----@param value? any The error value to throw.
----@param stack_level? integer The stack level to throw the error.
+---@param value any? The error value to throw.
+---@param stack_level integer? The stack level to throw the error.
 function error(value, stack_level) end
 
 --- [SHARED AND MENU]
@@ -237,7 +237,7 @@ function errorf(fmt, ...) end
 ---
 ---@generic T
 ---@param value T The value to check.
----@param message? string | Error | ErrorClass The error message, error object or error class.
+---@param message ( string | Error | ErrorClass )? The error message, error object or error class.
 ---@param ... any The message format arguments.
 ---@return T value
 ---@return any ...
@@ -492,7 +492,7 @@ local __AsyncFileSystemError = {}
 __AsyncFileSystemError.Messages = nil
 
 ---@param error_id integer
----@param is_writing? boolean
+---@param is_writing boolean?
 ---@protected
 function __AsyncFileSystemError:__init(error_id, is_writing) end
 

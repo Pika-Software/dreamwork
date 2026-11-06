@@ -44,8 +44,8 @@ function http.client.request(options) end
 --- Sends a GET request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.get(url, headers, timeout) end
@@ -55,9 +55,9 @@ function http.client.get(url, headers, timeout) end
 --- Sends a POST request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param parameters? http.Parameters The body to send with the request.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param parameters http.Parameters? The body to send with the request.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.post(url, parameters, headers, timeout) end
@@ -67,9 +67,9 @@ function http.client.post(url, parameters, headers, timeout) end
 --- Sends a PUT request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param parameters? http.Parameters The body to send with the request.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param parameters http.Parameters? The body to send with the request.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.put(url, parameters, headers, timeout) end
@@ -79,9 +79,9 @@ function http.client.put(url, parameters, headers, timeout) end
 --- Sends a PATCH request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param parameters? http.Parameters The body to send with the request.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param parameters http.Parameters? The body to send with the request.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.patch(url, parameters, headers, timeout) end
@@ -91,8 +91,8 @@ function http.client.patch(url, parameters, headers, timeout) end
 --- Sends a DELETE request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.delete(url, headers, timeout) end
@@ -102,8 +102,8 @@ function http.client.delete(url, headers, timeout) end
 --- Sends an OPTIONS request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.options(url, headers, timeout) end
@@ -113,8 +113,8 @@ function http.client.options(url, headers, timeout) end
 --- Sends a HEAD request.
 ---
 ---@param url http.RequestURL The URL to send the request to.
----@param headers? http.RequestHeaders The headers to send with the request.
----@param timeout? integer The timeout in seconds.
+---@param headers http.RequestHeaders? The headers to send with the request.
+---@param timeout integer? The timeout in seconds.
 ---@return http.Response response The response from the request.
 ---@async
 function http.client.head(url, headers, timeout) end

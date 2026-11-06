@@ -192,41 +192,38 @@ function console.Variable.getBounds(name) end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the given stage of the hook.
---- If the handler is already attached to that stage, only its priority is
---- updated (when a new one is supplied); it will not be attached twice.
+--- Attaches a handler called on every change of the variable, attaching the same handler twice is a no-op.
 ---
---- If the hook is currently running, the change is deferred and applied once
---- the hook finishes running.
+--- Handlers run in protected mode, one failing handler is reported and never stops the others.
+--- While they run `variable.value` still holds the old value, the new one is passed as `value`.
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler fun( variable: console.Variable<T>, value: T )
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook The callback or callable object.
 function Variable:attach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Attaches a handler function to the hook that automatically detaches
---- itself right before being invoked, so it only ever runs once.
+--- Attaches a one-shot handler, detached right before the next change calls it.
 ---
 ---@generic T
 ---@param self console.Variable<T>
----@param handler fun( variable: console.Variable<T>, value: T )
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook The callback or callable object.
 function Variable:once(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Detaches a previously attached handler from the given stage of the hook.
---- If the hook is currently running, the handler is replaced with a no-op and
---- the actual removal is deferred until the hook finishes running.
+--- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( variable: console.Variable<T>, value: T )
+---@generic T
+---@param self console.Variable<T>
+---@param handler fun( variable: console.Variable<T>, value: T ) | Hook The exact handler reference.
+---@return boolean removed `true` if the handler was attached.
 function Variable:detach(handler) end
 
 --- [SHARED AND MENU]
 ---
---- Cancels the hook if it is currently running, and removes every handler,
---- resetting their priority tables as well.
+--- Removes every handler of the variable, pending handlers of a running change are skipped.
 ---
 function Variable:clear() end
 
@@ -236,6 +233,7 @@ function Variable:clear() end
 ---
 ---@generic T
 ---@param self console.Variable<T>
+---@return console.Variable<T> variable
 ---@return T new_value
 ---@async
 function Variable:await() end

@@ -15,7 +15,7 @@ zlib = {}
 --- Compresses a string into a zlib stream.
 ---
 ---@param raw_data string The string to compress.
----@param options? deflate.Options The compression options.
+---@param options deflate.Options? The compression options.
 ---@return string compressed_data The compressed string.
 ---@nodiscard
 function zlib.compress(raw_data, options) end
@@ -28,7 +28,7 @@ function zlib.compress(raw_data, options) end
 --- call via `pcall()` when processing untrusted input.
 ---
 ---@param compressed_data string The zlib stream to decompress.
----@param dictionary? string The preset dictionary, required if the data was compressed with one.
+---@param dictionary string? The preset dictionary, required if the data was compressed with one.
 ---@return string decompressed_data The decompressed string.
 ---@return integer end_position The position of the first byte after the stream.
 ---@nodiscard

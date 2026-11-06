@@ -20,7 +20,7 @@ local Identifier = {}
 ---
 ---@class steam.IdentifierClass : steam.Identifier, Class
 ---@field __base steam.Identifier
----@overload fun( universe?: steam.IdentifierUniverse, type?: steam.IdentifierType, id?: integer, instance?: integer ): steam.Identifier
+---@overload fun( universe: steam.IdentifierUniverse?, type: steam.IdentifierType?, id: integer?, instance: integer? ): steam.Identifier
 steam.Identifier = {}
 
 ---@protected
@@ -36,7 +36,7 @@ function steam.Identifier:__new(universe, type, id, instance) end
 ---
 --- Converts a SteamID object to a Steam2 identifier.
 ---
----@param ignore_universe? boolean
+---@param ignore_universe boolean?
 ---@return string
 ---@nodiscard
 function Identifier:toSteam2(ignore_universe) end
@@ -67,7 +67,7 @@ function Identifier.to64(object) end
 ---
 --- Gets the URL for a SteamID object.
 ---
----@param http? boolean If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
+---@param http boolean? If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
 ---@return string | nil url_str The URL for the SteamID object.
 ---@nodiscard
 function Identifier:getURL(http) end
@@ -114,7 +114,7 @@ function steam.Identifier.isValidSteam3(steam3_str) end
 --- Creates a new SteamID object from a steam2 string.
 ---
 ---@param steam2_str string The steam2 string to parse.
----@param allow_zero_universe? boolean Whether to allow the universe to be zero.
+---@param allow_zero_universe boolean? Whether to allow the universe to be zero.
 ---@return steam.Identifier object The SteamID object.
 ---@nodiscard
 function steam.Identifier.fromSteam2(steam2_str, allow_zero_universe) end

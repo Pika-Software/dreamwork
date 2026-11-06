@@ -72,7 +72,7 @@ function __BigFixed:__init(value, scale) end
 --- returned unchanged.
 ---
 ---@param value any The value to convert to a `BigFixed`.
----@param scale? integer The number of fractional digits to keep. Defaults to `BigFixed.DEFAULT_SCALE`.
+---@param scale integer? The number of fractional digits to keep. Defaults to `BigFixed.DEFAULT_SCALE`.
 ---@return BigFixed obj
 ---@nodiscard
 function toBigFixed(value, scale) end

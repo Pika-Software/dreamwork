@@ -42,8 +42,8 @@ function string.byteMap(...) end
 ---
 ---@param str string The string to search in.
 ---@param searchable_byte integer The byte value to search for.
----@param start_position? integer The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop searching at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param start_position integer? The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop searching at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return integer | nil index The index of the first matching byte within the range, or `nil` if not found.
 ---@nodiscard
 function string.findByte(str, searchable_byte, start_position, end_position) end
@@ -67,7 +67,7 @@ function string.isEmpty(str) end
 --- `size` larger than the string just returns the whole string as a single chunk.
 ---
 ---@param str string The string to split.
----@param size? integer The size, in bytes, of each segment. Defaults to `1` (split into individual bytes). Clamped to `[1, #str]`.
+---@param size integer? The size, in bytes, of each segment. Defaults to `1` (split into individual bytes). Clamped to `[1, #str]`.
 ---@return string[] segments The array of fixed-size segments.
 ---@return integer segment_count The number of segments.
 ---@nodiscard
@@ -86,9 +86,9 @@ function string.divide(str, size) end
 ---
 ---@param str             string       The string to extract from.
 ---@param searchable      string       The substring or pattern to find and remove.
----@param start_position? integer      The position to start searching from. Defaults to `1` (the start of the string).
----@param default?        string | nil The value returned as `extracted` if no match is found. Defaults to `nil`.
----@param with_pattern?   boolean      When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param start_position integer?      The position to start searching from. Defaults to `1` (the start of the string).
+---@param default        string | nil The value returned as `extracted` if no match is found. Defaults to `nil`.
+---@param with_pattern   boolean?      When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return string new_string The string with the matched portion removed, or `str` unchanged if nothing matched.
 ---@return string | nil extracted The matched text (or its first capture, for patterns with captures), or `default` if nothing matched.
 ---@nodiscard
@@ -135,7 +135,7 @@ function string.remove(str, start_position, end_position) end
 ---
 ---@param str string The string to check.
 ---@param prefix string The prefix to check for.
----@param offset? integer The number of bytes to skip from the start of `str` before checking. Defaults to `0`.
+---@param offset integer? The number of bytes to skip from the start of `str` before checking. Defaults to `0`.
 ---@return boolean has_prefix `true` if the string starts with the prefix (at the given offset), `false` otherwise.
 ---@nodiscard
 function string.hasPrefix(str, prefix, offset) end
@@ -147,7 +147,7 @@ function string.hasPrefix(str, prefix, offset) end
 ---
 ---@param str string The string to check.
 ---@param suffix string The suffix to check for.
----@param offset? integer The number of bytes to ignore at the end of `str` before checking. Defaults to `0`.
+---@param offset integer? The number of bytes to ignore at the end of `str` before checking. Defaults to `0`.
 ---@return boolean has_suffix `true` if the string ends with the suffix (at the given offset), `false` otherwise.
 ---@nodiscard
 function string.hasSuffix(str, suffix, offset) end
@@ -164,8 +164,8 @@ function string.hasSuffix(str, suffix, offset) end
 ---
 ---@param str           string  The string to search in.
 ---@param searchable    string  The substring or pattern to search for.
----@param position?     integer The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param position     integer? The position to start searching from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param with_pattern boolean? When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return integer index The index of the first match, `0` if `searchable` is `nil` or empty, or `-1` if no match is found.
 ---@nodiscard
 function string.indexOf(str, searchable, position, with_pattern) end
@@ -188,9 +188,9 @@ function string.indexOf(str, searchable, position, with_pattern) end
 ---
 ---@param str string The string to pad.
 ---@param desired_length integer The target length, in bytes, that the result should reach.
----@param padding? string The string to pad with, repeated as needed. Defaults to a single space.
----@param left? boolean Whether to add padding on the left side.
----@param right? boolean Whether to add padding on the right side.
+---@param padding string? The string to pad with, repeated as needed. Defaults to a single space.
+---@param left boolean? Whether to add padding on the left side.
+---@param right boolean? Whether to add padding on the right side.
 ---@return string padded_str The padded string, or `str` unchanged if no padding was needed or requested.
 ---@nodiscard
 function string.pad(str, desired_length, padding, left, right) end
@@ -213,10 +213,10 @@ function string.pad(str, desired_length, padding, left, right) end
 --- segments with a replacement string in place of `replaceable`.
 ---
 ---@param str             string  The string to split.
----@param searchable?     string  The substring or pattern to split by. If `nil` or empty, splits into individual bytes instead.
----@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
----@param start_position? integer The position to start splitting from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Ignored if `searchable` is `nil` or empty.
----@param end_position?   integer The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Ignored if `searchable` is `nil` or empty.
+---@param searchable     string?  The substring or pattern to split by. If `nil` or empty, splits into individual bytes instead.
+---@param with_pattern   boolean? When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param start_position integer? The position to start splitting from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Ignored if `searchable` is `nil` or empty.
+---@param end_position   integer? The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Ignored if `searchable` is `nil` or empty.
 ---@return string[] segments The resulting array of substrings.
 ---@return integer segment_count The number of entries in `segments`.
 ---@nodiscard
@@ -233,11 +233,11 @@ function string.split(str, searchable, with_pattern, start_position, end_positio
 --- given range), the string is returned unchanged.
 ---
 ---@param str           string  The string we are seeking to replace an occurrence(s) in.
----@param searchable?   string  What we are seeking to replace, or the substring or pattern to split by.
----@param replaceable?  string  What to replace it with. If `nil`, occurrences are removed.
----@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
----@param start_position? integer The position to start replacing from, inclusive. Matches outside this range are left untouched.
----@param end_position?   integer The position to stop replacing at, inclusive. Matches outside this range are left untouched.
+---@param searchable   string?  What we are seeking to replace, or the substring or pattern to split by.
+---@param replaceable  string?  What to replace it with. If `nil`, occurrences are removed.
+---@param with_pattern   boolean? When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param start_position integer? The position to start replacing from, inclusive. Matches outside this range are left untouched.
+---@param end_position   integer? The position to stop replacing at, inclusive. Matches outside this range are left untouched.
 ---@return string str_replaced The new string with the occurrences replaced.
 ---@nodiscard
 function string.replace(str, searchable, replaceable, with_pattern, start_position, end_position) end
@@ -255,7 +255,7 @@ function string.replace(str, searchable, replaceable, with_pattern, start_positi
 ---
 ---@param str           string  The string to count.
 ---@param searchable    string  The substring or pattern to count by.
----@param with_pattern? boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param with_pattern boolean? When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
 ---@return integer match_count The number of non-overlapping matches, or `string.len( str )` if `searchable` is `nil` or empty.
 ---@nodiscard
 function string.count(str, searchable, with_pattern) end
@@ -272,10 +272,10 @@ function string.count(str, searchable, with_pattern) end
 --- Returns `0` if `str` is empty or `counted_byte` is `nil`.
 ---
 ---@param str string The string to count.
----@param counted_byte? integer The byte value to count occurrences of. If `nil`, `0` is returned.
----@param reverse_direction? boolean If `false`, scanning goes from `start_position` towards higher indices (left to right). If `true`, scanning goes from `start_position` towards lower indices (right to left). Defaults to `false`.
----@param start_position? integer The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
----@param end_position? integer The position to stop counting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
+---@param counted_byte integer? The byte value to count occurrences of. If `nil`, `0` is returned.
+---@param reverse_direction boolean? If `false`, scanning goes from `start_position` towards higher indices (left to right). If `true`, scanning goes from `start_position` towards lower indices (right to left). Defaults to `false`.
+---@param start_position integer? The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
+---@param end_position integer? The position to stop counting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
 ---@return integer byte_count The total number of occurrences of `counted_byte` within the range.
 ---@nodiscard
 function string.countByte(str, counted_byte, reverse_direction, start_position, end_position) end
@@ -293,10 +293,10 @@ function string.countByte(str, counted_byte, reverse_direction, start_position, 
 --- Returns `0` if `str` is empty or `counted_byte` is `nil`.
 ---
 ---@param str string The string to count.
----@param counted_byte? integer The byte value to count consecutive repetitions of. If `nil`, `0` is returned.
----@param reverse_direction? boolean If `false`, scanning goes from `start_position` towards higher indices (left to right). If `true`, scanning goes from `start_position` towards lower indices (right to left). Defaults to `false`.
----@param start_position? integer The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
----@param end_position? integer The position to stop counting at, inclusive; counting stops early regardless if a non-matching byte is found first. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
+---@param counted_byte integer? The byte value to count consecutive repetitions of. If `nil`, `0` is returned.
+---@param reverse_direction boolean? If `false`, scanning goes from `start_position` towards higher indices (left to right). If `true`, scanning goes from `start_position` towards lower indices (right to left). Defaults to `false`.
+---@param start_position integer? The position to start counting from. Negative values count from the end of the string. Defaults to `1` when scanning forward, or the end of the string when scanning in reverse.
+---@param end_position integer? The position to stop counting at, inclusive; counting stops early regardless if a non-matching byte is found first. Negative values count from the end of the string. Defaults to the end of the string when scanning forward, or `1` when scanning in reverse.
 ---@return integer byte_count The number of consecutive occurrences of `counted_byte` found, starting at `start_position`.
 ---@nodiscard
 function string.countConsecutiveByte(str, counted_byte, reverse_direction, start_position, end_position) end
@@ -316,11 +316,11 @@ function string.countConsecutiveByte(str, counted_byte, reverse_direction, start
 --- If the entire range consists of `trailing_byte`, the result is an empty string.
 ---
 ---@param str string The string to trim.
----@param trailing_byte? integer The byte value to trim from the start and/or end. Defaults to `0x20` (space).
----@param left? boolean Whether to trim from the start of the string. Defaults to `true`.
----@param right? boolean Whether to trim from the end of the string. Defaults to `true`.
----@param start_position? integer The position to start trimming within, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param trailing_byte integer? The byte value to trim from the start and/or end. Defaults to `0x20` (space).
+---@param left boolean? Whether to trim from the start of the string. Defaults to `true`.
+---@param right boolean? Whether to trim from the end of the string. Defaults to `true`.
+---@param start_position integer? The position to start trimming within, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
 ---@nodiscard
@@ -341,10 +341,10 @@ function string.trimByte(str, trailing_byte, left, right, start_position, end_po
 --- If the entire range consists of whitespace, the result is an empty string.
 ---
 ---@param str string The string to trim.
----@param left? boolean Whether to trim from the start of the string. Defaults to `true`.
----@param right? boolean Whether to trim from the end of the string. Defaults to `true`.
----@param start_position? integer The position to start trimming within, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param left boolean? Whether to trim from the start of the string. Defaults to `true`.
+---@param right boolean? Whether to trim from the end of the string. Defaults to `true`.
+---@param start_position integer? The position to start trimming within, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop trimming within, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string trimmed_str The trimmed string.
 ---@return integer trimmed_length The length of the trimmed string.
 ---@nodiscard
@@ -360,9 +360,9 @@ function string.trimSpaces(str, left, right, start_position, end_position) end
 --- e.g. splitting `"a,,b"` on `,` yields `{ "a", "", "b" }`.
 ---
 ---@param str string The string to split.
----@param searchable_byte? integer The byte value to split on. Defaults to `0x20` (space).
----@param start_position? integer The position to start splitting from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param searchable_byte integer? The byte value to split on. Defaults to `0x20` (space).
+---@param start_position integer? The position to start splitting from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop splitting at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string[] segments The resulting array of substrings.
 ---@return integer segment_count The number of entries in `segments`.
 ---@nodiscard
@@ -380,10 +380,10 @@ function string.byteSplit(str, searchable_byte, start_position, end_position) en
 --- splitting on space (`0x20`).
 ---
 ---@param str              string  The string we are seeking to replace an occurrence(s) in.
----@param searchable_byte? integer The byte value to find and replace. Defaults to `0x20` (space).
----@param replaceable?     string  What to replace each occurrence with. If `nil`, occurrences are removed.
----@param start_position?  integer The position to start replacing from, inclusive. Matches outside this range are left untouched.
----@param end_position?    integer The position to stop replacing at, inclusive. Matches outside this range are left untouched.
+---@param searchable_byte integer? The byte value to find and replace. Defaults to `0x20` (space).
+---@param replaceable     string?  What to replace each occurrence with. If `nil`, occurrences are removed.
+---@param start_position  integer? The position to start replacing from, inclusive. Matches outside this range are left untouched.
+---@param end_position    integer? The position to stop replacing at, inclusive. Matches outside this range are left untouched.
 ---@return string str_replaced The new string with the occurrences replaced.
 ---@nodiscard
 function string.byteReplace(str, searchable_byte, replaceable, start_position, end_position) end
@@ -399,8 +399,8 @@ function string.byteReplace(str, searchable_byte, replaceable, start_position, e
 ---
 ---@param str             string  The string to search in.
 ---@param searchable      string  The substring or pattern to search for.
----@param with_pattern?   boolean When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
----@param start_position? integer The byte position to start searching from. Defaults to `1`. Negative values count from the end of the string.
+---@param with_pattern   boolean? When `true`, `searchable` is interpreted as a Lua pattern. Defaults to `false` (plain match).
+---@param start_position integer? The byte position to start searching from. Defaults to `1`. Negative values count from the end of the string.
 ---@return boolean found `true` if `searchable` was found within `str`, `false` otherwise.
 ---@nodiscard
 function string.contains(str, searchable, with_pattern, start_position) end
@@ -414,8 +414,8 @@ function string.contains(str, searchable, with_pattern, start_position) end
 ---
 ---@param str string The string to check.
 ---@param byte integer The byte value to check for.
----@param start_position? integer The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param start_position integer? The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return boolean has_byte `true` if `byte` occurs anywhere within the range, `false` otherwise.
 ---@nodiscard
 function string.containsByte(str, byte, start_position, end_position) end
@@ -435,8 +435,8 @@ function string.containsByte(str, byte, start_position, end_position) end
 ---
 ---@param str string The string to check.
 ---@param byte_map table<integer, boolean> A byte map, as produced by `string.byteMap`, giving the set of bytes to look for.
----@param start_position? integer The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param start_position integer? The position to start checking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop checking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return boolean has_byte `true` if any byte in the range is present in `byte_map`, `false` otherwise.
 ---@return integer? position The position of the first matching byte found in scan order, or `nil` if there is no match.
 ---@return byte? found_byte The value of the matching byte, or `nil` if there is no match.
@@ -454,8 +454,8 @@ function string.containsBytes(str, byte_map, start_position, end_position) end
 ---
 ---@param str string The string to purge.
 ---@param byte integer The byte value to remove.
----@param start_position? integer The position to start purging from, inclusive. Bytes outside this range are left untouched.
----@param end_position? integer The position to stop purging at, inclusive. Bytes outside this range are left untouched.
+---@param start_position integer? The position to start purging from, inclusive. Bytes outside this range are left untouched.
+---@param end_position integer? The position to stop purging at, inclusive. Bytes outside this range are left untouched.
 ---@return string str_purged The string with every occurrence of `byte` removed.
 ---@nodiscard
 function string.purge(str, byte, start_position, end_position) end
@@ -475,9 +475,9 @@ function string.purge(str, byte, start_position, end_position) end
 --- and that substring is converted instead.
 ---
 ---@param str string The string to convert.
----@param base? integer The numeric base to interpret `str` in. If omitted, the base is auto-detected from the string's prefix (`0x`/`0X` → 16, leading `0` → 8, otherwise 10).
----@param start_position? integer The position to start converting from. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop converting at. Defaults to the end of the string.
+---@param base integer? The numeric base to interpret `str` in. If omitted, the base is auto-detected from the string's prefix (`0x`/`0X` → 16, leading `0` → 8, otherwise 10).
+---@param start_position integer? The position to start converting from. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop converting at. Defaults to the end of the string.
 ---@return number | nil num The converted number, or `nil` if the (sub)string is not a valid number in the given base.
 ---@nodiscard
 function string.toNumber(str, base, start_position, end_position) end
@@ -491,9 +491,9 @@ function string.toNumber(str, base, start_position, end_position) end
 --- without needing to hold on to the converted value when only the validity check matters.
 ---
 ---@param str string The string to check.
----@param base? integer The numeric base to check `str` in. If omitted, the base is auto-detected from the string's prefix (`0x`/`0X` → 16, leading `0` → 8, otherwise 10).
----@param start_position? integer The position to start checking from. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop checking at. Defaults to the end of the string.
+---@param base integer? The numeric base to check `str` in. If omitted, the base is auto-detected from the string's prefix (`0x`/`0X` → 16, leading `0` → 8, otherwise 10).
+---@param start_position integer? The position to start checking from. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop checking at. Defaults to the end of the string.
 ---@return boolean is_number `true` if the (sub)string is a valid number in the given base, `false` otherwise.
 ---@nodiscard
 function string.isNumber(str, base, start_position, end_position) end
@@ -533,7 +533,7 @@ function string.isURL(str) end
 ---
 ---@param str string The string to check.
 ---@param jit_version `0x01` | `0x02` | integer The expected LuaJIT bytecode version byte to match against (see `jit.version_byte`).
----@param start_position? integer The position in `str` where the bytecode header is expected to start. Defaults to `1` (the start of the string).
+---@param start_position integer? The position in `str` where the bytecode header is expected to start. Defaults to `1` (the start of the string).
 ---@return boolean result `true` if `str` starts with a matching LuaJIT bytecode header at `start_position`, `false` otherwise.
 ---@nodiscard
 function string.isBytecode(str, jit_version, start_position) end
@@ -552,8 +552,8 @@ function string.isBytecode(str, jit_version, start_position) end
 --- string-literal purposes rather than for safe use inside a pattern.
 ---
 ---@param str string The string to escape.
----@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+---@param start_position integer? The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
 ---@return string escaped_str The string with pattern-magic characters escaped for literal matching.
 ---@nodiscard
 function string.escapePattern(str, start_position, end_position) end
@@ -573,9 +573,9 @@ function string.escapePattern(str, start_position, end_position) end
 --- an explicit `false` turns a side off.
 ---
 ---@param str string The string to trim.
----@param pattern_str? string The set of characters to trim, as a single character, a `%`-class, or a run of characters to treat as a class. Defaults to `%s` (whitespace).
----@param left? boolean Whether to trim from the start of the string. Defaults to `true`.
----@param right? boolean Whether to trim from the end of the string. Defaults to `true`.
+---@param pattern_str string? The set of characters to trim, as a single character, a `%`-class, or a run of characters to treat as a class. Defaults to `%s` (whitespace).
+---@param left boolean? Whether to trim from the start of the string. Defaults to `true`.
+---@param right boolean? Whether to trim from the end of the string. Defaults to `true`.
 ---@return string trimmed_str The trimmed string.
 ---@nodiscard
 function string.trim(str, pattern_str, left, right) end
@@ -596,12 +596,12 @@ function string.trim(str, pattern_str, left, right) end
 --- The length of the string is 8 by default. Passing `0` returns an empty string without
 --- requiring any pool to be enabled.
 ---
----@param length? integer The length of the string, defaults to 8.
----@param lowercase? boolean Whether to include lowercase letters (`a`-`z`). Defaults to `true`.
----@param uppercase? boolean Whether to include uppercase letters (`A`-`Z`). Defaults to `false`.
----@param numbers? boolean Whether to include digits (`0`-`9`). Defaults to `true`.
----@param symbols? boolean Whether to include symbol/punctuation characters. Defaults to `false`.
----@param extended_ascii? boolean Whether to include extended (non-ASCII, above `0x7F`) characters. Defaults to `false`.
+---@param length integer? The length of the string, defaults to 8.
+---@param lowercase boolean? Whether to include lowercase letters (`a`-`z`). Defaults to `true`.
+---@param uppercase boolean? Whether to include uppercase letters (`A`-`Z`). Defaults to `false`.
+---@param numbers boolean? Whether to include digits (`0`-`9`). Defaults to `true`.
+---@param symbols boolean? Whether to include symbol/punctuation characters. Defaults to `false`.
+---@param extended_ascii boolean? Whether to include extended (non-ASCII, above `0x7F`) characters. Defaults to `false`.
 ---@return string result A randomly generated string of the requested length, drawn from the enabled character pools.
 ---@nodiscard
 function string.random(length, lowercase, uppercase, numbers, symbols, extended_ascii) end
@@ -637,8 +637,8 @@ function string.random(length, lowercase, uppercase, numbers, symbols, extended_
 ---
 ---@param str string The string to interpolate.
 ---@param variables string[] | table<string, string> The replacement values, keyed by the literal text inside each `{...}` placeholder (as a string key, even for numeric-looking placeholders like `{1}`).
----@param start_position? integer The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
----@param end_position? integer The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
+---@param start_position integer? The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
+---@param end_position integer? The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
 ---@return string str The interpolated string.
 ---@nodiscard
 function string.interpolate(str, variables, start_position, end_position) end
@@ -663,9 +663,9 @@ function string.interpolate(str, variables, start_position, end_position) end
 ---@param str string The string to interpolate.
 ---@param interpolate_byte integer The byte value that acts as a placeholder marker.
 ---@param variables string[] The replacement values, used in order of occurrence within the string.
----@param variable_count? integer The number of entries in `variables` to use. Defaults to `#variables` (via `len`); pass this to skip that calculation when the count is already known.
----@param start_position? integer The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
----@param end_position? integer The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
+---@param variable_count integer? The number of entries in `variables` to use. Defaults to `#variables` (via `len`); pass this to skip that calculation when the count is already known.
+---@param start_position integer? The position to start interpolating from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string). Text before this position is copied through unchanged.
+---@param end_position integer? The position to stop interpolating at, inclusive. Negative values count from the end of the string. Defaults to the end of the string. Text after this position is copied through unchanged.
 ---@return string str The interpolated string.
 ---@nodiscard
 function string.interpolateByte(str, interpolate_byte, variables, variable_count, start_position, end_position) end
@@ -679,7 +679,7 @@ function string.interpolateByte(str, interpolate_byte, variables, variable_count
 --- whole array (and hitting Lua's C-stack argument limit) in one call.
 ---
 ---@param bytes integer[] The sequence of bytes to pack, each an integer in the range `0`-`255`.
----@param byte_count? integer The number of bytes, from the start of `bytes`, to pack. Defaults to `len( bytes )` (the whole array).
+---@param byte_count integer? The number of bytes, from the start of `bytes`, to pack. Defaults to `len( bytes )` (the whole array).
 ---@return string str The packed byte string.
 ---@nodiscard
 function string.pack(bytes, byte_count) end
@@ -692,8 +692,8 @@ function string.pack(bytes, byte_count) end
 --- but built with `string_byte` calls batched 32 bytes at a time for performance.
 ---
 ---@param str string The string to unpack.
----@param start_position? integer The position to start unpacking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
----@param end_position? integer The position to stop unpacking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string (`string.len( str )`).
+---@param start_position integer? The position to start unpacking from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+---@param end_position integer? The position to stop unpacking at, inclusive. Negative values count from the end of the string. Defaults to the end of the string (`string.len( str )`).
 ---@return integer[] bytes The unpacked bytes, one entry per byte in the range.
 ---@return integer byte_count The number of bytes unpacked (i.e. `#bytes`).
 ---@nodiscard
@@ -715,8 +715,8 @@ function string.unpack(str, start_position, end_position) end
 --- of `0` returns `str` unchanged, since no grouping width is meaningful.
 ---
 ---@param str string The string to format.
----@param separator? string The separator string to insert between groups. Defaults to `","`.
----@param offset? integer The number of characters per group, counted from the right. Defaults to `3`. Normalized to a non-negative integer; `0` returns `str` unchanged.
+---@param separator string? The separator string to insert between groups. Defaults to `","`.
+---@param offset integer? The number of characters per group, counted from the right. Defaults to `3`. Normalized to a non-negative integer; `0` returns `str` unchanged.
 ---@return string str The string with separators inserted every `offset` characters from the right.
 ---@nodiscard
 function string.comma(str, separator, offset) end
@@ -731,7 +731,7 @@ function string.comma(str, separator, offset) end
 --- other count falls back to filling an array and unpacking it in one `string_char` call.
 ---
 ---@param rep_byte integer The byte value to repeat (`0`-`255`).
----@param repetitions? integer The number of times to repeat the byte. Defaults to `1`.
+---@param repetitions integer? The number of times to repeat the byte. Defaults to `1`.
 ---@return string rep_str The byte repeated `repetitions` times, as a string.
 ---@nodiscard
 function string.byteRep(rep_byte, repetitions) end
@@ -748,7 +748,7 @@ function string.byteRep(rep_byte, repetitions) end
 --- Inverse of `string.unQuote`.
 ---
 ---@param str string The string to quote.
----@param use_single? boolean When `true`, wraps in single quotes (`'`) and escapes any `'` inside `str`. When `false`/omitted, wraps in double quotes (`"`) and escapes any `"` inside `str`.
+---@param use_single boolean? When `true`, wraps in single quotes (`'`) and escapes any `'` inside `str`. When `false`/omitted, wraps in double quotes (`"`) and escapes any `"` inside `str`.
 ---@return string result The quoted string.
 ---@nodiscard
 function string.quote(str, use_single) end
@@ -763,7 +763,7 @@ function string.quote(str, use_single) end
 --- string that may or may not actually be quoted.
 ---
 ---@param str string The string to unquote.
----@param use_single? boolean When `true`, expects and strips single quotes (`'`) and unescapes `\'` inside `str`. When `false`/omitted, expects and strips double quotes (`"`) and unescapes `\"` inside `str`.
+---@param use_single boolean? When `true`, expects and strips single quotes (`'`) and unescapes `\'` inside `str`. When `false`/omitted, expects and strips double quotes (`"`) and unescapes `\"` inside `str`.
 ---@return string result The unquoted string, or `str` unchanged (with unescaping still applied) if it wasn't wrapped in the expected quote character.
 ---@nodiscard
 function string.unQuote(str, use_single) end
@@ -783,9 +783,9 @@ function string.unQuote(str, use_single) end
 ---
 ---@param str string The string to pad.
 ---@param desired_length integer The target length, in bytes, that the result should reach.
----@param padding_byte? integer The byte value to pad with. Defaults to `0x20` (space).
----@param left? boolean Whether to add padding on the left side.
----@param right? boolean Whether to add padding on the right side.
+---@param padding_byte integer? The byte value to pad with. Defaults to `0x20` (space).
+---@param left boolean? Whether to add padding on the left side.
+---@param right boolean? Whether to add padding on the right side.
 ---@return string padded_str The padded string, or `str` unchanged if no padding was needed or requested.
 ---@nodiscard
 function string.bytePad(str, desired_length, padding_byte, left, right) end
@@ -800,7 +800,7 @@ function string.bytePad(str, desired_length, padding_byte, left, right) end
 --- leading whitespace is removed, equivalent to `string.trimSpaces( str, true, false )`.
 ---
 ---@param str string The string to unindent.
----@param size? integer The maximum number of leading whitespace bytes to remove. Defaults to removing all of them.
+---@param size integer? The maximum number of leading whitespace bytes to remove. Defaults to removing all of them.
 ---@return string unindented The string with leading whitespace removed.
 ---@nodiscard
 function string.unIndent(str, size) end
@@ -843,7 +843,7 @@ function string.indentLines(str, size) end
 --- `string.unIndent`, which only strips the first line.
 ---
 ---@param str string The string to unindent.
----@param size? integer The maximum number of leading whitespace bytes to remove from each line. Defaults to removing all of them.
+---@param size integer? The maximum number of leading whitespace bytes to remove from each line. Defaults to removing all of them.
 ---@return string unindented The string with leading whitespace removed from every line.
 ---@nodiscard
 function string.unindentLines(str, size) end
@@ -868,7 +868,7 @@ function string.unindentLines(str, size) end
 ---
 ---@param source string The source string.
 ---@param target string The target string.
----@param minimal? boolean If `true`, returns the minimal edit script without the readability cleanup. Defaults to `false`.
+---@param minimal boolean? If `true`, returns the minimal edit script without the readability cleanup. Defaults to `false`.
 ---@return string.Difference[] diff_ops The difference operations.
 ---@return integer diff_op_count The count of difference operations.
 ---@nodiscard

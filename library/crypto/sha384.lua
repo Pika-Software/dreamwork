@@ -24,7 +24,7 @@ local SHA384 = {}
 ---
 ---@class crypto.SHA384Class : crypto.SHA384, crypto.SHA512Class
 ---@field __base crypto.SHA384
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: crypto.SHA384
@@ -44,7 +44,7 @@ SHA384.initial_state = {}
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute SHA384 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA384 string of the message.
 ---@nodiscard
 function crypto.SHA384.digest(message, as_hex) end

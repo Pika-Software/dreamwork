@@ -26,7 +26,7 @@ deflate = {}
 --- Compresses a string into a raw DEFLATE stream.
 ---
 ---@param raw_data string The string to compress.
----@param options? deflate.Options The compression options.
+---@param options deflate.Options? The compression options.
 ---@return string compressed_data The compressed string.
 ---@nodiscard
 function deflate.compress(raw_data, options) end
@@ -41,8 +41,8 @@ function deflate.compress(raw_data, options) end
 --- the second return value is the position right after the stream.
 ---
 ---@param compressed_data string The DEFLATE stream to decompress.
----@param dictionary? string The preset dictionary the data was compressed with.
----@param start_position? integer The position of the stream in the string, `1` by default.
+---@param dictionary string? The preset dictionary the data was compressed with.
+---@param start_position integer? The position of the stream in the string, `1` by default.
 ---@return string decompressed_data The decompressed string.
 ---@return integer end_position The position of the first byte after the stream.
 ---@nodiscard

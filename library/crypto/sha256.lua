@@ -32,7 +32,7 @@ local SHA256 = {}
 ---
 ---@class crypto.SHA256Class : crypto.SHA256, crypto.HashClass
 ---@field __base crypto.SHA256
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: crypto.SHA256
@@ -78,7 +78,7 @@ function SHA256:update(str) end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA256 string of the message.
 ---@nodiscard
 function SHA256:digest(as_hex) end
@@ -91,7 +91,7 @@ function SHA256:digest(as_hex) end
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute SHA256 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA256 string of the message.
 ---@nodiscard
 function crypto.SHA256.digest(message, as_hex) end

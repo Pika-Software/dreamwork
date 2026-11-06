@@ -42,8 +42,8 @@ function isVector2(value) end
 
 --- Creates a new vector, missing coordinates default to `0`.
 ---
----@param x? number The X coordinate, defaults to `0`.
----@param y? number The Y coordinate, defaults to `0`.
+---@param x number? The X coordinate, defaults to `0`.
+---@param y number? The Y coordinate, defaults to `0`.
 ---@return Vector2 vec2 The new vector.
 ---@protected
 function Vector2:__new(x, y) end
@@ -323,7 +323,7 @@ function __Vector2:getNormalized() end
 --- If `up` is given, its angle is added to the result.
 ---
 ---@param self Vector2 The vector.
----@param up? Vector2 The direction of the angle.
+---@param up Vector2? The direction of the angle.
 ---@return number degrees The angle of the vector.
 ---@nodiscard
 function __Vector2.getAngle(self, up) end

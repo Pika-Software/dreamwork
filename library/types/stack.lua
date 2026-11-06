@@ -53,7 +53,7 @@ function __Stack:__serialize(writer, ...) end
 ---@generic T
 ---@param self Stack<T>
 ---@param reader BinaryReader The reader.
----@param value_class? Class The class of the values, can be omitted if every value is `nil`.
+---@param value_class Class? The class of the values, can be omitted if every value is `nil`.
 ---@param ... any The arguments passed to `__deserialize` of every value.
 ---@protected
 function __Stack:__deserialize(reader, value_class, ...) end

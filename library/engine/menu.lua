@@ -304,8 +304,8 @@ function options.allowCustomLoadingScreen(value) end
 ---
 --- Changes the resolution of the game window.
 ---
----@param width? integer The width of the game window.
----@param height? integer The height of the game window.
+---@param width integer? The width of the game window.
+---@param height integer? The height of the game window.
 function options.setScreenResolution(width, height) end
 
 --- [MENU]

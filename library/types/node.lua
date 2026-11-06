@@ -68,7 +68,7 @@ function __Node:__serialize(writer, ...) end
 ---@generic T
 ---@param self Node<T>
 ---@param reader BinaryReader The reader.
----@param value_class? Class The class of the values, can be omitted if every value is `nil`.
+---@param value_class Class? The class of the values, can be omitted if every value is `nil`.
 ---@param ... any The arguments passed to `__deserialize` of every value.
 ---@protected
 function __Node:__deserialize(reader, value_class, ...) end

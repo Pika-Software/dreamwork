@@ -165,7 +165,7 @@ function isURLSearchParams(value) end
 function isURL(value) end
 
 ---@param query string | { [ 1 ]: string, [ 2 ]: string | nil }[] | nil
----@param url? URL
+---@param url URL?
 ---@protected
 function SearchParams:__init(query, url) end
 
@@ -182,7 +182,7 @@ function SearchParams:__represent() end
 --- Appends a name-value pair to the end of the list.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value of the parameter, `nil` is serialized the same as `""`.
+---@param value string? The value of the parameter, `nil` is serialized the same as `""`.
 function SearchParams:append(name, value) end
 
 --- [SHARED AND MENU]
@@ -192,7 +192,7 @@ function SearchParams:append(name, value) end
 --- If `value` is given, only pairs with both the given name and value are removed.
 ---
 ---@param name string The name of the parameters to remove.
----@param value? string The value the removed pairs must have.
+---@param value string? The value the removed pairs must have.
 function SearchParams:delete(name, value) end
 
 --- [SHARED AND MENU]
@@ -224,7 +224,7 @@ function SearchParams:getAll(name) end
 --- If `value` is given, the pair must also have the given value.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value the pair must have.
+---@param value string? The value the pair must have.
 ---@return boolean exists `true` if such a pair exists, otherwise `false`.
 ---@nodiscard
 function SearchParams:has(name, value) end
@@ -242,7 +242,7 @@ function SearchParams:has(name, value) end
 --- ```
 ---
 ---@param name string The name of the parameter.
----@param value? string The new value, `nil` is serialized the same as `""`.
+---@param value string? The new value, `nil` is serialized the same as `""`.
 function SearchParams:set(name, value) end
 
 --- [SHARED AND MENU]
@@ -305,7 +305,7 @@ function __URL:__tostring() end
 function __URL:__represent() end
 
 ---@param str string
----@param base? string | URL
+---@param base ( string | URL )?
 ---@protected
 function __URL:__init(str, base) end
 
@@ -326,7 +326,7 @@ function __URL:__init(str, base) end
 ---@see URLClass.serialize
 ---
 ---@param url string The URL string to parse.
----@param base? string | URL The base URL that relative URLs are resolved against.
+---@param base ( string | URL )? The base URL that relative URLs are resolved against.
 ---@return URL.State state The parsed URL state.
 ---@nodiscard
 function URL.parse(url, base) end
@@ -344,7 +344,7 @@ function URL.parse(url, base) end
 --- ```
 ---
 ---@param url string The URL string to check.
----@param base? string | URL The base URL that relative URLs are resolved against.
+---@param base ( string | URL )? The base URL that relative URLs are resolved against.
 ---@return boolean success `true` if the URL is valid, otherwise `false`.
 ---@return URL.State | string state_or_error The parsed URL state on success, otherwise the error message.
 ---@nodiscard
@@ -363,7 +363,7 @@ function URL.canParse(url, base) end
 --- ```
 ---
 ---@param state URL.State The URL state to serialize.
----@param exclude_fragment? boolean If `true`, the fragment is left out, defaults to `false`.
+---@param exclude_fragment boolean? If `true`, the fragment is left out, defaults to `false`.
 ---@return string url_str The serialized URL.
 ---@nodiscard
 function URL.serialize(state, exclude_fragment) end

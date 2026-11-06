@@ -418,7 +418,7 @@ function __Future:setResult(result) end
 ---@see Future.error to retrieve error
 ---
 ---@param err string | Error The error to fail the future with.
----@param error_class? ErrorClass The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
+---@param error_class ErrorClass? The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
 function __Future:setError(err, error_class) end
 
 --- [SHARED AND MENU]
@@ -482,7 +482,7 @@ Future = {}
 ---@field __class futures.TaskClass
 ---@field __parent Future
 ---@field protected setResult fun( self: futures.Task<T>, result: T )
----@field protected setError fun( self: futures.Task<T>, err: string | Error, error_class?: ErrorClass )
+---@field protected setError fun( self: futures.Task<T>, err: string | Error, error_class: ErrorClass? )
 ---@field addCallback fun( self: futures.Task<T>, callback: fun( task: futures.Task<T> ) )
 local __Task = {}
 

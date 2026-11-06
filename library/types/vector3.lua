@@ -43,9 +43,9 @@ function isVector3(value) end
 
 --- Creates a new vector, missing coordinates default to `0`.
 ---
----@param x? number The X coordinate ( forward ), defaults to `0`.
----@param y? number The Y coordinate ( left ), defaults to `0`.
----@param z? number The Z coordinate ( up ), defaults to `0`.
+---@param x number? The X coordinate ( forward ), defaults to `0`.
+---@param y number? The Y coordinate ( left ), defaults to `0`.
+---@param z number? The Z coordinate ( up ), defaults to `0`.
 ---@return Vector3 vec3 The new vector.
 ---@protected
 function Vector3:__new(x, y, z) end
@@ -520,7 +520,7 @@ function __Vector3.getLerpedToNumber(self, target, frac) end
 ---
 --- The vector does not have to be normalized.
 ---
----@param up? Vector3 The up direction, used to calculate roll.
+---@param up Vector3? The up direction, used to calculate roll.
 ---@return Angle3 ang3 The new angle.
 ---@nodiscard
 function __Vector3:toAngle3(up) end

@@ -49,7 +49,7 @@ function base64.alphabet(alphabet_str) end
 --- Encodes the specified string to base64.
 ---
 ---@param raw_str string The string to encode.
----@param options? base64.Options The base64 encoding options, default is the standard variant.
+---@param options base64.Options? The base64 encoding options, default is the standard variant.
 ---@return string base64_str The encoded string.
 ---@nodiscard
 function base64.encode(raw_str, options) end
@@ -63,7 +63,7 @@ function base64.encode(raw_str, options) end
 --- Throws an error if the string has invalid length, padding or characters.
 ---
 ---@param base64_str string The base64 encoded string to decode.
----@param options? base64.Options The base64 encoding options, default is the standard variant.
+---@param options base64.Options? The base64 encoding options, default is the standard variant.
 ---@return string raw_str The decoded string.
 ---@nodiscard
 function base64.decode(base64_str, options) end
@@ -73,7 +73,7 @@ function base64.decode(base64_str, options) end
 --- Checks if the specified base64 encoded string is valid, follows the same rules as `base64.decode`.
 ---
 ---@param base64_str string The base64 encoded string to check.
----@param options? base64.Options The base64 encoding options, default is the standard variant.
+---@param options base64.Options? The base64 encoding options, default is the standard variant.
 ---@return boolean is_valid `true` if the base64 string is valid, `false` otherwise
 ---@return nil | string err_msg The error message.
 ---@nodiscard

@@ -54,10 +54,10 @@ function isQuaternion(value) end
 ---
 --- Note that `Quaternion()` is a zero quaternion, not identity.
 ---
----@param r? number The real component ( `w` ), defaults to `0`.
----@param i? number The first imaginary component ( `x` ), defaults to `0`.
----@param j? number The second imaginary component ( `y` ), defaults to `0`.
----@param k? number The third imaginary component ( `z` ), defaults to `0`.
+---@param r number? The real component ( `w` ), defaults to `0`.
+---@param i number? The first imaginary component ( `x` ), defaults to `0`.
+---@param j number? The second imaginary component ( `y` ), defaults to `0`.
+---@param k number? The third imaginary component ( `z` ), defaults to `0`.
 ---@return Quaternion quat The new quaternion.
 ---@protected
 function Quaternion:__new(r, i, j, k) end
@@ -541,7 +541,7 @@ function __Quaternion:getSlerped(quaternion, frac) end
 ---
 --- Works with non-unit quaternions.
 ---
----@param full? boolean If `true`, returns angle in range [0, 360], otherwise in range [-180, 180].
+---@param full boolean? If `true`, returns angle in range [0, 360], otherwise in range [-180, 180].
 ---@return number degrees The rotation angle.
 ---@nodiscard
 function __Quaternion:getAngle(full) end

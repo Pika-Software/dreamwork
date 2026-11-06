@@ -72,7 +72,7 @@ function path.equals(file_path1, file_path2) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_extension? boolean `true` to keep the extension, `false` otherwise.
+---@param keep_extension boolean? `true` to keep the extension, `false` otherwise.
 ---@return string file_name The name of the file.
 ---@nodiscard
 function path.getFile(file_path, keep_extension) end
@@ -91,7 +91,7 @@ function path.getFile(file_path, keep_extension) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
+---@param keep_trailing_slash boolean? `true` to keep the trailing slash, `false` otherwise.
 ---@return string | nil directory The directory of the file, or `nil` if the file path has no `/`.
 ---@nodiscard
 function path.getDirectory(file_path, keep_trailing_slash) end
@@ -111,7 +111,7 @@ function path.getDirectory(file_path, keep_trailing_slash) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_dot? boolean `true` to keep the dot, `false` otherwise.
+---@param keep_dot boolean? `true` to keep the dot, `false` otherwise.
 ---@return string extension The extension of the file, or an empty string if there is none.
 ---@nodiscard
 function path.getExtension(file_path, keep_dot) end
@@ -130,7 +130,7 @@ function path.getExtension(file_path, keep_dot) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
+---@param keep_trailing_slash boolean? `true` to keep the trailing slash, `false` otherwise.
 ---@return string directory_path The directory from the file path, or an empty string if the file path has no `/`.
 ---@return string file_name The file name with extension from the file path.
 ---@nodiscard
@@ -150,7 +150,7 @@ function path.split(file_path, keep_trailing_slash) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_dot? boolean `true` to keep the extension dot, `false` otherwise.
+---@param keep_dot boolean? `true` to keep the extension dot, `false` otherwise.
 ---@return string file_path_without_extension The file path without the extension.
 ---@return string extension The extension, or an empty string if there is none.
 ---@nodiscard
@@ -332,7 +332,7 @@ function path.parse(file_path) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param keep_trailing_slash? boolean `true` to keep the trailing slash, `false` otherwise.
+---@param keep_trailing_slash boolean? `true` to keep the trailing slash, `false` otherwise.
 ---@return string new_file_path The normalized file path.
 ---@nodiscard
 function path.normalize(file_path, keep_trailing_slash) end
@@ -352,7 +352,7 @@ function path.normalize(file_path, keep_trailing_slash) end
 --- path.get() -- "/game/lua/autorun/init.lua"
 --- ```
 ---
----@param f? function | integer The function, or the stack level, where `1` (default) is the function calling `get`.
+---@param f ( function | integer )? The function, or the stack level, where `1` (default) is the function calling `get`.
 ---@return string file_path The absolute path of the file.
 ---@nodiscard
 function path.get(f) end
@@ -372,7 +372,7 @@ function path.get(f) end
 --- ```
 ---
 ---@param file_path string The file path.
----@param stack_level? integer The stack level of the file to resolve against, where `1` (default) is the function calling `resolve`.
+---@param stack_level integer? The stack level of the file to resolve against, where `1` (default) is the function calling `resolve`.
 ---@return string abs_path The resolved file path.
 ---@nodiscard
 function path.resolve(file_path, stack_level) end
@@ -395,7 +395,7 @@ function path.resolve(file_path, stack_level) end
 ---
 ---@param from string The directory to get the relative path from.
 ---@param to string The path to get the relative path to.
----@param stack_level? integer The stack level of the file to resolve relative paths against, where `1` (default) is the function calling `relative`.
+---@param stack_level integer? The stack level of the file to resolve relative paths against, where `1` (default) is the function calling `relative`.
 ---@return string relative_path The relative path.
 ---@nodiscard
 function path.relative(from, to, stack_level) end
@@ -416,7 +416,7 @@ function path.relative(from, to, stack_level) end
 --- ```
 ---
 ---@param segments string[] The file paths to join.
----@param segment_count? integer The number of file paths to join, defaults to the length of `segments`.
+---@param segment_count integer? The number of file paths to join, defaults to the length of `segments`.
 ---@return string file_path The joined file path.
 ---@nodiscard
 function path.join(segments, segment_count) end
@@ -451,7 +451,7 @@ function path.join(segments, segment_count) end
 --- ```
 ---
 ---@param wildcard_str string The path wildcard string.
----@param anchor_to_slash? boolean If `true`, the pattern can match after any `/` instead of only at the start of the string.
+---@param anchor_to_slash boolean? If `true`, the pattern can match after any `/` instead of only at the start of the string.
 ---@return string pattern_str The Lua pattern that represents the wildcard string.
 ---@nodiscard
 function path.wildcard(wildcard_str, anchor_to_slash) end

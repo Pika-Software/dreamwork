@@ -45,9 +45,9 @@ function isAngle3(value) end
 
 --- Creates a new angle, missing values default to `0`.
 ---
----@param pitch? number The pitch in degrees, defaults to `0`.
----@param yaw? number The yaw in degrees, defaults to `0`.
----@param roll? number The roll in degrees, defaults to `0`.
+---@param pitch number? The pitch in degrees, defaults to `0`.
+---@param yaw number? The yaw in degrees, defaults to `0`.
+---@param roll number? The roll in degrees, defaults to `0`.
 ---@return Angle3 ang3 The new angle.
 ---@protected
 function Angle3:__new(pitch, yaw, roll) end
