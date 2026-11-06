@@ -64,7 +64,7 @@ local MAX_ENTITY_LIMIT = 200
 local CLIENT_RESULT_TIMEOUT = 10
 
 --- How often the native bridge command queue is polled.
-local POLL_INTERVAL = 0.1
+local POLL_INTERVAL = 1
 
 --- JPEG quality used by `render.Capture`.
 local SCREENSHOT_QUALITY = 45
