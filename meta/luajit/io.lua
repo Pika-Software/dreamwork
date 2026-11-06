@@ -45,11 +45,11 @@ io = {}
 ---
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-io.close)
 ---
----@param file file?*
+---@param file file*?
 ---@return true?     suc
 ---@return exitcode? exitcode
 ---@return integer?  code
-function io.close(file) end
+function io.close( file ) end
 
 ---
 ---Saves any written data to default output file.
@@ -65,7 +65,7 @@ function io.flush() end
 ---
 ---@overload fun():file*
 ---@param file string|file*
-function io.input(file) end
+function io.input( file ) end
 
 ---
 ---------
@@ -81,7 +81,7 @@ function io.input(file) end
 ---@param filename string?
 ---@param ... readmode
 ---@return fun():any, ...
-function io.lines(filename, ...) end
+function io.lines( filename, ... ) end
 
 ---
 ---Opens a file, in the mode specified in the string `mode`.
@@ -93,7 +93,7 @@ function io.lines(filename, ...) end
 ---@return file*?
 ---@return string? errmsg
 ---@nodiscard
-function io.open(filename, mode) end
+function io.open( filename, mode ) end
 
 ---
 ---Sets `file` as the default output file.
@@ -102,7 +102,7 @@ function io.open(filename, mode) end
 ---
 ---@overload fun():file*
 ---@param file string|file*
-function io.output(file) end
+function io.output( file ) end
 
 ---@alias popenmode
 ---| "r" # Read data from this program by `file`.
@@ -117,7 +117,7 @@ function io.output(file) end
 ---@param mode popenmode?
 ---@return file*?
 ---@return string? errmsg
-function io.popen(prog, mode) end
+function io.popen( prog, mode ) end
 
 ---
 ---Reads the `file`, according to the given formats, which specify what to read.
@@ -128,7 +128,7 @@ function io.popen(prog, mode) end
 ---@return any
 ---@return any ...
 ---@nodiscard
-function io.read(...) end
+function io.read( ... ) end
 
 ---
 ---In case of success, returns a handle for a temporary file.
@@ -152,7 +152,7 @@ function io.tmpfile() end
 ---@param file file*
 ---@return filetype
 ---@nodiscard
-function io.type(file) end
+function io.type( file ) end
 
 ---
 ---Writes the value of each of its arguments to default output file.
@@ -161,7 +161,7 @@ function io.type(file) end
 ---
 ---@return file*
 ---@return string? errmsg
-function io.write(...) end
+function io.write( ... ) end
 
 ---
 ---
@@ -209,7 +209,7 @@ function file:flush() end
 ---
 ---@param ... readmode
 ---@return fun():any, ...
-function file:lines(...) end
+function file:lines( ... ) end
 
 ---
 ---Reads the `file`, according to the given formats, which specify what to read.
@@ -220,7 +220,7 @@ function file:lines(...) end
 ---@return any
 ---@return any ...
 ---@nodiscard
-function file:read(...) end
+function file:read( ... ) end
 
 ---@alias seekwhence
 ---| "set" # Base is beginning of the file.
@@ -236,7 +236,7 @@ function file:read(...) end
 ---@param offset integer?
 ---@return integer offset
 ---@return string? errmsg
-function file:seek(whence, offset) end
+function file:seek( whence, offset ) end
 
 ---@alias vbuf
 ---| "no"   # Output operation appears immediately.
@@ -250,7 +250,7 @@ function file:seek(whence, offset) end
 ---
 ---@param mode vbuf
 ---@param size integer?
-function file:setvbuf(mode, size) end
+function file:setvbuf( mode, size ) end
 
 ---
 ---Writes the value of each of its arguments to `file`.
@@ -260,6 +260,6 @@ function file:setvbuf(mode, size) end
 ---@param ... string|number
 ---@return file*?
 ---@return string? errmsg
-function file:write(...) end
+function file:write( ... ) end
 
 return io
