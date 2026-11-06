@@ -124,7 +124,6 @@ gc_setTableRules( run_queues, true, false )
 ---@field [string] dreamwork.std.WebClient.JSCallback | true
 
 --- JS↔Lua bridges for the underlying `HTML` panel (`NewObject` / `NewObjectCallback` / `OnCallback`).
---- Mirrors `DHTML:AddFunction` from Facepunch/garrysmod `lua/vgui/dhtml.lua`.
 ---
 ---@type table<dreamwork.std.WebClient, dreamwork.std.WebClient.JSBridges>
 local js_bridges = {}

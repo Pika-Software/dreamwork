@@ -36,6 +36,7 @@ local isBigInteger = std.isBigInteger
 local exceptions_call = dreamwork.exceptions.call
 
 local json = std.json
+local json_encode = json.encode
 local json_serialize = json.serialize
 local json_deserialize = json.deserialize
 
@@ -269,7 +270,7 @@ local function encode_value( value )
     elseif value == nil then
         return "undefined"
     elseif isString( value ) or isBoolean( value ) then
-        return json_serialize( value )
+        return json_encode( value )
     end
 
     error( ValueError( value, "WASM values must be numbers, BigIntegers, strings, booleans or nil" ), 4 )
@@ -379,7 +380,7 @@ local function encode_memory( name )
         return "null"
     end
 
-    return json_serialize( name )
+    return json_encode( name )
 end
 
 
@@ -598,7 +599,7 @@ function WASM:__init( binary, imports )
     end )
 
     client.html = RUNTIME_HTML
-    client:run( string_format( "__dw.load(%s,%s)", json_serialize( base64_encode( binary ) ), json_serialize( spec ) ) )
+    client:run( string_format( "__dw.load(%s,%s)", json_encode( base64_encode( binary ) ), json_serialize( spec ) ) )
 end
 
 --- Closes the hosting client when the object is collected.
@@ -700,7 +701,7 @@ function WASM:invoke( name, ... )
         arguments[ i ] = encode_value( arguments[ i ] )
     end
 
-    return request( self, decode_results, "call", json_serialize( name ) .. ",[" .. table_concat( arguments, ",", 1, count ) .. "]" )
+    return request( self, decode_results, "call", json_encode( name ) .. ",[" .. table_concat( arguments, ",", 1, count ) .. "]" )
 end
 
 --- [CLIENT AND MENU]
@@ -763,7 +764,7 @@ end
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return dreamwork.std.Future future
 function WASM:writeFuture( offset, data, memory )
-    return request( self, decode_nothing, "write", string_format( "%s,%d,%s", encode_memory( memory ), offset, json_serialize( base64_encode( data ) ) ) )
+    return request( self, decode_nothing, "write", string_format( "%s,%d,%s", encode_memory( memory ), offset, json_encode( base64_encode( data ) ) ) )
 end
 
 --- [CLIENT AND MENU]
@@ -809,7 +810,7 @@ end
 ---@return number | dreamwork.std.BigInteger value
 ---@async
 function WASM:getGlobal( name )
-    return request( self, decode_first, "get", json_serialize( name ) ):await()
+    return request( self, decode_first, "get", json_encode( name ) ):await()
 end
 
 --- [CLIENT AND MENU]
@@ -820,7 +821,7 @@ end
 ---@param value number | dreamwork.std.BigInteger The new value.
 ---@async
 function WASM:setGlobal( name, value )
-    request( self, decode_nothing, "set", json_serialize( name ) .. "," .. encode_value( value ) ):await()
+    request( self, decode_nothing, "set", json_encode( name ) .. "," .. encode_value( value ) ):await()
 end
 
 --- [CLIENT AND MENU]

@@ -31,6 +31,7 @@ local table = std.table
 local table_sort = table.sort
 
 local json = std.json
+local json_encode = json.encode
 local json_serialize = json.serialize
 
 local base64 = std.base64
@@ -427,7 +428,7 @@ local function send_request( options, redirects )
             error( "`body` and `json` cannot be used together", 2 )
         end
 
-        body = json_serialize( json_value, false )
+        body = json_encode( json_value, false )
 
         if content_type == nil then
             content_type = "application/json; charset=utf-8"

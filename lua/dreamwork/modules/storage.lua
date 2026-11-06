@@ -32,7 +32,7 @@ local string_format = string.format
 local table_concat = std.table.concat
 
 local json = std.json
-local json_serialize, json_deserialize = json.serialize, json.deserialize
+local json_encode, json_decode = json.encode, json.decode
 
 local sqlite = std.sqlite
 local SQLiteBlob = sqlite.Blob
@@ -121,7 +121,7 @@ end
 --- Raises a `DecodeError` if the stored value is not valid JSON.
 ---
 ---@param key string The key of the value.
----@return dreamwork.std.json.Object | dreamwork.std.json.Array | nil value The value, or `nil` if the key does not exist.
+---@return dreamwork.std.json.Value | nil value The value, or `nil` if the key does not exist.
 ---@nodiscard
 function storage.readJSON( key )
     local value = storage.read( key )
@@ -129,7 +129,7 @@ function storage.readJSON( key )
         return nil
     end
 
-    return json_deserialize( value )
+    return json_decode( value )
 end
 
 --- [SHARED AND MENU]
@@ -139,9 +139,9 @@ end
 --- Raises an `EncodeError` if the value cannot be serialized.
 ---
 ---@param key string The key of the value.
----@param value dreamwork.std.json.Value The value to serialize and store.
+---@param value dreamwork.std.json.Value The value to encode and store.
 function storage.writeJSON( key, value )
-    storage.write( key, json_serialize( value ) )
+    storage.write( key, json_encode( value ) )
 end
 
 do

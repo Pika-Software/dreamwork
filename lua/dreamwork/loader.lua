@@ -3026,8 +3026,8 @@ dreamwork_load( "std/net/http.lua" )
 dreamwork_load( "std/types/web_client.lua", false, LUA_SERVER )
 dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
 
--- dreamwork_load( "modules/engine/websocket.lua" )
--- dreamwork_load( "std/net/websocket.lua" )
+dreamwork_load( "modules/engine/websocket.lua" )
+dreamwork_load( "std/net/websocket.lua" )
 
 dreamwork_load( "std/net/network.lua", false, LUA_MENU )
 
@@ -3248,9 +3248,3 @@ gc.collect()
 
 local cleanup_memory = gc.getMemory()
 logger:info( "Clean-up finished, took %.2f ms, cleaned up %.02f MB of garbage, total memory used by LuaJIT: %.02f MB.", time.tick( "ms" ), (total_memory - cleanup_memory) / 1024, cleanup_memory / 1024 )
-
--- TODO: Globally replace all versions, steamids, url, etc. with their classes in dreamwork, e.g. std.URL, steam.Identifier
-
--- TODO: few ideas from https://gitlab.com/DBotThePony/DLib/-/blob/develop/lua_src/dlib/extensions/extensions.lua?ref_type=heads
-
--- TODO: enums https://gitlab.com/DBotThePony/DLib/-/blob/develop/lua_src/dlib/enums/sdk.lua?ref_type=heads maybe maybe https://gitlab.com/DBotThePony/DLib/-/blob/develop/lua_src/dlib/enums/gmod.lua?ref_type=heads
