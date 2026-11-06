@@ -761,7 +761,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Variable:attach( handler )
     events:attach( self, "change", handler )
 end
@@ -772,7 +772,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Variable:once( handler )
     events:once( self, "change", handler )
 end
@@ -783,7 +783,7 @@ end
 ---
 ---@generic T
 ---@param self dreamwork.std.console.Variable<T>
----@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook The exact handler reference.
+---@param handler fun( variable: dreamwork.std.console.Variable<T>, value: T ) | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Variable:detach( handler )
     return events:detach( self, "change", handler )

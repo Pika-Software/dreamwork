@@ -45,6 +45,7 @@ dreamwork_engine.hook = hook
 ---@alias dreamwork.engine.hook.Handler
 ---| fun( ...: any ): ...
 ---| dreamwork.std.Hook
+---| dreamwork.std.Event
 ---| dreamwork.std.Mixin
 
 --- Handlers of each event, sorted by priority (highest first).

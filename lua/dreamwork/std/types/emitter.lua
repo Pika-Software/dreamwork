@@ -28,9 +28,9 @@ local Future = std.Future
 local names = {}
 setmetatable( names, { __mode = "k" } )
 
---- A function, or a callable object such as a `Hook` (called through its `__call` metamethod).
+--- A function, or a callable object such as a `Hook` or an `Event` (called through its `__call` metamethod).
 ---
----@alias dreamwork.std.Emitter.Handler function | dreamwork.std.Hook
+---@alias dreamwork.std.Emitter.Handler function | dreamwork.std.Hook | dreamwork.std.Event
 
 --- One event's handlers: `[0]` is the count, `[1..n]` the handlers in attach order.
 ---

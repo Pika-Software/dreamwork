@@ -236,7 +236,7 @@ end
 ---
 --- Attaching the same handler twice is a no-op, handlers run in protected mode.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function PixelMap:attach( handler )
     events:attach( self, "resize", handler )
 end
@@ -245,7 +245,7 @@ end
 ---
 --- Attaches a one-shot resize handler that detaches itself before running.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function PixelMap:once( handler )
     events:once( self, "resize", handler )
 end
@@ -254,7 +254,7 @@ end
 ---
 --- Detaches a previously attached resize handler.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook The exact handler reference.
+---@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function PixelMap:detach( handler )
     return events:detach( self, "resize", handler )

@@ -17,7 +17,7 @@ local debug_fempty = debug.fempty
 local console = std.console
 local console_Variable = console.Variable
 
-local Hook = std.Hook
+local Event = std.Event
 
 --- [SHARED AND MENU]
 ---
@@ -190,7 +190,7 @@ if std.LUA_CLIENT and server.Tick == nil then
     ---
     --- Called once every processed server frame during lag.
     ---
-    local Tick = Hook( "server.Tick" )
+    local Tick = Event( "server.Tick" )
     engine_hook.catch( "Think", "server.Tick", Tick )
     server.Tick = Tick
 
@@ -221,7 +221,7 @@ if std.LUA_MENU then
     ---
     --- Called when the server details are received from the server.
     ---
-    local server_Details = std.Hook( "server.GameDetails" )
+    local server_Details = Event( "server.Details" )
     engine_hook.catch( "dreamwork.server.details", "server.Details", server_Details )
     server.Details = server_Details
 

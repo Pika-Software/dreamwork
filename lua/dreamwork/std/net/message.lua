@@ -234,7 +234,7 @@ local commands = {}
 ---
 --- If the handler is already attached, it will not be attached twice.
 ---
----@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Message:attach( handler )
     events:attach( self, "receive", handler )
 end
@@ -244,7 +244,7 @@ end
 --- Attaches a handler that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Message:once( handler )
     events:once( self, "receive", handler )
 end
@@ -253,7 +253,7 @@ end
 ---
 --- Detaches a previously attached receive handler.
 ---
----@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook The exact handler reference.
+---@param handler dreamwork.std.Message.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Message:detach( handler )
     return events:detach( self, "receive", handler )

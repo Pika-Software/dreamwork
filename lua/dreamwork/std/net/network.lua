@@ -316,7 +316,7 @@ local network_receive
 ---
 --- If the handler is already attached, it will not be attached twice.
 ---
----@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Network:attach( handler )
     events:attach( self, "receive", handler )
 end
@@ -326,7 +326,7 @@ end
 --- Attaches a handler that automatically detaches
 --- itself right before being invoked, so it only ever runs once.
 ---
----@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Network:once( handler )
     events:once( self, "receive", handler )
 end
@@ -335,7 +335,7 @@ end
 ---
 --- Detaches a previously attached receive handler.
 ---
----@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook The exact handler reference.
+---@param handler dreamwork.std.Network.ReceiveFn | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Network:detach( handler )
     return events:detach( self, "receive", handler )
@@ -372,7 +372,7 @@ end
 ---
 --- If a network has only stream handlers, the received data is not kept in memory.
 ---
----@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Network:stream( handler )
     events:attach( self, "stream", handler )
 end
@@ -381,7 +381,7 @@ end
 ---
 --- Detaches a previously attached stream handler.
 ---
----@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook The exact handler reference.
+---@param handler dreamwork.std.Network.StreamFn | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Network:unstream( handler )
     return events:detach( self, "stream", handler )
@@ -391,7 +391,7 @@ end
 ---
 --- Attaches a handler that is called on every transfer progress, both incoming and outgoing.
 ---
----@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Network:watch( handler )
     events:attach( self, "progress", handler )
 end
@@ -400,7 +400,7 @@ end
 ---
 --- Detaches a previously attached progress handler.
 ---
----@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook The exact handler reference.
+---@param handler dreamwork.std.Network.ProgressFn | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Network:unwatch( handler )
     return events:detach( self, "progress", handler )

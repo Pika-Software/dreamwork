@@ -226,7 +226,7 @@ end
 ---
 --- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Command:attach( handler )
     events:attach( self, "execute", handler )
 end
@@ -235,7 +235,7 @@ end
 ---
 --- Attaches a one-shot handler, detached right before the next execution calls it.
 ---
----@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The callback or callable object.
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Command:once( handler )
     events:once( self, "execute", handler )
 end
@@ -244,7 +244,7 @@ end
 ---
 --- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook The exact handler reference.
+---@param handler dreamwork.std.console.Command.Callback | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Command:detach( handler )
     return events:detach( self, "execute", handler )

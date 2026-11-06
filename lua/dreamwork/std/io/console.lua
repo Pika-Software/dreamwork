@@ -54,7 +54,12 @@ if std.LUA_MENU then
 
 end
 
-console.VisibilityHook = std.Hook( "console.VisibilityHook" )
+--- [SHARED AND MENU]
+---
+--- An event that is called with the new visibility when the console is shown or hidden.
+---
+local Visibility = console.Visibility or std.Event( "console.Visibility" )
+console.Visibility = Visibility
 
 if std.LUA_CLIENT_MENU then
 
@@ -67,7 +72,7 @@ if std.LUA_CLIENT_MENU then
         if visible ~= gui_IsConsoleVisible() then
             visible = not visible
             console.visible = visible
-            console.VisibilityHook:call( visible )
+            Visibility:call( visible )
         end
     end )
 

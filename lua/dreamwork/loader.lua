@@ -2726,6 +2726,7 @@ dreamwork_load( "std/compress/lzma.lua" )
 
 dreamwork_load( "std/types/mixin.lua" )
 dreamwork_load( "std/types/hook.lua" )
+dreamwork_load( "std/types/event.lua" )
 dreamwork_load( "std/types/emitter.lua" )
 dreamwork_load( "std/types/timer.lua" )
 

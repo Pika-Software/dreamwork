@@ -249,7 +249,7 @@ end
 ---
 --- Handlers run in protected mode, one failing handler is reported and never stops the others.
 ---
----@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Timer:attach( handler )
     events:attach( self, "tick", handler )
 end
@@ -258,7 +258,7 @@ end
 ---
 --- Attaches a one-shot handler, detached right before the next run of the timer calls it.
 ---
----@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The callback or callable object.
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
 function Timer:once( handler )
     events:once( self, "tick", handler )
 end
@@ -267,7 +267,7 @@ end
 ---
 --- Detaches a handler previously passed to `attach` or `once`.
 ---
----@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook The exact handler reference.
+---@param handler fun( timer: dreamwork.std.Timer ) | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
 function Timer:detach( handler )
     return events:detach( self, "tick", handler )

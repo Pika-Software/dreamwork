@@ -39,10 +39,10 @@ local intervals = {}
 ---@type table<string, integer>
 local repetitions = {}
 
----@type table<string, ( fun() | dreamwork.std.Hook )>
+---@type table<string, ( fun() | dreamwork.std.Hook | dreamwork.std.Event )>
 local handlers = {}
 
----@type table<( fun() | dreamwork.std.Hook ), boolean>
+---@type table<( fun() | dreamwork.std.Hook | dreamwork.std.Event ), boolean>
 local handlerIsType = {}
 
 ---@type table<string, dreamwork.std.Timer.state>
@@ -468,7 +468,7 @@ end
 --- Sets the function called by the timer.
 ---
 ---@param name string The name of the timer.
----@param fn fun() | dreamwork.std.Hook The function to call.
+---@param fn fun() | dreamwork.std.Hook | dreamwork.std.Event The function to call.
 ---@return boolean success Returns `true` if the timer exists, otherwise `false`.
 function engine_timer.setFunction( name, fn )
     if states[ name ] == nil then
@@ -488,7 +488,7 @@ end
 ---@param name string The name of the timer.
 ---@param interval number | nil The delay between repetitions in seconds, defaults to `1`.
 ---@param repetitions_total integer | nil The total amount of repetitions, `0` for endless, defaults to `1`.
----@param fn fun() | dreamwork.std.Hook | nil The function to call, defaults to an empty function.
+---@param fn fun() | dreamwork.std.Hook | dreamwork.std.Event | nil The function to call, defaults to an empty function.
 ---@return boolean success Always `true`.
 function engine_timer.create( name, interval, repetitions_total, fn )
     unschedule( name )

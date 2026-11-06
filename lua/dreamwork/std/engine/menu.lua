@@ -16,7 +16,7 @@ std.menu = menu
 
 if _G.gui == nil then
 
-    menu.Visibility = menu.Visibility or std.Hook( "menu.Visibility" )
+    menu.Visibility = menu.Visibility or std.Event( "menu.Visibility" )
 
     menu.open = std.debug.fempty
     menu.close = std.debug.fempty
@@ -35,7 +35,7 @@ else
 
         local gui_IsGameUIVisible = gui.IsGameUIVisible or function() return false end
 
-        local Visibility = menu.Visibility or std.Hook( "menu.Visibility" )
+        local Visibility = menu.Visibility or std.Event( "menu.Visibility" )
         menu.Visibility = Visibility
 
         local visible = gui_IsGameUIVisible()
@@ -47,7 +47,7 @@ else
                 menu.visible = visible
                 Visibility:call( visible )
             end
-        end, "std.menu.visible" )
+        end )
 
     end
 

@@ -131,12 +131,12 @@ end
 --- Error / lifecycle events: `"error"`, `"command"`, `"enable"`, `"disable"`.
 local events = Emitter( "MCP" )
 
----@param handler fun( message: string, context: table? ) | dreamwork.std.Hook
+---@param handler fun( message: string, context: table? ) | dreamwork.std.Hook | dreamwork.std.Event
 function mcp.onError( handler )
     events:attach( mcp, "error", handler )
 end
 
----@param handler fun( message: string, context: table? ) | dreamwork.std.Hook
+---@param handler fun( message: string, context: table? ) | dreamwork.std.Hook | dreamwork.std.Event
 ---@return boolean
 function mcp.offError( handler )
     return events:detach( mcp, "error", handler )

@@ -10,7 +10,7 @@ local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
 local CurTime = CurTime
-local Hook = std.Hook
+local Event = std.Event
 
 -- ---@class dreamwork.std.Game : dreamwork.std.Object
 -- local Game = class.base( "Game", true )
@@ -145,10 +145,10 @@ if game.OnTick == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- A hook that is called every tick.
+    --- An event that is called every tick.
     ---
-    local OnTick = Hook( "game.OnTick" )
-    engine_hookCatch( "Tick", OnTick )
+    local OnTick = Event( "game.OnTick" )
+    engine_hook.catch( "Tick", "game.OnTick", OnTick )
     game.OnTick = OnTick
 
 end
@@ -157,10 +157,10 @@ if game.OnShutDown == nil then
 
     --- [SHARED]
     ---
-    --- A hook that is called when the game is shutting down.
+    --- An event that is called when the game is shutting down.
     ---
-    local OnShutDown = Hook( "game.OnShutDown" )
-    engine_hookCatch( "ShutDown", OnShutDown, 2 )
+    local OnShutDown = Event( "game.OnShutDown" )
+    engine_hook.catch( "ShutDown", "game.OnShutDown", OnShutDown, 2 )
     game.OnShutDown = OnShutDown
 
 end

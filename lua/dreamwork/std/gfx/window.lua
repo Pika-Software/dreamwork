@@ -30,7 +30,7 @@ window.width, window.height = width, height
 
 if window.SizeChanged == nil then
 
-    local SizeChanged = std.Hook( "window.SizeChanged" )
+    local SizeChanged = std.Event( "window.SizeChanged" )
     window.SizeChanged = SizeChanged
 
     dreamwork.engine.hook.catch( "OnScreenSizeChanged", "screen.size.change", function( old_width, old_height, new_width, new_height )
