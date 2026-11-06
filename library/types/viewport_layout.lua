@@ -2,14 +2,14 @@
 
 --- [CLIENT AND MENU]
 ---
---- Display length abbreviations resolved by `PixelMap` into floored CSS pixels.
+--- Display length abbreviations resolved by `ViewportLayout` into floored CSS pixels.
 ---
 --- Viewport units (`vmin`, `vw`, …) track `window` size. Absolute lengths
 --- (`cm`, `pt`, …) use the CSS 96 DPI reference, not live DPI.
 ---
 --- For non-display unit conversion (mass, temperature, …) use `unit`.
 ---
----@alias PixelUnit
+---@alias ViewportUnit
 ---| "px" # Absolute pixels (identity).
 ---| "vmin" # `1%` of `min(window.width, window.height)`.
 ---| "vmax" # `1%` of `max(window.width, window.height)`.
@@ -29,10 +29,10 @@
 
 --- [CLIENT AND MENU]
 ---
---- A named map of CSS / viewport length descriptors that resolve to floored
+--- A named set of CSS / viewport length descriptors that resolve to floored
 --- pixels and refresh when the window is resized.
 ---
---- Indexing a registered alias (`sizes.hex`) returns the cached integer pixel
+--- Indexing a registered alias (`hud.hex`) returns the cached integer pixel
 --- length. Unknown keys fall through to the class prototype.
 ---
 --- Handlers attached with `:attach` / `:once` run after the shared pixel cache
@@ -41,7 +41,7 @@
 --- Construction raises `ValueError` if any descriptor cannot be parsed.
 ---
 --- ```lua
---- local sizes = PixelMap( {
+--- local hud = ViewportLayout( {
 ---     hex = "1vmin",
 ---     t = "2vmin",
 ---     h = "10cm",
@@ -49,81 +49,81 @@
 ---     d = "120px"
 --- } )
 ---
---- print( sizes.hex ) -- floored pixels for "1vmin"
+--- print( hud.hex ) -- floored pixels for "1vmin"
 ---
---- sizes:attach( function( map, old_width, old_height, new_width, new_height )
----     print( map.hex ) -- refreshed after resize
+--- hud:attach( function( layout, old_width, old_height, new_width, new_height )
+---     print( layout.hex ) -- refreshed after resize
 --- end )
 --- ```
 ---
----@class PixelMap : Object
----@field __class PixelMapClass The class used to construct this object.
-local __PixelMap = {}
+---@class ViewportLayout : Object
+---@field __class ViewportLayoutClass The class used to construct this object.
+local __ViewportLayout = {}
 
 --- Builds the alias table and seeds `pixel_cache` for each descriptor.
 ---
----@param definitions table<string, string> Alias name -> length quantity string (`"<number><PixelUnit>"`).
+---@param definitions table<string, string> Alias name -> length quantity string (`"<number><ViewportUnit>"`).
 ---@protected
-function __PixelMap:__init(definitions) end
+function __ViewportLayout:__init(definitions) end
 
 --- Resolves a registered alias to floored pixels, or falls back to the prototype.
 ---
 ---@param key string The alias name, or a prototype field / method name.
 ---@return integer | any value Floored pixels for a known alias; otherwise the prototype value.
 ---@protected
-function __PixelMap:__index(key) end
+function __ViewportLayout:__index(key) end
 
 --- [CLIENT AND MENU]
 ---
---- Attaches a handler that runs after this map's pixel values are refreshed
+--- Attaches a handler that runs after this layout's pixel values are refreshed
 --- on screen resize.
 ---
 --- Attaching the same handler twice is a no-op, handlers run in protected mode.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The callback or callable object.
-function __PixelMap:attach(handler) end
+---@param handler fun( layout: ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The callback or callable object.
+function __ViewportLayout:attach(handler) end
 
 --- [CLIENT AND MENU]
 ---
 --- Attaches a one-shot resize handler that detaches itself before running.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The callback or callable object.
-function __PixelMap:once(handler) end
+---@param handler fun( layout: ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The callback or callable object.
+function __ViewportLayout:once(handler) end
 
 --- [CLIENT AND MENU]
 ---
 --- Detaches a previously attached resize handler.
 ---
----@param handler fun( map: PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The exact handler reference.
+---@param handler fun( layout: ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | Hook | Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
-function __PixelMap:detach(handler) end
+function __ViewportLayout:detach(handler) end
 
 --- [CLIENT AND MENU]
 ---
---- Removes every resize handler attached to this map.
+--- Removes every resize handler attached to this layout.
 ---
-function __PixelMap:clear() end
+function __ViewportLayout:clear() end
 
 --- [CLIENT AND MENU]
 ---
---- Waits for the next screen-size refresh of this map.
+--- Waits for the next screen-size refresh of this layout.
 ---
----@return PixelMap map
+---@return ViewportLayout layout
 ---@return integer old_width
 ---@return integer old_height
 ---@return integer new_width
 ---@return integer new_height
 ---@async
-function __PixelMap:await() end
+function __ViewportLayout:await() end
 
 --- [CLIENT AND MENU]
 ---
---- The class used to create `PixelMap` instances and parse display lengths.
+--- The class used to create `ViewportLayout` instances and parse display lengths.
 ---
----@class PixelMapClass : PixelMap, Class
----@field __base PixelMap The instance prototype shared by all `PixelMap` objects.
+---@class ViewportLayoutClass : ViewportLayout, Class
+---@field __base ViewportLayout The instance prototype shared by all `ViewportLayout` objects.
 ---@overload fun( definitions: table<string, string> ): table<string, integer>
-PixelMap = {}
+ViewportLayout = {}
 
 --- [CLIENT AND MENU]
 ---
@@ -133,12 +133,12 @@ PixelMap = {}
 --- `"unsupported unit"` when the descriptor cannot be parsed.
 ---
 --- ```lua
---- PixelMap.parse( "120px" ) -- 120
---- PixelMap.parse( "10cm" )  -- floored CSS pixels at 96 DPI
---- PixelMap.parse( "1vmin" ) -- floored pixels from current window size
+--- ViewportLayout.parse( "120px" ) -- 120
+--- ViewportLayout.parse( "10cm" )  -- floored CSS pixels at 96 DPI
+--- ViewportLayout.parse( "1vmin" ) -- floored pixels from current window size
 --- ```
 ---
----@param descriptor string The length quantity string to parse (`"<number><PixelUnit>"`).
+---@param descriptor string The length quantity string to parse (`"<number><ViewportUnit>"`).
 ---@return integer pixels The floored pixel length.
 ---@nodiscard
-function PixelMap.parse(descriptor) end
+function ViewportLayout.parse(descriptor) end
