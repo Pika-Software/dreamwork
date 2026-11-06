@@ -3020,6 +3020,7 @@ dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
 dreamwork_load( "modules/engine/websocket.lua" )
 dreamwork_load( "std/net/websocket.lua" )
 
+dreamwork_load( "std/net/message.lua" )
 dreamwork_load( "std/net/network.lua", false, LUA_MENU )
 
 dreamwork_load( "modules/engine/material.lua" )
