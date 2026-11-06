@@ -148,7 +148,7 @@ do
     ---
     --- A cache of HTTP responses, keyed by URL and validated by ETag.
     ---
-    --- Size and lifetime limits are controlled by `storage.http.config`, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
+    --- Size and lifetime limits are controlled by `storage.http.config`, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
     ---
     ---@class dreamwork.storage.http
     local http = {}
@@ -220,7 +220,7 @@ do
                 return
             end
 
-            error( string_format( "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http_client cache_size).", url, content_size, max_size ), 2 )
+            error( string_format( "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http client cache_size).", url, content_size, max_size ), 2 )
         end
 
         sqlite_query( "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content", url, etag, time_now( "ms", false ), SQLiteBlob( content ) )
@@ -791,7 +791,7 @@ end
 ---
 --- Initializes the database: tunes the SQLite pragmas and runs all pending migrations.
 ---
---- The HTTP cache is pruned by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`), once its saved limits are applied.
+--- The HTTP cache is pruned by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`), once its saved limits are applied.
 ---
 function storage.init()
     dreamwork_Logger:info( "Initializing the database..." )

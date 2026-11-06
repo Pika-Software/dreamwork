@@ -6,15 +6,22 @@ local cli_printHeader = dreamwork_cli.printHeader
 local cli_complete = dreamwork_cli.complete
 local cli_shift = dreamwork_cli.shift
 
-local github = std.http.github
-local github_config = github.config
-local github_ratelimit = github.ratelimit
-local github_getRateLimit = github.getRateLimit
-
 local dreamwork_storage = dreamwork.storage
 local storage_read = dreamwork_storage.read
 local storage_write = dreamwork_storage.write
 local storage_delete = dreamwork_storage.delete
+
+local storage_http = dreamwork_storage.http
+local storage_http_prune = storage_http.prune
+local storage_http_config = storage_http.config
+
+local http = std.http
+local http_client_config = http.client.config
+
+local github = http.github
+local github_config = github.config
+local github_ratelimit = github.ratelimit
+local github_getRateLimit = github.getRateLimit
 
 local time_now = std.time.now
 local tostring = std.tostring
@@ -36,9 +43,97 @@ end
 
 --- [SHARED AND MENU]
 ---
---- The Github API commands, `dreamwork_sci github <command>`.
+--- The http commands, `dreamwork_sci http <command>`.
 ---
-local github_group = dreamwork_cli.group( "github", "Github API commands." )
+local http_group = dreamwork_cli.group( "http", "Http client and API commands." )
+
+http_group:settings( {
+    name = "client",
+    description = "Shows or changes the saved settings of the http client, 'reset' restores the default.",
+    settings = {
+        {
+            name = "timeout",
+            key = "dreamwork.http.timeout",
+            description = "The default timeout for http requests in seconds.",
+            target = http_client_config,
+            field = "timeout",
+            type = "number",
+            min = 0,
+            max = 300
+        },
+        {
+            name = "cache_ttl",
+            key = "dreamwork.http.cache.ttl",
+            description = "The cache time to live for the dreamwork http library in minutes.",
+            target = http_client_config,
+            field = "cache_ttl",
+            type = "number",
+            min = 0,
+            max = 40320
+        },
+        {
+            name = "cache_entries",
+            key = "dreamwork.http.cache.entries",
+            description = "The maximum number of responses kept in the dreamwork http session cache, 0 disables it.",
+            target = http_client_config,
+            field = "cache_entries",
+            type = "integer",
+            min = 0,
+            max = 65536
+        },
+        {
+            name = "max_redirects",
+            key = "dreamwork.http.max_redirects",
+            description = "The default maximum number of redirects followed in Lua by the dreamwork http library (with cookies and chttp).",
+            target = http_client_config,
+            field = "max_redirects",
+            type = "integer",
+            min = 0,
+            max = 100
+        },
+        {
+            name = "cache_size",
+            key = "dreamwork.http.cache_size",
+            description = "The maximum size of cached content in KB, used for etag caching in http library.",
+            target = storage_http_config,
+            field = "cache_size",
+            type = "integer",
+            min = 0,
+            max = 16384
+        },
+        {
+            name = "cache_total_size",
+            key = "dreamwork.http.cache_total_size",
+            description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
+            target = storage_http_config,
+            field = "cache_total_size",
+            type = "integer",
+            min = 0,
+            max = 1048576,
+            on_change = storage_http_prune
+        },
+        {
+            name = "cache_lifetime",
+            key = "dreamwork.http.cache_lifetime",
+            description = "The number of days cached content is kept for, 0 keeps it forever.",
+            target = storage_http_config,
+            field = "cache_lifetime",
+            type = "integer",
+            min = 0,
+            max = 3650,
+            on_change = storage_http_prune
+        }
+    }
+} )
+
+-- once, with the saved limits
+storage_http_prune()
+
+--- [SHARED AND MENU]
+---
+--- The Github API commands, `dreamwork_sci http github <command>`.
+---
+local github_group = http_group:group( "github", "Github API commands." )
 
 --- Formats the seconds left until the unix time `reset`.
 ---
@@ -114,7 +209,7 @@ github_group:register( "status", {
     end
 } )
 
-github_group:register( "set_token", {
+github_group:register( "token", {
     description = "Shows or changes the Github API token, 'reset' restores the default. See https://github.com/settings/tokens",
     usage = "[token|reset]",
     on_run = function( _, args, argument_string )
@@ -134,7 +229,7 @@ github_group:register( "set_token", {
         github_config.token = argument_string
         cli_printHeader( { "token: " .. format_token( github_config.token ) }, "Github API" )
     end,
-    on_type = function( _, argument_string )
+    on_type = function( _, _, argument_string )
         local value, rest = cli_shift( argument_string )
         if rest ~= nil then
             return nil

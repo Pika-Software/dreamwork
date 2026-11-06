@@ -285,7 +285,7 @@ Request.headers = nil
 ---
 --- The timeout for the connection in seconds.
 ---
---- Defaults to `http.client.config.timeout`, set by `http_client timeout` (`10` seconds).
+--- Defaults to `http.client.config.timeout`, set by `http client timeout` (`10` seconds).
 ---
 --- `0` means no timeout.
 ---
@@ -332,7 +332,7 @@ Request.cookies = nil
 ---
 --- The most redirects followed in Lua, more fail the request with `"too many redirects"`.
 ---
---- Defaults to `http.client.config.max_redirects`, set by `http_client max_redirects` (`10` redirects).
+--- Defaults to `http.client.config.max_redirects`, set by `http client max_redirects` (`10` redirects).
 ---
 --- Only applies when redirects are followed in Lua, with `cookies` and the `chttp` client,
 --- other clients follow redirects on their own with their own limits.

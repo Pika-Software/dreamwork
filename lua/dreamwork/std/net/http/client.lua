@@ -72,7 +72,7 @@ http.client = client
 
 --- [SHARED AND MENU]
 ---
---- The defaults of the http client, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
+--- The defaults of the http client, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
 ---
 ---@type dreamwork.std.http.client.Config
 local config = {

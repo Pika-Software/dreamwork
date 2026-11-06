@@ -1128,7 +1128,7 @@ do
     ---
     ---@class dreamwork.cli.Settings : dreamwork.std.Object, dreamwork.cli.Command
     ---@field __class dreamwork.cli.SettingsClass
-    ---@field path string The full typed path of the command, e.g. `dreamwork_sci http_client`.
+    ---@field path string The full typed path of the command, e.g. `dreamwork_sci http client`.
     ---@field list dreamwork.cli.Setting[] The settings in the listed order.
     ---@field names string[] The names of the settings in the listed order.
     ---@field by_name table<string, dreamwork.cli.Setting> The settings by name.
@@ -1358,6 +1358,5 @@ do
 end
 
 dreamwork_load( "modules/cli/commands/vfs.lua" )
-dreamwork_load( "modules/cli/commands/http_client.lua" )
-dreamwork_load( "modules/cli/commands/github.lua" )
+dreamwork_load( "modules/cli/commands/http.lua" )
 dreamwork_load( "modules/cli/commands/mcp.lua", false, not std.LUA_CLIENT_SERVER )
