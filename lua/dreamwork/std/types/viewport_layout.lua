@@ -32,14 +32,14 @@ local Future = std.Future
 
 --- [CLIENT AND MENU]
 ---
---- Display length abbreviations resolved by `PixelMap` into floored CSS pixels.
+--- Display length abbreviations resolved by `ViewportLayout` into floored CSS pixels.
 ---
 --- Viewport units (`vmin`, `vw`, …) track `window` size. Absolute lengths
 --- (`cm`, `pt`, …) use the CSS 96 DPI reference, not live DPI.
 ---
 --- For non-display unit conversion (mass, temperature, …) use `unit`.
 ---
----@alias dreamwork.std.PixelUnit
+---@alias dreamwork.std.ViewportUnit
 ---| "px" # Absolute pixels (identity).
 ---| "vmin" # `1%` of `min(window.width, window.height)`.
 ---| "vmax" # `1%` of `max(window.width, window.height)`.
@@ -59,7 +59,7 @@ local Future = std.Future
 
 --- Resolvers from magnitude to CSS pixels (before flooring).
 ---
----@type table<dreamwork.std.PixelUnit, fun( value: number ): number>
+---@type table<dreamwork.std.ViewportUnit, fun( value: number ): number>
 local display_units = {
     px = function( value )
         return value
@@ -126,7 +126,7 @@ display_units.pmax = display_units.vmax
 --- On failure returns `0` and one of `"missing magnitude"`, `"missing unit type"`,
 --- or `"unsupported unit"`.
 ---
----@param descriptor string The length quantity string (`"<number><PixelUnit>"`).
+---@param descriptor string The length quantity string (`"<number><ViewportUnit>"`).
 ---@return integer pixels The floored pixel length (`0` when `error_message` is set).
 ---@return string | nil error_message `nil` on success, otherwise a short failure reason.
 local function descriptor_to_pixels( descriptor )
@@ -154,21 +154,21 @@ end
 ---@type table<string, integer>
 local pixel_cache = {}
 
---- Weak keys: each `PixelMap` -> its alias name -> original descriptor string.
+--- Weak keys: each `ViewportLayout` -> its alias name -> original descriptor string.
 ---
----@type table<dreamwork.std.PixelMap, table<string, string>>
-local map_aliases = {}
-gc_setTableRules( map_aliases, true, false )
+---@type table<dreamwork.std.ViewportLayout, table<string, string>>
+local layout_aliases = {}
+gc_setTableRules( layout_aliases, true, false )
 
---- PixelMap `"resize"` handlers.
-local events = Emitter( "PixelMap" )
+--- ViewportLayout `"resize"` handlers.
+local events = Emitter( "ViewportLayout" )
 
 --- [CLIENT AND MENU]
 ---
---- A named map of CSS / viewport length descriptors that resolve to floored
+--- A named set of CSS / viewport length descriptors that resolve to floored
 --- pixels and refresh when the window is resized.
 ---
---- Indexing a registered alias (`sizes.hex`) returns the cached integer pixel
+--- Indexing a registered alias (`hud.hex`) returns the cached integer pixel
 --- length. Unknown keys fall through to the class prototype.
 ---
 --- Handlers attached with `:attach` / `:once` run after the shared pixel cache
@@ -177,7 +177,7 @@ local events = Emitter( "PixelMap" )
 --- Construction raises `ValueError` if any descriptor cannot be parsed.
 ---
 --- ```lua
---- local sizes = PixelMap( {
+--- local hud = ViewportLayout( {
 ---     hex = "1vmin",
 ---     t = "2vmin",
 ---     h = "10cm",
@@ -185,24 +185,24 @@ local events = Emitter( "PixelMap" )
 ---     d = "120px"
 --- } )
 ---
---- print( sizes.hex ) -- floored pixels for "1vmin"
+--- print( hud.hex ) -- floored pixels for "1vmin"
 ---
---- sizes:attach( function( map, old_width, old_height, new_width, new_height )
----     print( map.hex ) -- refreshed after resize
+--- hud:attach( function( layout, old_width, old_height, new_width, new_height )
+---     print( layout.hex ) -- refreshed after resize
 --- end )
 --- ```
 ---
----@class dreamwork.std.PixelMap : dreamwork.std.Object
----@field __class dreamwork.std.PixelMapClass The class used to construct this object.
-local PixelMap = class.base( "PixelMap", true )
+---@class dreamwork.std.ViewportLayout : dreamwork.std.Object
+---@field __class dreamwork.std.ViewportLayoutClass The class used to construct this object.
+local ViewportLayout = class.base( "ViewportLayout", true )
 
 --- Builds the alias table and seeds `pixel_cache` for each descriptor.
 ---
----@param definitions table<string, string> Alias name -> length quantity string (`"<number><PixelUnit>"`).
+---@param definitions table<string, string> Alias name -> length quantity string (`"<number><ViewportUnit>"`).
 ---@protected
-function PixelMap:__init( definitions )
+function ViewportLayout:__init( definitions )
     local aliases = {}
-    map_aliases[ self ] = aliases
+    layout_aliases[ self ] = aliases
 
     for alias, descriptor in raw_pairs( definitions ) do
         local pixels, error_message = descriptor_to_pixels( descriptor )
@@ -220,24 +220,24 @@ end
 ---@param key string The alias name, or a prototype field / method name.
 ---@return integer | any value Floored pixels for a known alias; otherwise the prototype value.
 ---@protected
-function PixelMap:__index( key )
-    local descriptor = map_aliases[ self ][ key ]
+function ViewportLayout:__index( key )
+    local descriptor = layout_aliases[ self ][ key ]
     if descriptor ~= nil then
         return pixel_cache[ descriptor ] or 0
     end
 
-    return raw_get( PixelMap, key )
+    return raw_get( ViewportLayout, key )
 end
 
 --- [CLIENT AND MENU]
 ---
---- Attaches a handler that runs after this map's pixel values are refreshed
+--- Attaches a handler that runs after this layout's pixel values are refreshed
 --- on screen resize.
 ---
 --- Attaching the same handler twice is a no-op, handlers run in protected mode.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
-function PixelMap:attach( handler )
+---@param handler fun( layout: dreamwork.std.ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
+function ViewportLayout:attach( handler )
     events:attach( self, "resize", handler )
 end
 
@@ -245,8 +245,8 @@ end
 ---
 --- Attaches a one-shot resize handler that detaches itself before running.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
-function PixelMap:once( handler )
+---@param handler fun( layout: dreamwork.std.ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The callback or callable object.
+function ViewportLayout:once( handler )
     events:once( self, "resize", handler )
 end
 
@@ -254,31 +254,31 @@ end
 ---
 --- Detaches a previously attached resize handler.
 ---
----@param handler fun( map: dreamwork.std.PixelMap, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
+---@param handler fun( layout: dreamwork.std.ViewportLayout, old_width: integer, old_height: integer, new_width: integer, new_height: integer ) | dreamwork.std.Hook | dreamwork.std.Event The exact handler reference.
 ---@return boolean removed `true` if the handler was attached.
-function PixelMap:detach( handler )
+function ViewportLayout:detach( handler )
     return events:detach( self, "resize", handler )
 end
 
 --- [CLIENT AND MENU]
 ---
---- Removes every resize handler attached to this map.
+--- Removes every resize handler attached to this layout.
 ---
-function PixelMap:clear()
+function ViewportLayout:clear()
     events:clear( self )
 end
 
 --- [CLIENT AND MENU]
 ---
---- Waits for the next screen-size refresh of this map.
+--- Waits for the next screen-size refresh of this layout.
 ---
----@return dreamwork.std.PixelMap map
+---@return dreamwork.std.ViewportLayout layout
 ---@return integer old_width
 ---@return integer old_height
 ---@return integer new_width
 ---@return integer new_height
 ---@async
-function PixelMap:await()
+function ViewportLayout:await()
     -- five values, `Emitter:await` returns at most four
     local future = Future()
 
@@ -292,13 +292,13 @@ end
 
 --- [CLIENT AND MENU]
 ---
---- The class used to create `PixelMap` instances and parse display lengths.
+--- The class used to create `ViewportLayout` instances and parse display lengths.
 ---
----@class dreamwork.std.PixelMapClass : dreamwork.std.PixelMap, dreamwork.std.Class
----@field __base dreamwork.std.PixelMap The instance prototype shared by all `PixelMap` objects.
+---@class dreamwork.std.ViewportLayoutClass : dreamwork.std.ViewportLayout, dreamwork.std.Class
+---@field __base dreamwork.std.ViewportLayout The instance prototype shared by all `ViewportLayout` objects.
 ---@overload fun( definitions: table<string, string> ): table<string, integer>
-local PixelMapClass = class.create( PixelMap )
-std.PixelMap = PixelMapClass
+local ViewportLayoutClass = class.create( ViewportLayout )
+std.ViewportLayout = ViewportLayoutClass
 
 --- [CLIENT AND MENU]
 ---
@@ -308,15 +308,15 @@ std.PixelMap = PixelMapClass
 --- `"unsupported unit"` when the descriptor cannot be parsed.
 ---
 --- ```lua
---- PixelMap.parse( "120px" ) -- 120
---- PixelMap.parse( "10cm" )  -- floored CSS pixels at 96 DPI
---- PixelMap.parse( "1vmin" ) -- floored pixels from current window size
+--- ViewportLayout.parse( "120px" ) -- 120
+--- ViewportLayout.parse( "10cm" )  -- floored CSS pixels at 96 DPI
+--- ViewportLayout.parse( "1vmin" ) -- floored pixels from current window size
 --- ```
 ---
----@param descriptor string The length quantity string to parse (`"<number><PixelUnit>"`).
+---@param descriptor string The length quantity string to parse (`"<number><ViewportUnit>"`).
 ---@return integer pixels The floored pixel length.
 ---@nodiscard
-function PixelMapClass.parse( descriptor )
+function ViewportLayoutClass.parse( descriptor )
     local pixels, error_message = descriptor_to_pixels( descriptor )
     if error_message ~= nil then
         error( ValueError( descriptor, error_message ), 2 )
@@ -325,12 +325,12 @@ function PixelMapClass.parse( descriptor )
     return pixels
 end
 
-engine_hook.catch( "OnScreenSizeChanged", "dreamwork.PixelMap::Update", function( old_width, old_height, new_width, new_height )
+engine_hook.catch( "OnScreenSizeChanged", "dreamwork.ViewportLayout::Update", function( old_width, old_height, new_width, new_height )
     for descriptor in raw_pairs( pixel_cache ) do
         pixel_cache[ descriptor ] = descriptor_to_pixels( descriptor )
     end
 
-    for pixel_map in raw_pairs( map_aliases ) do
-        events:emit( pixel_map, "resize", pixel_map, old_width, old_height, new_width, new_height )
+    for layout in raw_pairs( layout_aliases ) do
+        events:emit( layout, "resize", layout, old_width, old_height, new_width, new_height )
     end
 end )

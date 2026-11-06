@@ -53,7 +53,7 @@ local ValueError = std.ValueError
 --- Unit abbreviations registered in `unit` (convert-units style).
 ---
 --- Live viewport lengths (`vmin`, `vw`, …) are not part of this library;
---- resolve those with `PixelMap`.
+--- resolve those with `ViewportLayout`.
 ---
 ---@alias dreamwork.std.unit.Type
 ---|# Length — metric (anchor: meter)

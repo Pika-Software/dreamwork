@@ -3005,7 +3005,7 @@ end
 dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
-dreamwork_load( "std/types/pixel_map.lua", false, LUA_SERVER )
+dreamwork_load( "std/types/viewport_layout.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )
