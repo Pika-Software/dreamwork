@@ -3023,7 +3023,7 @@ dreamwork.storage.init()
 dreamwork_load( "modules/engine/http.lua" )
 dreamwork_load( "std/net/http.lua" )
 
-dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
+dreamwork_load( "std/types/web_client.lua", false, LUA_SERVER )
 -- dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
 
 -- dreamwork_load( "modules/engine/websocket.lua" )
