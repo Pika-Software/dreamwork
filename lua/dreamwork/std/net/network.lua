@@ -7,6 +7,7 @@ local exceptions_call = dreamwork.exceptions.call
 local engine_hook = dreamwork_engine.hook
 
 local engine_network = dreamwork_engine.network
+local network_receive_id = engine_network.receive
 local network_register = engine_network.register
 local network_getID = engine_network.getID
 
@@ -61,9 +62,6 @@ local net_WriteUInt = glua_net.WriteUInt
 local net_WriteData = glua_net.WriteData
 local net_ReadUInt = glua_net.ReadUInt
 local net_ReadData = glua_net.ReadData
-
-local receivers = glua_net.Receivers or {}
-glua_net.Receivers = receivers
 
 
 --[[
@@ -989,9 +987,9 @@ do
 
         ---@param remaining_bits integer
         ---@param sender garrysmod.Player | nil
-        receivers[ string_lower( network_name ) ] = function( remaining_bits, sender )
+        network_receive_id( network_id, function( remaining_bits, sender )
             network_receive( self, remaining_bits, sender )
-        end
+        end )
     end
 
     ---@type table<string, table<dreamwork.std.Network, any>>

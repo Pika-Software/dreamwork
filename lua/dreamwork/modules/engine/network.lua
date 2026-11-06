@@ -1,5 +1,6 @@
 ---@class dreamwork.engine
 local dreamwork_engine = dreamwork.engine
+local dreamwork_Logger = dreamwork.Logger
 
 local engine_hook = dreamwork_engine.hook
 local hook_call = engine_hook.call
@@ -197,51 +198,84 @@ local net_WriteBool = glua_net.WriteBool
 local net_ReadUInt = glua_net.ReadUInt
 local net_ReadBit = glua_net.ReadBit
 
----@type table<string, fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean )>
+---@alias dreamwork.engine.network.Receiver fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean )
+
+---@type table<string, dreamwork.engine.network.Receiver>
 local receivers = glua_net.Receivers or {}
 glua_net.Receivers = receivers
+
+---@type table<integer, dreamwork.engine.network.Receiver>
+local id_receivers = {}
+
+--- [SHARED]
+---
+--- Sets the receiver of the network by its ID.
+---
+--- Takes priority over receivers from `net.Receive`.
+---
+---@param network_id integer The ID of the network.
+---@param fn dreamwork.engine.network.Receiver | nil The receiver, `nil` to remove it.
+function network.receive( network_id, fn )
+    id_receivers[ network_id ] = fn
+end
+
+---@param network_id integer
+---@param network_name string | nil
+---@param reason "unknown" | "unexpected"
+---@param unreliable boolean
+---@param remaining_bits integer
+---@param sender garrysmod.Player | nil
+local function message_unhandled( network_id, network_name, reason, unreliable, remaining_bits, sender )
+    if hook_count( "dreamwork.network.message.unhandled" ) ~= 0 and hook_call( "dreamwork.network.message.unhandled", network_id, network_name, reason, unreliable, remaining_bits, sender ) then
+        return
+    end
+
+    local protocol = unreliable and "UDP" or "TCP"
+
+    if reason == "unknown" then
+        if LUA_SERVER then
+            ---@cast sender garrysmod.Player
+            dreamwork_Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [ID: %d, %s]", sender:Nick(), network_id, protocol )
+            sender:Kick( string_format( "Server received an invalid network message. [ID: %d, %s]", network_id, protocol ) )
+        else
+            dreamwork_Logger:warn( "Client received an invalid network message. [ID: %d, %s]", network_id, protocol )
+        end
+    elseif LUA_SERVER then
+        ---@cast sender garrysmod.Player
+        dreamwork_Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [ID: %d, Name: %s, %s]", sender:Nick(), network_id, network_name, protocol )
+        sender:Kick( string_format( "Server received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, protocol ) )
+    else
+        dreamwork_Logger:warn( "Client received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, protocol )
+    end
+end
 
 --- Receivers are called as `fn( remaining_bits, sender, unreliable )`.
 ---
 ---@param remaining_bits integer
----@param sender garrysmod.Player
+---@param sender garrysmod.Player | nil
 function glua_net.Incoming( remaining_bits, sender )
     local network_id = net_ReadUInt( header_size )
     local unreliable = net_ReadBit() == 1
 
     remaining_bits = remaining_bits - full_header_size
 
-    if hook_count( "dreamwork.network.message.incoming" ) ~= 0 then
-        local is_complete, block_size = hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender )
-        if is_complete == true then return end
-
-        if block_size ~= nil then
-            remaining_bits = remaining_bits - block_size
-        end
-    end
-
-    local network_name = network_names[ network_id ]
-    if network_name == nil then
-        if LUA_SERVER then
-            dreamwork.Logger:warn( "Client '%s' was disconnected for sending an invalid network message. [ID: %d, %s]", sender:Nick(), network_id, unreliable and "UDP" or "TCP" )
-            sender:Kick( string_format( "Server received an invalid network message. [ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" ) )
-        else
-            dreamwork.Logger:warn( "Client received an invalid network message. [ID: %d, %s]", network_id, unreliable and "UDP" or "TCP" )
-        end
-
+    if hook_count( "dreamwork.network.message.incoming" ) ~= 0 and hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender ) ~= nil then
         return
     end
 
-    local fn = receivers[ string_lower( network_name ) ]
+    local fn = id_receivers[ network_id ]
     if fn == nil then
-        if LUA_SERVER then
-            dreamwork.Logger:warn( "Client '%s' was disconnected for sending an unexpected network message. [ID: %d, Name: %s, %s]", sender:Nick(), network_id, network_name, unreliable and "UDP" or "TCP" )
-            sender:Kick( string_format( "Server received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, unreliable and "UDP" or "TCP" ) )
-        else
-            dreamwork.Logger:warn( "Client received an unexpected network message. [ID: %d, Name: %s, %s]", network_id, network_name, unreliable and "UDP" or "TCP" )
+        local network_name = network_names[ network_id ]
+        if network_name == nil then
+            message_unhandled( network_id, nil, "unknown", unreliable, remaining_bits, sender )
+            return
         end
 
-        return
+        fn = receivers[ string_lower( network_name ) ]
+        if fn == nil then
+            message_unhandled( network_id, network_name, "unexpected", unreliable, remaining_bits, sender )
+            return
+        end
     end
 
     fn( remaining_bits, sender, unreliable )
@@ -258,7 +292,7 @@ if glua_net.Start ~= nil then
                 error( string_format( "Failed to start network message '%s', network does not exist.", network_name ), 2 )
             end
 
-            dreamwork.Logger:error( "Client was disconnected for sending message using unregistered network. [Name: %s, %s]", network_name, (unreliable == true) and "UDP" or "TCP" )
+            dreamwork_Logger:error( "Client was disconnected for sending message using unregistered network. [Name: %s, %s]", network_name, (unreliable == true) and "UDP" or "TCP" )
             console_commandRun( "disconnect" )
             return
         end

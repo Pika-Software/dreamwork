@@ -340,25 +340,50 @@ event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name
     end
 end
 
+--- Called for every incoming message before it is routed to a receiver.
 ---
----  The first handler that returns a non-`nil` value stops the chain.
+--- The first handler that returns a non-`nil` value stops the chain:
+--- * `true` - the handler has read the whole message, routing is skipped.
+--- * `false` - the message is dropped without being read.
+--- * `nil` - the message is passed on, the handler must not read from it.
 ---
 ---@param handlers dreamwork.engine.hook.Handler[]
 ---@param network_id integer The ID of the network.
 ---@param unreliable boolean `true` if the message was sent unreliably.
 ---@param remaining_bits integer The number of bits left after the header.
 ---@param sender garrysmod.Player | nil The player who sent the message, `nil` on the client.
----@return boolean | nil is_complete `true` if a handler took care of the whole message.
----@return integer | nil block_size The number of bits the handler has read.
+---@return boolean | nil verdict `true` if consumed, `false` if dropped, `nil` to route the message.
 event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
     for i = 1, handlers[ 0 ], 1 do
-        local is_complete, block_size = handlers[ i ]( network_id, unreliable, remaining_bits, sender )
-        if is_complete ~= nil then
-            return is_complete, block_size
+        local verdict = handlers[ i ]( network_id, unreliable, remaining_bits, sender )
+        if verdict ~= nil then
+            return verdict
         end
     end
 
     return nil
+end
+
+--- Called when an incoming message cannot be routed.
+---
+--- The first handler that returns `true` marks the message as handled and suppresses the default kick (server) or warning (client).
+---
+---@param handlers dreamwork.engine.hook.Handler[]
+---@param network_id integer The ID of the network.
+---@param network_name string | nil The name of the network, `nil` if the ID is not registered.
+---@param reason "unknown" | "unexpected" `"unknown"` if the ID is not registered, `"unexpected"` if the network has no receiver.
+---@param unreliable boolean `true` if the message was sent unreliably.
+---@param remaining_bits integer The number of bits left after the header.
+---@param sender garrysmod.Player | nil The player who sent the message, `nil` on the client.
+---@return boolean is_handled `true` if a handler took care of the message.
+event_handlers[ "dreamwork.network.message.unhandled" ] = function( handlers, network_id, network_name, reason, unreliable, remaining_bits, sender )
+    for i = 1, handlers[ 0 ], 1 do
+        if handlers[ i ]( network_id, network_name, reason, unreliable, remaining_bits, sender ) == true then
+            return true
+        end
+    end
+
+    return false
 end
 
 if LUA_SERVER then
@@ -558,25 +583,6 @@ if LUA_CLIENT or LUA_SERVER then
     event_handlers[ "Saved" ]    = handler_empty
 
 
-    -- network
-
-    --- The first handler that returns a truthy value marks the message as handled and stops the chain.
-    ---
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param network_id integer The network message ID.
-    ---@param unreliable boolean `true` if the message was sent unreliably.
-    ---@param remaining_bits integer The number of unread bits in the message.
-    ---@param sender garrysmod.Player | nil The sender, `nil` when received from the server.
-    ---@return boolean is_handled `true` if a handler consumed the message.
-    event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
-        for i = 1, handlers[ 0 ], 1 do
-            if handlers[ i ]( network_id, unreliable, remaining_bits, sender ) then return true end
-        end
-
-        return false
-    end
-
-
     -- gamemode
 
     --- The first handler that returns a non-`nil` table replaces the gamemode table.
@@ -644,6 +650,34 @@ do
         return a_priority > b_priority
     end
 
+    --- Rebuilds the sorted handler array of the event from its entries.
+    ---
+    ---@param event_name string
+    ---@param entries table<string, dreamwork.engine.hook.Entry>
+    local function handlers_rebuild( event_name, entries )
+        ---@type dreamwork.engine.hook.Entry[]
+        local sorted_entries = {}
+
+        ---@type integer
+        local entry_count = 0
+
+        for _, value in raw_pairs( entries ) do
+            entry_count = entry_count + 1
+            sorted_entries[ entry_count ] = value
+        end
+
+        table_sort( sorted_entries, entries_sort_fn )
+
+        -- a new array, so the running calls keep iterating over the old one
+        local handlers = { [ 0 ] = entry_count }
+
+        for i = 1, entry_count, 1 do
+            handlers[ i ] = sorted_entries[ i ].handler
+        end
+
+        hook_handlers[ event_name ] = handlers
+    end
+
     --- [SHARED AND MENU]
     ---
     --- Attaches a handler to an engine event.
@@ -688,27 +722,29 @@ do
             entry.priority = priority or 0
         end
 
-        ---@type dreamwork.engine.hook.Entry[]
-        local sorted_entries = {}
+        handlers_rebuild( event_name, entries )
+    end
 
-        ---@type integer
-        local entry_count = 0
-
-        for _, value in raw_pairs( entries ) do
-            entry_count = entry_count + 1
-            sorted_entries[ entry_count ] = value
+    --- [SHARED AND MENU]
+    ---
+    --- Detaches a handler from an engine event.
+    ---
+    --- > NOTE: Detaching during the event call does not affect the running call, the change applies to the next one.
+    ---
+    --- > NOTE: Game events requested from the engine keep being listened to.
+    ---
+    ---@param event_name string The name of the engine event.
+    ---@param identifier string The identifier the handler was attached with.
+    ---@return boolean released `true` if the handler was attached and has been removed.
+    function hook.release( event_name, identifier )
+        local entries = raw_get( hook_entries, event_name )
+        if entries == nil or entries[ identifier ] == nil then
+            return false
         end
 
-        table_sort( sorted_entries, entries_sort_fn )
-
-        -- a new array, so the running calls keep iterating over the old one
-        local handlers = { [ 0 ] = entry_count }
-
-        for i = 1, entry_count, 1 do
-            handlers[ i ] = sorted_entries[ i ].handler
-        end
-
-        hook_handlers[ event_name ] = handlers
+        entries[ identifier ] = nil
+        handlers_rebuild( event_name, entries )
+        return true
     end
 
 end
