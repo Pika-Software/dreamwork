@@ -3,25 +3,69 @@
 ---@class garrysmod.net
 local glua_net = {}
 
+--- [SHARED]
+---
+--- A named two-way channel between the server and the clients
+--- built on top of the engine `net` library, without its 64 KiB message limit.
+---
+--- Data up to 8 KiB is usually sent as a single reliable message, larger data is split
+--- into segments and streamed over the unreliable channel with acknowledgements,
+--- retransmission, congestion control and a CRC32 check of the whole data.
+---
+--- Transfers to the same peer are queued, one runs at a time per network.
+---
+--- The network must be created on the server first, the client can only
+--- open networks the server has registered. Creating a network with
+--- the name of an existing one returns the existing object.
+---
+--- On the server, every client is limited in strikes, concurrent transfers
+--- and bytes, protocol violations accumulate strikes and kick the client.
+---
 ---@class Network : Object
 ---@field __class NetworkClass
----@field id integer The engine ID of the network.
----@field name string The name of the network.
----@field receiver boolean `true` if the network accepts incoming messages.
----@field timeout number The number of seconds without any progress after which a transfer is aborted.
----@field window integer The maximum number of segments in flight.
----@field segment integer The size of outgoing segments in bytes.
----@field limit integer The maximum size of an incoming message in bytes.
+---@field id integer The engine ID of the network, read-only.
+---@field name string The name of the network without the internal prefix, read-only.
+---@field receiver boolean `true` if the network accepts incoming messages, `false` by default.
+---@field timeout number The number of seconds without any progress after which a transfer is aborted, `15` by default, at least `1`.
+---@field window integer The maximum number of segments in flight, `64` by default, clamped to `[1, 256]`.
+---@field segment integer The size of outgoing segments in bytes, by default fits into a 1 KiB message, at least `256` and at most what fits into one message.
+---@field limit integer The maximum size of an incoming message in bytes, `64` MiB by default, `0` rejects everything.
 local __Network = {}
 
+--- [SHARED]
+---
+--- The class of `Network`, call it to create or get a network.
+---
 ---@class NetworkClass : Network, Class
 ---@field __base Network
 ---@overload fun( name: string, can_receive: boolean? ): Network
 Network = {}
 
+--- Called when a message is fully received and its checksum matches.
+---
+--- `sender` is the player on the server and `nil` on the client.
+---
 ---@alias Network.ReceiveFn fun( network: Network, reader: BinaryReader, sender: garrysmod.Player | nil )
+
+--- Called on every transfer progress, both incoming and outgoing.
+---
+--- `peer` is the other side, the player on the server and `nil` on the client,
+--- `is_outgoing` is `true` for sent data, `done_bytes` counts the received
+--- or acknowledged bytes out of `total_bytes`.
+---
 ---@alias Network.ProgressFn fun( network: Network, peer: garrysmod.Player | nil, is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
+
+--- Called for every chunk of incoming data in order, while it arrives.
+---
+--- `chunk` is the data at the zero-based byte `offset` out of `total` bytes.
+--- The last call has `chunk = nil` and `success`, `offset` is the number of delivered bytes then.
+---
 ---@alias Network.StreamFn fun( network: Network, sender: garrysmod.Player | nil, chunk: string | nil, offset: integer, total: integer, success: boolean | nil )
+
+--- Called when an outgoing transmission is finished.
+---
+--- `success` is `false` if it was rejected, cancelled, timed out or the peer left.
+---
 ---@alias Network.FinishFn fun( network: Network, success: boolean, peer: garrysmod.Player | nil )
 
 --- [SHARED]
@@ -102,80 +146,92 @@ function __Network:watch(handler) end
 ---@return boolean removed `true` if the handler was attached.
 function __Network:unwatch(handler) end
 
+--- The cached HolyLib net channel access of a player.
+---
 ---@class Network.GameClient
 ---@field client holylib.CGameClient The HolyLib `GameClient`.
 ---@field reliable holylib.bf_write The reliable stream ( `bf_write` ) of the client.
 
+--- The token bucket that limits single messages to one peer.
+---
 ---@class Network.Bucket
----@field tokens number
----@field time number
+---@field tokens number The number of bytes that can be sent as singles right now.
+---@field time number The uptime of the last refill.
 
+--- The limits of one client over all networks.
+---
 ---@class Network.Client
----@field strikes number
----@field strike_time number
----@field transfers integer
----@field bytes integer
----@field begins number
----@field begin_time number
+---@field strikes number The protocol violation strikes, decaying over time.
+---@field strike_time number The uptime of the last strike update.
+---@field transfers integer The number of incoming transfers in progress.
+---@field bytes integer The total size of incoming transfers in progress, in bytes.
+---@field begins number The token bucket of new transfers.
+---@field begin_time number The uptime of the last `begins` refill.
 
+--- The sender side state of a segmented transfer.
+---
 ---@class Network.Outgoing
----@field network Network
----@field peer garrysmod.Player | nil
----@field key garrysmod.Player | string
----@field id integer
----@field data string
----@field size integer
----@field segment_size integer
----@field count integer
----@field acked boolean[]
----@field sent_at number[]
----@field resent boolean[]
----@field resent_count integer
----@field acked_count integer
----@field acked_bytes integer
+---@field network Network The network of the transfer.
+---@field peer garrysmod.Player | nil The receiver, `nil` on the client.
+---@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field id integer The transfer ID, `[0, 255]`.
+---@field data string The whole data.
+---@field size integer The size of the data in bytes.
+---@field segment_size integer The size of every segment except the last one, in bytes.
+---@field count integer The number of segments.
+---@field acked boolean[] The acknowledged segments.
+---@field sent_at number[] The uptime of the last send of every segment.
+---@field resent boolean[] The segments that were sent more than once, excluded from rtt samples.
+---@field resent_count integer The number of resends, for the log.
+---@field acked_count integer The number of acknowledged segments.
+---@field acked_bytes integer The number of acknowledged bytes.
 ---@field base integer The first unacknowledged segment.
 ---@field highest integer The highest acknowledged segment.
----@field window number
----@field slow_start boolean
----@field srtt number | nil
+---@field window number The congestion window, in segments.
+---@field slow_start boolean `true` until the first loss, the window grows by one per ack instead of one per window.
+---@field srtt number | nil The smoothed round trip time in seconds, `nil` until accepted.
 ---@field srtt_seeded boolean | nil `true` while `srtt` is the handshake sample.
----@field rto number
----@field loss_time number
+---@field rto number The retransmission timeout in seconds.
+---@field loss_time number The uptime of the last window cut.
 ---@field credit number The number of segments that can be sent right now, refilled by pacing.
----@field pump_time number
----@field accepted boolean
----@field activity number
----@field start_time number
----@field callback Network.FinishFn | nil
+---@field pump_time number The uptime of the last pump, the base of the pacing refill.
+---@field accepted boolean `true` once the receiver has accepted the transfer.
+---@field activity number The uptime of the last progress, for the timeout.
+---@field start_time number The uptime of the start.
+---@field callback Network.FinishFn | nil The finish callback of `Network:send`.
 
+--- The receiver side state of a segmented transfer.
+---
 ---@class Network.Incoming
----@field network Network
----@field peer garrysmod.Player | nil
----@field key garrysmod.Player | string
----@field id integer
----@field size integer
----@field segment_size integer
----@field count integer
----@field checksum integer
+---@field network Network The network of the transfer.
+---@field peer garrysmod.Player | nil The sender, `nil` on the client.
+---@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field id integer The transfer ID, `[0, 255]`.
+---@field size integer The size of the data in bytes.
+---@field segment_size integer The size of every segment except the last one, in bytes.
+---@field count integer The number of segments.
+---@field checksum integer The CRC32 of the whole data announced by the sender.
 ---@field buffered boolean `true` if the segments are kept for the receive handlers.
 ---@field crc checksum.CRC32 | nil The running checksum of the delivered data, if not buffered.
----@field segments string[]
----@field received_flags boolean[]
----@field received integer
----@field received_bytes integer
+---@field segments string[] The received segments, the delivered ones are dropped if not buffered.
+---@field received_flags boolean[] The received segments.
+---@field received integer The number of received segments.
+---@field received_bytes integer The number of received bytes.
 ---@field base integer The first missing segment, everything before it is delivered.
 ---@field highest integer The highest received segment.
----@field ack_pending boolean
----@field ack_time number
----@field activity number
----@field start_time number
+---@field ack_pending boolean `true` if a segment arrived since the last ack.
+---@field ack_time number The uptime of the last ack.
+---@field activity number The uptime of the last received segment, for the timeout.
+---@field start_time number The uptime of the start.
 
+--- A transmission waiting for the running one to the same peer.
+---
 ---@class Network.Queued
----@field data string
----@field callback Network.FinishFn | nil
+---@field data string The data to send.
+---@field callback Network.FinishFn | nil The finish callback of `Network:send`.
 
----@param name string
----@return Network | nil object
+---@param name string The name of the network.
+---@return Network | nil object The existing network with this name.
 ---@protected
 function Network:__new(name) end
 
@@ -183,8 +239,8 @@ function Network:__new(name) end
 ---@protected
 function __Network:__represent() end
 
----@param name string
----@param can_receive boolean?
+---@param name string The name of the network, must be unique.
+---@param can_receive boolean? `true` if the network accepts incoming messages, `false` by default.
 ---@protected
 function __Network:__init(name, can_receive) end
 
@@ -233,7 +289,7 @@ function __Network:abort(target) end
 --- Checks if the network is sending data to the target.
 ---
 ---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
----@return boolean is_sending
+---@return boolean is_sending `true` if a transmission to the target is running.
 ---@nodiscard
 function __Network:isSending(target) end
 
@@ -242,6 +298,6 @@ function __Network:isSending(target) end
 --- Checks if the network is receiving data from the sender.
 ---
 ---@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
----@return boolean is_receiving
+---@return boolean is_receiving `true` if a transmission from the sender is running.
 ---@nodiscard
 function __Network:isReceiving(sender) end
