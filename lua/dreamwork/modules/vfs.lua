@@ -6,6 +6,7 @@ local hook_call = engine_hook.call
 
 local dreamwork_getUpTime = dreamwork.getUpTime
 local exceptions_call = dreamwork.exceptions.call
+local logger = dreamwork.Logger
 
 local detour = dreamwork.detour
 
@@ -169,7 +170,7 @@ do
     for i = 1, 2, 1 do
         local name = queue[ i ]
         if std.loadbinary( name ) then
-            dreamwork.Logger:info( "'%s' was loaded & connected as file system driver.", name )
+            logger:info( "'%s' was loaded & connected as file system driver.", name )
             driver_name = name
             break
         end
@@ -456,6 +457,26 @@ end
 ---
 --- Mounts only give access to a search path, they never mount or unmount anything in the engine.
 ---
+--- Like overlayfs, writes where the search path is read-only or there is none (intermediate directories) go to the memory layer on top:
+---
+--- * memory files and directories shadow files of the search path, appending or touching such a file copies it into memory first;
+--- * memory directories created over directories of the search path are merged with them;
+--- * deleting from a search path that does not allow deleting hides the file or directory with a whiteout,
+---   writing into the path again replaces the whiteout;
+--- * memory content stays at its path when mounts change, it is lost on reload and is never written to the disk,
+---   see `vfs.getMemoryUsage` and `vfs.setMemoryLimit`.
+---
+--- Memory files exist only for `vfs` and functions built on it, like `std.loadfile`, a memory `.lua` file under `/game/lua`
+--- is loaded by them instead of the real one. The engine, `include` and the `file` library never see memory files and whiteouts.
+---
+--- Every Lua state (server, client and menu) has its own memory layer, nothing is shared or networked.
+---
+--- ```lua
+--- dreamwork.vfs.writeFile( "/game/lua/my_addon/generated.lua", "return 1" ) -- 'lsv' is read-only, kept in memory
+--- dreamwork.vfs.createDirectory( "/game/level/cache" ) -- 'BSP' is read-only, a memory directory
+--- dreamwork.vfs.writeFile( "/garrysmod/data/settings.txt", "{}" ) -- 'DATA' is writable, written to the disk
+--- ```
+---
 ---@class dreamwork.vfs
 local vfs = {}
 dreamwork.vfs = vfs
@@ -614,7 +635,7 @@ gc_setTableRules( node_names, true, false )
 local node_parents = {}
 gc_setTableRules( node_parents, true, true )
 
---- The mounts that provide nodes, missing for virtual directories.
+--- The mounts that provide nodes, missing for intermediate directories.
 ---
 --- Values are weak, mounts are kept alive by `mounts`,
 --- a strong value would keep the mount root alive forever through `mount.node`.
@@ -635,17 +656,62 @@ gc_setTableRules( node_relative_paths, true, false )
 local node_children = {}
 gc_setTableRules( node_children, true, false )
 
---- The mount roots and virtual directories attached to directories, they shadow the search path.
+--- The mount roots, intermediate directories and memory files and directories attached to directories, they shadow the search path.
 ---
 ---@type table<dreamwork.vfs.Node, dreamwork.vfs.Node[]>
 local node_overlays = {}
 gc_setTableRules( node_overlays, true, false )
 
---- The creation time of virtual directories and mount roots.
+--- The creation time of intermediate directories and mount roots.
 ---
 ---@type table<dreamwork.vfs.Node, integer>
 local node_created = {}
 gc_setTableRules( node_created, true, false )
+
+--- The last modification time of intermediate directories and memory files.
+---
+---@type table<dreamwork.vfs.Node, integer>
+local node_modified = {}
+gc_setTableRules( node_modified, true, false )
+
+--- The files and directories kept in memory, the upper layer over search paths.
+---
+--- They are created where search paths are read-only, shadow files of search paths and stay at their paths when mounts change.
+---
+---@type table<dreamwork.vfs.Node, boolean>
+local node_memory = {}
+gc_setTableRules( node_memory, true, false )
+
+--- The data of memory files.
+---
+---@type table<dreamwork.vfs.Node, string>
+local node_data = {}
+gc_setTableRules( node_data, true, false )
+
+--- The whiteouts, memory files without data that hide files and directories of search paths that cannot be deleted.
+---
+--- They are never returned by lookups, writing into their path replaces them.
+---
+---@type table<dreamwork.vfs.Node, boolean>
+local node_whiteout = {}
+gc_setTableRules( node_whiteout, true, false )
+
+--- The directories of search paths and mount roots memory directories were merged into, with the creation time of the memory directory.
+---
+--- The memory directory is created again at their path once they are gone.
+---
+---@type table<dreamwork.vfs.Node, integer>
+local node_merged = {}
+gc_setTableRules( node_merged, true, false )
+
+--- The number of memory files, memory directories, whiteouts and merged memory directories.
+local memory_count = 0
+
+--- The total size of memory files in bytes.
+local memory_bytes = 0
+
+--- The maximal total size of memory files in bytes, `0` for no limit.
+local memory_limit = 0
 
 --- A file or directory of the map.
 ---
@@ -699,22 +765,6 @@ local function node_path( node )
     return node_path( parent ) .. "/" .. node_names[ node ]
 end
 
----@param parent dreamwork.vfs.Node
----@param node dreamwork.vfs.Node
-local function attach( parent, node )
-    node_parents[ node ] = parent
-    node_children[ parent ][ node_names[ node ] ] = node
-
-    if node_mounts[ node ] == nil or node_is_mount_root( node ) then
-        local overlays = node_overlays[ parent ]
-        if overlays == nil then
-            node_overlays[ parent ] = { node }
-        else
-            overlays[ #overlays + 1 ] = node
-        end
-    end
-end
-
 ---@param node dreamwork.vfs.Node
 local function detach( node )
     local parent = node_parents[ node ]
@@ -732,6 +782,80 @@ local function detach( node )
     local overlays = node_overlays[ parent ]
     if overlays ~= nil then
         table_removeByValue( overlays, node )
+    end
+end
+
+---@param node dreamwork.vfs.Node
+local function memory_add( node )
+    node_memory[ node ] = true
+    memory_count = memory_count + 1
+end
+
+--- Forgets memory files and directories, whiteouts and merges in the dropped node, mounts nested in it are skipped.
+---
+---@param node dreamwork.vfs.Node
+local function memory_release( node )
+    if memory_count == 0 then
+        return
+    end
+
+    if node_memory[ node ] then
+        node_memory[ node ], node_whiteout[ node ] = nil, nil
+        memory_count = memory_count - 1
+
+        local data = node_data[ node ]
+        if data ~= nil then
+            node_data[ node ] = nil
+            memory_bytes = memory_bytes - string_len( data )
+        end
+    elseif node_merged[ node ] ~= nil then
+        node_merged[ node ] = nil
+        memory_count = memory_count - 1
+    end
+
+    local children = node_children[ node ]
+    if children ~= nil then
+        for _, child in raw_pairs( children ) do
+            if not node_is_mount_root( child ) then
+                memory_release( child )
+            end
+        end
+    end
+end
+
+---@param name string
+---@param unix_time integer The creation time.
+---@return dreamwork.vfs.Node directory
+local function memory_directory( name, unix_time )
+    local directory = NodeClass( name, nil, "", true )
+    node_created[ directory ], node_modified[ directory ] = unix_time, unix_time
+
+    memory_add( directory )
+    return directory
+end
+
+---@param parent dreamwork.vfs.Node
+---@param node dreamwork.vfs.Node
+local function attach( parent, node )
+    local children, name = node_children[ parent ], node_names[ node ]
+
+    -- the name is taken again, the whiteout is not needed anymore
+    local existing = children[ name ]
+    if existing ~= nil and node_whiteout[ existing ] then
+        detach( existing )
+        memory_release( existing )
+    end
+
+    node_parents[ node ] = parent
+    children[ name ] = node
+
+    if node_mounts[ node ] == nil or node_is_mount_root( node ) then
+        local overlays = node_overlays[ parent ]
+        if overlays == nil then
+            node_overlays[ parent ] = { node }
+        else
+            overlays[ #overlays + 1 ] = node
+        end
     end
 end
 
@@ -763,6 +887,21 @@ local function discover( directory, name, is_directory )
     return node
 end
 
+--- Collects mount roots nested in the directory without descending into them, and memory files and directories too if `memory` is `true`.
+---
+---@type fun( directory: dreamwork.vfs.Node, directory_path: string, nodes: dreamwork.vfs.Node[], paths: string[], count: integer, memory: boolean ): integer
+local collect_upper
+
+--- Collects mount roots and memory files and directories in the directory that is going away, the memory directory merged into it is created again.
+---
+---@type fun( directory: dreamwork.vfs.Node, directory_path: string, nodes: dreamwork.vfs.Node[], paths: string[] ): integer
+local collect_detached
+
+--- Places collected mount roots and memory files and directories back at their paths, mounts that do not fit anymore are dropped.
+---
+---@type fun( nodes: dreamwork.vfs.Node[], paths: string[], count: integer )
+local reattach
+
 --- Returns the child by name, cached children are checked for being still alive.
 ---
 ---@param directory dreamwork.vfs.Node
@@ -775,6 +914,10 @@ local function child_get( directory, name )
 
     local child = node_children[ directory ][ name ]
     if child ~= nil then
+        if node_whiteout[ child ] then
+            return nil
+        end
+
         local mount = node_mounts[ child ]
         if mount == nil or node_is_mount_root( child ) then
             return child
@@ -790,7 +933,26 @@ local function child_get( directory, name )
             return child
         end
 
-        detach( child )
+        if node_children[ child ] == nil then
+            detach( child )
+        else
+            -- memory files and directories and mounts nested in the gone directory stay at their paths
+            local nodes, paths = {}, {}
+            local count = collect_detached( child, node_path( child ), nodes, paths )
+
+            detach( child )
+            reattach( nodes, paths, count )
+
+            -- reattached nodes could create an intermediate or memory directory in its place
+            child = node_children[ directory ][ name ]
+            if child ~= nil then
+                if node_whiteout[ child ] then
+                    return nil
+                end
+
+                return child
+            end
+        end
     end
 
     return discover( directory, name, nil )
@@ -822,60 +984,113 @@ local function lookup( vfs_path )
     return node
 end
 
---- Collects mounts nested in the directory, without descending into them.
----
----@param directory dreamwork.vfs.Node
----@param list dreamwork.vfs.Mount[]
----@param count integer
----@return integer count
-local function collect_mounts( directory, list, count )
-    for _, child in raw_pairs( node_children[ directory ] ) do
+function collect_upper( directory, directory_path, nodes, paths, count, memory )
+    for name, child in raw_pairs( node_children[ directory ] ) do
         if node_is_mount_root( child ) then
             count = count + 1
-            list[ count ] = node_mounts[ child ]
+            nodes[ count ], paths[ count ] = child, node_mounts[ child ].path
+        elseif memory and node_memory[ child ] then
+            count = count + 1
+            nodes[ count ], paths[ count ] = child, child_path( directory_path, name )
         elseif node_children[ child ] ~= nil then
-            count = collect_mounts( child, list, count )
+            local vfs_path = child_path( directory_path, name )
+
+            local unix_time = node_merged[ child ]
+            if memory and unix_time ~= nil then
+                -- the memory directory merged into it is created again
+                node_merged[ child ] = nil
+                memory_count = memory_count - 1
+
+                count = count + 1
+                nodes[ count ], paths[ count ] = memory_directory( name, unix_time ), vfs_path
+            end
+
+            count = collect_upper( child, vfs_path, nodes, paths, count, memory )
         end
     end
 
     return count
 end
 
---- Forgets virtual directories without anything inside, from the directory up.
+function collect_detached( directory, directory_path, nodes, paths )
+    local count = 0
+
+    local unix_time = node_merged[ directory ]
+    if unix_time ~= nil then
+        node_merged[ directory ] = nil
+        memory_count = memory_count - 1
+
+        count = 1
+        nodes[ 1 ], paths[ 1 ] = memory_directory( node_names[ directory ], unix_time ), directory_path
+    end
+
+    return collect_upper( directory, directory_path, nodes, paths, count, true )
+end
+
+---@param directory dreamwork.vfs.Node
+---@return boolean
+local function has_memory_nested( directory )
+    for _, child in raw_pairs( node_children[ directory ] ) do
+        if node_memory[ child ] or node_merged[ child ] ~= nil then
+            return true
+        end
+
+        if node_children[ child ] ~= nil and not node_is_mount_root( child ) and has_memory_nested( child ) then
+            return true
+        end
+    end
+
+    return false
+end
+
+--- Checks if memory files and directories or whiteouts are nested in the directory, mounts nested in it are not checked.
+---
+---@param directory dreamwork.vfs.Node
+---@return boolean
+local function has_memory( directory )
+    return memory_count ~= 0 and has_memory_nested( directory )
+end
+
+--- Forgets intermediate directories without anything inside, from the directory up, memory directories are kept.
 ---
 ---@param directory dreamwork.vfs.Node | nil
 local function prune( directory )
-    while directory ~= nil and directory ~= root and node_mounts[ directory ] == nil and raw_next( node_children[ directory ] ) == nil do
+    while directory ~= nil and directory ~= root and node_mounts[ directory ] == nil and not node_memory[ directory ] and raw_next( node_children[ directory ] ) == nil do
         local parent = node_parents[ directory ]
         detach( directory )
         directory = parent
     end
 end
 
+--- Places the mount root or the memory file or directory at the path, creating intermediate directories on the way.
+---
+--- Mount roots replace existing directories, memory files and directories shadow files of search paths,
+--- memory directories are merged into existing directories.
+---
+---@type fun( vfs_path: string, node: dreamwork.vfs.Node ): boolean, string | nil
 local attach_at
 
---- Places detached nested mounts back at their paths, mounts that do not fit anymore are dropped.
----
----@param nested dreamwork.vfs.Mount[]
----@param nested_count integer
-local function reattach( nested, nested_count )
-    for index = 1, nested_count, 1 do
-        local mount = nested[ index ]
-        detach( mount.node )
+function reattach( nodes, paths, count )
+    for index = 1, count, 1 do
+        local node, vfs_path = nodes[ index ], paths[ index ]
+        detach( node )
 
-        if not attach_at( mount.path, mount.node ) then
-            mounts[ mount.path ] = nil
-            hook_call( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
+        if not attach_at( vfs_path, node ) then
+            if node_is_mount_root( node ) then
+                local mount = node_mounts[ node ]
+                mounts[ mount.path ] = nil
+                hook_call( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
+            elseif node_children[ node ] ~= nil then
+                -- mounts nested in the dropped memory directory stay at their paths
+                local nested_nodes, nested_paths = {}, {}
+                reattach( nested_nodes, nested_paths, collect_upper( node, vfs_path, nested_nodes, nested_paths, 0, false ) )
+            end
+
+            memory_release( node )
         end
     end
 end
 
---- Places the mount root at the path, creating virtual directories on the way.
----
----@param vfs_path string
----@param node dreamwork.vfs.Node
----@return boolean success
----@return string | nil message
 function attach_at( vfs_path, node )
     local segments, segment_count = string_byteSplit( vfs_path, 0x2F --[[ / ]], 2 )
     local directory = root
@@ -890,7 +1105,7 @@ function attach_at( vfs_path, node )
             attach( directory, child )
         elseif node_children[ child ] == nil then
             prune( directory )
-            return false, string_format( "'%s' is a file, nothing can be mounted inside it.", node_path( child ) )
+            return false, string_format( "'%s' is a file, nothing can be placed inside it.", node_path( child ) )
         end
 
         directory = child
@@ -899,6 +1114,67 @@ function attach_at( vfs_path, node )
     local existing = child_get( directory, node_names[ node ] )
     if existing == nil then
         attach( directory, node )
+        return true
+    end
+
+    if node_memory[ node ] then
+        -- files of search paths are shadowed, whiteouts hide directories of search paths too
+        if node_mounts[ existing ] ~= nil and not node_is_mount_root( existing ) and (node_children[ existing ] == nil or node_whiteout[ node ]) then
+            local nodes, paths = {}, {}
+            local count = 0
+
+            if node_children[ existing ] ~= nil then
+                count = collect_upper( existing, vfs_path, nodes, paths, 0, false )
+            end
+
+            detach( existing )
+            memory_release( existing )
+            attach( directory, node )
+            reattach( nodes, paths, count )
+
+            return true
+        end
+
+        if node_children[ node ] == nil or node_children[ existing ] == nil then
+            prune( directory )
+            return false, string_format( "'%s' already exists.", vfs_path )
+        end
+
+        if node_mounts[ existing ] == nil and not node_memory[ existing ] then
+            -- the intermediate directory is replaced, mounts and memory content inside of it are placed into the memory directory
+            local nodes, paths = {}, {}
+            local count = collect_upper( existing, vfs_path, nodes, paths, 0, true )
+
+            detach( existing )
+            attach( directory, node )
+            reattach( nodes, paths, count )
+
+            return true
+        end
+
+        -- merged into the existing directory, the content is moved there
+        local nodes, paths, count = {}, {}, 0
+
+        for name, child in raw_pairs( node_children[ node ] ) do
+            count = count + 1
+            nodes[ count ], paths[ count ] = child, child_path( vfs_path, name )
+        end
+
+        node_memory[ node ] = nil
+        memory_count = memory_count - 1
+
+        if not node_memory[ existing ] then
+            -- remembered by the directory of the search path or the mount root, it is created again once they are gone
+            local unix_time, merged_time = node_created[ node ] or time_now(), node_merged[ existing ]
+            if merged_time == nil then
+                node_merged[ existing ] = unix_time
+                memory_count = memory_count + 1
+            elseif unix_time < merged_time then
+                node_merged[ existing ] = unix_time
+            end
+        end
+
+        reattach( nodes, paths, count )
         return true
     end
 
@@ -911,13 +1187,19 @@ function attach_at( vfs_path, node )
         return false, string_format( "'%s' is a file, it cannot be a mount point.", vfs_path )
     end
 
-    -- mounts nested in the replaced directory stay at their paths
-    local nested = {}
-    local nested_count = collect_mounts( existing, nested, 0 )
+    -- memory files and directories and mounts nested in the replaced directory stay at their paths
+    local nodes, paths = {}, {}
+    local count = collect_detached( existing, vfs_path, nodes, paths )
+
+    if node_memory[ existing ] then
+        -- the replaced memory directory is created again once the mount is gone
+        node_memory[ existing ] = nil
+        node_merged[ node ] = node_created[ existing ] or time_now()
+    end
 
     detach( existing )
     attach( directory, node )
-    reattach( nested, nested_count )
+    reattach( nodes, paths, count )
 
     return true
 end
@@ -926,8 +1208,9 @@ end
 local function map_unmount( mount )
     local node = mount.node
 
-    local nested = {}
-    local nested_count = collect_mounts( node, nested, 0 )
+    -- memory files and directories and mounts nested in the unmounted directory stay at their paths
+    local nodes, paths = {}, {}
+    local count = collect_detached( node, mount.path, nodes, paths )
 
     if node == root then
         node_mounts[ root ], node_relative_paths[ root ] = nil, ""
@@ -937,12 +1220,12 @@ local function map_unmount( mount )
         local parent = node_parents[ node ]
         detach( node )
 
-        -- virtual directories without anything inside are not needed anymore
+        -- intermediate directories without anything inside are not needed anymore
         prune( parent )
     end
 
     mounts[ mount.path ] = nil
-    reattach( nested, nested_count )
+    reattach( nodes, paths, count )
 end
 
 ---@param node dreamwork.vfs.Node
@@ -965,15 +1248,33 @@ local function is_allowed_extension( mount, file_name )
     return extensions == nil or extensions[ string_lower( path_getExtension( file_name, false ) ) ] == true
 end
 
+--- Returns where writes into the file, or into the directory, are stored.
+---
 ---@param node dreamwork.vfs.Node
----@return boolean
-local function is_writable( node )
-    local mount = node_mounts[ node ]
-    if mount == nil or not mount.writable then
-        return false
+---@return dreamwork.vfs.Storage | nil storage `nil` if the file cannot be written, the extension is not allowed by its search path.
+local function write_storage( node )
+    if node_memory[ node ] then
+        return "memory"
     end
 
-    return node_children[ node ] ~= nil or is_allowed_extension( mount, node_names[ node ] )
+    local is_directory = node_children[ node ] ~= nil
+
+    local mount
+    if is_directory then
+        mount = node_mounts[ node ]
+    else
+        mount = node_mounts[ node_parents[ node ] ]
+    end
+
+    if mount == nil or not mount.writable then
+        return "memory"
+    end
+
+    if is_directory or is_allowed_extension( mount, node_names[ node ] ) then
+        return "mount"
+    end
+
+    return nil
 end
 
 ---@param search_path string
@@ -1023,12 +1324,17 @@ end
 ---@return string | nil data
 ---@return string | nil message
 local function read_node( node )
+    local data = node_data[ node ]
+    if data ~= nil then
+        return data
+    end
+
     local handle = driver_Open( node_relative_paths[ node ], "rb", node_mounts[ node ].search_path )
     if handle == nil then
         return nil, string_format( "'%s' could not be opened for reading.", node_path( node ) )
     end
 
-    local data = handle:Read( handle:Size() ) or ""
+    data = handle:Read( handle:Size() ) or ""
     handle:Close()
 
     return data
@@ -1041,7 +1347,7 @@ end
 ---@return string | nil message
 ---@async
 local function read_node_async( node )
-    if file_AsyncRead == nil then
+    if file_AsyncRead == nil or node_data[ node ] ~= nil then
         return read_node( node )
     end
 
@@ -1080,6 +1386,42 @@ local mount_search_path
 ---@type fun( mount_path: string ): boolean
 local unmount_path
 
+--- Lists the directory, mount roots, intermediate directories and memory files and directories shadow the search path, whiteouts hide it.
+---
+---@type fun( directory: dreamwork.vfs.Node, pattern: string? ): string[], boolean[], integer
+local list_children
+
+---@type table<dreamwork.vfs.Mount | boolean, boolean>
+local memory_noticed = {}
+gc_setTableRules( memory_noticed, true, false )
+
+---@type table<dreamwork.vfs.Mount, boolean>
+local whiteout_noticed = {}
+gc_setTableRules( whiteout_noticed, true, false )
+
+--- Logs the first write kept in memory for the mount, so an unexpected fallback is easy to notice.
+---
+---@param directory dreamwork.vfs.Node The directory that is not a memory directory.
+---@param vfs_path string
+local function memory_notice( directory, vfs_path )
+    local mount = node_mounts[ directory ]
+
+    local key = mount or false
+    if memory_noticed[ key ] then
+        return
+    end
+
+    memory_noticed[ key ] = true
+
+    if mount == nil then
+        logger:debug( "'%s' has no search path, writes into intermediate directories are kept in memory.", vfs_path )
+    else
+        logger:debug( "'%s' is read-only, writes into '%s' mounted at '%s' are kept in memory.", vfs_path, mount.search_path, mount.path )
+    end
+end
+
+--- Creates the directory, in memory if the search path of the parent directory is read-only or it has none.
+---
 ---@param parent dreamwork.vfs.Node
 ---@param name string
 ---@return dreamwork.vfs.Node | nil directory
@@ -1090,10 +1432,19 @@ local function make_directory( parent, name )
         return nil, message
     end
 
-    local mount
-    mount, message = writable_mount( parent )
-    if mount == nil then
-        return nil, message
+    local mount = node_mounts[ parent ]
+    if mount == nil or not mount.writable then
+        local directory = memory_directory( name, time_now() )
+        attach( parent, directory )
+
+        local vfs_path = node_path( directory )
+
+        if not node_memory[ parent ] then
+            memory_notice( parent, vfs_path )
+        end
+
+        watchdog_change( "dreamwork.vfs.created", vfs_path, true )
+        return directory
     end
 
     local search_path, relative_path = mount.search_path, join_path( node_relative_paths[ parent ], name )
@@ -1146,7 +1497,68 @@ local function make_directory_chain( vfs_path )
     return directory
 end
 
+--- Writes the memory file, the file of the search path is shadowed by it and copied into memory first when appended to.
+---
+---@param directory dreamwork.vfs.Node
+---@param node dreamwork.vfs.Node | nil The existing file.
+---@param vfs_path string
+---@param name string
+---@param data string
+---@param append_mode boolean
+---@return boolean success
+---@return string | nil message
+local function write_memory_file( directory, node, vfs_path, name, data, append_mode )
+    if append_mode and node ~= nil then
+        local old_data, message = read_node( node )
+        if old_data == nil then
+            return false, message
+        end
+
+        data = old_data .. data
+    end
+
+    local is_memory = node ~= nil and node_memory[ node ] == true
+
+    local old_size = 0
+    if is_memory then
+        old_size = string_len( node_data[ node ] )
+    end
+
+    -- shrinking writes are allowed over the limit, the limit could be lowered after the file was written
+    local new_bytes = memory_bytes - old_size + string_len( data )
+    if memory_limit ~= 0 and new_bytes > memory_limit and new_bytes > memory_bytes then
+        return false, string_format( "'%s' cannot be kept in memory, %d bytes in memory would exceed the limit of %d bytes.", vfs_path, new_bytes, memory_limit )
+    end
+
+    local unix_time = time_now()
+    local existed = node ~= nil
+
+    if not is_memory then
+        if node ~= nil then
+            detach( node )
+        end
+
+        node = NodeClass( name, nil, "", false )
+        node_created[ node ] = unix_time
+        memory_add( node )
+
+        attach( directory, node )
+
+        if not node_memory[ directory ] then
+            memory_notice( directory, vfs_path )
+        end
+    end
+
+    memory_bytes = new_bytes
+    node_data[ node ], node_modified[ node ] = data, unix_time
+
+    watchdog_change( existed and "dreamwork.vfs.modified" or "dreamwork.vfs.created", vfs_path, false )
+    return true
+end
+
 --- Writes the file, missing directories are created.
+---
+--- Files are kept in memory where the search path is read-only or there is none.
 ---
 ---@param vfs_path string
 ---@param data string
@@ -1173,10 +1585,9 @@ local function write_file( vfs_path, data, append_mode, async )
         return false, string_format( "'%s' is a directory.", vfs_path )
     end
 
-    local mount
-    mount, message = writable_mount( directory )
-    if mount == nil then
-        return false, message
+    local mount = node_mounts[ directory ]
+    if mount == nil or not mount.writable or node_memory[ node ] then
+        return write_memory_file( directory, node, vfs_path, name, data, append_mode )
     end
 
     if not is_allowed_extension( mount, name ) then
@@ -1193,10 +1604,13 @@ local function write_file( vfs_path, data, append_mode, async )
         return false, string_format( "'%s' could not be opened for writing.", vfs_path )
     end
 
-    -- the file could be discovered by someone else while the write was awaited
+    -- the file could be discovered by someone else while the write was awaited, a whiteout is replaced
     local children = node_children[ directory ]
-    if children ~= nil and children[ name ] == nil then
-        discover( directory, name, false )
+    if children ~= nil then
+        local existing = children[ name ]
+        if existing == nil or node_whiteout[ existing ] then
+            discover( directory, name, false )
+        end
     end
 
     if node == nil then
@@ -1214,18 +1628,19 @@ end
 ---@return boolean success
 ---@return string | nil message
 local function touch_file_node( node )
-    local mount, message = writable_mount( node_parents[ node ] )
-    if mount == nil then
-        return false, message
+    local directory, vfs_path = node_parents[ node ], node_path( node )
+
+    -- files of read-only search paths are copied into memory
+    local mount = node_mounts[ directory ]
+    if mount == nil or not mount.writable or node_memory[ node ] then
+        return write_memory_file( directory, node, vfs_path, node_names[ node ], "", true )
     end
 
-    local vfs_path = node_path( node )
     if not is_allowed_extension( mount, node_names[ node ] ) then
         return false, string_format( "'%s' cannot be touched, extension is not allowed by '%s'.", vfs_path, mount.search_path )
     end
 
-    local data
-    data, message = read_node( node )
+    local data, message = read_node( node )
     if data == nil then
         return false, message
     end
@@ -1245,6 +1660,13 @@ end
 ---@return boolean success
 ---@return string | nil message
 local function touch_directory_node( node )
+    if node_mounts[ node ] == nil then
+        node_modified[ node ] = time_now()
+
+        watchdog_change( "dreamwork.vfs.modified", node_path( node ), true )
+        return true
+    end
+
     local mount, message = writable_mount( node )
     if mount == nil then
         return false, message
@@ -1284,45 +1706,157 @@ local function delete_tree( search_path, relative_path )
     driver_Delete( relative_path, search_path )
 end
 
+--- Returns the mount of the file or directory of the search path that is deleted or moved away.
+---
 ---@param node dreamwork.vfs.Node
 ---@return dreamwork.vfs.Mount | nil mount
 ---@return string | nil message
-local function deletable_mount( node )
+local function removable_mount( node )
     if node_is_mount_root( node ) then
         return nil, string_format( "'%s' is a mount point, use `vfs.unmount` instead.", node_path( node ) )
     end
 
     local mount = node_mounts[ node ]
     if mount == nil then
-        return nil, string_format( "'%s' is virtual and cannot be deleted.", node_path( node ) )
-    end
-
-    if not mount.deletable then
-        return nil, string_format( "'%s' cannot be deleted, '%s' does not allow deleting.", node_path( node ), mount.search_path )
+        return nil, string_format( "'%s' is an intermediate directory of mount points, it cannot be deleted.", node_path( node ) )
     end
 
     return mount
 end
 
+--- Hides the file or directory of the search path that does not allow deleting with a whiteout, memory content inside is deleted.
+---
+---@param node dreamwork.vfs.Node
+---@param mount dreamwork.vfs.Mount
+---@param recursive boolean
+---@return boolean success
+---@return string | nil message
+local function whiteout_node( node, mount, recursive )
+    local vfs_path = node_path( node )
+    local is_directory = node_children[ node ] ~= nil
+
+    if is_directory then
+        if not recursive then
+            local _, _, count = list_children( node )
+            if count ~= 0 then
+                return false, string_format( "'%s' is not empty.", vfs_path )
+            end
+        end
+
+        local nodes, paths = {}, {}
+        if collect_upper( node, vfs_path, nodes, paths, 0, false ) ~= 0 then
+            return false, string_format( "'%s' cannot be hidden, mount points are nested in it.", vfs_path )
+        end
+    end
+
+    local parent = node_parents[ node ]
+
+    detach( node )
+    memory_release( node )
+
+    local whiteout = NodeClass( node_names[ node ], nil, "", false )
+    node_whiteout[ whiteout ] = true
+    memory_add( whiteout )
+
+    attach( parent, whiteout )
+
+    if not whiteout_noticed[ mount ] then
+        whiteout_noticed[ mount ] = true
+        logger:debug( "'%s' cannot be deleted from '%s' mounted at '%s', it is hidden by a whiteout in memory.", vfs_path, mount.search_path, mount.path )
+    end
+
+    watchdog_change( "dreamwork.vfs.deleted", vfs_path, is_directory )
+    return true
+end
+
+---@type fun( node: dreamwork.vfs.Node, recursive: boolean ): boolean, string | nil
+local delete_node
+
+--- Deletes the memory file or directory, the file or directory of the search path shadowed by it is deleted too or hidden by a whiteout.
+---
 ---@param node dreamwork.vfs.Node
 ---@param recursive boolean
 ---@return boolean success
 ---@return string | nil message
-local function delete_node( node, recursive )
-    local mount, message = deletable_mount( node )
+local function delete_memory_node( node, recursive )
+    local vfs_path = node_path( node )
+
+    local children = node_children[ node ]
+    local is_directory = children ~= nil
+
+    if is_directory and not recursive then
+        local _, _, count = list_children( node )
+        if count ~= 0 then
+            return false, string_format( "'%s' is not empty.", vfs_path )
+        end
+    end
+
+    local parent = node_parents[ node ]
+
+    if is_directory then
+        -- mounts nested in the deleted directory stay at their paths
+        local nodes, paths = {}, {}
+        local count = collect_upper( node, vfs_path, nodes, paths, 0, false )
+
+        detach( node )
+        reattach( nodes, paths, count )
+    else
+        detach( node )
+    end
+
+    memory_release( node )
+    prune( parent )
+
+    local replacement = lookup( vfs_path )
+    if replacement == nil then
+        watchdog_change( "dreamwork.vfs.deleted", vfs_path, is_directory )
+        return true
+    end
+
+    -- the path must be gone like after any other deletion
+    if node_mounts[ replacement ] ~= nil and not node_is_mount_root( replacement ) then
+        return delete_node( replacement, true )
+    end
+
+    -- mounts nested in the deleted directory created an intermediate directory in its place
+    if is_directory then
+        watchdog_change( "dreamwork.vfs.modified", vfs_path, true )
+    else
+        watchdog_change( "dreamwork.vfs.deleted", vfs_path, false )
+        watchdog_change( "dreamwork.vfs.created", vfs_path, true )
+    end
+
+    return true
+end
+
+function delete_node( node, recursive )
+    if node_memory[ node ] then
+        return delete_memory_node( node, recursive )
+    end
+
+    local mount, message = removable_mount( node )
     if mount == nil then
         return false, message
+    end
+
+    if not mount.deletable then
+        return whiteout_node( node, mount, recursive )
     end
 
     local search_path, relative_path = mount.search_path, node_relative_paths[ node ]
 
     if node_children[ node ] ~= nil then
         local files, directories = driver_Find( join_path( relative_path, "*" ), search_path )
-        if (files ~= nil and files[ 1 ] ~= nil) or (directories ~= nil and directories[ 1 ] ~= nil) then
-            if not recursive then
+        local has_content = (files ~= nil and files[ 1 ] ~= nil) or (directories ~= nil and directories[ 1 ] ~= nil)
+
+        if not recursive then
+            local _, _, count = list_children( node )
+            if count ~= 0 then
                 return false, string_format( "'%s' is not empty.", node_path( node ) )
             end
+        end
 
+        if has_content then
             delete_tree( search_path, relative_path )
         end
     end
@@ -1336,12 +1870,13 @@ local function delete_node( node, recursive )
     end
 
     if node_children[ node ] ~= nil then
-        -- mounts nested in the deleted directory stay at their paths
-        local nested = {}
-        local nested_count = collect_mounts( node, nested, 0 )
+        -- mounts nested in the deleted directory stay at their paths, memory files and directories are deleted with it
+        local nodes, paths = {}, {}
+        local count = collect_upper( node, vfs_path, nodes, paths, 0, false )
 
         detach( node )
-        reattach( nested, nested_count )
+        reattach( nodes, paths, count )
+        memory_release( node )
     else
         detach( node )
     end
@@ -1352,8 +1887,9 @@ end
 
 ---@param node dreamwork.vfs.Node
 ---@param getter fun( relative_path: string, search_path: string ): integer
+---@param times table<dreamwork.vfs.Node, integer> The times of intermediate directories and memory files, the creation time if missing.
 ---@return integer unix_time
-local function node_time( node, getter )
+local function node_time( node, getter, times )
     local mount = node_mounts[ node ]
     if mount ~= nil then
         local unix_time = getter( node_relative_paths[ node ], mount.search_path )
@@ -1362,7 +1898,7 @@ local function node_time( node, getter )
         end
     end
 
-    return node_created[ node ] or 0
+    return times[ node ] or node_created[ node ] or 0
 end
 
 do
@@ -1410,6 +1946,7 @@ do
         times = {},
         sizes = {},
         indexes = {},
+        overlay_count = 0,
         relative_path = ""
     }
 
@@ -1450,19 +1987,32 @@ do
 
         local count = 0
 
-        -- mount roots and virtual directories go first, they shadow the search path
+        -- mount roots, intermediate directories and memory files go first, they shadow the search path
+        --- The names hidden by whiteouts.
+        ---
+        ---@type table<string, boolean>
+        local hidden = {}
+
         local overlays = node_overlays[ directory ]
         if overlays ~= nil then
             for index = 1, #overlays, 1 do
-                local name = node_names[ overlays[ index ] ]
-                count = count + 1
+                local overlay = overlays[ index ]
+                local name = node_names[ overlay ]
 
-                names[ count ], directories[ count ] = name, true
-                times[ count ], sizes[ count ] = 0, 0
+                if node_whiteout[ overlay ] then
+                    hidden[ name ] = true
+                else
+                    count = count + 1
 
-                indexes[ name ] = count
+                    names[ count ], directories[ count ] = name, node_children[ overlay ] ~= nil
+                    times[ count ], sizes[ count ] = 0, 0
+
+                    indexes[ name ] = count
+                end
             end
         end
+
+        local overlay_count = count
 
         local mount = node_mounts[ directory ]
         local relative_path = node_relative_paths[ directory ]
@@ -1481,7 +2031,7 @@ do
 
                 for index = 1, #files, 1 do
                     local name = files[ index ]
-                    if indexes[ name ] == nil and not restricted_names[ name ] then
+                    if indexes[ name ] == nil and not hidden[ name ] and not restricted_names[ name ] then
                         count = count + 1
                         names[ count ], directories[ count ] = name, false
 
@@ -1500,7 +2050,7 @@ do
             if folders ~= nil then
                 for index = 1, #folders, 1 do
                     local name = folders[ index ]
-                    if indexes[ name ] == nil and not restricted_names[ name ] then
+                    if indexes[ name ] == nil and not hidden[ name ] and not restricted_names[ name ] then
                         count = count + 1
 
                         names[ count ], directories[ count ] = name, true
@@ -1519,6 +2069,7 @@ do
             times = times,
             sizes = sizes,
             indexes = indexes,
+            overlay_count = overlay_count,
             search_path = search_path,
             relative_path = relative_path
         }
@@ -1529,9 +2080,10 @@ do
     ---@param vfs_path string The path of the directory.
     ---@param content dreamwork.vfs.WatchContent
     ---@param index integer
-    ---@return boolean is_checked `true` if the file was checked, `false` for directories.
+    ---@return boolean is_checked `true` if the file was checked, `false` for directories and memory files.
     local function check_child( vfs_path, content, index )
-        if content.directories[ index ] then
+        -- memory files are changed only through `vfs`, the changes are reported right away
+        if index <= content.overlay_count or content.directories[ index ] then
             return false
         end
 
@@ -1625,8 +2177,13 @@ do
         local file_time, file_size = 0, 0
 
         if exists then
-            local search_path, relative_path = node_mounts[ node ].search_path, node_relative_paths[ node ]
-            file_time, file_size = driver_Time( relative_path, search_path ) or 0, driver_Size( relative_path, search_path ) or 0
+            local mount = node_mounts[ node ]
+            if mount == nil then
+                file_time, file_size = node_modified[ node ] or 0, string_len( node_data[ node ] or "" )
+            else
+                local search_path, relative_path = mount.search_path, node_relative_paths[ node ]
+                file_time, file_size = driver_Time( relative_path, search_path ) or 0, driver_Size( relative_path, search_path ) or 0
+            end
         end
 
         local was_existing, was_directory = watch.exists, watch.is_directory
@@ -1752,7 +2309,7 @@ do
         hook_call( event_name, vfs_path, is_directory )
     end
 
-    --- Reports changes of a mount, virtual directories can be created or pruned anywhere on the way to it.
+    --- Reports changes of a mount, intermediate directories can be created or pruned anywhere on the way to it.
     ---
     ---@param mount_path string
     ---@param is_mounted boolean `true` to check from the root down, `false` from the mount path up.
@@ -1964,7 +2521,7 @@ do
         ---
         --- Mounts the search path into the virtual file system.
         ---
-        --- Missing directories on the way to the mount point are created as virtual directories,
+        --- Missing directories on the way to the mount point are created as intermediate directories,
         --- an existing directory at the mount point is replaced, mounts nested in it are kept.
         ---
         --- ```lua
@@ -2131,14 +2688,7 @@ local function directory_lookup( vfs_path )
     return node
 end
 
---- Lists the directory, mount roots and virtual directories shadow the search path.
----
----@param directory dreamwork.vfs.Node
----@param pattern string? Lua pattern names must match, `nil` lists everything.
----@return string[] names
----@return boolean[] directories
----@return integer count
-local function list_children( directory, pattern )
+function list_children( directory, pattern )
     ---@type string[]
     local names = {}
 
@@ -2153,12 +2703,13 @@ local function list_children( directory, pattern )
     local overlays = node_overlays[ directory ]
     if overlays ~= nil then
         for index = 1, #overlays, 1 do
-            local name = node_names[ overlays[ index ] ]
+            local overlay = overlays[ index ]
+            local name = node_names[ overlay ]
             listed[ name ] = true
 
-            if pattern == nil or string_match( name, pattern ) ~= nil then
+            if not node_whiteout[ overlay ] and (pattern == nil or string_match( name, pattern ) ~= nil) then
                 count = count + 1
-                names[ count ], directories[ count ] = name, true
+                names[ count ], directories[ count ] = name, node_children[ overlay ] ~= nil
             end
         end
     end
@@ -2193,6 +2744,11 @@ end
 ---@return integer size
 local function node_size( node )
     if node_children[ node ] == nil then
+        local data = node_data[ node ]
+        if data ~= nil then
+            return string_len( data )
+        end
+
         local size = driver_Size( node_relative_paths[ node ], node_mounts[ node ].search_path )
         if size == nil or size < 0 then
             return 0
@@ -2344,10 +2900,15 @@ local function move( source_path, target_path, overwrite, is_directory, async )
         return false, message
     end
 
+    -- memory files and directories are copied and deleted, files and directories of search paths that do not allow deleting are copied and hidden by whiteouts
+    local is_memory = node_memory[ source ] == true
+
     local mount
-    mount, message = deletable_mount( source )
-    if mount == nil then
-        return false, message
+    if not is_memory then
+        mount, message = removable_mount( source )
+        if mount == nil then
+            return false, message
+        end
     end
 
     local directory_path, name = path_split( target_path, false )
@@ -2363,12 +2924,14 @@ local function move( source_path, target_path, overwrite, is_directory, async )
         return false, message
     end
 
-    local search_path = mount.search_path
     local target_mount = node_mounts[ directory ]
 
-    -- directories are merged into an existing one by copying
-    if driver_Rename ~= nil and target_mount ~= nil and target_mount.writable and target_mount.search_path == search_path
-        and (is_directory or is_allowed_extension( target_mount, name )) and (target == nil or not is_directory) then
+    -- directories are merged into an existing one by copying, memory files and directories inside are copied too
+    if mount ~= nil and mount.deletable and driver_Rename ~= nil and target_mount ~= nil and target_mount.writable and target_mount.search_path == mount.search_path
+        and (is_directory or is_allowed_extension( target_mount, name )) and (target == nil or not is_directory)
+        and node_merged[ source ] == nil and not (is_directory and has_memory( source )) then
+
+        local search_path = mount.search_path
 
         if target ~= nil then
             local success
@@ -2385,18 +2948,21 @@ local function move( source_path, target_path, overwrite, is_directory, async )
         if file_Exists( new_relative_path, search_path ) and not file_Exists( relative_path, search_path ) then
             if is_directory then
                 -- mounts nested in the moved directory stay at their paths
-                local nested = {}
-                local nested_count = collect_mounts( source, nested, 0 )
+                local nodes, paths = {}, {}
+                local count = collect_upper( source, source_path, nodes, paths, 0, false )
 
                 detach( source )
-                reattach( nested, nested_count )
+                reattach( nodes, paths, count )
             else
                 detach( source )
             end
 
             local children = node_children[ directory ]
-            if children ~= nil and children[ name ] == nil then
-                discover( directory, name, is_directory )
+            if children ~= nil then
+                local existing = children[ name ]
+                if existing == nil or node_whiteout[ existing ] then
+                    discover( directory, name, is_directory )
+                end
             end
 
             watchdog_change( "dreamwork.vfs.deleted", source_path, is_directory )
@@ -2472,6 +3038,8 @@ end
 ---
 --- Replaces the file data, the file and missing directories are created.
 ---
+--- Kept in memory where the search path is read-only or there is none.
+---
 ---@param file_path string The path to the file.
 ---@param data string The new data.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
@@ -2487,6 +3055,8 @@ end
 --- [SHARED AND MENU]
 ---
 --- Appends data to the end of the file, the file and missing directories are created.
+---
+--- Kept in memory where the search path is read-only or there is none, the file of the search path is copied into memory first.
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append.
@@ -2504,7 +3074,8 @@ end
 ---
 --- Replaces the file data asynchronously, must be called from a coroutine.
 ---
---- Writes synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`.
+--- Writes synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`,
+--- kept in memory where the search path is read-only or there is none.
 ---
 ---@param file_path string The path to the file.
 ---@param data string The new data.
@@ -2523,7 +3094,8 @@ end
 ---
 --- Appends data to the end of the file asynchronously, must be called from a coroutine.
 ---
---- Appends synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`.
+--- Appends synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`,
+--- kept in memory where the search path is read-only or there is none.
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append.
@@ -2594,6 +3166,8 @@ end
 ---
 --- Deletes the file.
 ---
+--- Files of search paths that do not allow deleting are hidden by a whiteout instead, see `vfs`.
+---
 ---@param file_path string The path to the file.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.deleteFile( file_path, stack_level )
@@ -2614,6 +3188,8 @@ end
 --- [SHARED AND MENU]
 ---
 --- Creates a directory with missing parent directories, an existing directory is kept as is, fails if the path is a file.
+---
+--- Directories are created in memory where the search path is read-only or there is none.
 ---
 ---@param directory_path string The path to the directory.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
@@ -2656,6 +3232,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- Deletes the directory.
+---
+--- Memory files and directories inside are deleted with it, mounts nested in it stay at their paths.
+---
+--- Directories of search paths that do not allow deleting are hidden by a whiteout instead, see `vfs`,
+--- this fails if mounts are nested in them.
 ---
 ---@param directory_path string The path to the directory.
 ---@param recursive boolean? If `true`, the directory is deleted with everything in it, otherwise it must be empty.
@@ -3001,13 +3582,32 @@ end
 ---
 --- Checks if a file can be written, or files and directories can be created inside of a directory.
 ---
+--- Writes into read-only search paths and intermediate directories go to memory, see `vfs`,
+--- pass `"mount"` as the storage to check that writes reach the search path.
+---
+--- ```lua
+--- dreamwork.vfs.isWritable( "/garrysmod/data" ) -- true, "mount"
+--- dreamwork.vfs.isWritable( "/game/lua", "mount" ) -- false, "memory"
+--- ```
+---
 ---@param path_to string The path to the file or directory.
+---@param storage dreamwork.vfs.Storage? The storage writes must go to, `nil` accepts any.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
----@return boolean is_writable `true` if writing is allowed, `false` otherwise or if the path does not exist.
+---@return boolean is_writable `true` if writing is allowed and goes to the storage, `false` otherwise or if the path does not exist.
+---@return dreamwork.vfs.Storage | nil write_storage Where writes go, `nil` if the path does not exist or the file cannot be written.
 ---@nodiscard
-function vfs.isWritable( path_to, stack_level )
+function vfs.isWritable( path_to, storage, stack_level )
     local node = lookup( path_resolve( path_to, (stack_level or 1) + 1 ) )
-    return node ~= nil and is_writable( node )
+    if node == nil then
+        return false, nil
+    end
+
+    local write_to = write_storage( node )
+    if write_to == nil then
+        return false, nil
+    end
+
+    return storage == nil or storage == write_to, write_to
 end
 
 --- [SHARED AND MENU]
@@ -3024,11 +3624,12 @@ function vfs.isReadable( path_to, stack_level )
         return false
     end
 
-    if node_children[ node ] ~= nil then
+    local mount = node_mounts[ node ]
+    if node_children[ node ] ~= nil or mount == nil then
         return true
     end
 
-    local handle = driver_Open( node_relative_paths[ node ], "rb", node_mounts[ node ].search_path )
+    local handle = driver_Open( node_relative_paths[ node ], "rb", mount.search_path )
     if handle == nil then
         return false
     end
@@ -3041,7 +3642,7 @@ end
 ---
 --- Returns the information about the mount that provides a file or directory.
 ---
---- Virtual directories are created on the way to mount points and have no mount, their mount fields are `nil`.
+--- Intermediate directories created on the way to mount points and memory files and directories have no mount, their mount fields are `nil`.
 ---
 --- ```lua
 --- local info = dreamwork.vfs.getInfo( "/garrysmod/data/settings.txt" )
@@ -3060,12 +3661,14 @@ function vfs.getInfo( path_to, stack_level )
 
     local mount = node_mounts[ node ]
     if mount == nil then
+        local is_memory = node_memory[ node ] == true
+
         ---@type dreamwork.vfs.Info
         return {
-            is_virtual = true,
+            storage = is_memory and "memory" or "none",
             is_mount_root = false,
-            writable = false,
-            deletable = false
+            writable = is_memory,
+            deletable = is_memory
         }
     end
 
@@ -3075,11 +3678,50 @@ function vfs.getInfo( path_to, stack_level )
         search_path = mount.search_path,
         search_directory = mount.search_directory,
         relative_path = node_relative_paths[ node ],
-        is_virtual = false,
+        storage = "mount",
         is_mount_root = mount.node == node,
         writable = mount.writable,
         deletable = mount.deletable
     }
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns how much is kept in memory, see `vfs`.
+---
+---@return integer bytes The total size of memory files in bytes.
+---@return integer count The number of memory files, memory directories and whiteouts.
+---@nodiscard
+function vfs.getMemoryUsage()
+    return memory_bytes, memory_count
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the maximal total size of memory files.
+---
+---@return integer bytes The limit in bytes, `0` if there is no limit.
+---@nodiscard
+function vfs.getMemoryLimit()
+    return memory_limit
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets the maximal total size of memory files, writes into memory that would exceed it fail.
+---
+--- Files already in memory are kept when the limit is lowered, writes that shrink them are still allowed.
+---
+---@param bytes integer? The limit in bytes, `0` or `nil` for no limit (default).
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it.
+function vfs.setMemoryLimit( bytes, stack_level )
+    if bytes == nil then
+        bytes = 0
+    elseif not isNumber( bytes ) or bytes < 0 or bytes % 1 ~= 0 then
+        error( "memory limit must be a non-negative integer", (stack_level or 1) + 1 )
+    end
+
+    memory_limit = bytes
 end
 
 --- [SHARED AND MENU]
@@ -3098,7 +3740,7 @@ function vfs.getTimeAccessed( path_to, stack_level )
         return 0
     end
 
-    return node_time( node, driver_TimeAccessed )
+    return node_time( node, driver_TimeAccessed, node_modified )
 end
 
 --- [SHARED AND MENU]
@@ -3117,7 +3759,7 @@ function vfs.getTimeCreated( path_to, stack_level )
         return 0
     end
 
-    return node_time( node, driver_TimeCreated )
+    return node_time( node, driver_TimeCreated, node_created )
 end
 
 --- [SHARED AND MENU]
@@ -3134,7 +3776,7 @@ function vfs.getTimeModified( path_to, stack_level )
         return 0
     end
 
-    return node_time( node, driver_Time )
+    return node_time( node, driver_Time, node_modified )
 end
 
 --- [SHARED AND MENU]
@@ -3186,7 +3828,7 @@ end
 ---
 --- Searches for files and directories in a directory by wildcard, subdirectories are not searched.
 ---
---- Mount roots and virtual directories inside of the directory are found too, they shadow the search path.
+--- Mount roots, intermediate directories and memory files and directories inside of the directory are found too, they shadow the search path.
 ---
 --- ```lua
 --- local files, file_count, directories, directory_count = dreamwork.vfs.search( "/garrysmod/data", "*.txt" )

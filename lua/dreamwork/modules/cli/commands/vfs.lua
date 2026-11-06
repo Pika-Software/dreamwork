@@ -165,8 +165,11 @@ do
 
         local info = vfs_getInfo( vfs_path )
         if info ~= nil then
-            if info.is_virtual then
-                emit( " [virtual]", COLOR_VIRTUAL )
+            local storage = info.storage
+            if storage == "memory" then
+                emit( " [memory]", COLOR_VIRTUAL )
+            elseif storage == "none" then
+                emit( " [intermediate]", COLOR_VIRTUAL )
             elseif info.is_mount_root then
                 mount_count = mount_count + 1
 
@@ -240,8 +243,12 @@ do
     ---@return string
     local function describe_mount( vfs_path )
         local info = vfs_getInfo( vfs_path )
-        if info == nil or info.is_virtual then
-            return "Mount: none, virtual directory"
+        if info == nil or info.storage ~= "mount" then
+            if info ~= nil and info.storage == "memory" then
+                return "Mount: none, kept in memory"
+            end
+
+            return "Mount: none, intermediate directory"
         end
 
         local search_directory = info.search_directory
