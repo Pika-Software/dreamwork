@@ -293,9 +293,29 @@ function parseValue( text, position, depth, max_depth )
     error( DecodeError( "unexpected character", start ), 2 )
 end
 
+--- Parses a whole JSON document, skipping a leading UTF-8 BOM and rejecting trailing data.
+---@param json_str string
+---@param max_depth integer
+---@return dreamwork.std.json.Value value
+---@return integer start
+local function parseDocument( json_str, max_depth )
+    local uint8_1, uint8_2, uint8_3 = string_byte( json_str, 1, 3 )
+
+    local start = (uint8_1 == 0xEF and uint8_2 == 0xBB and uint8_3 == 0xBF) and 4 or 1 -- skip UTF-8 BOM
+
+    local value, end_position = parseValue( json_str, start, 1, max_depth )
+
+    local trailing = string_find( json_str, "[^ \t\r\n]", end_position )
+    if trailing ~= nil then
+        error( DecodeError( "unexpected trailing data", trailing ), 3 )
+    end
+
+    return value, start
+end
+
 --- [SHARED AND MENU]
 ---
---- Deserialize a JSON string into a Lua value.
+--- Decodes a JSON string into a Lua value, the root can be any JSON value.
 ---
 --- JSON `null` becomes `std.null` (never `nil`), numbers become Lua numbers, objects and arrays become plain tables.
 ---
@@ -303,26 +323,38 @@ end
 ---
 --- Raises a `DecodeError` (with the byte position of the problem) on malformed input or trailing data.
 ---
+---@see dreamwork.std.json.deserialize for objects and arrays only.
+---
+---@param json_str string The JSON string to decode.
+---@param max_depth integer? The maximum nesting depth, default is `512`.
+---@return dreamwork.std.json.Value json_value The decoded value.
+function json.decode( json_str, max_depth )
+    return (parseDocument( json_str, max_depth or MAX_DEPTH ))
+end
+
+--- [SHARED AND MENU]
+---
+--- Deserializes a JSON string into a Lua table, the root must be an object or an array.
+---
+--- JSON `null` becomes `std.null` (never `nil`), numbers become Lua numbers, objects and arrays become plain tables.
+---
+--- A leading UTF-8 BOM is skipped, nesting deeper than `max_depth` levels is rejected.
+---
+--- Raises a `DecodeError` (with the byte position of the problem) on malformed input, trailing data or a non-table root.
+---
+---@see dreamwork.std.json.decode for any JSON value.
+---
 ---@param json_str string The JSON string to deserialize.
 ---@param max_depth integer? The maximum nesting depth, default is `512`.
----@return dreamwork.std.json.Array | dreamwork.std.json.Object json_value The deserialized value.
+---@return dreamwork.std.json.Table json_table The deserialized table.
 function json.deserialize( json_str, max_depth )
-    local uint8_1, uint8_2, uint8_3 = string_byte( json_str, 1, 3 )
-
-    local start = (uint8_1 == 0xEF and uint8_2 == 0xBB and uint8_3 == 0xBF) and 4 or 1 -- skip UTF-8 BOM
-
-    local value, end_position = parseValue( json_str, start, 1, max_depth or MAX_DEPTH )
-
-    local trailing = string_find( json_str, "[^ \t\r\n]", end_position )
-    if trailing ~= nil then
-        error( DecodeError( "unexpected trailing data", trailing ), 2 )
-    end
+    local value, start = parseDocument( json_str, max_depth or MAX_DEPTH )
 
     if not isTable( value ) then
-        error( DecodeError( "invalid json, root must be an object or an array", string_find( json_str, "[^ \t\r\n]", start ) or start ), 2 )
+        error( DecodeError( "root must be an object or an array", string_find( json_str, "[^ \t\r\n]", start ) or start ), 2 )
     end
 
-    ---@cast value dreamwork.std.json.Array | dreamwork.std.json.Object
+    ---@cast value dreamwork.std.json.Table
 
     return value
 end
@@ -575,7 +607,8 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Serialize a Lua value into a JSON string.
+--- Encodes a Lua value into a JSON string, the root can be any JSON value.
+---
 ---
 --- Tables with only sequential keys `1..n` (and empty tables) become arrays, all other tables become objects.
 ---
@@ -587,12 +620,41 @@ end
 ---
 --- Raises an `EncodeError` for any other non-JSON value (functions, threads, `NaN`/`inf`), unconvertible keys, keys that collide after conversion, or nesting deeper than `max_depth` levels (circular references).
 ---
----@param value dreamwork.std.json.Value | nil The value to serialize.
+---@see dreamwork.std.json.serialize for objects and arrays only.
+---
+---@param value dreamwork.std.json.Value | nil The value to encode.
 ---@param prettify boolean? Whether to indent the output, default is `false`.
 ---@param max_depth integer? The maximum nesting depth, default is `512`.
 ---@return string json_str The JSON string.
 ---@nodiscard
-function json.serialize( value, prettify, max_depth )
+function json.encode( value, prettify, max_depth )
     local buffer = {}
     return table_concat( buffer, "", 1, serializeValue( buffer, 0, value, 0, max_depth or MAX_DEPTH, prettify == true ) )
+end
+
+--- [SHARED AND MENU]
+---
+--- Serializes a Lua table into a JSON string, the root must be an object or an array.
+---
+---
+--- Tables with only sequential keys `1..n` (and empty tables) become arrays, all other tables become objects.
+---
+--- `nil` and `std.null` are written as `null`.
+---
+--- Tables with a metatable are converted by the first available metamethod: `__tojson` (must return a valid JSON string, written as is), `__tonumber` (number) or `__tostring` (string).
+---
+--- Object keys that are not strings are converted: numbers and booleans are formatted, other values need `__tostring`.
+---
+--- Raises an `EncodeError` for any other non-JSON value (functions, threads, `NaN`/`inf`), unconvertible keys, keys that collide after conversion, or nesting deeper than `max_depth` levels (circular references).
+---
+---@see dreamwork.std.json.encode for any JSON value.
+---
+---@param tbl dreamwork.std.json.Table The table to serialize.
+---@param prettify boolean? Whether to indent the output, default is `false`.
+---@param max_depth integer? The maximum nesting depth, default is `512`.
+---@return string json_str The JSON string.
+---@nodiscard
+function json.serialize( tbl, prettify, max_depth )
+    local buffer = {}
+    return table_concat( buffer, "", 1, serializeValue( buffer, 0, tbl, 0, max_depth or MAX_DEPTH, prettify == true ) )
 end
