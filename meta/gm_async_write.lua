@@ -35,8 +35,8 @@
 ---
 ---@param path string The path to the file, relative to `DATA`.
 ---@param data string The data to write, replacing the file contents.
----@param callback? gm_async_write.Callback Called when the write completes; `status` is `FSASYNC_OK`, `FSASYNC_ERR_FILEOPEN` or `FSASYNC_ERR_FAILURE`. Without it, the write is fire-and-forget.
----@param sync? boolean If `true`, the file is written right away and the callback is called before the function returns.
+---@param callback gm_async_write.Callback? Called when the write completes; `status` is `FSASYNC_OK`, `FSASYNC_ERR_FILEOPEN` or `FSASYNC_ERR_FAILURE`. Without it, the write is fire-and-forget.
+---@param sync boolean? If `true`, the file is written right away and the callback is called before the function returns.
 ---@return garrysmod.file.AsyncStatus status `FSASYNC_OK` if queued, `FSASYNC_ERR_FILEOPEN` if the path was rejected.
 function file.AsyncWrite( path, data, callback, sync ) end
 
@@ -60,7 +60,7 @@ function file.AsyncWrite( path, data, callback, sync ) end
 ---
 ---@param path string The path to the file, relative to `DATA`.
 ---@param data string The data to append.
----@param callback? gm_async_write.Callback Called when the append completes. Without it, the append is fire-and-forget.
----@param sync? boolean If `true`, the file is appended right away and the callback is called before the function returns.
+---@param callback gm_async_write.Callback? Called when the append completes. Without it, the append is fire-and-forget.
+---@param sync boolean? If `true`, the file is appended right away and the callback is called before the function returns.
 ---@return garrysmod.file.AsyncStatus | gm_async_write.Callback | boolean | string status `FSASYNC_ERR_FILEOPEN` if the path was rejected, otherwise the last passed argument.
 function file.AsyncAppend( path, data, callback, sync ) end

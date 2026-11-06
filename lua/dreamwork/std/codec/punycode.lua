@@ -142,9 +142,9 @@ std.punycode = punycode
 --- ```
 ---
 ---@param codepoints integer[] The code points of the label to encode.
----@param codepoint_count? integer The number of code points to encode, defaults to the length of `codepoints`.
----@param ignore_prefix? boolean If `true`, the `"xn--"` prefix is not prepended to the result.
----@param lax? boolean If `true`, surrogates (U+D800 - U+DFFF) and code points above U+10FFFF are encoded as well instead of being rejected.
+---@param codepoint_count integer? The number of code points to encode, defaults to the length of `codepoints`.
+---@param ignore_prefix boolean? If `true`, the `"xn--"` prefix is not prepended to the result.
+---@param lax boolean? If `true`, surrogates (U+D800 - U+DFFF) and code points above U+10FFFF are encoded as well instead of being rejected.
 ---@return string | nil punycode_str The Punycode string, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard
@@ -498,8 +498,8 @@ end
 --- Invalid UTF-8 in a label without the prefix raises an error, unless `lax` is `true`.
 ---
 ---@param punycode_str string The Punycode label to decode.
----@param ignore_prefix? boolean If `true`, `punycode_str` is decoded as Punycode without looking for the `"xn--"` prefix.
----@param lax? boolean If `true`, non-ASCII bytes before the delimiter, surrogates and code points above U+10FFFF are accepted instead of being rejected.
+---@param ignore_prefix boolean? If `true`, `punycode_str` is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param lax boolean? If `true`, non-ASCII bytes before the delimiter, surrogates and code points above U+10FFFF are accepted instead of being rejected.
 ---@return integer[] | nil codepoints The decoded code points, `nil` if an error occurred.
 ---@return integer | nil codepoint_count The number of decoded code points, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
@@ -524,10 +524,10 @@ end
 --- Invalid UTF-8 raises an error, unless `lax` is `true`.
 ---
 ---@param str string The UTF-8 domain name to encode.
----@param ignore_prefix? boolean If `true`, encoded labels are not prefixed with `"xn--"`.
----@param start_position? integer The position to start from in bytes, negative values count from the end.
----@param end_position? integer The position to end at in bytes, negative values count from the end.
----@param lax? boolean If `true`, invalid UTF-8 sequences become U+FFFD and surrogates are encoded as well instead of being rejected.
+---@param ignore_prefix boolean? If `true`, encoded labels are not prefixed with `"xn--"`.
+---@param start_position integer? The position to start from in bytes, negative values count from the end.
+---@param end_position integer? The position to end at in bytes, negative values count from the end.
+---@param lax boolean? If `true`, invalid UTF-8 sequences become U+FFFD and surrogates are encoded as well instead of being rejected.
 ---@return string | nil punycode_str The encoded domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard
@@ -594,10 +594,10 @@ end
 --- Invalid UTF-8 in labels without the prefix raises an error, unless `lax` is `true`.
 ---
 ---@param punycode_str string The domain name to decode.
----@param ignore_prefix? boolean If `true`, every label is decoded as Punycode without looking for the `"xn--"` prefix.
----@param start_position? integer The position to start from in bytes, negative values count from the end.
----@param end_position? integer The position to end at in bytes, negative values count from the end.
----@param lax? boolean If `true`, malformed labels are decoded leniently and invalid code points become U+FFFD instead of being rejected.
+---@param ignore_prefix boolean? If `true`, every label is decoded as Punycode without looking for the `"xn--"` prefix.
+---@param start_position integer? The position to start from in bytes, negative values count from the end.
+---@param end_position integer? The position to end at in bytes, negative values count from the end.
+---@param lax boolean? If `true`, malformed labels are decoded leniently and invalid code points become U+FFFD instead of being rejected.
 ---@return string | nil str The decoded UTF-8 domain name, `nil` if an error occurred.
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard

@@ -26,7 +26,7 @@ function gui.ActivateGameUI() end
 --- Special commands can be added to captions, such as `<sfx>` to mark the caption as a sound effect caption,
 --- which is hidden if `cc_subtitles` is set to `1` (to only show dialogue subtitles).
 ---@param duration number How long the caption should stay for, in seconds.
----@param from_player? boolean `true` if the caption is coming from the player.
+---@param from_player boolean? `true` if the caption is coming from the player.
 ---
 --- This is used to give different colors to the caption to differentiate,
 --- for example, whether the SMG is fired by the player or an NPC.

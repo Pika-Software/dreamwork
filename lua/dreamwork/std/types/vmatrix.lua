@@ -1048,7 +1048,7 @@ end
 ---
 --- Same as `VMatrix:IsRotationMatrix` in Garry's Mod, translation is ignored.
 ---
----@param tolerance? number The tolerance, defaults to `1e-3`.
+---@param tolerance number? The tolerance, defaults to `1e-3`.
 ---@return boolean is_rotation_matrix `true` if the matrix is a rotation matrix, `false` otherwise.
 ---@nodiscard
 function VMatrix:isRotationMatrix( tolerance )
@@ -1084,7 +1084,7 @@ end
 ---
 ---@param t number The interpolation factor for translation, scale and the fourth row, `0` keeps the matrix, `1` sets it to the target.
 ---@param target dreamwork.std.VMatrix The target matrix.
----@param t_angle? number The interpolation factor for rotation, defaults to `t`.
+---@param t_angle number? The interpolation factor for rotation, defaults to `t`.
 ---@return dreamwork.std.VMatrix matrix The same matrix, interpolated.
 function VMatrix:lerp( t, target, t_angle )
     if t_angle == nil then
@@ -1121,7 +1121,7 @@ end
 --- Same as `AngleMatrix` in Source engine.
 ---
 ---@param angle dreamwork.std.Angle3 The angle.
----@param translation? dreamwork.std.Vector3 The translation, defaults to `( 0, 0, 0 )`.
+---@param translation dreamwork.std.Vector3? The translation, defaults to `( 0, 0, 0 )`.
 ---@return dreamwork.std.VMatrix matrix The new matrix.
 ---@nodiscard
 function VMatrixClass.fromAngle3( angle, translation )
@@ -1141,7 +1141,7 @@ end
 --- Same as `QuaternionMatrix` in Source engine, works with non-unit quaternions.
 ---
 ---@param quaternion dreamwork.std.Quaternion The quaternion.
----@param translation? dreamwork.std.Vector3 The translation, defaults to `( 0, 0, 0 )`.
+---@param translation dreamwork.std.Vector3? The translation, defaults to `( 0, 0, 0 )`.
 ---@return dreamwork.std.VMatrix matrix The new matrix.
 ---@nodiscard
 function VMatrixClass.fromQuaternion( quaternion, translation )

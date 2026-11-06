@@ -170,8 +170,8 @@ do
     --- Returns all available local variables at the given stack level (and, optionally,
     --- in the given thread/coroutine) as a table keyed by variable name.
     ---
-    ---@param stack_level? integer The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
-    ---@param thread? thread The thread/coroutine to inspect. If omitted, the current thread is used.
+    ---@param stack_level integer? The stack level to inspect, relative to the caller (defaults to the immediate caller's frame). Cannot be negative.
+    ---@param thread thread? The thread/coroutine to inspect. If omitted, the current thread is used.
     ---@return table<string, any> values A table mapping each local variable's name to its current value.
     ---@return integer value_count The number of locals found.
     ---@nodiscard
@@ -253,7 +253,7 @@ local raw_type = raw.type
 --- a table field, a method, or an upvalue - and can fail to find anything,
 --- in which case both results are `nil`.
 ---
----@param location? integer The function or stack level.
+---@param location integer? The function or stack level.
 ---@return string | nil name The name of the function, or `nil` if unknown.
 ---@return "global" | "local" | "method" | "field" | "upvalue" | nil name_what The kind of the function, or `nil` if unknown.
 ---@nodiscard
@@ -303,7 +303,7 @@ end
 ---
 --- Returns the main function of the current stack.
 ---
----@param stack_level? integer The stack `stack_level` to get the main function from.
+---@param stack_level integer? The stack `stack_level` to get the main function from.
 ---@return function | nil main_fn The main function or `nil` if not found.
 ---@nodiscard
 function debug.getfmain( stack_level )
@@ -332,11 +332,11 @@ end
 --- Captures the current call stack, starting at `stack_level` relative to the caller
 --- of this function, and returns it as a list of debug info tables.
 ---
----@param stack_level? integer The level to start capturing from, where `0` is the function that called `getstackinfo`. Default is `0`.
----@param what? infowhat A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
----@param head_skip? integer Number of extra frames to skip from the top ( nearest the caller ) before capturing begins. Default is `0`.
----@param tail_skip? integer Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
----@param max_levels? integer Maximum number of frames to read (after `head_skip` is applied). Stack walking stops as soon as this many frames have been collected, so no `debug.getinfo` call is made beyond that point. `tail_skip` is still applied afterward to this (already capped) set. `nil`/`0` means no limit.
+---@param stack_level integer? The level to start capturing from, where `0` is the function that called `getstackinfo`. Default is `0`.
+---@param what infowhat? A string of `debug.getinfo`-style flags selecting which fields to populate per frame. Default is `"Snluf"`.
+---@param head_skip integer? Number of extra frames to skip from the top ( nearest the caller ) before capturing begins. Default is `0`.
+---@param tail_skip integer? Number of frames to drop from the bottom ( nearest the root ) of the captured stack after capturing ends. Default is `0`.
+---@param max_levels integer? Maximum number of frames to read (after `head_skip` is applied). Stack walking stops as soon as this many frames have been collected, so no `debug.getinfo` call is made beyond that point. `tail_skip` is still applied afterward to this (already capped) set. `nil`/`0` means no limit.
 ---@return debuginfo[] stack A list of debug info tables, one per captured stack frame, ordered from `stack_level` outward.
 ---@return integer stack_size The number of entries in `stack` ( equivalent to `#stack` ).
 ---@nodiscard
@@ -555,7 +555,7 @@ do
     ---
     ---@param name string The name of the metatable.
     ---@param tbl metatable The metatable to register.
-    ---@param do_full_register? boolean `true`, the metatable will be registered, `false` otherwise.
+    ---@param do_full_register boolean? `true`, the metatable will be registered, `false` otherwise.
     ---@return integer meta_id The ID of the metatable or `-1` if not fully registered.
     function debug.registermetatable( name, tbl, do_full_register )
         tbl = registry[ name ] or tbl

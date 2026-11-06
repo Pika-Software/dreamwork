@@ -2,16 +2,16 @@ local glua_jit = jit
 
 local jit_util = glua_jit.util or {}
 
----@type fun( func: function, position?: integer ): integer, integer
+---@type fun( func: function, position: integer? ): integer, integer
 local util_funcbc = jit_util.funcbc
 
----@type fun( func: function, position?: integer ): jit.funcinfo.c | jit.funcinfo.lua
+---@type fun( func: function, position: integer? ): jit.funcinfo.c | jit.funcinfo.lua
 local util_funcinfo = jit_util.funcinfo
 
----@type fun( func: function, index?: integer ): any
+---@type fun( func: function, index: integer? ): any
 local util_funck = jit_util.funck
 
----@type fun( func: function, index?: integer ): string | nil
+---@type fun( func: function, index: integer? ): string | nil
 local util_funcuvname = jit_util.funcuvname
 
 
@@ -193,7 +193,7 @@ end
 --- For C functions returns `jit.funcinfo.c` (address, upvalues count and `ffid` for builtin fast functions).
 ---
 ---@param location function | integer The function or the stack level to get the main function from.
----@param position? integer The bytecode position (program counter) inside the function.
+---@param position integer? The bytecode position (program counter) inside the function.
 ---@return jit.funcinfo.c | jit.funcinfo.lua info The function information.
 ---@nodiscard
 function jit.getfinfo( location, position )
@@ -434,7 +434,7 @@ do
             if ffi.string == nil then
 
                 ---@param pointer ffi.cdata* | string
-                ---@param length? integer
+                ---@param length integer?
                 ---@return string
                 function ffi_copy.string( pointer, length )
                     if length == nil then
@@ -472,7 +472,7 @@ do
 
                 ---@param destination ffi.cdata*
                 ---@param source ffi.cdata* | string
-                ---@param length? integer
+                ---@param length integer?
                 function ffi_copy.copy( destination, source, length )
                     if length == nil then
                         -- like the original, a string is copied together with its terminating zero
@@ -491,7 +491,7 @@ do
 
                 ---@param destination ffi.cdata*
                 ---@param length integer
-                ---@param value? integer
+                ---@param value integer?
                 function ffi_copy.fill( destination, length, value )
                     if value == nil then
                         value = 0

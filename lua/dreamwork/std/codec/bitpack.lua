@@ -133,7 +133,7 @@ end
 ---
 ---@param x integer The integer (up to 32 bits).
 ---@param position integer The bit position (`0` - `31`).
----@param value? boolean | 0 | 1 The new value of the bit, `true` by default.
+---@param value ( boolean | 0 | 1 )? The new value of the bit, `true` by default.
 ---@return integer x The changed integer.
 ---@nodiscard
 function bitpack.set( x, position, value )
@@ -170,8 +170,8 @@ end
 --- ```
 ---
 ---@param x integer The integer (up to 32 bits).
----@param position? integer The position of the lowest bit of the field (`0` - `31`), `0` by default.
----@param bit_count? integer The size of the field in bits (`1` - `32`), `1` by default.
+---@param position integer? The position of the lowest bit of the field (`0` - `31`), `0` by default.
+---@param bit_count integer? The size of the field in bits (`1` - `32`), `1` by default.
 ---@return integer value The unsigned integer.
 ---@nodiscard
 function bitpack.readUInt( x, position, bit_count )
@@ -199,8 +199,8 @@ end
 --- ```
 ---
 ---@param x integer The integer (up to 32 bits).
----@param position? integer The position of the lowest bit of the field (`0` - `31`), `0` by default.
----@param bit_count? integer The size of the field in bits (`1` - `32`), `1` by default.
+---@param position integer? The position of the lowest bit of the field (`0` - `31`), `0` by default.
+---@param bit_count integer? The size of the field in bits (`1` - `32`), `1` by default.
 ---@return integer value The signed integer.
 ---@nodiscard
 function bitpack.readInt( x, position, bit_count )
@@ -373,14 +373,14 @@ end
 --- pack( true, false, true ) --> 0b00000101
 --- ```
 ---
----@param bit0? boolean
----@param bit1? boolean
----@param bit2? boolean
----@param bit3? boolean
----@param bit4? boolean
----@param bit5? boolean
----@param bit6? boolean
----@param bit7? boolean
+---@param bit0 boolean?
+---@param bit1 boolean?
+---@param bit2 boolean?
+---@param bit3 boolean?
+---@param bit4 boolean?
+---@param bit5 boolean?
+---@param bit6 boolean?
+---@param bit7 boolean?
 ---@return integer byte The byte.
 ---@nodiscard
 function bitpack.pack( bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7 )
@@ -399,8 +399,8 @@ end
 --- Unpacks the sequence of bytes into the sequence of bits (booleans).
 ---
 ---@param bytes integer[] The sequence of bytes.
----@param byte_count? integer The number of bytes.
----@param msb_first? boolean `true` to store the highest bit of each byte first, `false` by default.
+---@param byte_count integer? The number of bytes.
+---@param msb_first boolean? `true` to store the highest bit of each byte first, `false` by default.
 ---@return boolean[] bits The sequence of bits.
 ---@return integer bit_count The number of bits.
 ---@nodiscard
@@ -440,8 +440,8 @@ end
 --- unused bits of the last byte are `0`.
 ---
 ---@param bits boolean[] The sequence of bits.
----@param bit_count? integer The number of bits.
----@param msb_first? boolean `true` if the highest bit of each byte is stored first, `false` by default.
+---@param bit_count integer? The number of bits.
+---@param msb_first boolean? `true` if the highest bit of each byte is stored first, `false` by default.
 ---@return integer[] bytes The sequence of bytes.
 ---@return integer byte_count The number of bytes.
 ---@nodiscard
@@ -488,7 +488,7 @@ end
 --- ```
 ---
 ---@param byte integer The byte.
----@param bit_count? integer The number of the lowest bits to convert (`1` - `8`), `8` by default.
+---@param bit_count integer? The number of the lowest bits to convert (`1` - `8`), `8` by default.
 ---@return string str The string of `0`s and `1`s.
 ---@nodiscard
 function bitpack.toString( byte, bit_count )

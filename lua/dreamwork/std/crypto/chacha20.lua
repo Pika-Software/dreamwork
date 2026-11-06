@@ -774,7 +774,7 @@ chacha20.block_size = 64
 ---@param data string The plaintext to encrypt or the ciphertext to decrypt.
 ---@param key string The 32-byte key.
 ---@param nonce string The 12-byte nonce.
----@param counter? integer The initial block counter, default is `0`.
+---@param counter integer? The initial block counter, default is `0`.
 ---@return string result The ciphertext or plaintext, same length as `data`.
 ---@nodiscard
 function chacha20.encrypt( data, key, nonce, counter )
@@ -804,7 +804,7 @@ local zero_block = string_rep( "\0", 64 )
 ---
 ---@param key string The 32-byte key.
 ---@param nonce string The 12-byte nonce.
----@param counter? integer The block counter, default is `0`.
+---@param counter integer? The block counter, default is `0`.
 ---@return string block The 64-byte keystream block.
 ---@nodiscard
 function chacha20.block( key, nonce, counter )
@@ -895,7 +895,7 @@ end
 ---@param data string The plaintext to encrypt or the ciphertext to decrypt.
 ---@param key string The 32-byte key.
 ---@param nonce string The 24-byte nonce.
----@param counter? integer The initial block counter, default is `0`.
+---@param counter integer? The initial block counter, default is `0`.
 ---@return string result The ciphertext or plaintext, same length as `data`.
 ---@nodiscard
 function xchacha20.encrypt( data, key, nonce, counter )

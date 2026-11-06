@@ -31,8 +31,8 @@ string = {}
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.byte)
 ---
 ---@param s  string|number
----@param i? integer
----@param j? integer
+---@param i integer?
+---@param j integer?
 ---@return integer ...
 ---@nodiscard
 function string.byte( s, i, j ) end
@@ -68,7 +68,7 @@ function string.char( byte, ... ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-string.dump)
 ---
 ---@param f      async fun(...):...
----@param strip? boolean
+---@param strip boolean?
 ---@return string
 ---@nodiscard
 function string.dump( f, strip ) end
@@ -162,8 +162,8 @@ function string.dump( f, strip ) end
 ---
 ---@param s       string | number
 ---@param pattern string | number
----@param init?   integer
----@param plain?  boolean
+---@param init   integer?
+---@param plain  boolean?
 ---@return integer | nil start
 ---@return integer | nil end
 ---@return any | nil ... captured
@@ -401,7 +401,7 @@ function string.gmatch( s, pattern ) end
 ---@param s       string|number
 ---@param pattern string|number
 ---@param repl    string|number|table|function
----@param n?      integer
+---@param n      integer?
 ---@return string
 ---@return integer count
 function string.gsub( s, pattern, repl, n ) end
@@ -519,7 +519,7 @@ function string.lower( s ) end
 ---
 ---@param str string | number
 ---@param pattern string | number
----@param start_position? integer
+---@param start_position integer?
 ---@return any ...
 ---@nodiscard
 function string.match( str, pattern, start_position ) end
@@ -534,7 +534,7 @@ function string.match( str, pattern, start_position ) end
 ---
 ---@param fmt string
 ---@param v1  string|number
----@param v2? string|number
+---@param v2 ( string|number )?
 ---@param ... string|number
 ---@return string binary
 ---@nodiscard
@@ -568,7 +568,7 @@ function string.packsize( fmt ) end
 ---
 ---@param s    string|number
 ---@param n    integer
----@param sep? string|number
+---@param sep ( string|number )?
 ---@return string
 ---@nodiscard
 function string.rep( s, n, sep ) end
@@ -603,7 +603,7 @@ function string.reverse( s ) end
 ---
 ---@param s  string|number
 ---@param i  integer
----@param j? integer
+---@param j integer?
 ---@return string
 ---@nodiscard
 function string.sub( s, i, j ) end
@@ -620,7 +620,7 @@ function string.sub( s, i, j ) end
 ---
 ---@param fmt  string
 ---@param s    string
----@param pos? integer
+---@param pos integer?
 ---@return any ...
 ---@nodiscard
 function string.unpack( fmt, s, pos ) end

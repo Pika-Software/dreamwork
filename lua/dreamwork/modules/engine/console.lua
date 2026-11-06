@@ -347,10 +347,10 @@ do
     ---
     ---@param name string The name of the console variable.
     ---@param default string The default value of the console variable.
-    ---@param flags? integer The flags of the console variable (a combination of `FCVAR_*` values).
-    ---@param description? string The description of the console variable.
-    ---@param min? number The minimum value of the console variable.
-    ---@param max? number The maximum value of the console variable.
+    ---@param flags integer? The flags of the console variable (a combination of `FCVAR_*` values).
+    ---@param description string? The description of the console variable.
+    ---@param min number? The minimum value of the console variable.
+    ---@param max number? The maximum value of the console variable.
     ---@return garrysmod.console.Variable cvar The console variable object.
     function console.variableCreate( name, default, flags, description, min, max )
         ---@type garrysmod.console.Variable | nil

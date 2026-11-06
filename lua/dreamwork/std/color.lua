@@ -181,8 +181,8 @@ end
 --- Parses a color from a binary string.
 ---
 ---@param str string The binary string to parse.
----@param start_position? integer The starting position in the string.
----@param str_length? integer The length of the string to parse.
+---@param start_position integer? The starting position in the string.
+---@param str_length integer? The length of the string to parse.
 ---@return dreamwork.std.Color new_color The parsed color.
 ---@nodiscard
 function color_lib.fromString( str, start_position, str_length )

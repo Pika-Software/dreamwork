@@ -61,7 +61,7 @@ local MD5 = class.base( "MD5" )
 ---
 ---@class dreamwork.std.crypto.MD5Class : dreamwork.std.crypto.MD5, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.MD5
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: dreamwork.std.crypto.MD5
@@ -262,7 +262,7 @@ end
 ---
 ---@param tail string The unprocessed tail of the message, less than 64 bytes.
 ---@param message_length integer The total length of the message in bytes.
----@param as_hex? boolean
+---@param as_hex boolean?
 ---@return string
 local function finalize( tail, message_length, a, b, c, d, as_hex )
     local rbit_count_low = (message_length % 0x20000000) * 8
@@ -374,7 +374,7 @@ end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The MD5 string of the message.
 ---@nodiscard
 function MD5:digest( as_hex )
@@ -393,7 +393,7 @@ if util == nil or util.MD5 == nil then
     --- Commonly used for checksums, data integrity validation, and password hashing.
     ---
     ---@param message string The message to compute MD5 for.
-    ---@param as_hex? boolean If true, the result will be a hex string.
+    ---@param as_hex boolean? If true, the result will be a hex string.
     ---@return string str_result The MD5 string of the message.
     ---@nodiscard
     function MD5Class.digest( message, as_hex )
@@ -415,7 +415,7 @@ else
     --- Commonly used for checksums, data integrity validation, and password hashing.
     ---
     ---@param message string The message to compute MD5 for.
-    ---@param as_hex? boolean If true, the result will be a hex string.
+    ---@param as_hex boolean? If true, the result will be a hex string.
     ---@return string str_result The MD5 string of the message.
     ---@nodiscard
     function MD5Class.digest( message, as_hex )

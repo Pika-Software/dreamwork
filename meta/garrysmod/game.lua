@@ -93,9 +93,9 @@ function game.BuildAmmoTypes() end
 --- > NOTE: The `EFL_KEEP_ON_RECREATE_ENTITIES` flag doesn't prevent an entity from being recreated,
 --- > which means flagged entities will be duplicated since they are both kept and recreated.
 ---
----@param dont_send_to_clients? boolean If set to `true`, don't run this function on all clients.
----@param extra_filters? string[] The entity classes not to reset during cleanup.
----@param callback? fun() If set, delays the map cleanup until the end of a server tick, allowing bypassing the entity limit on maps with large amounts of them (otherwise the entities will not be cleaned up until the end of the server tick). The function is called after the map cleanup has been performed.
+---@param dont_send_to_clients boolean? If set to `true`, don't run this function on all clients.
+---@param extra_filters string[]? The entity classes not to reset during cleanup.
+---@param callback ( fun() )? If set, delays the map cleanup until the end of a server tick, allowing bypassing the entity limit on maps with large amounts of them (otherwise the entities will not be cleaned up until the end of the server tick). The function is called after the map cleanup has been performed.
 function game.CleanUpMap( dont_send_to_clients, extra_filters, callback ) end
 
 --- [SERVER]
@@ -296,7 +296,7 @@ function game.GetTimeScale() end
 ---
 --- See [env_wind_shared.cpp](https://github.com/ValveSoftware/source-sdk-2013/blob/master/src/game/shared/env_wind_shared.cpp#L255-L258) for how it's calculated.
 ---
----@param position? garrysmod.Vector The point to get the wind speed at.
+---@param position garrysmod.Vector? The point to get the wind speed at.
 --- If specified, wind controllers with `windradius` other than `-1` will be taken into account, if the point is within their radius.
 --- If omitted, only the global wind controller will be used (if one exists).
 --- This argument will be ignored on the `CLIENT` realm and will be treated as `nil`, because the position of `env_wind` is not currently networked to clients.
@@ -322,7 +322,7 @@ function game.IsDedicated() end
 --- Kicks a player from the server. This can be ran before the player has spawned.
 ---
 ---@param id string The `Player:UserID`, `Player:SteamID` or `Player:SteamID64` of the player to kick, uses SteamID32 e.g. `STEAM_0:0:00000000`.
----@param reason? string The reason to display to the player, this can span across multiple lines.
+---@param reason string? The reason to display to the player, this can span across multiple lines.
 --- This will be shortened to ~512 chars, though this includes the command itself and the player index so it will realistically be more around ~483.
 --- It is recommended to avoid going near the limit to avoid truncation.
 function game.KickID( id, reason ) end

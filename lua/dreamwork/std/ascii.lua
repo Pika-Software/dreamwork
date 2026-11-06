@@ -338,7 +338,7 @@ do
     ---@see dreamwork.std.ascii.toInteger
     ---
     ---@param value dreamwork.std.ascii.integer The digit value to convert.
-    ---@param uppercase? boolean If `true`, letters are returned in uppercase. Defaults to `false`.
+    ---@param uppercase boolean? If `true`, letters are returned in uppercase. Defaults to `false`.
     ---@return byte | nil uint8 The digit byte, or `nil` if the value is out of range.
     ---@nodiscard
     function ascii.fromInteger( value, uppercase )

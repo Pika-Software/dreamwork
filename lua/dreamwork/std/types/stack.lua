@@ -74,7 +74,7 @@ end
 ---@generic T
 ---@param self dreamwork.std.Stack<T>
 ---@param reader dreamwork.std.BinaryReader The reader.
----@param value_class? dreamwork.std.Class The class of the values, can be omitted if every value is `nil`.
+---@param value_class dreamwork.std.Class? The class of the values, can be omitted if every value is `nil`.
 ---@param ... any The arguments passed to `__deserialize` of every value.
 ---@protected
 function Stack:__deserialize( reader, value_class, ... )

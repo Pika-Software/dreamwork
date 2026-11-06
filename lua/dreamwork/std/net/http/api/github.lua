@@ -98,10 +98,10 @@ local mutative_methods = {
 ---
 ---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
----@param headers? table The headers to send with the request.
----@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response, only applies to `GET` requests, `true` by default.
----@param extra? dreamwork.std.http.github.RequestOptions The JSON body and query parameters.
+---@param headers table? The headers to send with the request.
+---@param body string? The body to send with the request.
+---@param do_cache boolean? Whether to cache the response, only applies to `GET` requests, `true` by default.
+---@param extra dreamwork.std.http.github.RequestOptions? The JSON body and query parameters.
 ---@return dreamwork.std.http.Response | nil response The response, `nil` if the rate limit is exceeded.
 ---@return string | nil message The reason if there is no response.
 ---@nodiscard
@@ -216,10 +216,10 @@ end
 ---
 ---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
----@param headers? table The headers to send with the request.
----@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response.
----@param extra? dreamwork.std.http.github.RequestOptions The JSON body and query parameters.
+---@param headers table? The headers to send with the request.
+---@param body string? The body to send with the request.
+---@param do_cache boolean? Whether to cache the response.
+---@param extra dreamwork.std.http.github.RequestOptions? The JSON body and query parameters.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string data The data returned from the API, or the error message.
 ---@nodiscard
@@ -259,10 +259,10 @@ github.apiRequest = apiRequest
 ---
 ---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
----@param headers? table The headers to send with the request.
----@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response.
----@param extra? dreamwork.std.http.github.RequestOptions The JSON body and query parameters.
+---@param headers table? The headers to send with the request.
+---@param body string? The body to send with the request.
+---@param do_cache boolean? Whether to cache the response.
+---@param extra dreamwork.std.http.github.RequestOptions? The JSON body and query parameters.
 ---@return boolean ok Whether the request succeeded (`true` for a `404`).
 ---@return table | string | nil data The data returned from the API, `nil` if not found, or the error message.
 ---@async
@@ -348,10 +348,10 @@ github.template = template
 ---@param method dreamwork.std.http.RequestMethod The request method.
 ---@param pathname string The path to send the request to.
 ---@param replaces table<string, any> The table to replace placeholders with.
----@param headers? table The headers to send with the request.
----@param body? string The body to send with the request.
----@param do_cache? boolean Whether to cache the response.
----@param extra? dreamwork.std.http.github.RequestOptions The JSON body and query parameters.
+---@param headers table? The headers to send with the request.
+---@param body string? The body to send with the request.
+---@param do_cache boolean? Whether to cache the response.
+---@param extra dreamwork.std.http.github.RequestOptions? The JSON body and query parameters.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string data The data returned from the API, or the error message.
 ---@nodiscard
@@ -369,9 +369,9 @@ github.templateRequest = templateRequest
 --- Pages are 100 items, the loop stops when there is no `next` link (or the page is not full if the link is unknown).
 ---
 ---@param pathname string The path to send the requests to.
----@param parameters? table<string, any> The query parameters.
----@param max_pages? integer The maximum number of pages to fetch, `50` by default.
----@param start_page? integer The first page, `1` by default.
+---@param parameters table<string, any>? The query parameters.
+---@param max_pages integer? The maximum number of pages to fetch, `50` by default.
+---@param start_page integer? The first page, `1` by default.
 ---@return boolean ok Whether every page was fetched.
 ---@return table[] | string items The joined list, or the error message.
 ---@nodiscard
@@ -454,7 +454,7 @@ end
 --- Downloads a response body as is (archives, raw files), anything but `200` is a failure.
 ---
 ---@param pathname string
----@param headers? table
+---@param headers table?
 ---@return boolean ok
 ---@return string body_or_message
 ---@async
@@ -572,7 +572,7 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param page? integer The page number, if omitted all pages are fetched.
+---@param page integer? The page number, if omitted all pages are fetched.
 ---@return boolean ok Whether the request succeeded.
 ---@return dreamwork.std.http.github.Repository.Tag[] | string tags The list of tags, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -653,8 +653,8 @@ end
 ---@param owner string The account owner of the repository. The name is not case sensitive.
 ---@param repo string The name of the repository without the .git extension. The name is not case sensitive.
 ---@param tree_sha string The SHA1 value or ref (branch or tag) name of the tree.
----@param recursive? boolean Returns the objects or subtrees referenced by the tree specified in :tree_sha.
----@param allow_truncated? boolean Return a truncated tree instead of throwing.
+---@param recursive boolean? Returns the objects or subtrees referenced by the tree specified in :tree_sha.
+---@param allow_truncated boolean? Return a truncated tree instead of throwing.
 ---@return boolean ok Whether the request succeeded.
 ---@return dreamwork.std.http.github.Tree | string tree The tree, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -732,8 +732,8 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param path? string The path in the repository, empty is the root.
----@param ref? string The branch, tag or commit, the default branch if omitted.
+---@param path string? The path in the repository, empty is the root.
+---@param ref string? The branch, tag or commit, the default branch if omitted.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string content The file object or the list of directory entries, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -760,7 +760,7 @@ end
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
 ---@param path string The path of the file.
----@param ref? string The branch, tag or commit, the default branch if omitted.
+---@param ref string? The branch, tag or commit, the default branch if omitted.
 ---@return boolean ok Whether the request succeeded.
 ---@return string | string content The file content, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -785,7 +785,7 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param ref? string The branch, tag or commit, the default branch if omitted.
+---@param ref string? The branch, tag or commit, the default branch if omitted.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string readme The readme file object, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -844,7 +844,7 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param ref? string The branch name, tag name, or commit sha-1, the default branch if omitted.
+---@param ref string? The branch name, tag name, or commit sha-1, the default branch if omitted.
 ---@return boolean ok Whether the request succeeded.
 ---@return string | string content The body of the zipball, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -864,7 +864,7 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param ref? string The branch name, tag name, or commit sha-1, the default branch if omitted.
+---@param ref string? The branch name, tag name, or commit sha-1, the default branch if omitted.
 ---@return boolean ok Whether the request succeeded.
 ---@return string | string content The body of the tarball, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -883,7 +883,7 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param max_pages? integer The maximum number of pages, `50` by default.
+---@param max_pages integer? The maximum number of pages, `50` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return dreamwork.std.http.github.Release[] | string releases The list of releases, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -956,8 +956,8 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param parameters? table<string, any> Filters: `sha` (branch/tag/commit), `path`, `author`, `since`, `until`.
----@param max_pages? integer The maximum number of pages, `1` by default.
+---@param parameters table<string, any>? Filters: `sha` (branch/tag/commit), `path`, `author`, `since`, `until`.
+---@param max_pages integer? The maximum number of pages, `1` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return dreamwork.std.http.github.Commit[] | string commits The list of commits, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -1015,8 +1015,8 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param parameters? table<string, any> Filters: `state`, `labels`, `assignee`, `since`.
----@param max_pages? integer The maximum number of pages, `1` by default.
+---@param parameters table<string, any>? Filters: `state`, `labels`, `assignee`, `since`.
+---@param max_pages integer? The maximum number of pages, `1` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return table[] | string issues The list of issues, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -1035,8 +1035,8 @@ end
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
 ---@param title string The issue title.
----@param issue_body? string The issue text.
----@param labels? string[] The labels.
+---@param issue_body string? The issue text.
+---@param labels string[]? The labels.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string issue The created issue, or the error message if `ok` is `false`.
 ---@async
@@ -1059,8 +1059,8 @@ end
 ---
 ---@param owner string The owner of the repository.
 ---@param repo string The name of the repository.
----@param parameters? table<string, any> Filters: `state`, `head`, `base`, `sort`.
----@param max_pages? integer The maximum number of pages, `1` by default.
+---@param parameters table<string, any>? Filters: `state`, `head`, `base`, `sort`.
+---@param max_pages integer? The maximum number of pages, `1` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return table[] | string pulls The list of pull requests, or the error message if `ok` is `false`.
 ---@nodiscard
@@ -1090,7 +1090,7 @@ end
 --- Searches repositories.
 ---
 ---@param query string The search query (https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories).
----@param page? integer The page number, `1` by default.
+---@param page integer? The page number, `1` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string result `total_count` and `items` (up to 100 repositories), or the error message if `ok` is `false`.
 ---@nodiscard
@@ -1106,7 +1106,7 @@ end
 --- Searches code, requires a token.
 ---
 ---@param query string The search query (https://docs.github.com/en/search-github/searching-on-github/searching-code).
----@param page? integer The page number, `1` by default.
+---@param page integer? The page number, `1` by default.
 ---@return boolean ok Whether the request succeeded.
 ---@return table | string result `total_count` and `items` (up to 100 matches), or the error message if `ok` is `false`.
 ---@nodiscard
@@ -1122,7 +1122,7 @@ end
 --- Renders Markdown to HTML.
 ---
 ---@param text string The Markdown text.
----@param repository? string The `owner/repo` used to link issues and mentions, switches to the `gfm` mode.
+---@param repository string? The `owner/repo` used to link issues and mentions, switches to the `gfm` mode.
 ---@return boolean ok Whether the request succeeded.
 ---@return string | string html The rendered HTML, or the error message if `ok` is `false`.
 ---@nodiscard

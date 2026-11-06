@@ -251,7 +251,7 @@ function net.SendToServer() end
 --- Net messages will not reliably reach the client until the client's `GM:InitPostEntity` hook is called.
 ---
 ---@param messageName string The name of the message to send
----@param unreliable? boolean If set to `true`, the message is not guaranteed to reach its destination
+---@param unreliable boolean? If set to `true`, the message is not guaranteed to reach its destination
 ---@return boolean success `true` if the message has been started.
 function net.Start( messageName, unreliable ) end
 
@@ -283,7 +283,7 @@ function net.WriteBool( boolean ) end
 --- Writes a chunk of binary data to the message.
 ---
 ---@param binaryData string The binary data to be sent.
----@param length? integer The length of the binary data to be sent, in bytes.
+---@param length integer? The length of the binary data to be sent, in bytes.
 function net.WriteData( binaryData, length ) end
 
 --- [SHARED]

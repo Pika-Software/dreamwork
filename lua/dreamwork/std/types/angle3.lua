@@ -171,9 +171,9 @@ std.isAngle3 = isAngle3
 
 --- Creates a new angle, missing values default to `0`.
 ---
----@param pitch? number The pitch in degrees, defaults to `0`.
----@param yaw? number The yaw in degrees, defaults to `0`.
----@param roll? number The roll in degrees, defaults to `0`.
+---@param pitch number? The pitch in degrees, defaults to `0`.
+---@param yaw number? The yaw in degrees, defaults to `0`.
+---@param roll number? The roll in degrees, defaults to `0`.
 ---@return dreamwork.std.Angle3 ang3 The new angle.
 ---@protected
 function Angle3Class:__new( pitch, yaw, roll )

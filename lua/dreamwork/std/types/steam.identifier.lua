@@ -97,7 +97,7 @@ local Identifier = class.base( "Identifier" )
 ---
 ---@class dreamwork.std.steam.IdentifierClass : dreamwork.std.steam.Identifier, dreamwork.std.Class
 ---@field __base dreamwork.std.steam.Identifier
----@overload fun( universe?: dreamwork.std.steam.IdentifierUniverse, type?: dreamwork.std.steam.IdentifierType, id?: integer, instance?: integer ): dreamwork.std.steam.Identifier
+---@overload fun( universe: dreamwork.std.steam.IdentifierUniverse?, type: dreamwork.std.steam.IdentifierType?, id: integer?, instance: integer? ): dreamwork.std.steam.Identifier
 local IdentifierClass = class.create( Identifier )
 steam.Identifier = IdentifierClass
 
@@ -144,7 +144,7 @@ end
 ---
 --- Converts a SteamID object to a Steam2 identifier.
 ---
----@param ignore_universe? boolean
+---@param ignore_universe boolean?
 ---@return string
 ---@nodiscard
 function Identifier:toSteam2( ignore_universe )
@@ -238,7 +238,7 @@ do
     ---
     --- Gets the URL for a SteamID object.
     ---
-    ---@param http? boolean If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
+    ---@param http boolean? If `true`, returns the HTTP URL, otherwise returns the HTTPS URL.
     ---@return string | nil url_str The URL for the SteamID object.
     ---@nodiscard
     function Identifier:getURL( http )
@@ -377,7 +377,7 @@ end
 --- Creates a new SteamID object from a steam2 string.
 ---
 ---@param steam2_str string The steam2 string to parse.
----@param allow_zero_universe? boolean Whether to allow the universe to be zero.
+---@param allow_zero_universe boolean? Whether to allow the universe to be zero.
 ---@return dreamwork.std.steam.Identifier object The SteamID object.
 ---@nodiscard
 function IdentifierClass.fromSteam2( steam2_str, allow_zero_universe )

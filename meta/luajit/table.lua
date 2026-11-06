@@ -14,9 +14,9 @@ table = {}
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-table.concat)
 ---
 ---@param list table
----@param sep? string
----@param i?   integer
----@param j?   integer
+---@param sep string?
+---@param i   integer?
+---@param j   integer?
 ---@return string
 ---@nodiscard
 function table.concat( list, sep, i, j ) end
@@ -28,7 +28,7 @@ function table.concat( list, sep, i, j ) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-table.create)
 ---
 ---@param nseq integer
----@param nrec? integer
+---@param nrec integer?
 ---@return table
 ---@nodiscard
 function table.create( nseq, nrec ) end
@@ -71,7 +71,7 @@ function table.maxn( table ) end
 ---@param f   integer
 ---@param e   integer
 ---@param t   integer
----@param a2? table
+---@param a2 table?
 ---@return table a2
 function table.move( a1, f, e, t, a2 ) end
 
@@ -91,7 +91,7 @@ function table.pack( ... ) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-table.remove)
 ---
 ---@param list table
----@param pos? integer
+---@param pos integer?
 ---@return any
 function table.remove( list, pos ) end
 
@@ -102,7 +102,7 @@ function table.remove( list, pos ) end
 ---
 ---@generic T
 ---@param list T[]
----@param comp? fun(a: T, b: T):boolean
+---@param comp ( fun(a: T, b: T):boolean )?
 function table.sort( list, comp ) end
 
 ---@version >5.2, JIT
@@ -129,8 +129,8 @@ function table.sort( list, comp ) end
 --- [9]?: T9,
 --- [10]?: T10,
 ---}
----@param i?   integer
----@param j?   integer
+---@param i   integer?
+---@param j   integer?
 ---@return T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
 ---@nodiscard
 function table.unpack( list, i, j ) end

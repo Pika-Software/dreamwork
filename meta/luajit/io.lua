@@ -45,7 +45,7 @@ io = {}
 ---
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-io.close)
 ---
----@param file? file*
+---@param file file?*
 ---@return true?     suc
 ---@return exitcode? exitcode
 ---@return integer?  code
@@ -89,7 +89,7 @@ function io.lines(filename, ...) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-io.open)
 ---
 ---@param filename string
----@param mode?    openmode
+---@param mode    openmode?
 ---@return file*?
 ---@return string? errmsg
 ---@nodiscard
@@ -114,7 +114,7 @@ function io.output(file) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-io.popen)
 ---
 ---@param prog  string
----@param mode? popenmode
+---@param mode popenmode?
 ---@return file*?
 ---@return string? errmsg
 function io.popen(prog, mode) end
@@ -232,8 +232,8 @@ function file:read(...) end
 ---
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-file:seek)
 ---
----@param whence? seekwhence
----@param offset? integer
+---@param whence seekwhence?
+---@param offset integer?
 ---@return integer offset
 ---@return string? errmsg
 function file:seek(whence, offset) end
@@ -249,7 +249,7 @@ function file:seek(whence, offset) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-file:setvbuf)
 ---
 ---@param mode vbuf
----@param size? integer
+---@param size integer?
 function file:setvbuf(mode, size) end
 
 ---

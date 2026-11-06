@@ -51,7 +51,7 @@ function debug.getfenv( o ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.gethook)
 ---
----@param co? thread The thread to inspect. Defaults to the running thread.
+---@param co thread? The thread to inspect. Defaults to the running thread.
 ---@return function hook The current hook function.
 ---@return string mask The current hook mask (any combination of `c`, `r` and `l`).
 ---@return integer count The current hook count (`0` if no count hook is set).
@@ -130,7 +130,7 @@ function debug.gethook( co ) end
 ---
 ---@param thread thread The thread whose call stack to inspect. Defaults to the running thread when omitted (see the overloads).
 ---@param location integer | async fun(...): ... A function to inspect, or a call stack level (`0` = `getinfo` itself, `1` = the caller of `getinfo`, ...).
----@param what? infowhat Which groups of fields to fill in. Defaults to `"flnSu"`.
+---@param what infowhat? Which groups of fields to fill in. Defaults to `"flnSu"`.
 ---@param f function? The function to inspect when `what` contains the `">"` modifier.
 ---@return debuginfo info The info for the given location, or `nil` if no info could be retrieved.
 ---@overload fun( location: function, what: infowhat?, f: function? ): debuginfo
@@ -291,7 +291,7 @@ function debug.setfenv( object, env ) end
 ---@param thread thread The thread to set the hook on. Defaults to the running thread when omitted (see the overloads).
 ---@param hook   async fun(...):... The hook function, called with the event name (and the line number for line events).
 ---@param mask   hookmask Which events trigger the hook.
----@param count? integer Also call the hook after every `count` instructions, if not `0`.
+---@param count integer? Also call the hook after every `count` instructions, if not `0`.
 function debug.sethook( thread, hook, mask, count ) end
 
 --- [SHARED AND MENU]
@@ -326,7 +326,7 @@ function debug.setlocal( thread, level, index, value ) end
 ---
 ---@generic T
 ---@param value T The value to set the metatable of.
----@param meta? table The new metatable, or `nil` to remove it.
+---@param meta table? The new metatable, or `nil` to remove it.
 ---@return T value The given `value`.
 function debug.setmetatable( value, meta ) end
 
@@ -370,8 +370,8 @@ function debug.setuservalue( udata, value ) end
 ---
 ---@overload fun(message: any?, level: integer?): string
 ---@param thread   thread The thread to produce a traceback of. Defaults to the running thread when omitted (see the overload).
----@param message? any A message to prepend to the traceback.
----@param level?   integer The stack level to start the traceback at. Defaults to `1`.
+---@param message any? A message to prepend to the traceback.
+---@param level   integer? The stack level to start the traceback at. Defaults to `1`.
 ---@return string  message The traceback string, or `message` unchanged if it isn't a string or `nil`.
 ---@nodiscard
 function debug.traceback( thread, message, level ) end

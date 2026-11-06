@@ -451,8 +451,8 @@ do
         ---
         --- Changes the resolution of the game window.
         ---
-        ---@param width? integer The width of the game window.
-        ---@param height? integer The height of the game window.
+        ---@param width integer? The width of the game window.
+        ---@param height integer? The height of the game window.
         function options.setScreenResolution( width, height )
             command.run( "mat_setvideomode", width or window.width, height or window.height, window.isWindowed() and 1 or 0 )
         end

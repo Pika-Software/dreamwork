@@ -304,8 +304,8 @@ function hook.Add( event_name, identifier, func ) end
 --- [View wiki](https://wiki.facepunch.com/gmod/hook.Call)
 ---
 ---@param event_name string The event to call hooks for.
----@param tbl? table If the gamemode is specified, the gamemode hook within will be called, otherwise not.
----@param ...? any The arguments to be passed to the hooks.
+---@param tbl table? If the gamemode is specified, the gamemode hook within will be called, otherwise not.
+---@param ... any? The arguments to be passed to the hooks.
 ---@return any ... # Return data from called hooks. Limited to **6** return values.
 function hook.Call( event_name, tbl, ... ) end
 

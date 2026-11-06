@@ -41,7 +41,7 @@ crypto.hkdf = hkdf
 ---
 ---@param hash dreamwork.std.crypto.HashClass The hash class to use, e.g. `std.crypto.SHA256`.
 ---@param key string The input keying material (IKM).
----@param salt? string The optional salt, default is a string of `digest_size` zero bytes.
+---@param salt string? The optional salt, default is a string of `digest_size` zero bytes.
 ---@return string prk The pseudorandom key as a binary string of `digest_size` bytes.
 ---@nodiscard
 local function extract( hash, key, salt )
@@ -62,8 +62,8 @@ hkdf.extract = extract
 ---
 ---@param hash dreamwork.std.crypto.HashClass The hash class to use, e.g. `std.crypto.SHA256`.
 ---@param prk string The pseudorandom key, usually the result of `hkdf.extract`.
----@param info? string The optional context and application specific information, default is an empty string.
----@param length? integer The length of the output keying material in bytes, default is `digest_size`, must not exceed `255 * digest_size`.
+---@param info string? The optional context and application specific information, default is an empty string.
+---@param length integer? The length of the output keying material in bytes, default is `digest_size`, must not exceed `255 * digest_size`.
 ---@return string okm The output keying material as a binary string of `length` bytes.
 ---@nodiscard
 local function expand( hash, prk, info, length )

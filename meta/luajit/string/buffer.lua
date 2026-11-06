@@ -150,7 +150,7 @@ local buf = {}
 --- Appending a buffer to a buffer is possible and short-circuited internally. But it still involves a copy. Better combine the buffer writes to use a single buffer.
 ---
 ---@param data string.buffer.data
----@param ...? string.buffer.data
+---@param ... string.buffer.data?
 ---@return string.buffer
 function buf:put( data, ... ) end
 
@@ -245,7 +245,7 @@ function buf:skip( len ) end
 ---
 --- Note: a zero length or no remaining buffer data returns an empty string and not `nil`.
 ---
----@param len? integer
+---@param len integer?
 ---@param ... integer|nil
 ---@return string ...
 function buf:get( len, ... ) end
@@ -338,8 +338,8 @@ function buffer.decode( str ) end
 ---
 --- The optional table options sets various serialization options.
 ---
----@param size? integer
----@param options? string.buffer.serialization.opts
+---@param size integer?
+---@param options string.buffer.serialization.opts?
 ---@return string.buffer
 function buffer.new( size, options ) end
 

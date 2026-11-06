@@ -24,8 +24,8 @@ arg = {}
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-assert)
 ---
 ---@generic T
----@param v? T The value to check.
----@param message? any The error object raised when `v` is falsy. Defaults to `"assertion failed!"`.
+---@param v T? The value to check.
+---@param message any? The error object raised when `v` is falsy. Defaults to `"assertion failed!"`.
 ---@param ... any Extra values, returned unchanged after `v` and `message` when the assertion passes.
 ---@return T
 ---@return any ...
@@ -64,7 +64,7 @@ function collectgarbage( ... ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-dofile)
 ---
----@param filename? string The path of the Lua file to run. Reads from `stdin` when omitted.
+---@param filename string? The path of the Lua file to run. Reads from `stdin` when omitted.
 ---@return any ...
 function dofile( filename ) end
 
@@ -84,7 +84,7 @@ function dofile( filename ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-error)
 ---
 ---@param message any The error object to raise.
----@param level?  integer Where to point the position information. Defaults to `1`; `0` adds none.
+---@param level  integer? Where to point the position information. Defaults to `1`; `0` adds none.
 function error( message, level ) end
 
 --- [SHARED AND MENU]
@@ -106,7 +106,7 @@ _G = {}
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-getfenv)
 ---
----@param f? integer|async fun(...):... A Lua function, or a stack level (`1` = the caller). Defaults to `1`.
+---@param f ( integer|async fun(...):... )? A Lua function, or a stack level (`1` = the caller). Defaults to `1`.
 ---@return table env The environment table of the function.
 ---@version 5.1
 ---@nodiscard
@@ -169,9 +169,9 @@ function ipairs( t ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-load)
 ---
 ---@param chunk      string | function The source string, or a function returning the source in pieces.
----@param chunkname? string The name of the chunk, used in error messages and debug info.
----@param mode?      loadmode Which kinds of chunks to accept. Defaults to `"bt"`.
----@param env?       table The environment for the loaded chunk.
+---@param chunkname string? The name of the chunk, used in error messages and debug info.
+---@param mode      loadmode? Which kinds of chunks to accept. Defaults to `"bt"`.
+---@param env       table? The environment for the loaded chunk.
 ---@return function? chunk The compiled chunk, or `nil` on a syntax error.
 ---@return string?   error_message The error message when compilation fails.
 ---@nodiscard
@@ -185,9 +185,9 @@ function load( chunk, chunkname, mode, env ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-loadfile)
 ---
----@param filename? string The path of the file to load. Reads from `stdin` when omitted.
----@param mode?     loadmode Which kinds of chunks to accept. Defaults to `"bt"`.
----@param env?      table The environment for the loaded chunk.
+---@param filename string? The path of the file to load. Reads from `stdin` when omitted.
+---@param mode     loadmode? Which kinds of chunks to accept. Defaults to `"bt"`.
+---@param env      table? The environment for the loaded chunk.
 ---@return function? chunk The compiled chunk, or `nil` on failure.
 ---@return string?  error_message The error message when loading fails.
 ---@nodiscard
@@ -202,7 +202,7 @@ function loadfile( filename, mode, env ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-loadstring)
 ---
 ---@param text       string The Lua source to compile.
----@param chunkname? string The name of the chunk, used in error messages and debug info.
+---@param chunkname string? The name of the chunk, used in error messages and debug info.
 ---@return function? chunk The compiled chunk, or `nil` on a syntax error.
 ---@return string?   error_message The error message when compilation fails.
 ---@version 5.1
@@ -252,7 +252,7 @@ function module( name, ... ) end
 ---
 ---@generic K, V
 ---@param table table<K, V> The table to traverse.
----@param index? K The previous key, or `nil` to start from the beginning.
+---@param index K? The previous key, or `nil` to start from the beginning.
 ---@return K? key The next key, or `nil` when the traversal is finished.
 ---@return V? value The value stored at `key`.
 ---@nodiscard
@@ -1026,7 +1026,7 @@ end
 ---
 ---@generic K, V
 ---@param tbl table<K, V> The table to set the metatable of.
----@param metatable? metatable<K, V> The new metatable, or `nil` to remove it.
+---@param metatable metatable<K, V>? The new metatable, or `nil` to remove it.
 ---@return metatable<K, V> table The given `table`.
 function setmetatable( tbl, metatable ) end
 
@@ -1117,7 +1117,7 @@ function warn( message, ... ) end
 ---
 ---@param f     async fun(...):... The function to call in protected mode.
 ---@param msgh  function The message handler, called with the error object when an error occurs.
----@param arg1? any The first argument passed to `f`. Extra arguments need LuaJIT or Lua 5.2+.
+---@param arg1 any? The first argument passed to `f`. Extra arguments need LuaJIT or Lua 5.2+.
 ---@param ...   any Further arguments passed to `f`.
 ---@return boolean success `true` if `f` ran without errors.
 ---@return any result The first result of `f`, or the value returned by `msgh` on error.
@@ -1149,8 +1149,8 @@ function xpcall( f, msgh, arg1, ... ) end
 --- [9]?: T9,
 --- [10]?: T10,
 ---}
----@param i?   integer The index of the first element to return. Defaults to `1`.
----@param j?   integer The index of the last element to return. Defaults to `#list`.
+---@param i   integer? The index of the first element to return. Defaults to `1`.
+---@param j   integer? The index of the last element to return. Defaults to `#list`.
 ---@return T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
 ---@version 5.1
 ---@nodiscard

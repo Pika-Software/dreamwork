@@ -56,7 +56,7 @@ asyncio = {}
 ---
 ---@param file_name string The path to the file, relative to `DATA`.
 ---@param content string The data to write.
----@param callback? gm_asyncio.WriteCallback Called when the write completes. Without it, the write is fire-and-forget.
+---@param callback gm_asyncio.WriteCallback? Called when the write completes. Without it, the write is fire-and-forget.
 ---@return garrysmod.file.AsyncStatus status `FSASYNC_OK` if queued, `FSASYNC_ERR_FILEOPEN` if the path was rejected, otherwise an `FSASYNC_ERR_*` value from the engine.
 function asyncio.AsyncWrite( file_name, content, callback ) end
 
@@ -66,7 +66,7 @@ function asyncio.AsyncWrite( file_name, content, callback ) end
 ---
 ---@param file_name string The path to the file, relative to `DATA`.
 ---@param content string The data to append.
----@param callback? gm_asyncio.WriteCallback Called when the append completes. Without it, the append is fire-and-forget.
+---@param callback gm_asyncio.WriteCallback? Called when the append completes. Without it, the append is fire-and-forget.
 ---@return garrysmod.file.AsyncStatus status `FSASYNC_OK` if queued, `FSASYNC_ERR_FILEOPEN` if the path was rejected, otherwise an `FSASYNC_ERR_*` value from the engine.
 function asyncio.AsyncAppend( file_name, content, callback ) end
 
@@ -78,6 +78,6 @@ function asyncio.AsyncAppend( file_name, content, callback ) end
 ---
 ---@param file_name string The path to the file.
 ---@param game_path string The search path, e.g. `"GAME"`, `"DATA"` or `"LUA"`.
----@param callback? gm_asyncio.ReadCallback Called when the read completes.
+---@param callback gm_asyncio.ReadCallback? Called when the read completes.
 ---@return garrysmod.file.AsyncStatus status `FSASYNC_OK` if queued, `FSASYNC_ERR_FILEOPEN` if the path was rejected, otherwise an `FSASYNC_ERR_*` value from the engine.
 function asyncio.AsyncRead( file_name, game_path, callback ) end

@@ -53,9 +53,9 @@ do
     ---@see string.unescape
     ---
     ---@param str string The string to escape.
-    ---@param escape_spaces? boolean Whether the space character (`0x20`) should also be escaped as `\x20`. Defaults to `false`.
-    ---@param start_position? integer The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
-    ---@param end_position? integer The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+    ---@param escape_spaces boolean? Whether the space character (`0x20`) should also be escaped as `\x20`. Defaults to `false`.
+    ---@param start_position integer? The position to start escaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+    ---@param end_position integer? The position to stop escaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string escaped_str The string with special characters escaped.
     ---@nodiscard
     function string.escape( str, escape_spaces, start_position, end_position )
@@ -128,8 +128,8 @@ do
     ---@see string.escape
     ---
     ---@param escaped_str string The string to unescape.
-    ---@param start_position? integer The position to start unescaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
-    ---@param end_position? integer The position to stop unescaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
+    ---@param start_position integer? The position to start unescaping from, inclusive. Negative values count from the end of the string. Defaults to `1` (the start of the string).
+    ---@param end_position integer? The position to stop unescaping at, inclusive. Negative values count from the end of the string. Defaults to the end of the string.
     ---@return string str The unescaped string.
     ---@nodiscard
     function string.unescape( escaped_str, start_position, end_position )

@@ -769,8 +769,8 @@ do
     --- Sends a GET request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.get( url, headers, timeout )
@@ -787,9 +787,9 @@ do
     --- Sends a POST request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param parameters? dreamwork.std.http.Parameters The body to send with the request.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param parameters dreamwork.std.http.Parameters? The body to send with the request.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.post( url, parameters, headers, timeout )
@@ -807,9 +807,9 @@ do
     --- Sends a PUT request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param parameters? dreamwork.std.http.Parameters The body to send with the request.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param parameters dreamwork.std.http.Parameters? The body to send with the request.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.put( url, parameters, headers, timeout )
@@ -827,9 +827,9 @@ do
     --- Sends a PATCH request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param parameters? dreamwork.std.http.Parameters The body to send with the request.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param parameters dreamwork.std.http.Parameters? The body to send with the request.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.patch( url, parameters, headers, timeout )
@@ -847,8 +847,8 @@ do
     --- Sends a DELETE request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.delete( url, headers, timeout )
@@ -865,8 +865,8 @@ do
     --- Sends an OPTIONS request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.options( url, headers, timeout )
@@ -883,8 +883,8 @@ do
     --- Sends a HEAD request.
     ---
     ---@param url dreamwork.std.http.RequestURL The URL to send the request to.
-    ---@param headers? dreamwork.std.http.RequestHeaders The headers to send with the request.
-    ---@param timeout? integer The timeout in seconds.
+    ---@param headers dreamwork.std.http.RequestHeaders? The headers to send with the request.
+    ---@param timeout integer? The timeout in seconds.
     ---@return dreamwork.std.http.Response response The response from the request.
     ---@async
     function client.head( url, headers, timeout )

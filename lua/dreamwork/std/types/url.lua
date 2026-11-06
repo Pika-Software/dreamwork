@@ -858,7 +858,7 @@ local parse_path_start, parse_path, parse_opaque_path, parse_query, parse_fragme
 ---@param start_position integer
 ---@param end_position integer
 ---@param base dreamwork.std.URL.State | nil
----@param state_override? boolean
+---@param state_override boolean?
 function parse_scheme( state, str, start_position, end_position, base, state_override )
     -- scheme start state
     if start_position <= end_position and ascii_isAlpha( string_byte( str, start_position, start_position ) ) then
@@ -1071,7 +1071,7 @@ end
 ---@param str string
 ---@param start_position integer
 ---@param end_position integer
----@param is_special? integer | boolean
+---@param is_special ( integer | boolean )?
 function parse_authority( state, str, start_position, end_position, is_special )
     local path_end_position = end_position
 
@@ -1123,7 +1123,7 @@ end
 ---@param start_position integer
 ---@param end_position integer
 ---@param is_special integer | boolean | nil
----@param state_override? "host" | "hostname"
+---@param state_override ( "host" | "hostname" )?
 function parse_host( state, str, start_position, end_position, is_special, state_override )
     if state_override and is_special == true then
         return parse_file_host( state, str, start_position, end_position, state_override )
@@ -1171,7 +1171,7 @@ end
 ---@param start_position integer
 ---@param end_position integer
 ---@param default_port integer | boolean | nil
----@param state_override? boolean | "host" | "hostname"
+---@param state_override ( boolean | "host" | "hostname" )?
 function parse_port( state, str, start_position, end_position, default_port, state_override )
     if start_position > end_position then
         return
@@ -1293,7 +1293,7 @@ end
 ---@param str string
 ---@param start_position integer
 ---@param end_position integer
----@param state_override? "host" | "hostname"
+---@param state_override ( "host" | "hostname" )?
 function parse_file_host( state, str, start_position, end_position, state_override )
     local position = start_position
 
@@ -1333,7 +1333,7 @@ end
 ---@param start_position integer
 ---@param end_position integer
 ---@param is_special integer | boolean | nil
----@param state_override? boolean
+---@param state_override boolean?
 function parse_path_start( state, str, start_position, end_position, is_special, state_override )
     local uint8 = start_position <= end_position and string_byte( str, start_position, start_position ) or nil
 
@@ -1363,9 +1363,9 @@ end
 ---@param str string
 ---@param start_position integer
 ---@param end_position integer
----@param is_special? integer | boolean
----@param segments? string[]
----@param state_override? boolean
+---@param is_special ( integer | boolean )?
+---@param segments string[]?
+---@param state_override boolean?
 function parse_path( state, str, start_position, end_position, is_special, segments, state_override )
     if segments == nil then
         segments = {}
@@ -1455,8 +1455,8 @@ end
 ---@param str string
 ---@param start_position integer
 ---@param end_position integer
----@param is_special? integer | boolean
----@param state_override? boolean
+---@param is_special ( integer | boolean )?
+---@param state_override boolean?
 function parse_query( state, str, start_position, end_position, is_special, state_override )
     if not state_override then
         local fragment_position = string_findByte( str, 0x23 --[[ # ]], start_position, end_position )
@@ -1567,7 +1567,7 @@ end
 --- ```
 ---
 ---@param state dreamwork.std.URL.State The URL state to serialize.
----@param exclude_fragment? boolean If `true`, the fragment is left out, defaults to `false`.
+---@param exclude_fragment boolean? If `true`, the fragment is left out, defaults to `false`.
 ---@return string url_str The serialized URL.
 ---@nodiscard
 local function serialize( state, exclude_fragment )
@@ -1750,7 +1750,7 @@ local function refresh_search_params( url )
 end
 
 ---@param query string | { [ 1 ]: string, [ 2 ]: string | nil }[] | nil
----@param url? dreamwork.std.URL
+---@param url dreamwork.std.URL?
 ---@protected
 function SearchParams:__init( query, url )
     self.url = url
@@ -1790,7 +1790,7 @@ end
 --- Appends a name-value pair to the end of the list.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value of the parameter, `nil` is serialized the same as `""`.
+---@param value string? The value of the parameter, `nil` is serialized the same as `""`.
 function SearchParams:append( name, value )
     self[ #self + 1 ] = { name, value }
     update( self )
@@ -1803,7 +1803,7 @@ end
 --- If `value` is given, only pairs with both the given name and value are removed.
 ---
 ---@param name string The name of the parameters to remove.
----@param value? string The value the removed pairs must have.
+---@param value string? The value the removed pairs must have.
 function SearchParams:delete( name, value )
     for index = #self, 1, -1 do
         local pair = self[ index ]
@@ -1865,7 +1865,7 @@ end
 --- If `value` is given, the pair must also have the given value.
 ---
 ---@param name string The name of the parameter.
----@param value? string The value the pair must have.
+---@param value string? The value the pair must have.
 ---@return boolean exists `true` if such a pair exists, otherwise `false`.
 ---@nodiscard
 function SearchParams:has( name, value )
@@ -1892,7 +1892,7 @@ end
 --- ```
 ---
 ---@param name string The name of the parameter.
----@param value? string The new value, `nil` is serialized the same as `""`.
+---@param value string? The new value, `nil` is serialized the same as `""`.
 function SearchParams:set( name, value )
     for index = 1, #self, 1 do
         local pair = self[ index ]
@@ -2215,7 +2215,7 @@ function URL:__represent()
 end
 
 ---@param str string
----@param base? string | dreamwork.std.URL
+---@param base ( string | dreamwork.std.URL )?
 ---@protected
 function URL:__init( str, base )
     self.state = parse( {}, str, base )
@@ -2238,7 +2238,7 @@ end
 ---@see dreamwork.std.URLClass.serialize
 ---
 ---@param url string The URL string to parse.
----@param base? string | dreamwork.std.URL The base URL that relative URLs are resolved against.
+---@param base ( string | dreamwork.std.URL )? The base URL that relative URLs are resolved against.
 ---@return dreamwork.std.URL.State state The parsed URL state.
 ---@nodiscard
 function URLClass.parse( url, base )
@@ -2258,7 +2258,7 @@ end
 --- ```
 ---
 ---@param url string The URL string to check.
----@param base? string | dreamwork.std.URL The base URL that relative URLs are resolved against.
+---@param base ( string | dreamwork.std.URL )? The base URL that relative URLs are resolved against.
 ---@return boolean success `true` if the URL is valid, otherwise `false`.
 ---@return dreamwork.std.URL.State | string state_or_error The parsed URL state on success, otherwise the error message.
 ---@nodiscard

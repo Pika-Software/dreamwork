@@ -213,7 +213,7 @@ do
     ---@param url string The URL of the response.
     ---@param etag string The ETag of the response.
     ---@param content string The response body.
-    ---@param ignore_errors? boolean If `true`, too large content is silently skipped instead of raising an error.
+    ---@param ignore_errors boolean? If `true`, too large content is silently skipped instead of raising an error.
     function http.write( url, etag, content, ignore_errors )
         -- do not cache content that is larger than `config.cache_size`
         local content_size, max_size = string_len( content ), config.cache_size * 1024

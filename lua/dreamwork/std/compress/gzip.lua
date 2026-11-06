@@ -75,7 +75,7 @@ end
 --- Compresses a string into a gzip stream.
 ---
 ---@param raw_data string The string to compress.
----@param options? dreamwork.std.gzip.Options The compression options.
+---@param options dreamwork.std.gzip.Options? The compression options.
 ---@return string compressed_data The compressed string.
 ---@nodiscard
 function gzip.compress( raw_data, options )
@@ -198,7 +198,7 @@ end
 --- call via `pcall()` when processing untrusted input.
 ---
 ---@param compressed_data string The gzip stream to decompress.
----@param start_position? integer The position of the stream in the string, `1` by default.
+---@param start_position integer? The position of the stream in the string, `1` by default.
 ---@return string decompressed_data The decompressed string.
 ---@return integer end_position The position of the first byte after the stream.
 ---@return dreamwork.std.gzip.Header header The header of the first member.

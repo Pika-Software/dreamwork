@@ -215,7 +215,7 @@ function gameserver.SetMaxClients( maxClients ) end
 ---
 --- > **NOTE**: Verify if this actually works
 ---
----@param paused? boolean Defaults to `false`.
+---@param paused boolean? Defaults to `false`.
 function gameserver.SetPaused( paused ) end
 
 --- [SERVER]
@@ -280,8 +280,8 @@ function gameserver.BroadcastMessage( type, name, buffer ) end
 ---
 ---@param bf holylib.bf_write
 ---@param ip string The target ip. Format `ip:port`.
----@param useDNS? boolean Defaults to `false`.
----@param socket? integer Defaults to `NS_SERVER`.
+---@param useDNS boolean? Defaults to `false`.
+---@param socket integer? Defaults to `NS_SERVER`.
 ---@return integer result
 function gameserver.SendConnectionlessPacket( bf, ip, useDNS, socket ) end
 
@@ -308,8 +308,8 @@ function gameserver.CreateNewClient() end
 --- Searches if there is a `CGameClient` with the given address already and returns their object OR attempts to create a new client.
 ---
 ---@param address string
----@param useDNS? boolean Defaults to `false`.
----@param noQueueClients? boolean Defaults to `false`.
+---@param useDNS boolean? Defaults to `false`.
+---@param noQueueClients boolean? Defaults to `false`.
 ---@return holylib.CGameClient | nil result
 function gameserver.GetFreeClient( address, useDNS, noQueueClients ) end
 
@@ -318,7 +318,7 @@ function gameserver.GetFreeClient( address, useDNS, noQueueClients ) end
 --- Searches if there is a queue `CGameClient` with the given address already and returns their object OR attempts to create a new queue client.
 ---
 ---@param address string
----@param useDNS? boolean Defaults to `false`.
+---@param useDNS boolean? Defaults to `false`.
 ---@return holylib.CGameClient | nil result
 function gameserver.GetFreeQueueClient( address, useDNS ) end
 
@@ -335,9 +335,9 @@ function gameserver.GetSocket() end
 --- Returns the channel or `nil` on failure.
 ---
 ---@param ip string The target ip. Format `ip:port`.
----@param useDNS? boolean Defaults to `false`.
----@param protocolVersion? integer Defaults to `1`.
----@param socket? integer Defaults to `NS_SERVER`.
+---@param useDNS boolean? Defaults to `false`.
+---@param protocolVersion integer? Defaults to `1`.
+---@param socket integer? Defaults to `NS_SERVER`.
 ---@return holylib.CNetChan | nil result
 function gameserver.CreateNetChannel( ip, useDNS, protocolVersion, socket ) end
 
@@ -527,7 +527,7 @@ function CBaseClient:GetClientChallenge() end
 
 --- [SERVER]
 ---
----@param reportClient? boolean Defaults to `false`.
+---@param reportClient boolean? Defaults to `false`.
 function CBaseClient:SetReportThisFakeClient( reportClient ) end
 
 --- [SERVER]
@@ -547,8 +547,8 @@ function CBaseClient:Inactivate() end
 --- Disconnects the client.
 ---
 ---@param reason string
----@param silent? boolean Silently closes the net channel and sends no disconnect to the client. Defaults to `false`.
----@param nogameevent? boolean Stops the `player_disconnect` event from being created. Defaults to `false`.
+---@param silent boolean? Silently closes the net channel and sends no disconnect to the client. Defaults to `false`.
+---@param nogameevent boolean? Stops the `player_disconnect` event from being created. Defaults to `false`.
 function CBaseClient:Disconnect( reason, silent, nogameevent ) end
 
 --- [SERVER]
@@ -690,8 +690,8 @@ function CBaseClient:UpdateSendState() end
 --- > **NOTE**: This function was formerly known as `HolyLib.SetSignOnState`
 ---
 ---@param signOnState integer
----@param spawnCount? integer Defaults to `0`.
----@param rawSet? boolean Defaults to `false`.
+---@param spawnCount integer? Defaults to `0`.
+---@param rawSet boolean? Defaults to `false`.
 ---@return boolean result
 function CBaseClient:SetSignonState( signOnState, spawnCount, rawSet ) end
 
@@ -709,7 +709,7 @@ function CBaseClient:SendServerInfo() end
 --- This function allows you to specify the client index that is sent out or it falls back to the normal one.
 --- This function intentionally does not clamp the clientIndex when unsafe code is enabled because who knows what you may try- you got all the freedom.
 ---
----@param clientIndex? integer Defaults to `-1`.
+---@param clientIndex integer? Defaults to `-1`.
 function CBaseClient:FillServerInfo( clientIndex ) end
 
 --- [SERVER]
@@ -910,8 +910,8 @@ function CBaseClient:SetTimeout( seconds ) end
 --- end)
 --- ```
 ---
----@param onlyReliable? boolean Defaults to `false`.
----@param freeSubChannels? boolean Marks all sub channels as freed, allowing data to be transmitted again. This is a possible speed improvement, but fragments may get lost and cause issues, so it is unsafe. Defaults to `false`.
+---@param onlyReliable boolean? Defaults to `false`.
+---@param freeSubChannels boolean? Marks all sub channels as freed, allowing data to be transmitted again. This is a possible speed improvement, but fragments may get lost and cause issues, so it is unsafe. Defaults to `false`.
 ---@return boolean result
 function CBaseClient:Transmit( onlyReliable, freeSubChannels ) end
 
@@ -939,9 +939,9 @@ function CBaseClient:ProcessStream() end
 --- end)
 --- ```
 ---
----@param reliable? boolean Defaults to `false`.
+---@param reliable boolean? Defaults to `false`.
 ---@param bytes integer
----@param voice? boolean Defaults to `false`.
+---@param voice boolean? Defaults to `false`.
 function CBaseClient:SetMaxBufferSize( reliable, bytes, voice ) end
 
 --- [SERVER]
@@ -1101,14 +1101,14 @@ function CNetChan:SetChoked() end
 ---
 --- If `true` files will be transmitted using a single fragment.
 ---
----@param backgroundTransmission? boolean Defaults to `false`.
+---@param backgroundTransmission boolean? Defaults to `false`.
 function CNetChan:SetFileTransmissionMode( backgroundTransmission ) end
 
 --- [SERVER]
 ---
 --- If `true` enables compression.
 ---
----@param compression? boolean Defaults to `false`.
+---@param compression boolean? Defaults to `false`.
 function CNetChan:SetCompressionMode( compression ) end
 
 --- [SERVER]
@@ -1265,9 +1265,9 @@ function CNetChan:SetTimeout( seconds ) end
 --- Transmit any pending data to the channel.
 --- Returns `true` on success.
 ---
----@param onlyReliable? boolean Defaults to `false`.
----@param fragments? integer Defaults to `-1`.
----@param freeSubChannels? boolean Marks all sub channels as freed, allowing data to be transmitted again. This is a possible speed improvement, but fragments may get lost and cause issues, so it is unsafe. Defaults to `false`.
+---@param onlyReliable boolean? Defaults to `false`.
+---@param fragments integer? Defaults to `-1`.
+---@param freeSubChannels boolean? Marks all sub channels as freed, allowing data to be transmitted again. This is a possible speed improvement, but fragments may get lost and cause issues, so it is unsafe. Defaults to `false`.
 ---@return boolean result
 function CNetChan:Transmit( onlyReliable, fragments, freeSubChannels ) end
 
@@ -1285,16 +1285,16 @@ function CNetChan:ProcessStream() end
 ---
 --- > **NOTE**: All data inside that stream is discarded, make sure everything was sent out.
 ---
----@param reliable? boolean Defaults to `false`.
+---@param reliable boolean? Defaults to `false`.
 ---@param bytes integer
----@param voice? boolean Defaults to `false`.
+---@param voice boolean? Defaults to `false`.
 function CNetChan:SetMaxBufferSize( reliable, bytes, voice ) end
 
 --- [SERVER]
 ---
 --- Shuts down the channel.
 ---
----@param reason? string Defaults to `nil`.
+---@param reason string? Defaults to `nil`.
 function CNetChan:Shutdown( reason ) end
 
 --- [SERVER]
@@ -1302,7 +1302,7 @@ function CNetChan:Shutdown( reason ) end
 --- Sends out the given buffer as a message.
 ---
 ---@param buffer holylib.bf_write
----@param reliable? boolean Defaults to `false`.
+---@param reliable boolean? Defaults to `false`.
 function CNetChan:SendMessage( buffer, reliable ) end
 
 --- [SERVER]

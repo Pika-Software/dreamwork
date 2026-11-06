@@ -29,7 +29,7 @@ local WebSocket = {}
 --- While connecting / connected the Lua table is held by a reference so callbacks keep working
 --- even if nothing else references the socket.
 ---
----@param should_clear_queue? boolean Clear the outbound queue before connecting. Defaults to `true`.
+---@param should_clear_queue boolean? Clear the outbound queue before connecting. Defaults to `true`.
 function WebSocket:open( should_clear_queue ) end
 
 --- [SHARED AND MENU]
@@ -40,7 +40,7 @@ function WebSocket:open( should_clear_queue ) end
 --- WebSocket frame instead of a text frame.
 ---
 ---@param message string The payload to send.
----@param is_binary? boolean Send as a binary frame. Defaults to `false` (text).
+---@param is_binary boolean? Send as a binary frame. Defaults to `false` (text).
 function WebSocket:write( message, is_binary ) end
 
 --- [SHARED AND MENU]
@@ -146,7 +146,7 @@ GWSockets = {}
 --- When `verify_certificate` is `false`, TLS peers with untrusted certificates are accepted.
 ---
 ---@param url string The WebSocket URL, including the scheme.
----@param verify_certificate? boolean Verify the TLS certificate. Defaults to `true`.
+---@param verify_certificate boolean? Verify the TLS certificate. Defaults to `true`.
 ---@return gm_gwsockets.WebSocket | nil socket The socket table, or `nil` if the URL was invalid.
 function GWSockets.createWebSocket( url, verify_certificate ) end
 

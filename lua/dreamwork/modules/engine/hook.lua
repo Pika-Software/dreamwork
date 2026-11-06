@@ -662,7 +662,7 @@ do
     ---@param event_name string The name of the engine event.
     ---@param identifier string The unique identifier of the handler within the event.
     ---@param handler dreamwork.engine.hook.Handler The callback function.
-    ---@param priority? integer The priority of the handler, higher is called first. Default is `0`.
+    ---@param priority integer? The priority of the handler, higher is called first. Default is `0`.
     function hook.catch( event_name, identifier, handler, priority )
         if event_handlers[ event_name ] == nil then
             error( string_format( "An attempt to catch a '%s' hook from an engine that does not have a handler; before attach, make sure that this hook is supported!", event_name ), 2 )

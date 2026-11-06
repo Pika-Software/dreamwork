@@ -137,8 +137,8 @@ std.isVector2 = isVector2
 
 --- Creates a new vector, missing coordinates default to `0`.
 ---
----@param x? number The X coordinate, defaults to `0`.
----@param y? number The Y coordinate, defaults to `0`.
+---@param x number? The X coordinate, defaults to `0`.
+---@param y number? The Y coordinate, defaults to `0`.
 ---@return dreamwork.std.Vector2 vec2 The new vector.
 ---@protected
 function Vector2Class:__new( x, y )
@@ -573,7 +573,7 @@ end
 --- If `up` is given, its angle is added to the result.
 ---
 ---@param self dreamwork.std.Vector2 The vector.
----@param up? dreamwork.std.Vector2 The direction of the angle.
+---@param up dreamwork.std.Vector2? The direction of the angle.
 ---@return number degrees The angle of the vector.
 ---@nodiscard
 local function Vector2_getAngle( self, up )

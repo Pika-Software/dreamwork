@@ -578,9 +578,9 @@ do
     --- Sets a `BigInteger` object from a decimal string.
     ---
     ---@param str string The string representation of the big integer.
-    ---@param base? integer The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
-    ---@param start_position? integer The start position to read from.
-    ---@param end_position? integer The end position to read to.
+    ---@param base integer? The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
+    ---@param start_position integer? The start position to read from.
+    ---@param end_position integer? The end position to read to.
     ---@return dreamwork.std.BigInteger self
     function BigInteger:fromString( str, base, start_position, end_position )
         local str_length = string_len( str )
@@ -746,7 +746,7 @@ do
     --- If `value` is already a `BigInteger`, it is returned unchanged.
     ---
     ---@param value any The value to convert to a `BigInteger`.
-    ---@param base? integer The numeric base used when parsing string values. Must be between `2` and `36` (inclusive). Defaults to `10`.
+    ---@param base integer? The numeric base used when parsing string values. Must be between `2` and `36` (inclusive). Defaults to `10`.
     ---@return dreamwork.std.BigInteger obj
     ---@nodiscard
     function std.toBigInteger( value, base )
@@ -957,7 +957,7 @@ do
     ---
     --- Converts the big integer to a string in the specified (or not) base.
     ---
-    ---@param base? integer The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
+    ---@param base integer? The numerical base of the digits in the input value. Can be any integer between 2 and 36, inclusive. By default: `10`
     ---@return string str The string representation of the big integer.
     ---@nodiscard
     function BigInteger:toString( base )

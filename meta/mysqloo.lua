@@ -89,8 +89,8 @@ mysqloo = {}
 ---@param username string The user name.
 ---@param password string The user password.
 ---@param database string The name of the database (schema) to use.
----@param port? integer The port of the MySQL server, `3306` by default.
----@param socket? string The path of the unix socket to use instead of TCP.
+---@param port integer? The port of the MySQL server, `3306` by default.
+---@param socket string? The path of the unix socket to use instead of TCP.
 ---@return mysqloo.Database database The database object.
 function mysqloo.connect( host, username, password, database, port, socket ) end
 
@@ -115,7 +115,7 @@ function Database:connect() end
 ---
 --- Calls the `onDisconnected` callback if it existed on the database before the database was connected.
 ---
----@param shouldWait? boolean If `true`, waits for all queries to finish before disconnecting.
+---@param shouldWait boolean? If `true`, waits for all queries to finish before disconnecting.
 function Database:disconnect( shouldWait ) end
 
 --- [SHARED AND MENU]
@@ -269,11 +269,11 @@ function Database:setSSLMode( mode ) end
 ---
 --- See: https://dev.mysql.com/doc/c-api/8.0/en/mysql-ssl-set.html
 ---
----@param key? string The path to the key file.
----@param cert? string The path to the certificate file.
----@param ca? string The path to the certificate authority file.
----@param capath? string The path to the directory that contains trusted CA certificates.
----@param cipher? string The list of permissible ciphers for SSL encryption.
+---@param key string? The path to the key file.
+---@param cert string? The path to the certificate file.
+---@param ca string? The path to the certificate authority file.
+---@param capath string? The path to the directory that contains trusted CA certificates.
+---@param cipher string? The list of permissible ciphers for SSL encryption.
 function Database:setSSLSettings( key, cert, ca, capath, cipher ) end
 
 --- [SHARED AND MENU]
@@ -403,7 +403,7 @@ function Query:setOption( option ) end
 ---
 --- This should only ever be used if it is really necessary, since it can cause lag.
 ---
----@param shouldSwap? boolean If `true`, the query is swapped to the front of the queue, making it the next query to be executed.
+---@param shouldSwap boolean? If `true`, the query is swapped to the front of the queue, making it the next query to be executed.
 function Query:wait( shouldSwap ) end
 
 --- [SHARED AND MENU]

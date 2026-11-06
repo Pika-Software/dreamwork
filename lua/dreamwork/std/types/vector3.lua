@@ -147,9 +147,9 @@ std.isVector3 = isVector3
 
 --- Creates a new vector, missing coordinates default to `0`.
 ---
----@param x? number The X coordinate ( forward ), defaults to `0`.
----@param y? number The Y coordinate ( left ), defaults to `0`.
----@param z? number The Z coordinate ( up ), defaults to `0`.
+---@param x number? The X coordinate ( forward ), defaults to `0`.
+---@param y number? The Y coordinate ( left ), defaults to `0`.
+---@param z number? The Z coordinate ( up ), defaults to `0`.
 ---@return dreamwork.std.Vector3 vec3 The new vector.
 ---@protected
 function Vector3Class:__new( x, y, z )
@@ -847,7 +847,7 @@ Vector3.getLerpedToNumber = Vector3_getLerped
 ---
 --- The vector does not have to be normalized.
 ---
----@param up? dreamwork.std.Vector3 The up direction, used to calculate roll.
+---@param up dreamwork.std.Vector3? The up direction, used to calculate roll.
 ---@return dreamwork.std.Angle3 ang3 The new angle.
 ---@nodiscard
 function Vector3:toAngle3( up )

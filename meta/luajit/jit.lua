@@ -28,7 +28,7 @@ jit = {}
 ---
 ---@overload fun(...):...
 ---@param func       function|boolean The function or `true` for the function of the caller.
----@param recursive? boolean `true` to affect all sub-functions too.
+---@param recursive boolean? `true` to affect all sub-functions too.
 function jit.on(func, recursive)
 end
 
@@ -46,7 +46,7 @@ end
 ---
 ---@overload fun(...):...
 ---@param func       function|boolean The function or `true` for the function of the caller.
----@param recursive? boolean `true` to affect all sub-functions too.
+---@param recursive boolean? `true` to affect all sub-functions too.
 function jit.off(func, recursive)
 end
 
@@ -67,7 +67,7 @@ end
 ---@overload fun(...):...
 ---@overload fun(tr: jit.trace)
 ---@param func       function|boolean The function or `true` for the function of the caller.
----@param recursive? boolean `true` to affect all sub-functions too.
+---@param recursive boolean? `true` to affect all sub-functions too.
 function jit.flush(func, recursive)
 end
 
@@ -93,7 +93,7 @@ end
 --- Undocumented and not stable LuaJIT API, used by `jit.v` and `jit.dump` modules.
 ---
 ---@param handler function The event handler.
----@param event? "bc" | "trace" | "record" | "texit" | string The event name, omit to detach the handler.
+---@param event ( "bc" | "trace" | "record" | "texit" | string )? The event name, omit to detach the handler.
 function jit.attach(handler, event)
 end
 

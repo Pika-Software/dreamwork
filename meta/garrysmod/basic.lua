@@ -99,7 +99,7 @@ function include( file_path ) end
 ---
 --- Does nothing on the client, so it is safe to call from a shared file.
 ---
----@param file_path? string Path to the Lua file, relative to the `lua/` folder. If omitted, the calling file is sent.
+---@param file_path string? Path to the Lua file, relative to the `lua/` folder. If omitted, the calling file is sent.
 function AddCSLuaFile( file_path ) end
 
 --- [SHARED AND MENU]

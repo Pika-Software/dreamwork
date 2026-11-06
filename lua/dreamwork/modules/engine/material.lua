@@ -39,7 +39,7 @@ if c_material_fn == nil then
     --- Loads a material from the file.
     ---
     ---@param file_path string The path to the file.
-    ---@param parameters? dreamwork.std.MaterialParameters The parameters to load the image with.
+    ---@param parameters dreamwork.std.MaterialParameters? The parameters to load the image with.
     ---@return garrysmod.Material material The loaded material.
     ---@return number time_taken The time taken to load the material.
     ---@nodiscard
@@ -78,7 +78,7 @@ else
     --- Loads a material from the file.
     ---
     ---@param file_path string The path to the file.
-    ---@param parameters? dreamwork.std.MaterialParameters The parameters to load the image with.
+    ---@param parameters dreamwork.std.MaterialParameters? The parameters to load the image with.
     ---@return garrysmod.Material material The loaded material.
     ---@return number time_taken The time taken to load the material.
     ---@nodiscard

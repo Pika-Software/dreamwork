@@ -32,7 +32,7 @@ dreamwork.engine = engine
 --- when the host engine doesn't provide one.
 ---
 ---@param name string The name of the library, e.g. `"timer"`.
----@param stack_level? integer The level of the function whose environment is used, `1` is the function that calls `requireLibrary`. Default is `1`.
+---@param stack_level integer? The level of the function whose environment is used, `1` is the function that calls `requireLibrary`. Default is `1`.
 ---@return table library The existing or newly created library table.
 function engine.requireLibrary( name, stack_level )
     if stack_level == nil then

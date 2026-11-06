@@ -280,7 +280,7 @@ if std.LUA_CLIENT_MENU then
     --- Returns the name of the player with the given Steam ID.
     ---
     ---@param id dreamwork.std.steam.Identifier The SteamID of the player.
-    ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
+    ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string name The name of the player.
     ---@nodiscard
     ---@async
@@ -324,7 +324,7 @@ do
     ---
     --- Checks if the given Steam Workshop item ID is valid.
     ---
-    ---@param id? string
+    ---@param id string?
     ---@return boolean
     ---@nodiscard
     function workshop.isValidID( id )
@@ -364,8 +364,8 @@ do
         --- Returns the details of a Steam Workshop collection's.
         ---
         ---@param ids string[] The Steam Workshop item ID's.
-        ---@param id_count? integer The number of Steam Workshop item ID's.
-        ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
+        ---@param id_count integer? The number of Steam Workshop item ID's.
+        ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
         ---@return dreamwork.std.steam.workshop.Collection.Details[] items The details of the Steam Workshop collections.
         ---@return integer item_count The number of Steam Workshop collections.
         ---@nodiscard
@@ -455,8 +455,8 @@ do
     --- Returns the details of a Steam Workshop item's.
     ---
     ---@param ids string[] The Steam Workshop item ID's.
-    ---@param id_count? integer The number of Steam Workshop item ID's.
-    ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
+    ---@param id_count integer? The number of Steam Workshop item ID's.
+    ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return dreamwork.std.steam.workshop.Item.Details[] items The details of the Steam Workshop items.
     ---@return integer item_count The number of Steam Workshop items.
     ---@nodiscard
@@ -570,7 +570,7 @@ do
         --- Fetches a detailed information about a specific Steam Workshop item or collection.
         ---
         ---@param wsid string The workshop ID of the item/collection.
-        ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
+        ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
         ---@return dreamwork.std.steam.workshop.ItemInfo info The details of the item/collection.
         ---@nodiscard
         ---@async
@@ -695,8 +695,8 @@ if std.LUA_CLIENT_MENU then
     --- Downloads the icon of the Steam Workshop item and returns the absolute path to the file.
     ---
     ---@param wsid string The workshop ID of the addon.
-    ---@param uncompress? boolean Whether the icon should be uncompressed, `true` by default.
-    ---@param timeout? number The timeout in seconds, if `nil` then the default timeout will be used.
+    ---@param uncompress boolean? Whether the icon should be uncompressed, `true` by default.
+    ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
     ---@return string file_path The absolute path to the icon file.
     ---@async
     function workshop.downloadIcon( wsid, uncompress, timeout )
@@ -1054,7 +1054,7 @@ if std.LUA_MENU then
     ---@param filePath string The absolute path to the addon file.
     ---@param imagePath string The absolute path to the image file.
     ---@param title string The title of the addon.
-    ---@param description? string The description of the addon.
+    ---@param description string? The description of the addon.
     ---@param tags string[] The tags for the addon.
     ---@param wsid string The workshop ID of the addon.
     ---@param changeLog string? The changelog of the publication.

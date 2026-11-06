@@ -50,7 +50,7 @@ local SHA512 = class.base( "SHA512" )
 ---
 ---@class dreamwork.std.crypto.SHA512Class : dreamwork.std.crypto.SHA512, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.SHA512
----@field digest fun( message: string, as_hex?: boolean ): string
+---@field digest fun( message: string, as_hex: boolean? ): string
 ---@field digest_size integer
 ---@field block_size integer
 ---@operator call: dreamwork.std.crypto.SHA512
@@ -247,7 +247,7 @@ local copy_state
 
 --- Serializes the first `word_count` words of the state.
 ---
----@type fun( state: integer[] | ffi.cdata*, word_count: integer, as_hex?: boolean ): string
+---@type fun( state: integer[] | ffi.cdata*, word_count: integer, as_hex: boolean? ): string
 local serialize
 
 if ffi == nil then
@@ -546,7 +546,7 @@ end
 ---@param message_length integer The total length of the message in bytes.
 ---@param state integer[] | ffi.cdata*
 ---@param word_count integer The number of 64-bit words in the digest, 8 for SHA512 and 6 for SHA384.
----@param as_hex? boolean
+---@param as_hex boolean?
 ---@return string
 local function finalize( tail, message_length, state, word_count, as_hex )
     local bit_count_low = (message_length % 0x20000000) * 8
@@ -648,7 +648,7 @@ end
 ---
 --- Does not change the state, so the object can be updated further.
 ---
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA512 string of the message.
 ---@nodiscard
 function SHA512:digest( as_hex )
@@ -665,7 +665,7 @@ SHA512.__tostring = SHA512.digest
 --- Commonly used for checksums, data integrity validation, and password hashing.
 ---
 ---@param message string The message to compute SHA512 for.
----@param as_hex? boolean If true, the result will be a hex string.
+---@param as_hex boolean? If true, the result will be a hex string.
 ---@return string str_result The SHA512 string of the message.
 ---@nodiscard
 function SHA512Class.digest( message, as_hex )

@@ -68,7 +68,7 @@ local funcinfo2 = {
 --- Returns the information about the given function.
 ---
 ---@param func function The function to get the information about.
----@param pc? integer The bytecode position, affects `currentline` and `loc`.
+---@param pc integer? The bytecode position, affects `currentline` and `loc`.
 ---@return jit.funcinfo.c | jit.funcinfo.lua info The function information.
 function util.funcinfo( func, pc ) end
 

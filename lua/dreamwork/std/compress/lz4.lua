@@ -102,7 +102,7 @@ if holylib_CompressLZ4 == nil then
     --- the block if the receiving side needs to know it in advance.
     ---
     ---@param data string The string to compress.
-    ---@param acceleration? integer A positive integer, defaults to `1`. Higher values may increase the compression speed, especially on incompressible data, at the cost of compression efficiency.
+    ---@param acceleration integer? A positive integer, defaults to `1`. Higher values may increase the compression speed, especially on incompressible data, at the cost of compression efficiency.
     ---@return string compressed The compressed data as a string.
     ---@nodiscard
     function lz4.compress( data, acceleration )

@@ -113,8 +113,8 @@ function os.clock() end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.date)
 ---
----@param fmt? string The format string, if not provided, "%c" is used.
----@param timestamp? integer The timestamp to format, if not provided, the current time is used.
+---@param fmt string? The format string, if not provided, "%c" is used.
+---@param timestamp integer? The timestamp to format, if not provided, the current time is used.
 ---@return string time_str The formatted date and time string.
 ---@overload fun( fmt: ( "*t" | "!*t" ), timestamp: integer? ): osdate
 ---@nodiscard
@@ -138,7 +138,7 @@ function os.difftime( t2, t1 ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.execute)
 ---
----@param command? string
+---@param command string?
 ---@return true?     suc
 ---@return exitcode? exitcode
 ---@return integer?  code
@@ -150,8 +150,8 @@ function os.execute( command ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.exit)
 ---
----@param code?  boolean|integer
----@param close? boolean
+---@param code  ( boolean|integer )?
+---@param close boolean?
 function os.exit( code, close ) end
 
 --- [SHARED AND MENU]
@@ -205,7 +205,7 @@ function os.rename( oldname, newname ) end
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.setlocale)
 ---
 ---@param locale    string|nil
----@param category? localecategory
+---@param category localecategory?
 ---@return string localecategory
 function os.setlocale( locale, category ) end
 
@@ -271,7 +271,7 @@ function os.setlocale( locale, category ) end
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os.time)
 ---
----@param date? osdateparam
+---@param date osdateparam?
 ---@return integer
 ---@nodiscard
 function os.time( date ) end

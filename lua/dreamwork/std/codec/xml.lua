@@ -891,7 +891,7 @@ end
 ---
 --- Text of a text-only node is returned with an empty key `""`, text next to child nodes with key `1`, list items are returned one by one with the list key.
 ---
----@param key? string The key to iterate over, with dot-separated keys for nested values.
+---@param key string? The key to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function, which returns key-value pairs for the node at the given key.
 ---@nodiscard
 function XMLNode:iterator( key )
@@ -976,7 +976,7 @@ end
 --- end
 --- ```
 ---
----@param key? string The key of the node to iterate over, with dot-separated keys for nested values.
+---@param key string? The key of the node to iterate over, with dot-separated keys for nested values.
 ---@return fun(): ( ( string | integer | nil ), ( string | dreamwork.std.XMLNode ) ) fn The iterator function.
 ---@nodiscard
 function XMLNode:children( key )
@@ -1123,7 +1123,7 @@ do
     --- Decodes named and numeric character references in one pass, unknown ones are kept as is.
     ---
     ---@param str string
-    ---@param decoder? fun( name: string ): string | nil
+    ---@param decoder ( fun( name: string ): string | nil )?
     ---@return string
     function decode_entities( str, decoder )
         if string_find( str, "&", 1, true ) == nil then
@@ -1242,9 +1242,9 @@ do
     ---
     --- Children are written in document order, pretty formatting adds whitespace to the text, so use compact output for exact data.
     ---
-    ---@param pretty? boolean Whether to use pretty formatting (indentation and newlines).
-    ---@param name? string The name of the node.
-    ---@param level? number The indentation level.
+    ---@param pretty boolean? Whether to use pretty formatting (indentation and newlines).
+    ---@param name string? The name of the node.
+    ---@param level number? The indentation level.
     ---@return string str The XML string representation of this node.
     ---@nodiscard
     function XMLNode:toString( pretty, name, level )
@@ -1425,7 +1425,7 @@ do
     --- Converts a table to an XML node structure.
     ---
     ---@param tbl table The table to convert to an XML node.
-    ---@param name? string The name of the root node.
+    ---@param name string? The name of the root node.
     ---@return dreamwork.std.XMLNode root_node The root node of the XML tree.
     ---@nodiscard
     function XMLNodeClass.fromTable( tbl, name )
@@ -1594,7 +1594,7 @@ do
     --- Line breaks are normalized to `\n`, attribute values are normalized as XML requires, character references and entities declared in the internal DOCTYPE subset are decoded.
     ---
     ---@param xml_str string The XML string to parse.
-    ---@param keep_whitespace? boolean Whether to keep all whitespace in text, defaults to `false`.
+    ---@param keep_whitespace boolean? Whether to keep all whitespace in text, defaults to `false`.
     ---@return dreamwork.std.XMLNode | nil root_node The root node, or `nil` if the string has no elements.
     ---@nodiscard
     function XMLNodeClass.fromString( xml_str, keep_whitespace )

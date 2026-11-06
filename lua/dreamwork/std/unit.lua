@@ -257,7 +257,7 @@ local measure_units = {}
 ---@param system dreamwork.std.unit.System The system inside that measure.
 ---@param abbr dreamwork.std.unit.Type | string The unit abbreviation (lookup key).
 ---@param to_anchor number Multiplier into the system anchor (`1` of this unit = `to_anchor` anchor units).
----@param anchor_shift? number Optional additive shift around the system anchor.
+---@param anchor_shift number? Optional additive shift around the system anchor.
 local function define_unit( measure, system, abbr, to_anchor, anchor_shift )
     unit_definitions[ abbr ] = {
         measure = measure,
@@ -691,7 +691,7 @@ end
 --- local all_units = unit.possibilities()                 -- every configured unit
 --- ```
 ---
----@param measure? dreamwork.std.unit.Measure Optional measure filter.
+---@param measure dreamwork.std.unit.Measure? Optional measure filter.
 ---@return dreamwork.std.unit.Type[] unit_types A new list of matching unit abbreviations (1-based, no `[0]` length slot).
 ---@return integer unit_count The number of matching unit abbreviations.
 ---@nodiscard

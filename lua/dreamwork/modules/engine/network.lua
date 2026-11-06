@@ -251,7 +251,7 @@ if glua_net.Start ~= nil then
 
     ---@param fn fun( network_name: string, unreliable: boolean? )
     ---@param network_name string
-    ---@param unreliable? boolean
+    ---@param unreliable boolean?
     detour.attach( function( fn, network_name, unreliable )
         if network_ids[ network_name ] == nil then
             if LUA_SERVER then

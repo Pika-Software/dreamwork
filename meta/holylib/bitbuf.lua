@@ -216,8 +216,8 @@ function bf_read:ReadBitCoordBits() end
 ---
 --- > **NOTE**: This is only available for the 32x!
 ---
----@param integral? boolean Defaults to `false`.
----@param lowPrecision? boolean Defaults to `false`.
+---@param integral boolean? Defaults to `false`.
+---@param lowPrecision boolean? Defaults to `false`.
 ---@return number result
 function bf_read:ReadBitCoordMP( integral, lowPrecision ) end
 
@@ -225,8 +225,8 @@ function bf_read:ReadBitCoordMP( integral, lowPrecision ) end
 ---
 --- > **NOTE**: This is only available for the 32x!
 ---
----@param integral? boolean Defaults to `false`.
----@param lowPrecision? boolean Defaults to `false`.
+---@param integral boolean? Defaults to `false`.
+---@param lowPrecision boolean? Defaults to `false`.
 ---@return integer result
 function bf_read:ReadBitCoordMPBits( integral, lowPrecision ) end
 
@@ -242,7 +242,7 @@ function bf_read:ReadBitFloat() end
 --- > **NOTE**: This is only available for the 32x!
 ---
 ---@param bits integer
----@param signed? boolean Defaults to `false`.
+---@param signed boolean? Defaults to `false`.
 ---@return integer result
 function bf_read:ReadBitLong( bits, signed ) end
 
@@ -585,7 +585,7 @@ function bf_write:WriteBytes( data ) end
 ---
 --- Writes one bit.
 ---
----@param value? boolean Defaults to `false`.
+---@param value boolean? Defaults to `false`.
 function bf_write:WriteOneBit( value ) end
 
 --- [SHARED AND MENU]
@@ -593,7 +593,7 @@ function bf_write:WriteOneBit( value ) end
 --- Sets the given bit to the given value.
 ---
 ---@param bit integer
----@param value? boolean Defaults to `false`.
+---@param value boolean? Defaults to `false`.
 function bf_write:WriteOneBitAt( bit, value ) end
 
 --- [SHARED AND MENU]
@@ -639,7 +639,7 @@ function bf_write:WriteUBitVar( value ) end
 ---
 ---@param value integer
 ---@param bits integer
----@param signed? boolean Defaults to `false`.
+---@param signed boolean? Defaults to `false`.
 function bf_write:WriteUBitLong( value, bits, signed ) end
 
 --- [SHARED AND MENU]
@@ -714,8 +714,8 @@ function bf_write:WriteBitCoord( value ) end
 --- [SHARED AND MENU]
 ---
 ---@param value integer
----@param integral? boolean Defaults to `false`.
----@param lowPrecision? boolean Defaults to `false`.
+---@param integral boolean? Defaults to `false`.
+---@param lowPrecision boolean? Defaults to `false`.
 function bf_write:WriteBitCoordMP( value, integral, lowPrecision ) end
 
 --- [SHARED AND MENU]

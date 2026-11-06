@@ -63,7 +63,7 @@ gc.setTableRules( keys, true, false )
 ---
 ---@generic F: function
 ---@param new_fn F The new function to call instead of the original.
----@param location? table The table that holds the original function. Defaults to the environment of the calling function.
+---@param location table? The table that holds the original function. Defaults to the environment of the calling function.
 ---@param key any The key of the original function in `location`.
 ---@return F hooked_fn Hooked function that was assigned to `location[ key ]`.
 function detour.simple( new_fn, location, key )
@@ -113,7 +113,7 @@ end
 ---
 ---@generic F: function
 ---@param new_fn F The new function to call before the original.
----@param location? table The table that holds the original function. Defaults to the environment of the calling function.
+---@param location table? The table that holds the original function. Defaults to the environment of the calling function.
 ---@param key any The key of the original function in `location`.
 ---@return F hooked_fn Hooked function that was assigned to `location[ key ]`.
 function detour.before( new_fn, location, key )
@@ -158,7 +158,7 @@ end
 ---
 ---@generic F: function
 ---@param new_fn F The new function to call instead of the original.
----@param location? table The table that holds the original function. Defaults to the environment of the calling function.
+---@param location table? The table that holds the original function. Defaults to the environment of the calling function.
 ---@param key any The key of the original function in `location`.
 ---@return F hooked_fn The `new_fn` that was assigned to `location[ key ]`.
 function detour.replace( new_fn, location, key )
@@ -183,7 +183,7 @@ end
 --- Hooks `location[ key ]` with a function that calls the `new_fn` with the original function as the first argument.
 ---
 ---@param new_fn ( fun( in_fn: function | nil, ...: any ): any, any, any, any ) The new function to call instead of the original.
----@param location? table The table that holds the original function. Defaults to the environment of the calling function.
+---@param location table? The table that holds the original function. Defaults to the environment of the calling function.
 ---@param key any The key of the original function in `location`.
 ---@return function hooked_fn Hooked function that was assigned to `location[ key ]`.
 function detour.attach( new_fn, location, key )

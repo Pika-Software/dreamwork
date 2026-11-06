@@ -150,14 +150,14 @@ end
 local IPv6Class = class.create( IPv6 )
 std.IPv6 = IPv6Class
 
----@param group1? integer The first group. <0-65535>
----@param group2? integer The second group. <0-65535>
----@param group3? integer The third group. <0-65535>
----@param group4? integer The fourth group. <0-65535>
----@param group5? integer The fifth group. <0-65535>
----@param group6? integer The sixth group. <0-65535>
----@param group7? integer The seventh group. <0-65535>
----@param group8? integer The eighth group. <0-65535>
+---@param group1 integer? The first group. <0-65535>
+---@param group2 integer? The second group. <0-65535>
+---@param group3 integer? The third group. <0-65535>
+---@param group4 integer? The fourth group. <0-65535>
+---@param group5 integer? The fifth group. <0-65535>
+---@param group6 integer? The sixth group. <0-65535>
+---@param group7 integer? The seventh group. <0-65535>
+---@param group8 integer? The eighth group. <0-65535>
 ---@return dreamwork.std.IPv6
 ---@protected
 function IPv6Class:__new( group1, group2, group3, group4, group5, group6, group7, group8 )
@@ -250,8 +250,8 @@ end
 --- the address has a wrong number of groups or more than one `::`, or the prefix length is not an integer in range 0-128.
 ---
 ---@param ipv6_str string The IPv6 address string to parse.
----@param start_position? integer The start position in the ipv6 string.
----@param end_position? integer The end position in the ipv6 string.
+---@param start_position integer? The start position in the ipv6 string.
+---@param end_position integer? The end position in the ipv6 string.
 ---@return dreamwork.std.IPv6 address The parsed IP address.
 ---@return integer prefix_length The CIDR prefix length. <0-128>, `128` if not specified.
 ---@nodiscard

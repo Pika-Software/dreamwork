@@ -33,10 +33,10 @@ do
 
     --- Creates the color proxy, missing channels default to `0` (alpha to `255`).
     ---
-    ---@param r? integer Red channel.
-    ---@param g? integer Green channel.
-    ---@param b? integer Blue channel.
-    ---@param a? integer Alpha channel.
+    ---@param r integer? Red channel.
+    ---@param g integer? Green channel.
+    ---@param b integer? Blue channel.
+    ---@param a integer? Alpha channel.
     ---@protected
     function ColorProxy:__init( r, g, b, a )
         self.r = r or 0
@@ -109,9 +109,9 @@ do
 
         --- Creates the vector proxy, missing coordinates default to `0`.
         ---
-        ---@param x? number The x coordinate.
-        ---@param y? number The y coordinate.
-        ---@param z? number The z coordinate.
+        ---@param x number? The x coordinate.
+        ---@param y number? The y coordinate.
+        ---@param z number? The z coordinate.
         ---@protected
         function Vector3Proxy:__init( x, y, z )
             self.value = glua_Vector( x or 0, y or 0, z or 0 )
@@ -151,7 +151,7 @@ do
         --- Vector proxy class, call it to create a new `dreamwork.engine.Vector3Proxy`.
         ---
         ---@class dreamwork.engine.Vector3ProxyClass : dreamwork.engine.Vector3Proxy, dreamwork.std.Class
-        ---@overload fun( x?: number, y?: number, z?: number ): dreamwork.engine.Vector3Proxy
+        ---@overload fun( x: number?, y: number?, z: number? ): dreamwork.engine.Vector3Proxy
         dreamwork_engine.Vector3Proxy = class.create( Vector3Proxy )
 
     end
@@ -178,9 +178,9 @@ do
 
         --- Creates the angle proxy, missing angles default to `0`.
         ---
-        ---@param pitch? number The pitch in degrees.
-        ---@param yaw? number The yaw in degrees.
-        ---@param roll? number The roll in degrees.
+        ---@param pitch number? The pitch in degrees.
+        ---@param yaw number? The yaw in degrees.
+        ---@param roll number? The roll in degrees.
         ---@protected
         function Angle3Proxy:__init( pitch, yaw, roll )
             self.value = glua_Angle( pitch or 0, yaw or 0, roll or 0 )
@@ -220,7 +220,7 @@ do
         --- Angle proxy class, call it to create a new `dreamwork.engine.Angle3Proxy`.
         ---
         ---@class dreamwork.engine.Angle3ProxyClass : dreamwork.engine.Angle3Proxy, dreamwork.std.Class
-        ---@overload fun( pitch?: number, yaw?: number, roll?: number ): dreamwork.engine.Angle3Proxy
+        ---@overload fun( pitch: number?, yaw: number?, roll: number? ): dreamwork.engine.Angle3Proxy
         dreamwork_engine.Angle3Proxy = class.create( Angle3Proxy )
 
     end

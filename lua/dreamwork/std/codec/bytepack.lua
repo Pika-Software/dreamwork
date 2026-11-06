@@ -1871,9 +1871,9 @@ end
 ---
 --- Values are clamped to the valid DOS ranges: hours `0` - `23`, minutes `0` - `59`, seconds `0` - `59`.
 ---
----@param hours? integer The number of hours.
----@param minutes? integer The number of minutes.
----@param seconds? integer The number of seconds, **will be rounded**.
+---@param hours integer? The number of hours.
+---@param minutes integer? The number of minutes.
+---@param seconds integer? The number of seconds, **will be rounded**.
 ---@return integer uint16 The uint16 to read from.
 ---@nodiscard
 function bytepack.writeTime( hours, minutes, seconds )
@@ -1921,9 +1921,9 @@ end
 ---
 --- Writes date in DOS format as single `Short` number ( UInt16 ).
 ---
----@param day? integer The day.
----@param month? integer The month.
----@param year? integer The year.
+---@param day integer? The day.
+---@param month integer? The month.
+---@param year integer? The year.
 ---@return integer uint16 The uint16 to read from.
 ---@nodiscard
 function bytepack.writeDate( day, month, year )

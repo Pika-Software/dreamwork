@@ -278,7 +278,7 @@ do
     --- uuid.v7( 1761782400123 ) -- "019a326a-047b-7xxx-..." (random tail)
     --- ```
     ---
-    ---@param timestamp? integer The UNIX timestamp in milliseconds (`0`..`2^48 - 1`), defaults to the current time.
+    ---@param timestamp integer? The UNIX timestamp in milliseconds (`0`..`2^48 - 1`), defaults to the current time.
     ---@return string uuid_str A UUID v7 string.
     ---@nodiscard
     function uuid.v7( timestamp )
@@ -331,22 +331,22 @@ end
 --- uuid.v8( 0xDE, 0xAD, 0xBE, 0xEF ) -- "deadbeef-0000-8000-8000-000000000000"
 --- ```
 ---
----@param uint8_1? integer Unsigned byte (0..255)
----@param uint8_2? integer Unsigned byte (0..255)
----@param uint8_3? integer Unsigned byte (0..255)
----@param uint8_4? integer Unsigned byte (0..255)
----@param uint8_5? integer Unsigned byte (0..255)
----@param uint8_6? integer Unsigned byte (0..255)
----@param uint8_7? integer Unsigned byte (0..15)
----@param uint8_8? integer Unsigned byte (0..255)
----@param uint8_9? integer Unsigned byte (0..63)
----@param uint8_10? integer Unsigned byte (0..255)
----@param uint8_11? integer Unsigned byte (0..255)
----@param uint8_12? integer Unsigned byte (0..255)
----@param uint8_13? integer Unsigned byte (0..255)
----@param uint8_14? integer Unsigned byte (0..255)
----@param uint8_15? integer Unsigned byte (0..255)
----@param uint8_16? integer Unsigned byte (0..255)
+---@param uint8_1 integer? Unsigned byte (0..255)
+---@param uint8_2 integer? Unsigned byte (0..255)
+---@param uint8_3 integer? Unsigned byte (0..255)
+---@param uint8_4 integer? Unsigned byte (0..255)
+---@param uint8_5 integer? Unsigned byte (0..255)
+---@param uint8_6 integer? Unsigned byte (0..255)
+---@param uint8_7 integer? Unsigned byte (0..15)
+---@param uint8_8 integer? Unsigned byte (0..255)
+---@param uint8_9 integer? Unsigned byte (0..63)
+---@param uint8_10 integer? Unsigned byte (0..255)
+---@param uint8_11 integer? Unsigned byte (0..255)
+---@param uint8_12 integer? Unsigned byte (0..255)
+---@param uint8_13 integer? Unsigned byte (0..255)
+---@param uint8_14 integer? Unsigned byte (0..255)
+---@param uint8_15 integer? Unsigned byte (0..255)
+---@param uint8_16 integer? Unsigned byte (0..255)
 ---@return string uuid_str A UUID v8 string.
 ---@nodiscard
 function uuid.v8( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 )

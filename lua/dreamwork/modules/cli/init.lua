@@ -108,7 +108,7 @@ do
     --- Writes the text into the console without a new line.
     ---
     ---@param text string The text.
-    ---@param color? dreamwork.std.Color The color, the default console color if `nil`.
+    ---@param color dreamwork.std.Color? The color, the default console color if `nil`.
     local function write( text, color )
         if color == nil then
             console_message( text )
@@ -206,7 +206,7 @@ do
     ---
     ---@param text string The text, without new lines.
     ---@param width integer The maximal width of a line in characters.
-    ---@param lines? string[] The lines to append to, a new table if `nil`.
+    ---@param lines string[]? The lines to append to, a new table if `nil`.
     ---@return string[] lines The lines.
     ---@return integer line_count The number of lines.
     local function wrap( text, width, lines )
@@ -276,9 +276,9 @@ do
     --- ```
     ---
     ---@param lines string[] The lines, without new lines.
-    ---@param title? string The title shown in the separated top part of the box.
-    ---@param color? dreamwork.std.Color The color of the text, `cli.colors.name` if `nil`.
-    ---@param border_color? dreamwork.std.Color The color of the border, `cli.colors.description` if `nil`.
+    ---@param title string? The title shown in the separated top part of the box.
+    ---@param color dreamwork.std.Color? The color of the text, `cli.colors.name` if `nil`.
+    ---@param border_color dreamwork.std.Color? The color of the border, `cli.colors.description` if `nil`.
     function cli.printBox( lines, title, color, border_color )
         color = color or colors.name
         border_color = border_color or colors.description
@@ -354,9 +354,9 @@ do
     --- Prints the lines inside of the box with an empty line after it, separates the header from the content.
     ---
     ---@param lines string[] The lines, without new lines.
-    ---@param title? string The title shown in the separated top part of the box.
-    ---@param color? dreamwork.std.Color The color of the text, `cli.colors.name` if `nil`.
-    ---@param border_color? dreamwork.std.Color The color of the border, `cli.colors.description` if `nil`.
+    ---@param title string? The title shown in the separated top part of the box.
+    ---@param color dreamwork.std.Color? The color of the text, `cli.colors.name` if `nil`.
+    ---@param border_color dreamwork.std.Color? The color of the border, `cli.colors.description` if `nil`.
     function cli.printHeader( lines, title, color, border_color )
         cli.printBox( lines, title, color, border_color )
         write( "\n" )
@@ -471,9 +471,9 @@ end
 --- Converts the typed string into a number.
 ---
 ---@param str string The typed string.
----@param min? number The minimal value.
----@param max? number The maximal value.
----@param is_integer? boolean If `true`, fractional values are rejected.
+---@param min number? The minimal value.
+---@param max number? The maximal value.
+---@param is_integer boolean? If `true`, fractional values are rejected.
 ---@return number | nil value The number, or `nil` if the string is invalid.
 ---@return string | nil reason The reason why the string is invalid, e.g. `is not a number`.
 function cli.parseNumber( str, min, max, is_integer )
@@ -537,9 +537,9 @@ end
 ---@param args string[] The arguments.
 ---@param index integer The index of the argument.
 ---@param default number The value used when the argument is missing.
----@param min? number The minimal value.
----@param max? number The maximal value.
----@param is_integer? boolean If `true`, fractional values are rejected.
+---@param min number? The minimal value.
+---@param max number? The maximal value.
+---@param is_integer boolean? If `true`, fractional values are rejected.
 ---@return number | nil value The number, or `nil` if the argument is invalid and the error was printed.
 function cli.readNumber( args, index, default, min, max, is_integer )
     local str = args[ index ]
@@ -563,9 +563,9 @@ local cli_readNumber = cli.readNumber
 ---
 ---@param prefix string The typed prefix.
 ---@param names string[] The candidate names.
----@param suggestions? string[] The suggestions to append to, a new table if `nil`.
----@param head? string The text added before every suggested name.
----@param tail? string The text added after every suggested name.
+---@param suggestions string[]? The suggestions to append to, a new table if `nil`.
+---@param head string? The text added before every suggested name.
+---@param tail string? The text added after every suggested name.
 ---@return string[] suggestions
 function cli.complete( prefix, names, suggestions, head, tail )
     if suggestions == nil then
@@ -621,7 +621,7 @@ local cli_toVFSPath = cli.toVFSPath
 --- Suggestions always start with `/`, a path typed without it is completed as an absolute one.
 ---
 ---@param typed string The typed path.
----@param directories_only? boolean If `true`, files are not suggested.
+---@param directories_only boolean? If `true`, files are not suggested.
 ---@return string[] | nil suggestions The suggestions, or `nil` if the typed directory does not exist.
 function cli.completeVFSPath( typed, directories_only )
     if string_byte( typed, 1, 1 ) ~= 0x2F --[[ / ]] then
@@ -680,7 +680,7 @@ local Group = class.base( "cli.Group", false )
 Group.usage = "<command> [arguments]"
 
 ---@param path_to string The full typed path of the group.
----@param description? string The description shown by `help`.
+---@param description string? The description shown by `help`.
 ---@protected
 function Group:__init( path_to, description )
     self.path = path_to
@@ -694,7 +694,7 @@ end
 ---
 ---@class dreamwork.cli.GroupClass : dreamwork.cli.Group, dreamwork.std.Class
 ---@field __base dreamwork.cli.Group
----@overload fun( path_to: string, description?: string ): dreamwork.cli.Group
+---@overload fun( path_to: string, description: string? ): dreamwork.cli.Group
 local GroupClass = class.create( Group )
 cli.Group = GroupClass
 
@@ -724,7 +724,7 @@ end
 --- Creates and registers the nested group, e.g. `dreamwork_sci <name> <command>`.
 ---
 ---@param name string The name of the group, must not contain spaces.
----@param description? string The description shown by `help`.
+---@param description string? The description shown by `help`.
 ---@return dreamwork.cli.Group group The nested group.
 function Group:group( name, description )
     local group = GroupClass( self.path .. " " .. name, description )
@@ -997,7 +997,7 @@ end
 --- Creates and registers the group in the root group.
 ---
 ---@param name string The name of the group, must not contain spaces.
----@param description? string The description shown by `help`.
+---@param description string? The description shown by `help`.
 ---@return dreamwork.cli.Group group The group.
 function cli.group( name, description )
     return root:group( name, description )

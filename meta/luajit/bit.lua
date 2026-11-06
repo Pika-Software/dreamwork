@@ -61,7 +61,7 @@ function bit.tobit( x ) end
 --- [View documents](https://bitop.luajit.org/api.html#tohex)
 ---
 ---@param x integer | ffi.cdata* The number to convert.
----@param n? integer The number of hex digits, negative for uppercase.
+---@param n integer? The number of hex digits, negative for uppercase.
 ---@return string hex The hexadecimal string.
 ---@nodiscard
 function bit.tohex( x, n ) end

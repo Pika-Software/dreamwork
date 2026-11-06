@@ -247,7 +247,7 @@ end
 --- Handlers still pending in a running `emit` of a cleared event are skipped.
 ---
 ---@param object any The object to clear.
----@param event_name? string The event name, or `nil` for all events.
+---@param event_name string? The event name, or `nil` for all events.
 function Emitter:clear( object, event_name )
     local lists = raw_get( self, object )
     if lists == nil then
@@ -363,8 +363,8 @@ end
 ---
 ---@param object any The object to wait on.
 ---@param event_name string The event to wait for.
----@param abort_event? string An event that cancels the wait, e.g. `"close"`.
----@param abort_message? string The error message thrown on abort.
+---@param abort_event string? An event that cancels the wait, e.g. `"close"`.
+---@param abort_message string? The error message thrown on abort.
 ---@return any ... The arguments `event` was emitted with.
 ---@async
 function Emitter:await( object, event_name, abort_event, abort_message )

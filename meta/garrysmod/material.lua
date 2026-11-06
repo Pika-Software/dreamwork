@@ -23,7 +23,7 @@
 --- > It is a good idea to cache the material in a variable.
 ---
 ---@param file_path string The material name or path relative to the `garrysmod/` folder. `!` for Lua created materials.
----@param params? string Space separated keywords that add material parameters, only works for `.png` or `.jpg` image files:
+---@param params string? Space separated keywords that add material parameters, only works for `.png` or `.jpg` image files:
 --- * `vertexlitgeneric` - makes the material a `VertexLitGeneric` so it can be applied to models and receive lighting, the default shader is `UnlitGeneric`.
 --- * `nocull` - sets `$nocull` to `1`, so the back side of the texture is always drawn.
 --- * `alphatest` - sets `$alphatest` to `1` instead of `$vertexalpha`, making alpha fully opaque or fully transparent.

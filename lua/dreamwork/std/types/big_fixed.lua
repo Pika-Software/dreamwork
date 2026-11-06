@@ -275,7 +275,7 @@ do
     --- returned unchanged.
     ---
     ---@param value any The value to convert to a `BigFixed`.
-    ---@param scale? integer The number of fractional digits to keep. Defaults to `BigFixed.DEFAULT_SCALE`.
+    ---@param scale integer? The number of fractional digits to keep. Defaults to `BigFixed.DEFAULT_SCALE`.
     ---@return dreamwork.std.BigFixed obj
     ---@nodiscard
     function std.toBigFixed( value, scale )

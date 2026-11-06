@@ -155,7 +155,7 @@ end
 --- Checks the length and padding of a base32 string.
 ---
 ---@param base32_str string
----@param ignore_padding? boolean
+---@param ignore_padding boolean?
 ---@return integer | nil data_length The length without padding, or `nil` if the string is invalid.
 ---@return nil | string err_msg The error message.
 local function get_data_length( base32_str, ignore_padding )
@@ -427,8 +427,8 @@ end
 --- Encodes the specified string to base32.
 ---
 ---@param raw_str string The string to encode.
----@param ignore_padding? boolean Whether to ignore padding.
----@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
+---@param ignore_padding boolean? Whether to ignore padding.
+---@param alphabet ( "standard" | "extended" | dreamwork.std.base32.Alphabet )? The alphabet to use.
 ---@return string base32_str The encoded string.
 ---@nodiscard
 function base32.encode( raw_str, ignore_padding, alphabet )
@@ -448,8 +448,8 @@ end
 --- Throws an error if the string has invalid length, padding or characters.
 ---
 ---@param base32_str string The base32 encoded string to decode.
----@param ignore_padding? boolean Whether padding is optional.
----@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
+---@param ignore_padding boolean? Whether padding is optional.
+---@param alphabet ( "standard" | "extended" | dreamwork.std.base32.Alphabet )? The alphabet to use.
 ---@return string raw_str The decoded string.
 ---@nodiscard
 function base32.decode( base32_str, ignore_padding, alphabet )
@@ -477,8 +477,8 @@ end
 --- Checks if the specified base32 encoded string is valid.
 ---
 ---@param base32_str string The base32 encoded string to check.
----@param ignore_padding? boolean Whether padding is optional.
----@param alphabet? "standard" | "extended" | dreamwork.std.base32.Alphabet The alphabet to use.
+---@param ignore_padding boolean? Whether padding is optional.
+---@param alphabet ( "standard" | "extended" | dreamwork.std.base32.Alphabet )? The alphabet to use.
 ---@return boolean is_valid `true` if the base32 string is valid, `false` otherwise
 ---@return nil | string err_msg The error message.
 ---@nodiscard

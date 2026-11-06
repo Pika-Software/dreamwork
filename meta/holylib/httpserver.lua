@@ -158,7 +158,7 @@ function HttpServer:SetName( name ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Get( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -167,7 +167,7 @@ function HttpServer:Get( path, handler, ip_whitelist ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Post( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -176,7 +176,7 @@ function HttpServer:Post( path, handler, ip_whitelist ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Put( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -185,7 +185,7 @@ function HttpServer:Put( path, handler, ip_whitelist ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Patch( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -194,7 +194,7 @@ function HttpServer:Patch( path, handler, ip_whitelist ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Delete( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -203,7 +203,7 @@ function HttpServer:Delete( path, handler, ip_whitelist ) end
 ---
 ---@param path string The URL path pattern.
 ---@param handler holylib.HttpServer.Handler The request callback.
----@param ip_whitelist? boolean Restrict to connected players. Defaults to `false`.
+---@param ip_whitelist boolean? Restrict to connected players. Defaults to `false`.
 function HttpServer:Options( path, handler, ip_whitelist ) end
 
 --- [SERVER]
@@ -290,7 +290,7 @@ function HttpServer:SetThreads( min_threads, max_threads ) end
 ---
 ---@param proxy_address string The remote address of the trusted proxy.
 ---@param header_name string Header that carries the real client IP, e.g. `"X-Forwarded-For"`.
----@param unshit_address? boolean Prefer the last IP in a comma-separated header. Defaults to `false`.
+---@param unshit_address boolean? Prefer the last IP in a comma-separated header. Defaults to `false`.
 function HttpServer:AddProxyAddress( proxy_address, header_name, unshit_address ) end
 
 --- [SERVER]
@@ -305,7 +305,7 @@ function HttpServer:AddProxyAddress( proxy_address, header_name, unshit_address 
 ---@param method string Exact HTTP method to match, e.g. `"GET"`.
 ---@param required_headers table<string, string> Headers that must be present with these values.
 ---@param handler holylib.HttpServer.PreparedResponseHandler Fills the prepared response.
----@param uses? integer How many times this entry may match. Defaults to `1`.
+---@param uses integer? How many times this entry may match. Defaults to `1`.
 function HttpServer:AddPreparedResponse( user_id, path, method, required_headers, handler, uses ) end
 
 
@@ -465,7 +465,7 @@ function HttpRequest:MarkHandled() end
 --- Sets the response body and content type.
 ---
 ---@param content string The response body.
----@param content_type? string The `Content-Type`. Defaults to `"text/plain"`.
+---@param content_type string? The `Content-Type`. Defaults to `"text/plain"`.
 function HttpRequest:SetContent( content, content_type ) end
 
 --- [SERVER]
@@ -473,7 +473,7 @@ function HttpRequest:SetContent( content, content_type ) end
 --- Sets a redirect response.
 ---
 ---@param url string The redirect target URL.
----@param code? integer The redirect status code. Defaults to `302`.
+---@param code integer? The redirect status code. Defaults to `302`.
 function HttpRequest:SetRedirect( url, code ) end
 
 --- [SERVER]
@@ -520,7 +520,7 @@ function HttpResponse:GetTable() end
 --- Sets the response body and content type.
 ---
 ---@param content string The response body.
----@param content_type? string The `Content-Type`. Defaults to `"text/plain"`.
+---@param content_type string? The `Content-Type`. Defaults to `"text/plain"`.
 function HttpResponse:SetContent( content, content_type ) end
 
 --- [SERVER]
@@ -528,7 +528,7 @@ function HttpResponse:SetContent( content, content_type ) end
 --- Sets a redirect response.
 ---
 ---@param url string The redirect target URL.
----@param code? integer The redirect status code. Defaults to `302`.
+---@param code integer? The redirect status code. Defaults to `302`.
 function HttpResponse:SetRedirect( url, code ) end
 
 --- [SERVER]

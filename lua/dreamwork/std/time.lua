@@ -116,10 +116,10 @@ do
     --- Transforms a timestamp from one unit to another.
     ---
     ---@param timestamp number The timestamp to transform.
-    ---@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, 's' by default.
-    ---@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, 's' by default.
-    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
-    ---@param error_level? integer The error level to use, 2 by default.
+    ---@param unit dreamwork.std.time.Unit? The unit to transform the timestamp from, 's' by default.
+    ---@param target dreamwork.std.time.Unit? The unit to transform the timestamp to, 's' by default.
+    ---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
+    ---@param error_level integer? The error level to use, 2 by default.
     ---@return number timestamp The transformed timestamp.
     function transform( timestamp, unit, target, as_float, error_level )
         if unit == nil then
@@ -172,9 +172,9 @@ end
 --- precise to `~256ns`, and the same moment in float seconds to `~240ns`.
 ---
 ---@param timestamp number The timestamp to transform.
----@param unit? dreamwork.std.time.Unit The unit to transform the timestamp from, 's' by default.
----@param target? dreamwork.std.time.Unit The unit to transform the timestamp to, 's' by default.
----@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+---@param unit dreamwork.std.time.Unit? The unit to transform the timestamp from, 's' by default.
+---@param target dreamwork.std.time.Unit? The unit to transform the timestamp to, 's' by default.
+---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
 ---@return number timestamp The transformed timestamp.
 ---@nodiscard
 function time.transform( timestamp, unit, target, as_float )
@@ -186,8 +186,8 @@ end
 --- Seconds are floored, so the remainder is always positive (`-1.5s` is `-2s` and `500ms`).
 ---
 ---@param timestamp number
----@param unit? dreamwork.std.time.Unit
----@param error_level? integer
+---@param unit dreamwork.std.time.Unit?
+---@param error_level integer?
 ---@return integer seconds
 ---@return integer nanoseconds The sub-second remainder in nanoseconds. [0, 999999999]
 local function split( timestamp, unit, error_level )
@@ -373,7 +373,7 @@ end
 ---
 --- Follows the host's timezone including its DST rules, or `time.zone` as a fixed offset if it was changed.
 ---
----@param timestamp? number The Unix timestamp in seconds, current time by default.
+---@param timestamp number? The Unix timestamp in seconds, current time by default.
 ---@return integer offset The UTC offset in seconds, e.g. `7200` for `+02:00`.
 ---@nodiscard
 function time.offset( timestamp )
@@ -442,8 +442,8 @@ end )
 ---
 --- Returns the time elapsed since lua/game was started.
 ---
----@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, 's' by default.
----@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
+---@param unit dreamwork.std.time.Unit? The unit to return the elapsed time in, 's' by default.
+---@param as_float boolean? Whether to return the elapsed time as a float, `true` by default.
 ---@return number timestamp The elapsed time in the specified unit.
 ---@nodiscard
 function time.elapsed( unit, as_float )
@@ -489,8 +489,8 @@ do
     ---
     --- Returns the time elapsed since the last call to this function (or since the library was loaded).
     ---
-    ---@param unit? dreamwork.std.time.Unit The unit to return the elapsed time in, 's' by default.
-    ---@param as_float? boolean Whether to return the elapsed time as a float, `true` by default.
+    ---@param unit dreamwork.std.time.Unit? The unit to return the elapsed time in, 's' by default.
+    ---@param as_float boolean? Whether to return the elapsed time as a float, `true` by default.
     ---@return number delta The elapsed time in the specified unit.
     function time.tick( unit, as_float )
         local elapsed = dreamwork_getUpTime()
@@ -507,8 +507,8 @@ end
 ---
 --- Returns the current Unix timestamp (UTC) in the specified unit.
 ---
----@param unit? dreamwork.std.time.Unit The unit to return the current time in, `s` by default.
----@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+---@param unit dreamwork.std.time.Unit? The unit to return the current time in, `s` by default.
+---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
 ---@return integer | number timestamp The current timestamp in the specified unit.
 ---@nodiscard
 local function now( unit, as_float )
@@ -548,9 +548,9 @@ end
 ---
 --- See [howardhinnant date algorithms](http://howardhinnant.github.io/date_algorithms.html#days_from_civil) and  [socantre lua port](https://gist.github.com/socantre/c9dfcc5bd106a601d395).
 ---
----@param year? integer The calendar year. Defaults to the current local year.
----@param month? integer The calendar month (`1`-`12`). Defaults to the current local month.
----@param day? integer The calendar day of the month. Defaults to the current local day.
+---@param year integer? The calendar year. Defaults to the current local year.
+---@param month integer? The calendar month (`1`-`12`). Defaults to the current local month.
+---@param day integer? The calendar day of the month. Defaults to the current local day.
 ---@return integer days The number of days since the Unix epoch (`1970-01-01`).
 ---@nodiscard
 function time.daysFromCivil( year, month, day )
@@ -582,7 +582,7 @@ end
 --- Based on Howard Hinnant's "civil_from_days" algorithm, the counterpart to
 --- `daysFromCivil`'s "days_from_civil".
 ---
----@param days? integer The number of days since the Unix epoch. If omitted, the current local date is returned.
+---@param days integer? The number of days since the Unix epoch. If omitted, the current local date is returned.
 ---@return integer year The calendar year.
 ---@return integer month The calendar month (`1`-`12`).
 ---@return integer day The calendar day of the month.
@@ -600,7 +600,7 @@ end
 --- Checks if a year is a leap year, following the Gregorian rule: divisible by `4`, except
 --- century years (divisible by `100`), unless also divisible by `400`.
 ---
----@param year? integer The year to check, the current local year by default.
+---@param year integer? The year to check, the current local year by default.
 ---@return boolean is_leap_year Returns `true` if the year is a leap year, otherwise `false`.
 ---@nodiscard
 local function isLeapYear( year )
@@ -625,8 +625,8 @@ local common_year_month_days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 
 --- `month` is wrapped into the valid `[1, 12]` range via modulo before use, so out-of-range
 --- values (e.g. `13` or `0`) are normalized rather than erroring.
 ---
----@param month? integer The month to get the number of days in (`1`–`12`), the current month by default.
----@param year? integer The year to get the number of days in, the current year by default.
+---@param month integer? The month to get the number of days in (`1`–`12`), the current month by default.
+---@param year integer? The year to get the number of days in, the current year by default.
 ---@return integer days_in_month The number of days in the month.
 ---@nodiscard
 local function daysInMonth( month, year )
@@ -657,7 +657,7 @@ time.daysInMonth = daysInMonth
 ---
 --- Returns the number of days in a given year, accounting for leap years.
 ---
----@param year? integer The year to get the number of days in, the current year by default.
+---@param year integer? The year to get the number of days in, the current year by default.
 ---@return integer days_in_year The number of days in the year, `365` or `366`.
 ---@nodiscard
 function time.daysInYear( year )
@@ -669,9 +669,9 @@ end
 --- Returns the ordinal day of the year for a given civil (Gregorian) date, where
 --- `January 1st` is `1`.
 ---
----@param year? integer The calendar year, the current year by default.
----@param month? integer The calendar month (`1`-`12`), the current month by default.
----@param day? integer The calendar day of the month, the current day by default.
+---@param year integer? The calendar year, the current year by default.
+---@param month integer? The calendar month (`1`-`12`), the current month by default.
+---@param day integer? The calendar day of the month, the current day by default.
 ---@return integer day_of_year The day of the year (`1`-`366`).
 ---@nodiscard
 function time.dayOfYear( year, month, day )
@@ -716,9 +716,9 @@ end
 ---
 --- Shortcut for `time.weekdayFromDays( time.daysFromCivil( year, month, day ) )`.
 ---
----@param year? integer The calendar year, the current year by default.
----@param month? integer The calendar month (`1`-`12`), the current month by default.
----@param day? integer The calendar day of the month, the current day by default.
+---@param year integer? The calendar year, the current year by default.
+---@param month integer? The calendar month (`1`-`12`), the current month by default.
+---@param day integer? The calendar day of the month, the current day by default.
 ---@return integer weekday The `0`-based weekday index (`0` = Sunday, `6` = Saturday) for that date.
 ---@nodiscard
 function time.weekdayFromCivil( year, month, day )
@@ -786,8 +786,8 @@ end
 ---
 ---@param weekday integer The `0`-based weekday index (`0` = Sunday, `6` = Saturday) to look for.
 ---@param index integer The `1`-based occurrence of `weekday` within the month (`1`-`5`), or a negative index counting from the end of the month (`-1`-`-5`).
----@param month? integer The month to search in (`1`–`12`), the current month by default.
----@param year? integer The year to search in, the current year by default.
+---@param month integer? The month to search in (`1`–`12`), the current month by default.
+---@param year integer? The year to search in, the current year by default.
 ---@return integer | nil day The day of the month (`1`-`31`) of the `index`-th occurrence of `weekday`, or `nil` if the month has no such occurrence.
 ---@return integer | nil days The same date as a day count relative to the Unix epoch, as produced by `time.daysFromCivil`, or `nil` if the month has no such occurrence.
 ---@nodiscard
@@ -848,8 +848,8 @@ end
 --- See [howardhinnant date](https://howardhinnant.github.io/date/date.html#year_month_weekday_last).
 ---
 ---@param weekday integer The `0`-based weekday index (`0` = Sunday, `6` = Saturday) to look for.
----@param month? integer The month to search in (`1`–`12`), the current month by default.
----@param year? integer The year to search in, the current year by default.
+---@param month integer? The month to search in (`1`–`12`), the current month by default.
+---@param year integer? The year to search in, the current year by default.
 ---@return integer day The day of the month (`22`-`31`) of the last occurrence of `weekday`.
 ---@return integer days The same date as a day count relative to the Unix epoch, as produced by `time.daysFromCivil`.
 ---@nodiscard
@@ -887,9 +887,9 @@ end
 ---
 --- See [ISO week date](https://en.wikipedia.org/wiki/ISO_week_date).
 ---
----@param year? integer The calendar year, the current year by default.
----@param month? integer The calendar month (`1`-`12`), the current month by default.
----@param day? integer The calendar day of the month, the current day by default.
+---@param year integer? The calendar year, the current year by default.
+---@param month integer? The calendar month (`1`-`12`), the current month by default.
+---@param day integer? The calendar day of the month, the current day by default.
 ---@return integer iso_year The ISO week-numbering year, which may differ from `year` by one near year boundaries.
 ---@return integer week The ISO week number (`1`-`53`).
 ---@return integer iso_weekday The ISO weekday (`1` = Monday, `7` = Sunday).
@@ -914,7 +914,7 @@ end
 --- A year has `53` ISO weeks if it starts on a Thursday, or if it is a leap year that starts
 --- on a Wednesday; otherwise it has `52`.
 ---
----@param year? integer The ISO week-numbering year, the current year by default.
+---@param year integer? The ISO week-numbering year, the current year by default.
 ---@return integer weeks The number of ISO weeks in the year, `52` or `53`.
 ---@nodiscard
 function time.isoWeeksInYear( year )
@@ -938,12 +938,12 @@ end
 --- timezone or DST settings, and works for any year, including those before `1970`.
 --- The date and time are treated as UTC; subtract `time.offset()` to convert from local time.
 ---
----@param year? integer The calendar year, the current year by default.
----@param month? integer The calendar month (`1`-`12`), the current month by default.
----@param day? integer The calendar day of the month, the current day by default.
----@param hour? integer The hour (`0`-`23`), `0` by default.
----@param minute? integer The minute (`0`-`59`), `0` by default.
----@param second? number The second (`0`-`59`), `0` by default; may be fractional.
+---@param year integer? The calendar year, the current year by default.
+---@param month integer? The calendar month (`1`-`12`), the current month by default.
+---@param day integer? The calendar day of the month, the current day by default.
+---@param hour integer? The hour (`0`-`23`), `0` by default.
+---@param minute integer? The minute (`0`-`59`), `0` by default.
+---@param second number? The second (`0`-`59`), `0` by default; may be fractional.
 ---@return number timestamp The Unix timestamp in seconds.
 ---@nodiscard
 function time.timestampFromCivil( year, month, day, hour, minute, second )
@@ -958,7 +958,7 @@ end
 --- Like `time.timestampFromCivil`, this is pure arithmetic and is not affected by the host's
 --- local timezone; the result is in UTC, add `time.offset( timestamp )` to get local time.
 ---
----@param timestamp? number The Unix timestamp in seconds, current time by default.
+---@param timestamp number? The Unix timestamp in seconds, current time by default.
 ---@return integer year The calendar year.
 ---@return integer month The calendar month (`1`-`12`).
 ---@return integer day The calendar day of the month.
@@ -1005,8 +1005,8 @@ end
 --- | `y`      | Year         | 365 days                    |
 ---
 ---@param duration_str dreamwork.std.time.DurationString The duration string to convert.
----@param unit? dreamwork.std.time.Unit The unit to convert the duration to, 's' by default.
----@param as_float? boolean Whether to return the duration as a float, `false` by default.
+---@param unit dreamwork.std.time.Unit? The unit to convert the duration to, 's' by default.
+---@param as_float boolean? Whether to return the duration as a float, `false` by default.
 ---@return integer timestamp The duration in the specified unit.
 ---@nodiscard
 local function fromDuration( duration_str, unit, as_float )
@@ -1092,7 +1092,7 @@ do
     --- | `y`      | Year         | 365 days                      |
     ---
     ---@param timestamp integer The timestamp to convert.
-    ---@param unit? dreamwork.std.time.Unit The unit to convert the timestamp to, 's' by default.
+    ---@param unit dreamwork.std.time.Unit? The unit to convert the timestamp to, 's' by default.
     ---@return string duration_str The duration string.
     ---@nodiscard
     function time.toDuration( timestamp, unit )
@@ -1190,9 +1190,9 @@ end
 ---
 --- Returns a table with the date and time components.
 ---
----@param timestamp? number The timestamp to parse, current time by default.
----@param unit? dreamwork.std.time.Unit The unit to parse the timestamp from, 's' by default.
----@param in_utc? boolean Whether to return the date in UTC instead of local time, `false` by default.
+---@param timestamp number? The timestamp to parse, current time by default.
+---@param unit dreamwork.std.time.Unit? The unit to parse the timestamp from, 's' by default.
+---@param in_utc boolean? Whether to return the date in UTC instead of local time, `false` by default.
 ---@return dreamwork.std.time.DateInfo date_info The date and time components.
 ---@nodiscard
 function time.parse( timestamp, unit, in_utc )
@@ -1358,10 +1358,10 @@ do
     --- | `mo`     | Month        | 1 calendar month            |
     --- | `y`      | Year         | 1 calendar year             |
     ---
-    ---@param timestamp? number The timestamp to add the duration to, current time by default.
-    ---@param unit? dreamwork.std.time.Unit The unit of the timestamp, 's' by default.
+    ---@param timestamp number? The timestamp to add the duration to, current time by default.
+    ---@param unit dreamwork.std.time.Unit? The unit of the timestamp, 's' by default.
     ---@param duration_str dreamwork.std.time.DurationString The duration string to add.
-    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+    ---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
     ---@return number new_timestamp
     ---@nodiscard
     function time.add( timestamp, unit, duration_str, as_float )
@@ -1391,10 +1391,10 @@ do
     --- | `mo`     | Month        | 1 calendar month            |
     --- | `y`      | Year         | 1 calendar year             |
     ---
-    ---@param timestamp? number The timestamp to subtract the duration from, current time by default.
-    ---@param unit? dreamwork.std.time.Unit The unit of the timestamp, 's' by default.
+    ---@param timestamp number? The timestamp to subtract the duration from, current time by default.
+    ---@param unit dreamwork.std.time.Unit? The unit of the timestamp, 's' by default.
     ---@param duration_str dreamwork.std.time.DurationString The duration string to subtract.
-    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+    ---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
     ---@return number new_timestamp
     ---@nodiscard
     function time.sub( timestamp, unit, duration_str, as_float )
@@ -1533,9 +1533,9 @@ do
     --- | `{timezone}`            | Timezone offset, `+0000` in UTC                        | `-0300`                    |
     ---
     ---@param fmt string The format string.
-    ---@param timestamp? integer The timestamp to format.
-    ---@param unit? dreamwork.std.time.Unit The timestamp unit, 's' by default.
-    ---@param in_utc? boolean Use UTC instead of local timezone, `false` by default.
+    ---@param timestamp integer? The timestamp to format.
+    ---@param unit dreamwork.std.time.Unit? The timestamp unit, 's' by default.
+    ---@param in_utc boolean? Use UTC instead of local timezone, `false` by default.
     ---@return string str The formatted string.
     ---@nodiscard
     function time.format( fmt, timestamp, unit, in_utc )
@@ -1559,9 +1559,9 @@ do
     --- This is the format used by email headers ( `Date:` ) and HTTP's obsolete `rfc1123-date`,
     --- and is also what JavaScript's `Date.prototype.toString()` timezone-less variants are based on.
     ---
-    ---@param timestamp? integer The timestamp to convert, current time by default.
-    ---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
-    ---@param in_utc? boolean Whether to format the string in UTC, `false` by default.
+    ---@param timestamp integer? The timestamp to convert, current time by default.
+    ---@param unit dreamwork.std.time.Unit? The unit of `timestamp`, `s` by default.
+    ---@param in_utc boolean? Whether to format the string in UTC, `false` by default.
     ---@return string str The RFC 2822 date-time string.
     ---@nodiscard
     function time.toRFC2822( timestamp, unit, in_utc )
@@ -1637,9 +1637,9 @@ do
     --- The output is compatible with JavaScript's `Date.prototype.toISOString()` /
     --- `JSON.stringify( new Date() )`, and can be parsed back with `time.fromISOString`.
     ---
-    ---@param timestamp? integer The timestamp to convert, current time by default.
-    ---@param unit? dreamwork.std.time.Unit The unit of `timestamp`, `s` by default.
-    ---@param in_utc? boolean Whether to format the string in UTC ( with a `Z` suffix ), `false` by default.
+    ---@param timestamp integer? The timestamp to convert, current time by default.
+    ---@param unit dreamwork.std.time.Unit? The unit of `timestamp`, `s` by default.
+    ---@param in_utc boolean? Whether to format the string in UTC ( with a `Z` suffix ), `false` by default.
     ---@return string str The JS-like date-time string.
     ---@nodiscard
     function time.toISOString( timestamp, unit, in_utc )
@@ -1701,8 +1701,8 @@ do
     --- the precision of `unit` are truncated.
     ---
     ---@param str string The JS-like date-time string to parse.
-    ---@param unit? dreamwork.std.time.Unit The unit to return the timestamp in, `s` by default.
-    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+    ---@param unit dreamwork.std.time.Unit? The unit to return the timestamp in, `s` by default.
+    ---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
     ---@return number timestamp The unix timestamp in the specified unit.
     ---@nodiscard
     function time.fromISOString( str, unit, as_float )
@@ -1843,8 +1843,8 @@ do
     --- treated as UTC, per RFC 2822's handling of the obsolete military zones.
     ---
     ---@param str string The RFC 2822 date-time string to parse.
-    ---@param unit? dreamwork.std.time.Unit The unit to return the timestamp in, `s` by default.
-    ---@param as_float? boolean Whether to return the timestamp as a float, `false` by default.
+    ---@param unit dreamwork.std.time.Unit? The unit to return the timestamp in, `s` by default.
+    ---@param as_float boolean? Whether to return the timestamp as a float, `false` by default.
     ---@return number timestamp The unix timestamp in the specified unit.
     ---@nodiscard
     function time.fromRFC2822( str, unit, as_float )

@@ -79,7 +79,7 @@ local BinaryWriter = class.base( "BinaryWriter", false, nil )
 ---
 ---@class dreamwork.std.BinaryWriterClass : dreamwork.std.BinaryWriter, dreamwork.std.Class
 ---@field __base dreamwork.std.BinaryWriter
----@overload fun( data?: any ): dreamwork.std.BinaryWriter
+---@overload fun( data: any? ): dreamwork.std.BinaryWriter
 local BinaryWriterClass = class.create( BinaryWriter )
 std.BinaryWriter = BinaryWriterClass
 
@@ -250,7 +250,7 @@ local function moveCursor( writer, position )
     writer.position = position
 end
 
----@param data? any
+---@param data any?
 ---@protected
 function BinaryWriter:__init( data )
     if data == nil then
@@ -303,8 +303,8 @@ end
 ---
 --- Positions after the end grow the data (zero-filled), negative positions count back from the end.
 ---
----@param position? integer The new position, `0` by default.
----@param as_bytes? boolean `true` if `position` is in bytes, `false` (bits) by default.
+---@param position integer? The new position, `0` by default.
+---@param as_bytes boolean? `true` if `position` is in bytes, `false` (bits) by default.
 ---@return integer position The new position in bits.
 function BinaryWriter:seek( position, as_bytes )
     if position == nil then
@@ -329,7 +329,7 @@ end
 ---
 --- Returns the cursor position.
 ---
----@param as_bytes? boolean `true` to return the number of whole bytes before the cursor, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the number of whole bytes before the cursor, `false` (bits) by default.
 ---@return integer position The cursor position.
 ---@nodiscard
 function BinaryWriter:tell( as_bytes )
@@ -344,7 +344,7 @@ end
 ---
 --- Returns the size of the data.
 ---
----@param as_bytes? boolean `true` to return the size of the compiled string in bytes, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the size of the compiled string in bytes, `false` (bits) by default.
 ---@return integer size The size of the data.
 ---@nodiscard
 function BinaryWriter:size( as_bytes )
@@ -370,8 +370,8 @@ end
 --- writer:seek( end_position )
 --- ```
 ---
----@param length? integer The distance to move, negative to move back, `1` by default.
----@param as_bytes? boolean `true` if `length` is in bytes, `false` (bits) by default.
+---@param length integer? The distance to move, negative to move back, `1` by default.
+---@param as_bytes boolean? `true` if `length` is in bytes, `false` (bits) by default.
 ---@return integer position The new position in bits.
 function BinaryWriter:skip( length, as_bytes )
     if length == nil then
@@ -393,7 +393,7 @@ end
 ---
 --- Moves the cursor forward to the next multiple of `bit_boundary`, padding with `0` bits.
 ---
----@param bit_boundary? integer The boundary in bits, `8` (byte) by default.
+---@param bit_boundary integer? The boundary in bits, `8` (byte) by default.
 ---@return integer position The new position in bits.
 function BinaryWriter:align( bit_boundary )
     local position = self.position
@@ -412,7 +412,7 @@ end
 ---
 --- Checks if the cursor is at a multiple of `bit_boundary`.
 ---
----@param bit_boundary? integer The boundary in bits, `8` (byte) by default.
+---@param bit_boundary integer? The boundary in bits, `8` (byte) by default.
 ---@return boolean is_aligned `true` if the cursor is aligned.
 ---@nodiscard
 function BinaryWriter:isAligned( bit_boundary )
@@ -433,7 +433,7 @@ end
 ---
 --- Returns the size of the data after the cursor, that the next writes overwrite.
 ---
----@param as_bytes? boolean `true` to return the number of whole bytes, `false` (bits) by default.
+---@param as_bytes boolean? `true` to return the number of whole bytes, `false` (bits) by default.
 ---@return integer remaining The size of the data after the cursor.
 ---@nodiscard
 function BinaryWriter:remaining( as_bytes )
@@ -582,7 +582,7 @@ end
 ---@param writer dreamwork.std.BinaryWriter
 ---@param value integer
 ---@param bit_count integer
----@param is_little_endian? boolean
+---@param is_little_endian boolean?
 ---@param stack_level integer
 local function writeInteger( writer, value, bit_count, is_little_endian, stack_level )
     if bit_count > 64 then
@@ -711,7 +711,7 @@ end
 ---
 ---@param value integer The unsigned integer, only the lowest `bit_count` bits are written.
 ---@param bit_count integer The size of the integer in bits (`1` - `64`), `0` writes nothing.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 function BinaryWriter:writeUInt( value, bit_count, is_little_endian )
     writeInteger( self, value, bit_count, is_little_endian, 2 )
 end
@@ -764,7 +764,7 @@ end
 ---
 ---@param value integer The signed integer, only the lowest `bit_count` bits are written.
 ---@param bit_count integer The size of the integer in bits (`1` - `64`), `0` writes nothing.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 function BinaryWriter:writeInt( value, bit_count, is_little_endian )
     writeInteger( self, value, bit_count, is_little_endian, 2 )
 end
@@ -937,7 +937,7 @@ end
 ---
 ---@param data string The string.
 ---@param bit_count integer The size of the length in bits (`1` - `64`).
----@param is_little_endian? boolean `true` to write the length as little endian, `false` by default.
+---@param is_little_endian boolean? `true` to write the length as little endian, `false` by default.
 ---@return integer byte_count The size of the string in bytes.
 function BinaryWriter:writeCountedString( data, bit_count, is_little_endian )
     local data_length = string_len( data )
@@ -972,7 +972,7 @@ end
 ---@param value number The unsigned fixed-point number.
 ---@param m integer The number of integer bits.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 function BinaryWriter:writeUnsignedFixedPoint( value, m, n, is_little_endian )
     writeInteger( self, math_floor( math_ldexp( value, n ) + 0.5 ), m + n, is_little_endian, 2 )
 end
@@ -998,7 +998,7 @@ end
 ---@param value number The signed fixed-point number.
 ---@param m integer The number of integer bits, including the sign bit.
 ---@param n integer The number of fractional bits.
----@param is_little_endian? boolean `true` for little endian, `false` by default.
+---@param is_little_endian boolean? `true` for little endian, `false` by default.
 function BinaryWriter:writeFixedPoint( value, m, n, is_little_endian )
     writeInteger( self, math_floor( math_ldexp( value, n ) + 0.5 ), m + n, is_little_endian, 2 )
 end
@@ -1075,7 +1075,7 @@ do
     --- Range: `1.1754944e-38` - `3.4028235e38` (normal), integers are exact up to `16777216`.
     ---
     ---@param value number The float, precision is reduced to float.
-    ---@param is_little_endian? boolean `true` for little endian (as `net.WriteFloat`), `false` by default.
+    ---@param is_little_endian boolean? `true` for little endian (as `net.WriteFloat`), `false` by default.
     function BinaryWriter:writeFloat( value, is_little_endian )
         write4( self, (is_little_endian and bytepack_writeFloatLE or bytepack_writeFloatBE)( value ) )
     end
@@ -1101,7 +1101,7 @@ do
     --- Range: `2.2250738585072014e-308` - `1.7976931348623157e308` (normal), Lua numbers are doubles, so nothing is lost.
     ---
     ---@param value number The double.
-    ---@param is_little_endian? boolean `true` for little endian (as `net.WriteDouble`), `false` by default.
+    ---@param is_little_endian boolean? `true` for little endian (as `net.WriteDouble`), `false` by default.
     function BinaryWriter:writeDouble( value, is_little_endian )
         write8( self, (is_little_endian and bytepack_writeDoubleLE or bytepack_writeDoubleBE)( value ) )
     end
@@ -1123,10 +1123,10 @@ do
     --- | 10 - 5  | minutes     | `0` - `59`                      |
     --- | 4 - 0   | seconds / 2 | `0` - `29` (`0` - `58` seconds) |
     ---
-    ---@param hours? integer The number of hours.
-    ---@param minutes? integer The number of minutes.
-    ---@param seconds? integer The number of seconds, rounded down to even.
-    ---@param is_little_endian? boolean `true` for little endian, `false` by default.
+    ---@param hours integer? The number of hours.
+    ---@param minutes integer? The number of minutes.
+    ---@param seconds integer? The number of seconds, rounded down to even.
+    ---@param is_little_endian boolean? `true` for little endian, `false` by default.
     function BinaryWriter:writeTime( hours, minutes, seconds, is_little_endian )
         writeInteger( self, bytepack_writeTime( hours, minutes, seconds ), 16, is_little_endian, 2 )
     end
@@ -1148,10 +1148,10 @@ do
     --- | 8 - 5  | month       | `1` - `12`                    |
     --- | 4 - 0  | day         | `1` - `31`                    |
     ---
-    ---@param day? integer The day.
-    ---@param month? integer The month.
-    ---@param year? integer The year (`1980` - `2107`).
-    ---@param is_little_endian? boolean `true` for little endian, `false` by default.
+    ---@param day integer? The day.
+    ---@param month integer? The month.
+    ---@param year integer? The year (`1980` - `2107`).
+    ---@param is_little_endian boolean? `true` for little endian, `false` by default.
     function BinaryWriter:writeDate( day, month, year, is_little_endian )
         writeInteger( self, bytepack_writeDate( day, month, year ), 16, is_little_endian, 2 )
     end

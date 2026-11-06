@@ -1151,7 +1151,7 @@ end
 ---@param vfs_path string
 ---@param data string
 ---@param append_mode boolean
----@param async? boolean `true` to write with gm_asyncio where possible, must be called from a coroutine then.
+---@param async boolean? `true` to write with gm_asyncio where possible, must be called from a coroutine then.
 ---@return boolean success
 ---@return string | nil message
 local function write_file( vfs_path, data, append_mode, async )
@@ -1863,7 +1863,7 @@ do
     --- ```
     ---
     ---@param path_to string The path to the file or directory.
-    ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+    ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
     function vfs.watch( path_to, stack_level )
         local vfs_path = path_resolve( path_to, (stack_level or 1) + 1 )
 
@@ -1895,7 +1895,7 @@ do
     --- Stops watching a file or directory, fails if it is not watched.
     ---
     ---@param path_to string The path to the file or directory.
-    ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+    ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
     function vfs.unwatch( path_to, stack_level )
         stack_level = (stack_level or 1) + 1
 
@@ -1922,7 +1922,7 @@ do
     --- Checks if changes of a file or directory are reported, by watching it or its parent directory.
     ---
     ---@param path_to string The path to the file or directory.
-    ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+    ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
     ---@return boolean is_watched `true` if the path is watched, `false` otherwise.
     ---@nodiscard
     function vfs.isWatched( path_to, stack_level )
@@ -1940,7 +1940,7 @@ do
     --- Returns the number of `vfs.watch` calls without `vfs.unwatch` for a file or directory, watches of its parent directory are not counted.
     ---
     ---@param path_to string The path to the file or directory.
-    ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+    ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
     ---@return integer count The number of watches, `0` if the path is not watched.
     ---@nodiscard
     function vfs.getWatchCount( path_to, stack_level )
@@ -1974,10 +1974,10 @@ do
         ---
         ---@param mount_path string The absolute virtual path of the mount.
         ---@param search_path string The [search path](https://wiki.facepunch.com/gmod/File_Search_Paths), e.g. `MOD`, `DATA`, `hl2` or an addon title.
-        ---@param search_directory? string The directory inside of the search path, its root by default.
-        ---@param writable? boolean If `true`, files and directories can be created and written, defaults depend on the search path. Writing anywhere except `DATA` requires HolyLib.
-        ---@param deletable? boolean If `true`, files and directories can be deleted, defaults depend on the search path.
-        ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+        ---@param search_directory string? The directory inside of the search path, its root by default.
+        ---@param writable boolean? If `true`, files and directories can be created and written, defaults depend on the search path. Writing anywhere except `DATA` requires HolyLib.
+        ---@param deletable boolean? If `true`, files and directories can be deleted, defaults depend on the search path.
+        ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
         function vfs.mount( mount_path, search_path, search_directory, writable, deletable, stack_level )
             stack_level = (stack_level or 1) + 1
 
@@ -2073,7 +2073,7 @@ do
     --- Fails if nothing is mounted at the path.
     ---
     ---@param mount_path string The absolute virtual path of the mount.
-    ---@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+    ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
     function vfs.unmount( mount_path, stack_level )
         stack_level = (stack_level or 1) + 1
 
@@ -2134,7 +2134,7 @@ end
 --- Lists the directory, mount roots and virtual directories shadow the search path.
 ---
 ---@param directory dreamwork.vfs.Node
----@param pattern? string Lua pattern names must match, `nil` lists everything.
+---@param pattern string? Lua pattern names must match, `nil` lists everything.
 ---@return string[] names
 ---@return boolean[] directories
 ---@return integer count
@@ -2420,7 +2420,7 @@ end
 --- Reads the whole file.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return string data The file data.
 ---@nodiscard
 function vfs.readFile( file_path, stack_level )
@@ -2447,7 +2447,7 @@ end
 --- Falls back to a synchronous read where the engine has no asynchronous reading.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return string data The file data.
 ---@nodiscard
 ---@async
@@ -2474,7 +2474,7 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The new data.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.writeFile( file_path, data, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2490,7 +2490,7 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.appendFile( file_path, data, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2508,7 +2508,7 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The new data.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.writeFileAsync( file_path, data, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2527,7 +2527,7 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.appendFileAsync( file_path, data, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2543,7 +2543,7 @@ end
 --- Creates an empty file with missing directories, fails if the path already exists.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.createFile( file_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2564,7 +2564,7 @@ end
 --- Like Linux `touch`: creates an empty file with missing directories, or updates the modification time of an existing one keeping its content.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.touchFile( file_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2595,7 +2595,7 @@ end
 --- Deletes the file.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.deleteFile( file_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2616,7 +2616,7 @@ end
 --- Creates a directory with missing parent directories, an existing directory is kept as is, fails if the path is a file.
 ---
 ---@param directory_path string The path to the directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.createDirectory( directory_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2631,7 +2631,7 @@ end
 --- Like Linux `touch`: creates a directory with missing parent directories, or updates the modification time of an existing one.
 ---
 ---@param directory_path string The path to the directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.touchDirectory( directory_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2658,8 +2658,8 @@ end
 --- Deletes the directory.
 ---
 ---@param directory_path string The path to the directory.
----@param recursive? boolean If `true`, the directory is deleted with everything in it, otherwise it must be empty.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param recursive boolean? If `true`, the directory is deleted with everything in it, otherwise it must be empty.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.deleteDirectory( directory_path, recursive, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2681,8 +2681,8 @@ end
 ---
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.copyFile( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2700,8 +2700,8 @@ end
 ---
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.copyFileAsync( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2720,8 +2720,8 @@ end
 ---
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.moveFile( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2741,8 +2741,8 @@ end
 ---
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.moveFileAsync( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2761,8 +2761,8 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param name string The new name of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.renameFile( file_path, name, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2790,8 +2790,8 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param name string The new name of the file.
----@param overwrite? boolean If `true`, the existing file is replaced, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.renameFileAsync( file_path, name, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2818,8 +2818,8 @@ end
 ---
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.copyDirectory( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2839,8 +2839,8 @@ end
 ---
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.copyDirectoryAsync( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2861,8 +2861,8 @@ end
 ---
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.moveDirectory( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2884,8 +2884,8 @@ end
 ---
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.moveDirectoryAsync( source_path, target_path, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2904,8 +2904,8 @@ end
 ---
 ---@param directory_path string The path to the directory.
 ---@param name string The new name of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 function vfs.renameDirectory( directory_path, name, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
 
@@ -2933,8 +2933,8 @@ end
 ---
 ---@param directory_path string The path to the directory.
 ---@param name string The new name of the directory.
----@param overwrite? boolean If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
 function vfs.renameDirectoryAsync( directory_path, name, overwrite, stack_level )
     stack_level = (stack_level or 1) + 1
@@ -2958,7 +2958,7 @@ end
 --- Checks if a file or directory exists.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return boolean exists `true` if the file or directory exists, `false` otherwise.
 ---@return boolean is_directory `true` if it is a directory, `false` otherwise.
 ---@nodiscard
@@ -2976,7 +2976,7 @@ end
 --- Checks if a file exists.
 ---
 ---@param file_path string The path to the file.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return boolean is_file `true` if the file exists, `false` otherwise.
 ---@nodiscard
 function vfs.isFile( file_path, stack_level )
@@ -2989,7 +2989,7 @@ end
 --- Checks if a directory exists.
 ---
 ---@param directory_path string The path to the directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return boolean is_directory `true` if the directory exists, `false` otherwise.
 ---@nodiscard
 function vfs.isDirectory( directory_path, stack_level )
@@ -3002,7 +3002,7 @@ end
 --- Checks if a file can be written, or files and directories can be created inside of a directory.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return boolean is_writable `true` if writing is allowed, `false` otherwise or if the path does not exist.
 ---@nodiscard
 function vfs.isWritable( path_to, stack_level )
@@ -3015,7 +3015,7 @@ end
 --- Checks if a file can be opened for reading, or a directory exists.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return boolean is_readable `true` if reading is allowed, `false` otherwise or if the path does not exist.
 ---@nodiscard
 function vfs.isReadable( path_to, stack_level )
@@ -3049,7 +3049,7 @@ end
 --- ```
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return dreamwork.vfs.Info | nil info The information, `nil` if the path does not exist.
 ---@nodiscard
 function vfs.getInfo( path_to, stack_level )
@@ -3089,7 +3089,7 @@ end
 --- Without HolyLib the last modification time is returned.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return integer unix_time The last access time, `0` if the path does not exist.
 ---@nodiscard
 function vfs.getTimeAccessed( path_to, stack_level )
@@ -3108,7 +3108,7 @@ end
 --- Without HolyLib the last modification time is returned.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return integer unix_time The creation time, `0` if the path does not exist.
 ---@nodiscard
 function vfs.getTimeCreated( path_to, stack_level )
@@ -3125,7 +3125,7 @@ end
 --- Returns the last modification time of a file or directory.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return integer unix_time The last modification time, `0` if the path does not exist.
 ---@nodiscard
 function vfs.getTimeModified( path_to, stack_level )
@@ -3144,7 +3144,7 @@ end
 --- Directories are walked recursively, large trees can take a while.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, relative paths are resolved against its file.
 ---@return integer size The size in bytes, `0` if the path does not exist.
 ---@nodiscard
 function vfs.size( path_to, stack_level )
@@ -3161,7 +3161,7 @@ end
 --- Checks if a file has no data, or a directory has nothing inside, fails if the path does not exist.
 ---
 ---@param path_to string The path to the file or directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return boolean is_empty `true` if the file size is `0` or the directory has no files and directories, `false` otherwise.
 ---@nodiscard
 function vfs.isEmpty( path_to, stack_level )
@@ -3193,8 +3193,8 @@ end
 --- ```
 ---
 ---@param directory_path string The path to the directory.
----@param wildcard? string The wildcard names must match, see `path.wildcard`, `*` by default.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param wildcard string? The wildcard names must match, see `path.wildcard`, `*` by default.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return string[] files The names of the found files.
 ---@return integer file_count The number of the found files.
 ---@return string[] directories The names of the found directories.
@@ -3256,7 +3256,7 @@ end
 --- ```
 ---
 ---@param directory_path string The path to the directory.
----@param stack_level? integer The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
+---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return fun(): string | nil, boolean | nil iterator The iterator that returns the absolute virtual path and `true` for directories.
 ---@nodiscard
 function vfs.foreach( directory_path, stack_level )

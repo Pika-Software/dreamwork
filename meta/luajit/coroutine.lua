@@ -45,7 +45,7 @@ function coroutine.close(co) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-coroutine.resume)
 ---
 ---@param co    thread
----@param val1? any
+---@param val1 any?
 ---@return boolean success
 ---@return any ...
 function coroutine.resume(co, val1, ...) end

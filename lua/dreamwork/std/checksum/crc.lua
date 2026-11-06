@@ -284,11 +284,11 @@ local CRC8 = class.base( "CRC8", false )
 
 CRC8.DigestSize = 1
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@return integer poly
 ---@return integer init The initial register value, reflected if `ref_in` is `true`.
 ---@return boolean ref_in
@@ -323,11 +323,11 @@ local function crc8_parameters( poly, init, ref_in, ref_out, xor_out )
     return poly, init, ref_in, ref_out == true, xor_out
 end
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function CRC8:__init( poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc8_parameters( poly, init, ref_in, ref_out, xor_out )
@@ -392,7 +392,7 @@ end
 ---
 ---@class dreamwork.std.checksum.CRC8Class : dreamwork.std.checksum.CRC8, dreamwork.std.Class
 ---@field __base dreamwork.std.checksum.CRC8
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC8
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): dreamwork.std.checksum.CRC8
 local CRC8Class = class.create( CRC8 )
 std.CRC8 = CRC8Class
 
@@ -401,11 +401,11 @@ std.CRC8 = CRC8Class
 --- Calculates the CRC-8 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value of checksum.
----@param ref_in? boolean `true` if input checksum is reversed, otherwise `false`.
----@param ref_out? boolean `true` if output checksum is reversed, otherwise `false`.
----@param xor_out? integer The value to be XORed with output checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value of checksum.
+---@param ref_in boolean? `true` if input checksum is reversed, otherwise `false`.
+---@param ref_out boolean? `true` if output checksum is reversed, otherwise `false`.
+---@param xor_out integer? The value to be XORed with output checksum.
 ---@return integer checksum The CRC-8 checksum, which is greater or equal to 0, and less than 2^8 (0x100).
 ---@nodiscard
 function CRC8Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
@@ -455,11 +455,11 @@ local CRC16 = class.base( "CRC16", false, CRC8Class )
 
 CRC16.DigestSize = 2
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@return integer poly
 ---@return integer init The initial register value, reflected if `ref_in` is `true`.
 ---@return boolean ref_in
@@ -494,11 +494,11 @@ local function crc16_parameters( poly, init, ref_in, ref_out, xor_out )
     return poly, init, ref_in, ref_out == true, xor_out
 end
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function CRC16:__init( poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc16_parameters( poly, init, ref_in, ref_out, xor_out )
@@ -554,7 +554,7 @@ end
 ---@class dreamwork.std.checksum.CRC16Class : dreamwork.std.checksum.CRC16, dreamwork.std.checksum.CRC8Class
 ---@field __parent dreamwork.std.checksum.CRC8Class
 ---@field __base dreamwork.std.checksum.CRC16
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC16
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): dreamwork.std.checksum.CRC16
 local CRC16Class = class.create( CRC16 )
 std.CRC16 = CRC16Class
 
@@ -567,11 +567,11 @@ CRC16Class.CDMA2000 = nil
 --- Calculates the CRC-16 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value is used to calculate checksum.
----@param ref_in? boolean Whether to reflect the input data before processing.
----@param ref_out? boolean Whether to reflect the output data after processing.
----@param xor_out? integer The XOR value is used to calculate checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value is used to calculate checksum.
+---@param ref_in boolean? Whether to reflect the input data before processing.
+---@param ref_out boolean? Whether to reflect the output data after processing.
+---@param xor_out integer? The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-16 checksum, which is greater or equal to 0, and less than 2^16 (0x10000).
 ---@nodiscard
 function CRC16Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
@@ -621,11 +621,11 @@ local CRC32 = class.base( "CRC32", false, CRC16Class )
 
 CRC32.DigestSize = 4
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@return integer poly
 ---@return integer init The initial register value, NOT reflected.
 ---@return boolean ref_in
@@ -653,11 +653,11 @@ local function crc32_parameters( poly, init, ref_in, ref_out, xor_out )
     return poly, init, ref_in ~= false, ref_out ~= false, xor_out
 end
 
----@param poly? integer
----@param init? integer
----@param ref_in? boolean
----@param ref_out? boolean
----@param xor_out? integer
+---@param poly integer?
+---@param init integer?
+---@param ref_in boolean?
+---@param ref_out boolean?
+---@param xor_out integer?
 ---@protected
 function CRC32:__init( poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc32_parameters( poly, init, ref_in, ref_out, xor_out )
@@ -718,7 +718,7 @@ end
 ---@class dreamwork.std.checksum.CRC32Class : dreamwork.std.checksum.CRC32, dreamwork.std.checksum.CRC16Class
 ---@field __parent dreamwork.std.checksum.CRC16Class
 ---@field __base dreamwork.std.checksum.CRC32
----@overload fun( poly?: integer, init?: integer, ref_in?: boolean, ref_out?: boolean, xor_out?: integer ): dreamwork.std.checksum.CRC32
+---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): dreamwork.std.checksum.CRC32
 local CRC32Class = class.create( CRC32 )
 std.CRC32 = CRC32Class
 
@@ -732,11 +732,11 @@ CRC32Class.USB = nil
 --- Calculates the CRC-32 checksum of the specified string.
 ---
 ---@param raw_str string The string is used to calculate checksum.
----@param poly? integer The polynomial is used to calculate checksum.
----@param init? integer The initial value is used to calculate checksum.
----@param ref_in? boolean Whether to reflect the input data before processing.
----@param ref_out? boolean Whether to reflect the output data after processing.
----@param xor_out? integer The XOR value is used to calculate checksum.
+---@param poly integer? The polynomial is used to calculate checksum.
+---@param init integer? The initial value is used to calculate checksum.
+---@param ref_in boolean? Whether to reflect the input data before processing.
+---@param ref_out boolean? Whether to reflect the output data after processing.
+---@param xor_out integer? The XOR value is used to calculate checksum.
 ---@return integer checksum The CRC-32 checksum, which is greater or equal to 0, and less than 2^32 (0x100000000).
 ---@nodiscard
 function CRC32Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )

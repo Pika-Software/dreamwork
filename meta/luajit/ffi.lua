@@ -24,25 +24,25 @@ local cb
 local ffi = {}
 
 ---@param def     string
----@param params? any
+---@param params any?
 function ffi.cdef(def, params, ...) end
 
 ---@param name    string
----@param global? boolean
+---@param global boolean?
 ---@return ffi.namespace* clib
 ---@nodiscard
 function ffi.load(name, global) end
 
 ---@overload fun(ct: ffi.ct*, init: any, ...)
 ---@param ct     ffi.ct*
----@param nelem? integer
----@param init?  any
+---@param nelem integer?
+---@param init  any?
 ---@return ffi.cdata* cdata
 ---@nodiscard
 function ffi.new(ct, nelem, init, ...) end
 
 ---@param ct      ffi.ct*
----@param params? any
+---@param params any?
 ---@return ffi.ctype* ctype
 ---@nodiscard
 function ffi.typeof(ct, params, ...) end
@@ -59,12 +59,12 @@ function ffi.cast(ct, init) end
 function ffi.metatype(ct, metatable) end
 
 ---@param cdata     ffi.cdata*
----@param finalizer? function
+---@param finalizer function?
 ---@return ffi.cdata* cdata
 function ffi.gc(cdata, finalizer) end
 
 ---@param ct     ffi.ct*
----@param nelem? integer
+---@param nelem integer?
 ---@return integer|nil size
 ---@nodiscard
 function ffi.sizeof(ct, nelem) end
@@ -88,13 +88,13 @@ function ffi.offsetof(ct, field) end
 ---@nodiscard
 function ffi.istype(ct, obj) end
 
----@param newerr? integer
+---@param newerr integer?
 ---@return integer err
 ---@nodiscard
 function ffi.errno(newerr) end
 
 ---@param ptr  any
----@param len? integer
+---@param len integer?
 ---@return string str
 function ffi.string(ptr, len) end
 
@@ -106,7 +106,7 @@ function ffi.copy(dst, src, len) end
 
 ---@param dst any
 ---@param len integer
----@param c?  any
+---@param c  any?
 function ffi.fill(dst, len, c) end
 
 ---@param param string

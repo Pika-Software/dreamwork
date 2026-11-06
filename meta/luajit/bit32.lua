@@ -141,7 +141,7 @@ function bit32.bxor( ... ) end
 ---
 ---@param n integer The number to extract the bits from.
 ---@param field integer The position of the first bit, `0` to `31`.
----@param width? integer The number of bits, `1` by default.
+---@param width integer? The number of bits, `1` by default.
 ---@return integer y The extracted bits.
 ---@nodiscard
 function bit32.extract( n, field, width ) end
@@ -163,7 +163,7 @@ function bit32.extract( n, field, width ) end
 ---@param n integer The number to replace the bits in.
 ---@param v integer The number providing the replacement bits.
 ---@param field integer The position of the first bit, `0` to `31`.
----@param width? integer The number of bits, `1` by default.
+---@param width integer? The number of bits, `1` by default.
 ---@return integer y The number with the bits replaced.
 ---@nodiscard
 function bit32.replace( n, v, field, width ) end

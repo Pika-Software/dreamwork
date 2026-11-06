@@ -246,7 +246,7 @@ end
 ---
 --- Hidden frames are left out, the same way `std.error` captures them.
 ---
----@param stack_level? integer The level of the first captured frame, `1` (the caller) by default.
+---@param stack_level integer? The level of the first captured frame, `1` (the caller) by default.
 function Error:capture( stack_level )
     local stack = exceptions_Stack()
     self.stack = stack
@@ -451,7 +451,7 @@ std.RuntimeError        = RuntimeErrorClass
 --- Can be passed to `xpcall` directly as a message handler.
 ---
 ---@param error_value any The error value to convert.
----@param error_class? dreamwork.std.ErrorClass The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
+---@param error_class dreamwork.std.ErrorClass? The class used to wrap values that are not errors, called with the message only. Defaults to `RuntimeError`.
 ---@return dreamwork.std.Error error_object
 ---@nodiscard
 local function to_error( error_value, error_class )
@@ -671,8 +671,8 @@ do
     ---
     --- Displays the error with its call stack without throwing it, the current code keeps running.
     ---
-    ---@param value? any The error value to display.
-    ---@param stack_level? integer The stack level the error is blamed on.
+    ---@param value any? The error value to display.
+    ---@param stack_level integer? The stack level the error is blamed on.
     ---@return dreamwork.std.Error error_object The displayed error.
     function std.warn( value, stack_level )
         local error_object = prepare_error( value, stack_level )
@@ -691,8 +691,8 @@ do
     --- Values that are neither errors nor strings (signals like `ACTION_CANCEL`) are thrown as is
     --- inside protected calls and coroutines, so they keep their identity.
     ---
-    ---@param value? any The error value to throw.
-    ---@param stack_level? integer The stack level to throw the error.
+    ---@param value any? The error value to throw.
+    ---@param stack_level integer? The stack level to throw the error.
     function std_error( value, stack_level )
         local is_protected = coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall )
 
@@ -743,7 +743,7 @@ end
 ---
 ---@generic T
 ---@param value T The value to check.
----@param message? string | dreamwork.std.Error | dreamwork.std.ErrorClass The error message, error object or error class.
+---@param message ( string | dreamwork.std.Error | dreamwork.std.ErrorClass )? The error message, error object or error class.
 ---@param ... any The message format arguments.
 ---@return T value
 ---@return any ...
@@ -1172,7 +1172,7 @@ do
     AsyncFileSystemError.Messages = status_messages
 
     ---@param error_id integer
-    ---@param is_writing? boolean
+    ---@param is_writing boolean?
     ---@protected
     function AsyncFileSystemError:__init( error_id, is_writing )
         self.message = (is_writing and "writing " or "reading ") .. (status_messages[ error_id ] or status_messages[ -16 ])

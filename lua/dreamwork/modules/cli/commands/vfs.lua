@@ -93,7 +93,7 @@ do
     local segment_count = 0
 
     ---@param text string
-    ---@param color? dreamwork.std.Color
+    ---@param color dreamwork.std.Color?
     local function emit( text, color )
         segments[ segment_count + 1 ] = text
         segments[ segment_count + 2 ] = color or false

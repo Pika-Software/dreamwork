@@ -149,8 +149,8 @@ if not operators then
     ---@field bshift fun( x: integer, disp: integer ): integer
     ---@field brotate fun( x: integer, disp: integer ): integer
     ---@field btest fun( x: integer, ...: integer ): boolean
-    ---@field extract fun( x: integer, field: integer, width?: integer ): integer
-    ---@field replace fun( x: integer, extract: integer, field: integer, width?: integer ): integer
+    ---@field extract fun( x: integer, field: integer, width: integer? ): integer
+    ---@field replace fun( x: integer, extract: integer, field: integer, width: integer? ): integer
     ---@diagnostic disable-next-line: undefined-global, deprecated
     local glua_bit = bit or bit32
 
@@ -731,7 +731,7 @@ end
 ---
 ---@generic T: integer | ffi.cdata*
 ---@param x T The unsigned integer to convert.
----@param bit_count? integer The bit width of the integer, `32` by default.
+---@param bit_count integer? The bit width of the integer, `32` by default.
 ---@return T result The signed value of the integer.
 ---@nodiscard
 function rbit.sign( x, bit_count )
@@ -765,7 +765,7 @@ end
 ---
 ---@generic T: integer | ffi.cdata*
 ---@param x T The signed integer to convert.
----@param bit_count? integer The bit width of the integer, `32` by default.
+---@param bit_count integer? The bit width of the integer, `32` by default.
 ---@return T result The unsigned value of the integer.
 ---@nodiscard
 function rbit.unsign( x, bit_count )

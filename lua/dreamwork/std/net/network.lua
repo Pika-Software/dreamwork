@@ -268,7 +268,7 @@ local Network = class.base( "Network", true )
 
 ---@class dreamwork.std.NetworkClass : dreamwork.std.Network, dreamwork.std.Class
 ---@field __base dreamwork.std.Network
----@overload fun( name: string, can_receive?: boolean ): dreamwork.std.Network
+---@overload fun( name: string, can_receive: boolean? ): dreamwork.std.Network
 local NetworkClass = class.create( Network )
 std.Network = NetworkClass
 
@@ -944,7 +944,7 @@ do
     end
 
     ---@param name string
-    ---@param can_receive? boolean
+    ---@param can_receive boolean?
     ---@protected
     function Network:__init( name, can_receive )
         local network_name = name_prefix .. name
@@ -1407,8 +1407,8 @@ end
 --- If the target is already receiving a transmission from this network, the data is queued behind it.
 ---
 ---@param data string The data to send.
----@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
----@param callback? dreamwork.std.Network.FinishFn The callback that is called when the transmission is finished or failed.
+---@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param callback dreamwork.std.Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function Network:send( data, target, callback )
     transmit_to( self, data, target, callback )
 end
@@ -1418,8 +1418,8 @@ end
 --- Builds the data with a binary writer and sends it to the target.
 ---
 ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.BinaryWriter ) The function that writes the data.
----@param target? garrysmod.Player | garrysmod.Player[] The target player(s), required on the server, ignored on the client.
----@param callback? dreamwork.std.Network.FinishFn The callback that is called when the transmission is finished or failed.
+---@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param callback dreamwork.std.Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function Network:transmit( fn, target, callback )
     local writer = std.BinaryWriter()
     fn( self, writer )
@@ -1430,7 +1430,7 @@ end
 ---
 --- Cancels the outgoing transmission to the target and all queued ones.
 ---
----@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
 ---@return boolean cancelled `true` if anything was cancelled.
 function Network:abort( target )
     local key = (LUA_SERVER and target) or server_key
@@ -1452,7 +1452,7 @@ end
 ---
 --- Checks if the network is sending data to the target.
 ---
----@param target? garrysmod.Player The target player, required on the server, ignored on the client.
+---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
 ---@return boolean is_sending
 ---@nodiscard
 function Network:isSending( target )
@@ -1463,7 +1463,7 @@ end
 ---
 --- Checks if the network is receiving data from the sender.
 ---
----@param sender? garrysmod.Player The sender player, required on the server, ignored on the client.
+---@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
 ---@return boolean is_receiving
 ---@nodiscard
 function Network:isReceiving( sender )

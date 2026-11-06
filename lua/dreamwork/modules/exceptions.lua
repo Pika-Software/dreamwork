@@ -298,10 +298,10 @@ end
 ---
 --- If no match is found, the new capture is appended wholesale on top of the existing frames.
 ---
----@param stack_level? integer  How many levels to skip to reach the caller (same meaning as the `level` argument of `debug.getstack`/`debug.getinfo`). Defaults to `2`, i.e. the function calling `capture`.
----@param head_skip? integer    Constant number of frames to drop from the innermost end of the capture (e.g. `1` to drop the bare `error` C frame).
----@param tail_skip? integer    Constant number of frames to drop from the outermost end of the capture (e.g. to drop your own `xpcall`/wrapper frames).
----@param max_levels? integer   Maximum number of stack frames to read, counted from the innermost frame (after `head_skip` is applied). Stack walking stops as soon as this many frames have been captured, so frames further up (older/outer) are never read at all. `nil`/omitted means no limit.
+---@param stack_level integer?  How many levels to skip to reach the caller (same meaning as the `level` argument of `debug.getstack`/`debug.getinfo`). Defaults to `2`, i.e. the function calling `capture`.
+---@param head_skip integer?    Constant number of frames to drop from the innermost end of the capture (e.g. `1` to drop the bare `error` C frame).
+---@param tail_skip integer?    Constant number of frames to drop from the outermost end of the capture (e.g. to drop your own `xpcall`/wrapper frames).
+---@param max_levels integer?   Maximum number of stack frames to read, counted from the innermost frame (after `head_skip` is applied). Stack walking stops as soon as this many frames have been captured, so frames further up (older/outer) are never read at all. `nil`/omitted means no limit.
 function Stack:capture( stack_level, head_skip, tail_skip, max_levels )
     local levels, level_count = debug_getstack( (stack_level or 2) + 1, "Slnf", head_skip, tail_skip, max_levels )
     local current_thread = coroutine_running()

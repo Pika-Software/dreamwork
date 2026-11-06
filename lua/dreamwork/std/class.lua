@@ -135,8 +135,8 @@ do
     --- and their data must be kept outside ( e.g. in a weak table ).
     ---
     ---@param name string The name of the class.
-    ---@param private? boolean If `true`, objects will be `userdata` instead of `table`.
-    ---@param parent? dreamwork.std.Class | unknown The parent class.
+    ---@param private boolean? If `true`, objects will be `userdata` instead of `table`.
+    ---@param parent ( dreamwork.std.Class | unknown )? The parent class.
     ---@return dreamwork.std.Object base The base of the class.
     ---@nodiscard
     function class.base( name, private, parent )

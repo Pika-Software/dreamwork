@@ -68,7 +68,7 @@ end
 ---
 ---@param tbl table The table to clean up.
 ---@param type_name dreamwork.std.gc.Type The type of objects used as keys in the table.
----@param instruction? dreamwork.std.gc.Instruction The function that maps the destroyed object to the key, by default the object itself is the key.
+---@param instruction dreamwork.std.gc.Instruction? The function that maps the destroyed object to the key, by default the object itself is the key.
 function gc.setup( tbl, type_name, instruction )
     local tables = track_list[ type_name ]
     if tables == nil then

@@ -101,8 +101,8 @@ do
     --- Loads a Lua file of the framework.
     ---
     ---@param relative_path string Path to the file including the leading `lua/` folder (e.g., `"lua/dreamwork/std/raw.lua"`), which is stripped for `include` and `AddCSLuaFile`.
-    ---@param skip_client? boolean If `true`, the file is also marked to be sent to clients (server only).
-    ---@param skip_include? boolean If `true`, the file is not executed, only (optionally) sent to clients.
+    ---@param skip_client boolean? If `true`, the file is also marked to be sent to clients (server only).
+    ---@param skip_include boolean? If `true`, the file is not executed, only (optionally) sent to clients.
     ---@return any ... Values returned by the loaded file, nothing if `skip_include` is set.
     function dreamwork.load( relative_path, skip_client, skip_include )
         if LUA_SERVER then
@@ -150,8 +150,8 @@ local raw_tonumber = raw.tonumber
 ---
 --- Throws an error with the specified message and level.
 ---
----@param value? any The error value to throw.
----@param stack_level? integer The stack level to throw the error.
+---@param value any? The error value to throw.
+---@param stack_level integer? The stack level to throw the error.
 function std.error( value, stack_level )
     return error( value, stack_level )
 end
@@ -467,7 +467,7 @@ end
 --- Returns binary size of the `value` as integer of bit/bytes.
 ---
 ---@param value any The value to get the size of.
----@param as_bytes? boolean Whether return size as bytes. By default: `false`
+---@param as_bytes boolean? Whether return size as bytes. By default: `false`
 ---@return integer | nil size The size of the `value`.
 ---@nodiscard
 function std.sizeof( value, as_bytes )
@@ -509,7 +509,7 @@ end
 --- [View documents](command:extension.lua.doc?["en-us/51/manual.html/pdf-tonumber"])
 ---
 ---@param e any The value to convert to a number.
----@param base? numberbase The number base, default is `10`.
+---@param base numberbase? The number base, default is `10`.
 ---@return number | nil x The number value of `e`, or `nil` if `e` cannot be converted to a number.
 ---@nodiscard
 function std.tonumber( e, base )
@@ -725,7 +725,7 @@ do
     ---
     ---@param from integer The starting value of the range.
     ---@param to integer The ending value of the range (inclusive).
-    ---@param step? integer The amount to step by each iteration. Defaults to `1`. Can be negative to count down.
+    ---@param step integer? The amount to step by each iteration. Defaults to `1`. Can be negative to count down.
     ---@return fun( break_point: integer, index: integer ): integer | nil iterator The iterator function to be used with a generic `for` loop.
     ---@return integer to The final value, passed through as the loop's invariant state.
     ---@return integer start The initial value, passed to the iterator on the first call.
@@ -824,7 +824,7 @@ do
     --- that length, or truncated from the left if it's already longer.
     ---
     ---@param value any The value to get a hexadecimal identifier for.
-    ---@param desired_length? integer The exact length the returned string should be. If omitted, the natural length is used.
+    ---@param desired_length integer? The exact length the returned string should be. If omitted, the natural length is used.
     ---@return string hex_str The hexadecimal identifier of `value`, optionally padded or truncated to `desired_length`.
     ---@nodiscard
     function std.tohex( value, desired_length )
@@ -1775,8 +1775,8 @@ do
     ---
     ---@param name string The name of the benchmark.
     ---@param fn function The function to benchmark.
-    ---@param iterations? integer The number of iterations per round, `1000` by default.
-    ---@param rounds? integer The number of timed rounds, `5` by default.
+    ---@param iterations integer? The number of iterations per round, `1000` by default.
+    ---@param rounds integer? The number of timed rounds, `5` by default.
     ---@return number best The best time per iteration in seconds.
     ---@return number mean The mean time per iteration in seconds.
     ---@return number allocated The bytes allocated per iteration.
@@ -2042,7 +2042,7 @@ do
     ---
     ---@generic F: function
     ---@param inputs dreamwork.std.OverloadInput<F>[] The signatures to dispatch between, checked in order (first match wins).
-    ---@param fallback_fn? F The function called when no input matches. If omitted, a non-matching call raises an error.
+    ---@param fallback_fn F? The function called when no input matches. If omitted, a non-matching call raises an error.
     ---@return F fn_over A function that dispatches to the matching input's `fn`, or to `fallback_fn`.
     ---@nodiscard
     function std.dispatch( inputs, fallback_fn )
@@ -2480,7 +2480,7 @@ do
     ---
     ---@param a string The source string.
     ---@param b string The target string.
-    ---@param minimal? boolean If `true`, prints the raw minimal edit script without the readability cleanup. Defaults to `false`.
+    ---@param minimal boolean? If `true`, prints the raw minimal edit script without the readability cleanup. Defaults to `false`.
     function std.printDiff( a, b, minimal )
         local diff_ops, diff_op_count = string_diff( a, b, minimal )
 
@@ -2548,7 +2548,7 @@ do
         --- ```
         ---
         ---@param fn function The callback function.
-        ---@param delay? number The delay in seconds, default is `0`.
+        ---@param delay number? The delay in seconds, default is `0`.
         ---@param ... any Additional arguments to pass to the callback function.
         ---@return integer timeout_id The identifier of the timeout, used to cancel it with `std.clearTimeout`.
         function std.setTimeout( fn, delay, ... )
@@ -2620,7 +2620,7 @@ do
         --- ```
         ---
         ---@param fn function The callback function.
-        ---@param delay? number The delay between calls in seconds, default is `1`.
+        ---@param delay number? The delay between calls in seconds, default is `1`.
         ---@param ... any Additional arguments to pass to the callback function.
         ---@return integer interval_id The identifier of the interval, used to cancel it with `std.clearInterval`.
         function std.setInterval( fn, delay, ... )

@@ -87,8 +87,8 @@ package.searchers = {}
 ---@version >5.2,JIT
 ---@param name string
 ---@param path string
----@param sep? string
----@param rep? string
+---@param sep string?
+---@param rep string?
 ---@return string? filename
 ---@return string? errmsg
 ---@nodiscard

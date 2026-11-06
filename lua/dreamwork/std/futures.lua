@@ -821,7 +821,7 @@ do
     ---@see dreamwork.std.Future.error to retrieve error
     ---
     ---@param err string | dreamwork.std.Error The error to fail the future with.
-    ---@param error_class? dreamwork.std.ErrorClass The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
+    ---@param error_class dreamwork.std.ErrorClass? The class used to wrap `err` if it is not an `Error`, defaults to `RuntimeError`.
     function Future:setError( err, error_class )
         if self.state ~= 0 then
             error( "future is already finished", 2 )
@@ -954,7 +954,7 @@ do
     ---@field __class dreamwork.std.futures.TaskClass
     ---@field __parent dreamwork.std.Future
     ---@field protected setResult fun( self: dreamwork.std.futures.Task<T>, result: T )
-    ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, err: string | dreamwork.std.Error, error_class?: dreamwork.std.ErrorClass )
+    ---@field protected setError fun( self: dreamwork.std.futures.Task<T>, err: string | dreamwork.std.Error, error_class: dreamwork.std.ErrorClass? )
     ---@field addCallback fun( self: dreamwork.std.futures.Task<T>, callback: fun( task: dreamwork.std.futures.Task<T> ) )
     local Task = std.Task and std.Task.__base or class.base( "Task", false, std.Future )
 

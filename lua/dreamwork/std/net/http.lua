@@ -453,7 +453,7 @@ end
 --- Without `url` the first not expired cookie with this name is returned.
 ---
 ---@param name string The cookie name.
----@param url? string | dreamwork.std.URL The URL the cookie would be sent to.
+---@param url ( string | dreamwork.std.URL )? The URL the cookie would be sent to.
 ---@return dreamwork.std.http.Cookie | nil cookie The cookie, or `nil` if there is none.
 ---@nodiscard
 function CookieJar:get( name, url )
@@ -590,7 +590,7 @@ end
 --- Removes every cookie with the given name, only from `domain` if it is given.
 ---
 ---@param name string The cookie name.
----@param domain? string The domain to remove the cookie from.
+---@param domain string? The domain to remove the cookie from.
 function CookieJar:delete( name, domain )
     if domain ~= nil then
         domain = normalize_domain( domain )
@@ -608,7 +608,7 @@ end
 ---
 --- Removes every cookie, or only the session ones (without `expires`).
 ---
----@param session_only? boolean If `true`, only session cookies are removed.
+---@param session_only boolean? If `true`, only session cookies are removed.
 function CookieJar:clear( session_only )
     for index = #self, 1, -1 do
         if not session_only then

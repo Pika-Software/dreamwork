@@ -250,11 +250,11 @@ end
 --- suitable for serialization, logging, or safe ASCII output.
 ---
 ---@param utf8_str string The input string containing unicode characters.
----@param style? dreamwork.std.unicode.EscapeStyle The escape sequence style, `"json"` by default.
----@param keep_ascii? boolean If `true`, printable ASCII characters (except `\`) are left as is.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
----@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences are escaped as `U+FFFD`.
+---@param style dreamwork.std.unicode.EscapeStyle? The escape sequence style, `"json"` by default.
+---@param keep_ascii boolean? If `true`, printable ASCII characters (except `\`) are left as is.
+---@param start_position integer? The position to start from in bytes.
+---@param end_position integer? The position to end at in bytes.
+---@param lax boolean? Whether to lax the UTF-8 validity check, invalid sequences are escaped as `U+FFFD`.
 ---@return string escaped_str A string where each character is replaced with its unicode escape sequence.
 ---@nodiscard
 function unicode.escape( utf8_str, style, keep_ascii, start_position, end_position, lax )
@@ -306,7 +306,7 @@ end
 --- `\\` is treated as an escaped backslash and left as is, malformed sequences are left as is.
 ---
 ---@param escaped_str string A string containing unicode escape sequences.
----@param lax? boolean If `true`, lone surrogates and code points above `U+10FFFF` are replaced with `U+FFFD` instead of raising an error.
+---@param lax boolean? If `true`, lone surrogates and code points above `U+10FFFF` are replaced with `U+FFFD` instead of raising an error.
 ---@return string utf8_str A string with the escape sequences converted to real unicode characters.
 ---@nodiscard
 function unicode.unescape( escaped_str, lax )
@@ -2274,9 +2274,9 @@ if ffi == nil then
     --- Bytes outside the given range are always left untouched.
     ---
     ---@param utf8_string string The UTF-8 string to convert.
-    ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
-    ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
-    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@param start_position integer? The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
+    ---@param end_position integer? The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
+    ---@param lax boolean? Whether to lax the UTF-8 validity check.
     ---@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
     ---@nodiscard
     function unicode.lower( utf8_string, start_position, end_position, lax )
@@ -2350,9 +2350,9 @@ if ffi == nil then
     --- Bytes outside the given range are always left untouched.
     ---
     ---@param utf8_string string The UTF-8 string to convert.
-    ---@param start_position? integer The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
-    ---@param end_position? integer The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
-    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@param start_position integer? The byte position to start converting from (inclusive). Defaults to 1. Negative values count from the end of the string.
+    ---@param end_position integer? The byte position to stop converting at (inclusive). Defaults to the end of the string. Negative values count from the end of the string.
+    ---@param lax boolean? Whether to lax the UTF-8 validity check.
     ---@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
     ---@nodiscard
     function unicode.upper( utf8_string, start_position, end_position, lax )
@@ -2420,7 +2420,7 @@ else
     --- instead of collecting string segments, ~2x faster with JIT.
     ---
     ---@param case_map table<integer, string>
-    ---@return fun( utf8_string: string, start_position?: integer, end_position?: integer, lax?: boolean ): string
+    ---@return fun( utf8_string: string, start_position: integer?, end_position: integer?, lax: boolean? ): string
     local function ffi_case_mapper( case_map )
         local ascii_map = uint8_array_t( 128 )
 
@@ -2522,9 +2522,9 @@ end
 --- skipped and do not count as "the first character".
 ---
 ---@param utf8_string string The UTF-8 string to capitalize.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
----@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param start_position integer? The position to start from in bytes.
+---@param end_position integer? The position to end at in bytes.
+---@param lax boolean? Whether to lax the UTF-8 validity check.
 ---@return string capitalized_utf8_str The capitalized UTF-8 string.
 ---@nodiscard
 function unicode.capitalize( utf8_string, start_position, end_position, lax )
@@ -2657,9 +2657,9 @@ end
 --- digits and letters without case (`ß`, CJK, etc.) don't break a word.
 ---
 ---@param utf8_string string The UTF-8 string to convert to title case.
----@param start_position? integer The position to start from in bytes.
----@param end_position? integer The position to end at in bytes.
----@param lax? boolean Whether to lax the UTF-8 validity check.
+---@param start_position integer? The position to start from in bytes.
+---@param end_position integer? The position to end at in bytes.
+---@param lax boolean? Whether to lax the UTF-8 validity check.
 ---@return string title_utf8_str The title-cased UTF-8 string.
 ---@nodiscard
 function unicode.title( utf8_string, start_position, end_position, lax )
@@ -3422,9 +3422,9 @@ do
     --- The result depends on the font and terminal, emoji are rendered inconsistently across them.
     ---
     ---@param utf8_string string The UTF-8 string to measure.
-    ---@param start_position? integer The position to start from in bytes.
-    ---@param end_position? integer The position to end at in bytes.
-    ---@param lax? boolean Whether to lax the UTF-8 validity check, invalid sequences count as `U+FFFD`.
+    ---@param start_position integer? The position to start from in bytes.
+    ---@param end_position integer? The position to end at in bytes.
+    ---@param lax boolean? Whether to lax the UTF-8 validity check, invalid sequences count as `U+FFFD`.
     ---@return integer width The width of the string in columns.
     ---@nodiscard
     function unicode.displayWidth( utf8_string, start_position, end_position, lax )
@@ -3453,9 +3453,9 @@ do
     ---
     ---@param utf8_string string The UTF-8 string to wrap.
     ---@param max_width integer The maximum width of each line, in columns.
-    ---@param start_position? integer The position to start from in bytes.
-    ---@param end_position? integer The position to end at in bytes.
-    ---@param lax? boolean Whether to lax the UTF-8 validity check.
+    ---@param start_position integer? The position to start from in bytes.
+    ---@param end_position integer? The position to end at in bytes.
+    ---@param lax boolean? Whether to lax the UTF-8 validity check.
     ---@return string wrapped_string The string with newlines inserted so no line is wider than `max_width` columns.
     ---@nodiscard
     function unicode.wrap( utf8_string, max_width, start_position, end_position, lax )

@@ -304,7 +304,7 @@ end
 --- Raises a `DecodeError` (with the byte position of the problem) on malformed input or trailing data.
 ---
 ---@param json_str string The JSON string to deserialize.
----@param max_depth? integer The maximum nesting depth, default is `512`.
+---@param max_depth integer? The maximum nesting depth, default is `512`.
 ---@return dreamwork.std.json.Array | dreamwork.std.json.Object json_value The deserialized value.
 function json.deserialize( json_str, max_depth )
     local uint8_1, uint8_2, uint8_3 = string_byte( json_str, 1, 3 )
@@ -588,8 +588,8 @@ end
 --- Raises an `EncodeError` for any other non-JSON value (functions, threads, `NaN`/`inf`), unconvertible keys, keys that collide after conversion, or nesting deeper than `max_depth` levels (circular references).
 ---
 ---@param value dreamwork.std.json.Value | nil The value to serialize.
----@param prettify? boolean Whether to indent the output, default is `false`.
----@param max_depth? integer The maximum nesting depth, default is `512`.
+---@param prettify boolean? Whether to indent the output, default is `false`.
+---@param max_depth integer? The maximum nesting depth, default is `512`.
 ---@return string json_str The JSON string.
 ---@nodiscard
 function json.serialize( value, prettify, max_depth )

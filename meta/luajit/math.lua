@@ -175,7 +175,7 @@ function math.ldexp(m, e) end
 ---[View documents](http://www.lua.org/manual/5.1/manual.html#pdf-math.log)
 ---
 ---@param x     number
----@param base? integer
+---@param base integer?
 ---@return number
 ---@nodiscard
 function math.log(x, base) end

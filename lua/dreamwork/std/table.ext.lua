@@ -29,7 +29,7 @@ local table = std.table
 ---
 ---@param tbl table The table to get the value from.
 ---@param path string The key path to get.
----@param separator? integer The separator of the key path, default is `0x2E`.
+---@param separator integer? The separator of the key path, default is `0x2E`.
 ---@return any value The value of the key path.
 ---@nodiscard
 function table.get( tbl, path, separator )
@@ -75,7 +75,7 @@ end
 ---@param tbl table The table to set the value in.
 ---@param path string The key path.
 ---@param value any The value to set.
----@param separator? integer The separator of the key path, default is `0x2E`.
+---@param separator integer? The separator of the key path, default is `0x2E`.
 function table.set( tbl, path, value, separator )
     if separator == nil then
         separator = 0x2E --[[ "." ]]

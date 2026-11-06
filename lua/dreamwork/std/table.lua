@@ -66,7 +66,7 @@ end
 ---@param tbl V[] The table to insert the value into.
 ---@param index integer The index to insert the value at.
 ---@param value V The value to insert.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer index The index of the inserted value.
 ---@diagnostic disable-next-line: duplicate-set-field
 function table.insert( tbl, index, value, tbl_length )
@@ -122,11 +122,11 @@ if table.move == nil then
     ---
     ---@generic V
     ---@param source V[] The source table.
-    ---@param start_position? integer The start position of the source table, defaults to 1.
-    ---@param end_position? integer The end position of the source table, defaults to the length of the source table.
-    ---@param offset? integer The start position of the destination table, defaults to 1.
-    ---@param destination? V[] The destination table, defaults to the source table.
-    ---@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
+    ---@param start_position integer? The start position of the source table, defaults to 1.
+    ---@param end_position integer? The end position of the source table, defaults to the length of the source table.
+    ---@param offset integer? The start position of the destination table, defaults to 1.
+    ---@param destination V[]? The destination table, defaults to the source table.
+    ---@param source_length integer? The length of the source table. Optionally, it should be used to speed up calculations.
     ---@return V[] destination Selected destination table.
     ---@diagnostic disable-next-line: duplicate-set-field
     function table.move( source, start_position, end_position, offset, destination, source_length )
@@ -178,9 +178,9 @@ do
     ---
     ---@generic V
     ---@param tbl V[] The table to get the range from.
-    ---@param start_position? integer The start position of the range.
-    ---@param end_position? integer The end position of the range.
-    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@param start_position integer? The start position of the range.
+    ---@param end_position integer? The end position of the range.
+    ---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
     ---@return V[] range_values The values of the range.
     ---@return integer range_length The length of the range.
     ---@nodiscard
@@ -206,10 +206,10 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to slice.
----@param start_position? integer The start position of the slice.
----@param end_position? integer The end position of the slice.
----@param step? integer The step of the slice.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param start_position integer? The start position of the slice.
+---@param end_position integer? The end position of the slice.
+---@param step integer? The step of the slice.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] slice The slice of the table.
 ---@return integer length The length of the sliced table.
 ---@nodiscard
@@ -242,8 +242,8 @@ table.sub = table.slice
 ---
 ---@generic V
 ---@param tbl V[] The table to truncate.
----@param new_length? integer The length of the truncated table.
----@param tbl_length? integer The length of the original table. Optionally, it should be used to speed up calculations.
+---@param new_length integer? The length of the truncated table.
+---@param tbl_length integer? The length of the original table. Optionally, it should be used to speed up calculations.
 function table.truncate( tbl, new_length, tbl_length )
     for index = (new_length or 0) + 1, tbl_length or len( tbl ), 1 do
         tbl[ index ] = nil
@@ -260,7 +260,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to truncate.
----@param tbl_length? integer The length of the truncated table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the truncated table. Optionally, it should be used to speed up calculations.
 ---@return V[] truncated The truncated table.
 ---@nodiscard
 function table.truncated( tbl, tbl_length )
@@ -280,11 +280,11 @@ end
 ---@generic V
 ---@param destination V[] The destination table.
 ---@param source V[] The source table.
----@param offset? integer The position to inject.
----@param start_position? integer The start position.
----@param end_position? integer The end position.
----@param destination_length? integer The length of the destination table. Optionally, it should be used to speed up calculations.
----@param source_length? integer The length of the source table. Optionally, it should be used to speed up calculations.
+---@param offset integer? The position to inject.
+---@param start_position integer? The start position.
+---@param end_position integer? The end position.
+---@param destination_length integer? The length of the destination table. Optionally, it should be used to speed up calculations.
+---@param source_length integer? The length of the source table. Optionally, it should be used to speed up calculations.
 function table.inject( destination, source, offset, start_position, end_position, destination_length, source_length )
     if destination_length == nil then
         destination_length = len( destination )
@@ -335,9 +335,9 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to remove values from.
----@param start_position? integer The start position.
----@param end_position? integer The end position.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param start_position integer? The start position.
+---@param end_position integer? The end position.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] values The removed values.
 ---@return integer values_length The count of removed values.
 function table.eject( tbl, start_position, end_position, tbl_length )
@@ -388,7 +388,7 @@ end
 ---@generic V
 ---@param tbl V[] The table to search.
 ---@param searchable V The value to search for.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer | nil index The index of the value.
 ---@nodiscard
 function table.getIndex( tbl, searchable, tbl_length )
@@ -590,7 +590,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to empty.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 function table.clearIndexes( tbl, tbl_length )
     for index = 1, tbl_length or len( tbl ), 1 do
         tbl[ index ] = nil
@@ -617,7 +617,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 function table.shuffle( tbl, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -637,7 +637,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The sequential table.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V value The random value.
 ---@return integer | nil index The index of the value.
 ---@nodiscard
@@ -707,7 +707,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The sequential table.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] tbl The reversed sequential table.
 ---@return integer length The length of the reversed table.
 function table.reverse( tbl, tbl_length )
@@ -743,7 +743,7 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to reverse.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] reversed The reversed table.
 ---@return integer length The length of the reversed table.
 ---@nodiscard
@@ -797,10 +797,10 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to extract values from.
----@param start_position? integer The start position.
----@param end_position? integer The end position.
----@param step_size? integer The step size.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param start_position integer? The start position.
+---@param end_position integer? The end position.
+---@param step_size integer? The step size.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return V[] values The extracted values.
 ---@return integer length The length of the extracted values.
 ---@nodiscard
@@ -832,7 +832,7 @@ end
 ---@generic V
 ---@param tbl V[] The table to map.
 ---@param fn fun( index: integer, value: V ): V | nil The function to apply.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up execution.
 ---@return V[] mapped The new mapped sequential table.
 ---@return integer mapped_length The length of the new mapped sequential table.
 ---@nodiscard
@@ -890,7 +890,7 @@ end
 ---@generic V
 ---@param tbl V[] The table to execute the function on.
 ---@param fn fun( index: integer, value: V ) The function to execute.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up execution.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up execution.
 function table.foreach( tbl, fn, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -912,7 +912,7 @@ do
     ---@generic V
     ---@param tbl V[] The table to remove from.
     ---@param value V The value that will be removed.
-    ---@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+    ---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
     ---@return integer | nil index The index of the value.
     function table.removeByValue( tbl, value, tbl_length )
         for index = (tbl_length or len( tbl )), 1, -1 do
@@ -931,9 +931,9 @@ end
 ---
 ---@generic V
 ---@param tbl V[] The table to remove from.
----@param start_position? integer The start position.
----@param end_position? integer The end position.
----@param tbl_length? integer The length of the table. Optionally, it should be used to speed up calculations.
+---@param start_position integer? The start position.
+---@param end_position integer? The end position.
+---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 function table.removeByRange( tbl, start_position, end_position, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
