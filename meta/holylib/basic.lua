@@ -1,5 +1,12 @@
 ---@meta holylib
 
+
+---
+--- Which HolyLib version this build is using.
+---
+---@type string
+_HOLYLIB_VERSION = nil
+
 --- [SHARED AND MENU]
 ---
 --- This library is exposed by the holylib module and provides a few different more generic functions.

@@ -7,6 +7,7 @@ local std = dreamwork.std
 local raw = std.raw
 local raw_get = raw.get
 local raw_select = raw.select
+local raw_tonumber = raw.tonumber
 
 local error = std.error
 
@@ -89,11 +90,10 @@ function debug.fcall( f, ... )
     return f( ... )
 end
 
-if debug.newproxy == nil then
+if debug.newproxy == nil or ( _HOLYLIB_VERSION ~= nil and ( raw_tonumber( _HOLYLIB_VERSION ) or 0 ) <= 0.9 ) then
 
     local setmetatable = std.setmetatable
 
-    ---@diagnostic disable-next-line: duplicate-set-field
     function debug.newproxy( add_metatable )
         local fake_userdata = {}
 
@@ -116,7 +116,7 @@ if debug.newproxy == nil then
         return fake_userdata
     end
 
-    raw.print( "newproxy is missing, fallback created!" )
+    raw.print( "newproxy is missing or broken, fallback created!" )
 
 end
 
