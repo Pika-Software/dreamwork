@@ -12,7 +12,7 @@ http.github = {}
 
 --- [SHARED AND MENU]
 ---
---- The settings of the Github API library, set by the `http_client` console command (`dreamwork_sci` / `dreamwork_cci`).
+--- The settings of the Github API library, set by the `http github set_token` console command (`dreamwork_sci` / `dreamwork_cci`).
 ---
 ---@type http.github.Config
 http.github.config = nil
