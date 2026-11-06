@@ -615,6 +615,15 @@ function math.fdiv(a, b) end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the arithmetic mean of the given numbers.
+---
+---@param ... number The numbers to average.
+---@return number average The arithmetic mean of the given numbers.
+---@nodiscard
+function math.average(...) end
+
+--- [SHARED AND MENU]
+---
 --- The math easing functions.
 ---
 ---@class math.ease
