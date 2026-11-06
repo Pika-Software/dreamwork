@@ -255,58 +255,122 @@ local max_transfer_size = 0xFFFFFFFF
 ---@type string
 local name_prefix = "\255\128\64"
 
+--- [SHARED]
+---
+--- A named two-way channel between the server and the clients
+--- built on top of the engine `net` library, without its 64 KiB message limit.
+---
+--- Data up to 8 KiB is usually sent as a single reliable message, larger data is split
+--- into segments and streamed over the unreliable channel with acknowledgements,
+--- retransmission, congestion control and a CRC32 check of the whole data.
+---
+--- Transfers to the same peer are queued, one runs at a time per network.
+---
+--- The network must be created on the server first, the client can only
+--- open networks the server has registered. Creating a network with
+--- the name of an existing one returns the existing object.
+---
+--- On the server, every client is limited in strikes, concurrent transfers
+--- and bytes, protocol violations accumulate strikes and kick the client.
+---
 ---@class dreamwork.std.Network : dreamwork.std.Object
 ---@field __class dreamwork.std.NetworkClass
----@field id integer The engine ID of the network.
----@field name string The name of the network.
----@field receiver boolean `true` if the network accepts incoming messages.
----@field timeout number The number of seconds without any progress after which a transfer is aborted.
----@field window integer The maximum number of segments in flight.
----@field segment integer The size of outgoing segments in bytes.
----@field limit integer The maximum size of an incoming message in bytes.
+---@field id integer The engine ID of the network, read-only.
+---@field name string The name of the network without the internal prefix, read-only.
+---@field receiver boolean `true` if the network accepts incoming messages, `false` by default.
+---@field timeout number The number of seconds without any progress after which a transfer is aborted, `15` by default, at least `1`.
+---@field window integer The maximum number of segments in flight, `64` by default, clamped to `[1, 256]`.
+---@field segment integer The size of outgoing segments in bytes, by default fits into a 1 KiB message, at least `256` and at most what fits into one message.
+---@field limit integer The maximum size of an incoming message in bytes, `64` MiB by default, `0` rejects everything.
 local Network = class.base( "Network", true )
 
+--- [SHARED]
+---
+--- The class of `Network`, call it to create or get a network.
+---
 ---@class dreamwork.std.NetworkClass : dreamwork.std.Network, dreamwork.std.Class
 ---@field __base dreamwork.std.Network
 ---@overload fun( name: string, can_receive: boolean? ): dreamwork.std.Network
 local NetworkClass = class.create( Network )
 std.Network = NetworkClass
 
+--- Called when a message is fully received and its checksum matches.
+---
+--- `sender` is the player on the server and `nil` on the client.
+---
 ---@alias dreamwork.std.Network.ReceiveFn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, sender: garrysmod.Player | nil )
+
+--- Called on every transfer progress, both incoming and outgoing.
+---
+--- `peer` is the other side, the player on the server and `nil` on the client,
+--- `is_outgoing` is `true` for sent data, `done_bytes` counts the received
+--- or acknowledged bytes out of `total_bytes`.
+---
 ---@alias dreamwork.std.Network.ProgressFn fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
+
+--- Called for every chunk of incoming data in order, while it arrives.
+---
+--- `chunk` is the data at the zero-based byte `offset` out of `total` bytes.
+--- The last call has `chunk = nil` and `success`, `offset` is the number of delivered bytes then.
+---
 ---@alias dreamwork.std.Network.StreamFn fun( network: dreamwork.std.Network, sender: garrysmod.Player | nil, chunk: string | nil, offset: integer, total: integer, success: boolean | nil )
+
+--- Called when an outgoing transmission is finished.
+---
+--- `success` is `false` if it was rejected, cancelled, timed out or the peer left.
+---
 ---@alias dreamwork.std.Network.FinishFn fun( network: dreamwork.std.Network, success: boolean, peer: garrysmod.Player | nil )
 
+--- The prefixed names the engine knows the networks by.
+---
 ---@type table<dreamwork.std.Network, string>
 local network_identifiers = {}
 
+--- The engine IDs of the networks.
+---
 ---@type table<dreamwork.std.Network, integer>
 local network_ids = {}
 
+--- The user facing names of the networks, without the prefix.
+---
 ---@type table<dreamwork.std.Network, string>
 local network_names = {}
 
+--- The `receiver` values of the networks.
+---
 ---@type table<dreamwork.std.Network, boolean>
 local receive_allowed = {}
 
+--- The `timeout` values of the networks, in seconds.
+---
 ---@type table<dreamwork.std.Network, number>
 local timeouts = {}
 
+--- The `window` values of the networks, in segments.
+---
 ---@type table<dreamwork.std.Network, integer>
 local windows = {}
 
+--- The `limit` values of the networks, in bytes.
+---
 ---@type table<dreamwork.std.Network, integer>
 local limits = {}
 
+--- The `segment` values of the networks, in bytes.
+---
 ---@type table<dreamwork.std.Network, integer>
 local segment_sizes = {}
 
 --- Network `"receive"`, `"stream"` and `"progress"` handlers.
 local events = Emitter( "Network" )
 
+--- The networks by their user facing names.
+---
 ---@type table<string, dreamwork.std.Network>
 local networks = {}
 
+--- Parses an incoming engine message of the network and dispatches it by opcode.
+---
 ---@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: ( garrysmod.Player | nil ) )
 local network_receive
 
@@ -522,6 +586,8 @@ if LUA_SERVER then
 
         local FLOW_OUTGOING = glua_gameserver.FLOW_OUTGOING
 
+        --- The cached HolyLib net channel access of a player.
+        ---
         ---@class dreamwork.std.Network.GameClient
         ---@field client holylib.CGameClient The HolyLib `GameClient`.
         ---@field reliable holylib.bf_write The reliable stream ( `bf_write` ) of the client.
@@ -643,10 +709,14 @@ else
 
 end
 
+--- The token bucket that limits single messages to one peer.
+---
 ---@class dreamwork.std.Network.Bucket
----@field tokens number
----@field time number
+---@field tokens number The number of bytes that can be sent as singles right now.
+---@field time number The uptime of the last refill.
 
+--- The single buckets, keyed by the player on the server and `server_key` on the client.
+---
 ---@type table<garrysmod.Player | string, dreamwork.std.Network.Bucket>
 local single_buckets = {}
 gc_setTableRules( single_buckets, true, false )
@@ -675,12 +745,20 @@ local function single_allowed( peer, key, size )
     return true
 end
 
+--- Logs a protocol violation of the peer, on the server it adds `weight` strikes and kicks the client over the limit.
+---
+--- `reason` is a format string for `...`.
+---
 ---@type fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, weight: integer, reason: string, ...: any )
 local violation
 
+--- Reserves a new incoming transfer of `size` bytes for the peer, returns the reason if it is not allowed.
+---
 ---@type fun( peer: garrysmod.Player | nil, size: integer ): string | nil
 local client_admit
 
+--- Releases an incoming transfer of `size` bytes reserved by `client_admit`.
+---
 ---@type fun( peer: garrysmod.Player | nil, size: integer )
 local client_release
 
@@ -716,16 +794,21 @@ if LUA_SERVER then
     ---@type number
     local begin_rate = 32
 
+    ---
+    --- new transfers one client can start at once
+    ---
     ---@type integer
     local begin_burst = 64
 
+    --- The limits of one client over all networks.
+    ---
     ---@class dreamwork.std.Network.Client
-    ---@field strikes number
-    ---@field strike_time number
-    ---@field transfers integer
-    ---@field bytes integer
-    ---@field begins number
-    ---@field begin_time number
+    ---@field strikes number The protocol violation strikes, decaying over time.
+    ---@field strike_time number The uptime of the last strike update.
+    ---@field transfers integer The number of incoming transfers in progress.
+    ---@field bytes integer The total size of incoming transfers in progress, in bytes.
+    ---@field begins number The token bucket of new transfers.
+    ---@field begin_time number The uptime of the last `begins` refill.
 
     ---@type table<garrysmod.Player, dreamwork.std.Network.Client>
     local clients = {}
@@ -854,84 +937,102 @@ local function send_control( network, opcode, transfer_id, peer )
     message_send( peer )
 end
 
+--- The sender side state of a segmented transfer.
+---
 ---@class dreamwork.std.Network.Outgoing
----@field network dreamwork.std.Network
----@field peer garrysmod.Player | nil
----@field key garrysmod.Player | string
----@field id integer
----@field data string
----@field size integer
----@field segment_size integer
----@field count integer
----@field acked boolean[]
----@field sent_at number[]
----@field resent boolean[]
----@field resent_count integer
----@field acked_count integer
----@field acked_bytes integer
+---@field network dreamwork.std.Network The network of the transfer.
+---@field peer garrysmod.Player | nil The receiver, `nil` on the client.
+---@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field id integer The transfer ID, `[0, 255]`.
+---@field data string The whole data.
+---@field size integer The size of the data in bytes.
+---@field segment_size integer The size of every segment except the last one, in bytes.
+---@field count integer The number of segments.
+---@field acked boolean[] The acknowledged segments.
+---@field sent_at number[] The uptime of the last send of every segment.
+---@field resent boolean[] The segments that were sent more than once, excluded from rtt samples.
+---@field resent_count integer The number of resends, for the log.
+---@field acked_count integer The number of acknowledged segments.
+---@field acked_bytes integer The number of acknowledged bytes.
 ---@field base integer The first unacknowledged segment.
 ---@field highest integer The highest acknowledged segment.
----@field window number
----@field slow_start boolean
----@field srtt number | nil
+---@field window number The congestion window, in segments.
+---@field slow_start boolean `true` until the first loss, the window grows by one per ack instead of one per window.
+---@field srtt number | nil The smoothed round trip time in seconds, `nil` until accepted.
 ---@field srtt_seeded boolean | nil `true` while `srtt` is the handshake sample.
----@field rto number
----@field loss_time number
+---@field rto number The retransmission timeout in seconds.
+---@field loss_time number The uptime of the last window cut.
 ---@field credit number The number of segments that can be sent right now, refilled by pacing.
----@field pump_time number
----@field accepted boolean
----@field activity number
----@field start_time number
----@field callback dreamwork.std.Network.FinishFn | nil
+---@field pump_time number The uptime of the last pump, the base of the pacing refill.
+---@field accepted boolean `true` once the receiver has accepted the transfer.
+---@field activity number The uptime of the last progress, for the timeout.
+---@field start_time number The uptime of the start.
+---@field callback dreamwork.std.Network.FinishFn | nil The finish callback of `Network:send`.
 
+--- The receiver side state of a segmented transfer.
+---
 ---@class dreamwork.std.Network.Incoming
----@field network dreamwork.std.Network
----@field peer garrysmod.Player | nil
----@field key garrysmod.Player | string
----@field id integer
----@field size integer
----@field segment_size integer
----@field count integer
----@field checksum integer
+---@field network dreamwork.std.Network The network of the transfer.
+---@field peer garrysmod.Player | nil The sender, `nil` on the client.
+---@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field id integer The transfer ID, `[0, 255]`.
+---@field size integer The size of the data in bytes.
+---@field segment_size integer The size of every segment except the last one, in bytes.
+---@field count integer The number of segments.
+---@field checksum integer The CRC32 of the whole data announced by the sender.
 ---@field buffered boolean `true` if the segments are kept for the receive handlers.
 ---@field crc dreamwork.std.checksum.CRC32 | nil The running checksum of the delivered data, if not buffered.
----@field segments string[]
----@field received_flags boolean[]
----@field received integer
----@field received_bytes integer
+---@field segments string[] The received segments, the delivered ones are dropped if not buffered.
+---@field received_flags boolean[] The received segments.
+---@field received integer The number of received segments.
+---@field received_bytes integer The number of received bytes.
 ---@field base integer The first missing segment, everything before it is delivered.
 ---@field highest integer The highest received segment.
----@field ack_pending boolean
----@field ack_time number
----@field activity number
----@field start_time number
+---@field ack_pending boolean `true` if a segment arrived since the last ack.
+---@field ack_time number The uptime of the last ack.
+---@field activity number The uptime of the last received segment, for the timeout.
+---@field start_time number The uptime of the start.
 
+--- A transmission waiting for the running one to the same peer.
+---
 ---@class dreamwork.std.Network.Queued
----@field data string
----@field callback dreamwork.std.Network.FinishFn | nil
+---@field data string The data to send.
+---@field callback dreamwork.std.Network.FinishFn | nil The finish callback of `Network:send`.
 
+--- The running outgoing transfer of every network, keyed by the peer.
+---
 ---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Outgoing>>
 local outgoing = {}
 
+--- The running incoming transfer of every network, keyed by the peer.
+---
 ---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Incoming>>
 local incoming = {}
 
+--- The transmissions waiting behind the running outgoing one, keyed by the peer.
+---
 ---@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Queued[]>>
 local queues = {}
 
+--- All running outgoing transfers, walked every tick.
+---
 ---@type table<dreamwork.std.Network.Outgoing, boolean>
 local active_outgoing = {}
 
+--- All running incoming transfers, walked every tick.
+---
 ---@type table<dreamwork.std.Network.Incoming, boolean>
 local active_incoming = {}
 
+--- The ID of the last started transfer, wraps at 256.
+---
 ---@type integer
 local transfer_counter = 0
 
 do
 
-    ---@param name string
-    ---@return dreamwork.std.Network | nil object
+    ---@param name string The name of the network.
+    ---@return dreamwork.std.Network | nil object The existing network with this name.
     ---@protected
     function NetworkClass:__new( name )
         return networks[ name ]
@@ -943,8 +1044,8 @@ do
         return string_format( "Network: %p [%d][%s]", self, network_ids[ self ], network_names[ self ] )
     end
 
-    ---@param name string
-    ---@param can_receive boolean?
+    ---@param name string The name of the network, must be unique.
+    ---@param can_receive boolean? `true` if the network accepts incoming messages, `false` by default.
     ---@protected
     function Network:__init( name, can_receive )
         local network_name = name_prefix .. name
@@ -1453,7 +1554,7 @@ end
 --- Checks if the network is sending data to the target.
 ---
 ---@param target garrysmod.Player? The target player, required on the server, ignored on the client.
----@return boolean is_sending
+---@return boolean is_sending `true` if a transmission to the target is running.
 ---@nodiscard
 function Network:isSending( target )
     return outgoing[ self ][ (LUA_SERVER and target) or server_key ] ~= nil
@@ -1464,7 +1565,7 @@ end
 --- Checks if the network is receiving data from the sender.
 ---
 ---@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
----@return boolean is_receiving
+---@return boolean is_receiving `true` if a transmission from the sender is running.
 ---@nodiscard
 function Network:isReceiving( sender )
     return incoming[ self ][ (LUA_SERVER and sender) or server_key ] ~= nil

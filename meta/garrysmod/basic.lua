@@ -208,3 +208,10 @@ function ScrW() end
 ---
 ---@return number height The height of the game's window in pixels.
 function ScrH() end
+
+--- [MENU]
+---
+--- Opens a folder with the given name in the garrysmod folder using the operating system's file browser.
+---
+---@param folder_path string The path of the folder, relative to the `garrysmod/` folder.
+function OpenFolder( folder_path ) end

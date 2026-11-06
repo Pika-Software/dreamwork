@@ -92,8 +92,12 @@ local LUA_SERVER = std.LUA_SERVER
 
 --]]
 
+--- The Lua state a message is sent from or to.
+---
 ---@alias dreamwork.std.Message.Realm "server" | "client" | "menu"
 
+--- The realm codes of the packet header to the realms.
+---
 ---@type table<integer, dreamwork.std.Message.Realm>
 local code2realm = {
     [ 0 ] = "server",
@@ -101,6 +105,8 @@ local code2realm = {
     [ 2 ] = "menu"
 }
 
+--- The realms to the realm codes of the packet header.
+---
 ---@type table<dreamwork.std.Message.Realm, integer>
 local realm2code = {
     server = 0,
@@ -108,6 +114,8 @@ local realm2code = {
     menu = 2
 }
 
+--- The realm of this Lua state.
+---
 ---@type dreamwork.std.Message.Realm
 local local_realm
 
@@ -133,6 +141,8 @@ else
 end
 
 ---
+--- sender realm, transfer id, index and count
+---
 --- in bytes
 ---
 ---@type integer
@@ -156,6 +166,8 @@ local max_line_length = 500
 local frame_budget = LUA_SERVER and (4 * 1024) or (3 * 1024)
 
 ---
+--- the count field is 16 bit
+---
 --- in packets
 ---
 ---@type integer
@@ -177,49 +189,98 @@ local ack_window = math_floor( 6000 / max_line_length )
 ---@type number
 local ack_timeout = 1.0
 
+--- The command the client acknowledges the packets of the server with.
+---
 ---@type string
 local ack_command = "dreamwork.inet.ack"
 
+--- The packets are url-safe base64, so they never contain quotes or console separators.
+---
 ---@type dreamwork.std.base64.Options
 local base64_options = { variant = "urlsafe" }
 
+--- The help text of the registered commands.
 local description = "Internal dreamwork message channel, do not use."
 
+--- [SHARED AND MENU]
+---
+--- A named channel that sends data through hidden console commands,
+--- so it also works between the menu and the client states, where the `net` library doesn't.
+---
+--- The server sends to the client state of players, the client sends to the server or the menu,
+--- the menu sends to the client. The data is split into url-safe base64 packets of one console
+--- line each, paced by a per-frame byte budget, and is delivered to the handlers only when complete.
+---
+--- It is slow ( ~45 KiB/s with a 20 fps client ) and has no checksum, so prefer `std.Network`
+--- for large data between the server and the client.
+---
+--- Every realm must create the message with the same name to receive it,
+--- creating a message with the name of an existing one returns the existing object.
+---
+--- Messages to the same target are queued and sent in order.
+---
 ---@class dreamwork.std.Message : dreamwork.std.Object
 ---@field __class dreamwork.std.MessageClass
----@field name string The name of the message.
----@field receiver boolean `true` if the message accepts incoming data.
----@field timeout number The number of seconds without a packet after which an incomplete incoming transfer is dropped.
----@field limit integer The maximum size of an incoming message in bytes.
+---@field name string The name of the message, read-only.
+---@field receiver boolean `true` if the message accepts incoming data, `false` by default.
+---@field timeout number The number of seconds without a packet after which an incomplete incoming transfer is dropped, `15` by default, at least `1`.
+---@field limit integer The maximum size of an incoming message in bytes, `256` KiB by default, `0` rejects everything.
 local Message = class.base( "Message", true )
 
+--- [SHARED AND MENU]
+---
+--- The class of `Message`, call it to create or get a message.
+---
 ---@class dreamwork.std.MessageClass : dreamwork.std.Message, dreamwork.std.Class
 ---@field __base dreamwork.std.Message
 ---@overload fun( name: string, can_receive: boolean? ): dreamwork.std.Message
 local MessageClass = class.create( Message )
 std.Message = MessageClass
 
+--- Called when a message is fully received.
+---
+--- `sender` is the player on the server and `nil` on the client and menu,
+--- `realm` is the realm the message claims to come from.
+---
 ---@alias dreamwork.std.Message.ReceiveFn fun( message: dreamwork.std.Message, reader: dreamwork.std.BinaryReader, sender: garrysmod.Player | nil, realm: dreamwork.std.Message.Realm )
+
+--- Called when an outgoing message is finished.
+---
+--- `success` is `true` when the last packet is handed to the engine, the delivery is not confirmed,
+--- `false` if it was aborted or the target player left.
+---
 ---@alias dreamwork.std.Message.FinishFn fun( message: dreamwork.std.Message, success: boolean, target: garrysmod.Player | dreamwork.std.Message.Realm )
 
+--- The names of the messages.
+---
 ---@type table<dreamwork.std.Message, string>
 local message_names = {}
 
+--- The `receiver` values of the messages.
+---
 ---@type table<dreamwork.std.Message, boolean>
 local receive_allowed = {}
 
+--- The `timeout` values of the messages, in seconds.
+---
 ---@type table<dreamwork.std.Message, number>
 local timeouts = {}
 
+--- The `limit` values of the messages, in bytes.
+---
 ---@type table<dreamwork.std.Message, integer>
 local limits = {}
 
+--- The ID of the last started transfer of every message, wraps at 256.
+---
 ---@type table<dreamwork.std.Message, integer>
 local transfer_counters = {}
 
 --- Message `"receive"` handlers.
 local events = Emitter( "Message" )
 
+--- The messages by their names.
+---
 ---@type table<string, dreamwork.std.Message>
 local messages = {}
 
@@ -280,17 +341,19 @@ function Message:await()
     return events:await( self, "receive" )
 end
 
----@param realm dreamwork.std.Message.Realm
----@param name string
----@return string
+--- Returns the console command that delivers the message to the realm.
+---
+---@param realm dreamwork.std.Message.Realm The receiving realm.
+---@param name string The name of the message.
+---@return string command
 local function command_name( realm, name )
     return "dreamwork.inet." .. realm .. "." .. name
 end
 
 do
 
-    ---@param name string
-    ---@return dreamwork.std.Message | nil object
+    ---@param name string The name of the message.
+    ---@return dreamwork.std.Message | nil object The existing message with this name.
     ---@protected
     function MessageClass:__new( name )
         return messages[ name ]
@@ -302,8 +365,8 @@ do
         return string_format( "Message: %p [%s]", self, message_names[ self ] )
     end
 
-    ---@param name string
-    ---@param can_receive boolean?
+    ---@param name string The name of the message, must be the same in every realm.
+    ---@param can_receive boolean? `true` if the message accepts incoming data, `false` by default.
     ---@protected
     function Message:__init( name, can_receive )
         message_names[ self ] = name
@@ -355,6 +418,8 @@ do
 
 end
 
+--- Formats the player or the realm for the log.
+---
 ---@param target garrysmod.Player | dreamwork.std.Message.Realm
 ---@return string
 local function target_tostring( target )
@@ -373,14 +438,16 @@ end
 
 --]]
 
+--- An outgoing transfer, split into packets up front.
+---
 ---@class dreamwork.std.Message.Outgoing
----@field message dreamwork.std.Message
----@field target garrysmod.Player | dreamwork.std.Message.Realm
----@field command string
----@field packets string[] The encoded packets.
----@field count integer
----@field sent integer
----@field callback dreamwork.std.Message.FinishFn | nil
+---@field message dreamwork.std.Message The message of the transfer.
+---@field target garrysmod.Player | dreamwork.std.Message.Realm The target player on the server, the target realm otherwise.
+---@field command string The receiving console command.
+---@field packets string[] The encoded packets, the sent ones are dropped.
+---@field count integer The number of packets.
+---@field sent integer The number of sent packets.
+---@field callback dreamwork.std.Message.FinishFn | nil The finish callback of `Message:send`.
 
 --- The queues of outgoing transfers, keyed by the target player on the server or the target realm.
 ---
@@ -394,8 +461,11 @@ gc_setTableRules( queues, true, false )
 local spent = {}
 gc_setTableRules( spent, true, false )
 
+--- The budget key of the client and menu, they share one console.
 local shared_key = "shared"
 
+--- Calls the finish callback of the transfer.
+---
 ---@param transfer dreamwork.std.Message.Outgoing
 ---@param success boolean
 local function outgoing_finish( transfer, success )
@@ -405,6 +475,8 @@ local function outgoing_finish( transfer, success )
     end
 end
 
+--- Checks if the player is still connected, realms are always valid.
+---
 ---@param target garrysmod.Player | dreamwork.std.Message.Realm
 ---@return boolean
 local function target_valid( target )
@@ -412,6 +484,8 @@ local function target_valid( target )
     return isString( target ) or target:IsValid()
 end
 
+--- Drops the queue of the target, every transfer in it fails.
+---
 ---@param key garrysmod.Player | dreamwork.std.Message.Realm
 local function queue_flush( key )
     local queue = queues[ key ]
@@ -436,6 +510,8 @@ gc_setTableRules( inflight, true, false )
 local inflight_times = {}
 gc_setTableRules( inflight_times, true, false )
 
+--- Runs the receiving command with the packet, on the server it is counted as in flight.
+---
 ---@type fun( transfer: dreamwork.std.Message.Outgoing, packet: string )
 local packet_send
 
@@ -517,10 +593,12 @@ local function queue_pump( key )
     end
 end
 
+--- Splits the data into packets and queues them to the target.
+---
 ---@param message dreamwork.std.Message
 ---@param data string
----@param target garrysmod.Player | dreamwork.std.Message.Realm
----@param realm dreamwork.std.Message.Realm
+---@param target garrysmod.Player | dreamwork.std.Message.Realm The queue key.
+---@param realm dreamwork.std.Message.Realm The receiving realm.
 ---@param callback dreamwork.std.Message.FinishFn | nil
 local function transmit( message, data, target, realm, callback )
     local command = command_name( realm, message_names[ message ] )
@@ -574,6 +652,8 @@ local function transmit( message, data, target, realm, callback )
     queue_pump( target )
 end
 
+--- Resolves the target of `Message:send` and transmits to every player or the realm.
+---
 ---@param message dreamwork.std.Message
 ---@param data string
 ---@param target ( garrysmod.Player | garrysmod.Player[] | dreamwork.std.Message.Realm )?
@@ -648,6 +728,8 @@ function Message:transmit( fn, target, callback )
     transmit_to( self, writer:compile(), target, callback )
 end
 
+--- Returns the queue key of the target, the default realm if it is `nil` outside the server.
+---
 ---@param target ( garrysmod.Player | dreamwork.std.Message.Realm )?
 ---@return garrysmod.Player | dreamwork.std.Message.Realm | nil
 local function target_key( target )
@@ -710,7 +792,7 @@ end
 --- Checks if the message has queued outgoing packets to the target.
 ---
 ---@param target ( garrysmod.Player | dreamwork.std.Message.Realm )? The target player on the server, the target realm on the client, ignored in the menu.
----@return boolean is_sending
+---@return boolean is_sending `true` if a transfer of this message to the target is queued.
 ---@nodiscard
 function Message:isSending( target )
     local queue = queues[ target_key( target ) ]
@@ -731,13 +813,15 @@ end
 
 --]]
 
+--- An incomplete incoming transfer.
+---
 ---@class dreamwork.std.Message.Incoming
----@field id integer
----@field count integer
+---@field id integer The transfer ID, `[0, 255]`.
+---@field count integer The number of packets.
 ---@field next integer The zero-based index of the expected packet.
----@field chunks string[]
----@field size integer
----@field activity number
+---@field chunks string[] The received data chunks.
+---@field size integer The number of received bytes.
+---@field activity number The uptime of the last received packet, for the timeout.
 
 --- The incomplete incoming transfers, keyed by the sender player on the server or the sender realm.
 ---
@@ -745,9 +829,13 @@ end
 local incoming = {}
 gc_setTableRules( incoming, true, false )
 
+--- The number of incomplete incoming transfers over all messages, the timeout check is skipped at `0`.
+---
 ---@type integer
 local incoming_count = 0
 
+--- Drops the incomplete transfer from the sender.
+---
 ---@param message dreamwork.std.Message
 ---@param key garrysmod.Player | dreamwork.std.Message.Realm
 local function incoming_remove( message, key )
@@ -763,7 +851,7 @@ end
 --- Checks if the message is receiving data from the sender.
 ---
 ---@param sender ( garrysmod.Player | dreamwork.std.Message.Realm )? The sender player on the server, the sender realm on the client, ignored in the menu.
----@return boolean is_receiving
+---@return boolean is_receiving `true` if an incomplete transfer from the sender is in progress.
 ---@nodiscard
 function Message:isReceiving( sender )
     local states = incoming[ self ]
@@ -775,9 +863,11 @@ end
 ---@type integer
 local unacknowledged = 0
 
+--- Decodes an incoming packet and assembles the transfer, the handlers are called when it is complete.
+---
 ---@param message dreamwork.std.Message
----@param sender garrysmod.Player | nil
----@param encoded string
+---@param sender garrysmod.Player | nil The sender player on the server, `nil` otherwise.
+---@param encoded string The base64 packet.
 local function message_receive( message, sender, encoded )
     if not base64_validate( encoded, base64_options ) then
         dreamwork_Logger:debug( "Message '%s' received a malformed packet.", message_names[ message ] )
@@ -936,6 +1026,8 @@ engine_hook.catch( "dreamwork.console.command.execute", "dreamwork.std.Message",
     return true
 end, -1000 )
 
+--- The reusable list of queue keys pumped in `Think`.
+---
 ---@type ( garrysmod.Player | dreamwork.std.Message.Realm )[]
 local pump_keys = {}
 
