@@ -2699,6 +2699,7 @@ end
 
 dreamwork_load( "std/codec/json.lua" )
 dreamwork_load( "std/codec/xml.lua" )
+dreamwork_load( "std/codec/html.lua" )
 dreamwork_load( "std/codec/vdf.lua" )
 
 dreamwork_load( "std/types/url.lua" )
