@@ -2995,12 +2995,15 @@ dreamwork_load( "std/types/pixel_map.lua", false, LUA_SERVER )
 dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )
 
--- dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
--- dreamwork_load( "modules/engine/websocket.lua" )
+dreamwork.storage.init()
+
+dreamwork_load( "std/types/webclient.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/net/http.lua" )
 dreamwork_load( "std/net/websocket.lua" )
 dreamwork_load( "std/net/network.lua", false, LUA_MENU )
+
+dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 
 -- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
 if LUA_SERVER then
@@ -3015,10 +3018,6 @@ if LUA_SERVER then
 elseif LUA_CLIENT then
     dreamwork_load( "modules/mcp.lua" )
 end
-
-dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
-
-dreamwork.storage.init()
 
 dreamwork_load( "modules/cli/init.lua" )
 
