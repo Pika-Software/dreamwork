@@ -2892,7 +2892,7 @@ local function copy( source_path, target_path, overwrite, is_directory, async )
     return copy_node( source, target_path, async )
 end
 
---- Moves the file or the directory, renames it in the search path if possible, otherwise copies and deletes it.
+--- Moves the file or the directory into an existing directory, renames it in the search path if possible, otherwise copies and deletes it.
 ---
 ---@param source_path string
 ---@param target_path string
@@ -2925,8 +2925,9 @@ local function move( source_path, target_path, overwrite, is_directory, async )
         return false, message
     end
 
+    -- like `mv`, the target directory must exist
     local directory
-    directory, message = make_directory_chain( directory_path )
+    directory, message = directory_lookup( directory_path )
     if directory == nil then
         return false, message
     end
@@ -3302,7 +3303,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the file, missing directories are created.
+--- Moves the file, the target directory must exist.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted.
 ---
@@ -3321,7 +3322,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the file, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
+--- Moves the file asynchronously when called from a coroutine, synchronously otherwise, the target directory must exist.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted.
 ---
@@ -3441,7 +3442,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the directory with everything in it, missing directories are created.
+--- Moves the directory with everything in it, the target directory must exist.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted, mounts nested in it stay at their paths.
 ---
@@ -3462,7 +3463,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the directory with everything in it, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
+--- Moves the directory with everything in it asynchronously when called from a coroutine, synchronously otherwise, the target directory must exist.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted, mounts nested in it stay at their paths.
 ---

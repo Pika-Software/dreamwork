@@ -158,7 +158,7 @@ end
 ---
 ---@class dreamwork.std.fs.File : dreamwork.std.Object
 ---@field __class dreamwork.std.fs.FileClass
----@field path string The absolute virtual path of the file, assigning moves the file without overwriting.
+---@field path string The absolute virtual path of the file, assigning moves the file without overwriting, the target directory must exist.
 ---@field name string The name of the file with its extension, assigning renames the file without overwriting.
 ---@field content string The file data, reading reads the whole file, assigning replaces it.
 ---@field size integer The size of the file in bytes, `0` if the file does not exist. **Read-only.**
@@ -187,7 +187,7 @@ std.File = FileClass
 ---
 ---@class dreamwork.std.fs.Directory : dreamwork.std.Object
 ---@field __class dreamwork.std.fs.DirectoryClass
----@field path string The absolute virtual path of the directory, assigning moves the directory without overwriting.
+---@field path string The absolute virtual path of the directory, assigning moves the directory without overwriting, the target directory must exist.
 ---@field name string The name of the directory, empty for the root, assigning renames the directory without overwriting.
 ---@field size integer The total size of everything in the directory in bytes, walked recursively, `0` if the directory does not exist. **Read-only.**
 ---@field parent dreamwork.std.fs.Directory The parent directory, the root returns itself, assigning moves the directory into the directory without overwriting.
@@ -411,7 +411,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the file, missing directories are created, asynchronously inside of a coroutine.
+--- Moves the file, the target directory must exist, asynchronously inside of a coroutine.
 ---
 --- The object follows the file, its `path` and `name` are updated.
 ---
@@ -610,7 +610,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the directory with everything in it, missing directories are created, asynchronously inside of a coroutine.
+--- Moves the directory with everything in it, the target directory must exist, asynchronously inside of a coroutine.
 ---
 --- The object follows the directory, its `path` and `name` are updated,
 --- objects of files and directories inside of it keep their old paths.
