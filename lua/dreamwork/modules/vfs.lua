@@ -72,9 +72,12 @@ local gc_setTableRules = gc.setTableRules
 local class = std.class
 local Future = std.Future
 
-local isNumber = std.isNumber
-local isString = std.isString
+local coroutine = std.coroutine
+local coroutine_isyieldable = coroutine.isyieldable
+
 local error = std.error
+local isString = std.isString
+local isNumber = std.isNumber
 
 
 do
@@ -1294,7 +1297,7 @@ local function write_data( search_path, relative_path, data, append_mode )
     return true
 end
 
---- Writes the data into `DATA` with async_write or gm_asyncio, must be called from a coroutine.
+--- Writes the data into `DATA` with async_write or gm_asyncio from a coroutine, synchronously otherwise.
 ---
 --- Paths rejected by the driver are written synchronously, async_write allows fewer extensions than `DATA`.
 ---
@@ -1304,6 +1307,10 @@ end
 ---@return boolean success
 ---@async
 local function write_data_async( relative_path, data, append_mode )
+    if not coroutine_isyieldable() then
+        return write_data( "DATA", relative_path, data, append_mode )
+    end
+
     local f = Future()
 
     local status = (append_mode and file_AsyncAppend or file_AsyncWrite)( relative_path, data, function( _, write_status )
@@ -1340,14 +1347,14 @@ local function read_node( node )
     return data
 end
 
---- Reads the file asynchronously where possible, must be called from a coroutine.
+--- Reads the file asynchronously where possible from a coroutine, synchronously otherwise.
 ---
 ---@param node dreamwork.vfs.Node
 ---@return string | nil data
 ---@return string | nil message
 ---@async
 local function read_node_async( node )
-    if file_AsyncRead == nil or node_data[ node ] ~= nil then
+    if file_AsyncRead == nil or node_data[ node ] ~= nil or not coroutine_isyieldable() then
         return read_node( node )
     end
 
@@ -1563,7 +1570,7 @@ end
 ---@param vfs_path string
 ---@param data string
 ---@param append_mode boolean
----@param async boolean? `true` to write with gm_asyncio where possible, must be called from a coroutine then.
+---@param async boolean? `true` to write with gm_asyncio where possible, synchronously outside of a coroutine.
 ---@return boolean success
 ---@return string | nil message
 local function write_file( vfs_path, data, append_mode, async )
@@ -2774,7 +2781,7 @@ end
 ---
 ---@param node dreamwork.vfs.Node
 ---@param target_path string
----@param async boolean `true` to read and write asynchronously where possible, must be called from a coroutine then.
+---@param async boolean `true` to read and write asynchronously where possible, synchronously outside of a coroutine.
 ---@return boolean success
 ---@return string | nil message
 local function copy_node( node, target_path, async )
@@ -3008,7 +3015,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Reads the whole file asynchronously, must be called from a coroutine.
+--- Reads the whole file asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Falls back to a synchronous read where the engine has no asynchronous reading.
 ---
@@ -3072,7 +3079,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Replaces the file data asynchronously, must be called from a coroutine.
+--- Replaces the file data asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Writes synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`,
 --- kept in memory where the search path is read-only or there is none.
@@ -3092,7 +3099,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Appends data to the end of the file asynchronously, must be called from a coroutine.
+--- Appends data to the end of the file asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Appends synchronously where neither async_write nor gm_asyncio is installed or the file is outside of `DATA`,
 --- kept in memory where the search path is read-only or there is none.
@@ -3275,7 +3282,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Copies the file, missing directories are created asynchronously, must be called from a coroutine.
+--- Copies the file, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Reads and writes synchronously where the engine, async_write or gm_asyncio cannot do it asynchronously.
 ---
@@ -3314,7 +3321,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the file, missing directories are created asynchronously, must be called from a coroutine.
+--- Moves the file, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted.
 ---
@@ -3363,7 +3370,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames the file asynchronously, must be called from a coroutine, it stays in its parent directory.
+--- Renames the file asynchronously when called from a coroutine, synchronously otherwise, it stays in its parent directory.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted.
 ---
@@ -3412,7 +3419,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Copies the directory with everything in it, missing directories are created asynchronously, must be called from a coroutine.
+--- Copies the directory with everything in it, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Fails midway if anything cannot be copied, the copied part is kept.
 ---
@@ -3455,7 +3462,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Moves the directory with everything in it, missing directories are created asynchronously, must be called from a coroutine.
+--- Moves the directory with everything in it, missing directories are created asynchronously when called from a coroutine, synchronously otherwise.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted, mounts nested in it stay at their paths.
 ---
@@ -3506,7 +3513,7 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Renames the directory asynchronously, must be called from a coroutine, it stays in its parent directory.
+--- Renames the directory asynchronously when called from a coroutine, synchronously otherwise, it stays in its parent directory.
 ---
 --- Renamed in the search path if possible, otherwise copied and deleted, mounts nested in it stay at their paths.
 ---

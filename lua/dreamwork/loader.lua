@@ -3004,6 +3004,7 @@ if ffi ~= nil then
 end
 
 dreamwork_load( "modules/vfs.lua" )
+dreamwork_load( "std/io/fs.lua" )
 
 do
 
