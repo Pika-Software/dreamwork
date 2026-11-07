@@ -23,7 +23,6 @@ local ascii_isHexDigit       = ascii.isHexDigit
 local ascii_toInteger        = ascii.toInteger
 
 local string                 = std.string
-local string_len             = string.len
 local string_sub             = string.sub
 local string_find            = string.find
 local string_gsub            = string.gsub
@@ -353,7 +352,7 @@ end
 ---@return boolean
 local function is_windows_drive_letter( str, normalized )
     ---@cast str string
-    return isString( str ) and string_len( str ) == 2 and is_windows_drive_letter_bytes( string_byte( str, 1, 1 ), string_byte( str, 2, 2 ), normalized )
+    return isString( str ) and #str == 2 and is_windows_drive_letter_bytes( string_byte( str, 1, 1 ), string_byte( str, 2, 2 ), normalized )
 end
 
 ---@param str string
@@ -809,7 +808,7 @@ local function parse_host_string( str, start_position, end_position, is_special 
         error( "Invalid URL: Domain invalid code point" )
     end
 
-    local ascii_domain_length = string_len( ascii_domain )
+    local ascii_domain_length = #ascii_domain
 
     if ends_in_a_number( ascii_domain, 1, ascii_domain_length ) then
         -- one trailing dot is allowed, other empty parts are not
@@ -1382,7 +1381,7 @@ function parse_path( state, str, start_position, end_position, is_special, segme
 
         if uint8 == nil or is_slash or (not state_override and (uint8 == 0x3F --[[ ? ]] or uint8 == 0x23 --[[ # ]])) then
             local segment = percent_encode( string_sub( str, segment_start, position - 1 ), PATH_WHITELIST, true )
-            local segment_length = string_len( segment )
+            local segment_length = #segment
             segment_start = position + 1
 
             if is_double_dot( segment, segment_length ) then
@@ -1497,8 +1496,8 @@ local function parse( state, str, base )
     str = string_gsub( str, "[\t\n\r]", "" )
 
     -- trim leading and trailing C0 controls and spaces
-    local start_position = trim_input( str, 1, string_len( str ) )
-    local end_position = trim_input( str, string_len( str ), start_position )
+    local start_position = trim_input( str, 1, #str )
+    local end_position = trim_input( str, #str, start_position )
 
     parse_scheme( state, str, start_position, end_position, base )
 
@@ -2113,7 +2112,7 @@ local function set_host( url, state, value, state_override )
         new_state[ key ] = state_value
     end
 
-    if pcall( parse_host, new_state, value, 1, string_len( value ), get_special( state ), state_override ) then
+    if pcall( parse_host, new_state, value, 1, #value, get_special( state ), state_override ) then
         raw_set( url, "state", new_state )
         reset_cache( url )
     end
@@ -2144,7 +2143,7 @@ function URL:__newindex( key, value )
                 state.port = nil
             else
                 value = tostring( value )
-                parse_port( state, value, 1, string_len( value ), get_special( state ), true )
+                parse_port( state, value, 1, #value, get_special( state ), true )
             end
         elseif key == "query" then
             if isURLSearchParams( value ) then
@@ -2166,7 +2165,7 @@ function URL:__newindex( key, value )
         refresh_search_params( self )
     elseif key == "protocol" then
         reset_cache( self )
-        parse_scheme( state, value .. ":", 1, string_len( value ) + 1, nil, true )
+        parse_scheme( state, value .. ":", 1, #value + 1, nil, true )
     elseif key == "host" then
         set_host( self, state, value, "host" )
     elseif key == "pathname" then
@@ -2175,14 +2174,14 @@ function URL:__newindex( key, value )
         reset_cache( self )
 
         state.path = {}
-        parse_path_start( state, value, 1, string_len( value ), get_special( state ), true )
+        parse_path_start( state, value, 1, #value, get_special( state ), true )
     elseif key == "search" then
         reset_cache( self )
 
         if value == nil or value == "" then
             state.query = nil
         else
-            parse_query( state, value, (string_byte( value, 1, 1 ) == 0x3F --[[ ? ]]) and 2 or 1, string_len( value ), get_special( state ), true )
+            parse_query( state, value, (string_byte( value, 1, 1 ) == 0x3F --[[ ? ]]) and 2 or 1, #value, get_special( state ), true )
         end
 
         refresh_search_params( self )
@@ -2196,7 +2195,7 @@ function URL:__newindex( key, value )
             return
         end
 
-        parse_fragment( state, value, (string_byte( value, 1, 1 ) == 0x23 --[[ # ]]) and 2 or 1, string_len( value ) )
+        parse_fragment( state, value, (string_byte( value, 1, 1 ) == 0x23 --[[ # ]]) and 2 or 1, #value )
     else
         raw_set( self, key, value )
     end

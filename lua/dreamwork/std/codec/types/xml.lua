@@ -24,7 +24,7 @@ local table_concat = table.concat
 local string = std.string
 local string_byteRep = string.byteRep
 local string_toNumber = string.toNumber
-local string_sub, string_len = string.sub, string.len
+local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 local string_gsub, string_match = string.gsub, string.match
 local string_find, string_format = string.find, string.format
@@ -613,7 +613,7 @@ function XMLNode:set( key, value )
     local data = node_data_table( node )
 
     local key_start = string_find( key, ".", 1, true )
-    if key_start == nil or key_start == string_len( key ) then
+    if key_start == nil or key_start == #key then
         if key_start ~= nil then
             key = string_sub( key, 1, key_start - 1 )
         end
@@ -1600,7 +1600,7 @@ do
     function XMLNodeClass.fromString( xml_str, keep_whitespace )
         keep_whitespace = keep_whitespace == true
 
-        local xml_length = string_len( xml_str )
+        local xml_length = #xml_str
 
         ---@type dreamwork.std.XMLNode | nil
         local active_node

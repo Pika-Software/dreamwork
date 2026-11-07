@@ -1,7 +1,6 @@
 local std = dreamwork.std
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 
@@ -37,7 +36,7 @@ function table.get( tbl, path, separator )
         separator = 0x2E --[[ "." ]]
     end
 
-    local str_length = string_len( path )
+    local str_length = #path
     local split_position = 0
 
     for position = 1, str_length, 1 do
@@ -81,7 +80,7 @@ function table.set( tbl, path, value, separator )
         separator = 0x2E --[[ "." ]]
     end
 
-    local str_length = string_len( path )
+    local str_length = #path
     local split_position = 0
 
     for position = 1, str_length, 1 do

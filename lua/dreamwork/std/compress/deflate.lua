@@ -23,7 +23,6 @@ local table_concat = table.concat
 local table_unpack = table.unpack
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_char = string.char
@@ -1376,7 +1375,7 @@ function deflate.compress( raw_data, options )
     local start = 1
 
     if dictionary ~= nil then
-        local dictionary_length = string_len( dictionary )
+        local dictionary_length = #dictionary
         if dictionary_length > WINDOW_SIZE then
             dictionary, dictionary_length = string_sub( dictionary, -WINDOW_SIZE ), WINDOW_SIZE
         end
@@ -1387,7 +1386,7 @@ function deflate.compress( raw_data, options )
         end
     end
 
-    local data_length = string_len( raw_data )
+    local data_length = #raw_data
 
     local bytes, capacity = get_bytes( data_length - start + 1 + 0x400 )
 
@@ -1910,14 +1909,14 @@ function deflate.decompress( compressed_data, dictionary, start_position )
         error( "start_position must be a positive integer", 2 )
     end
 
-    local data_length = string_len( compressed_data )
+    local data_length = #compressed_data
 
     -- the bit buffer may read up to 4 bytes past the end of a valid stream
     local position_limit = data_length + 5
 
     local dictionary_length = 0
     if dictionary ~= nil then
-        dictionary_length = string_len( dictionary )
+        dictionary_length = #dictionary
         if dictionary_length > WINDOW_SIZE then
             dictionary, dictionary_length = string_sub( dictionary, -WINDOW_SIZE ), WINDOW_SIZE
         end

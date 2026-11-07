@@ -18,7 +18,6 @@ local table_concat = table.concat
 local table_unpack = table.unpack
 
 local string = std.string
-local string_len = string.len
 local string_char = string.char
 local string_byte = string.byte
 
@@ -88,7 +87,7 @@ local function get_format( options )
 
     local alphabet = options.alphabet
     if alphabet ~= nil then
-        local alphabet_length = string_len( alphabet )
+        local alphabet_length = #alphabet
 
         symbol_bits = 1
         while 2 ^ symbol_bits < alphabet_length do
@@ -116,7 +115,7 @@ local function get_format( options )
         end
 
         if pad ~= false then
-            if string_len( pad ) ~= 1 then
+            if #pad ~= 1 then
                 return nil, "options.pad must be a single character or false"
             end
 
@@ -484,7 +483,7 @@ if ffi == nil then
         -- without a clear code a full dictionary starts over by itself
         local implicit_reset = reset and clear == nil
 
-        local data_length = string_len( compressed_data )
+        local data_length = #compressed_data
 
         local pad_byte = format.pad_byte
         if pad_byte ~= nil then
@@ -959,7 +958,7 @@ else
         -- without a clear code a full dictionary starts over by itself
         local implicit_reset = reset and clear == nil
 
-        local data_length = string_len( compressed_data )
+        local data_length = #compressed_data
 
         local pad_byte = format.pad_byte
         if pad_byte ~= nil then
@@ -1129,7 +1128,7 @@ function lzw.compress( raw_data, options )
     end
 
     local compressed_data
-    compressed_data, error_message = compress( raw_data, string_len( raw_data ), format )
+    compressed_data, error_message = compress( raw_data, #raw_data, format )
 
     if compressed_data == nil then
         error( error_message, 2 )

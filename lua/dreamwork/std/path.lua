@@ -6,7 +6,6 @@ local debug_getfmain = debug.getfmain
 local debug_getfsource = debug.getfsource
 
 local string = std.string
-local string_len = string.len
 local pattern_bytes = string.PatternBytes
 local string_byteSplit = string.byteSplit
 local string_sub, string_gsub = string.sub, string.gsub
@@ -149,7 +148,7 @@ path.equals = equals
 ---@nodiscard
 function path.getFile( file_path, keep_extension )
     if keep_extension then
-        for index = string_len( file_path ), 1, -1 do
+        for index = #file_path, 1, -1 do
             if string_byte( file_path, index ) == 0x2F --[[ / ]] then
                 return string_sub( file_path, index + 1 )
             end
@@ -160,7 +159,7 @@ function path.getFile( file_path, keep_extension )
 
     local dot_position
 
-    for index = string_len( file_path ), 1, -1 do
+    for index = #file_path, 1, -1 do
         local uint8 = string_byte( file_path, index )
         if uint8 == 0x2E --[[ . ]] then
             -- a leading dot belongs to the name (e.g. `.bashrc`)
@@ -201,7 +200,7 @@ end
 ---@return string | nil directory The directory of the file, or `nil` if the file path has no `/`.
 ---@nodiscard
 local function getDirectory( file_path, keep_trailing_slash )
-    for index = string_len( file_path ), 1, -1 do
+    for index = #file_path, 1, -1 do
         if string_byte( file_path, index ) == 0x2F --[[ / ]] then
             -- the root directory keeps its slash
             if not keep_trailing_slash and index ~= 1 then
@@ -236,7 +235,7 @@ path.getDirectory = getDirectory
 ---@return string extension The extension of the file, or an empty string if there is none.
 ---@nodiscard
 function path.getExtension( file_path, keep_dot )
-    for index = string_len( file_path ), 1, -1 do
+    for index = #file_path, 1, -1 do
         local uint8 = string_byte( file_path, index )
         if uint8 == 0x2F --[[ / ]] then
             break
@@ -276,7 +275,7 @@ end
 ---@return string file_name The file name with extension from the file path.
 ---@nodiscard
 local function split( file_path, keep_trailing_slash )
-    for index = string_len( file_path ), 1, -1 do
+    for index = #file_path, 1, -1 do
         if string_byte( file_path, index ) == 0x2F --[[ / ]] then
             -- the root directory keeps its slash
             return string_sub( file_path, 1, (keep_trailing_slash or index == 1) and index or (index - 1) ), string_sub( file_path, index + 1 )
@@ -307,7 +306,7 @@ path.split = split
 ---@return string extension The extension, or an empty string if there is none.
 ---@nodiscard
 local function splitExtension( file_path, keep_dot )
-    for index = string_len( file_path ), 1, -1 do
+    for index = #file_path, 1, -1 do
         local uint8 = string_byte( file_path, index )
         if uint8 == 0x2F --[[ / ]] then
             return file_path, ""
@@ -363,7 +362,7 @@ end
 function path.replaceDirectory( file_path, dir_name )
     local _, file_name = split( file_path, false )
 
-    local dir_length = string_len( dir_name )
+    local dir_length = #dir_name
     if dir_length == 0 then
         return file_name
     elseif string_byte( dir_name, dir_length, dir_length ) ~= 0x2F --[[ / ]] then
@@ -407,7 +406,7 @@ end
 ---@return string new_file_path The new file path.
 ---@nodiscard
 function path.stripTrailingSlash( file_path )
-    local file_path_length = string_len( file_path )
+    local file_path_length = #file_path
     local index = file_path_length
 
     -- the first byte is never stripped, so the root directory stays `/`
@@ -440,7 +439,7 @@ end
 ---@return string new_file_path The new file path.
 ---@nodiscard
 function path.ensureTrailingSlash( file_path )
-    if string_byte( file_path, string_len( file_path ) ) == 0x2F --[[ / ]] then
+    if string_byte( file_path, #file_path ) == 0x2F --[[ / ]] then
         return file_path
     else
         return file_path .. "/"
@@ -583,7 +582,7 @@ do
     ---@return string new_file_path The normalized file path.
     ---@nodiscard
     function normalize( file_path, keep_trailing_slash )
-        local file_path_length = string_len( file_path )
+        local file_path_length = #file_path
         if file_path_length == 0 then
             return "."
         end
@@ -994,7 +993,7 @@ do
     ---@return string pattern_str The Lua pattern that represents the wildcard string.
     ---@nodiscard
     function path.wildcard( wildcard_str, anchor_to_slash )
-        local str_length = string_len( wildcard_str )
+        local str_length = #wildcard_str
 
         local segments, segment_count = { anchor_to_slash and "%f[^%z/]" or "^" }, 1
 

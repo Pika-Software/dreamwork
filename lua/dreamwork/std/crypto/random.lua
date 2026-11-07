@@ -17,7 +17,7 @@ local math = std.math
 local math_floor = math.floor
 
 local string = std.string
-local string_sub, string_len = string.sub, string.len
+local string_sub = string.sub
 local string_byte, string_rep = string.byte, string.rep
 
 local table = std.table
@@ -105,7 +105,7 @@ if ffi ~= nil then
     -- a source that loads but does not deliver is treated as missing
     if os_random ~= nil then
         local success, bytes = pcall( os_random, 32 )
-        if not (success and bytes ~= nil and string_len( bytes ) == 32) then
+        if not (success and bytes ~= nil and #bytes == 32) then
             os_random = nil
         end
     end

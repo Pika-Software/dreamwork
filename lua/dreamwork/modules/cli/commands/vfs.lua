@@ -29,7 +29,6 @@ local path_getExtension = path.getExtension
 
 local string = std.string
 local string_sub = string.sub
-local string_len = string.len
 local string_diff = string.diff
 local string_byte = string.byte
 local string_match = string.match
@@ -351,7 +350,7 @@ vfs_group:register( "read", {
 
         ---@cast data string
 
-        local data_length = string_len( data )
+        local data_length = #data
 
         local shown_length = data_length
         if shown_length > max_bytes then
@@ -383,7 +382,7 @@ do
 
     local DATA_PATH = "/garrysmod/data"
     local DATA_PREFIX = DATA_PATH .. "/"
-    local DATA_PREFIX_LENGTH = string_len( DATA_PREFIX )
+    local DATA_PREFIX_LENGTH = #DATA_PREFIX
 
     --- The maximal size of the previous content that is diffed, the diff is O(ND), so big rewrites are slow.
     local DIFF_LIMIT = 65536
@@ -465,11 +464,11 @@ do
                 return
             end
 
-            local header = { string_format( "%s, %d bytes", exists and "replaced" or "created", string_len( content ) ) }
+            local header = { string_format( "%s, %d bytes", exists and "replaced" or "created", #content ) }
 
             if old_content == nil then
                 header[ 2 ] = "The previous content could not be read, no diff."
-            elseif string_len( old_content ) > DIFF_LIMIT then
+            elseif #old_content > DIFF_LIMIT then
                 header[ 2 ] = string_format( "The previous content is larger than %d bytes, no diff.", DIFF_LIMIT )
             else
                 cli_printHeader( header, vfs_path )
@@ -530,7 +529,7 @@ do
 
             ---@cast old_content string
 
-            local old_length = string_len( old_content )
+            local old_length = #old_content
 
             local header = { string_format( "deleted, %d bytes", old_length ) }
 

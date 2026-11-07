@@ -10,7 +10,6 @@ local table = std.table
 local table_unpack = table.unpack
 
 local string = std.string
-local string_len = string.len
 local string_rep = string.rep
 local string_byte, string_char = string.byte, string.char
 
@@ -40,7 +39,7 @@ crypto.hmac = hmac
 ---@return string normalized_key The key of exactly `block_size` bytes.
 ---@nodiscard
 local function normalizeKey( key, digest_fn, block_size )
-    local key_length = string_len( key )
+    local key_length = #key
     if key_length > block_size then
         return normalizeKey( digest_fn( key ), digest_fn, block_size )
     elseif key_length < block_size then
@@ -64,7 +63,7 @@ hmac.normalizeKey = normalizeKey
 ---@return string inner The inner pad.
 ---@nodiscard
 local function pads( key, block_size )
-    if string_len( key ) ~= block_size then
+    if #key ~= block_size then
         error( "hmac key must be exactly " .. block_size .. " bytes, use `hmac.normalizeKey` first", 2 )
     end
 

@@ -10,7 +10,6 @@ local math = std.math
 local math_max = math.max
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_match = string.match
 local string_format = string.format
@@ -103,7 +102,7 @@ if ffi == nil then
     -- whitelisted runs are copied with `string.sub` instead of byte by byte
 
     function encode( raw_str, whitelist, space_as_plus )
-        local raw_str_length = string_len( raw_str )
+        local raw_str_length = #raw_str
         local segments, segment_count = {}, 0
         local run_start = 1
 
@@ -140,7 +139,7 @@ if ffi == nil then
     end
 
     function decode( percent_str, plus_as_space )
-        local percent_str_length = string_len( percent_str )
+        local percent_str_length = #percent_str
 
         local segments, segment_count = {}, 0
         local position, run_start = 1, 1
@@ -246,7 +245,7 @@ else
     -- loops below do not allocate, so the GC cannot collect the string while its data is read by pointer.
 
     function encode( raw_str, whitelist, space_as_plus )
-        local raw_str_length = string_len( raw_str )
+        local raw_str_length = #raw_str
         local output = get_buffer( raw_str_length * 3 )
 
         local source = ffi_cast( uint8_ptr_t, raw_str )
@@ -272,7 +271,7 @@ else
     end
 
     function decode( percent_str, plus_as_space )
-        local percent_str_length = string_len( percent_str )
+        local percent_str_length = #percent_str
         local output = get_buffer( percent_str_length )
 
         local source = ffi_cast( uint8_ptr_t, percent_str )
@@ -367,7 +366,7 @@ function percent.validate( percent_str, whitelist, ignore_spaces )
         whitelist = default_whitelist
     end
 
-    local percent_str_length = string_len( percent_str )
+    local percent_str_length = #percent_str
     local plus_as_space = ignore_spaces ~= true
     local position = 1
 

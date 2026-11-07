@@ -20,7 +20,6 @@ local rbit_band, rbit_bor, rbit_bxor = rbit.band, rbit.bor, rbit.bxor
 local rbit_lshift, rbit_rshift, rbit_tobit = rbit.lshift, rbit.rshift, rbit.tobit
 
 local string = std.string
-local string_len = string.len
 local string_rep = string.rep
 local string_sub = string.sub
 local string_format = string.format
@@ -274,14 +273,14 @@ local function finalize( tail, message_length, a, b, c, d, as_hex )
     local rbit_count_low = (message_length % 0x20000000) * 8
     local rbit_count_high = math_floor( message_length / 0x20000000 )
 
-    local block = tail .. "\128" .. string_rep( "\0", (55 - string_len( tail )) % 64 ) .. string_char(
+    local block = tail .. "\128" .. string_rep( "\0", (55 - #tail) % 64 ) .. string_char(
         rbit_band( rbit_count_low, 0xFF ), rbit_band( rbit_rshift( rbit_count_low, 8 ), 0xFF ), rbit_band( rbit_rshift( rbit_count_low, 16 ), 0xFF ), rbit_rshift( rbit_count_low, 24 ),
         rbit_band( rbit_count_high, 0xFF ), rbit_band( rbit_rshift( rbit_count_high, 8 ), 0xFF ), rbit_band( rbit_rshift( rbit_count_high, 16 ), 0xFF ), rbit_rshift( rbit_count_high, 24 )
     )
 
     a, b, c, d = transform( block, 0, a, b, c, d )
 
-    if string_len( block ) == 128 then
+    if #block == 128 then
         a, b, c, d = transform( block, 64, a, b, c, d )
     end
 
@@ -339,7 +338,7 @@ end
 ---@param str string The string to update the MD5 object with.
 ---@return dreamwork.std.crypto.MD5 obj The updated MD5 object.
 function MD5:update( str )
-    local str_length = string_len( str )
+    local str_length = #str
     if str_length == 0 then
         return self
     end
@@ -347,7 +346,7 @@ function MD5:update( str )
     self.message_length = self.message_length + str_length
 
     local buffer = self.buffer
-    local required = 64 - string_len( buffer )
+    local required = 64 - #buffer
 
     if str_length < required then
         self.buffer = buffer .. str
@@ -403,7 +402,7 @@ if util_MD5 == nil then
     ---@return string str_result The MD5 string of the message.
     ---@nodiscard
     function MD5Class.digest( message, as_hex )
-        local message_length = string_len( message )
+        local message_length = #message
         local offset, a, b, c, d = process( message, 0, message_length, 0x67452301, -0x10325477, -0x67452302, 0x10325476 )
         return finalize( string_sub( message, offset + 1 ), message_length, a, b, c, d, as_hex )
     end

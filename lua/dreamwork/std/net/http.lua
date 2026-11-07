@@ -13,7 +13,6 @@ local raw_get = raw.get
 local raw_tonumber = raw.tonumber
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_find = string.find
@@ -140,7 +139,7 @@ local function domain_match( host, domain, is_ip )
         return false
     end
 
-    local position = string_len( host ) - string_len( domain )
+    local position = #host - #domain
     return position > 1 and string_byte( host, position ) == 0x2E --[[ . ]] and string_sub( host, position + 1 ) == domain
 end
 
@@ -154,7 +153,7 @@ local function path_match( request_path, cookie_path )
         return true
     end
 
-    local cookie_path_length = string_len( cookie_path )
+    local cookie_path_length = #cookie_path
     if string_sub( request_path, 1, cookie_path_length ) ~= cookie_path then
         return false
     end
@@ -401,7 +400,7 @@ end
 ---@param b dreamwork.std.http.Cookie
 ---@return boolean
 local function cookie_order( a, b )
-    local a_length, b_length = string_len( a.path ), string_len( b.path )
+    local a_length, b_length = #a.path, #b.path
     if a_length == b_length then
         return a.created < b.created
     end

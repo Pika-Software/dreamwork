@@ -4,7 +4,6 @@ local std = dreamwork.std
 local len = std.len
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_char = string.char
@@ -505,7 +504,7 @@ end
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard
 function punycode.unpack( punycode_str, ignore_prefix, lax )
-    return unpack_range( punycode_str, 1, string_len( punycode_str ), ignore_prefix, lax )
+    return unpack_range( punycode_str, 1, #punycode_str, ignore_prefix, lax )
 end
 
 --- [SHARED AND MENU]
@@ -532,7 +531,7 @@ end
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard
 function punycode.encode( str, ignore_prefix, start_position, end_position, lax )
-    local start_index, end_index = math_range( string_len( str ), start_position, end_position )
+    local start_index, end_index = math_range( #str, start_position, end_position )
     if start_index > end_index then
         return "", nil
     end
@@ -602,7 +601,7 @@ end
 ---@return nil | string err_msg The error message, `nil` if no error occurred.
 ---@nodiscard
 function punycode.decode( punycode_str, ignore_prefix, start_position, end_position, lax )
-    local start_index, end_index = math_range( string_len( punycode_str ), start_position, end_position )
+    local start_index, end_index = math_range( #punycode_str, start_position, end_position )
     if start_index > end_index then
         return "", nil
     end

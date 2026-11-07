@@ -15,7 +15,6 @@ local table_concat = table.concat
 ---@class dreamwork.std.string
 local string = std.string
 local string_sub = string.sub
-local string_len = string.len
 local string_char = string.char
 local string_byte = string.byte
 
@@ -59,7 +58,7 @@ do
     ---@return string escaped_str The string with special characters escaped.
     ---@nodiscard
     function string.escape( str, escape_spaces, start_position, end_position )
-        local str_length = string_len( str )
+        local str_length = #str
         if str_length == 0 then
             return str
         end
@@ -133,7 +132,7 @@ do
     ---@return string str The unescaped string.
     ---@nodiscard
     function string.unescape( escaped_str, start_position, end_position )
-        local str_length = string_len( escaped_str )
+        local str_length = #escaped_str
         if str_length == 0 then
             return escaped_str
         end
@@ -204,7 +203,7 @@ end
 function string.fnv0( str )
     local hash_int = 0
 
-    for index = 1, string_len( str ), 1 do
+    for index = 1, #str, 1 do
         hash_int = hash_int + rbit_lshift( hash_int, 1 ) + rbit_lshift( hash_int, 4 ) + rbit_lshift( hash_int, 7 ) + rbit_lshift( hash_int, 8 ) + rbit_lshift( hash_int, 24 )
         hash_int = rbit_bxor( hash_int, string_byte( str, index, index ) )
     end
@@ -224,7 +223,7 @@ end
 function string.fnv1( str )
     local hash_int = 0x811c9dc5
 
-    for index = 1, string_len( str ), 1 do
+    for index = 1, #str, 1 do
         hash_int = hash_int + rbit_lshift( hash_int, 1 ) + rbit_lshift( hash_int, 4 ) + rbit_lshift( hash_int, 7 ) + rbit_lshift( hash_int, 8 ) + rbit_lshift( hash_int, 24 )
         hash_int = rbit_bxor( hash_int, string_byte( str, index, index ) )
     end
@@ -244,7 +243,7 @@ end
 function string.fnv1a( str )
     local hash_int = 0x811c9dc5
 
-    for index = 1, string_len( str ), 1 do
+    for index = 1, #str, 1 do
         hash_int = rbit_bxor( hash_int, string_byte( str, index, index ) )
         hash_int = hash_int + rbit_lshift( hash_int, 1 ) + rbit_lshift( hash_int, 4 ) + rbit_lshift( hash_int, 7 ) + rbit_lshift( hash_int, 8 ) + rbit_lshift( hash_int, 24 )
     end

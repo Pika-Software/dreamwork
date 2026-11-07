@@ -30,7 +30,6 @@ local tostring = std.tostring
 
 local string = std.string
 local string_sub = string.sub
-local string_len = string.len
 local string_byte = string.byte
 local string_find = string.find
 local string_gmatch = string.gmatch
@@ -172,17 +171,25 @@ do
 
     if is_terminal then
         box_style = {
-            top_left = "┌", top_right = "┐",
-            bottom_left = "└", bottom_right = "┘",
-            middle_left = "├", middle_right = "┤",
-            horizontal = "─", vertical = "│"
+            top_left = "┌",
+            top_right = "┐",
+            bottom_left = "└",
+            bottom_right = "┘",
+            middle_left = "├",
+            middle_right = "┤",
+            horizontal = "─",
+            vertical = "│"
         }
     else
         box_style = {
-            top_left = "+", top_right = "+",
-            bottom_left = "+", bottom_right = "+",
-            middle_left = "+", middle_right = "+",
-            horizontal = "-", vertical = "|"
+            top_left = "+",
+            top_right = "+",
+            bottom_left = "+",
+            bottom_right = "+",
+            middle_left = "+",
+            middle_right = "+",
+            horizontal = "-",
+            vertical = "|"
         }
     end
 
@@ -190,7 +197,7 @@ do
     ---@return integer
     local function text_width( str )
         -- lax, so broken UTF-8 still has a width
-        return utf8_len( str, nil, nil, true ) or string_len( str )
+        return utf8_len( str, nil, nil, true ) or #str
     end
 
     --- [SHARED AND MENU]
@@ -228,9 +235,7 @@ do
                     lines[ line_count ] = line
                 end
 
-                local word_length = string_len( word )
-
-                for position = 1, word_length, width do
+                for position = 1, #word, width do
                     line_count = line_count + 1
                     lines[ line_count ] = string_sub( word, position, position + width - 1 )
                 end
@@ -434,7 +439,7 @@ function cli.parseArguments( argument_string )
         if stop == nil then
             buffer_size = buffer_size + 1
             buffer[ buffer_size ] = string_sub( argument_string, position )
-            position = string_len( argument_string ) + 1
+            position = #argument_string + 1
         else
             buffer_size = buffer_size + 1
             buffer[ buffer_size ] = string_sub( argument_string, position, stop - 1 )
@@ -454,7 +459,7 @@ function cli.parseArguments( argument_string )
 
         argument = table_concat( buffer, "", 1, buffer_size )
     else
-        local stop = string_find( argument_string, "%s", start ) or (string_len( argument_string ) + 1)
+        local stop = string_find( argument_string, "%s", start ) or (#argument_string + 1)
         argument = string_sub( argument_string, start, stop - 1 )
         position = stop
     end
@@ -579,7 +584,7 @@ function cli.complete( prefix, names, suggestions, head, tail )
 
     head, tail = head or "", tail or ""
 
-    local prefix_length = string_len( prefix )
+    local prefix_length = #prefix
 
     for index = 1, #names, 1 do
         local name = names[ index ]
@@ -788,7 +793,7 @@ function Group:printHelp( page )
         last = name_count
     end
 
-    local number_width = string_len( raw_tostring( last ) )
+    local number_width = #raw_tostring( last )
 
     for index = first, last, 1 do
         local name = names[ index ]
@@ -1081,7 +1086,7 @@ do
                 return "<not set>"
             end
 
-            return string_format( "<set, %d characters>", string_len( value ) )
+            return string_format( "<set, %d characters>", #value )
         end
 
         return "\"" .. value .. "\""

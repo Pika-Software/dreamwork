@@ -844,7 +844,7 @@ do
         end
 
         if desired_length ~= nil then
-            local length = string_len( hex_str )
+            local length = #hex_str
             if length < desired_length then
                 return string_byteRep( 0x30, desired_length - length ) .. string_sub( hex_str, 1, length )
             elseif length > desired_length then
@@ -1509,7 +1509,7 @@ do
     ---@return string
     ---@private
     function String.__represent( value )
-        return string_format( "string: %p [%s][%d]", value, string_escape( value, false ), string_len( value ) )
+        return string_format( "string: %p [%s][%d]", value, string_escape( value, false ), #value )
     end
 
 end

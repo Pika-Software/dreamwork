@@ -25,7 +25,6 @@ local github_getRateLimit = github.getRateLimit
 
 local time_now = std.time.now
 local tostring = std.tostring
-local string_len = std.string.len
 local string_format = std.string.format
 
 --- The storage key of the Github API token.
@@ -159,7 +158,7 @@ local function format_token( token )
         return "<not set>"
     end
 
-    return string_format( "<set, %d characters>", string_len( token ) )
+    return string_format( "<set, %d characters>", #token )
 end
 
 --- The resources of the `/rate_limit` response that are shown.

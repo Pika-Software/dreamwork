@@ -2,11 +2,7 @@ local dreamwork_engine = dreamwork.engine
 
 ---@type garrysmod.util
 local glua_util = dreamwork_engine.requireLibrary( "util" )
-
----@type fun( data: string ): string
 local util_Base64Encode = glua_util.Base64Encode
-
----@type fun( data: string ): string
 local util_Base64Decode = glua_util.Base64Decode
 
 ---@class dreamwork.std
@@ -23,7 +19,6 @@ local table = std.table
 local table_concat = table.concat
 
 local string = std.string
-local string_len = string.len
 local string_sub, string_rep = string.sub, string.rep
 local string_byte, string_char = string.byte, string.char
 local string_find, string_gsub = string.find, string.gsub
@@ -64,7 +59,7 @@ std.base64 = base64
 ---@return dreamwork.std.base64.Alphabet alphabet The alphabet.
 ---@nodiscard
 function base64.alphabet( alphabet_str )
-    if string_len( alphabet_str ) ~= 64 then
+    if #alphabet_str ~= 64 then
         error( "alphabet must be 64 characters long", 2 )
     end
 
@@ -175,7 +170,7 @@ local function get_options( options )
     local pad_byte
 
     if pad then
-        if string_len( pad ) ~= 1 then
+        if #pad ~= 1 then
             error( "pad must be a single character", 3 )
         end
 
@@ -216,7 +211,7 @@ local tail_bytes = { [ 0 ] = 0, [ 2 ] = 1, [ 3 ] = 2 }
 ---@return nil | string err_msg The error message.
 local function get_data_length( base64_str, pad_byte )
     ---@type integer
-    local str_length = string_len( base64_str )
+    local str_length = #base64_str
     local data_length = str_length
 
     while data_length ~= 0 and string_byte( base64_str, data_length, data_length ) == pad_byte do
@@ -245,7 +240,7 @@ end
 ---@param pad_byte integer
 ---@return integer | nil
 local function find_invalid( base64_str, decode_map, pad_byte )
-    local end_position = string_len( base64_str )
+    local end_position = #base64_str
 
     while end_position ~= 0 do
         local uint8 = string_byte( base64_str, end_position, end_position )
@@ -467,7 +462,7 @@ end
 ---@return string
 local function wrap_lines( base64_str, wrap, eol )
     ---@type integer
-    local str_length = string_len( base64_str )
+    local str_length = #base64_str
 
     if str_length <= wrap then
         return base64_str
@@ -549,7 +544,7 @@ function base64.encode( raw_str, options )
     end
 
     ---@type integer
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
 
     if str_length == 0 then
         return raw_str

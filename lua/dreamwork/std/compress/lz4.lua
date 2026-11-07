@@ -17,7 +17,6 @@ local math = std.math
 local math_min = math.min
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_char = string.char
 local string_byte = string.byte
@@ -116,7 +115,7 @@ if holylib_CompressLZ4 == nil then
         local output = {}
         local output_size = 0
 
-        local index, dataLen = 1, string_len( data ) -- 1-indexed
+        local index, dataLen = 1, #data -- 1-indexed
         local nextUnencodedPos = index               -- Sometimes called the "anchor" in other implementations
 
         local mfLimit = dataLen - MFLIMIT + 1        -- Last index a match may start at
@@ -282,7 +281,7 @@ if holylib_DecompressLZ4 == nil then
         local output_size = 0
 
         local index = 1 -- 1-indexed
-        local dataLen = string_len( data )
+        local dataLen = #data
 
         while index <= dataLen do
             local token = string_byte( data, index )

@@ -24,7 +24,6 @@ local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
 
 local string = std.string
-local string_len = string.len
 local string_format = string.format
 
 local table_concat = std.table.concat
@@ -214,17 +213,25 @@ do
     ---@param ignore_errors boolean? If `true`, too large content is silently skipped instead of raising an error.
     function http.write( url, etag, content, ignore_errors )
         -- do not cache content that is larger than `config.cache_size`
-        local content_size, max_size = string_len( content ), config.cache_size * 1024
+        local content_size, max_size = #content, config.cache_size * 1024
         if content_size > max_size then
-            if ignore_errors then
-                return
-            end
+            if ignore_errors then return end
 
-            error( string_format( "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http client cache_size).", url, content_size, max_size ), 2 )
+            error( string_format(
+                "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http client cache_size).",
+                url, content_size, max_size
+            ), 2 )
         end
 
-        sqlite_query( "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content", url, etag, time_now( "ms", false ), SQLiteBlob( content ) )
-        cache[ url ] = { etag = etag, content = content }
+        sqlite_query(
+            "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content",
+            url, etag, time_now( "ms", false ), SQLiteBlob( content )
+        )
+
+        cache[ url ] = {
+            etag = etag,
+            content = content,
+        }
     end
 
     --- [SHARED AND MENU]

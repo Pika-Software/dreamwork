@@ -26,7 +26,6 @@ local math_max = math.max
 local math_floor = math.floor
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_char = string.char
@@ -566,7 +565,7 @@ local function queue_pump( key )
         transfer.sent = index
 
         packet_send( transfer, packet )
-        used = used + string_len( transfer.command ) + string_len( packet ) + 3
+        used = used + #transfer.command + #packet + 3
     end
 
     -- callbacks can send more, so the budget is stored before them
@@ -604,12 +603,12 @@ local function transmit( message, data, target, realm, callback )
     local command = command_name( realm, message_names[ message ] )
 
     -- every 4 characters of base64 carry 3 bytes, the line is `command "packet"`
-    local packet_size = math_floor( (max_line_length - string_len( command ) - 3) / 4 ) * 3 - header_size
+    local packet_size = math_floor( (max_line_length - #command - 3) / 4 ) * 3 - header_size
     if packet_size < 1 then
         error( string_format( "Message name '%s' is too long.", message_names[ message ] ), 3 )
     end
 
-    local data_length = string_len( data )
+    local data_length = #data
 
     local count = math_max( math_floor( (data_length + packet_size - 1) / packet_size ), 1 )
     if count > max_packet_count then
@@ -875,7 +874,7 @@ local function message_receive( message, sender, encoded )
     end
 
     local packet = base64_decode( encoded, base64_options )
-    if string_len( packet ) < header_size then
+    if #packet < header_size then
         dreamwork_Logger:debug( "Message '%s' received a truncated packet.", message_names[ message ] )
         return
     end
@@ -921,7 +920,7 @@ local function message_receive( message, sender, encoded )
             return
         end
 
-        local packet_size = string_len( packet ) - header_size
+        local packet_size = #packet - header_size
 
         if count == 0 or (count > 1 and (count - 1) * packet_size > limits[ message ]) then
             dreamwork_Logger:warn( "Message '%s' rejected %d packets from %s, the limit is %d bytes.", message_names[ message ], count, target_tostring( key ), limits[ message ] )
@@ -967,7 +966,7 @@ local function message_receive( message, sender, encoded )
     end
 
     local chunk = string_sub( packet, header_size + 1 )
-    local size = state.size + string_len( chunk )
+    local size = state.size + #chunk
 
     if size > limits[ message ] then
         dreamwork_Logger:warn( "Message '%s' rejected more than %d bytes from %s.", message_names[ message ], limits[ message ], target_tostring( key ) )

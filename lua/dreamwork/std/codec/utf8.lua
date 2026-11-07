@@ -15,7 +15,7 @@ local raw                      = std.raw
 local raw_select               = raw.select
 
 local string                   = std.string
-local string_len, string_sub   = string.len, string.sub
+local string_sub               = string.sub
 local string_char, string_byte = string.char, string.byte
 
 local math                     = std.math
@@ -257,7 +257,7 @@ end
 ---@return nil | integer error_position
 ---@return nil | dreamwork.std.utf8.ErrorCode error_code
 local function len( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return 0
     end
@@ -311,7 +311,7 @@ end
 ---@return dreamwork.std.utf8.ErrorCode | nil error_code The error code.
 ---@nodiscard
 function utf8.decode( utf8_string, index, end_index, lax, stack_level )
-    return decode( utf8_string, index or 1, end_index or string_len( utf8_string ), lax ~= true, stack_level or 1 )
+    return decode( utf8_string, index or 1, end_index or #utf8_string, lax ~= true, stack_level or 1 )
 end
 
 --- [SHARED AND MENU]
@@ -348,7 +348,7 @@ end
 ---@return integer utf8_codepoint_count The length of the string in UTF-8 code units.
 ---@nodiscard
 local function unpack( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return {}, 0
     end
@@ -387,7 +387,7 @@ utf8.unpack = unpack
 ---@return string utf8_sub The substring of the string in UTF-8 code units.
 ---@nodiscard
 local function sub( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return utf8_string
     end
@@ -470,7 +470,7 @@ utf8.sub = sub
 ---@return integer ... The code points of the UTF-8 string.
 ---@nodiscard
 function utf8.codepoint( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
 
     local start_index, end_index = math_range( str_length, start_position, end_position or start_position or 1 )
 
@@ -515,7 +515,7 @@ do
     ---@return integer | nil
     ---@return integer | nil
     local function iterate( utf8_string, index, strict )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
 
         if index == 0 then
             index = 1
@@ -629,7 +629,7 @@ else
             if utf8_codepoint < 0 or utf8_codepoint > 0x10FFFF or (utf8_codepoint >= 0xD800 and utf8_codepoint <= 0xDFFF) then
                 -- raises in strict mode, U+FFFD otherwise
                 local utf8_sequence = encode( utf8_codepoint, strict, 2 )
-                local utf8_sequence_length = string_len( utf8_sequence )
+                local utf8_sequence_length = #utf8_sequence
 
                 ffi_copy( buffer + length, utf8_sequence, utf8_sequence_length )
                 length = length + utf8_sequence_length
@@ -696,7 +696,7 @@ end
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
 ---@nodiscard
 function utf8.offset( utf8_string, index, offset, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return nil
     end
@@ -770,7 +770,7 @@ if ffi == nil then
     ---@return string utf8_reversed The reversed UTF-8 string.
     ---@nodiscard
     function utf8.reverse( utf8_string, start_position, end_position, lax )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
 
         local start_index, end_index = math_range( str_length, start_position, end_position )
 
@@ -812,7 +812,7 @@ else
     ---@return string utf8_reversed
     ---@nodiscard
     function utf8.reverse( utf8_string, start_position, end_position, lax )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
 
         local start_index, end_index = math_range( str_length, start_position, end_position )
 
@@ -876,7 +876,7 @@ do
     ---@return string utf8_normalized The normalized UTF-8 string.
     ---@nodiscard
     function utf8.normalize( utf8_string, replacement_str, start_position, end_position )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
         if str_length == 0 then
             return utf8_string
         end

@@ -10,7 +10,6 @@ local math = std.math
 local math_max = math.max
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_format = string.format
 local string_byte, string_char = string.byte, string.char
@@ -71,7 +70,7 @@ if ffi == nil then
     function encode( str )
         local segments, segment_count = {}, 0
 
-        for index = 1, string_len( str ), 1 do
+        for index = 1, #str, 1 do
             segment_count = segment_count + 1
             segments[ segment_count ] = encode_map[ string_byte( str, index, index ) ]
         end
@@ -80,7 +79,7 @@ if ffi == nil then
     end
 
     function decode( str )
-        local str_length = string_len( str )
+        local str_length = #str
         local segments, segment_count = {}, 0
 
         for index = 1, str_length - 1, 2 do
@@ -155,7 +154,7 @@ else
     -- loops below do not allocate, so the GC cannot collect `str` while its data is read by pointer.
 
     function encode( str )
-        local str_length = string_len( str )
+        local str_length = #str
         local output = get_buffer( str_length * 2 )
 
         local source = ffi_cast( uint8_ptr_t, str )
@@ -169,7 +168,7 @@ else
     end
 
     function decode( str )
-        local str_length = string_len( str )
+        local str_length = #str
         local output = get_buffer( str_length )
 
         local source = ffi_cast( uint8_ptr_t, str )
@@ -242,7 +241,7 @@ end
 ---@return nil | string err_msg The error message.
 ---@nodiscard
 function base16.validate( base16_str )
-    local str_length = string_len( base16_str )
+    local str_length = #base16_str
 
     if str_length == 0 then
         return false, "string cannot be empty"

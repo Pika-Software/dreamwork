@@ -43,7 +43,6 @@ local raw_next = raw.next
 local raw_pairs = raw.pairs
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_match = string.match
@@ -619,7 +618,7 @@ end
 ---@param directory_path string
 ---@return boolean
 local function is_inside( vfs_path, directory_path )
-    return directory_path == "/" or string_sub( vfs_path, 1, string_len( directory_path ) + 1 ) == directory_path .. "/"
+    return directory_path == "/" or string_sub( vfs_path, 1, #directory_path + 1 ) == (directory_path .. "/")
 end
 
 ---@type table<string, dreamwork.vfs.Mount>
@@ -810,7 +809,7 @@ local function memory_release( node )
         local data = node_data[ node ]
         if data ~= nil then
             node_data[ node ] = nil
-            memory_bytes = memory_bytes - string_len( data )
+            memory_bytes = memory_bytes - #data
         end
     elseif node_merged[ node ] ~= nil then
         node_merged[ node ] = nil
@@ -1529,11 +1528,11 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
 
     local old_size = 0
     if is_memory then
-        old_size = string_len( node_data[ node ] )
+        old_size = #node_data[ node ]
     end
 
     -- shrinking writes are allowed over the limit, the limit could be lowered after the file was written
-    local new_bytes = memory_bytes - old_size + string_len( data )
+    local new_bytes = memory_bytes - old_size + #data
     if memory_limit ~= 0 and new_bytes > memory_limit and new_bytes > memory_bytes then
         return false, string_format( "'%s' cannot be kept in memory, %d bytes in memory would exceed the limit of %d bytes.", vfs_path, new_bytes, memory_limit )
     end
@@ -1556,6 +1555,8 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
             memory_notice( directory, vfs_path )
         end
     end
+
+    ---@cast node dreamwork.vfs.Node
 
     memory_bytes = new_bytes
     node_data[ node ], node_modified[ node ] = data, unix_time
@@ -2187,7 +2188,14 @@ do
         if exists then
             local mount = node_mounts[ node ]
             if mount == nil then
-                file_time, file_size = node_modified[ node ] or 0, string_len( node_data[ node ] or "" )
+                file_time = node_modified[ node ] or 0
+
+                local data = node_data[ node ]
+                if data == nil then
+                    file_size = 0
+                else
+                    file_size = #data
+                end
             else
                 local search_path, relative_path = mount.search_path, node_relative_paths[ node ]
                 file_time, file_size = driver_Time( relative_path, search_path ) or 0, driver_Size( relative_path, search_path ) or 0
@@ -2754,7 +2762,7 @@ local function node_size( node )
     if node_children[ node ] == nil then
         local data = node_data[ node ]
         if data ~= nil then
-            return string_len( data )
+            return #data
         end
 
         local size = driver_Size( node_relative_paths[ node ], node_mounts[ node ].search_path )

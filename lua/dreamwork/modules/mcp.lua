@@ -17,7 +17,6 @@ local isString = std.isString
 local isFunction = std.isFunction
 
 local string = std.string
-local string_len = string.len
 local string_find = string.find
 local string_lower = string.lower
 local string_format = string.format
@@ -255,11 +254,13 @@ local function compile_chunk( code, identifier )
         return nil, "Lua code must be a string."
     end
 
-    if string_len( code ) > MAX_LUA_CODE_BYTES then
+    local code_length = #code
+
+    if code_length > MAX_LUA_CODE_BYTES then
         return nil, format_error( "Lua code exceeds the %d byte limit.", MAX_LUA_CODE_BYTES )
     end
 
-    if string_len( code ) == 0 then
+    if code_length == 0 then
         return nil, "Lua code is empty."
     end
 
@@ -453,7 +454,7 @@ if LUA_SERVER then
         ---@type ( fun( entity: garrysmod.Entity ): boolean ) | nil
         local check
         if custom_check ~= nil and custom_check ~= "" then
-            if string_len( custom_check ) > MAX_LUA_CODE_BYTES then
+            if #custom_check > MAX_LUA_CODE_BYTES then
                 error( format_error( "customCheck exceeds the %d byte limit.", MAX_LUA_CODE_BYTES ), 2 )
             end
 
@@ -535,7 +536,7 @@ if LUA_SERVER then
             return nil, "client target is empty."
         end
 
-        if string_len( normalized ) > MAX_TARGET_BYTES then
+        if #normalized > MAX_TARGET_BYTES then
             return nil, format_error( "client target exceeds the %d byte limit.", MAX_TARGET_BYTES )
         end
 
@@ -788,19 +789,23 @@ if LUA_SERVER then
             error( "unknown MCP tool " .. tostring( tool ), 2 )
         end
 
-        if not isString( command.state ) or not isString( command.code ) then
+        local code = command.code
+
+        if not isString( command.state ) or not isString( code ) then
             error( "invalid exec_lua_code command", 2 )
         end
 
+        local code_length = #code
+
         if command.state == "server" then
-            local executed, execute_error = compile_and_run( command.code, "dreamwork.mcp:server", request_id )
+            local executed, execute_error = compile_and_run( code, "dreamwork.mcp:server", request_id )
             if not executed then
-                report_error( "server Lua execution failed (tool=%s, request=%s, %d bytes): %s", tool, request_id or "-", string_len( command.code ), execute_error, {
+                report_error( "server Lua execution failed (tool=%s, request=%s, %d bytes): %s", tool, request_id or "-", code_length, execute_error, {
                     tool = tool,
                     request_id = request_id
                 } )
             else
-                dreamwork_Logger:debug( "MCP: ran server Lua (tool=%s, request=%s, %d bytes).", tool, request_id or "-", string_len( command.code ) )
+                dreamwork_Logger:debug( "MCP: ran server Lua (tool=%s, request=%s, %d bytes).", tool, request_id or "-", code_length )
             end
 
             return
@@ -810,19 +815,19 @@ if LUA_SERVER then
             error( "client exec_lua_code requires a target", 2 )
         end
 
-        local sent, send_error = send_exec_to_client( command.code, command.target, request_id )
+        local sent, send_error = send_exec_to_client( code, command.target, request_id )
         if not sent then
             if isString( request_id ) and request_id ~= "" then
                 respond_lua_raw( request_id, false, tostring( send_error ) )
             end
 
-            report_error( "client Lua execution skipped (tool=%s, target=%s, request=%s, %d bytes): %s", tool, command.target, request_id or "-", string_len( command.code ), send_error, {
+            report_error( "client Lua execution skipped (tool=%s, target=%s, request=%s, %d bytes): %s", tool, command.target, request_id or "-", code_length, send_error, {
                 tool = tool,
                 target = command.target,
                 request_id = request_id
             } )
         else
-            dreamwork_Logger:debug( "MCP: queued client Lua (tool=%s, target=%s, request=%s, %d bytes).", tool, command.target, request_id or "-", string_len( command.code ) )
+            dreamwork_Logger:debug( "MCP: queued client Lua (tool=%s, target=%s, request=%s, %d bytes).", tool, command.target, request_id or "-", code_length )
         end
     end
 
@@ -862,9 +867,10 @@ if LUA_SERVER then
                 clear_pending_screenshot( request_id )
 
                 if success then
-                    if string_len( payload ) == 0 then
+                    local payload_size = #payload
+                    if payload_size == 0 then
                         respond_screenshot( request_id, false, "Screenshot is empty." )
-                    elseif string_len( payload ) > MAX_SCREENSHOT_BYTES then
+                    elseif payload_size > MAX_SCREENSHOT_BYTES then
                         respond_screenshot( request_id, false, format_error(
                             "Screenshot exceeds the %d byte limit.",
                             MAX_SCREENSHOT_BYTES
@@ -1154,7 +1160,7 @@ if LUA_CLIENT then
 
         local chunk, compile_error = compile_chunk( code, "dreamwork.mcp:client" )
         if chunk == nil then
-            report_error( "client Lua compilation failed (request=%s, %d bytes): %s", request_id ~= "" and request_id or "-", string_len( code ), compile_error )
+            report_error( "client Lua compilation failed (request=%s, %d bytes): %s", request_id ~= "" and request_id or "-", #code, compile_error )
             send_result( request_id, false, tostring( compile_error ) )
             return
         end
@@ -1184,7 +1190,7 @@ if LUA_CLIENT then
 
         local run_ok, run_result = pcall( chunk )
         if not run_ok then
-            report_error( "client Lua execution failed (request=%s, %d bytes): %s", request_id ~= "" and request_id or "-", string_len( code ), run_result )
+            report_error( "client Lua execution failed (request=%s, %d bytes): %s", request_id ~= "" and request_id or "-", #code, run_result )
 
             if request_id ~= "" and not result_sent then
                 result_sent = true
@@ -1255,12 +1261,12 @@ if LUA_CLIENT then
             return
         end
 
-        if not isString( data ) or string_len( data ) == 0 then
+        if not isString( data ) or #data == 0 then
             send_screenshot_result( request_id, false, "GMod cannot capture while the Escape menu is open." )
             return
         end
 
-        if string_len( data ) > MAX_SCREENSHOT_BYTES then
+        if #data > MAX_SCREENSHOT_BYTES then
             send_screenshot_result( request_id, false, format_error(
                 "Screenshot exceeds the %d byte limit.",
                 MAX_SCREENSHOT_BYTES

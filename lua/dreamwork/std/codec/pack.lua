@@ -2,7 +2,7 @@
 local std = dreamwork.std
 
 local string = std.string
-local string_len, string_rep = string.len, string.rep
+local string_rep = string.rep
 local string_sub, string_find = string.sub, string.find
 local string_byte, string_char = string.byte, string.char
 
@@ -75,7 +75,7 @@ do
             index = 1
         end
 
-        if index > string_len( str ) then
+        if index > #str then
             error( EndOfFileError( index - 1, 1 ), 2 )
         end
 
@@ -110,7 +110,7 @@ do
             index = 1
         end
 
-        if index > string_len( str ) then
+        if index > #str then
             error( EndOfFileError( index - 1, 1 ), 2 )
         end
 
@@ -155,7 +155,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -190,7 +190,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -235,7 +235,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -270,7 +270,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -315,7 +315,7 @@ do
             index = 1
         end
 
-        if index + 2 > string_len( str ) then
+        if index + 2 > #str then
             error( EndOfFileError( index - 1, 3 ), 2 )
         end
 
@@ -350,7 +350,7 @@ do
             index = 1
         end
 
-        if index + 2 > string_len( str ) then
+        if index + 2 > #str then
             error( EndOfFileError( index - 1, 3 ), 2 )
         end
 
@@ -395,7 +395,7 @@ do
             index = 1
         end
 
-        if index + 2 > string_len( str ) then
+        if index + 2 > #str then
             error( EndOfFileError( index - 1, 3 ), 2 )
         end
 
@@ -430,7 +430,7 @@ do
             index = 1
         end
 
-        if index + 2 > string_len( str ) then
+        if index + 2 > #str then
             error( EndOfFileError( index - 1, 3 ), 2 )
         end
 
@@ -475,7 +475,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -510,7 +510,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -555,7 +555,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -590,7 +590,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -635,7 +635,7 @@ do
             index = 1
         end
 
-        if index + 4 > string_len( str ) then
+        if index + 4 > #str then
             error( EndOfFileError( index - 1, 5 ), 2 )
         end
 
@@ -670,7 +670,7 @@ do
             index = 1
         end
 
-        if index + 4 > string_len( str ) then
+        if index + 4 > #str then
             error( EndOfFileError( index - 1, 5 ), 2 )
         end
 
@@ -715,7 +715,7 @@ do
             index = 1
         end
 
-        if index + 4 > string_len( str ) then
+        if index + 4 > #str then
             error( EndOfFileError( index - 1, 5 ), 2 )
         end
 
@@ -750,7 +750,7 @@ do
             index = 1
         end
 
-        if index + 4 > string_len( str ) then
+        if index + 4 > #str then
             error( EndOfFileError( index - 1, 5 ), 2 )
         end
 
@@ -795,7 +795,7 @@ do
             index = 1
         end
 
-        if index + 5 > string_len( str ) then
+        if index + 5 > #str then
             error( EndOfFileError( index - 1, 6 ), 2 )
         end
 
@@ -830,7 +830,7 @@ do
             index = 1
         end
 
-        if index + 5 > string_len( str ) then
+        if index + 5 > #str then
             error( EndOfFileError( index - 1, 6 ), 2 )
         end
 
@@ -875,7 +875,7 @@ do
             index = 1
         end
 
-        if index + 5 > string_len( str ) then
+        if index + 5 > #str then
             error( EndOfFileError( index - 1, 6 ), 2 )
         end
 
@@ -910,7 +910,7 @@ do
             index = 1
         end
 
-        if index + 5 > string_len( str ) then
+        if index + 5 > #str then
             error( EndOfFileError( index - 1, 6 ), 2 )
         end
 
@@ -957,7 +957,7 @@ do
             index = 1
         end
 
-        if index + 6 > string_len( str ) then
+        if index + 6 > #str then
             error( EndOfFileError( index - 1, 7 ), 2 )
         end
 
@@ -994,7 +994,7 @@ do
             index = 1
         end
 
-        if index + 6 > string_len( str ) then
+        if index + 6 > #str then
             error( EndOfFileError( index - 1, 7 ), 2 )
         end
 
@@ -1041,7 +1041,7 @@ do
             index = 1
         end
 
-        if index + 6 > string_len( str ) then
+        if index + 6 > #str then
             error( EndOfFileError( index - 1, 7 ), 2 )
         end
 
@@ -1078,7 +1078,7 @@ do
             index = 1
         end
 
-        if index + 6 > string_len( str ) then
+        if index + 6 > #str then
             error( EndOfFileError( index - 1, 7 ), 2 )
         end
 
@@ -1125,7 +1125,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1164,7 +1164,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1213,7 +1213,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1252,7 +1252,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1295,7 +1295,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -1334,7 +1334,7 @@ do
             index = 1
         end
 
-        if index + 3 > string_len( str ) then
+        if index + 3 > #str then
             error( EndOfFileError( index - 1, 4 ), 2 )
         end
 
@@ -1373,7 +1373,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1412,7 +1412,7 @@ do
             index = 1
         end
 
-        if index + 7 > string_len( str ) then
+        if index + 7 > #str then
             error( EndOfFileError( index - 1, 8 ), 2 )
         end
 
@@ -1456,7 +1456,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -1478,7 +1478,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -1526,7 +1526,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -1548,7 +1548,7 @@ do
             index = 1
         end
 
-        if index + 1 > string_len( str ) then
+        if index + 1 > #str then
             error( EndOfFileError( index - 1, 2 ), 2 )
         end
 
@@ -1597,7 +1597,7 @@ function pack.readFixedString( str, index, length )
         index = 1
     end
 
-    local str_length = string_len( str )
+    local str_length = #str
 
     if length == nil then
         length = str_length - index + 1
@@ -1631,7 +1631,7 @@ end
 ---@return string data The `length`-byte string.
 ---@nodiscard
 function pack.writeFixedString( data, length )
-    local data_length = string_len( data )
+    local data_length = #data
     if data_length == length then
         return data
     elseif data_length > length then
@@ -1649,7 +1649,7 @@ end
 ---@return integer data_length
 ---@return boolean terminated
 local function readTerminated( str, index, terminator, stack_level )
-    local str_length = string_len( str )
+    local str_length = #str
     if index > str_length then
         error( EndOfFileError( index - 1, 1 ), stack_level + 1 )
     end
@@ -1848,7 +1848,7 @@ do
             index = 1
         end
 
-        local str_length = string_len( str )
+        local str_length = #str
 
         local data_index = index + length_size
         if (data_index - 1) > str_length then
@@ -1879,7 +1879,7 @@ do
     ---@return string data The counted string.
     ---@nodiscard
     function pack.writeCountedString( data, length_size, is_little_endian )
-        local data_length = string_len( data )
+        local data_length = #data
 
         if length_size < 7 and data_length >= (2 ^ (length_size * 8)) then
             error( "data is too long for the " .. length_size .. "-byte length: " .. data_length .. " bytes", 2 )
@@ -1922,7 +1922,7 @@ do
     ---@param stack_level integer
     ---@return 0 | 1
     local function readBit( str, bit_position, stack_level )
-        if bit_position >= (string_len( str ) * 8) then
+        if bit_position >= (#str * 8) then
             error( EndOfFileError( rbit_rshift( bit_position, 3 ), 1 ), stack_level + 1 )
         end
 
@@ -2008,7 +2008,7 @@ do
             bit_position = 0
         end
 
-        local available = (string_len( str ) * 8) - bit_position
+        local available = (#str * 8) - bit_position
         if available < (byte_count * 8) then
             error( EndOfFileError( rbit_rshift( bit_position, 3 ), byte_count ), 2 )
         end
@@ -2089,7 +2089,7 @@ do
             return readBit( str, bit_position, stack_level ) -- tail call
         end
 
-        if (bit_position + bit_count) > (string_len( str ) * 8) then
+        if (bit_position + bit_count) > (#str * 8) then
             error( EndOfFileError( rbit_rshift( bit_position, 3 ), math_ceil( bit_count / 8 ) ), stack_level + 1 )
         end
 

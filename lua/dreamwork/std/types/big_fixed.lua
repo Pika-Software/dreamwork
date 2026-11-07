@@ -19,7 +19,6 @@ local math_huge = math.huge
 local math_floor = math.floor
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_format = string.format
@@ -146,7 +145,7 @@ end
 ---@param scale integer
 ---@return dreamwork.std.BigFixed bigfixed
 local function fromString( bigfixed, str, scale )
-    local str_length = string_len( str )
+    local str_length = #str
     local position = 1
 
     local sign = false
@@ -182,7 +181,7 @@ local function fromString( bigfixed, str, scale )
         integer_part = "0"
     end
 
-    local fractional_length = string_len( fractional_part )
+    local fractional_length = #fractional_part
 
     if fractional_length > scale then
         fractional_part = string_sub( fractional_part, 1, scale ) -- truncate, no rounding
@@ -624,7 +623,7 @@ function BigFixed:toString()
     end
 
     local digits = mantissa:copy():abs():toString( 10 )
-    local digits_length = string_len( digits )
+    local digits_length = #digits
 
     if digits_length <= scale then
         local padding = {}
@@ -634,7 +633,7 @@ function BigFixed:toString()
         end
 
         digits = table_concat( padding ) .. digits
-        digits_length = string_len( digits )
+        digits_length = #digits
     end
 
     local str = string_sub( digits, 1, digits_length - scale ) .. "." .. string_sub( digits, digits_length - scale + 1, digits_length )

@@ -2,7 +2,6 @@
 local std = dreamwork.std
 
 local string = std.string
-local string_len = string.len
 local string_byte = string.byte
 
 local class = std.class
@@ -46,7 +45,7 @@ end
 ---@param raw_str string The string is used to update checksum.
 ---@return dreamwork.std.Adler32 self
 function Adler32:update( raw_str )
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
     local a, b = self.a, self.b
 
     -- sums stay exact in doubles ( < 2^53 ), so modulo is only needed once per chunk

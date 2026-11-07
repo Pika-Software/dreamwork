@@ -14,7 +14,6 @@ local math_huge = math.huge
 local math_floor = math.floor
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_char = string.char
 local string_byte = string.byte
@@ -79,7 +78,7 @@ local function parseString( text, position )
     local start = position + 1
     local stop = string_find( text, "[\"\\%z\1-\31]", start )
     if stop == nil then
-        error( DecodeError( "unterminated string", string_len( text ) + 1 ), 2 )
+        error( DecodeError( "unterminated string", #text + 1 ), 2 )
     end
 
     -- fast path: no escapes
@@ -145,7 +144,7 @@ local function parseString( text, position )
 
     stop = string_find( text, "[\"\\%z\1-\31]", start )
     if stop == nil then
-        error( DecodeError( "unterminated string", string_len( text ) + 1 ), 2 )
+        error( DecodeError( "unterminated string", #text + 1 ), 2 )
     end
 
     ---@diagnostic disable-next-line: missing-return
@@ -164,7 +163,7 @@ local parseValue
 function parseValue( text, position, depth, max_depth )
     local start = string_find( text, "[^ \t\r\n]", position )
     if start == nil then
-        error( DecodeError( "unexpected end of input", string_len( text ) + 1 ), 2 )
+        error( DecodeError( "unexpected end of input", #text + 1 ), 2 )
     end
 
     local uint8 = string_byte( text, start )
@@ -193,7 +192,7 @@ function parseValue( text, position, depth, max_depth )
 
         local key_start = string_find( text, "[^ \t\r\n]", position )
         if key_start == nil or string_byte( text, key_start ) ~= 0x22 then
-            error( DecodeError( "object key must be a string", key_start or string_len( text ) + 1 ), 2 )
+            error( DecodeError( "object key must be a string", key_start or #text + 1 ), 2 )
         end
 
         local key
@@ -201,7 +200,7 @@ function parseValue( text, position, depth, max_depth )
 
         local colon = string_find( text, "[^ \t\r\n]", position )
         if colon == nil or string_byte( text, colon ) ~= 0x3A then
-            error( DecodeError( "expected ':'", colon or string_len( text ) + 1 ), 2 )
+            error( DecodeError( "expected ':'", colon or #text + 1 ), 2 )
         end
 
         result[ key ], position = parseValue( text, colon + 1, depth + 1, max_depth )
@@ -216,7 +215,7 @@ function parseValue( text, position, depth, max_depth )
             return result, separator + 1
         end
 
-        error( DecodeError( "expected ',' or '}'", separator or string_len( text ) + 1 ), 2 )
+        error( DecodeError( "expected ',' or '}'", separator or #text + 1 ), 2 )
     end
 
     -- array
@@ -249,7 +248,7 @@ function parseValue( text, position, depth, max_depth )
             return result, separator + 1
         end
 
-        error( DecodeError( "expected ',' or ']'", separator or string_len( text ) + 1 ), 2 )
+        error( DecodeError( "expected ',' or ']'", separator or #text + 1 ), 2 )
     end
 
     -- number

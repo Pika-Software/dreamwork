@@ -17,7 +17,6 @@ local rbit_band, rbit_bor = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
 
 local string = std.string
-local string_len = string.len
 local string_byte = string.byte
 
 local class = std.class
@@ -155,7 +154,7 @@ end
 local function crc8_update( value, raw_str, tables )
     local t0, t1, t2, t3, t4, t5, t6, t7 = tables[ 0 ], tables[ 1 ], tables[ 2 ], tables[ 3 ], tables[ 4 ], tables[ 5 ], tables[ 6 ], tables[ 7 ]
 
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
     local blocks_end = str_length - str_length % 8
 
     for index = 1, blocks_end, 8 do
@@ -184,7 +183,7 @@ end
 local function crc16_update( value, raw_str, tables, ref_in )
     local t0, t1, t2, t3, t4, t5, t6, t7 = tables[ 0 ], tables[ 1 ], tables[ 2 ], tables[ 3 ], tables[ 4 ], tables[ 5 ], tables[ 6 ], tables[ 7 ]
 
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
     local blocks_end = str_length - str_length % 8
 
     if ref_in then
@@ -228,7 +227,7 @@ end
 local function crc32_update( value, raw_str, tables, ref_in )
     local t0, t1, t2, t3, t4, t5, t6, t7 = tables[ 0 ], tables[ 1 ], tables[ 2 ], tables[ 3 ], tables[ 4 ], tables[ 5 ], tables[ 6 ], tables[ 7 ]
 
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
     local blocks_end = str_length - str_length % 8
 
     if ref_in then

@@ -12,7 +12,6 @@ local rbit_lshift, rbit_rshift, rbit_tobit = rbit.lshift, rbit.rshift, rbit.tobi
 local rbit_bswap, rbit_rrotate, rbit_tohex = rbit.bswap, rbit.rrotate, rbit.tohex
 
 local string = std.string
-local string_len = string.len
 local string_rep = string.rep
 local string_sub = string.sub
 local string_format = string.format
@@ -553,14 +552,14 @@ local function finalize( tail, message_length, state, word_count, as_hex )
     local bit_count_high = math_floor( message_length / 0x20000000 )
 
     -- the length is 128-bit, upper 64 bits are always zero
-    local block = tail .. "\128" .. string_rep( "\0", (111 - string_len( tail )) % 128 + 8 ) .. string_char(
+    local block = tail .. "\128" .. string_rep( "\0", (111 - #tail) % 128 + 8 ) .. string_char(
         rbit_rshift( bit_count_high, 24 ), rbit_band( rbit_rshift( bit_count_high, 16 ), 0xFF ), rbit_band( rbit_rshift( bit_count_high, 8 ), 0xFF ), rbit_band( bit_count_high, 0xFF ),
         rbit_rshift( bit_count_low, 24 ), rbit_band( rbit_rshift( bit_count_low, 16 ), 0xFF ), rbit_band( rbit_rshift( bit_count_low, 8 ), 0xFF ), rbit_band( bit_count_low, 0xFF )
     )
 
     transform( block, 0, state )
 
-    if string_len( block ) == 256 then
+    if #block == 256 then
         transform( block, 128, state )
     end
 
@@ -609,7 +608,7 @@ end
 ---@param str string The string to update the SHA512 object with.
 ---@return dreamwork.std.crypto.SHA512 obj The updated SHA512 object.
 function SHA512:update( str )
-    local str_length = string_len( str )
+    local str_length = #str
     if str_length == 0 then
         return self
     end
@@ -617,7 +616,7 @@ function SHA512:update( str )
     self.message_length = self.message_length + str_length
 
     local buffer = self.buffer
-    local required = 128 - string_len( buffer )
+    local required = 128 - #buffer
 
     if str_length < required then
         self.buffer = buffer .. str
@@ -669,7 +668,7 @@ SHA512.__tostring = SHA512.digest
 ---@return string str_result The SHA512 string of the message.
 ---@nodiscard
 function SHA512Class.digest( message, as_hex )
-    local message_length = string_len( message )
+    local message_length = #message
 
     local state = new_state( SHA512.initial_state )
 

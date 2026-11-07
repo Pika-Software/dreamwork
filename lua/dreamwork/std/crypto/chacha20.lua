@@ -19,7 +19,6 @@ local table = std.table
 local table_concat = table.concat
 
 local string = std.string
-local string_len = string.len
 local string_rep = string.rep
 local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
@@ -714,7 +713,7 @@ end
 ---@return integer k6
 ---@return integer k7
 local function readKey( key )
-    if string_len( key ) ~= 32 then
+    if #key ~= 32 then
         error( "key must be exactly 32 bytes long", 3 )
     end
 
@@ -780,11 +779,11 @@ chacha20.block_size = 64
 function chacha20.encrypt( data, key, nonce, counter )
     local k0, k1, k2, k3, k4, k5, k6, k7 = readKey( key )
 
-    if string_len( nonce ) ~= 12 then
+    if #nonce ~= 12 then
         error( "nonce must be exactly 12 bytes long", 2 )
     end
 
-    local data_length = string_len( data )
+    local data_length = #data
     counter = checkCounter( counter, data_length )
 
     if data_length == 0 then
@@ -810,7 +809,7 @@ local zero_block = string_rep( "\0", 64 )
 function chacha20.block( key, nonce, counter )
     local k0, k1, k2, k3, k4, k5, k6, k7 = readKey( key )
 
-    if string_len( nonce ) ~= 12 then
+    if #nonce ~= 12 then
         error( "nonce must be exactly 12 bytes long", 2 )
     end
 
@@ -867,7 +866,7 @@ xchacha20.block_size = 64
 ---@return string subkey The 32-byte subkey.
 ---@nodiscard
 function xchacha20.hchacha20( key, nonce )
-    if string_len( nonce ) ~= 16 then
+    if #nonce ~= 16 then
         error( "nonce must be exactly 16 bytes long", 2 )
     end
 
@@ -899,13 +898,13 @@ end
 ---@return string result The ciphertext or plaintext, same length as `data`.
 ---@nodiscard
 function xchacha20.encrypt( data, key, nonce, counter )
-    if string_len( nonce ) ~= 24 then
+    if #nonce ~= 24 then
         error( "nonce must be exactly 24 bytes long", 2 )
     end
 
     local k0, k1, k2, k3, k4, k5, k6, k7 = hchacha20( key, nonce )
 
-    local data_length = string_len( data )
+    local data_length = #data
     counter = checkCounter( counter, data_length )
 
     if data_length == 0 then

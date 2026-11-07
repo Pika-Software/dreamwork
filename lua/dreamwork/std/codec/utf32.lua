@@ -15,7 +15,7 @@ local raw = std.raw
 local raw_select = raw.select
 
 local string = std.string
-local string_len, string_sub = string.len, string.sub
+local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 
 local math = std.math
@@ -215,7 +215,7 @@ end
 ---@return dreamwork.std.utf32.ErrorCode | nil error_code The error code.
 ---@nodiscard
 function utf32.decode( utf32_string, index, end_index, lax, big_endian, stack_level )
-    return decode( utf32_string, index or 1, end_index or string_len( utf32_string ), lax ~= true, stack_level or 1, big_endian )
+    return decode( utf32_string, index or 1, end_index or #utf32_string, lax ~= true, stack_level or 1, big_endian )
 end
 
 --- [SHARED AND MENU]
@@ -230,7 +230,7 @@ end
 ---@return integer utf32_codepoint_count The number of code points.
 ---@nodiscard
 function utf32.len( utf32_string, start_position, end_position, lax, big_endian )
-    local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf32_string, start_position, end_position )
 
     if lax == true then
         -- fixed width: every 4 bytes are one code point, a truncated tail counts as one more
@@ -352,7 +352,7 @@ end
 ---@return integer utf32_codepoint_count The number of code points.
 ---@nodiscard
 function utf32.unpack( utf32_string, start_position, end_position, lax, big_endian )
-    local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf32_string, start_position, end_position )
     return unpack( utf32_string, start_index, end_index, lax ~= true, 1, big_endian )
 end
 
@@ -410,7 +410,7 @@ end
 ---@return integer ... The code points.
 ---@nodiscard
 function utf32.codepoint( utf32_string, start_position, end_position, lax, big_endian )
-    local str_length = string_len( utf32_string )
+    local str_length = #utf32_string
 
     local start_index, end_index = math_range( str_length, start_position, end_position or start_position or 1 )
 
@@ -454,7 +454,7 @@ end
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
 ---@nodiscard
 function utf32.offset( utf32_string, index, offset, lax, big_endian )
-    local str_length = string_len( utf32_string )
+    local str_length = #utf32_string
     if str_length == 0 then
         return nil
     end
@@ -517,7 +517,7 @@ end
 ---@return string utf32_sub The substring.
 ---@nodiscard
 function utf32.sub( utf32_string, start_position, end_position, lax, big_endian )
-    local str_length = string_len( utf32_string )
+    local str_length = #utf32_string
     if str_length == 0 then
         return utf32_string
     end
@@ -625,7 +625,7 @@ if ffi == nil then
     ---@return string utf32_reversed The reversed UTF-32 string.
     ---@nodiscard
     function utf32.reverse( utf32_string, start_position, end_position, lax, big_endian )
-        local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
+        local start_index, end_index = math_range( #utf32_string, start_position, end_position )
 
         local strict = lax ~= true
 
@@ -666,7 +666,7 @@ else
     ---@return string utf32_reversed
     ---@nodiscard
     function utf32.reverse( utf32_string, start_position, end_position, lax, big_endian )
-        local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
+        local start_index, end_index = math_range( #utf32_string, start_position, end_position )
 
         if start_index > end_index then
             return ""
@@ -731,7 +731,7 @@ end
 ---@return string utf32_normalized The normalized UTF-32 string.
 ---@nodiscard
 function utf32.normalize( utf32_string, replacement_str, start_position, end_position, big_endian )
-    local start_index, end_index = math_range( string_len( utf32_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf32_string, start_position, end_position )
 
     if replacement_str == nil then
         replacement_str = big_endian and "\0\0\xFF\xFD" or "\xFD\xFF\0\0"
@@ -788,7 +788,7 @@ do
     ---@return integer | nil
     ---@return integer | nil
     local function iterate( utf32_string, index, strict, big_endian )
-        local str_length = string_len( utf32_string )
+        local str_length = #utf32_string
 
         if index == 0 then
             index = 1

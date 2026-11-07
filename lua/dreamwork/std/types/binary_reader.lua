@@ -15,7 +15,7 @@ local table_concat, table_unpack = table.concat, table.unpack
 
 local string = std.string
 local string_format = string.format
-local string_len, string_sub = string.len, string.sub
+local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 
 local rbit = raw.bit
@@ -133,7 +133,7 @@ end
 ---@param data any The data, converted to a string with `tostring`.
 function BinaryReader:open( data )
     local str = tostring( data )
-    self.data_length = string_len( str ) * 8
+    self.data_length = #str * 8
     self.position = 0
     self.data = str
 end
@@ -249,7 +249,7 @@ end
 local function readString( data, position, byte_count )
     if rbit_band( position, 7 ) == 0 then
         local byte_index = rbit_rshift( position, 3 )
-        if byte_index == 0 and byte_count == string_len( data ) then
+        if byte_index == 0 and byte_count == #data then
             return data
         end
 
@@ -735,7 +735,7 @@ end
 function BinaryReader:readLine()
     local line = readTerminated( self, 0x0A --[[ \n ]], 2 )
 
-    local line_length = string_len( line )
+    local line_length = #line
     if line_length ~= 0 and string_byte( line, line_length, line_length ) == 0x0D --[[ \r ]] then
         return string_sub( line, 1, line_length - 1 )
     end

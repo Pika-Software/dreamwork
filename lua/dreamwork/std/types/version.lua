@@ -14,7 +14,7 @@ local ascii_isAlnum = ascii.isAlnum
 local ascii_isDigit = ascii.isDigit
 
 local string = std.string
-local string_len, string_sub = string.len, string.sub
+local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 local string_format, string_find = string.format, string.find
 
@@ -51,7 +51,7 @@ end
 ---@param is_pre_release boolean If `true`, numeric identifiers must not include leading zeroes.
 ---@return boolean is_valid
 local function is_valid_identifiers( str, is_pre_release )
-    local str_length = string_len( str )
+    local str_length = #str
     if str_length == 0 then
         return false
     end
@@ -122,7 +122,7 @@ local function compare_pre_releases( pre_release_a, pre_release_b )
         return -1
     end
 
-    local length_a, length_b = string_len( pre_release_a ), string_len( pre_release_b )
+    local length_a, length_b = #pre_release_a, #pre_release_b
     local start_a, start_b = 1, 1
 
     while true do
@@ -371,7 +371,7 @@ local function parse( str, partial )
                 return "invalid pre-release version"
             end
 
-            position = build_position or (string_len( str ) + 1)
+            position = build_position or (#str + 1)
             uint8 = string_byte( str, position, position )
         end
 
@@ -535,7 +535,7 @@ end
 ---@param value integer
 ---@return string
 local function pre_release_add( pre_release, value )
-    local pre_release_length = string_len( pre_release )
+    local pre_release_length = #pre_release
 
     local identifier_start = pre_release_length
     while identifier_start ~= 0 and string_byte( pre_release, identifier_start, identifier_start ) ~= 0x2E --[[ . ]] do
@@ -837,7 +837,7 @@ end
 ---@return integer word_count
 local function split_words( str )
     local words, word_count = {}, 0
-    local position, str_length = 1, string_len( str )
+    local position, str_length = 1, #str
 
     while position <= str_length do
         local word_start, word_end = string_find( str, "[^%s]+", position )

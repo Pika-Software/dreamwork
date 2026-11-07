@@ -29,7 +29,6 @@ local math_max = math.max
 local math_min = math.min
 
 local string = std.string
-local string_len = string.len
 local string_format = string.format
 local string_sub = string.sub
 
@@ -477,7 +476,7 @@ local function perform_callbacks( network, data, sender )
     if events:count( network, "receive" ) == 0 then
         if events:count( network, "stream" ) ~= 0 then return end
 
-        dreamwork_Logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], string_len( data ) )
+        dreamwork_Logger:warn( "Network '%s' received %d bytes, but has no handlers attached.", network_names[ network ], #data )
         return
     end
 
@@ -1381,7 +1380,7 @@ end
 ---@param key garrysmod.Player | string
 ---@param callback dreamwork.std.Network.FinishFn | nil
 function transmit_start( network, data, peer, key, callback )
-    local size = string_len( data )
+    local size = #data
 
     if size == 0 or (size <= single_threshold and (peer_reliable_written( peer ) + size) <= single_burst and single_allowed( peer, key, size )) then
         message_start( network, OP_SINGLE, false )
@@ -1479,8 +1478,8 @@ end
 ---@param target garrysmod.Player | garrysmod.Player[] | nil
 ---@param callback dreamwork.std.Network.FinishFn | nil
 local function transmit_to( network, data, target, callback )
-    if string_len( data ) > max_transfer_size then
-        error( string_format( "Transmission is too large, %d bytes is more than the limit of %d bytes.", string_len( data ), max_transfer_size ), 3 )
+    if #data > max_transfer_size then
+        error( string_format( "Transmission is too large, %d bytes is more than the limit of %d bytes.", #data, max_transfer_size ), 3 )
     end
 
     if not LUA_SERVER then

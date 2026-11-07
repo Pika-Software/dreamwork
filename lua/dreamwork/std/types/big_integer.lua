@@ -37,7 +37,6 @@ local table_concat = table.concat
 local table_unpack = table.unpack
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_format = string.format
@@ -583,9 +582,7 @@ do
     ---@param end_position integer? The end position to read to.
     ---@return dreamwork.std.BigInteger self
     function BigInteger:fromString( str, base, start_position, end_position )
-        local str_length = string_len( str )
-
-        local start_index, end_index = math_range( str_length, start_position, end_position )
+        local start_index, end_index = math_range( #str, start_position, end_position )
 
         if string_byte( str, start_index ) == 0x2d then -- "-"
             start_index = start_index + 1

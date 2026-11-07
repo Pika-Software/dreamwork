@@ -8,7 +8,6 @@ local math_clamp        = math.clamp
 local math_range        = math.range
 
 local string            = std.string
-local string_len        = string.len
 local string_byte       = string.byte
 local string_rep        = string.rep
 local string_format     = string.format
@@ -256,7 +255,7 @@ end
 ---@return integer prefix_length The CIDR prefix length. <0-128>, `128` if not specified.
 ---@nodiscard
 function IPv6Class.parse( ipv6_str, start_position, end_position )
-    local start_index, end_index = math_range( string_len( ipv6_str ), start_position, end_position )
+    local start_index, end_index = math_range( #ipv6_str, start_position, end_position )
 
     local prefix_length = 128
 

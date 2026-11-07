@@ -2,7 +2,6 @@
 local std = dreamwork.std
 
 local string = std.string
-local string_len = string.len
 local string_sub, string_byte = string.sub, string.byte
 
 local table = std.table
@@ -514,7 +513,7 @@ end
 ---@return integer | nil byte The byte, or `nil` if the string is empty, too long or has other characters.
 ---@nodiscard
 function bitpack.fromString( str )
-    local str_length = string_len( str )
+    local str_length = #str
     if str_length == 0 or str_length > 8 then
         return nil
     end

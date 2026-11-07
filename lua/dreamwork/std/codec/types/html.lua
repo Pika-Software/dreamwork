@@ -527,7 +527,7 @@ local function has_class_name( class_str, name )
         return true
     end
 
-    local class_length = string_len( class_str )
+    local class_length = #class_str
     local start = 1
 
     ::class_loop::
@@ -1139,7 +1139,7 @@ do
     ---@param selector string
     ---@return dreamwork.std.HTMLNode.Selector
     function selector_compile( selector )
-        local selector_length = string_len( selector )
+        local selector_length = #selector
 
         ---@type dreamwork.std.HTMLNode.SelectorCompound[]
         local complex = {}
@@ -1350,13 +1350,13 @@ do
         elseif operator == "~=" then
             return expected ~= "" and string_find( expected, "%s" ) == nil and has_class_name( value, expected )
         elseif operator == "|=" then
-            return value == expected or string_sub( value, 1, string_len( expected ) + 1 ) == expected .. "-"
+            return value == expected or string_sub( value, 1, #expected + 1 ) == expected .. "-"
         elseif expected == "" then
             return false
         elseif operator == "^=" then
-            return string_sub( value, 1, string_len( expected ) ) == expected
+            return string_sub( value, 1, #expected ) == expected
         elseif operator == "$=" then
-            return string_sub( value, -string_len( expected ) ) == expected
+            return string_sub( value, - #expected ) == expected
         else -- *=
             return string_find( value, expected, 1, true ) ~= nil
         end
@@ -2044,7 +2044,7 @@ do
 
                 text = " "
             else
-                local text_start, text_end = 1, string_len( text )
+                local text_start, text_end = 1, #text
 
                 if first ~= 1 and node.children == nil then
                     local newline = string_find( text, "[\n\r]" )
@@ -2060,7 +2060,7 @@ do
                     end
                 end
 
-                if text_start ~= 1 or text_end ~= string_len( text ) then
+                if text_start ~= 1 or text_end ~= #text then
                     text = string_sub( text, text_start, text_end )
                 end
 
@@ -2123,7 +2123,7 @@ do
     function HTMLNodeClass.fromString( html_str, keep_whitespace )
         keep_whitespace = keep_whitespace == true
 
-        local html_length = string_len( html_str )
+        local html_length = #html_str
 
         ---@type string | nil
         local html_lower

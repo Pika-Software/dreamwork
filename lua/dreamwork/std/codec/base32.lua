@@ -9,7 +9,6 @@ local math = std.math
 local math_max = math.max
 
 local string = std.string
-local string_len = string.len
 local string_sub, string_rep = string.sub, string.rep
 local string_byte, string_char = string.byte, string.char
 
@@ -52,7 +51,7 @@ std.base32 = base32
 ---@return dreamwork.std.base32.Alphabet alphabet The alphabet.
 ---@nodiscard
 function base32.alphabet( alphabet_str )
-    if string_len( alphabet_str ) ~= 32 then
+    if #alphabet_str ~= 32 then
         error( "alphabet must be 32 characters long", 2 )
     end
 
@@ -159,7 +158,7 @@ end
 ---@return integer | nil data_length The length without padding, or `nil` if the string is invalid.
 ---@return nil | string err_msg The error message.
 local function get_data_length( base32_str, ignore_padding )
-    local str_length = string_len( base32_str )
+    local str_length = #base32_str
 
     if ignore_padding ~= true and str_length % 8 ~= 0 then
         return nil, "string length must be a multiple of 8"
@@ -432,7 +431,7 @@ end
 ---@return string base32_str The encoded string.
 ---@nodiscard
 function base32.encode( raw_str, ignore_padding, alphabet )
-    local str_length = string_len( raw_str )
+    local str_length = #raw_str
 
     if str_length == 0 then
         return raw_str

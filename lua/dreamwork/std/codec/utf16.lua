@@ -15,7 +15,7 @@ local raw = std.raw
 local raw_select = raw.select
 
 local string = std.string
-local string_len, string_sub = string.len, string.sub
+local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 
 local math = std.math
@@ -247,7 +247,7 @@ end
 ---@return dreamwork.std.utf16.ErrorCode | nil error_code The error code.
 ---@nodiscard
 function utf16.decode( utf16_string, index, end_index, lax, big_endian, stack_level )
-    return decode( utf16_string, index or 1, end_index or string_len( utf16_string ), lax ~= true, stack_level or 1, big_endian )
+    return decode( utf16_string, index or 1, end_index or #utf16_string, lax ~= true, stack_level or 1, big_endian )
 end
 
 --- [SHARED AND MENU]
@@ -262,7 +262,7 @@ end
 ---@return integer utf16_codepoint_count The number of code points.
 ---@nodiscard
 function utf16.len( utf16_string, start_position, end_position, lax, big_endian )
-    local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf16_string, start_position, end_position )
     local utf16_codepoint_count = 0
     local strict = lax ~= true
 
@@ -393,7 +393,7 @@ end
 ---@return integer utf16_codepoint_count The number of code points.
 ---@nodiscard
 function utf16.unpack( utf16_string, start_position, end_position, lax, big_endian )
-    local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf16_string, start_position, end_position )
     return unpack( utf16_string, start_index, end_index, lax ~= true, 1, big_endian )
 end
 
@@ -451,7 +451,7 @@ end
 ---@return integer ... The code points.
 ---@nodiscard
 function utf16.codepoint( utf16_string, start_position, end_position, lax, big_endian )
-    local str_length = string_len( utf16_string )
+    local str_length = #utf16_string
     if str_length == 0 then
         return
     end
@@ -497,7 +497,7 @@ end
 ---@return integer | nil index The position of the code point in bytes or `nil` if not found.
 ---@nodiscard
 function utf16.offset( utf16_string, index, offset, lax, big_endian )
-    local str_length = string_len( utf16_string )
+    local str_length = #utf16_string
     if str_length == 0 then
         return nil
     end
@@ -580,7 +580,7 @@ end
 ---@return string utf16_sub The substring.
 ---@nodiscard
 function utf16.sub( utf16_string, start_position, end_position, lax, big_endian )
-    local str_length = string_len( utf16_string )
+    local str_length = #utf16_string
     if str_length == 0 then
         return utf16_string
     end
@@ -663,7 +663,7 @@ if ffi == nil then
     ---@return string utf16_reversed The reversed UTF-16 string.
     ---@nodiscard
     function utf16.reverse( utf16_string, start_position, end_position, lax, big_endian )
-        local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
+        local start_index, end_index = math_range( #utf16_string, start_position, end_position )
         local strict = lax ~= true
 
         ---@type string[]
@@ -703,7 +703,7 @@ else
     ---@return string utf16_reversed
     ---@nodiscard
     function utf16.reverse( utf16_string, start_position, end_position, lax, big_endian )
-        local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
+        local start_index, end_index = math_range( #utf16_string, start_position, end_position )
         if start_index > end_index then
             return ""
         end
@@ -765,7 +765,7 @@ end
 ---@return string utf16_normalized The normalized UTF-16 string.
 ---@nodiscard
 function utf16.normalize( utf16_string, replacement_str, start_position, end_position, big_endian )
-    local start_index, end_index = math_range( string_len( utf16_string ), start_position, end_position )
+    local start_index, end_index = math_range( #utf16_string, start_position, end_position )
 
     if replacement_str == nil then
         replacement_str = big_endian and "\xFF\xFD" or "\xFD\xFF"
@@ -822,7 +822,7 @@ do
     ---@return integer | nil
     ---@return integer | nil
     local function iterate( utf16_string, index, strict, big_endian )
-        local str_length = string_len( utf16_string )
+        local str_length = #utf16_string
 
         if index == 0 then
             index = 1

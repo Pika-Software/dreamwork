@@ -6,7 +6,6 @@ local math_clamp                  = math.clamp
 local math_range                  = math.range
 
 local string                      = std.string
-local string_len                  = string.len
 local string_format               = string.format
 local string_byte                 = string.byte
 local string_findByte             = string.findByte
@@ -122,7 +121,7 @@ ipv4.fromOctets = fromOctets
 ---@return integer prefix_length The CIDR prefix length. <0-32>, `32` if not specified.
 ---@nodiscard
 function ipv4.parse( ipv4_str, start_position, end_position )
-    local start_index, end_index = math_range( string_len( ipv4_str ), start_position, end_position )
+    local start_index, end_index = math_range( #ipv4_str, start_position, end_position )
 
     local prefix_length = 32
 

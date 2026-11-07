@@ -20,7 +20,7 @@ local rbit_band, rbit_bor = rbit.band, rbit.bor
 local rbit_lshift, rbit_rshift = rbit.lshift, rbit.rshift
 
 local string = std.string
-local string_len, string_rep = string.len, string.rep
+local string_rep = string.rep
 local string_sub, string_find = string.sub, string.find
 local string_char, string_byte = string.char, string.byte
 local string_match, string_format = string.match, string.format
@@ -318,7 +318,7 @@ function unicode.unescape( escaped_str, lax )
     ---@type string[]
     local segments, segment_count = {}, 0
 
-    local str_length = string_len( escaped_str )
+    local str_length = #escaped_str
 
     -- start of the chunk that is not copied yet
     local copy_position = 1
@@ -335,7 +335,7 @@ function unicode.unescape( escaped_str, lax )
 
                     -- leading zeros are allowed, but more than 8 significant digits can't fit
                     hex_str = string_match( hex_str, "^0*(.-)$" )
-                    codepoint = string_len( hex_str ) > 8 and 0x7FFFFFFF or (raw_tonumber( hex_str, 16 ) or 0)
+                    codepoint = #hex_str > 8 and 0x7FFFFFFF or (raw_tonumber( hex_str, 16 ) or 0)
                 end
             else
                 local hex_str = string_match( escaped_str, "^%x%x%x%x", position + 2 )
@@ -2280,7 +2280,7 @@ if ffi == nil then
     ---@return string lowercase_utf8_str The string with the given range converted to lowercase; identical to the input if nothing in range needed conversion.
     ---@nodiscard
     function unicode.lower( utf8_string, start_position, end_position, lax )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
         if str_length == 0 then
             return utf8_string
         end
@@ -2356,7 +2356,7 @@ if ffi == nil then
     ---@return string uppercase_utf8_str The string with the given range converted to uppercase; identical to the input if nothing in range needed conversion.
     ---@nodiscard
     function unicode.upper( utf8_string, start_position, end_position, lax )
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
         if str_length == 0 then
             return utf8_string
         end
@@ -2428,7 +2428,7 @@ else
             local replacement = case_map[ uint8 ]
             if replacement == nil then
                 ascii_map[ uint8 ] = uint8
-            elseif string_len( replacement ) == 1 then
+            elseif #replacement == 1 then
                 ascii_map[ uint8 ] = string_byte( replacement, 1, 1 )
             else
                 error( "ascii case mapping must stay ascii" )
@@ -2439,14 +2439,14 @@ else
         local max_growth = 1
 
         for utf8_codepoint, replacement in raw_pairs( case_map ) do
-            local growth = string_len( replacement ) / string_len( utf8_encode( utf8_codepoint, true ) )
+            local growth = #replacement / #utf8_encode( utf8_codepoint, true )
             if growth > max_growth then
                 max_growth = growth
             end
         end
 
         return function( utf8_string, start_position, end_position, lax )
-            local str_length = string_len( utf8_string )
+            local str_length = #utf8_string
             if str_length == 0 then
                 return utf8_string
             end
@@ -2489,7 +2489,7 @@ else
                     else
                         changed = true
 
-                        local replacement_length = string_len( replacement )
+                        local replacement_length = #replacement
                         ffi_copy( buffer + length, replacement, replacement_length )
                         length = length + replacement_length
                     end
@@ -2528,7 +2528,7 @@ end
 ---@return string capitalized_utf8_str The capitalized UTF-8 string.
 ---@nodiscard
 function unicode.capitalize( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return utf8_string
     end
@@ -2663,7 +2663,7 @@ end
 ---@return string title_utf8_str The title-cased UTF-8 string.
 ---@nodiscard
 function unicode.title( utf8_string, start_position, end_position, lax )
-    local str_length = string_len( utf8_string )
+    local str_length = #utf8_string
     if str_length == 0 then
         return utf8_string
     end
@@ -3428,13 +3428,7 @@ do
     ---@return integer width The width of the string in columns.
     ---@nodiscard
     function unicode.displayWidth( utf8_string, start_position, end_position, lax )
-        local str_length = string_len( utf8_string )
-        if str_length == 0 then
-            return 0
-        end
-
-        local start_index, end_index = math_range( str_length, start_position, end_position )
-
+        local start_index, end_index = math_range( #utf8_string, start_position, end_position )
         return measure( utf8_string, start_index, end_index, lax, 1 )
     end
 
@@ -3463,7 +3457,7 @@ do
             return utf8_string
         end
 
-        local str_length = string_len( utf8_string )
+        local str_length = #utf8_string
         if str_length == 0 then
             return utf8_string
         end
@@ -3574,7 +3568,7 @@ do
         end
 
         -- the longest prefix of `padding` that fits into `remainder`
-        local padding_length = string_len( padding )
+        local padding_length = #padding
         local index, prefix_width = 1, 0
 
         local cluster_width, regional_open = 0, false
@@ -3634,13 +3628,13 @@ do
         if padding == nil then
             padding = " "
         else
-            padding_width = measure( padding, 1, string_len( padding ), lax, 2 )
+            padding_width = measure( padding, 1, #padding, lax, 2 )
             if padding_width == 0 then
                 return utf8_string
             end
         end
 
-        local missing_width = desired_width - measure( utf8_string, 1, string_len( utf8_string ), lax, 2 )
+        local missing_width = desired_width - measure( utf8_string, 1, #utf8_string, lax, 2 )
         if missing_width <= 0 then
             return utf8_string
         end

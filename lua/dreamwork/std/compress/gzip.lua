@@ -11,7 +11,6 @@ local bytepack_readUInt32LE = bytepack.readUInt32LE
 local bytepack_writeUInt32LE = bytepack.writeUInt32LE
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_byte = string.byte
 local string_char = string.char
@@ -111,7 +110,7 @@ function gzip.compress( raw_data, options )
         end
 
         extra = options.extra
-        if extra ~= nil and string_len( extra ) > 0xFFFF then
+        if extra ~= nil and #extra > 0xFFFF then
             error( "options.extra must be up to 65535 bytes long", 2 )
         end
 
@@ -145,7 +144,7 @@ function gzip.compress( raw_data, options )
     local segment_count = 1
 
     if extra ~= nil then
-        segments[ segment_count + 1 ] = string_char( bytepack_writeUInt16LE( string_len( extra ) ) )
+        segments[ segment_count + 1 ] = string_char( bytepack_writeUInt16LE( #extra ) )
         segments[ segment_count + 2 ] = extra
         segment_count = segment_count + 2
     end
@@ -169,7 +168,7 @@ function gzip.compress( raw_data, options )
 
     segments[ segment_count + 1 ] = compressed_data
     segments[ segment_count + 2 ] = string_char( bytepack_writeUInt32LE( CRC32_digest( raw_data ) ) )
-    segments[ segment_count + 3 ] = string_char( bytepack_writeUInt32LE( string_len( raw_data ) % 0x100000000 ) )
+    segments[ segment_count + 3 ] = string_char( bytepack_writeUInt32LE( #raw_data % 0x100000000 ) )
 
     return table_concat( segments, "", 1, segment_count + 3 )
 end
@@ -249,7 +248,7 @@ function gzip.decompress( compressed_data, start_position )
             end
 
             local extra_end = position + 1 + bytepack_readUInt16LE( length_1, length_2 )
-            if extra_end > string_len( compressed_data ) then
+            if extra_end > #compressed_data then
                 error( "corrupt gzip data: truncated header", 2 )
             end
 
@@ -300,7 +299,7 @@ function gzip.decompress( compressed_data, start_position )
             error( "corrupt gzip data: checksum mismatch", 2 )
         end
 
-        if bytepack_readUInt32LE( size_1, size_2, size_3, size_4 ) ~= string_len( decompressed_data ) % 0x100000000 then
+        if bytepack_readUInt32LE( size_1, size_2, size_3, size_4 ) ~= #decompressed_data % 0x100000000 then
             error( "corrupt gzip data: size mismatch", 2 )
         end
 

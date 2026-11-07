@@ -6,7 +6,6 @@ local math_floor = math.floor
 local math_random = math.random
 
 local string = std.string
-local string_len = string.len
 local string_byte = string.byte
 local string_match = string.match
 local string_format = string.format
@@ -99,7 +98,7 @@ uuid.NAMESPACE_X500 = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 ---@return string | nil uuid_bytes The 16 raw bytes, or `nil` if the string is not a valid UUID.
 ---@nodiscard
 local function parse( uuid_str )
-    local uuid_str_length = string_len( uuid_str )
+    local uuid_str_length = #uuid_str
 
     if uuid_str_length == 36 then
         local part_1, part_2, part_3, part_4, part_5 = string_match( uuid_str, "^(%x%x%x%x%x%x%x%x)%-(%x%x%x%x)%-(%x%x%x%x)%-(%x%x%x%x)%-(%x%x%x%x%x%x%x%x%x%x%x%x)$" )
@@ -134,7 +133,7 @@ uuid.parse = parse
 ---@return string uuid_str The UUID string.
 ---@nodiscard
 function uuid.toString( uuid_bytes )
-    if string_len( uuid_bytes ) ~= 16 then
+    if #uuid_bytes ~= 16 then
         error( "UUID must be exactly 16 bytes", 2 )
     end
 
@@ -146,7 +145,7 @@ end
 ---@param namespace string
 ---@return string | nil
 local function namespace_bytes( namespace )
-    if string_len( namespace ) == 16 then
+    if #namespace == 16 then
         return namespace
     end
 

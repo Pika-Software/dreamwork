@@ -15,7 +15,6 @@ local raw_pairs = raw.pairs
 local raw_select = raw.select
 
 local string = std.string
-local string_len = string.len
 local string_sub = string.sub
 local string_gsub = string.gsub
 local string_trim = string.trim
@@ -98,7 +97,7 @@ sqlite.escape = escape
 ---@return dreamwork.std.sqlite.QueryRow[] | nil result The result of the query.
 local function query_raw( query_str )
     -- blob literals can make queries megabytes long
-    local str_length = string_len( query_str )
+    local str_length = #query_str
     if str_length > 64 then
         dreamwork_Logger:debug( "Executing SQL query: " .. string_sub( query_str, 1, 64 ) .. "... (+" .. (str_length - 64) .. " bytes)" )
     else

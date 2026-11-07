@@ -5,7 +5,6 @@ local ascii = std.ascii
 local ascii_isHexDigit = ascii.isHexDigit
 
 local string = std.string
-local string_len = string.len
 local string_format = string.format
 local string_byte, string_char = string.byte, string.char
 
@@ -191,7 +190,7 @@ function color_lib.fromString( str, start_position, str_length )
     end
 
     if str_length == nil then
-        str_length = string_len( str )
+        str_length = #str
     end
 
     if (str_length - start_position + 1) < 4 then
