@@ -1,4 +1,7 @@
-local glua_util = util
+local dreamwork_engine = dreamwork.engine
+
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
 
 ---@class dreamwork.std
 local std = dreamwork.std

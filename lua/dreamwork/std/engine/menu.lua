@@ -1,5 +1,6 @@
 local _G = _G
 local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -14,7 +15,9 @@ local window = std.window
 local menu = std.menu or { visible = false }
 std.menu = menu
 
-if _G.gui == nil then
+local glua_gui = dreamwork_engine.requireLibrary( "gui" )
+
+if glua_gui.ActivateGameUI == nil then
 
     menu.Visibility = menu.Visibility or std.Event( "menu.Visibility" )
 
@@ -24,7 +27,7 @@ if _G.gui == nil then
 
 else
 
-    local gui = _G.gui
+    local gui = glua_gui
 
     menu.open = gui.ActivateGameUI or std.debug.fempty
 

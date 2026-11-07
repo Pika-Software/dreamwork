@@ -1,4 +1,7 @@
-local sql = sql
+local dreamwork_engine = dreamwork.engine
+
+---@type garrysmod.sql
+local sql = dreamwork_engine.requireLibrary( "sql" )
 local sql_Query = sql.Query
 
 local dreamwork_Logger = dreamwork.Logger

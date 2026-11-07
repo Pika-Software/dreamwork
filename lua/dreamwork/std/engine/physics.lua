@@ -1,7 +1,9 @@
 local std = dreamwork.std
 
-local physenv = physenv
-local util = util
+local dreamwork_engine = dreamwork.engine
+
+local physenv = dreamwork_engine.requireLibrary( "physenv" )
+local util = dreamwork_engine.requireLibrary( "util" )
 
 local setmetatable = std.setmetatable
 local isString = std.isString

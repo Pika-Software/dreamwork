@@ -1,10 +1,10 @@
-local glua_util = util
+local dreamwork_engine = dreamwork.engine
 
-local holylib_CompressLZ4, holylib_DecompressLZ4
-if glua_util ~= nil then
-    holylib_CompressLZ4 = glua_util.CompressLZ4
-    holylib_DecompressLZ4 = glua_util.DecompressLZ4
-end
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
+
+local holylib_CompressLZ4 = glua_util.CompressLZ4
+local holylib_DecompressLZ4 = glua_util.DecompressLZ4
 
 ---@class dreamwork.std
 local std = dreamwork.std

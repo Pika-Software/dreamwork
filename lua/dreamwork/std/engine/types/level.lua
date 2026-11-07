@@ -1,8 +1,12 @@
 -- TODO: https://holylib.raphaelit7.com/HolyLib.IsMapValid
 
-local glua_game, glua_engine, glua_util = _G.game, _G.engine, _G.util
-local file_Exists = _G.file.Exists
 local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
+
+local glua_game = dreamwork_engine.requireLibrary( "game" )
+local glua_engine = dreamwork_engine.requireLibrary( "engine" )
+local glua_util = dreamwork_engine.requireLibrary( "util" )
+local file_Exists = dreamwork_engine.requireLibrary( "file" ).Exists
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -51,7 +55,7 @@ end
 
 if std.LUA_CLIENT then
     level.getSunInfo = level.getSunInfo or glua_util.GetSunInfo
-    level.redownloadLightmaps = level.redownloadLightmaps or _G.render.RedownloadAllLightmaps
+    level.redownloadLightmaps = level.redownloadLightmaps or dreamwork_engine.requireLibrary( "render" ).RedownloadAllLightmaps
 end
 
 --- [SHARED AND MENU]
@@ -103,12 +107,12 @@ if std.LUA_SERVER then
     level.getLoadType = level.getLoadType or glua_game.MapLoadType
     level.getState = level.getState or glua_game.GetGlobalState
     level.setState = level.setState or glua_game.SetGlobalState
-    level.sendCommand = level.sendCommand or _G.hammer.SendCommand
+    level.sendCommand = level.sendCommand or dreamwork_engine.requireLibrary( "hammer" ).SendCommand
     level.getNext = level.getNext or glua_game.GetMapNext
 
     do
 
-        local glua_navmesh = _G.navmesh
+        local glua_navmesh = dreamwork_engine.requireLibrary( "navmesh" )
 
         -- T0D0: make a classes
         local navmesh = {

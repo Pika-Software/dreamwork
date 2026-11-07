@@ -1,11 +1,12 @@
 local _G = _G
 
 local dreamwork = dreamwork
+local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
 
-local glua_gui = _G.gui
-local glua_vgui = _G.vgui
-local glua_input = _G.input
+local glua_gui = dreamwork_engine.requireLibrary( "gui" )
+local glua_vgui = dreamwork_engine.requireLibrary( "vgui" )
+local glua_input = dreamwork_engine.requireLibrary( "input" )
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -148,11 +149,11 @@ if std.LUA_CLIENT_MENU then
         input.mouse = mouse
 
         mouse.wheel = glua_gui.InternalMouseWheeled
-        mouse.move = gui.InternalCursorMoved
+        mouse.move = glua_gui.InternalCursorMoved
 
         mouse.press = glua_gui.InternalMousePressed
         mouse.release = glua_gui.InternalMouseReleased
-        mouse.doubleClick = gui.InternalMouseDoublePressed
+        mouse.doubleClick = glua_gui.InternalMouseDoublePressed
 
         mouse.isDown = glua_input.IsMouseDown
 

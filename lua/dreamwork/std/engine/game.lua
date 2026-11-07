@@ -1,12 +1,13 @@
-local glua_engine = engine or {}
-local glua_game = game or {}
+local dreamwork_engine = dreamwork.engine
+
+local glua_engine = dreamwork_engine.requireLibrary( "engine" )
+local glua_game = dreamwork_engine.requireLibrary( "game" )
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
 local class = std.class
 
-local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
 local CurTime = CurTime

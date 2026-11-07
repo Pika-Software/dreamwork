@@ -1,3 +1,5 @@
+local dreamwork_engine = dreamwork.engine
+
 ---@class dreamwork.std
 local std = dreamwork.std
 local len = std.len
@@ -5,11 +7,12 @@ local len = std.len
 local debug = std.debug
 local debug_fempty = debug.fempty
 
----@diagnostic disable-next-line: undefined-global
-local glua_render = render or {}
 
----@diagnostic disable-next-line: undefined-global
-local glua_cam = cam or {}
+---@type garrysmod.render
+local glua_render = dreamwork_engine.requireLibrary( "render" )
+
+---@type garrysmod.cam
+local glua_cam = dreamwork_engine.requireLibrary( "cam" )
 
 -- TODO: engine proxy for vectors, angles and etc
 

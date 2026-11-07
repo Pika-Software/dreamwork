@@ -1,3 +1,9 @@
+local dreamwork_engine = dreamwork.engine
+
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
+local util_SHA256 = glua_util.SHA256
+
 local std = dreamwork.std
 local ffi = std.ffi
 
@@ -652,7 +658,7 @@ end
 
 SHA256.__tostring = SHA256.digest
 
-if util == nil or util.SHA256 == nil then
+if util_SHA256 == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -674,7 +680,6 @@ if util == nil or util.SHA256 == nil then
 else
 
     local base16_decode = std.base16.decode
-    local util_SHA256 = util.SHA256
 
     --- [SHARED AND MENU]
     ---

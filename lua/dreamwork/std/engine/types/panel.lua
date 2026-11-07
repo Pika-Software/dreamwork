@@ -2,12 +2,13 @@ local _G = _G
 
 ---@type dreamwork
 local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
 local transducers = dreamwork.transducers
 
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local glua_vgui = _G.vgui
+local glua_vgui = dreamwork_engine.requireLibrary( "vgui" )
 
 --[[
 

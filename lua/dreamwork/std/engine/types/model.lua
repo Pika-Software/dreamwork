@@ -1,5 +1,5 @@
-local _G = _G
-local glua_util = _G.util
+local dreamwork_engine = dreamwork.engine
+local glua_util = dreamwork_engine.requireLibrary( "util" )
 
 ---@class dreamwork.std
 local std = dreamwork.std

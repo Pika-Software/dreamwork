@@ -1,14 +1,13 @@
----@type fun( data: string ): string
-local util_Base64Encode
+local dreamwork_engine = dreamwork.engine
+
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
 
 ---@type fun( data: string ): string
-local util_Base64Decode
+local util_Base64Encode = glua_util.Base64Encode
 
-local glua_util = util
-if glua_util ~= nil then
-    util_Base64Encode = glua_util.Base64Encode
-    util_Base64Decode = glua_util.Base64Decode
-end
+---@type fun( data: string ): string
+local util_Base64Decode = glua_util.Base64Decode
 
 ---@class dreamwork.std
 local std = dreamwork.std

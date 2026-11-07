@@ -10,7 +10,8 @@ local exceptions_call = dreamwork.exceptions.call
 
 local detour = dreamwork.detour
 
-local glua_file = file
+---@type garrysmod.file
+local glua_file = dreamwork_engine.requireLibrary( "file" )
 
 ---@type holylib.filesystem | nil
 local filesystem = filesystem

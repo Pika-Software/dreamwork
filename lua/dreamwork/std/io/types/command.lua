@@ -174,10 +174,8 @@ end
 
 if std.LUA_CLIENT_MENU then
 
-    ---@class dreamwork.GModInputLibrary
-    ---@field TranslateAlias fun( str: string ): string | nil
-    ---@diagnostic disable-next-line: undefined-global
-    local glua_input = input
+    ---@type garrysmod.input
+    local glua_input = dreamwork_engine.requireLibrary( "input" )
 
     local input_TranslateAlias = glua_input.TranslateAlias or debug_fempty
 

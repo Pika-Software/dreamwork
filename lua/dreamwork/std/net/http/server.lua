@@ -1,11 +1,12 @@
----@diagnostic disable-next-line: undefined-global
-local glua_httpserver = httpserver
+local dreamwork_engine = dreamwork.engine
+local engine_nextTick = dreamwork_engine.nextTick
+
+---@type holylib.httpserver | nil
+local httpserver = httpserver
 
 local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_call = dreamwork_exceptions.call
 local exceptions_report = dreamwork_exceptions.report
-
-local engine_timer_simple = dreamwork.engine.timer.simple
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -29,8 +30,8 @@ local math = std.math
 local math_floor = math.floor
 
 local string = std.string
-local string_format = string.format
 local string_upper = string.upper
+local string_format = string.format
 
 local class = std.class
 local class_new = class.new
@@ -39,13 +40,11 @@ local class_isInherited = class.isInherited
 local uuid = std.uuid
 local uuid_unique = uuid.unique
 
-local error = std.error
 local type = std.type
+local error = std.error
 
 local Future = std.Future
 
-
-local httpserver_available = glua_httpserver ~= nil and glua_httpserver.Create ~= nil
 
 ---@type fun(): holylib.HttpServer
 local httpserver_Create
@@ -59,11 +58,15 @@ local httpserver_FindByName
 ---@type fun(): holylib.HttpServer[]
 local httpserver_GetAll
 
-if httpserver_available then
-    httpserver_Create = glua_httpserver.Create
-    httpserver_Destroy = glua_httpserver.Destroy
-    httpserver_FindByName = glua_httpserver.FindByName
-    httpserver_GetAll = glua_httpserver.GetAll
+---@type boolean
+local httpserver_available = false
+
+if httpserver ~= nil and httpserver.Create ~= nil then
+    httpserver_FindByName = httpserver.FindByName
+    httpserver_Destroy = httpserver.Destroy
+    httpserver_Create = httpserver.Create
+    httpserver_GetAll = httpserver.GetAll
+    httpserver_available = true
 end
 
 ---@alias dreamwork.std.http.Server.Handler fun( request: dreamwork.std.http.Server.Request, response: dreamwork.std.http.Server.Response ): ( boolean | dreamwork.std.Future | nil )
@@ -626,17 +629,15 @@ local function schedule_restart( state )
 
     state.restart_pending = true
 
-    engine_timer_simple( 0, function()
-        if not state.restart_pending then
-            return
-        end
+    engine_nextTick( function()
+        if state.restart_pending then
+            state.restart_pending = false
 
-        state.restart_pending = false
-
-        local handle = state.handle
-        if handle:IsValid() and handle:IsRunning() then
-            flush_deferred( state )
-            handle:Start( handle:GetAddress(), handle:GetPort() )
+            local handle = state.handle
+            if handle:IsValid() and handle:IsRunning() then
+                flush_deferred( state )
+                handle:Start( handle:GetAddress(), handle:GetPort() )
+            end
         end
     end )
 end

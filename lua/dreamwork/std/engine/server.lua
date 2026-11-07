@@ -110,12 +110,12 @@ if server.getGamemodeName == nil then
         ---@class dreamwork.GModGModLib
         ---@field GetGamemode fun(): table
         ---@diagnostic disable-next-line: undefined-global
-        local glua_gmod = gmod
+        local glua_gmod = dreamwork_engine.requireLibrary( "gmod" )
 
         ---@class dreamwork.GModGamemodeLib
         ---@field Get fun(name: string): table
         ---@diagnostic disable-next-line: undefined-global
-        local glua_gamemode = gamemode
+        local glua_gamemode = dreamwork_engine.requireLibrary( "gamemode" )
 
         --- [SHARED]
         ---
@@ -166,9 +166,11 @@ if server.getGamemodeName == nil then
         ---
         ---@return string title The title of the gamemode.
         ---@nodiscard
+        local glua_hook = dreamwork_engine.requireLibrary( "hook" )
+
         function server.getGamemodeTitle()
             ---@diagnostic disable-next-line: undefined-field, undefined-global
-            return hook.Call( "GetGameDescription" ) or (GM or GAMEMODE or {}).Title or "unknown"
+            return glua_hook.Call( "GetGameDescription" ) or (GM or GAMEMODE or {}).Title or "unknown"
         end
 
     end
@@ -206,7 +208,7 @@ if std.LUA_CLIENT_MENU then
     ---@field IsGranted fun()
     ---@field GetAll fun()
     ---@diagnostic disable-next-line: undefined-global
-    local glua_permissions = permissions or {}
+    local glua_permissions = dreamwork_engine.requireLibrary( "permissions" )
 
     server.grantPermission = glua_permissions.Grant or debug_fempty
     server.revokePermission = glua_permissions.Revoke or debug_fempty
@@ -599,7 +601,7 @@ if std.LUA_MENU then
     ---@field IsServerFavorite fun( ip: string ): boolean
     ---@field Query fun( data: { GameDir: string, Type: string, AppID: integer, Callback: fun( server_ping: number, server_name: string, gamemode_title: string, level_name: string, player_count: number, player_limit: number, bot_count: number, has_password: boolean, last_played_time: number, server_address: string, gamemode_name: string, gamemode_workshopid: number, is_anonymous_server: boolean, gmod_version: string, server_localization: string, gamemode_category: string ), CallbackFailed: fun( reason: string ), Finished: fun() } )
     ---@diagnostic disable-next-line: undefined-global
-    local glua_serverlist = serverlist
+    local glua_serverlist = dreamwork_engine.requireLibrary( "serverlist" )
     local setTimeout = std.setTimeout
     local Future = std.Future
 

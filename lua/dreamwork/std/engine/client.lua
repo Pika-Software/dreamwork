@@ -61,6 +61,7 @@
 
 local _G = _G
 local dreamwork = _G.dreamwork
+local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -176,7 +177,7 @@ if LUA_CLIENT_MENU then
 
     if std.LUA_MENU then
 
-        client.connect = _G.JoinServer or _G.permissions.Connect
+        client.connect = _G.JoinServer or dreamwork_engine.requireLibrary( "permissions" ).Connect
 
         --- [CLIENT AND MENU]
         ---
@@ -191,7 +192,7 @@ if LUA_CLIENT_MENU then
 
     else
 
-        client.connect = _G.permissions.AskToConnect
+        client.connect = dreamwork_engine.requireLibrary( "permissions" ).AskToConnect
 
         --- [CLIENT AND MENU]
         ---

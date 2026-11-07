@@ -1,14 +1,17 @@
-local std              = dreamwork.std
+---@class dreamwork.engine
+local dreamwork_engine = dreamwork.engine
+local std = dreamwork.std
 
-local debug            = std.debug
+local debug = std.debug
 
-local raw              = std.raw
+local raw = std.raw
 
-local rbit             = raw.bit
-local rbit_band        = rbit.band
+local rbit = raw.bit
+local rbit_band = rbit.band
 
-local table            = std.table
-local table_concat     = table.concat
+local table = std.table
+local table_concat = table.concat
+
 
 local bitpack          = std.bitpack
 local bitpack_toString = bitpack.toString
@@ -43,7 +46,7 @@ if c_material_fn == nil then
     ---@return garrysmod.Material material The loaded material.
     ---@return number time_taken The time taken to load the material.
     ---@nodiscard
-    function engine.loadMaterial( file_path, parameters )
+    function dreamwork_engine.loadMaterial( file_path, parameters )
         if parameters == nil then
             return glua_Material( file_path )
         end
@@ -82,7 +85,7 @@ else
     ---@return garrysmod.Material material The loaded material.
     ---@return number time_taken The time taken to load the material.
     ---@nodiscard
-    function engine.loadMaterial( file_path, parameters )
+    function dreamwork_engine.loadMaterial( file_path, parameters )
         if parameters == nil then
             return c_material_fn( file_path )
         end

@@ -1,8 +1,8 @@
-local util_CRC
+local dreamwork_engine = dreamwork.engine
 
-if util ~= nil then
-    util_CRC = util.CRC
-end
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
+local util_CRC = glua_util.CRC
 
 ---@class dreamwork.std
 local std = dreamwork.std

@@ -19,7 +19,9 @@ std.gfx2d = gfx2d
 
 if LUA_CLIENT then
 
-    local cam_Start = cam.Start or debug_fempty
+    ---@type garrysmod.cam
+    local glua_cam = dreamwork.engine.requireLibrary( "cam" )
+    local cam_Start = glua_cam.Start or debug_fempty
 
     ---@type garrysmod.RenderCamData
     local view = {
@@ -34,7 +36,7 @@ if LUA_CLIENT then
         cam_Start( view )
     end
 
-    gfx2d.stop = cam.End2D or debug_fempty
+    gfx2d.stop = glua_cam.End2D or debug_fempty
 
 end
 

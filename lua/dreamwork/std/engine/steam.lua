@@ -1,5 +1,7 @@
-local glua_steamworks = steamworks
-local glua_system = system
+local dreamwork_engine = dreamwork.engine
+
+local glua_steamworks = dreamwork_engine.requireLibrary( "steamworks" )
+local glua_system = dreamwork_engine.requireLibrary( "system" )
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -10,15 +12,6 @@ local isString = std.isString
 local error = std.error
 
 local Future = std.Future
-
-
--- TODO: https://wiki.facepunch.com/gmod/resource.AddWorkshop
--- TODO: https://holylib.raphaelit7.com/addonsystem
--- http://holylib.raphaelit7.com/steamworks
---
--- https://holylib.raphaelit7.com/HolyLib:OnSteamConnect
--- https://holylib.raphaelit7.com/HolyLib:OnSteamDisconnect
---
 
 --- [SHARED AND MENU]
 ---
@@ -33,79 +26,6 @@ if glua_system ~= nil then
     steam.getAwayTime = glua_system.UpTime or function() return 0 end
     steam.getAppTime = glua_system.AppTime or steam.getAwayTime
     steam.getTime = glua_system.SteamTime or std.time.now
-
-end
-
-if std.LUA_CLIENT_MENU then
-
-    do
-
-        local glua_achievements = _G.achievements
-        local achievements_Count, achievements_GetName, achievements_GetDesc, achievements_GetCount, achievements_GetGoal, achievements_IsAchieved = glua_achievements.Count, glua_achievements.GetName, glua_achievements.GetDesc, glua_achievements.GetCount, glua_achievements.GetGoal, glua_achievements.IsAchieved
-
-        -- TODO: update code/docs
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Returns information about an achievement (name, description, value, etc.)
-        ---
-        ---@param id number The ID of achievement to retrieve name of. Note  IDs start from 0, not 1.
-        ---@return table | nil table Returns nil if the ID is invalid.
-        local function get( id )
-            local goal = achievements_GetGoal( id )
-            if goal == nil then return nil end
-
-            local isAchieved = achievements_IsAchieved( id )
-
-            return {
-                name = achievements_GetName( id ),
-                description = achievements_GetDesc( id ),
-                value = isAchieved and goal or achievements_GetCount( id ),
-                achieved = isAchieved,
-                goal = goal
-            }
-        end
-
-        --- [CLIENT AND MENU]
-        ---
-        --- The game achievement library.
-        ---
-        ---@class dreamwork.std.game.achievement
-        local achievement = {
-            getCount = achievements_Count,
-            get = get
-        }
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Checks if an achievement with the given ID exists.
-        ---
-        ---@param id number
-        ---@return boolean exist Returns true if the achievement exists.
-        ---@nodiscard
-        function achievement.exists( id )
-            return achievements_IsAchieved( id ) ~= nil
-        end
-
-        --- [CLIENT AND MENU]
-        ---
-        --- Returns information about all achievements.
-        ---
-        ---@return table achievement_list The list of all achievements.
-        ---@return number achievement_count The count of achievements.
-        ---@nodiscard
-        function achievement.getAll()
-            local tbl, count = {}, achievements_Count()
-            for index = 0, count - 1 do
-                tbl[ index + 1 ] = get( index )
-            end
-
-            return tbl, count
-        end
-
-        game.achievement = achievement
-
-    end
 
 end
 
@@ -793,16 +713,6 @@ if std.LUA_MENU then
         glua_steamworks.Vote( wsid, vote )
     end
 
-end
-
--- https://github.com/WilliamVenner/gmsv_workshop
----@diagnostic disable-next-line: undefined-field
-if std.LUA_SERVER and not (std.isTable( steamworks ) and std.isFunction( steamworks.DownloadUGC )) then
-    if std.loadbinary( "workshop" ) then
-        dreamwork.Logger:info( "'gmsv_workshop' was loaded & connected as server-side Steam Workshop API." )
-    else
-        dreamwork.Logger:warn( "'gmsv_workshop' is missing, `steam.workshop.download` will do nothing on server." )
-    end
 end
 
 do

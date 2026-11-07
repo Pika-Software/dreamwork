@@ -1,3 +1,9 @@
+local dreamwork_engine = dreamwork.engine
+
+---@type garrysmod.util
+local glua_util = dreamwork_engine.requireLibrary( "util" )
+local util_MD5 = glua_util.MD5
+
 local std = dreamwork.std
 local ffi = std.ffi
 
@@ -383,7 +389,7 @@ end
 
 MD5.__tostring = MD5.digest
 
-if util == nil or util.MD5 == nil then
+if util_MD5 == nil then
 
     --- [SHARED AND MENU]
     ---
@@ -405,7 +411,6 @@ if util == nil or util.MD5 == nil then
 else
 
     local base16_decode = std.base16.decode
-    local util_MD5 = util.MD5
 
     --- [SHARED AND MENU]
     ---

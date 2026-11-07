@@ -1,4 +1,6 @@
 local dreamwork_engine = dreamwork.engine
+local engine_requireLibrary = dreamwork_engine.requireLibrary
+
 local detour = dreamwork.detour
 
 local engine_hook = dreamwork_engine.hook
@@ -43,22 +45,10 @@ if LUA_MENU then
 
 end
 
----@param name string
----@return table
-local function glua_library( name )
-    local lib = _G[ name ]
-    if lib == nil then
-        lib = {}
-        _G[ name ] = lib
-    end
-
-    return lib
-end
-
 do
 
     ---@class garrysmod.hook
-    local glua_hook = glua_library( "hook" )
+    local glua_hook = engine_requireLibrary( "hook" )
 
     detour.simple( function( event_name, _, ... )
         return hook_call( event_name, ... )
@@ -69,7 +59,7 @@ end
 do
 
     ---@class garrysmod.concommand
-    local concommand = glua_library( "concommand" )
+    local concommand = engine_requireLibrary( "concommand" )
 
     local fallback_exists = concommand.Run ~= nil
 
@@ -103,7 +93,7 @@ end
 do
 
     ---@class garrysmod.cvars
-    local cvars = glua_library( "cvars" )
+    local cvars = engine_requireLibrary( "cvars" )
 
     ---@param name string
     ---@param old_value string
@@ -119,7 +109,7 @@ if LUA_SERVER or LUA_CLIENT then
     do
 
         ---@class garrysmod.gamemode
-        local gamemode = glua_library( "gamemode" )
+        local gamemode = engine_requireLibrary( "gamemode" )
 
         if gamemode.Get == nil then
 
@@ -189,7 +179,7 @@ if LUA_SERVER or LUA_CLIENT then
     do
 
         ---@class garrysmod.scripted_ents
-        local scripted_ents = glua_library( "scripted_ents" )
+        local scripted_ents = engine_requireLibrary( "scripted_ents" )
 
         ---@param name string
         ---@param output table | nil
@@ -211,7 +201,7 @@ if LUA_SERVER or LUA_CLIENT then
     do
 
         ---@class garrysmod.weapons
-        local weapons = glua_library( "weapons" )
+        local weapons = engine_requireLibrary( "weapons" )
 
         ---@param name string
         ---@param output table | nil
@@ -234,7 +224,7 @@ if LUA_SERVER or LUA_CLIENT then
     do
 
         ---@class garrysmod.effects
-        local effects = glua_library( "effects" )
+        local effects = engine_requireLibrary( "effects" )
 
         ---@param name string
         ---@param output table | nil
