@@ -90,7 +90,7 @@ function debug.fcall( f, ... )
     return f( ... )
 end
 
-if debug.newproxy == nil or ( _HOLYLIB_VERSION ~= nil and ( raw_tonumber( _HOLYLIB_VERSION ) or 0 ) <= 0.9 ) then
+if debug.newproxy == nil or (_HOLYLIB_RUN_NUMBER ~= nil and (raw_tonumber( _HOLYLIB_RUN_NUMBER ) or 0) < 5952) then
 
     local setmetatable = std.setmetatable
 

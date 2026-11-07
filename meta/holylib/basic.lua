@@ -7,6 +7,12 @@
 ---@type string
 _HOLYLIB_VERSION = nil
 
+---
+--- Which workflow run this HolyLib build is from.
+---
+---@type integer
+_HOLYLIB_RUN_NUMBER = nil
+
 --- [SHARED AND MENU]
 ---
 --- This library is exposed by the holylib module and provides a few different more generic functions.
