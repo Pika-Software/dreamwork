@@ -3022,6 +3022,15 @@ do
 
 end
 
+-- https://github.com/WilliamVenner/gmsv_workshop
+if LUA_SERVER then
+    if std.loadbinary( "workshop" ) then
+        logger:info( "`gmsv_workshop` was loaded & connected as server-side Steam Workshop API." )
+    else
+        logger:warn( "`gmsv_workshop` is missing, `steam.workshop.download` will cause an error on the server." )
+    end
+end
+
 dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
@@ -3052,7 +3061,7 @@ dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 if LUA_SERVER then
     if std.loadbinary( "mcp" ) then
         dreamwork_load( "modules/mcp.lua" )
-        logger:info( "'mcp' was loaded & connected as MCP bridge." )
+        logger:info( "'gm_mcp' was loaded & connected as MCP bridge." )
     end
 elseif LUA_CLIENT and dreamwork.vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
@@ -3067,7 +3076,7 @@ do
 
     -- https://github.com/unknown-gd/gm_bytecode
     if std.loadbinary( "bytecode" ) and isFunction( load_bytecode ) then
-        logger:info( "'bytecode' was loaded & connected as LuaJIT bytecode compiler." )
+        logger:info( "'gm_bytecode' was loaded & connected as LuaJIT bytecode compiler." )
         compile_bytecode = load_bytecode
     else
 
@@ -3087,7 +3096,7 @@ do
                 return error( "bytecode compilation not available.", 1 )
             end
 
-            logger:warn( "'gmbc' is missing, bytecode compilation not available." )
+            logger:warn( "'gm_bytecode' is missing, bytecode compilation not available." )
         end
 
     end

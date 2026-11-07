@@ -7,7 +7,8 @@ local console_commandRun = engine_console.commandRun
 local console_message = engine_console.message
 local console_messageColored = engine_console.messageColored
 
-local glua_gui = gui or {}
+---@type garrysmod.gui
+local glua_gui = dreamwork_engine.requireLibrary( "gui" )
 
 ---@class dreamwork.std
 local std = dreamwork.std
