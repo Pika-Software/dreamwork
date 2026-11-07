@@ -778,7 +778,7 @@ local string = std.string
 local string_byte = string.byte
 local string_match = string.match
 local string_format = string.format
-local string_sub, string_len = string.sub, string.len
+local string_sub = string.sub
 
 dreamwork.Copyright = string_format( "%s - Copyright (c) 2023-%s %s. Licensed under %s.", dreamwork.Prefix, os.date( "!%Y" ), dreamwork.DevTeam, dreamwork.License )
 std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
@@ -1142,7 +1142,7 @@ do
 
         String.__tonumber = raw_tonumber
         String.__div = string.divide
-        String.__len = string_len
+        String.__len = string.len
 
         --- [SHARED AND MENU]
         ---

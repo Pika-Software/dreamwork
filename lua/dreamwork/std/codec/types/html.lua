@@ -20,10 +20,10 @@ local table_sort                 = table.sort
 local table_concat               = table.concat
 
 local string                     = std.string
+local string_sub                 = string.sub
 local string_lower               = string.lower
 local string_gmatch              = string.gmatch
 local string_byteRep             = string.byteRep
-local string_sub, string_len     = string.sub, string.len
 local string_char, string_byte   = string.char, string.byte
 local string_gsub, string_match  = string.gsub, string.match
 local string_find, string_format = string.find, string.format
