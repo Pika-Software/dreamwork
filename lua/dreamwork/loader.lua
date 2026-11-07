@@ -1312,6 +1312,8 @@ local isNumber = std.isNumber
 
 if ffi == nil then
 
+    local Number = std.Number
+
     --- [SHARED AND MENU]
     ---
     --- Returns a string representing the name of the type of the passed object.
@@ -1320,33 +1322,49 @@ if ffi == nil then
     ---@return type type_name The type name of the given value.
     ---@nodiscard
     function std.type( value )
-        if isNumber( value ) and (value % 1) == 0 then
-            return "integer"
+        local metatable = debug_getmetatable( value )
+        if metatable ~= nil then
+            if metatable == Number and (value % 1) == 0 then
+                return "integer"
+            end
+
+            local type_name = raw_get( metatable, "__type" )
+            if type_name ~= nil then
+                return type_name
+            end
         end
 
-        return debug_getmetavalue( value, "__type" ) or
-            raw_type( value )
+        local type_name = raw_type( value )
+        if type_name == "UserData" then
+            return "userdata" -- unf*ck gmod userdata
+        end
+
+        return type_name
     end
 
 else
 
     function std.type( value )
-        local name = raw_type( value )
-        if name == "number" then
+        local type_name = raw_type( value )
+        if type_name == "number" then
             if value % 1 == 0 then
                 return "integer"
             end
 
-            return name
+            return type_name
+        end
+
+        if type_name == "UserData" then
+            return "userdata" -- unf*ck gmod userdata
         end
 
         ---@type metatable | nil
         local metatable = debug_getmetatable( value )
         if metatable == nil then
-            return name
+            return type_name
         end
 
-        return raw_get( metatable, "__type" ) or name
+        return raw_get( metatable, "__type" ) or type_name
     end
 
 end
