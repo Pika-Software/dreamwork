@@ -54,6 +54,12 @@ if std.LUA_MENU then
 
 end
 
+if not std.LUA_SERVER then
+    function console.clear()
+        console_commandRun( "clear" ) -- fuck facepunch
+    end
+end
+
 --- [SHARED AND MENU]
 ---
 --- An event that is called with the new visibility when the console is shown or hidden.
@@ -241,12 +247,6 @@ do
 
 end
 
-dreamwork_load( "std/io/console/variable.lua" )
-dreamwork_load( "std/io/console/command.lua" )
-dreamwork_load( "std/io/console/logger.lua" )
-
-if not std.LUA_SERVER then
-    function console.clear()
-        console.Command.run( "clear" ) -- fuck facepunch
-    end
-end
+dreamwork_load( "std/io/types/variable.lua" )
+dreamwork_load( "std/io/types/command.lua" )
+dreamwork_load( "std/io/types/logger.lua" )

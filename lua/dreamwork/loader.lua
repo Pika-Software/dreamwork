@@ -1461,9 +1461,9 @@ dreamwork_load( "std/ipv6.lua" )
 
 dreamwork_load( "std/types/version.lua" )
 
-dreamwork_load( "std/checksum/crc.lua" )
-dreamwork_load( "std/checksum/adler.lua" )
-dreamwork_load( "std/checksum/fletcher.lua" )
+dreamwork_load( "std/checksum/types/crc.lua" )
+dreamwork_load( "std/checksum/types/adler.lua" )
+dreamwork_load( "std/checksum/types/fletcher.lua" )
 
 dreamwork_load( "std/codec/base16.lua" )
 dreamwork_load( "std/codec/base32.lua" )
@@ -2689,9 +2689,10 @@ do
 end
 
 dreamwork_load( "std/codec/json.lua" )
-dreamwork_load( "std/codec/xml.lua" )
-dreamwork_load( "std/codec/html.lua" )
 dreamwork_load( "std/codec/vdf.lua" )
+
+dreamwork_load( "std/codec/types/xml.lua" )
+dreamwork_load( "std/codec/types/html.lua" )
 
 dreamwork_load( "std/types/url.lua" )
 
@@ -2702,11 +2703,11 @@ dreamwork_load( "std/types/url.lua" )
 ---@class dreamwork.std.crypto
 std.crypto = std.crypto or {}
 
-dreamwork_load( "std/crypto/md5.lua" )
-dreamwork_load( "std/crypto/sha1.lua" )
-dreamwork_load( "std/crypto/sha256.lua" )
-dreamwork_load( "std/crypto/sha512.lua" )
-dreamwork_load( "std/crypto/sha384.lua" )
+dreamwork_load( "std/crypto/types/md5.lua" )
+dreamwork_load( "std/crypto/types/sha1.lua" )
+dreamwork_load( "std/crypto/types/sha256.lua" )
+dreamwork_load( "std/crypto/types/sha512.lua" )
+dreamwork_load( "std/crypto/types/sha384.lua" )
 
 dreamwork_load( "std/crypto/hmac.lua" )
 dreamwork_load( "std/crypto/pbkdf2.lua" )
@@ -3019,10 +3020,10 @@ dreamwork_load( "std/types/web_client.lua", false, LUA_SERVER )
 dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
 
 dreamwork_load( "modules/engine/websocket.lua" )
-dreamwork_load( "std/net/websocket.lua" )
+dreamwork_load( "std/net/types/websocket.lua" )
 
-dreamwork_load( "std/net/message.lua" )
-dreamwork_load( "std/net/network.lua", false, LUA_MENU )
+dreamwork_load( "std/net/types/message.lua" )
+dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
 
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
