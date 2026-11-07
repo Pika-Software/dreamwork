@@ -55,10 +55,6 @@ function console.Command.get(name) end
 ---@param ... string The arguments to pass to the console command.
 function Command:run(...) end
 
----@class dreamwork.GModInputLibrary
----@field TranslateAlias fun( str: string ): string | nil
-local glua_input = {}
-
 --- [CLIENT AND MENU]
 ---
 --- Translates a console command alias, basically reverse of the `alias` console command.

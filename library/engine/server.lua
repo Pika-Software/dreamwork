@@ -42,12 +42,6 @@ function server.getGamemode() end
 ---@param gm Gamemode The new active gamemode object.
 function server.setGamemode(gm) end
 
---- [SHARED AND MENU]
----
---- Returns the title of the gamemode in the server browser.
----
----@return string title The title of the gamemode.
----@nodiscard
 function server.getGamemodeTitle() end
 
 ---@type fun(): number

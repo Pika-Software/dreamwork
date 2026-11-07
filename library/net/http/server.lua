@@ -429,6 +429,9 @@ http.Server.Request = RequestClass
 
 http.Server.Response = ResponseClass
 
+---@type boolean
+http.Server.available = nil
+
 --- [SERVER]
 ---
 --- Finds an existing server by its `name` property.
