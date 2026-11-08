@@ -1,5 +1,8 @@
 ---@meta _
 
+---@class dreamwork
+local dreamwork = {}
+
 ---@alias Timer.state
 ---| `0` # Timer stopped.
 ---| `1` # Timer paused.

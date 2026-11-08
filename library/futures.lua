@@ -633,3 +633,13 @@ function futures.any(futureList) end
 ---@param seconds number How long to sleep, in seconds.
 ---@async
 function futures.sleep(seconds) end
+
+--- [SHARED AND MENU]
+---
+--- Puts current thread to sleep for given amount of seconds.
+---
+--- **CAUTION**: This function could pause the main thread.
+---
+---@see futures.sleep
+---@param seconds number
+function sleep(seconds) end

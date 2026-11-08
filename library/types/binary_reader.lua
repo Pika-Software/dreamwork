@@ -500,9 +500,8 @@ function __BinaryReader:readObject(obj, ...) end
 --- local vector = reader:readClass( Vector2 )
 --- ```
 ---
----@generic T: Object
----@param cls T | Class | Object | any The class to create.
+---@param cls Object | Class | any The class to create.
 ---@param ... any The arguments passed to `__deserialize`.
----@return T obj The new object.
+---@return any obj The new object.
 ---@nodiscard
 function __BinaryReader:readClass(cls, ...) end

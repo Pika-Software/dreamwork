@@ -3,7 +3,7 @@
 
 --- A JSON primitive: string, number, boolean or `null`.
 ---
----@alias json.Primitive string | number | boolean | null
+---@alias json.Primitive string | number | boolean | null | nil
 
 --- A JSON array, a sequence of JSON values.
 ---

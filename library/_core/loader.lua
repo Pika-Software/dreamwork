@@ -70,6 +70,16 @@ FRAME_TIME = nil
 ---@type number
 FPS = nil
 
+--- The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
+---
+---@type number
+TICK_TIME = nil
+
+--- The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
+---
+---@type number
+TPS = nil
+
 --- A sentinel symbol that represents an explicit "no value", compare it by identity.
 ---
 ---@type null
@@ -495,6 +505,8 @@ String.__type = "string"
 String.__tonumber = raw.tonumber
 
 String.__div = string.divide
+
+String.__len = string.len
 
 --- [SHARED AND MENU]
 ---
@@ -983,35 +995,10 @@ function clearInterval(interval_id) end
 
 --- [SHARED AND MENU]
 ---
---- Puts current thread to sleep for given amount of seconds.
----
---- **CAUTION**: This function could pause the main thread.
----
----@see futures.sleep
----@param seconds number
-function sleep(seconds) end
-
---- [SHARED AND MENU]
----
 --- A collection of cryptographic utilities.
 ---
 ---@class crypto
 crypto = {}
-
---- The country code of the operating system. (ISO 3166-1 alpha-2)
----
----@type string
-SYSTEM_COUNTRY = nil
-
---- `true` if the operating system has a battery, `false` if not.
----
----@type boolean
-SYSTEM_HAS_BATTERY = nil
-
---- The battery level, from `0` to `100`.
----
----@type garrysmod.system.BatteryPower
-SYSTEM_BATTERY_LEVEL = nil
 
 --- [SHARED AND MENU]
 ---

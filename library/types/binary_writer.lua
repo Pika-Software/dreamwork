@@ -15,8 +15,10 @@
 --- writer:compile() --> "\5\44\1"
 --- ```
 ---
---- Lua strings can't be changed in place, so bytes are kept in a buffer (`bytes`) until `compile` (or `tostring`) joins them,
---- the buffer is a growable FFI `uint8_t` array when FFI is available, or a table otherwise.
+--- Lua strings can't be changed in place, so bytes are kept in a buffer (`bytes`) until `compile` (or `tostring`) joins them:
+--- a `string.buffer` written in place when FFI and `string.buffer` are available (appends and `compile` are `memcpy`),
+--- a growable FFI `uint8_t` array when only FFI is, or a table otherwise,
+--- where large aligned appends at the end are kept as string chunks and writing before them joins everything back into bytes.
 ---
 --- Writing overwrites the data under the cursor, bits next to a field in the same byte are kept.
 --- The size grows to the furthest position written or moved to (`seek`, `skip`, `align`),
@@ -28,8 +30,12 @@
 ---@class BinaryWriter : Object
 ---@field __class BinaryWriterClass
 ---@field position integer The cursor position in bits.
----@field bytes BinaryWriter.Buffer The written bytes, `1`-indexed, a table may have gaps.
+---@field bytes BinaryWriter.Buffer The written bytes, `1`-indexed from `base`, a table may have gaps.
+---@field base integer The position in bits of `bytes[ 1 ]`, the size of `chunks` (table backend), `0` otherwise.
 ---@field capacity number The size of `bytes` in bits, `math.huge` for a table.
+---@field buffer string.buffer | nil The `string.buffer` that holds the data (`string.buffer` backend).
+---@field chunks string[] | nil The data before `base` (table backend).
+---@field chunk_count integer | nil The number of `chunks` (table backend).
 ---@field has_gaps boolean `true` if a table has bytes that were never written.
 ---@field data_length integer The size of the data in bits.
 ---@operator len: integer
