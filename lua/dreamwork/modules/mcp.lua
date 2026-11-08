@@ -3,6 +3,16 @@ local dreamwork = dreamwork
 
 local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
+
+local dreamwork_exceptions = dreamwork.exceptions
+local exceptions_Sentinel = dreamwork_exceptions.Sentinel
+local exceptions_tostring = dreamwork_exceptions.tostring
+
+local engine_timer = dreamwork_engine.timer
+local engine_timer_create = engine_timer.create
+local engine_timer_remove = engine_timer.remove
+local engine_timer_start = engine_timer.start
+local engine_timer_stop = engine_timer.stop
 local engine_hook = dreamwork_engine.hook
 
 ---@class dreamwork.std
@@ -13,6 +23,7 @@ local raw_pairs = raw.pairs
 local raw_select = raw.select
 
 local isTable = std.isTable
+local isError = std.isError
 local isString = std.isString
 local isFunction = std.isFunction
 
@@ -39,7 +50,6 @@ local tostring = std.tostring
 local loadstring = std.loadstring
 
 local Emitter = std.Emitter
-local Timer = std.Timer
 local Network = std.Network
 
 local LUA_SERVER = std.LUA_SERVER
@@ -89,9 +99,15 @@ local PAYLOAD_LENGTH_BITS = 32
 ---@type gm_mcp | nil
 local bridge = LUA_SERVER and mcp or nil
 
+--- `true` when the module is re-included (autorefresh), CLI settings are not re-applied then.
+local is_reload = dreamwork.mcp ~= nil
+
 ---@class dreamwork.mcp
 ---@field config dreamwork.mcp.Config
 ---@field bridge gm_mcp | nil The native bridge table, server-only when loaded.
+---@field respond_result fun( request_id: string?, ok: boolean, value: any ) Completes a waiting Lua exec with a value or error.
+---@field respond_error fun( request_id_or_message: string, message: string? ): boolean Fails the active or a specific waiting Lua exec.
+---@field return_result fun( value: any )? Set during a waiting exec so scripts can return a result asynchronously.
 local mcp = dreamwork.mcp or {}
 dreamwork.mcp = mcp
 
@@ -245,6 +261,50 @@ local function encode_result( value )
     return encoded, nil
 end
 
+---@param message any
+---@param realm string | nil
+---@param stack table | nil
+---@param name string | nil
+---@return string
+local function format_lua_error( message, realm, stack, name )
+    return json_serialize( {
+        message = message,
+        realm = realm,
+        stack = stack,
+        name = name
+    } )
+end
+
+--- Converts a dreamwork error into an `OnLuaError`-like JSON error, top frame first.
+---
+---@param error_value dreamwork.std.Error | any
+---@param realm string
+---@return string
+local function format_reported_error( error_value, realm )
+    ---@type table[] | nil
+    local stack
+
+    if isError( error_value ) then
+        ---@cast error_value dreamwork.std.Error
+        local error_stack = error_value.stack
+        if error_stack ~= nil then
+            stack = {}
+
+            local size = error_stack.size
+            for index = size, 1, -1 do
+                local frame = error_stack[ index ]
+                stack[ size - index + 1 ] = {
+                    File = frame.source or frame.short_src,
+                    Line = frame.currentline,
+                    Function = frame.name
+                }
+            end
+        end
+    end
+
+    return format_lua_error( exceptions_tostring( error_value ), realm, stack, nil )
+end
+
 ---@param code string
 ---@param identifier string
 ---@return function | nil chunk
@@ -285,8 +345,9 @@ if LUA_SERVER then
         not isFunction( bridge.shutdown ) or
         not isFunction( bridge.isRunning ) or
         not isFunction( bridge.respondLua ) or
+        not isFunction( bridge.respondError ) or
         not isFunction( bridge.respondScreenshot ) then
-        report_error( "native bridge API is unavailable (require('mcp') did not export setStatus/pollCommand/respondLua/respondScreenshot)." )
+        report_error( "native bridge API is unavailable (require('mcp') did not export setStatus/pollCommand/respondLua/respondError/respondScreenshot)." )
         return
     end
 
@@ -303,20 +364,31 @@ if LUA_SERVER then
     ---@type table<string, garrysmod.Player>
     local pending_exec = {}
 
-    ---@type table<string, dreamwork.std.Timer>
-    local pending_exec_timers = {}
-
     ---@type table<string, garrysmod.Player>
     local pending_screenshots = {}
 
-    ---@type table<string, dreamwork.std.Timer>
-    local pending_screenshot_timers = {}
-
-    ---@type dreamwork.std.Timer | nil
-    local poll_timer
+    local POLL_TIMER_NAME = "dreamwork.mcp.poll"
 
     ---@type boolean
     local bridge_running = false
+
+    --- Request id of the Lua exec currently awaited by the native bridge (`return_result`).
+    ---@type string | nil
+    local active_exec_request_id
+
+    ---@param request_id string | nil
+    local function set_active_exec( request_id )
+        if isString( request_id ) and request_id ~= "" then
+            active_exec_request_id = request_id
+        end
+    end
+
+    ---@param request_id string | nil
+    local function clear_active_exec( request_id )
+        if request_id == nil or active_exec_request_id == request_id then
+            active_exec_request_id = nil
+        end
+    end
 
     ---@param request_id string | nil
     ---@param ok boolean
@@ -325,6 +397,8 @@ if LUA_SERVER then
         if request_id == nil or request_id == "" then
             return
         end
+
+        clear_active_exec( request_id )
 
         local reported, respond_err = pcall( bridge.respondLua, request_id, ok, payload )
         if not reported then
@@ -368,23 +442,57 @@ if LUA_SERVER then
     ---@param request_id string
     local function clear_pending_exec( request_id )
         pending_exec[ request_id ] = nil
-
-        local timer = pending_exec_timers[ request_id ]
-        if timer ~= nil then
-            pending_exec_timers[ request_id ] = nil
-            timer:stop()
-        end
+        engine_timer_remove( "dreamwork.mcp.exec." .. request_id )
     end
 
     ---@param request_id string
     local function clear_pending_screenshot( request_id )
         pending_screenshots[ request_id ] = nil
+        engine_timer_remove( "dreamwork.mcp.shot." .. request_id )
+    end
 
-        local timer = pending_screenshot_timers[ request_id ]
-        if timer ~= nil then
-            pending_screenshot_timers[ request_id ] = nil
-            timer:stop()
+    --- [SERVER]
+    ---
+    --- Fails a waiting MCP Lua exec. Prefer this from console/error hooks over
+    --- `respond_result( id, false, ... )` / `respondLua( id, false, ... )`.
+    ---
+    --- - `mcp.respond_error( message )` — fail the active waiting server exec (if any).
+    --- - `mcp.respond_error( requestId, message )` — fail a specific waiting exec.
+    ---
+    --- Returns `true` if a waiting MCP request was notified.
+    ---
+    ---@param request_id_or_message string
+    ---@param message string | nil
+    ---@return boolean delivered
+    function mcp.respond_error( request_id_or_message, message )
+        local request_id
+
+        if message == nil then
+            -- the native active id also covers client execs, so resolve it here
+            request_id, message = active_exec_request_id, request_id_or_message
+            if request_id == nil then
+                return false
+            end
+        else
+            request_id = request_id_or_message
+            if request_id == "" then
+                return false
+            end
         end
+
+        clear_pending_exec( request_id )
+        clear_active_exec( request_id )
+
+        local reported, delivered = pcall( bridge.respondError, request_id, message )
+        if not reported then
+            report_error( "failed to report Lua error to bridge (request=%s): %s", request_id, delivered, {
+                request_id = request_id
+            } )
+
+            return false
+        end
+
+        return delivered == true
     end
 
     ---@param vector garrysmod.Vector
@@ -665,15 +773,14 @@ if LUA_SERVER then
             clear_pending_exec( request_id )
             pending_exec[ request_id ] = ply
 
-            local timer = Timer( CLIENT_RESULT_TIMEOUT, 1, "dreamwork.mcp.exec." .. request_id )
-            pending_exec_timers[ request_id ] = timer
-            timer:attach( function()
+            local timer_name = "dreamwork.mcp.exec." .. request_id
+
+            engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
                 if pending_exec[ request_id ] == ply then
                     clear_pending_exec( request_id )
                     respond_lua_raw( request_id, false, "Client Lua result timed out." )
                 end
-            end )
-            timer:start()
+            end, true )
         end
 
         channel:transmit( function( _, writer )
@@ -708,15 +815,14 @@ if LUA_SERVER then
         clear_pending_screenshot( request_id )
         pending_screenshots[ request_id ] = ply
 
-        local timer = Timer( CLIENT_RESULT_TIMEOUT, 1, "dreamwork.mcp.shot." .. request_id )
-        pending_screenshot_timers[ request_id ] = timer
-        timer:attach( function()
+        local timer_name = "dreamwork.mcp.shot." .. request_id
+
+        engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
             if pending_screenshots[ request_id ] == ply then
                 clear_pending_screenshot( request_id )
                 respond_screenshot( request_id, false, "Screenshot timed out." )
             end
-        end )
-        timer:start()
+        end, true )
 
         channel:transmit( function( _, writer )
             write_opcode( writer, MSG_SCREENSHOT )
@@ -798,6 +904,8 @@ if LUA_SERVER then
         local code_length = #code
 
         if command.state == "server" then
+            set_active_exec( request_id )
+
             local executed, execute_error = compile_and_run( code, "dreamwork.mcp:server", request_id )
             if not executed then
                 report_error( "server Lua execution failed (tool=%s, request=%s, %d bytes): %s", tool, request_id or "-", code_length, execute_error, {
@@ -896,6 +1004,8 @@ if LUA_SERVER then
     do
         local channel = get_network()
         if channel ~= nil then
+            -- networks are shared by name, drop the receivers of previous module loads
+            channel:clear()
             channel:attach( on_network_receive )
         end
     end
@@ -936,6 +1046,8 @@ if LUA_SERVER then
         end
     end
 
+    engine_timer_create( POLL_TIMER_NAME, POLL_INTERVAL, 0, poll_commands )
+
     ---@param active boolean
     ---@return boolean success
     local function set_bridge_active( active )
@@ -949,12 +1061,7 @@ if LUA_SERVER then
 
                 bridge_running = true
 
-                if poll_timer == nil then
-                    poll_timer = Timer( POLL_INTERVAL, 0, "dreamwork.mcp.poll" )
-                    poll_timer:attach( poll_commands )
-                end
-
-                poll_timer:start()
+                engine_timer_start( POLL_TIMER_NAME )
                 dreamwork_Logger:info( "MCP: bridge enabled (polling every %.2fs).", POLL_INTERVAL )
             else
                 pcall( bridge.setStatus, true, "Garry's Mod is connected." )
@@ -1027,10 +1134,9 @@ if LUA_SERVER then
     function mcp.shutdown()
         set_bridge_active( false )
         bridge_running = false
+        clear_active_exec( nil )
 
-        if poll_timer ~= nil then
-            poll_timer:stop()
-        end
+        engine_timer_stop( POLL_TIMER_NAME )
 
         for request_id in raw_pairs( pending_exec ) do
             clear_pending_exec( request_id )
@@ -1048,11 +1154,58 @@ if LUA_SERVER then
         end
     end
 
-    engine_hook.catch( "ShutDown", "dreamwork.mcp", function()
+    engine_hook.catch( "ShutDown", "modules.mcp.shutdown", function()
         mcp.shutdown()
     end )
 
-    engine_hook.catch( "dreamwork.entity.destroy", "dreamwork.mcp", function( entity, is_player )
+    -- Fail the active waiting exec with the original error, before it is replaced by the sentinel.
+    engine_hook.catch( "dreamwork.error.report", "modules.mcp.error", function( error_value )
+        if active_exec_request_id ~= nil then
+            mcp.respond_error( format_reported_error( error_value, "server" ) )
+        end
+    end, 2000 )
+
+    -- Fail waiting execs on Lua errors that did not go through dreamwork (those are sentinels here).
+    engine_hook.catch( "dreamwork.error.occurred", "modules.mcp.error", function( err, realm, stack, source, client )
+        if err == exceptions_Sentinel then
+            return
+        end
+
+        if client == nil then
+            if active_exec_request_id ~= nil then
+                mcp.respond_error( format_lua_error( err, realm, stack, source ) )
+            end
+
+            return
+        end
+
+        if not client:IsValid() then
+            return
+        end
+
+        ---@type string[]
+        local matched = {}
+        local matched_count = 0
+
+        for request_id, pending_ply in raw_pairs( pending_exec ) do
+            if pending_ply == client then
+                matched_count = matched_count + 1
+                matched[ matched_count ] = request_id
+            end
+        end
+
+        if matched_count == 0 then
+            return
+        end
+
+        local message = format_lua_error( err, realm, stack, source )
+
+        for index = 1, matched_count, 1 do
+            mcp.respond_error( matched[ index ], message )
+        end
+    end )
+
+    engine_hook.catch( "dreamwork.entity.destroy", "modules.mcp.entities", function( entity, is_player )
         if not is_player then
             return
         end
@@ -1088,8 +1241,12 @@ if LUA_SERVER then
         end
     end
 
-    -- Initial enable/disable is applied from CLI settings (storage) right after this module loads.
-    pcall( bridge.setStatus, false, "MCP is starting." )
+    if is_reload then
+        mcp.sync()
+    else
+        -- Initial enable/disable is applied from CLI settings (storage) right after this module loads.
+        pcall( bridge.setStatus, false, "MCP is starting." )
+    end
 
     local running = false
     local status_ok, status = pcall( bridge.getStatus )
@@ -1112,12 +1269,20 @@ if LUA_CLIENT then
     ---@type string[]
     local pending_captures = {}
 
+    --- Request id of the client Lua exec awaiting `mcp.return_result` / a result payload.
+    ---@type string | nil
+    local active_client_request_id
+
     ---@param request_id string
     ---@param ok boolean
     ---@param payload string
     local function send_result( request_id, ok, payload )
         if request_id == nil or request_id == "" then
             return
+        end
+
+        if active_client_request_id == request_id then
+            active_client_request_id = nil
         end
 
         local channel = get_network()
@@ -1131,6 +1296,35 @@ if LUA_CLIENT then
             writer:writeBoolean( ok )
             write_payload( writer, payload or "" )
         end )
+    end
+
+    --- [CLIENT]
+    ---
+    --- Fails a waiting MCP Lua exec over the network.
+    ---
+    --- - `mcp.respond_error( message )` — fail the active waiting exec (if any).
+    --- - `mcp.respond_error( requestId, message )` — fail a specific waiting exec.
+    ---
+    ---@param request_id_or_message string
+    ---@param message string | nil
+    ---@return boolean delivered
+    function mcp.respond_error( request_id_or_message, message )
+        local request_id
+
+        if message == nil then
+            request_id, message = active_client_request_id, request_id_or_message
+            if request_id == nil then
+                return false
+            end
+        else
+            request_id = request_id_or_message
+            if request_id == "" then
+                return false
+            end
+        end
+
+        send_result( request_id, false, message )
+        return true
     end
 
     ---@param request_id string
@@ -1169,6 +1363,8 @@ if LUA_CLIENT then
         local result_sent = false
 
         if request_id ~= "" then
+            active_client_request_id = request_id
+
             ---@param value any
             function mcp.return_result( value )
                 if result_sent then
@@ -1221,6 +1417,20 @@ if LUA_CLIENT then
         end
     end
 
+    -- Fail the active waiting client exec with the original error, before it is replaced by the sentinel.
+    engine_hook.catch( "dreamwork.error.report", "modules.mcp.error", function( error_value )
+        if active_client_request_id ~= nil then
+            mcp.respond_error( format_reported_error( error_value, "client" ) )
+        end
+    end, 2000 )
+
+    -- Fail the active waiting client exec on Lua errors that did not go through dreamwork.
+    engine_hook.catch( "dreamwork.error.occurred", "modules.mcp.error", function( err, realm, stack, source )
+        if err ~= exceptions_Sentinel and active_client_request_id ~= nil then
+            mcp.respond_error( format_lua_error( err, realm, stack, source ) )
+        end
+    end )
+
     ---@param request_id string
     local function capture_screenshot( request_id )
         if not config.allow_capture then
@@ -1236,7 +1446,7 @@ if LUA_CLIENT then
         pending_captures[ #pending_captures + 1 ] = request_id
     end
 
-    engine_hook.catch( "PostRender", "dreamwork.mcp.screenshot", function()
+    engine_hook.catch( "PostRender", "modules.mcp.screenshot", function()
         local request_id = table_remove( pending_captures, 1 )
         if request_id == nil then
             return
@@ -1279,6 +1489,9 @@ if LUA_CLIENT then
 
     ---@param channel dreamwork.std.Network
     local function attach_client_receiver( channel )
+        -- networks are shared by name, drop the receivers of previous module loads
+        channel:clear()
+
         channel:attach( function( _, reader )
             local ok, err = pcall( function()
                 local opcode = read_opcode( reader )
@@ -1322,7 +1535,7 @@ if LUA_CLIENT then
 
     if not try_bind_network( true ) then
         -- String table may not be ready yet, or the server has no MCP bridge.
-        engine_hook.catch( "InitPostEntity", "dreamwork.mcp.bind", function()
+        engine_hook.catch( "InitPostEntity", "modules.mcp.bind", function()
             if network ~= nil then
                 return
             end

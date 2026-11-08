@@ -108,6 +108,21 @@ function mcp.respondLua( requestId, ok, payload ) end
 
 --- [SERVER]
 ---
+--- Fails a waiting Lua exec with a console / runtime error (not a normal `respondLua` path).
+---
+--- - `mcp.respondError( message )` — fail the active polled exec, if any.
+--- - `mcp.respondError( requestId, message )` — fail that specific pending exec.
+---
+--- Returns `true` if a waiting MCP request was notified. Prefer this from `OnLuaError` /
+--- `OnClientLuaError` hooks instead of `respondLua( id, false, ... )`.
+---
+---@param requestIdOrMessage string Request id when failing a specific wait, or the error message when failing the active wait.
+---@param message string | nil Error message when the first argument is a request id.
+---@return boolean delivered
+function mcp.respondError( requestIdOrMessage, message ) end
+
+--- [SERVER]
+---
 --- Completes a pending screenshot waited on by the bridge.
 ---
 --- When `ok` is `true`, `payload` must be the raw JPEG bytes (empty or over `1 MiB` is rejected by the bridge). When `ok` is `false`, `payload` is the error message string.
