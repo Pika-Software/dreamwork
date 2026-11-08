@@ -7,16 +7,6 @@
 ---@class http.github
 http.github = {}
 
----@class http.github.Config
----@field token string The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens
-
---- [SHARED AND MENU]
----
---- The settings of the Github API library, set by the `http github set_token` console command (`dreamwork_sci` / `dreamwork_cci`).
----
----@type http.github.Config
-http.github.config = nil
-
 --- [SHARED AND MENU]
 ---
 --- The last rate limit state reported by the Github API, empty until the first response.

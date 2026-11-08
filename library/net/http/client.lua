@@ -2,23 +2,11 @@
 
 --- [SHARED AND MENU]
 ---
----
+--- The HTTP client library, asynchronous requests over the engine http client
+--- (`garrysmod`, `chttp` or `reqwest`) with timeouts, cookies, redirects and caching.
 ---
 ---@class http.client
 http.client = {}
-
----@class http.client.Config
----@field timeout number The default timeout for http requests in seconds.
----@field cache_ttl number The default time to live of the session cache in minutes.
----@field cache_entries integer The maximum number of responses kept in the session cache, `0` disables it.
----@field max_redirects integer The default maximum number of redirects followed in Lua (with cookies and chttp).
-
---- [SHARED AND MENU]
----
---- The defaults of the http client, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
----
----@type http.client.Config
-http.client.config = nil
 
 --- [SHARED AND MENU]
 ---
