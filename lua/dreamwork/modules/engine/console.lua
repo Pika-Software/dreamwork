@@ -306,6 +306,53 @@ do
         return console_variables[ name ]
     end
 
+    ---@type table<string, string>
+    local console_values = {}
+
+    do
+
+        local ConsoleVariable_GetString = engine_ConsoleVariable.GetString
+
+        setmetatable( console_values, {
+            ---@param self table<string, string>
+            ---@param name string
+            __index = function( self, name )
+                local variable = console_variables[ name ]
+                if variable == nil then
+                    return ""
+                end
+
+                local value = ConsoleVariable_GetString( variable )
+                self[ name ] = value
+                return value
+            end
+        } )
+
+        hook_catch( "dreamwork.console.variable.change", "modules.engine.console.values", function( name, _, new_value )
+            console_values[ name ] = new_value
+        end, 1000 )
+
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Gets the value of a console variable as a string by name.
+    ---
+    --- The value is read from the engine on first use and cached, the cache is updated
+    --- by the `dreamwork.console.variable.change` engine hook, so repeated calls don't
+    --- touch the engine. Returns an empty string if no such console variable is
+    --- available through `engine.console.variableGet` (not cached).
+    ---
+    ---@see dreamwork.engine.console.variableGet
+    ---@see dreamwork.engine.console.variableSet
+    ---
+    ---@param name string The name of the console variable.
+    ---@return string value The value of the console variable, or an empty string.
+    ---@nodiscard
+    function console.variableGetValue( name )
+        return console_values[ name ]
+    end
+
     --- [SHARED AND MENU]
     ---
     --- Sets the value of a console variable by name.
@@ -325,7 +372,7 @@ do
     ---@param name string The name of the console variable.
     ---@param value string The new value of the console variable.
     ---@return boolean success `true` if the value was set (or the command to set it was sent), `false` otherwise.
-    function console.variableSet( name, value )
+    function console.variableSetValue( name, value )
         return set_console_variable( name, value )
     end
 
@@ -394,8 +441,9 @@ do
             return false
         end
 
-        -- console_variables[ name ] = nil
+        -- console_variables[ name ] = nil -- still exists so nope
         remove_console_variable( name )
+        console_values[ name ] = nil
 
         return not ConVarExists( name )
     end
@@ -462,28 +510,23 @@ do
         return variables, variable_count
     end
 
-end
-
-
-do
-
-    ---@type table<string, string>
-    local values = {}
-
     hook_catch( "server_cvar", "modules.engine.console.variable", function( data )
         local name, new_value = data.cvarname, data.cvarvalue
-        local old_value = values[ name ]
 
+        local old_value = raw_get( console_values, name )
         if old_value == nil then
-            local variable = console.variableGet( name )
-            if variable ~= nil then
+            local variable = console_variables[ name ]
+            if variable == nil then
+                old_value = ""
+            else
                 old_value = variable:GetDefault()
             end
-
-            values[ name ] = old_value or ""
-        else
-            values[ name ] = new_value
+        elseif old_value == new_value then
+            -- already reported by `cvars.OnConVarChanged`
+            return
         end
+
+        ---@cast old_value string
 
         hook_call( "dreamwork.console.variable.change", name, old_value, new_value )
     end, -1000 )
