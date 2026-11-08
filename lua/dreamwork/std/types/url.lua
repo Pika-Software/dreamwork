@@ -1481,10 +1481,6 @@ end
 ---@param base string | dreamwork.std.URL | dreamwork.std.URL.State | nil
 ---@return dreamwork.std.URL.State
 local function parse( state, str, base )
-    if not isString( str ) then
-        error( "Invalid URL: URL must be a string" )
-    end
-
     if isString( base ) then
         ---@cast base string
         base = parse( {}, base )

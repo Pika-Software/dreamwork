@@ -1,6 +1,7 @@
 local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
 
+local engine_mounts = dreamwork_engine.mounts
 local engine_hook = dreamwork_engine.hook
 local hook_catch = engine_hook.catch
 local hook_call = engine_hook.call
@@ -485,7 +486,7 @@ local vfs = {}
 dreamwork.vfs = vfs
 
 ---@type table<string, dreamwork.vfs.MountInfo>
-local engine_mounts = {
+local mount_points = {
     [ "DATA" ] = {
         writable = true,
         deletable = true,
@@ -2581,7 +2582,7 @@ do
                 end
             end
 
-            local info = engine_mounts[ search_path ] or default_info
+            local info = mount_points[ search_path ] or default_info
 
             if writable == nil then
                 writable = info.writable
@@ -4017,12 +4018,12 @@ do
     hook_catch( "dreamwork.addon.mount", "modules.vfs.mount", addon_mount, 2 )
 
     local game_list = engine_mounts.GameList
-    for index = 1, engine_mounts.GameCount or 0, 1 do
+    for index = 1, engine_mounts.GameCount, 1 do
         game_mount( game_list[ index ], true )
     end
 
     local addon_list = engine_mounts.AddonList
-    for index = 1, engine_mounts.AddonCount or 0, 1 do
+    for index = 1, engine_mounts.AddonCount, 1 do
         addon_mount( addon_list[ index ], true )
     end
 

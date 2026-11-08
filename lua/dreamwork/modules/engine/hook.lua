@@ -424,6 +424,9 @@ if LUA_MENU then
     -- menu
     event_handlers[ "MenuStart" ] = handler_empty
 
+    -- server
+    event_handlers[ "dreamwork.server.details" ] = handler_gameevent
+
     -- gameevents
     event_handlers[ "client_beginconnect" ] = handler_gameevent
     event_handlers[ "client_connected" ] = handler_gameevent

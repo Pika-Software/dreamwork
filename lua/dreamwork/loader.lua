@@ -41,6 +41,8 @@ end
 ---@field DEVELOPER integer A cached value of `developer` console variable.
 ---@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
 ---@field FPS number The number of frames per second. **Client-only**
+---@field TICK_TIME number The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
+---@field TPS number The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
 ---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
 
@@ -2959,6 +2961,9 @@ dreamwork_load( "std/net/types/websocket.lua" )
 
 dreamwork_load( "std/net/types/message.lua" )
 dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
+
+dreamwork_load( "std/net/steam.lua" )
+dreamwork_load( "std/types/addon.lua" )
 
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )

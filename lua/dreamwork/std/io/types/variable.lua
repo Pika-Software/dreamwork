@@ -46,7 +46,6 @@ local setmetatable = std.setmetatable
 
 local Emitter = std.Emitter
 local Boolean = std.Boolean
-local Number = std.Number
 local String = std.String
 
 
@@ -669,19 +668,13 @@ do
         elseif cvar_metatable == String then
             ---@cast value string
             console_commandRun( name, value )
-        elseif cvar_metatable == Number then
-            ---@cast value number | integer
-
-            if (value % 1) == 0 then
-                ---@cast value integer
-                console_commandRun( name, string_format( "%d", value ) )
-            else
-                ---@cast value number
-                console_commandRun( name, string_format( "%f", value ) )
-            end
+        elseif (value % 1) == 0 then
+            ---@cast value integer
+            console_commandRun( name, string_format( "%d", value ) )
+        else
+            ---@cast value number
+            console_commandRun( name, string_format( "%f", value ) )
         end
-
-        error( "invalid value type, must be boolean, string, integer or number.", 2 )
     end
 
 end
