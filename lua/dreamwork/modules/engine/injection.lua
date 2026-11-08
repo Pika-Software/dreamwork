@@ -106,20 +106,6 @@ do
 
 end
 
-do
-
-    ---@class garrysmod.cvars
-    local cvars = engine_requireLibrary( "cvars" )
-
-    ---@param name string
-    ---@param old_value string
-    ---@param new_value string
-    detour.before( function( name, old_value, new_value )
-        hook_call( "dreamwork.console.variable.change", name, old_value, new_value )
-    end, cvars, "OnConVarChanged" )
-
-end
-
 if LUA_SERVER or LUA_CLIENT then
 
     do

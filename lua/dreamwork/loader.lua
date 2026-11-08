@@ -1054,7 +1054,7 @@ do
         ---@return string
         ---@private
         function Number:__represent()
-            return string_format( "%s: 0x00000000 [%g]", (self % 1) == 0 and "integer" or "number", self, self )
+            return string_format( "%s: 0x00000000 [%.14g]", (self % 1) == 0 and "integer" or "number", self, self )
         end
 
         do
@@ -2404,7 +2404,7 @@ do
         if isString( key ) then
             output[ output_size + 1 ] = string_indent( "[ \"" .. string_escape( key, true ) .. "\" ]", depth * 2 )
         elseif isNumber( key ) then
-            output[ output_size + 1 ] = string_indent( string_format( "[ %g ]", key ), depth * 2 )
+            output[ output_size + 1 ] = string_indent( string_format( "[ %.14g ]", key ), depth * 2 )
         else
             output[ output_size + 1 ] = string_indent( string_format( "[ %s ]", represent( key ) ), depth * 2 )
         end

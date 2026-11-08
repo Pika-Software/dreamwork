@@ -467,6 +467,26 @@ if LUA_CLIENT then
 
     event_handlers[ "PostRender" ] = handler_empty
 
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param index integer
+    ---@param name string
+    ---@param text string
+    ---@param message_type string
+    ---@return boolean | nil should_hide
+    event_handlers[ "ChatText" ] = function( handlers, index, name, text, message_type )
+        for i = 1, handlers[ 0 ], 1 do
+            if handlers[ i ]( index, name, text, message_type ) then
+                for j = i + 1, handlers[ 0 ], 1 do
+                    handlers[ j ]( index, name, text, message_type )
+                end
+
+                return true
+            end
+        end
+
+        return nil
+    end
+
     -- skybox (3d render)
     event_handlers[ "PostDraw2DSkyBox" ] = handler_empty
     event_handlers[ "PostDrawSkyBox" ] = handler_empty

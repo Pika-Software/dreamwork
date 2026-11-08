@@ -26,6 +26,9 @@ local time_elapsed = time.elapsed
 local futures = std.futures
 local futures_sleep = futures.sleep
 
+local console = std.console
+local console_Variable = console.Variable
+
 local error = std.error
 local pairs = std.pairs
 local isTable = std.isTable
@@ -43,19 +46,16 @@ local URL_encodeURIComponent = URL.encodeURIComponent
 local github = {}
 http.github = github
 
----@class dreamwork.std.http.github.Config
----@field token string The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens
-
---- [SHARED AND MENU]
----
---- The settings of the Github API library, set by the `http github set_token` console command (`dreamwork_sci` / `dreamwork_cci`).
----
----@type dreamwork.std.http.github.Config
-local config = {
-    token = ""
-}
-
-github.config = config
+---@type dreamwork.std.console.Variable<string>
+local token = console_Variable( {
+    name = "dreamwork_github_token",
+    description = "The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens",
+    type = "string",
+    default = "",
+    archive = true,
+    hidden = true,
+    protected = true
+} )
 
 -- https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
 local next_mutation_time = 0
@@ -146,13 +146,23 @@ local function request( method, pathname, headers, body, do_cache, extra )
     -- the response of a mutative request must never be served from the cache
     local use_cache = do_cache ~= false and method == "GET"
 
+    ---@type dreamwork.std.http.Auth | nil
+    local auth
+
+    local token_value = token.value
+    if token_value ~= nil and #token_value ~= 0 then
+        auth = {
+            token = token_value
+        }
+    end
+
     -- i believe there is no reason to implement queue, since requests are queued by the engine
+
     local result = http_request( {
         url = href,
         method = method,
         headers = request_headers,
-        -- the client skips it if `headers` already has an `Authorization`
-        auth = config.token ~= "" and { token = config.token } or nil,
+        auth = auth,
         body = body,
         json = extra ~= nil and extra.json or nil,
         parameters = extra ~= nil and extra.parameters or nil,

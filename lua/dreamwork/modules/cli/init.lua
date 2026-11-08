@@ -10,17 +10,11 @@ local console_messageColored = engine_console.messageColored
 
 local console = std.console
 local console_Command = console.Command
+local console_Variable = console.Variable
 
 local dreamwork_vfs = dreamwork.vfs
 local vfs_search = dreamwork_vfs.search
 
-local dreamwork_storage = dreamwork.storage
-local storage_read = dreamwork_storage.read
-local storage_write = dreamwork_storage.write
-local storage_delete = dreamwork_storage.delete
-
-local os = std.os
-local os_date = os.date
 
 local raw = std.raw
 local raw_pairs = raw.pairs
@@ -1014,21 +1008,16 @@ do
     local cli_print = cli.print
     local cli_error = cli.error
 
-    ---@alias dreamwork.cli.Setting.Type "number" | "integer" | "string" | "boolean"
-    ---@alias dreamwork.cli.Setting.Value number | string | boolean
+    ---@alias dreamwork.cli.Setting.Type "number" | "integer" | "string" | "boolean" | "toggle"
+    ---@alias dreamwork.cli.Setting.Value number | string | boolean | nil
 
+    --- A setting is a console variable created by its library, the command only shows and changes it.
+    ---
     ---@class dreamwork.cli.Setting
     ---@field name string The name typed in the command.
-    ---@field key string The key of the saved value in `dreamwork.storage`.
-    ---@field description string The description shown with the value.
-    ---@field target table The config table that receives the value.
-    ---@field field string The field of the config table.
-    ---@field type dreamwork.cli.Setting.Type The type of the value.
-    ---@field min? number The minimal value of numbers.
-    ---@field max? number The maximal value of numbers.
+    ---@field variable string The name of the console variable.
+    ---@field type dreamwork.cli.Setting.Type The type of the value, `toggle` is `true`, `false` or `nil` kept in a string variable as `"1"`, `"0"` or `""`.
     ---@field secret? boolean If `true`, the value is never printed.
-    ---@field on_change? fun( value: dreamwork.cli.Setting.Value ) Called after the value was changed.
-    ---@field default? dreamwork.cli.Setting.Value Taken from the config table before the saved value is applied.
 
     ---@type table<string, boolean>
     local booleans = {
@@ -1048,18 +1037,36 @@ do
     ---@type string[]
     local reset_names = { "reset" }
 
-    --- Converts the typed or saved string into the value of the setting.
+    --- Returns the console variable of the setting.
+    ---
+    --- Looked up on every use, a reloaded library creates a new variable object.
     ---
     ---@param setting dreamwork.cli.Setting
+    ---@return dreamwork.std.console.Variable
+    local function get_variable( setting )
+        local setting_type = setting.type
+        if setting_type == "toggle" then
+            setting_type = "string"
+        end
+
+        ---@cast setting_type dreamwork.std.console.VariableType
+
+        return console_Variable.get( setting.variable, setting_type )
+    end
+
+    --- Converts the typed string into the value of the setting.
+    ---
+    ---@param setting dreamwork.cli.Setting
+    ---@param variable dreamwork.std.console.Variable
     ---@param str string
     ---@return dreamwork.cli.Setting.Value | nil value The value, or `nil` if the string is invalid.
     ---@return string | nil reason The reason why the string is invalid.
-    local function parse_value( setting, str )
+    local function parse_value( setting, variable, str )
         local setting_type = setting.type
 
         if setting_type == "string" then
             return str, nil
-        elseif setting_type == "boolean" then
+        elseif setting_type == "boolean" or setting_type == "toggle" then
             local value = booleans[ string_lower( str ) ]
             if value == nil then
                 return nil, "is not a boolean"
@@ -1068,13 +1075,49 @@ do
             return value, nil
         end
 
-        return cli_parseNumber( str, setting.min, setting.max, setting_type == "integer" )
+        return cli_parseNumber( str, variable.min, variable.max, setting_type == "integer" )
+    end
+
+    --- Converts the value of the console variable into the value of the setting.
+    ---
+    ---@param setting dreamwork.cli.Setting
+    ---@param value number | string | boolean
+    ---@return dreamwork.cli.Setting.Value
+    local function from_variable( setting, value )
+        if setting.type == "toggle" then
+            ---@cast value string
+            return booleans[ string_lower( value ) ]
+        end
+
+        return value
+    end
+
+    --- Converts the value of the setting into the value of the console variable.
+    ---
+    ---@param setting dreamwork.cli.Setting
+    ---@param value dreamwork.cli.Setting.Value
+    ---@return number | string | boolean
+    local function to_variable( setting, value )
+        if setting.type == "toggle" then
+            if value == nil then
+                return ""
+            end
+
+            return value and "1" or "0"
+        end
+
+        ---@cast value number | string | boolean
+        return value
     end
 
     ---@param setting dreamwork.cli.Setting
     ---@param value dreamwork.cli.Setting.Value
     ---@return string
     local function format_value( setting, value )
+        if value == nil then
+            return "none"
+        end
+
         if setting.type ~= "string" then
             return raw_tostring( value )
         end
@@ -1094,42 +1137,33 @@ do
 
     ---@param setting dreamwork.cli.Setting
     local function print_setting( setting )
-        local value = setting.target[ setting.field ]
+        local variable = get_variable( setting )
+        local value, default = from_variable( setting, variable.value ), from_variable( setting, variable.default )
 
         cli_write( "  " .. setting.name, colors.name )
         cli_write( " = " .. format_value( setting, value ), colors.value )
 
-        if value == setting.default then
+        if value == default then
             cli_write( " (default)", colors.description )
         elseif not setting.secret then
-            cli_write( " (default " .. format_value( setting, setting.default ) .. ")", colors.description )
+            cli_write( " (default " .. format_value( setting, default ) .. ")", colors.description )
+        end
+
+        if variable.replicated then
+            cli_write( " (replicated)", colors.description )
         end
 
         cli_write( "\n" )
-        cli_print( colors.description, "    " .. setting.description )
-    end
-
-    ---@param setting dreamwork.cli.Setting
-    ---@param value dreamwork.cli.Setting.Value
-    local function apply_value( setting, value )
-        local target, field = setting.target, setting.field
-        if target[ field ] == value then
-            return
-        end
-
-        target[ field ] = value
-
-        local on_change = setting.on_change
-        if on_change ~= nil then
-            on_change( value )
-        end
+        cli_print( colors.description, "    " .. variable.description )
     end
 
     --- [SHARED AND MENU]
     ---
-    --- The command that shows and changes the settings saved in `dreamwork.storage`.
+    --- The command that shows and changes console variables of the libraries.
     ---
     --- `<name>` lists the settings, `<name> <setting>` shows one, `<name> <setting> <value>` changes it and `<name> <setting> reset` restores the default.
+    ---
+    --- Replicated variables are read-only on the client.
     ---
     ---@class dreamwork.cli.Settings : dreamwork.std.Object, dreamwork.cli.Command
     ---@field __class dreamwork.cli.SettingsClass
@@ -1146,8 +1180,6 @@ do
     ---@field description string The description shown by `help`.
     ---@field settings dreamwork.cli.Setting[] The settings in the listed order.
 
-    --- The defaults are taken from the config tables and the saved values are applied right away.
-    ---
     ---@param path_to string The full typed path of the command.
     ---@param options dreamwork.cli.SettingsOptions The options of the command.
     ---@protected
@@ -1166,19 +1198,6 @@ do
 
             names[ index ] = setting_name
             by_name[ setting_name ] = setting
-
-            -- defaults are taken before the saved values are applied
-            setting.default = setting.target[ setting.field ]
-
-            local saved = storage_read( setting.key )
-            if saved ~= nil then
-                local value, reason = parse_value( setting, saved )
-                if value == nil then
-                    dreamwork.Logger:warn( "Saved value of '%s %s' %s, the default is used.", path_to, setting_name, reason )
-                else
-                    setting.target[ setting.field ] = value
-                end
-            end
         end
 
         self.description = options.description
@@ -1200,7 +1219,7 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Parses, saves and applies the value of the setting.
+    --- Parses the value and sets the console variable of the setting.
     ---
     ---@param name string The name of the setting.
     ---@param str string The value as typed in the console.
@@ -1212,31 +1231,40 @@ do
             return false, "is not a setting"
         end
 
-        local value, reason = parse_value( setting, str )
+        local variable = get_variable( setting )
+        if variable.replicated and not LUA_SERVER then
+            return false, "is replicated from the server"
+        end
+
+        local value, reason = parse_value( setting, variable, str )
         if value == nil then
             return false, reason
         end
 
-        storage_write( setting.key, raw_tostring( value ) )
-        apply_value( setting, value )
+        variable.value = to_variable( setting, value )
         return true, nil
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Removes the saved value of the setting and applies the default.
+    --- Reverts the console variable of the setting to its default.
     ---
     ---@param name string The name of the setting.
-    ---@return boolean success `true` if the setting exists.
+    ---@return boolean success `true` if the default was applied.
+    ---@return string | nil reason The reason why the default was not applied.
     function Settings:reset( name )
         local setting = self.by_name[ name ]
         if setting == nil then
-            return false
+            return false, "is not a setting"
         end
 
-        storage_delete( setting.key )
-        apply_value( setting, setting.default )
-        return true
+        local variable = get_variable( setting )
+        if variable.replicated and not LUA_SERVER then
+            return false, "is replicated from the server"
+        end
+
+        variable:revert()
+        return true, nil
     end
 
     ---@param args string[]
@@ -1277,7 +1305,12 @@ do
         end
 
         if str == "reset" then
-            self:reset( name )
+            local success, reason = self:reset( name )
+            if not success then
+                cli_error( "'%s' %s.", name, reason )
+                return
+            end
+
             print_setting( setting )
             return
         end
@@ -1319,7 +1352,8 @@ do
 
         local suggestions = cli_complete( value_prefix, reset_names, nil, head )
 
-        if setting.type == "boolean" then
+        local setting_type = setting.type
+        if setting_type == "boolean" or setting_type == "toggle" then
             cli_complete( value_prefix, boolean_names, suggestions, head )
         end
 
@@ -1338,7 +1372,7 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Creates and registers the settings command, the defaults are taken from the config tables and the saved values are applied right away.
+    --- Creates and registers the settings command, the console variables must already exist.
     ---
     ---@param options dreamwork.cli.SettingsOptions The options of the command.
     ---@return dreamwork.cli.Settings settings

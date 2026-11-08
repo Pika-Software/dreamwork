@@ -29,9 +29,6 @@ local math_floor = math.floor
 local math_trunc = math.trunc
 local math_clamp = math.clamp
 
-local gc = std.gc
-local gc_setTableRules = gc.setTableRules
-
 local string = std.string
 local string_format = string.format
 local string_toNumber = string.toNumber
@@ -285,8 +282,6 @@ local events = Emitter( "console.Variable" )
 
 ---@type table<string, dreamwork.std.console.Variable>
 local named_variables = {}
-
-gc_setTableRules( named_variables, false, true )
 
 
 --- [SHARED AND MENU]

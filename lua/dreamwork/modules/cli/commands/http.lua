@@ -1,25 +1,18 @@
 local dreamwork_cli = dreamwork.cli
-local std = dreamwork.std
 
 local cli_error = dreamwork_cli.error
-local cli_printHeader = dreamwork_cli.printHeader
-local cli_complete = dreamwork_cli.complete
 local cli_shift = dreamwork_cli.shift
+local cli_complete = dreamwork_cli.complete
+local cli_printHeader = dreamwork_cli.printHeader
 
-local dreamwork_storage = dreamwork.storage
-local storage_read = dreamwork_storage.read
-local storage_write = dreamwork_storage.write
-local storage_delete = dreamwork_storage.delete
+local std = dreamwork.std
 
-local storage_http = dreamwork_storage.http
-local storage_http_prune = storage_http.prune
-local storage_http_config = storage_http.config
+local console = std.console
+local console_Variable = console.Variable
 
 local http = std.http
-local http_client_config = http.client.config
 
 local github = http.github
-local github_config = github.config
 local github_ratelimit = github.ratelimit
 local github_getRateLimit = github.getRateLimit
 
@@ -27,18 +20,8 @@ local time_now = std.time.now
 local tostring = std.tostring
 local string_format = std.string.format
 
---- The storage key of the Github API token.
-local TOKEN_KEY = "dreamwork.github.token"
-
---- The default token, taken before the saved value is applied.
-local TOKEN_DEFAULT = github_config.token
-
-do
-    local saved = storage_read( TOKEN_KEY )
-    if saved ~= nil then
-        github_config.token = saved
-    end
-end
+--- The Github API token variable, created by `std.http.github`.
+local TOKEN_VARIABLE = "dreamwork_github_token"
 
 --- [SHARED AND MENU]
 ---
@@ -48,85 +31,50 @@ local http_group = dreamwork_cli.group( "http", "Http client and API commands." 
 
 http_group:settings( {
     name = "client",
-    description = "Shows or changes the saved settings of the http client, 'reset' restores the default.",
+    description = "Shows or changes the settings of the http client, 'reset' restores the default.",
     settings = {
         {
             name = "timeout",
-            key = "dreamwork.http.timeout",
-            description = "The default timeout for http requests in seconds.",
-            target = http_client_config,
-            field = "timeout",
-            type = "number",
-            min = 0,
-            max = 300
+            variable = "dreamwork_http_timeout",
+            type = "number"
+        },
+        {
+            name = "timeout_grace",
+            variable = "dreamwork_http_timeout_grace",
+            type = "number"
         },
         {
             name = "cache_ttl",
-            key = "dreamwork.http.cache.ttl",
-            description = "The cache time to live for the dreamwork http library in minutes.",
-            target = http_client_config,
-            field = "cache_ttl",
-            type = "number",
-            min = 0,
-            max = 40320
+            variable = "dreamwork_http_cache_ttl",
+            type = "number"
         },
         {
             name = "cache_entries",
-            key = "dreamwork.http.cache.entries",
-            description = "The maximum number of responses kept in the dreamwork http session cache, 0 disables it.",
-            target = http_client_config,
-            field = "cache_entries",
-            type = "integer",
-            min = 0,
-            max = 65536
+            variable = "dreamwork_http_cache_entries",
+            type = "integer"
         },
         {
             name = "max_redirects",
-            key = "dreamwork.http.max_redirects",
-            description = "The default maximum number of redirects followed in Lua by the dreamwork http library (with cookies and chttp).",
-            target = http_client_config,
-            field = "max_redirects",
-            type = "integer",
-            min = 0,
-            max = 100
+            variable = "dreamwork_http_max_redirects",
+            type = "integer"
         },
         {
             name = "cache_size",
-            key = "dreamwork.http.cache_size",
-            description = "The maximum size of cached content in KB, used for etag caching in http library.",
-            target = storage_http_config,
-            field = "cache_size",
-            type = "integer",
-            min = 0,
-            max = 16384
+            variable = "dreamwork_http_cache_size",
+            type = "integer"
         },
         {
             name = "cache_total_size",
-            key = "dreamwork.http.cache_total_size",
-            description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
-            target = storage_http_config,
-            field = "cache_total_size",
-            type = "integer",
-            min = 0,
-            max = 1048576,
-            on_change = storage_http_prune
+            variable = "dreamwork_http_cache_total_size",
+            type = "integer"
         },
         {
             name = "cache_lifetime",
-            key = "dreamwork.http.cache_lifetime",
-            description = "The number of days cached content is kept for, 0 keeps it forever.",
-            target = storage_http_config,
-            field = "cache_lifetime",
-            type = "integer",
-            min = 0,
-            max = 3650,
-            on_change = storage_http_prune
+            variable = "dreamwork_http_cache_lifetime",
+            type = "integer"
         }
     }
 } )
-
--- once, with the saved limits
-storage_http_prune()
 
 --- [SHARED AND MENU]
 ---
@@ -172,7 +120,7 @@ github_group:register( "status", {
     on_run = function()
         ---@type string[]
         local lines = {
-            "token: " .. format_token( github_config.token )
+            "token: " .. format_token( console_Variable.getString( TOKEN_VARIABLE ) )
         }
 
         local ok, data = github_getRateLimit()
@@ -213,20 +161,19 @@ github_group:register( "token", {
     usage = "[token|reset]",
     on_run = function( _, args, argument_string )
         if args[ 1 ] == nil then
-            cli_printHeader( { "token: " .. format_token( github_config.token ) }, "Github API" )
+            cli_printHeader( { "token: " .. format_token( console_Variable.getString( TOKEN_VARIABLE ) ) }, "Github API" )
             return
         end
+
+        local variable = console_Variable.get( TOKEN_VARIABLE, "string" )
 
         if args[ 1 ] == "reset" and args[ 2 ] == nil then
-            storage_delete( TOKEN_KEY )
-            github_config.token = TOKEN_DEFAULT
-            cli_printHeader( { "token: " .. format_token( github_config.token ) }, "Github API" )
-            return
+            variable:revert()
+        else
+            variable.value = argument_string
         end
 
-        storage_write( TOKEN_KEY, argument_string )
-        github_config.token = argument_string
-        cli_printHeader( { "token: " .. format_token( github_config.token ) }, "Github API" )
+        cli_printHeader( { "token: " .. format_token( variable.value ) }, "Github API" )
     end,
     on_type = function( _, _, argument_string )
         local value, rest = cli_shift( argument_string )

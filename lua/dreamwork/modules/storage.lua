@@ -42,6 +42,9 @@ local time = std.time
 local time_now = time.now
 local time_tick = time.tick
 
+local console = std.console
+local console_Variable = console.Variable
+
 local error = std.error
 local pcall = std.pcall
 local assert = std.assert
@@ -147,25 +150,53 @@ do
     ---
     --- A cache of HTTP responses, keyed by URL and validated by ETag.
     ---
-    --- Size and lifetime limits are controlled by `storage.http.config`, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
+    --- Size and lifetime limits are replicated console variables, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
     ---
     ---@class dreamwork.storage.http
     local http = {}
     storage.http = http
 
-    ---@class dreamwork.storage.http.Config
-    ---@field cache_size integer The maximum size of a cached response in KB.
-    ---@field cache_total_size integer The maximum total size of all cached responses in KB, the oldest entries are removed first.
-    ---@field cache_lifetime integer The number of days cached responses are kept for, `0` keeps them forever.
+    ---@type dreamwork.std.console.Variable<integer>
+    local cache_size = console_Variable( {
+        name = "dreamwork_http_cache_size",
+        description = "The maximum size of cached content in KB, used for etag caching in http library.",
+        type = "integer",
+        default = 50,
+        min = 0,
+        max = 16384,
+        archive = true,
+        hidden = true,
+        replicated = true,
+        notify = true
+    } )
 
-    ---@type dreamwork.storage.http.Config
-    local config = {
-        cache_size = 50,
-        cache_total_size = 8192,
-        cache_lifetime = 30
-    }
+    ---@type dreamwork.std.console.Variable<integer>
+    local cache_total_size = console_Variable( {
+        name = "dreamwork_http_cache_total_size",
+        description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
+        type = "integer",
+        default = 8192,
+        min = 0,
+        max = 1048576,
+        archive = true,
+        hidden = true,
+        replicated = true,
+        notify = true
+    } )
 
-    http.config = config
+    ---@type dreamwork.std.console.Variable<integer>
+    local cache_lifetime = console_Variable( {
+        name = "dreamwork_http_cache_lifetime",
+        description = "The number of days cached content is kept for, 0 keeps it forever.",
+        type = "integer",
+        default = 30,
+        min = 0,
+        max = 3650,
+        archive = true,
+        hidden = true,
+        replicated = true,
+        notify = true
+    } )
 
     ---@class dreamwork.storage.http.Record
     ---@field etag string The ETag of the cached response.
@@ -205,15 +236,15 @@ do
     ---
     --- Caches the response for the specified URL, replacing the previous one.
     ---
-    --- Raises an error if the content is larger than `config.cache_size`.
+    --- Raises an error if the content is larger than the `cache_size` limit.
     ---
     ---@param url string The URL of the response.
     ---@param etag string The ETag of the response.
     ---@param content string The response body.
     ---@param ignore_errors boolean? If `true`, too large content is silently skipped instead of raising an error.
     function http.write( url, etag, content, ignore_errors )
-        -- do not cache content that is larger than `config.cache_size`
-        local content_size, max_size = #content, config.cache_size * 1024
+        -- do not cache content that is larger than `cache_size`
+        local content_size, max_size = #content, cache_size.value * 1024
         if content_size > max_size then
             if ignore_errors then return end
 
@@ -246,29 +277,32 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Removes entries older than `config.cache_lifetime`, then the oldest ones until the total size fits `config.cache_total_size`.
+    --- Removes entries older than the `cache_lifetime` limit, then the oldest ones until the total size fits the `cache_total_size` limit.
     ---
     --- Clears the in-memory cache, so the remaining entries are reloaded from the database on demand.
     ---
     function http.prune()
-        local lifetime = config.cache_lifetime
+        local lifetime = cache_lifetime.value
         if lifetime > 0 then
             sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE timestamp < ?", time_now( "ms", false ) - lifetime * 86400000 )
         end
 
         -- running total from the newest entry, everything past the limit goes
-        sqlite_query( [[
+        sqlite_query( string.unindentLines( [[
             DELETE FROM 'dreamwork.storage.http' WHERE url IN (
                 SELECT url FROM (
                     SELECT url, SUM( length( CAST( content AS BLOB ) ) ) OVER ( ORDER BY timestamp DESC, url ) AS total_size
                     FROM 'dreamwork.storage.http'
                 ) WHERE total_size > ?
             )
-        ]], config.cache_total_size * 1024 )
+        ]], 12 ), cache_total_size.value * 1024 )
 
         -- rows were removed in bulk, so the cache cannot be trusted anymore
         cache = {}
     end
+
+    cache_total_size:attach( http.prune )
+    cache_lifetime:attach( http.prune )
 
 end
 
@@ -834,6 +868,9 @@ function storage.init()
     sqlite_rawQuery( "CREATE TABLE IF NOT EXISTS 'dreamwork.storage.migrations' (name TEXT, timestamp INTEGER)" )
 
     storage.migrate()
+
+    -- once, with the archived limits
+    storage.http.prune()
 
     dreamwork_Logger:info( "Database initialized in %.2f ms.", time_tick( "ms" ) )
 end

@@ -2,6 +2,11 @@
 local dreamwork_engine = dreamwork.engine
 local engine_ConsoleVariable = dreamwork_engine.ConsoleVariable
 
+local detour = dreamwork.detour
+
+---@class garrysmod.cvars
+local cvars = dreamwork_engine.requireLibrary( "cvars" )
+
 local hook = dreamwork_engine.hook
 local hook_call = hook.call
 local hook_catch = hook.catch
@@ -14,6 +19,8 @@ local raw_pairs = raw.pairs
 
 local debug = std.debug
 local debug_fempty = debug.fempty
+
+local string = std.string
 
 local setmetatable = std.setmetatable
 local error = std.error
@@ -510,6 +517,15 @@ do
         return variables, variable_count
     end
 
+    ---@param name string
+    ---@param old_value string
+    ---@param new_value string
+    detour.before( function( name, old_value, new_value )
+        if raw_get( console_values, name ) ~= new_value then
+            hook_call( "dreamwork.console.variable.change", name, old_value, new_value )
+        end
+    end, cvars, "OnConVarChanged" )
+
     hook_catch( "server_cvar", "modules.engine.console.variable", function( data )
         local name, new_value = data.cvarname, data.cvarvalue
 
@@ -522,7 +538,6 @@ do
                 old_value = variable:GetDefault()
             end
         elseif old_value == new_value then
-            -- already reported by `cvars.OnConVarChanged`
             return
         end
 
@@ -530,6 +545,20 @@ do
 
         hook_call( "dreamwork.console.variable.change", name, old_value, new_value )
     end, -1000 )
+
+    if std.LUA_CLIENT then
+
+        local string_find = string.find
+
+        -- `notify` makes the engine print "Server cvar 'name' changed to value" in the chat,
+        -- dreamwork variables use it only to reach the client, so their messages are hidden
+        hook_catch( "ChatText", "modules.engine.console.notify", function( _, _, text, message_type )
+            if message_type == "servermsg" and string_find( text, "'dreamwork_", 1, true ) ~= nil then
+                return true
+            end
+        end )
+
+    end
 
 end
 

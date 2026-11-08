@@ -36,19 +36,22 @@ local json_serialize = json.serialize
 local base64 = std.base64
 local base64_encode = base64.encode
 
+local console = std.console
+local console_Variable = console.Variable
+
 local error = std.error
 local pcall = std.pcall
 local pairs = std.pairs
 local isString = std.isString
 local isNumber = std.isNumber
-local isURLSearchParams = std.isURLSearchParams
 local setTimeout = std.setTimeout
 local clearTimeout = std.clearTimeout
+local isURLSearchParams = std.isURLSearchParams
 
-local HTTPError = std.HTTPError
 local Future = std.Future
-local URL = std.URL
+local HTTPError = std.HTTPError
 
+local URL = std.URL
 local URL_SearchParams = URL.SearchParams
 local URL_decodeURIComponent = URL.decodeURIComponent
 
@@ -58,35 +61,82 @@ local http = std.http
 
 --- [SHARED AND MENU]
 ---
----
+--- The HTTP client library, asynchronous requests over the engine http client
+--- (`garrysmod`, `chttp` or `reqwest`) with timeouts, cookies, redirects and caching.
 ---
 ---@class dreamwork.std.http.client
 local client = {}
 http.client = client
 
----@class dreamwork.std.http.client.Config
----@field timeout number The default timeout for http requests in seconds.
----@field cache_ttl number The default time to live of the session cache in minutes.
----@field cache_entries integer The maximum number of responses kept in the session cache, `0` disables it.
----@field max_redirects integer The default maximum number of redirects followed in Lua (with cookies and chttp).
+---@type dreamwork.std.console.Variable<number>
+local timeout_default = console_Variable( {
+    name = "dreamwork_http_timeout",
+    description = "The default timeout for http requests in seconds.",
+    type = "number",
+    default = 60,
+    min = 0,
+    max = 300,
+    archive = true,
+    hidden = true,
+    replicated = true,
+    notify = true
+} )
 
---- [SHARED AND MENU]
----
---- The defaults of the http client, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
----
----@type dreamwork.std.http.client.Config
-local config = {
-    timeout = 10,
-    cache_ttl = 1,
-    cache_entries = 256,
-    max_redirects = 10
-}
+---@type dreamwork.std.console.Variable<number>
+local cache_ttl_default = console_Variable( {
+    name = "dreamwork_http_cache_ttl",
+    description = "The cache time to live for the dreamwork http library in minutes.",
+    type = "number",
+    default = 1,
+    min = 0,
+    max = 40320,
+    archive = true,
+    hidden = true,
+    replicated = true,
+    notify = true
+} )
 
-client.config = config
+---@type dreamwork.std.console.Variable<integer>
+local cache_entries = console_Variable( {
+    name = "dreamwork_http_cache_entries",
+    description = "The maximum number of responses kept in the dreamwork http session cache, 0 disables it.",
+    type = "integer",
+    default = 256,
+    min = 0,
+    max = 65536,
+    archive = true,
+    hidden = true,
+    replicated = true,
+    notify = true
+} )
 
---- Extra seconds the Lua-side timeout waits on top of the request timeout,
---- so the client's own timeout error comes first when it works.
-local TIMEOUT_GRACE = 1
+---@type dreamwork.std.console.Variable<integer>
+local max_redirects_default = console_Variable( {
+    name = "dreamwork_http_max_redirects",
+    description = "The default maximum number of redirects followed in Lua by the dreamwork http library (with cookies and chttp).",
+    type = "integer",
+    default = 10,
+    min = 0,
+    max = 100,
+    archive = true,
+    hidden = true,
+    replicated = true,
+    notify = true
+} )
+
+---@type dreamwork.std.console.Variable<number>
+local timeout_grace = console_Variable( {
+    name = "dreamwork_http_timeout_grace",
+    description = "Extra seconds the dreamwork http library waits on top of the request timeout, so the http client's own timeout error comes first.",
+    type = "number",
+    default = 1,
+    min = 0,
+    max = 60,
+    archive = true,
+    hidden = true,
+    replicated = true,
+    notify = true
+} )
 
 ---@type table<string, boolean>
 local supported_methods = {
@@ -234,7 +284,7 @@ local function cache_insert( entry, now )
     local identifier = entry.identifier
 
     if session_cache[ identifier ] == nil then
-        local limit = config.cache_entries
+        local limit = cache_entries.value
         if limit <= 0 then return end
 
         if session_cache_count >= limit then
@@ -562,7 +612,7 @@ local function send_request( options, redirects )
     -- request timeout
     local timeout = options.timeout
     if not isNumber( timeout ) then
-        timeout = config.timeout
+        timeout = timeout_default.value
     end
 
     ---@cast timeout number
@@ -578,7 +628,7 @@ local function send_request( options, redirects )
 
         local cache_ttl = options.cache_ttl
         if not isNumber( cache_ttl ) then
-            cache_ttl = config.cache_ttl * 60
+            cache_ttl = cache_ttl_default.value * 60
         end
 
         ---@cast cache_ttl number
@@ -701,7 +751,7 @@ local function send_request( options, redirects )
 
     -- armed before sending, the client may call back synchronously
     if timeout > 0 then
-        timeout_id = setTimeout( request_options.failed, timeout + TIMEOUT_GRACE, "timed out, the http client did not respond" )
+        timeout_id = setTimeout( request_options.failed, timeout + timeout_grace.value, "timed out, the http client did not respond" )
     end
 
     local success, sent = pcall( http_request, request_options )
@@ -722,7 +772,7 @@ local function send_request( options, redirects )
                 -- copied into the options of every hop by `redirect_options`
                 local max_redirects = options.max_redirects
                 if not isNumber( max_redirects ) then
-                    max_redirects = config.max_redirects
+                    max_redirects = max_redirects_default.value
                 end
 
                 if redirects >= max_redirects then
