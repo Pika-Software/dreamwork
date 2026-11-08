@@ -1,8 +1,5 @@
 ---@meta _
 
----@class garrysmod.console.Variable
-local GModConVar = {}
-
 --- [SHARED AND MENU]
 ---
 --- The console variable object.
@@ -23,15 +20,15 @@ local Variable = {}
 ---@protected
 function Variable:__represent() end
 
----@param str_key string
+---@param key string
 ---@return any
 ---@protected
-function Variable:__index(str_key) end
+function Variable:__index(key) end
 
----@param str_key string
+---@param key string
 ---@param value any
 ---@protected
-function Variable:__newindex(str_key, value) end
+function Variable:__newindex(key, value) end
 
 ---@param options console.VariableOptions
 ---@protected
@@ -46,24 +43,24 @@ function Variable:__init(options) end
 ---@overload fun( options: console.VariableOptions ): console.Variable
 console.Variable = {}
 
----@param str_name string
+---@param name string
 ---@return console.Variable?
 ---@protected
-function console.Variable:__new(str_name) end
+function console.Variable:__new(name) end
 
 --- [SHARED AND MENU]
 ---
 --- Gets a `console.Variable` object by its name.
 ---
----@param str_name string The name of the console variable.
+---@param name string The name of the console variable.
 ---@param cvar_type console.VariableType The type of the console variable.
 ---@return console.Variable variable The `console.Variable` object.
 ---@nodiscard
----@overload fun( str_name: string, cvar_type: "boolean"): console.Variable<boolean>
----@overload fun( str_name: string, cvar_type: "integer"): console.Variable<integer>
----@overload fun( str_name: string, cvar_type: "number"): console.Variable<number>
----@overload fun( str_name: string, cvar_type: "string"): console.Variable<string>
-function console.Variable.get(str_name, cvar_type) end
+---@overload fun( name: string, cvar_type: "boolean"): console.Variable<boolean>
+---@overload fun( name: string, cvar_type: "integer"): console.Variable<integer>
+---@overload fun( name: string, cvar_type: "number"): console.Variable<number>
+---@overload fun( name: string, cvar_type: "string"): console.Variable<string>
+function console.Variable.get(name, cvar_type) end
 
 --- [SHARED AND MENU]
 ---
@@ -115,6 +112,7 @@ function Variable:revert() end
 --- Reverts the value of the `console.Variable` object to its default value.
 ---
 ---@param name string The name of the console variable.
+---@return boolean success `true` if the value was set (or the command to set it was sent), `false` otherwise.
 function console.Variable.revert(name) end
 
 --- [SHARED AND MENU]
@@ -150,6 +148,7 @@ function console.Variable.getFlags(name) end
 ---
 ---@param name string The name of the console variable.
 ---@param value console.VariableValue The value to set.
+---@return boolean success `true` if the value was set (or the command to set it was sent), `false` otherwise.
 function console.Variable.set(name, value) end
 
 --- [SHARED AND MENU]
