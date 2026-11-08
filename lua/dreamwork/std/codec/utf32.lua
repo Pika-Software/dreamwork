@@ -38,8 +38,12 @@ local error = std.error
 ---
 --- The utf32 library provides functions for the manipulation of UTF-32 strings.
 ---
---- All positions are in bytes, all functions use little-endian byte order
---- unless `big_endian` is `true`.
+--- Positions are in bytes, except `utf32.sub`, which takes code point positions.
+--- Code units are aligned to the start of the string, all functions use little-endian
+--- byte order unless `big_endian` is `true`, a byte order mark is not handled.
+---
+--- Functions that take `lax` raise an error on the first invalid code unit (a surrogate, a value above U+10FFFF
+--- or a truncated tail), unless `lax` is `true`; in lax mode each invalid code unit counts as one code point, decoded as U+FFFD.
 ---
 ---@class dreamwork.std.utf32
 local utf32 = {}
@@ -200,19 +204,19 @@ end
 ---
 --- Decodes a single UTF-32 sequence starting at the given byte position.
 ---
---- In lax mode invalid sequences are not raised, `nil` is returned as the code point
---- together with the number of bytes to skip, the error position and the error code.
+--- In lax mode invalid sequences do not raise an error, `nil` is returned as the code point
+--- together with the number of bytes to skip, the position of the sequence and the error code.
 ---
 ---@param utf32_string string The UTF-32 string to decode from.
 ---@param index integer? The position of the sequence in bytes, `1` by default.
----@param end_index integer? The last byte that can be read, the end of the string by default.
----@param lax boolean? Whether to lax the UTF-32 validity check.
+---@param end_index integer? The last byte that can be read, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, invalid sequences are returned as `nil` instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@param stack_level integer? The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return integer | nil utf32_codepoint The decoded code point, or `nil` if the sequence is invalid.
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
----@return integer | nil error_position The position of the invalid sequence.
----@return dreamwork.std.utf32.ErrorCode | nil error_code The error code.
+---@return integer | nil error_position The position of the invalid sequence, `nil` if the sequence is valid.
+---@return dreamwork.std.utf32.ErrorCode | nil error_code The error code, `nil` if the sequence is valid.
 ---@nodiscard
 function utf32.decode( utf32_string, index, end_index, lax, big_endian, stack_level )
     return decode( utf32_string, index or 1, end_index or #utf32_string, lax ~= true, stack_level or 1, big_endian )
@@ -220,12 +224,12 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the number of code points in a UTF-32 string.
+--- Returns the number of code points that start between byte positions `start_position` and `end_position` (both inclusive).
 ---
----@param utf32_string string The UTF-32 string to get the length of.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
----@param lax boolean? Whether to lax the UTF-32 validity check, invalid sequences count as one code point each.
+---@param utf32_string string The UTF-32 string to count the code points of.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, every invalid sequence counts as one code point instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer utf32_codepoint_count The number of code points.
 ---@nodiscard
@@ -341,12 +345,10 @@ end
 ---
 --- Decodes a UTF-32 string into a table of code points.
 ---
---- Invalid sequences raise an error, or are replaced with U+FFFD if `lax` is `true`.
----
 ---@param utf32_string string The UTF-32 string to decode.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
----@param lax boolean? Whether to lax the UTF-32 validity check.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, invalid sequences are decoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer[] utf32_codepoints The code points.
 ---@return integer utf32_codepoint_count The number of code points.
@@ -360,11 +362,9 @@ end
 ---
 --- Encodes a table of code points into a UTF-32 string.
 ---
---- Invalid code points raise an error, or are replaced with U+FFFD if `lax` is `true`.
----
 ---@param utf32_codepoints integer[] The code points to encode.
----@param utf32_codepoint_count integer? The number of code points to encode.
----@param lax boolean? Whether to lax the UTF-32 validity check.
+---@param utf32_codepoint_count integer? The number of code points to encode, `#utf32_codepoints` by default.
+---@param lax boolean? If `true`, invalid code points (surrogates, negative or above U+10FFFF) are encoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether to produce a big-endian string.
 ---@return string utf32_string The UTF-32 string.
 ---@nodiscard
@@ -376,11 +376,11 @@ end
 ---
 --- Encodes code points into a little-endian UTF-32 string.
 ---
---- This functions similarly to `string.char`, use `utf32.pack` for big-endian strings.
+--- This functions similarly to `string.char`, invalid code points raise an error, use `utf32.pack` for big-endian strings.
 ---
----@param a ( integer | nil ) The code points to encode.
----@param b ( integer | nil ) The code points to encode.
----@param ... ( integer | nil ) The code points to encode.
+---@param a integer? The first code point.
+---@param b integer? The second code point.
+---@param ... integer The rest of the code points.
 ---@return string utf32_string The UTF-32 string.
 ---@nodiscard
 function utf32.char( a, b, ... )
@@ -402,10 +402,12 @@ end
 ---
 --- This functions similarly to `string.byte`, use `utf32.unpack` for long strings.
 ---
+--- The last code point is decoded completely even if it ends after `end_position`.
+---
 ---@param utf32_string string The UTF-32 string to decode.
----@param start_position integer? The position to start from in bytes, defaults to `1`.
----@param end_position integer? The position to end at in bytes, defaults to `start_position`.
----@param lax boolean? Whether to lax the UTF-32 validity check.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, `start_position` by default.
+---@param lax boolean? If `true`, invalid sequences are decoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer ... The code points.
 ---@nodiscard
@@ -442,77 +444,144 @@ function utf32.codepoint( utf32_string, start_position, end_position, lax, big_e
     return table_unpack( utf32_codepoints, 1, utf32_codepoint_count )
 end
 
---- [SHARED AND MENU]
+--- Raises an error on the first invalid code unit at `first_index`, `first_index + step`, ... `last_index`.
 ---
---- Returns the byte position of a code point in UTF-32 string.
+--- Checks only the 3 high bytes, `decode` runs just to raise the error.
 ---
----@param utf32_string string The UTF-32 string to search in.
----@param index integer The code point to search for, `0` returns the start of the code point containing byte `offset`.
----@param offset integer? The position to start from in bytes.
----@param lax boolean? Whether to lax the UTF-32 validity check.
----@param big_endian boolean? Whether the string is big-endian.
----@return integer | nil index The position of the code point in bytes or `nil` if not found.
----@nodiscard
-function utf32.offset( utf32_string, index, offset, lax, big_endian )
-    local str_length = #utf32_string
-    if str_length == 0 then
-        return nil
-    end
+---@param utf32_string string
+---@param first_index integer
+---@param last_index integer
+---@param step integer `4` or `-4`.
+---@param str_length integer
+---@param big_endian boolean?
+local function validate( utf32_string, first_index, last_index, step, str_length, big_endian )
+    for index = first_index, last_index, step do
+        -- from the most significant byte, `nil` for a truncated tail
+        local uint8_1, uint8_2, uint8_3
 
-    if offset == nil then
-        offset = 1
-    elseif offset < 0 then
-        offset = math_relative( offset, str_length )
-    else
-        offset = math_max( 1, math_min( offset, str_length ) )
-    end
-
-    if index == 0 then
-        -- align to the start of the code unit
-        return offset - (offset - 1) % 4
-    elseif index < 0 then
-        local utf32_codepoint_count
-
-        if lax == true then
-            utf32_codepoint_count = math_ceil( (str_length - offset + 1) / 4 )
-        else
-            utf32_codepoint_count = 0
-            local position = offset
-
-            while position <= str_length do
-                local _, utf32_sequence_length = decode( utf32_string, position, str_length, true, 2, big_endian )
-                position = position + utf32_sequence_length
-                utf32_codepoint_count = utf32_codepoint_count + 1
+        if index + 3 <= str_length then
+            if big_endian then
+                uint8_1, uint8_2, uint8_3 = string_byte( utf32_string, index, index + 2 )
+            else
+                uint8_3, uint8_2, uint8_1 = string_byte( utf32_string, index + 1, index + 3 )
             end
         end
 
-        if (0 - index) > utf32_codepoint_count then
-            index = 1
-        else
-            index = utf32_codepoint_count + index + 1
+        -- above U+10FFFF, a surrogate or truncated
+        if uint8_1 ~= 0 or uint8_2 > 0x10 or (uint8_2 == 0 and uint8_3 >= 0xD8 and uint8_3 <= 0xDF) then
+            decode( utf32_string, index, str_length, true, 3, big_endian )
         end
     end
-
-    -- fixed width: the n-th code point is always 4 * (n - 1) bytes further
-    offset = offset + (index - 1) * 4
-
-    if offset > str_length then
-        return nil
-    end
-
-    return offset
 end
 
 --- [SHARED AND MENU]
 ---
---- Returns a substring of the UTF-32 string, positions are in code points.
+--- Returns the byte positions where the `n`-th code point, counting from byte `position`, starts and ends.
 ---
---- This functions similarly to `string.sub`, negative positions count from the end of the string.
+--- This functions similarly to `utf8.offset` from Lua 5.5:
+--- * `n > 0` counts forward, `1` is the code point that starts at `position`.
+--- * `n < 0` counts backward, `-1` is the code point right before `position`.
+--- * `n = 0` returns the code point that contains byte `position`.
+---
+--- `#utf32_string + 1` is the position right after the last code point and is returned as `#utf32_string + 1, #utf32_string + 1`.
+---
+--- Code units are aligned to the start of the string, a truncated tail (1 to 3 bytes) is one code point.
+--- In lax mode positions are computed without reading the string, otherwise any invalid code unit
+--- that is walked over raises an error.
+---
+--- Raises an error if `n ~= 0` and `position` points inside a code point.
+---
+---@param utf32_string string The UTF-32 string to search in.
+---@param n integer The number of the code point, relative to `position`.
+---@param position integer? The byte position to count from, `1` if `n >= 0`, otherwise `#utf32_string + 1`, negative positions count from the end of the string, out of range positions are clamped.
+---@param lax boolean? If `true`, invalid code units count as code points instead of raising an error.
+---@param big_endian boolean? Whether the string is big-endian.
+---@return integer | nil start_position The position of the first byte of the code point, or `nil` if the string has no such code point.
+---@return integer | nil end_position The position of the last byte of the code point, or `nil` if the string has no such code point.
+---@nodiscard
+function utf32.offset( utf32_string, n, position, lax, big_endian )
+    local str_length = #utf32_string
+    local end_of_string = str_length + 1
+
+    if position == nil then
+        position = n < 0 and end_of_string or 1
+    elseif position < 0 then
+        position = math_relative( position, str_length )
+    elseif position == 0 then
+        position = 1
+    elseif position > end_of_string then
+        position = end_of_string
+    end
+
+    local strict = lax ~= true
+
+    if n == 0 then
+        if position == end_of_string then
+            return position, position
+        end
+
+        local start_index = position - (position - 1) % 4
+
+        if strict then
+            decode( utf32_string, start_index, str_length, true, 2, big_endian )
+        end
+
+        return start_index, math_min( start_index + 3, str_length )
+    end
+
+    if position ~= end_of_string and (position - 1) % 4 ~= 0 then
+        error( string.format( "initial position %d is inside a code point", position ), 2 )
+    end
+
+    local start_index
+
+    if n > 0 then
+        -- fixed width: the n-th code point is always 4 * (n - 1) bytes further
+        start_index = position + (n - 1) * 4
+
+        if strict then
+            validate( utf32_string, position, math_min( start_index, str_length ), 4, str_length, big_endian )
+        end
+
+        if start_index > str_length then
+            -- the position right after the last code point, only if the previous one exists
+            if start_index - 4 < end_of_string then
+                return end_of_string, end_of_string
+            end
+
+            return nil, nil
+        end
+    else
+        -- zero-based number of the code point to return
+        local utf32_codepoint_count = math_ceil( (position - 1) / 4 )
+        local target = utf32_codepoint_count + n
+
+        if strict then
+            validate( utf32_string, (utf32_codepoint_count - 1) * 4 + 1, math_max( target, 0 ) * 4 + 1, -4, str_length, big_endian )
+        end
+
+        if target < 0 then
+            return nil, nil
+        end
+
+        start_index = target * 4 + 1
+    end
+
+    return start_index, math_min( start_index + 3, str_length )
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the substring between code points `start_position` and `end_position` (both inclusive).
+---
+--- This functions similarly to `string.sub`, but positions are in code points, negative positions count from the end of the string.
+---
+--- The bytes are copied as is, in lax mode invalid sequences are kept (each counts as one code point).
 ---
 ---@param utf32_string string The UTF-32 string to get the substring of.
----@param start_position integer? The position to start from in code points.
----@param end_position integer? The position to end at in code points.
----@param lax boolean? Whether to lax the UTF-32 validity check.
+---@param start_position integer? The position of the first code point, `1` by default.
+---@param end_position integer? The position of the last code point, the last code point of the string by default.
+---@param lax boolean? If `true`, every invalid sequence counts as one code point instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return string utf32_sub The substring.
 ---@nodiscard
@@ -613,14 +682,14 @@ if ffi == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the reverse of a UTF-32 string.
+    --- Returns the code points between byte positions `start_position` and `end_position` in reverse order.
     ---
-    --- This functions similarly to `string.reverse`
+    --- This functions similarly to `string.reverse`, but the bytes of each code point keep their order.
     ---
     ---@param utf32_string string The UTF-32 string to reverse.
-    ---@param start_position integer? The position to start from in bytes.
-    ---@param end_position integer? The position to end at in bytes.
-    ---@param lax boolean? Whether to lax the UTF-32 validity check, invalid sequences are replaced with U+FFFD.
+    ---@param start_position integer? The position to start from in bytes, `1` by default.
+    ---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+    ---@param lax boolean? If `true`, invalid sequences are replaced with U+FFFD instead of raising an error.
     ---@param big_endian boolean? Whether the string is big-endian.
     ---@return string utf32_reversed The reversed UTF-32 string.
     ---@nodiscard
@@ -719,16 +788,18 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Normalizes a UTF-32 string.
+--- Returns a well-formed copy of a UTF-32 string, every invalid sequence (surrogates, values above U+10FFFF, a truncated tail) is replaced with `replacement_str`.
 ---
---- This function will replace all invalid UTF-32 sequences (surrogates, values above U+10FFFF, truncated tail).
+--- This is **not** Unicode normalization (NFC, NFD, NFKC, NFKD): valid sequences are copied as is.
 ---
----@param utf32_string string The UTF-32 string to normalize.
----@param replacement_str string? The string to replace invalid sequences with, by default U+FFFD in the string's byte order.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
+--- Only the range between `start_position` and `end_position` is returned, a sequence cut by `end_position` is invalid.
+---
+---@param utf32_string string The UTF-32 string to sanitize.
+---@param replacement_str string? The string to replace invalid sequences with, U+FFFD in the string's byte order by default.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default.
 ---@param big_endian boolean? Whether the string is big-endian.
----@return string utf32_normalized The normalized UTF-32 string.
+---@return string utf32_normalized The well-formed UTF-32 string.
 ---@nodiscard
 function utf32.normalize( utf32_string, replacement_str, start_position, end_position, big_endian )
     local start_index, end_index = math_range( #utf32_string, start_position, end_position )
@@ -824,10 +895,12 @@ do
     ---
     --- Returns an iterator function that iterates over the code points of a UTF-32 string.
     ---
+    --- Yields the byte position and the code point of every character, like `utf8.codes`.
+    ---
     --- Invalid sequences raise an error, or yield U+FFFD if `lax` is `true`.
     ---
     ---@param utf32_string string The UTF-32 string to iterate over.
-    ---@param lax boolean? Whether to lax the UTF-32 validity check.
+    ---@param lax boolean? If `true`, invalid sequences are yielded as U+FFFD instead of raising an error.
     ---@param big_endian boolean? Whether the string is big-endian.
     ---@return ( fun( utf32_string: string, index: integer ): integer | nil, integer | nil ), string, integer
     ---@nodiscard

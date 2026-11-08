@@ -960,10 +960,9 @@ end
 --- local vector = reader:readClass( Vector2 )
 --- ```
 ---
----@generic T: dreamwork.std.Object
----@param cls T | dreamwork.std.Class | dreamwork.std.Object | any The class to create.
+---@param cls dreamwork.std.Object | dreamwork.std.Class | any The class to create.
 ---@param ... any The arguments passed to `__deserialize`.
----@return T obj The new object.
+---@return any obj The new object.
 ---@nodiscard
 function BinaryReader:readClass( cls, ... )
     ---@type nil | dreamwork.std.Object

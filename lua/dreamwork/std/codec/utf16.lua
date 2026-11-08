@@ -21,7 +21,7 @@ local string_char, string_byte = string.char, string.byte
 local math = std.math
 local math_range = math.range
 local math_relative = math.relative
-local math_min, math_max = math.min, math.max
+local math_min = math.min
 
 local rbit = raw.bit
 local rbit_band, rbit_rshift = rbit.band, rbit.rshift
@@ -35,11 +35,14 @@ local error = std.error
 
 --- [SHARED AND MENU]
 ---
---- The utf16 library provides functions for the manipulation of UTF-16 strings
---- and conversion between UTF-8 and UTF-16.
+--- The utf16 library provides functions for the manipulation of UTF-16 strings.
 ---
---- All positions are in bytes, all functions use little-endian byte order
---- unless `big_endian` is `true`.
+--- Positions are in bytes, except `utf16.sub`, which takes code point positions.
+--- Code units are aligned to the start of the string, all functions use little-endian
+--- byte order unless `big_endian` is `true`, a byte order mark is not handled.
+---
+--- Functions that take `lax` raise an error on the first invalid sequence (an unpaired surrogate
+--- or an odd trailing byte), unless `lax` is `true`; in lax mode each invalid sequence counts as one code point, decoded as U+FFFD.
 ---
 ---@class dreamwork.std.utf16
 local utf16 = {}
@@ -232,19 +235,19 @@ end
 ---
 --- Decodes a single UTF-16 sequence starting at the given byte position.
 ---
---- In lax mode invalid sequences are not raised, `nil` is returned as the code point
---- together with the number of bytes to skip, the error position and the error code.
+--- In lax mode invalid sequences do not raise an error, `nil` is returned as the code point
+--- together with the number of bytes to skip, the position of the sequence and the error code.
 ---
 ---@param utf16_string string The UTF-16 string to decode from.
 ---@param index integer? The position of the sequence in bytes, `1` by default.
----@param end_index integer? The last byte that can be read, the end of the string by default.
----@param lax boolean? Whether to lax the UTF-16 validity check.
+---@param end_index integer? The last byte that can be read, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, invalid sequences are returned as `nil` instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@param stack_level integer? The error level, relative to the caller, `1` (default) blames the caller of this function.
 ---@return integer | nil utf16_codepoint The decoded code point, or `nil` if the sequence is invalid.
 ---@return integer sequence_length The length of the sequence in bytes, at least `1`.
----@return integer | nil error_position The position of the invalid sequence.
----@return dreamwork.std.utf16.ErrorCode | nil error_code The error code.
+---@return integer | nil error_position The position of the invalid sequence, `nil` if the sequence is valid.
+---@return dreamwork.std.utf16.ErrorCode | nil error_code The error code, `nil` if the sequence is valid.
 ---@nodiscard
 function utf16.decode( utf16_string, index, end_index, lax, big_endian, stack_level )
     return decode( utf16_string, index or 1, end_index or #utf16_string, lax ~= true, stack_level or 1, big_endian )
@@ -252,12 +255,12 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the number of code points in a UTF-16 string.
+--- Returns the number of code points that start between byte positions `start_position` and `end_position` (both inclusive).
 ---
----@param utf16_string string The UTF-16 string to get the length of.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
----@param lax boolean? Whether to lax the UTF-16 validity check, invalid sequences count as one code point each.
+---@param utf16_string string The UTF-16 string to count the code points of.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, every invalid sequence counts as one code point instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer utf16_codepoint_count The number of code points.
 ---@nodiscard
@@ -382,12 +385,10 @@ end
 ---
 --- Decodes a UTF-16 string into a table of code points.
 ---
---- Invalid sequences raise an error, or are replaced with U+FFFD if `lax` is `true`.
----
 ---@param utf16_string string The UTF-16 string to decode.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
----@param lax boolean? Whether to lax the UTF-16 validity check.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+---@param lax boolean? If `true`, invalid sequences are decoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer[] utf16_codepoints The code points.
 ---@return integer utf16_codepoint_count The number of code points.
@@ -401,11 +402,9 @@ end
 ---
 --- Encodes a table of code points into a UTF-16 string.
 ---
---- Invalid code points raise an error, or are replaced with U+FFFD if `lax` is `true`.
----
 ---@param utf16_codepoints integer[] The code points to encode.
----@param utf16_codepoint_count integer? The number of code points to encode.
----@param lax boolean? Whether to lax the UTF-16 validity check.
+---@param utf16_codepoint_count integer? The number of code points to encode, `#utf16_codepoints` by default.
+---@param lax boolean? If `true`, invalid code points (surrogates, negative or above U+10FFFF) are encoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether to produce a big-endian string.
 ---@return string utf16_string The UTF-16 string.
 ---@nodiscard
@@ -417,11 +416,11 @@ end
 ---
 --- Encodes code points into a little-endian UTF-16 string.
 ---
---- This functions similarly to `string.char`, use `utf16.pack` for big-endian strings.
+--- This functions similarly to `string.char`, invalid code points raise an error, use `utf16.pack` for big-endian strings.
 ---
----@param a ( integer | nil ) The code points to encode.
----@param b ( integer | nil ) The code points to encode.
----@param ... ( integer | nil ) The code points to encode.
+---@param a integer? The first code point.
+---@param b integer? The second code point.
+---@param ... integer The rest of the code points.
 ---@return string utf16_string The UTF-16 string.
 ---@nodiscard
 function utf16.char( a, b, ... )
@@ -443,10 +442,12 @@ end
 ---
 --- This functions similarly to `string.byte`, use `utf16.unpack` for long strings.
 ---
+--- The last code point is decoded completely even if it ends after `end_position`.
+---
 ---@param utf16_string string The UTF-16 string to decode.
----@param start_position integer? The position to start from in bytes, defaults to `1`.
----@param end_position integer? The position to end at in bytes, defaults to `start_position`.
----@param lax boolean? Whether to lax the UTF-16 validity check.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, `start_position` by default.
+---@param lax boolean? If `true`, invalid sequences are decoded as U+FFFD instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return integer ... The code points.
 ---@nodiscard
@@ -485,97 +486,170 @@ function utf16.codepoint( utf16_string, start_position, end_position, lax, big_e
     return table_unpack( utf16_codepoints, 1, utf16_codepoint_count )
 end
 
---- [SHARED AND MENU]
+--- Finds the sequence that contains byte `index`, as `decode` splits the string when walking it from the start:
+--- code units start at odd positions, and a low surrogate right after a high surrogate belongs to it.
 ---
---- Returns the byte position of a code point in UTF-16 string.
----
----@param utf16_string string The UTF-16 string to search in.
----@param index integer The code point to search for, `0` returns the start of the code point containing byte `offset`.
----@param offset integer? The position to start from in bytes.
----@param lax boolean? Whether to lax the UTF-16 validity check.
----@param big_endian boolean? Whether the string is big-endian.
----@return integer | nil index The position of the code point in bytes or `nil` if not found.
----@nodiscard
-function utf16.offset( utf16_string, index, offset, lax, big_endian )
-    local str_length = #utf16_string
-    if str_length == 0 then
-        return nil
-    end
+---@param utf16_string string
+---@param index integer The byte position, `1 <= index <= str_length`.
+---@param str_length integer
+---@param big_endian boolean?
+---@return integer start_index
+---@return integer sequence_length
+---@return integer | nil utf16_codepoint `nil` if the sequence is invalid.
+local function find_sequence( utf16_string, index, str_length, big_endian )
+    local start_index = index - (index - 1) % 2
 
-    if offset == nil then
-        offset = 1
-    elseif offset < 0 then
-        offset = math_relative( offset, str_length )
-    else
-        offset = math_max( 1, math_min( offset, str_length ) )
-    end
+    if start_index > 2 then
+        local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( utf16_string, start_index - 2, start_index + 1 )
+        if uint8_4 ~= nil then
+            if big_endian then
+                uint8_2, uint8_4 = uint8_1, uint8_3
+            end
 
-    if index == 0 then
-        -- align to the start of the code unit
-        offset = offset - (offset - 1) % 2
-
-        -- low surrogate of a pair, step back to its high surrogate
-        if offset > 2 then
-            local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( utf16_string, offset - 2, offset + 1 )
-            if uint8_4 ~= nil then
-                local high_uint16, low_uint16
-                if big_endian then
-                    high_uint16, low_uint16 = uint8_1 * 0x100 + uint8_2, uint8_3 * 0x100 + uint8_4
-                else
-                    high_uint16, low_uint16 = uint8_2 * 0x100 + uint8_1, uint8_4 * 0x100 + uint8_3
-                end
-
-                if high_uint16 >= 0xD800 and high_uint16 <= 0xDBFF and low_uint16 >= 0xDC00 and low_uint16 <= 0xDFFF then
-                    offset = offset - 2
-                end
+            -- `uint8_2` and `uint8_4` are the high bytes of the previous and the current code unit
+            if uint8_2 >= 0xD8 and uint8_2 <= 0xDB and uint8_4 >= 0xDC and uint8_4 <= 0xDF then
+                start_index = start_index - 2
             end
         end
-
-        return offset
-    elseif index < 0 then
-        local strict = lax ~= true
-
-        local utf16_codepoint_count = 0
-        local position = offset
-
-        while position <= str_length do
-            local _, utf16_sequence_length = decode( utf16_string, position, str_length, strict, 2, big_endian )
-            position = position + utf16_sequence_length
-            utf16_codepoint_count = utf16_codepoint_count + 1
-        end
-
-        if (0 - index) > utf16_codepoint_count then
-            index = 1
-        else
-            index = utf16_codepoint_count + index + 1
-        end
     end
 
-    local utf16_codepoint_count = 1
-
-    repeat
-        if utf16_codepoint_count == index then
-            return offset
-        else
-            local _, utf16_sequence_length = decode( utf16_string, offset, str_length, false, nil, big_endian )
-            offset = offset + utf16_sequence_length
-            utf16_codepoint_count = utf16_codepoint_count + 1
-        end
-    until offset > str_length
-
-    return nil
+    local utf16_codepoint, sequence_length = decode( utf16_string, start_index, str_length, false, nil, big_endian )
+    return start_index, sequence_length, utf16_codepoint
 end
 
 --- [SHARED AND MENU]
 ---
---- Returns a substring of the UTF-16 string, positions are in code points.
+--- Returns the byte positions where the `n`-th code point, counting from byte `position`, starts and ends.
 ---
---- This functions similarly to `string.sub`, negative positions count from the end of the string.
+--- This functions similarly to `utf8.offset` from Lua 5.5:
+--- * `n > 0` counts forward, `1` is the code point that starts at `position`.
+--- * `n < 0` counts backward, `-1` is the code point right before `position`.
+--- * `n = 0` returns the code point that contains byte `position`.
+---
+--- `#utf16_string + 1` is the position right after the last code point and is returned as `#utf16_string + 1, #utf16_string + 1`.
+---
+--- Code units are aligned to the start of the string. In lax mode every invalid sequence counts as one code point
+--- (the same way `utf16.len` counts them), otherwise any invalid sequence that is walked over raises an error.
+---
+--- Raises an error if `n ~= 0` and `position` points inside a code point.
+---
+---@param utf16_string string The UTF-16 string to search in.
+---@param n integer The number of the code point, relative to `position`.
+---@param position integer? The byte position to count from, `1` if `n >= 0`, otherwise `#utf16_string + 1`, negative positions count from the end of the string, out of range positions are clamped.
+---@param lax boolean? If `true`, invalid sequences count as code points instead of raising an error.
+---@param big_endian boolean? Whether the string is big-endian.
+---@return integer | nil start_position The position of the first byte of the code point, or `nil` if the string has no such code point.
+---@return integer | nil end_position The position of the last byte of the code point, or `nil` if the string has no such code point.
+---@nodiscard
+function utf16.offset( utf16_string, n, position, lax, big_endian )
+    local str_length = #utf16_string
+    local end_of_string = str_length + 1
+
+    if position == nil then
+        position = n < 0 and end_of_string or 1
+    elseif position < 0 then
+        position = math_relative( position, str_length )
+    elseif position == 0 then
+        position = 1
+    elseif position > end_of_string then
+        position = end_of_string
+    end
+
+    local strict = lax ~= true
+
+    if n == 0 then
+        if position == end_of_string then
+            return position, position
+        end
+
+        local start_index, sequence_length, utf16_codepoint = find_sequence( utf16_string, position, str_length, big_endian )
+        if utf16_codepoint == nil and strict then
+            decode( utf16_string, start_index, str_length, true, 2, big_endian )
+        end
+
+        return start_index, start_index + (sequence_length - 1)
+    end
+
+    if position ~= end_of_string and find_sequence( utf16_string, position, str_length, big_endian ) ~= position then
+        error( string.format( "initial position %d is inside a code point", position ), 2 )
+    end
+
+    -- position of the high byte in a code unit, relative to its first byte
+    local high_offset = big_endian and 0 or 1
+
+    if n > 0 then
+        while position <= str_length do
+            local sequence_length = 2
+
+            -- a whole code unit that is not a surrogate is always valid, no need to decode it
+            if position == str_length then
+                local _
+                _, sequence_length = decode( utf16_string, position, str_length, strict, 2, big_endian )
+            else
+                local uint8 = string_byte( utf16_string, position + high_offset, position + high_offset )
+                if uint8 >= 0xD8 and uint8 <= 0xDF then
+                    local _
+                    _, sequence_length = decode( utf16_string, position, str_length, strict, 2, big_endian )
+                end
+            end
+
+            if n == 1 then
+                return position, position + (sequence_length - 1)
+            end
+
+            n = n - 1
+            position = position + sequence_length
+        end
+
+        if n == 1 then
+            return end_of_string, end_of_string
+        end
+
+        return nil, nil
+    end
+
+    while position > 1 do
+        local start_index, sequence_length = position - 2, 2
+
+        -- the high byte of the code unit before `position`, `nil` if that is an odd trailing byte
+        local uint8
+        if position % 2 == 1 then
+            uint8 = string_byte( utf16_string, start_index + high_offset, start_index + high_offset )
+        end
+
+        -- surrogates (pairs or not) and an odd trailing byte need the full lookup
+        if uint8 == nil or (uint8 >= 0xD8 and uint8 <= 0xDF) then
+            local utf16_codepoint
+            start_index, sequence_length, utf16_codepoint = find_sequence( utf16_string, position - 1, str_length, big_endian )
+
+            if utf16_codepoint == nil and strict then
+                decode( utf16_string, start_index, str_length, true, 2, big_endian )
+            end
+        end
+
+        n = n + 1
+        if n == 0 then
+            return start_index, start_index + (sequence_length - 1)
+        end
+
+        position = start_index
+    end
+
+    return nil, nil
+end
+
+--- [SHARED AND MENU]
+---
+--- Returns the substring between code points `start_position` and `end_position` (both inclusive).
+---
+--- This functions similarly to `string.sub`, but positions are in code points, negative positions count from the end of the string.
+---
+--- The bytes are copied as is, in lax mode invalid sequences are kept (each counts as one code point).
 ---
 ---@param utf16_string string The UTF-16 string to get the substring of.
----@param start_position integer? The position to start from in code points.
----@param end_position integer? The position to end at in code points.
----@param lax boolean? Whether to lax the UTF-16 validity check.
+---@param start_position integer? The position of the first code point, `1` by default.
+---@param end_position integer? The position of the last code point, the last code point of the string by default.
+---@param lax boolean? If `true`, every invalid sequence counts as one code point instead of raising an error.
 ---@param big_endian boolean? Whether the string is big-endian.
 ---@return string utf16_sub The substring.
 ---@nodiscard
@@ -651,14 +725,14 @@ if ffi == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the reverse of a UTF-16 string, surrogate pairs are kept intact.
+    --- Returns the code points between byte positions `start_position` and `end_position` in reverse order.
     ---
-    --- This functions similarly to `string.reverse`
+    --- This functions similarly to `string.reverse`, but the bytes of each code point (and surrogate pair) keep their order.
     ---
     ---@param utf16_string string The UTF-16 string to reverse.
-    ---@param start_position integer? The position to start from in bytes.
-    ---@param end_position integer? The position to end at in bytes.
-    ---@param lax boolean? Whether to lax the UTF-16 validity check, invalid sequences are replaced with U+FFFD.
+    ---@param start_position integer? The position to start from in bytes, `1` by default.
+    ---@param end_position integer? The position to end at in bytes, the end of the string by default; a sequence cut by it is invalid.
+    ---@param lax boolean? If `true`, invalid sequences are replaced with U+FFFD instead of raising an error.
     ---@param big_endian boolean? Whether the string is big-endian.
     ---@return string utf16_reversed The reversed UTF-16 string.
     ---@nodiscard
@@ -753,16 +827,18 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Normalizes a UTF-16 string.
+--- Returns a well-formed copy of a UTF-16 string, every invalid sequence (unpaired surrogates, an odd trailing byte) is replaced with `replacement_str`.
 ---
---- This function will replace all invalid UTF-16 sequences (unpaired surrogates, odd trailing byte).
+--- This is **not** Unicode normalization (NFC, NFD, NFKC, NFKD): valid sequences are copied as is.
 ---
----@param utf16_string string The UTF-16 string to normalize.
----@param replacement_str string? The string to replace invalid sequences with, by default U+FFFD in the string's byte order.
----@param start_position integer? The position to start from in bytes.
----@param end_position integer? The position to end at in bytes.
+--- Only the range between `start_position` and `end_position` is returned, a sequence cut by `end_position` is invalid.
+---
+---@param utf16_string string The UTF-16 string to sanitize.
+---@param replacement_str string? The string to replace invalid sequences with, U+FFFD in the string's byte order by default.
+---@param start_position integer? The position to start from in bytes, `1` by default.
+---@param end_position integer? The position to end at in bytes, the end of the string by default.
 ---@param big_endian boolean? Whether the string is big-endian.
----@return string utf16_normalized The normalized UTF-16 string.
+---@return string utf16_normalized The well-formed UTF-16 string.
 ---@nodiscard
 function utf16.normalize( utf16_string, replacement_str, start_position, end_position, big_endian )
     local start_index, end_index = math_range( #utf16_string, start_position, end_position )
@@ -858,10 +934,12 @@ do
     ---
     --- Returns an iterator function that iterates over the code points of a UTF-16 string.
     ---
+    --- Yields the byte position and the code point of every character, like `utf8.codes`.
+    ---
     --- Invalid sequences raise an error, or yield U+FFFD if `lax` is `true`.
     ---
     ---@param utf16_string string The UTF-16 string to iterate over.
-    ---@param lax boolean? Whether to lax the UTF-16 validity check.
+    ---@param lax boolean? If `true`, invalid sequences are yielded as U+FFFD instead of raising an error.
     ---@param big_endian boolean? Whether the string is big-endian.
     ---@return ( fun( utf16_string: string, index: integer ): integer | nil, integer | nil ), string, integer
     ---@nodiscard

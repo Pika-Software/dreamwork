@@ -12,7 +12,7 @@ local table = std.table
 local table_concat, table_unpack = table.concat, table.unpack
 
 local string = std.string
-local string_len, string_find, string_format = string.len, string.find, string.format
+local string_find, string_format = string.find, string.format
 local string_byte, string_char, string_sub, string_rep = string.byte, string.char, string.sub, string.rep
 
 local rbit = std.raw.bit
@@ -50,8 +50,10 @@ local CHUNK_SIZE = 4096
 --- writer:compile() --> "\5\44\1"
 --- ```
 ---
---- Lua strings can't be changed in place, so bytes are kept in a buffer (`bytes`) until `compile` (or `tostring`) joins them,
---- the buffer is a growable FFI `uint8_t` array when FFI is available, or a table otherwise.
+--- Lua strings can't be changed in place, so bytes are kept in a buffer (`bytes`) until `compile` (or `tostring`) joins them:
+--- a `string.buffer` written in place when FFI and `string.buffer` are available (appends and `compile` are `memcpy`),
+--- a growable FFI `uint8_t` array when only FFI is, or a table otherwise,
+--- where large aligned appends at the end are kept as string chunks and writing before them joins everything back into bytes.
 ---
 --- Writing overwrites the data under the cursor, bits next to a field in the same byte are kept.
 --- The size grows to the furthest position written or moved to (`seek`, `skip`, `align`),
@@ -63,8 +65,12 @@ local CHUNK_SIZE = 4096
 ---@class dreamwork.std.BinaryWriter : dreamwork.std.Object
 ---@field __class dreamwork.std.BinaryWriterClass
 ---@field position integer The cursor position in bits.
----@field bytes dreamwork.std.BinaryWriter.Buffer The written bytes, `1`-indexed, a table may have gaps.
+---@field bytes dreamwork.std.BinaryWriter.Buffer The written bytes, `1`-indexed from `base`, a table may have gaps.
+---@field base integer The position in bits of `bytes[ 1 ]`, the size of `chunks` (table backend), `0` otherwise.
 ---@field capacity number The size of `bytes` in bits, `math.huge` for a table.
+---@field buffer string.buffer | nil The `string.buffer` that holds the data (`string.buffer` backend).
+---@field chunks string[] | nil The data before `base` (table backend).
+---@field chunk_count integer | nil The number of `chunks` (table backend).
 ---@field has_gaps boolean `true` if a table has bytes that were never written.
 ---@field data_length integer The size of the data in bits.
 ---@operator len: integer
@@ -120,45 +126,262 @@ local MIN_CAPACITY = 256
 
 ---@alias dreamwork.std.BinaryWriter.Buffer integer[] | ffi.cdata*
 
----@type fun( byte_count: integer ): dreamwork.std.BinaryWriter.Buffer, number
-local allocate
+--- Makes room for the bytes from `position` to `end_position` (in bits) and returns the buffer,
+--- `bytes[ 1 ]` is the byte at `writer.base`.
+---
+--- Loop-free in every backend: it is called by every write.
+---
+---@type fun( writer: dreamwork.std.BinaryWriter, position: integer, end_position: integer ): dreamwork.std.BinaryWriter.Buffer
+local reserve
 
+--- Joins the data into a string, `byte_count` is the size of the whole data in bytes.
+---
 ---@type fun( writer: dreamwork.std.BinaryWriter, byte_count: integer ): string
 local bufferToString
 
----@type fun( str: string, length: integer ): dreamwork.std.BinaryWriter.Buffer, number
-local stringToBuffer
-
---- Makes room for `end_position` bits.
+--- Replaces the data with the string.
 ---
----@type fun( writer: dreamwork.std.BinaryWriter, end_position: integer ): dreamwork.std.BinaryWriter.Buffer
-local reserve
+---@type fun( writer: dreamwork.std.BinaryWriter, str: string, length: integer )
+local openBuffer
 
-if ffi == nil then
+--- Appends the string at the end of the data without copying it byte by byte,
+--- called only when the cursor is aligned and at the end, returns `false` if the backend can't.
+---
+---@type fun( writer: dreamwork.std.BinaryWriter, data: string, data_length: integer ): boolean
+local appendString
 
-    -- tables grow on their own
-    function reserve( writer )
+--- Creates the empty buffer of a new writer.
+---
+---@type fun( writer: dreamwork.std.BinaryWriter )
+local initBuffer
+
+local string_buffer = string.buffer
+
+if ffi ~= nil and string_buffer ~= nil then
+
+    -- `string.buffer` backend: the bytes after `base` are written in place through `ref()`,
+    -- large aligned appends and `open` are kept as string chunks (no copy, `compile` is one `table.concat`),
+    -- a fresh 1 MiB buffer per writer would cost ~700 us of page faults on the server
+
+    local string_buffer_new = string_buffer.new
+
+    --- Smaller appends are copied into the buffer.
+    local CHUNK_THRESHOLD = 64
+
+    --- Zeros for new bytes, `putcdata` copies them without a Lua loop.
+    local ZERO_BLOCK_SIZE = 4096
+    local zero_block = ffi.new( "uint8_t[?]", ZERO_BLOCK_SIZE )
+
+    --- Updates `bytes` after the buffer was reallocated or reset.
+    ---
+    ---@param buffer string.buffer
+    local function refresh( buffer )
+        -- `writeBits` windows touch up to 3 bytes after the committed part, keep them allocated
+        buffer:reserve( 4 )
+
+        -- `1`-based, as in a table
+        return buffer:ref() - 1
+    end
+
+    --- The slow path: a write before `base` puts the chunks back into the buffer.
+    ---
+    ---@param writer dreamwork.std.BinaryWriter
+    local function materialize( writer )
+        local str = bufferToString( writer, rbit_rshift( writer.data_length + 7, 3 ) )
+
+        writer.buffer:reset():put( str )
+        writer.chunks, writer.chunk_count = {}, 0
+        writer.base = 0
+        writer.capacity = #str * 8
+        writer.bytes = refresh( writer.buffer )
+    end
+
+    function initBuffer( writer )
+        writer.buffer = string_buffer_new( MIN_CAPACITY )
+        writer.chunks, writer.chunk_count = {}, 0
+        writer.capacity = 0
+        writer.bytes = refresh( writer.buffer )
+    end
+
+    function reserve( writer, position, end_position )
+        if position < writer.base then
+            materialize( writer )
+        end
+
+        local capacity = writer.capacity
+        if end_position <= capacity then
+            return writer.bytes
+        end
+
+        -- at least double, so appends are amortized `O( 1 )`, the zeros after the data are cut by `compile`
+        local base = writer.base
+        local committed = rbit_rshift( capacity - base, 3 )
+        local byte_count = math_max( rbit_rshift( end_position - base + 7, 3 ), committed * 2, MIN_CAPACITY ) - committed
+
+        if byte_count > ZERO_BLOCK_SIZE then
+            writer.buffer:put( string_rep( "\0", byte_count ) )
+        else
+            writer.buffer:putcdata( zero_block, byte_count )
+        end
+
+        writer.capacity = capacity + byte_count * 8
+        writer.bytes = refresh( writer.buffer )
+
         return writer.bytes
     end
 
-    function allocate()
-        return {}, math_huge
+    function bufferToString( writer, byte_count )
+        ---@type integer
+        local chunk_count = writer.chunk_count
+        local tail_count = byte_count - rbit_rshift( writer.base, 3 )
+
+        ---@type string
+        local tail = ""
+
+        if tail_count ~= 0 then
+            tail = writer.buffer:tostring()
+
+            if #tail ~= tail_count then
+                tail = string_sub( tail, 1, tail_count )
+            end
+        end
+
+        if chunk_count == 0 then
+            return tail
+        end
+
+        -- the tail joins the same `concat`, `..` would copy all chunks a second time
+        ---@type string[]
+        local chunks = writer.chunks
+        chunks[ chunk_count + 1 ] = tail
+        local str = table_concat( chunks, "", 1, chunk_count + 1 )
+        chunks[ chunk_count + 1 ] = nil
+        return str
+    end
+
+    function openBuffer( writer, str, length )
+        if writer.buffer == nil then
+            initBuffer( writer )
+        end
+
+        ---@type string.buffer
+        local buffer = writer.buffer
+        buffer:reset()
+
+        if length == 0 then
+            writer.chunks, writer.chunk_count = {}, 0
+            writer.base = 0
+        else
+            writer.chunks, writer.chunk_count = { str }, 1
+            writer.base = length * 8
+        end
+
+        writer.capacity = writer.base
+        writer.bytes = refresh( buffer )
+    end
+
+    function appendString( writer, data, data_length )
+        if data_length < CHUNK_THRESHOLD then
+            return false
+        end
+
+        ---@type string.buffer
+        local buffer = writer.buffer
+
+        ---@type string[]
+        local chunks = writer.chunks
+
+        ---@type integer
+        local chunk_count = writer.chunk_count
+
+        -- the bytes written since the last chunk become a chunk too, `reset` keeps the memory for the next ones
+        local tail_count = rbit_rshift( writer.position - writer.base, 3 )
+        if tail_count ~= 0 then
+            chunk_count = chunk_count + 1
+            chunks[ chunk_count ] = buffer:get( tail_count )
+        end
+
+        chunk_count = chunk_count + 1
+        chunks[ chunk_count ] = data
+
+        local base = writer.position + data_length * 8
+
+        -- nothing committed after the last chunk: the buffer is already empty
+        if writer.capacity ~= writer.base then
+            buffer:reset()
+            writer.capacity = base
+            writer.base = base
+            writer.bytes = refresh( buffer )
+        else
+            writer.capacity = base
+            writer.base = base
+        end
+
+        writer.chunk_count = chunk_count
+        return true
+    end
+
+elseif ffi ~= nil then
+
+    -- FFI array backend: a growable `uint8_t` array, used when `string.buffer` is missing
+
+    local ffi_new, ffi_copy, ffi_string = ffi.new, ffi.copy, ffi.string
+
+    -- one extra byte in front, so indices are `1`-based as in a table,
+    -- and 3 after, `writeBits` writes 4-byte windows that may end past the field
+    ---@param byte_count integer
+    ---@return dreamwork.std.BinaryWriter.Buffer bytes
+    ---@return number capacity
+    local function allocate( byte_count )
+        local capacity = math_max( byte_count, MIN_CAPACITY )
+        return ffi_new( "uint8_t[?]", capacity + 4 ), capacity * 8
+    end
+
+    function reserve( writer, _, end_position )
+        if end_position <= writer.capacity then
+            return writer.bytes
+        end
+
+        -- at least double, so appends are amortized `O( 1 )`
+        local old_bytes, old_count = writer.bytes, writer.capacity / 8
+        local bytes, capacity = allocate( math_max( rbit_rshift( end_position + 7, 3 ), old_count * 2 ) )
+
+        ffi_copy( bytes, old_bytes, old_count + 1 )
+
+        writer.bytes, writer.capacity = bytes, capacity
+        return bytes
     end
 
     function bufferToString( writer, byte_count )
-        local bytes = writer.bytes
+        return ffi_string( writer.bytes + 1, byte_count )
+    end
 
-        -- `string.char` doesn't accept `nil`
-        if writer.has_gaps then
-            for index = 1, byte_count, 1 do
-                if bytes[ index ] == nil then
-                    bytes[ index ] = 0
-                end
-            end
+    function openBuffer( writer, str, length )
+        local bytes, capacity = allocate( length )
+        ffi_copy( bytes + 1, str, length )
+        writer.bytes, writer.capacity = bytes, capacity
+    end
 
-            writer.has_gaps = false
-        end
+    function appendString()
+        return false
+    end
 
+    function initBuffer( writer )
+        writer.bytes, writer.capacity = allocate( 0 )
+    end
+
+else
+
+    -- table backend: one byte per entry, large aligned appends are kept as string chunks,
+    -- `bytes` only holds the data after `base` (the end of the chunks)
+
+    --- Smaller appends are copied into `bytes`, a chunk per tiny string isn't worth it.
+    local CHUNK_THRESHOLD = 64
+
+    ---@param bytes integer[]
+    ---@param byte_count integer
+    ---@return string
+    local function bytesToString( bytes, byte_count )
         if byte_count <= CHUNK_SIZE then
             return string_char( table_unpack( bytes, 1, byte_count ) )
         end
@@ -177,7 +400,31 @@ if ffi == nil then
         return table_concat( chunks, "", 1, chunk_count )
     end
 
-    function stringToBuffer( str, length )
+    --- Converts `byte_count` bytes of `bytes` to a string, `string.char` doesn't accept `nil`.
+    ---
+    ---@param writer dreamwork.std.BinaryWriter
+    ---@param byte_count integer
+    ---@return string
+    local function tailToString( writer, byte_count )
+        local bytes = writer.bytes
+
+        if writer.has_gaps then
+            for index = 1, byte_count, 1 do
+                if bytes[ index ] == nil then
+                    bytes[ index ] = 0
+                end
+            end
+
+            writer.has_gaps = false
+        end
+
+        return bytesToString( bytes, byte_count )
+    end
+
+    ---@param str string
+    ---@param length integer
+    ---@return integer[]
+    local function stringToBytes( str, length )
         ---@type integer[]
         local bytes = {}
 
@@ -185,43 +432,96 @@ if ffi == nil then
             bytes[ index ] = string_byte( str, index, index )
         end
 
-        return bytes, math_huge
+        return bytes
     end
 
-else
+    --- The slow path: a write before `base` turns the chunks back into bytes.
+    ---
+    ---@param writer dreamwork.std.BinaryWriter
+    local function materialize( writer )
+        local str = bufferToString( writer, rbit_rshift( writer.data_length + 7, 3 ) )
 
-    local ffi_new, ffi_copy, ffi_string = ffi.new, ffi.copy, ffi.string
+        writer.bytes = stringToBytes( str, #str )
+        writer.chunks, writer.chunk_count = {}, 0
+        writer.base = 0
+        writer.has_gaps = false
+    end
 
-    -- one extra byte in front, so indices are `1`-based as in a table,
-    -- and 3 after, `writeBits` writes 4-byte windows that may end past the field
-    function allocate( byte_count )
-        local capacity = math_max( byte_count, MIN_CAPACITY )
-        return ffi_new( "uint8_t[?]", capacity + 4 ), capacity * 8
+    function reserve( writer, position )
+        if position < writer.base then
+            materialize( writer )
+        end
+
+        return writer.bytes
     end
 
     function bufferToString( writer, byte_count )
-        return ffi_string( writer.bytes + 1, byte_count )
-    end
+        ---@type integer
+        local chunk_count = writer.chunk_count
+        local tail_count = byte_count - rbit_rshift( writer.base, 3 )
 
-    function stringToBuffer( str, length )
-        local bytes, capacity = allocate( length )
-        ffi_copy( bytes + 1, str, length )
-        return bytes, capacity
-    end
-
-    function reserve( writer, end_position )
-        if end_position <= writer.capacity then
-            return writer.bytes
+        if chunk_count == 0 then
+            return tailToString( writer, tail_count )
         end
 
-        -- at least double, so appends are amortized `O( 1 )`
-        local old_bytes, old_count = writer.bytes, writer.capacity / 8
-        local bytes, capacity = allocate( math_max( rbit_rshift( end_position + 7, 3 ), old_count * 2 ) )
+        ---@type string[]
+        local chunks = writer.chunks
 
-        ffi_copy( bytes, old_bytes, old_count + 1 )
+        if tail_count == 0 then
+            return table_concat( chunks, "", 1, chunk_count )
+        end
 
-        writer.bytes, writer.capacity = bytes, capacity
-        return bytes
+        -- the tail joins the same `concat`, `..` would copy all chunks a second time
+        chunks[ chunk_count + 1 ] = tailToString( writer, tail_count )
+        local str = table_concat( chunks, "", 1, chunk_count + 1 )
+        chunks[ chunk_count + 1 ] = nil
+        return str
+    end
+
+    function openBuffer( writer, str, length )
+        writer.bytes = {}
+        writer.has_gaps = false
+
+        if length == 0 then
+            writer.chunks, writer.chunk_count = {}, 0
+            writer.base = 0
+        else
+            writer.chunks, writer.chunk_count = { str }, 1
+            writer.base = length * 8
+        end
+    end
+
+    function appendString( writer, data, data_length )
+        if data_length < CHUNK_THRESHOLD then
+            return false
+        end
+
+        ---@type string[]
+        local chunks = writer.chunks
+
+        ---@type integer
+        local chunk_count = writer.chunk_count
+
+        -- the bytes written since the last chunk become a chunk too
+        local tail_count = rbit_rshift( writer.position - writer.base, 3 )
+        if tail_count ~= 0 then
+            chunk_count = chunk_count + 1
+            chunks[ chunk_count ] = tailToString( writer, tail_count )
+            writer.bytes = {}
+        end
+
+        chunk_count = chunk_count + 1
+        chunks[ chunk_count ] = data
+
+        writer.chunk_count = chunk_count
+        writer.base = writer.position + data_length * 8
+        return true
+    end
+
+    function initBuffer( writer )
+        writer.bytes = {}
+        writer.capacity = math_huge
+        writer.chunks, writer.chunk_count = {}, 0
     end
 
 end
@@ -242,7 +542,7 @@ end
 ---@param position integer
 local function moveCursor( writer, position )
     if position > writer.data_length then
-        reserve( writer, position )
+        reserve( writer, position, position )
         writer.data_length = position
         writer.has_gaps = true
     end
@@ -256,8 +556,9 @@ function BinaryWriter:__init( data )
     if data == nil then
         self.data_length = 0
         self.position = 0
+        self.base = 0
         self.has_gaps = false
-        self.bytes, self.capacity = allocate( 0 )
+        initBuffer( self )
     else
         self:open( data )
     end
@@ -289,12 +590,13 @@ end
 ---@param data any The data, converted to a string with `tostring`.
 function BinaryWriter:open( data )
     local str = tostring( data )
-    local length = string_len( str )
+    local length = #str
 
     self.data_length = length * 8
     self.position = length * 8
+    self.base = 0
     self.has_gaps = false
-    self.bytes, self.capacity = stringToBuffer( str, length )
+    openBuffer( self, str, length )
 end
 
 --- [SHARED AND MENU]
@@ -592,7 +894,8 @@ local function writeInteger( writer, value, bit_count, is_little_endian, stack_l
     end
 
     local position = writer.position
-    local bytes = reserve( writer, position + bit_count )
+    local bytes = reserve( writer, position, position + bit_count )
+    local offset = position - writer.base
 
     if bit_count > 32 then
         -- split into 32-bit halves, `%` keeps the low half non-negative for negative values
@@ -600,16 +903,16 @@ local function writeInteger( writer, value, bit_count, is_little_endian, stack_l
         local high = (value - low) / 0x100000000
 
         if is_little_endian then
-            writeBits( bytes, position, low, 32 )
-            writeBits( bytes, position + 32, high, bit_count - 32 )
+            writeBits( bytes, offset, low, 32 )
+            writeBits( bytes, offset + 32, high, bit_count - 32 )
         else
-            writeBitsBE( bytes, position, high, bit_count - 32 )
-            writeBitsBE( bytes, position + (bit_count - 32), low, 32 )
+            writeBitsBE( bytes, offset, high, bit_count - 32 )
+            writeBitsBE( bytes, offset + (bit_count - 32), low, 32 )
         end
     elseif is_little_endian then
-        writeBits( bytes, position, value, bit_count )
+        writeBits( bytes, offset, value, bit_count )
     else
-        writeBitsBE( bytes, position, value, bit_count )
+        writeBitsBE( bytes, offset, value, bit_count )
     end
 
     moveTo( writer, position + bit_count )
@@ -622,9 +925,9 @@ end
 ---@param value 0 | 1 | boolean The bit.
 function BinaryWriter:writeBit( value )
     local position = self.position
-    local bytes = reserve( self, position + 1 )
+    local bytes = reserve( self, position, position + 1 )
 
-    local index = rbit_rshift( position, 3 ) + 1
+    local index = rbit_rshift( position - self.base, 3 ) + 1
     local bit_offset = rbit_band( position, 7 )
 
     -- branchless, random bits would side exit on every other call
@@ -649,9 +952,9 @@ end
 ---@param value boolean The boolean.
 function BinaryWriter:writeBoolean( value )
     local position = self.position
-    local bytes = reserve( self, position + 1 )
+    local bytes = reserve( self, position, position + 1 )
 
-    local index = rbit_rshift( position, 3 ) + 1
+    local index = rbit_rshift( position - self.base, 3 ) + 1
     local bit_offset = rbit_band( position, 7 )
 
     bytes[ index ] = rbit_bor( rbit_band( bytes[ index ] or 0, rbit_bnot( rbit_lshift( 1, bit_offset ) ) ), rbit_lshift( value == true and 1 or 0, bit_offset ) )
@@ -778,10 +1081,18 @@ local function writeString( writer, data, data_length )
     end
 
     local position = writer.position
-    local bytes = reserve( writer, position + data_length * 8 )
+
+    -- appending at the end: the backend copies the whole string at once
+    if position == writer.data_length and rbit_band( position, 7 ) == 0 and appendString( writer, data, data_length ) then
+        moveTo( writer, position + data_length * 8 )
+        return
+    end
+
+    local bytes = reserve( writer, position, position + data_length * 8 )
+    local offset = position - writer.base
 
     if rbit_band( position, 7 ) == 0 then
-        local byte_index = rbit_rshift( position, 3 )
+        local byte_index = rbit_rshift( offset, 3 )
 
         for index = 1, data_length - 3, 4 do
             bytes[ byte_index + 1 ], bytes[ byte_index + 2 ], bytes[ byte_index + 3 ], bytes[ byte_index + 4 ] = string_byte( data, index, index + 3 )
@@ -793,7 +1104,7 @@ local function writeString( writer, data, data_length )
             bytes[ byte_index ] = string_byte( data, index, index )
         end
     else
-        local byte_index = rbit_rshift( position, 3 ) + 1
+        local byte_index = rbit_rshift( offset, 3 ) + 1
         local bit_offset = rbit_band( position, 7 )
         local inverse_offset = 8 - bit_offset
 
@@ -822,7 +1133,7 @@ end
 ---@param data string The bytes.
 ---@return integer byte_count The number of bytes written.
 function BinaryWriter:write( data )
-    local data_length = string_len( data )
+    local data_length = #data
     writeString( self, data, data_length )
     return data_length
 end
@@ -840,18 +1151,19 @@ function BinaryWriter:writeBytes( ... )
     end
 
     local position = self.position
-    local bytes = reserve( self, position + byte_count * 8 )
+    local bytes = reserve( self, position, position + byte_count * 8 )
+    local offset = position - self.base
 
     -- `select` instead of `{ ... }`, the table never lets the caller's trace settle
     if rbit_band( position, 7 ) == 0 then
-        local byte_index = rbit_rshift( position, 3 )
+        local byte_index = rbit_rshift( offset, 3 )
 
         for index = 1, byte_count, 1 do
             bytes[ byte_index + index ] = rbit_band( (select( index, ... )), 0xFF )
         end
     else
         for index = 1, byte_count, 1 do
-            writeByte( bytes, position + (index - 1) * 8, (select( index, ... )) )
+            writeByte( bytes, offset + (index - 1) * 8, (select( index, ... )) )
         end
     end
 
@@ -866,7 +1178,7 @@ end
 ---@param data string The string.
 ---@param byte_count integer The size of the string in bytes.
 function BinaryWriter:writeFixedString( data, byte_count )
-    local data_length = string_len( data )
+    local data_length = #data
 
     if data_length > byte_count then
         writeString( self, string_sub( data, 1, byte_count ), byte_count )
@@ -888,7 +1200,7 @@ local function writeTerminated( writer, data, terminator, stack_level )
         error( "data contains the terminator byte " .. terminator, stack_level + 1 )
     end
 
-    writeString( writer, data .. terminator_char, string_len( data ) + 1 )
+    writeString( writer, data .. terminator_char, #data + 1 )
 end
 
 --- [SHARED AND MENU]
@@ -940,7 +1252,7 @@ end
 ---@param is_little_endian boolean? `true` to write the length as little endian, `false` by default.
 ---@return integer byte_count The size of the string in bytes.
 function BinaryWriter:writeCountedString( data, bit_count, is_little_endian )
-    local data_length = string_len( data )
+    local data_length = #data
 
     if bit_count < 53 and data_length >= (2 ^ bit_count) then
         error( "data is too long for the " .. bit_count .. "-bit length: " .. data_length .. " bytes", 2 )
@@ -1010,16 +1322,17 @@ end
 ---@param uint8_4 integer
 local function write4( writer, uint8_1, uint8_2, uint8_3, uint8_4 )
     local position = writer.position
-    local bytes = reserve( writer, position + 32 )
+    local bytes = reserve( writer, position, position + 32 )
+    local offset = position - writer.base
 
     if rbit_band( position, 7 ) == 0 then
-        local index = rbit_rshift( position, 3 )
+        local index = rbit_rshift( offset, 3 )
         bytes[ index + 1 ], bytes[ index + 2 ], bytes[ index + 3 ], bytes[ index + 4 ] = uint8_1, uint8_2, uint8_3, uint8_4
     else
-        writeByte( bytes, position, uint8_1 )
-        writeByte( bytes, position + 8, uint8_2 )
-        writeByte( bytes, position + 16, uint8_3 )
-        writeByte( bytes, position + 24, uint8_4 )
+        writeByte( bytes, offset, uint8_1 )
+        writeByte( bytes, offset + 8, uint8_2 )
+        writeByte( bytes, offset + 16, uint8_3 )
+        writeByte( bytes, offset + 24, uint8_4 )
     end
 
     moveTo( writer, position + 32 )
@@ -1036,21 +1349,22 @@ end
 ---@param uint8_8 integer
 local function write8( writer, uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8 )
     local position = writer.position
-    local bytes = reserve( writer, position + 64 )
+    local bytes = reserve( writer, position, position + 64 )
+    local offset = position - writer.base
 
     if rbit_band( position, 7 ) == 0 then
-        local index = rbit_rshift( position, 3 )
+        local index = rbit_rshift( offset, 3 )
         bytes[ index + 1 ], bytes[ index + 2 ], bytes[ index + 3 ], bytes[ index + 4 ] = uint8_1, uint8_2, uint8_3, uint8_4
         bytes[ index + 5 ], bytes[ index + 6 ], bytes[ index + 7 ], bytes[ index + 8 ] = uint8_5, uint8_6, uint8_7, uint8_8
     else
-        writeByte( bytes, position, uint8_1 )
-        writeByte( bytes, position + 8, uint8_2 )
-        writeByte( bytes, position + 16, uint8_3 )
-        writeByte( bytes, position + 24, uint8_4 )
-        writeByte( bytes, position + 32, uint8_5 )
-        writeByte( bytes, position + 40, uint8_6 )
-        writeByte( bytes, position + 48, uint8_7 )
-        writeByte( bytes, position + 56, uint8_8 )
+        writeByte( bytes, offset, uint8_1 )
+        writeByte( bytes, offset + 8, uint8_2 )
+        writeByte( bytes, offset + 16, uint8_3 )
+        writeByte( bytes, offset + 24, uint8_4 )
+        writeByte( bytes, offset + 32, uint8_5 )
+        writeByte( bytes, offset + 40, uint8_6 )
+        writeByte( bytes, offset + 48, uint8_7 )
+        writeByte( bytes, offset + 56, uint8_8 )
     end
 
     moveTo( writer, position + 64 )

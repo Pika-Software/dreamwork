@@ -3,7 +3,7 @@
 
 --- A JSON primitive: string, number, boolean or `null`.
 ---
----@alias dreamwork.std.json.Primitive string | number | boolean | dreamwork.std.null
+---@alias dreamwork.std.json.Primitive string | number | boolean | dreamwork.std.null | nil
 
 --- A JSON array, a sequence of JSON values.
 ---

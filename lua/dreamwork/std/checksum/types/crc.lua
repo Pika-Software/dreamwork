@@ -741,7 +741,8 @@ CRC32Class.USB = nil
 function CRC32Class.digest( raw_str, poly, init, ref_in, ref_out, xor_out )
     poly, init, ref_in, ref_out, xor_out = crc32_parameters( poly, init, ref_in, ref_out, xor_out )
 
-    if util_CRC ~= nil and poly == 0x04C11DB7 and init == 0xFFFFFFFF and ref_in and ref_out and xor_out == 0xFFFFFFFF then
+    -- `util.CRC` only wins on short strings: 1.54 ns/byte against 0.83 for the slicing-by-8 below (server, 4 KiB - 45 MiB)
+    if util_CRC ~= nil and #raw_str < 128 and poly == 0x04C11DB7 and init == 0xFFFFFFFF and ref_in and ref_out and xor_out == 0xFFFFFFFF then
         return raw_tonumber( util_CRC( raw_str ) or 0, 10 ) or 0
     end
 
