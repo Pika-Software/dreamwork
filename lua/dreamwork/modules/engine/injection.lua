@@ -50,9 +50,25 @@ do
     ---@class garrysmod.hook
     local glua_hook = engine_requireLibrary( "hook" )
 
+    --- Events the engine fires through `hook.Run` instead of `hook.Call`.
+    ---
+    ---@type table<string, boolean>
+    local run_events = {
+        OnLuaError = true,
+        OnClientLuaError = true
+    }
+
     detour.simple( function( event_name, _, ... )
-        return hook_call( event_name, ... )
+        if run_events[ event_name ] == nil then
+            return hook_call( event_name, ... )
+        end
     end, glua_hook, "Call" )
+
+    detour.simple( function( event_name, ... )
+        if run_events[ event_name ] ~= nil then
+            return hook_call( event_name, ... )
+        end
+    end, glua_hook, "Run" )
 
 end
 

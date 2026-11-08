@@ -203,8 +203,14 @@ end
 local encode
 do
 
+    --- The maximal amount of cached sequences, the cache is emptied when it is full.
+    local CACHE_LIMIT = 4096
+
     ---@type table<integer, string>
     local cache = {}
+
+    ---@type integer
+    local cache_size = 0
 
     local replacement_sequence = "\xEF\xBF\xBD"
 
@@ -248,7 +254,13 @@ do
             )
         end
 
+        if cache_size == CACHE_LIMIT then
+            cache, cache_size = {}, 0
+        end
+
+        cache_size = cache_size + 1
         cache[ utf8_codepoint ] = utf8_sequence
+
         return utf8_sequence
     end
 

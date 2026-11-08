@@ -997,7 +997,7 @@ if LUA_SERVER then
     console_commandRegister( ack_command, description, 16 --[[ FCVAR_HIDDEN ]] )
 end
 
-engine_hook.catch( "dreamwork.console.command.execute", "dreamwork.std.Message", function( sender, name, args )
+engine_hook.catch( "dreamwork.console.command.execute", "net.message.class", function( sender, name, args )
     local message = commands[ name ]
     if message == nil then
         if LUA_SERVER and name == ack_command and sender ~= nil then
@@ -1030,7 +1030,7 @@ end, -1000 )
 ---@type ( garrysmod.Player | dreamwork.std.Message.Realm )[]
 local pump_keys = {}
 
-engine_hook.catch( "Think", "dreamwork.std.Message", function()
+engine_hook.catch( "Think", "net.message.class", function()
     for key in raw_pairs( spent ) do
         spent[ key ] = nil
     end

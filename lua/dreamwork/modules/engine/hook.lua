@@ -208,8 +208,6 @@ local event_handlers = {
 
     -- dreamwork
 
-    --- Handlers may return the number of changed games and addons, the totals are summed.
-    ---
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@return integer total_game_changes
     ---@return integer total_addon_changes
@@ -235,12 +233,10 @@ local event_handlers = {
     end,
 }
 
---- Handlers may return a replacement error value, which is then passed to the next handlers.
----
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param error_value dreamwork.std.Error | any The error value.
----@return dreamwork.std.Error | any error_value The final error value.
-event_handlers[ "dreamwork.lua.error" ] = function( handlers, error_value )
+---@param error_value dreamwork.std.Error | any
+---@return dreamwork.std.Error | any error_value
+event_handlers[ "dreamwork.error.report" ] = function( handlers, error_value )
     for i = 1, handlers[ 0 ], 1 do
         local new_value = handlers[ i ]( error_value )
         if new_value ~= nil then
@@ -251,11 +247,35 @@ event_handlers[ "dreamwork.lua.error" ] = function( handlers, error_value )
     return error_value
 end
 
+---@param handlers dreamwork.engine.hook.Handler[]
+---@param error_message string
+---@param realm string
+---@param stack table
+---@param source string | nil
+---@param client garrysmod.Player | nil
+event_handlers[ "dreamwork.error.occurred" ] = function( handlers, error_message, realm, stack, source, client )
+    for i = 1, handlers[ 0 ], 1 do
+        handlers[ i ]( error_message, realm, stack, source, client )
+    end
+end
+
+---@param handlers dreamwork.engine.hook.Handler[]
+---@param err string
+---@param realm string
+---@param stack table
+---@param addon_name string | nil
+---@param addon_id string | nil
+event_handlers[ "OnLuaError" ] = function( handlers, err, realm, stack, addon_name, addon_id )
+    for i = 1, handlers[ 0 ], 1 do
+        handlers[ i ]( err, realm, stack, addon_name, addon_id )
+    end
+end
+
 do
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param info dreamwork.engine.mounts.GameInfo | dreamwork.engine.mounts.AddonInfo The game or addon that was (un)mounted.
-    ---@param is_mounted boolean `true` if the content was mounted, `false` if unmounted.
+    ---@param info dreamwork.engine.mounts.GameInfo | dreamwork.engine.mounts.AddonInfo
+    ---@param is_mounted boolean
     local function handler_mount( handlers, info, is_mounted )
         for i = 1, handlers[ 0 ], 1 do
             handlers[ i ]( info, is_mounted )
@@ -270,8 +290,8 @@ end
 do
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param vfs_path string The path of the affected VFS node.
-    ---@param is_directory boolean `true` if the node is a directory.
+    ---@param vfs_path string
+    ---@param is_directory boolean
     local function handler_vfs( handlers, vfs_path, is_directory )
         for i = 1, handlers[ 0 ], 1 do
             handlers[ i ]( vfs_path, is_directory )
@@ -285,23 +305,21 @@ do
 end
 
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param mount_path string The VFS path the directory is mounted at.
----@param search_path string The engine search path of the directory.
----@param is_mounted boolean `true` if the directory was mounted, `false` if unmounted.
+---@param mount_path string
+---@param search_path string
+---@param is_mounted boolean
 event_handlers[ "dreamwork.vfs.directory.mount" ] = function( handlers, mount_path, search_path, is_mounted )
     for i = 1, handlers[ 0 ], 1 do
         handlers[ i ]( mount_path, search_path, is_mounted )
     end
 end
 
---- The first handler that returns a non-`nil` value stops the chain.
----
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param pl garrysmod.Player | nil The player who executed the command, `nil` for the server console.
----@param command string The name of the executed command.
----@param args string[] The parsed arguments.
----@param argument_string string The raw argument string.
----@return boolean is_command_found `true` if a handler took care of the command.
+---@param pl garrysmod.Player | nil
+---@param command string
+---@param args string[]
+---@param argument_string string
+---@return boolean is_command_found
 event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, pl, command, args, argument_string )
     for i = 1, handlers[ 0 ], 1 do
         local is_command_found = handlers[ i ]( pl, command, args, argument_string )
@@ -313,13 +331,11 @@ event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, pl, 
     return false
 end
 
---- The first handler that returns a non-`nil` value stops the chain.
----
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param name string The name of the command being completed.
----@param argument_string string The raw argument string.
----@param args string[] The parsed arguments.
----@return string[] | nil suggestions The autocomplete suggestions, `nil` if no handler provided any.
+---@param name string
+---@param argument_string string
+---@param args string[]
+---@return string[] | nil suggestions
 event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers, name, argument_string, args )
     for i = 1, handlers[ 0 ], 1 do
         local suggestions = handlers[ i ]( name, argument_string, args )
@@ -332,28 +348,21 @@ event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers,
 end
 
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param name string The name of the changed console variable.
----@param old_value string The previous value.
----@param new_value string The new value.
+---@param name string
+---@param old_value string
+---@param new_value string
 event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name, old_value, new_value )
     for i = 1, handlers[ 0 ], 1 do
         handlers[ i ]( name, old_value, new_value )
     end
 end
 
---- Called for every incoming message before it is routed to a receiver.
----
---- The first handler that returns a non-`nil` value stops the chain:
---- * `true` - the handler has read the whole message, routing is skipped.
---- * `false` - the message is dropped without being read.
---- * `nil` - the message is passed on, the handler must not read from it.
----
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param network_id integer The ID of the network.
----@param unreliable boolean `true` if the message was sent unreliably.
----@param remaining_bits integer The number of bits left after the header.
----@param sender garrysmod.Player | nil The player who sent the message, `nil` on the client.
----@return boolean | nil verdict `true` if consumed, `false` if dropped, `nil` to route the message.
+---@param network_id integer
+---@param unreliable boolean
+---@param remaining_bits integer
+---@param sender garrysmod.Player | nil
+---@return boolean | nil verdict
 event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, network_id, unreliable, remaining_bits, sender )
     for i = 1, handlers[ 0 ], 1 do
         local verdict = handlers[ i ]( network_id, unreliable, remaining_bits, sender )
@@ -365,18 +374,14 @@ event_handlers[ "dreamwork.network.message.incoming" ] = function( handlers, net
     return nil
 end
 
---- Called when an incoming message cannot be routed.
----
---- The first handler that returns `true` marks the message as handled and suppresses the default kick (server) or warning (client).
----
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param network_id integer The ID of the network.
----@param network_name string | nil The name of the network, `nil` if the ID is not registered.
----@param reason "unknown" | "unexpected" `"unknown"` if the ID is not registered, `"unexpected"` if the network has no receiver.
----@param unreliable boolean `true` if the message was sent unreliably.
----@param remaining_bits integer The number of bits left after the header.
----@param sender garrysmod.Player | nil The player who sent the message, `nil` on the client.
----@return boolean is_handled `true` if a handler took care of the message.
+---@param network_id integer
+---@param network_name string | nil
+---@param reason "unknown" | "unexpected"
+---@param unreliable boolean
+---@param remaining_bits integer
+---@param sender garrysmod.Player | nil
+---@return boolean is_handled
 event_handlers[ "dreamwork.network.message.unhandled" ] = function( handlers, network_id, network_name, reason, unreliable, remaining_bits, sender )
     for i = 1, handlers[ 0 ], 1 do
         if handlers[ i ]( network_id, network_name, reason, unreliable, remaining_bits, sender ) == true then
@@ -390,6 +395,17 @@ end
 if LUA_SERVER then
     event_handlers[ "hltv_rank_camera" ] = handler_gameevent
     event_handlers[ "hltv_rank_entity" ] = handler_gameevent
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param err string
+    ---@param ply garrysmod.Player
+    ---@param stack table
+    ---@param addon_name string
+    event_handlers[ "OnClientLuaError" ] = function( handlers, err, ply, stack, addon_name )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( err, ply, stack, addon_name )
+        end
+    end
 end
 
 if LUA_MENU then
@@ -430,10 +446,8 @@ if LUA_CLIENT then
     event_handlers[ "PreDrawEffects" ] = handler_empty
     event_handlers[ "DrawMonitors" ] = handler_empty
 
-    --- If a handler returns `true`, the remaining handlers are still called, and `true` is returned.
-    ---
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@return boolean | nil should_suppress `true` if any handler requested to suppress the rendering.
+    ---@return boolean | nil should_suppress
     event_handlers[ "PreRender" ] = function( handlers )
         for i = 1, handlers[ 0 ], 1 do
             if handlers[ i ]() then
@@ -463,10 +477,10 @@ if LUA_CLIENT or LUA_MENU then
     event_handlers[ "DrawOverlay" ] = handler_empty
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param old_width integer The previous screen width in pixels.
-    ---@param old_height integer The previous screen height in pixels.
-    ---@param new_width integer The new screen width in pixels.
-    ---@param new_height integer The new screen height in pixels.
+    ---@param old_width integer
+    ---@param old_height integer
+    ---@param new_width integer
+    ---@param new_height integer
     event_handlers[ "OnScreenSizeChanged" ] = function( handlers, old_width, old_height, new_width, new_height )
         for i = 1, handlers[ 0 ], 1 do
             handlers[ i ]( old_width, old_height, new_width, new_height )
@@ -495,10 +509,8 @@ if LUA_CLIENT or LUA_SERVER then
     event_handlers[ "OnReloaded" ]         = handler_empty
     event_handlers[ "Initialize" ]         = handler_empty
 
-    --- The first handler that returns a non-`nil` name stops the chain.
-    ---
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@return string | nil name The game description, `nil` if no handler provided one.
+    ---@return string | nil name
     event_handlers[ "GetGameDescription" ] = function( handlers )
         for i = 1, handlers[ 0 ], 1 do
             local name = handlers[ i ]()
@@ -517,8 +529,8 @@ if LUA_CLIENT or LUA_SERVER then
     event_handlers[ "PreCleanupMap" ]             = handler_empty
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity The removed entity.
-    ---@param is_full_update boolean `true` if the entity was removed because of a full update.
+    ---@param entity garrysmod.Entity
+    ---@param is_full_update boolean
     event_handlers[ "EntityRemoved" ]             = function( handlers, entity, is_full_update )
         is_full_update = is_full_update == true
 
@@ -528,8 +540,8 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity The spawned entity.
-    ---@param is_player boolean `true` if the entity is a player.
+    ---@param entity garrysmod.Entity
+    ---@param is_player boolean
     event_handlers[ "dreamwork.entity.spawn" ]    = function( handlers, entity, is_player )
         if not is_player and debug_getmetatable( entity ) == engine_Player then
             is_player = true
@@ -541,8 +553,8 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity The destroyed entity.
-    ---@param is_player boolean `true` if the entity is a player.
+    ---@param entity garrysmod.Entity
+    ---@param is_player boolean
     event_handlers[ "dreamwork.entity.destroy" ]  = function( handlers, entity, is_player )
         if not is_player and debug_getmetatable( entity ) == engine_Player then
             is_player = true
@@ -554,7 +566,7 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity The garbage collected entity.
+    ---@param entity garrysmod.Entity
     event_handlers[ "dreamwork.entity.gc" ]       = function( handlers, entity )
         local is_player = debug_getmetatable( entity ) == engine_Player
 
@@ -564,8 +576,8 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entities garrysmod.Entity[] The entity registry.
-    ---@param entity_count integer The number of entities in the registry.
+    ---@param entities garrysmod.Entity[]
+    ---@param entity_count integer
     event_handlers[ "dreamwork.entity.registry" ] = function( handlers, entities, entity_count )
         for i = 1, handlers[ 0 ], 1 do
             handlers[ i ]( entities, entity_count )
@@ -586,12 +598,10 @@ if LUA_CLIENT or LUA_SERVER then
 
     -- gamemode
 
-    --- The first handler that returns a non-`nil` table replaces the gamemode table.
-    ---
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param name string The name of the selected gamemode.
-    ---@param tbl table The gamemode table.
-    ---@return table gamemode The replacement table, or `tbl` if no handler provided one.
+    ---@param name string
+    ---@param tbl table
+    ---@return table gamemode
     event_handlers[ "dreamwork.gamemode.select" ] = function( handlers, name, tbl )
         for i = 1, handlers[ 0 ], 1 do
             local result = handlers[ i ]( name, tbl )

@@ -470,7 +470,7 @@ do
     ---@type table<string, string>
     local values = {}
 
-    hook_catch( "server_cvar", "dreamwork.console.variable.change", function( data )
+    hook_catch( "server_cvar", "modules.engine.console.variable", function( data )
         local name, new_value = data.cvarname, data.cvarvalue
         local old_value = values[ name ]
 

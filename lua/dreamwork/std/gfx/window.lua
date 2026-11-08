@@ -33,7 +33,7 @@ if window.SizeChanged == nil then
     local SizeChanged = std.Event( "window.SizeChanged" )
     window.SizeChanged = SizeChanged
 
-    dreamwork.engine.hook.catch( "OnScreenSizeChanged", "screen.size.change", function( old_width, old_height, new_width, new_height )
+    dreamwork.engine.hook.catch( "OnScreenSizeChanged", "gfx.window.resolution", function( old_width, old_height, new_width, new_height )
         width, height = new_width, new_height
         window.width, window.height = new_width, new_height
         SizeChanged( new_width, new_height, old_width, old_height )
@@ -46,12 +46,12 @@ if system_HasFocus ~= nil then
     local has_focus = system_HasFocus()
     window.focus = has_focus
 
-    dreamwork.TickTimer[ 0.25 ]:attach( function()
+    dreamwork_engine.timer.create( "std.window.focus", 0.25, 0, function()
         if has_focus ~= system_HasFocus() then
             has_focus = not has_focus
             window.focus = has_focus
         end
-    end )
+    end, true )
 
 end
 

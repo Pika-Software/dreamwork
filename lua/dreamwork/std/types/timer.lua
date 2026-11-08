@@ -1,3 +1,5 @@
+---@class dreamwork
+local dreamwork = dreamwork
 local dreamwork_exceptions = dreamwork.exceptions
 
 local dreamwork_engine = dreamwork.engine
@@ -332,4 +334,5 @@ end
 ---@class dreamwork.std.TimerClass : dreamwork.std.Timer, dreamwork.std.Class
 ---@field __base dreamwork.std.Timer
 ---@overload fun( interval: ( number | nil ), repetitions_total: ( integer | nil ), name: ( string | nil ) ): dreamwork.std.Timer
-std.Timer = class.create( Timer )
+local TimerClass = class.create( Timer )
+std.Timer = TimerClass

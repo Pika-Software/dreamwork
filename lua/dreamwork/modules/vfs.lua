@@ -2360,7 +2360,7 @@ do
         end
     end
 
-    hook_catch( "Tick", "dreamwork.vfs.watchdog", function()
+    hook_catch( "Tick", "modules.vfs.watchdog", function()
         if watch_count == 0 then return end
 
         -- the scanned directory could be unwatched by an event handler
@@ -4013,8 +4013,8 @@ do
         end
     end
 
-    hook_catch( "dreamwork.game.mount", "dreamwork.vfs", game_mount, 2 )
-    hook_catch( "dreamwork.addon.mount", "dreamwork.vfs", addon_mount, 2 )
+    hook_catch( "dreamwork.game.mount", "modules.vfs.mount", game_mount, 2 )
+    hook_catch( "dreamwork.addon.mount", "modules.vfs.mount", addon_mount, 2 )
 
     local game_list = engine_mounts.GameList
     for index = 1, engine_mounts.GameCount or 0, 1 do

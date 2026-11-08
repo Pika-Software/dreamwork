@@ -325,7 +325,7 @@ function ViewportLayoutClass.parse( descriptor )
     return pixels
 end
 
-engine_hook.catch( "OnScreenSizeChanged", "dreamwork.ViewportLayout::Update", function( old_width, old_height, new_width, new_height )
+engine_hook.catch( "OnScreenSizeChanged", "viewport.resolution", function( old_width, old_height, new_width, new_height )
     for descriptor in raw_pairs( pixel_cache ) do
         pixel_cache[ descriptor ] = descriptor_to_pixels( descriptor )
     end

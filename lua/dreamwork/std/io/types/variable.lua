@@ -813,7 +813,7 @@ end
 ---@param str_name string
 ---@param str_old string
 ---@param str_new string
-engine_hook.catch( "dreamwork.console.variable.change", "variable.change", function( str_name, str_old, str_new )
+engine_hook.catch( "dreamwork.console.variable.change", "console.variable.change", function( str_name, str_old, str_new )
     local variable = variables[ str_name ]
     if variable == nil then return end
 

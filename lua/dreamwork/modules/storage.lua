@@ -824,7 +824,7 @@ function storage.init()
     end
 
     -- truncate WAL journal on shutdown
-    engine_hook.catch( "ShutDown", "dreamwork.sqlite", function()
+    engine_hook.catch( "ShutDown", "modules.sqlite.wal.truncate", function()
         local success, error_message = pcall( sqlite_rawQuery, "pragma wal_checkpoint(TRUNCATE)" )
         if not success then
             dreamwork_Logger:error( "Failed to truncate the SQLite WAL journal on shutdown: %s", error_message )

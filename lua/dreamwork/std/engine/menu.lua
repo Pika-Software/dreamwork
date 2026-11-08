@@ -44,13 +44,13 @@ else
         local visible = gui_IsGameUIVisible()
         menu.visible = visible
 
-        dreamwork.TickTimer[ 0.1 ]:attach( function()
+        dreamwork_engine.timer.create( "std.menu.visibility", 0.1, 0, function()
             if visible ~= gui_IsGameUIVisible() then
                 visible = not visible
                 menu.visible = visible
                 Visibility:call( visible )
             end
-        end )
+        end, true )
 
     end
 

@@ -115,7 +115,7 @@ do
     local Entity_EntIndex = engine_Entity.EntIndex
 
     -- the lowest priority, so other handlers still can read the data of the removed entity
-    engine_hook.catch( "EntityRemoved", "gc.setup", function( entity, is_full_update )
+    engine_hook.catch( "EntityRemoved", "gc.ext.cleanup", function( entity, is_full_update )
         -- the client may recreate the same entity object after a full update
         if is_full_update then return end
 

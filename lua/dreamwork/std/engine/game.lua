@@ -52,7 +52,7 @@ do
 
     -- TODO: attempt to implement manual tick counter, to stop calling engine fn
 
-    engine_hook.catch( "Tick", "dreamwork.tick_counter", function()
+    engine_hook.catch( "Tick", "engine.ticks", function()
         local ticks_elapsed = engine_TickCount()
         if ticks_elapsed ~= tick_id then
             tick_id = ticks_elapsed
@@ -149,7 +149,7 @@ if game.OnTick == nil then
     --- An event that is called every tick.
     ---
     local OnTick = Event( "game.OnTick" )
-    engine_hook.catch( "Tick", "game.OnTick", OnTick )
+    engine_hook.catch( "Tick", "std.engine.event", OnTick )
     game.OnTick = OnTick
 
 end
@@ -161,7 +161,7 @@ if game.OnShutDown == nil then
     --- An event that is called when the game is shutting down.
     ---
     local OnShutDown = Event( "game.OnShutDown" )
-    engine_hook.catch( "ShutDown", "game.OnShutDown", OnShutDown, 2 )
+    engine_hook.catch( "ShutDown", "std.engine.event", OnShutDown, 2 )
     game.OnShutDown = OnShutDown
 
 end

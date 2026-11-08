@@ -148,7 +148,7 @@ if server.getGamemodeName == nil then
             end
         end
 
-        engine_hook.catch( "dreamwork.gamemode.select", "gamemode.translator", function( name )
+        engine_hook.catch( "dreamwork.gamemode.select", "server.gamemode.translator", function( name )
             if gamemode_value == nil then
                 return nil
             else
@@ -193,7 +193,7 @@ if std.LUA_CLIENT and server.Tick == nil then
     --- Called once every processed server frame during lag.
     ---
     local Tick = Event( "server.Tick" )
-    engine_hook.catch( "Think", "server.Tick", Tick )
+    engine_hook.catch( "Think", "std.server.event", Tick )
     server.Tick = Tick
 
 end
@@ -224,7 +224,7 @@ if std.LUA_MENU then
     --- Called when the server details are received from the server.
     ---
     local server_Details = Event( "server.Details" )
-    engine_hook.catch( "dreamwork.server.details", "server.Details", server_Details )
+    engine_hook.catch( "dreamwork.server.details", "server.details", server_Details )
     server.Details = server_Details
 
 end

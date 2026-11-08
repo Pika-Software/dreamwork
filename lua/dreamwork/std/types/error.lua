@@ -525,7 +525,7 @@ do
 
     exceptions_hide( display_error )
 
-    engine_hook.catch( "dreamwork.lua.error", "console.display", function( error_value )
+    engine_hook.catch( "dreamwork.error.report", "error.display.console", function( error_value )
         -- this runs inside error handlers, where a second error would replace the original one,
         -- so the conversion is protected as well, not only the display
         local success, display_failure = pcall( display_error, error_value )

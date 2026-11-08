@@ -1463,6 +1463,8 @@ do
         return fn
     end
 
+    -- TODO: check for load/loadstring if no CompileString
+
 end
 
 dreamwork_load( "std/raw.ext.lua" )
@@ -2525,10 +2527,7 @@ do
         ---@param timeout_id integer
         local function timeout_call( timeout_id )
             local fn = timeouts[ timeout_id ]
-            if fn == nil then
-                -- cleared
-                return
-            end
+            if fn == nil then return end -- cleared
 
             local args = timeout_arguments[ timeout_id ]
 
@@ -2646,8 +2645,7 @@ do
             end
 
             local name = string_format( "dreamwork.interval.%d", interval_count )
-            timer.create( name, delay or 1, 0, fn )
-            timer.start( name )
+            timer.create( name, delay or 1, 0, fn, true )
 
             return interval_count
         end
@@ -2678,33 +2676,6 @@ end
 
 -- futures library
 dreamwork_load( "std/futures.lua" )
-
-do
-
-    local futures = std.futures
-    local futures_sleep = futures.sleep
-    local futures_running = futures.running
-
-    --- [SHARED AND MENU]
-    ---
-    --- Puts current thread to sleep for given amount of seconds.
-    ---
-    --- **CAUTION**: This function could pause the main thread.
-    ---
-    ---@see dreamwork.std.futures.sleep
-    ---@param seconds number
-    function std.sleep( seconds )
-        if futures_running() == nil then -- main thread
-            local deadline = dreamwork_getUpTime() + seconds
-            while dreamwork_getUpTime() < deadline do end
-
-            return
-        end
-
-        futures_sleep( seconds ) -- second thread
-    end
-
-end
 
 dreamwork_load( "std/codec/json.lua" )
 dreamwork_load( "std/codec/vdf.lua" )
@@ -2748,72 +2719,6 @@ dreamwork_load( "std/types/hook.lua" )
 dreamwork_load( "std/types/event.lua" )
 dreamwork_load( "std/types/emitter.lua" )
 dreamwork_load( "std/types/timer.lua" )
-
-if dreamwork.TickTimer == nil then
-
-    ---@type table<number, dreamwork.std.Timer>
-    local timers = {}
-
-    setmetatable( timers, {
-        ---@param interval number
-        __index = function( self, interval )
-            local timer = std.Timer( interval, 0, dreamwork.Prefix .. "::TickTimer" .. string.gsub( raw.tostring( interval ), "[^%d]*", "_" ) )
-            self[ interval ] = timer
-            timer:start()
-            return timer
-        end
-    } )
-
-    dreamwork.TickTimer = timers
-
-end
-
-do
-
-    ---@class dreamwork.std
-    ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
-    ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
-    ---@field SYSTEM_BATTERY_LEVEL garrysmod.system.BatteryPower The battery level, from `0` to `100`.
-
-    ---@type garrysmod.system
-    local glua_system         = dreamwork_engine.requireLibrary( "system" )
-    local system_BatteryPower = glua_system.BatteryPower
-
-    std.SYSTEM_COUNTRY        = string.lower( (glua_system.GetCountry or debug_fempty)() or "eu" )
-
-    std.SYSTEM_HAS_BATTERY    = false
-    std.SYSTEM_BATTERY_LEVEL  = 100
-
-    if system_BatteryPower ~= nil then
-
-        ---@type number
-        local previous_value
-
-        dreamwork.TickTimer[ 1.5 ]:attach( function()
-            local value = system_BatteryPower() or 255
-            if previous_value == value then return end
-
-            previous_value = value
-
-            if value == 255 then
-                std.SYSTEM_HAS_BATTERY = false
-                std.SYSTEM_BATTERY_LEVEL = 100
-                return
-            end
-
-            if value == 0 then
-                std.SYSTEM_HAS_BATTERY = true
-                std.SYSTEM_BATTERY_LEVEL = 0
-                return
-            end
-
-            std.SYSTEM_HAS_BATTERY = true
-            std.SYSTEM_BATTERY_LEVEL = math_floor( value / 100 )
-        end )
-
-    end
-
-end
 
 dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
 dreamwork_load( "std/io/console.lua" )
@@ -3006,6 +2911,8 @@ end
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "std/io/fs.lua" )
 
+dreamwork_load( "modules/engine/events.lua" )
+
 do
 
     local HolyLib = HolyLib
@@ -3158,65 +3065,6 @@ do
 
         return loadstring( content, file_path, env )
     end
-
-end
-
----@param game_info dreamwork.engine.mounts.GameInfo
----@param is_mounted boolean
-engine_hook.catch( "dreamwork.game.mount", "logs", function( game_info, is_mounted )
-    logger:debug( "Game '%s' (AppID: %d) was %s.", game_info.folder, game_info.depot, is_mounted and "mounted" or "unmounted" )
-end )
-
----@param addon_info dreamwork.engine.mounts.AddonInfo
----@param is_mounted boolean
-engine_hook.catch( "dreamwork.addon.mount", "logs", function( addon_info, is_mounted )
-    logger:debug( "Addon '%s' (ID: %s) was %s.", addon_info.title, addon_info.folder, is_mounted and "mounted" or "unmounted" )
-end )
-
-do
-
-    local changes_timeout = std.Timer( 0.5, 1, dreamwork.Prefix .. "::ContentWatcher" )
-
-    local function perform_synchronization()
-        logger:debug( "Game content change triggered, synchronization..." )
-        time.tick( "ms", false )
-
-        local game_changes, addon_changes = engine_hook.call( "dreamwork.content.update" )
-
-        if game_changes == 0 and addon_changes == 0 then
-            logger:debug( "No changes found, skipped." )
-        else
-            logger:debug( "Synchronization finished with %d game(s) and %d addon(s) in %d ms.", game_changes, addon_changes, time.tick( "ms", false ) )
-        end
-    end
-
-    changes_timeout:attach( perform_synchronization )
-    perform_synchronization()
-
-    engine_hook.catch( "GameContentChanged", "dreamwork.content.update", function()
-        changes_timeout:start()
-    end, -1000 )
-
-end
-
-logger:info( "%d game(s) and %d add-on(s) mounted to game.", dreamwork_engine.mounts.GameCount, dreamwork_engine.mounts.AddonCount )
-
-std.FRAME_TIME = 1 / 60
-std.FPS = 60
-
-if LUA_CLIENT then
-
-    local last_call = dreamwork_getUpTime()
-
-    engine_hook.catch( "PreRender", "dreamwork.frame_counter", function()
-        local elapsed_time = dreamwork_getUpTime()
-
-        local frame_time = elapsed_time - last_call
-        last_call = elapsed_time
-
-        std.FRAME_TIME = frame_time
-        std.FPS = 1 / frame_time
-    end, 1000 )
 
 end
 

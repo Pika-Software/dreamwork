@@ -7,7 +7,6 @@ local engine_hook = dreamwork_engine.hook
 
 local std = dreamwork.std
 
-
 do
 
     ---@type table<integer, fun()>
@@ -31,7 +30,7 @@ do
         queue[ queue_size ] = fn
     end
 
-    engine_hook.catch( "Tick", "engine.timer.nextTick", function()
+    engine_hook.catch( "Tick", "modules.engine.timer.tick", function()
         local size = queue_size
         if size == 0 then return end
 

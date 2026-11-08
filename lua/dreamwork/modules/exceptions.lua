@@ -45,7 +45,7 @@ if exceptions == nil then
     --- [SHARED AND MENU]
     ---
     --- Core of the error pipeline: call stack capturing, hidden frames, `xpcall` handlers
-    --- and reporting errors to the `dreamwork.lua.error` engine hook.
+    --- and reporting errors to the `dreamwork.error.report` engine hook.
     ---
     --- User-facing functions (`toError`, `try`, `error`, `errorf`, `warn`, `assert`) live in `std`.
     ---
@@ -120,12 +120,12 @@ if exceptions == nil then
 
     --- [SHARED AND MENU]
     ---
-    --- Passes the error to the `dreamwork.lua.error` handlers, which display it.
+    --- Passes the error to the `dreamwork.error.report` handlers, which display it.
     ---
     ---@param error_object dreamwork.std.Error The error to report.
     ---@return any result The value returned by the handlers.
     function exceptions.report( error_object )
-        return hook_call( "dreamwork.lua.error", error_object )
+        return hook_call( "dreamwork.error.report", error_object )
     end
 
     --- [SHARED AND MENU]

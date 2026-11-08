@@ -273,7 +273,7 @@ end
 ---@param name string
 ---@param argument_string string
 ---@param args string[]
-engine_hook.catch( "dreamwork.console.command.execute", "console.handle", function( client, name, args, argument_string )
+engine_hook.catch( "dreamwork.console.command.execute", "console.command.execute", function( client, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
         return nil
@@ -293,7 +293,7 @@ end, -500 )
 ---@param name string
 ---@param argument_string string
 ---@param args string[]
-engine_hook.catch( "dreamwork.console.command.autocomplete", "console.autocomplete", function( name, argument_string, args )
+engine_hook.catch( "dreamwork.console.command.autocomplete", "console.command.autocomplete", function( name, argument_string, args )
     local command = commands[ name ]
     if command == nil then return end
 

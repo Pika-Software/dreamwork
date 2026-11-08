@@ -1963,7 +1963,7 @@ end
 ---@type dreamwork.std.Network.Outgoing[] | dreamwork.std.Network.Incoming[]
 local tick_states = {}
 
-engine_hook.catch( "Tick", "dreamwork.std.Network", function()
+engine_hook.catch( "Tick", "net.network.class", function()
     local now = dreamwork_getUpTime()
 
     -- callbacks can start new transfers, so the sets are not modified while iterating

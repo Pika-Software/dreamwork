@@ -243,9 +243,9 @@ do
 
     local timer_api = systimer or timer
     if timer_api == nil then
-        engine_hook.catch( "Think", "dreamwork.engine.timer", tick )
+        engine_hook.catch( "Think", "modules.engine.timer.think", tick )
     else
-        timer_api.Create( "dreamwork.engine.timer", 0, 0, tick )
+        timer_api.Create( dreamwork.Prefix .. "::Timers", 0, 0, tick )
     end
 
 end
@@ -479,6 +479,9 @@ function engine_timer.setFunction( name, fn )
     return true
 end
 
+---@type fun( name: string ): boolean
+local restart
+
 --- [SHARED AND MENU]
 ---
 --- Creates a stopped timer or stops and reconfigures an existing one.
@@ -489,8 +492,9 @@ end
 ---@param interval number | nil The delay between repetitions in seconds, defaults to `1`.
 ---@param repetitions_total integer | nil The total amount of repetitions, `0` for endless, defaults to `1`.
 ---@param fn fun() | dreamwork.std.Hook | dreamwork.std.Event | nil The function to call, defaults to an empty function.
+---@param start boolean | nil If `true`, the timer starts immediately, defaults to `false`.
 ---@return boolean success Always `true`.
-function engine_timer.create( name, interval, repetitions_total, fn )
+function engine_timer.create( name, interval, repetitions_total, fn, start )
     unschedule( name )
 
     states[ name ] = 0
@@ -514,6 +518,10 @@ function engine_timer.create( name, interval, repetitions_total, fn )
         handlers[ name ] = fn
     elseif handlers[ name ] == nil then
         handlers[ name ] = debug_fempty
+    end
+
+    if start then
+        return restart( name )
     end
 
     return true
@@ -548,7 +556,7 @@ end
 ---
 ---@param name string The name of the timer.
 ---@return boolean success Returns `true` if the timer exists, otherwise `false`.
-local function restart( name )
+function restart( name )
     if states[ name ] == nil then
         return false
     end

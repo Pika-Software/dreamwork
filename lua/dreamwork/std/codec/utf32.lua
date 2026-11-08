@@ -143,11 +143,17 @@ end
 local encode
 do
 
+    --- The maximal amount of cached sequences in both caches, the caches are emptied when they are full.
+    local CACHE_LIMIT = 4096
+
     ---@type table<integer, string>
     local le_cache = {}
 
     ---@type table<integer, string>
     local be_cache = {}
+
+    ---@type integer
+    local cache_size = 0
 
     ---@param utf32_codepoint integer
     ---@param strict boolean If `false`, invalid code points are encoded as U+FFFD.
@@ -180,7 +186,14 @@ do
             utf32_sequence = string_char( uint8_3, uint8_2, uint8_1, 0 )
         end
 
+        if cache_size == CACHE_LIMIT then
+            le_cache, be_cache, cache_size = {}, {}, 0
+            cache = big_endian and be_cache or le_cache
+        end
+
+        cache_size = cache_size + 1
         cache[ utf32_codepoint ] = utf32_sequence
+
         return utf32_sequence
     end
 

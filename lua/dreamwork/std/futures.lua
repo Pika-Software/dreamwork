@@ -1,7 +1,10 @@
+local dreamwork_getUpTime = dreamwork.getUpTime
+
 local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_catchError = dreamwork_exceptions.catch
 local exceptions_errorHandler = dreamwork_exceptions.handler
 local exceptions_isHiddenFrame = dreamwork_exceptions.isHiddenFrame
+
 local exceptions_Stack = dreamwork_exceptions.Stack
 
 ---@class dreamwork.std
@@ -1284,6 +1287,33 @@ function futures.sleep( seconds )
     end
 
     ---@cast co thread
+
+    setTimeout( function()
+        return coroutine_resume( co )
+    end, seconds )
+
+    futures_pending()
+end
+
+--- [SHARED AND MENU]
+---
+--- Puts current thread to sleep for given amount of seconds.
+---
+--- **CAUTION**: This function could pause the main thread.
+---
+---@see dreamwork.std.futures.sleep
+---@param seconds number
+function std.sleep( seconds )
+    local co = coroutine_running()
+    if co == nil then -- main thread
+        local deadline = dreamwork_getUpTime() + seconds
+        while dreamwork_getUpTime() < deadline do end
+
+        return
+    end
+
+    ---@cast co thread
+
     setTimeout( function()
         return coroutine_resume( co )
     end, seconds )

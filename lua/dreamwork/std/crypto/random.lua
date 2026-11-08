@@ -179,7 +179,7 @@ local pending, pending_length = {}, 0
 
 if os_random == nil then
     -- tick timings depend on the frame and network load, which is outside of the attacker's view
-    engine_hook.catch( "Tick", "dreamwork.crypto.random", function()
+    engine_hook.catch( "Tick", "crypto.random.generator", function()
         if pending_length < 256 then
             pending_length = pending_length + 1
             pending[ pending_length ] = clock_sample()

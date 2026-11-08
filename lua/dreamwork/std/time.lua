@@ -428,7 +428,7 @@ do
 
 end
 
-engine_hook.catch( "Tick", "dreamwork.std.time", function()
+engine_hook.catch( "Tick", "time.clock", function()
     -- frequent sampling keeps the sub-second anchor precise
     wall_clock()
 

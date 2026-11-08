@@ -75,13 +75,13 @@ if std.LUA_CLIENT_MENU then
     local visible = gui_IsConsoleVisible()
     console.visible = visible
 
-    dreamwork.TickTimer[ 0.25 ]:attach( function()
+    dreamwork_engine.timer.create( "std.console.visibility", 0.25, 0, function()
         if visible ~= gui_IsConsoleVisible() then
             visible = not visible
             console.visible = visible
             Visibility:call( visible )
         end
-    end )
+    end, true )
 
 end
 

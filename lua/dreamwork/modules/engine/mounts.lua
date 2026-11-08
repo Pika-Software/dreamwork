@@ -119,7 +119,7 @@ local function get_addon_id( addon_file )
     return laid
 end
 
-engine_hook.catch( "dreamwork.content.update", "dreamwork.content.mount", function()
+engine_hook.catch( "dreamwork.content.update", "modules.engine.mounts.update", function()
     local stamp = update_stamp + 1
     update_stamp = stamp
 
