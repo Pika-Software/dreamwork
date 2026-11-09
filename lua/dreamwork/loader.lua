@@ -1866,8 +1866,8 @@ dreamwork_load( "modules/engine/utils.lua" )
 
 dreamwork_load( "std/codec/pack.lua" )
 
-dreamwork_load( "std/types/binary_reader.lua" )
-dreamwork_load( "std/types/binary_writer.lua" )
+dreamwork_load( "std/codec/types/binary_reader.lua" )
+dreamwork_load( "std/codec/types/binary_writer.lua" )
 
 do
 
