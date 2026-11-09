@@ -363,6 +363,18 @@ end
 
 do
 
+    ---@return string
+    local function roll_prefix()
+        return string_format( "%08x-%04x-%04x-%04x-%04x",
+            time_now(),
+            math_random( 0, 0xFFFF ),
+            0x8000 + math_random( 0, 0x0FFF ),
+            0x8000 + math_random( 0, 0x3FFF ),
+            math_random( 0, 0xFFFF )
+        )
+    end
+
+    local prefix = roll_prefix()
     local counter = -1
 
     --- [SHARED AND MENU]
@@ -380,27 +392,38 @@ do
     ---
     --- Use it for cache file names, temporary keys and similar, prefer `uuid.v7` for record identifiers.
     ---
+    --- When `is_unique` is given, identifiers are generated until it returns `true`,
+    --- e.g. to skip names already taken by files from previous sessions.
+    --- A callback that never returns `true` loops forever.
+    ---
     --- ```lua
     --- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000000"
     --- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000001"
+    ---
+    --- uuid.unique( function( uuid_str )
+    ---     return not File.exists( "cache/" .. uuid_str .. ".dat", "DATA" )
+    --- end )
     --- ```
     ---
+    ---@param is_unique ( fun( uuid_str: string ): boolean )? Optional check, called with each candidate until it returns `true`.
     ---@return string uuid_str A UUID v8 string.
     ---@nodiscard
-    function uuid.unique()
+    function uuid.unique( is_unique )
+        ::generate_uuid::
+
         counter = counter + 1
 
         if counter > 0xFFFFFFFF then
-            counter = 0
+            prefix, counter = roll_prefix(), 0
         end
 
-        return string_format( "%08x-%04x-%04x-%04x-%04x",
-            time_now(),
-            math_random( 0, 0xFFFF ),
-            0x8000 + math_random( 0, 0x0FFF ),
-            0x8000 + math_random( 0, 0x3FFF ),
-            math_random( 0, 0xFFFF )
-        ) .. string_format( "%08x", counter )
+        local uuid_str = prefix .. string_format( "%08x", counter )
+
+        if is_unique ~= nil and not is_unique( uuid_str ) then
+            goto generate_uuid
+        end
+
+        return uuid_str
     end
 
 end
