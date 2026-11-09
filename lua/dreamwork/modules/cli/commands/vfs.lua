@@ -15,10 +15,10 @@ local cli_completeVFSPath = dreamwork_cli.completeVFSPath
 local colors = dreamwork_cli.colors
 
 local dreamwork_vfs = dreamwork.vfs
-local vfs_search = dreamwork_vfs.search
-local vfs_isExists = dreamwork_vfs.isExists
 local vfs_size = dreamwork_vfs.size
+local vfs_search = dreamwork_vfs.search
 local vfs_getInfo = dreamwork_vfs.getInfo
+local vfs_isExists = dreamwork_vfs.isExists
 local vfs_readFile = dreamwork_vfs.readFile
 local vfs_writeFile = dreamwork_vfs.writeFile
 local vfs_deleteFile = dreamwork_vfs.deleteFile

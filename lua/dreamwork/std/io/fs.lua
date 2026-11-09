@@ -3,18 +3,18 @@ local vfs_size = vfs.size
 local vfs_isFile = vfs.isFile
 local vfs_search = vfs.search
 local vfs_foreach = vfs.foreach
+local vfs_readFile = vfs.readFile
+local vfs_moveFile = vfs.moveFile
 local vfs_touchFile = vfs.touchFile
+local vfs_writeFile = vfs.writeFile
 local vfs_deleteFile = vfs.deleteFile
+local vfs_appendFile = vfs.appendFile
+local vfs_renameFile = vfs.renameFile
 local vfs_isDirectory = vfs.isDirectory
-local vfs_readFileAsync = vfs.readFileAsync
+local vfs_moveDirectory = vfs.moveDirectory
 local vfs_touchDirectory = vfs.touchDirectory
-local vfs_writeFileAsync = vfs.writeFileAsync
-local vfs_appendFileAsync = vfs.appendFileAsync
 local vfs_deleteDirectory = vfs.deleteDirectory
-local vfs_moveFileAsync = vfs.moveFileAsync
-local vfs_renameFileAsync = vfs.renameFileAsync
-local vfs_moveDirectoryAsync = vfs.moveDirectoryAsync
-local vfs_renameDirectoryAsync = vfs.renameDirectoryAsync
+local vfs_renameDirectory = vfs.renameDirectory
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -103,7 +103,7 @@ end
 ---@async
 local function move_file( object, target_path, overwrite, stack_level )
     target_path = path_normalize( target_path, false )
-    vfs_moveFileAsync( paths[ object ], target_path, overwrite, stack_level + 1 )
+    vfs_moveFile( paths[ object ], target_path, overwrite, stack_level + 1 )
     set_path( object, target_path, file_objects )
 end
 
@@ -113,7 +113,7 @@ end
 ---@param stack_level integer
 ---@async
 local function rename_file( object, name, overwrite, stack_level )
-    vfs_renameFileAsync( paths[ object ], name, overwrite, stack_level + 1 )
+    vfs_renameFile( paths[ object ], name, overwrite, stack_level + 1 )
     set_path( object, sibling_path( object, name ), file_objects )
 end
 
@@ -124,7 +124,7 @@ end
 ---@async
 local function move_directory( object, target_path, overwrite, stack_level )
     target_path = path_normalize( target_path, false )
-    vfs_moveDirectoryAsync( paths[ object ], target_path, overwrite, stack_level + 1 )
+    vfs_moveDirectory( paths[ object ], target_path, overwrite, stack_level + 1 )
     set_path( object, target_path, directory_objects )
 end
 
@@ -134,7 +134,7 @@ end
 ---@param stack_level integer
 ---@async
 local function rename_directory( object, name, overwrite, stack_level )
-    vfs_renameDirectoryAsync( paths[ object ], name, overwrite, stack_level + 1 )
+    vfs_renameDirectory( paths[ object ], name, overwrite, stack_level + 1 )
     set_path( object, sibling_path( object, name ), directory_objects )
 end
 
@@ -315,7 +315,7 @@ function File:__index( key )
     elseif key == "parent" then
         return get_parent( self )
     elseif key == "content" then
-        return vfs_readFileAsync( paths[ self ], 2 )
+        return vfs_readFile( paths[ self ], 2 )
     elseif key == "size" then
         return vfs_size( paths[ self ], 2 )
     end
@@ -328,7 +328,7 @@ end
 ---@protected
 function File:__newindex( key, value )
     if key == "content" then
-        vfs_writeFileAsync( paths[ self ], value, 2 )
+        vfs_writeFile( paths[ self ], value, 2 )
     elseif key == "name" then
         rename_file( self, value, false, 2 )
     elseif key == "path" then
@@ -378,7 +378,7 @@ end
 ---@nodiscard
 ---@async
 function File:read()
-    return vfs_readFileAsync( paths[ self ], 2 )
+    return vfs_readFile( paths[ self ], 2 )
 end
 
 --- [SHARED AND MENU]
@@ -388,7 +388,7 @@ end
 ---@param data string The new data.
 ---@async
 function File:write( data )
-    vfs_writeFileAsync( paths[ self ], data, 2 )
+    vfs_writeFile( paths[ self ], data, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -398,7 +398,7 @@ end
 ---@param data string The data to append.
 ---@async
 function File:append( data )
-    vfs_appendFileAsync( paths[ self ], data, 2 )
+    vfs_appendFile( paths[ self ], data, 2 )
 end
 
 --- [SHARED AND MENU]

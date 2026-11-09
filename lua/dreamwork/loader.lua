@@ -2913,6 +2913,8 @@ end
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "std/io/fs.lua" )
 
+local vfs = dreamwork.vfs
+
 dreamwork_load( "modules/engine/events.lua" )
 
 do
@@ -2975,7 +2977,7 @@ if LUA_SERVER then
         dreamwork_load( "modules/mcp.lua" )
         logger:info( "'gm_mcp' was loaded & connected as MCP bridge." )
     end
-elseif LUA_CLIENT and dreamwork.vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
+elseif LUA_CLIENT and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
 end
 
@@ -3041,7 +3043,7 @@ end
 
 do
 
-    local vfs_readFile = dreamwork.vfs.readFile
+    local vfs_readFile = vfs.readFile
 
     local string_isBytecode = string.isBytecode
 
