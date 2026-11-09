@@ -29,6 +29,8 @@ local string_char = string.char
 
 local error = std.error
 
+local class = std.class
+
 
 --- [SHARED AND MENU]
 ---
@@ -130,6 +132,10 @@ end
 ---@type fun( size: integer ): dreamwork.std.deflate.Bytes, integer
 local get_bytes
 
+--- Returns new bytes that are not shared, for buffers that are kept between calls.
+---@type fun( size: integer ): dreamwork.std.deflate.Bytes, integer
+local new_bytes
+
 ---@type fun( bytes: dreamwork.std.deflate.Bytes, length: integer, size: integer ): dreamwork.std.deflate.Bytes, integer
 local grow_bytes
 
@@ -166,6 +172,10 @@ if ffi == nil then
         end
 
         return buffer, math_huge
+    end
+
+    function new_bytes()
+        return {}, math_huge
     end
 
     function grow_bytes( bytes )
@@ -245,6 +255,10 @@ else
         end
 
         return buffer, buffer_size
+    end
+
+    function new_bytes( size )
+        return uint8_array_t( size ), size
     end
 
     function grow_bytes( bytes, length, size )
@@ -756,6 +770,16 @@ local function encode_lengths( length_count )
     return run_count
 end
 
+local function clear_frequencies()
+    for symbol = 0, 287, 1 do
+        literal_frequencies[ symbol ] = 0
+    end
+
+    for code = 0, 31, 1 do
+        distance_frequencies[ code ] = 0
+    end
+end
+
 --- Writes the block of items as the smallest of stored, fixed and dynamic blocks.
 ---
 ---@param writer dreamwork.std.deflate.Writer
@@ -838,9 +862,10 @@ local function write_block( writer, data, first, last, item_count, is_last, stra
         end
     end
 
-    -- stored blocks start at a byte and take 4 bytes of lengths per 65535 bytes
+    -- stored blocks start at a byte and take 4 bytes of lengths per 65535 bytes,
+    -- streams drop old bytes, so blocks that start before the kept data can't be stored
     local byte_count = last - first + 1
-    local stored_size = (strategy == 1) and math_huge or (byte_count + 5 * math_max( 1, math_ceil( byte_count / MAX_STORED ) )) * 8
+    local stored_size = (strategy == 1 or first < 1) and math_huge or (byte_count + 5 * math_max( 1, math_ceil( byte_count / MAX_STORED ) )) * 8
 
     if stored_size <= fixed_size and stored_size <= dynamic_size then
         write_stored( writer, data, first, last, is_last )
@@ -886,13 +911,7 @@ local function write_block( writer, data, first, last, item_count, is_last, stra
         end
     end
 
-    for symbol = 0, 287, 1 do
-        literal_frequencies[ symbol ] = 0
-    end
-
-    for code = 0, 31, 1 do
-        distance_frequencies[ code ] = 0
-    end
+    clear_frequencies()
 end
 
 -- The hash chains keep the last position of every hash in `heads` and the previous position with the same hash
@@ -900,11 +919,58 @@ end
 --
 -- Positions are stored with a base that grows with every call, so entries left over from previous calls
 -- always look further away than the window and never have to be cleared.
+--
+-- Streams keep their base between updates while they own the hash chains and the block buffers,
+-- their kept data is cut in steps of 32768 bytes, so `position % 32768` stays the same.
 
 local heads = new_integers( HASH_MASK + 1 )
 local chains = new_integers( WINDOW_SIZE )
 
 local next_base = WINDOW_SIZE + 1
+
+--- The stream whose positions are in the hash chains and whose unfinished block is in the block buffers.
+---@type dreamwork.std.deflate.Stream | nil
+local owner = nil
+
+--- Returns the base for positions up to `data_length`, the hash chains are cleared once bases reach 2^31.
+---
+---@param data_length integer
+---@return integer base
+local function take_base( data_length )
+    local base = next_base
+    if base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
+        for i = 0, HASH_MASK, 1 do
+            heads[ i ] = 0
+        end
+
+        for i = 0, WINDOW_MASK, 1 do
+            chains[ i ] = 0
+        end
+
+        base = WINDOW_SIZE + 1
+    end
+
+    next_base = base + data_length + WINDOW_SIZE + 1
+    return base
+end
+
+--- Adds the positions from `first` to `last` to the hash chains, each of them needs 2 bytes after it.
+---
+---@param data string
+---@param base integer
+---@param first integer
+---@param last integer
+local function insert_hashes( data, base, first, last )
+    if first > last then return end
+
+    local hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, first ), HASH_SHIFT ), string_byte( data, first + 1 ) ), HASH_MASK )
+
+    for position = first, last, 1 do
+        hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+        chains[ rbit_band( position, WINDOW_MASK ) ] = heads[ hash ]
+        heads[ hash ] = base + position
+    end
+end
 
 ---@alias dreamwork.std.deflate.Input string | ffi.cdata*
 
@@ -1033,60 +1099,63 @@ else
 
 end
 
----@param writer dreamwork.std.deflate.Writer
+---@class dreamwork.std.deflate.State : dreamwork.std.deflate.Writer
+---@field position integer The index of the next byte to compress.
+---@field block_first integer The index of the first byte of the unfinished block, `< 1` if it is not kept anymore.
+---@field item_count integer The number of items of the unfinished block in `items`.
+---@field hash_end integer The index of the first position that is not in the hash chains yet.
+---@field match_available boolean Lazy matching: the byte before `position` waits for a decision.
+---@field match_length integer Lazy matching: the length of the match at the byte before `position`.
+---@field match_start integer Lazy matching: the start of the match at the byte before `position`.
+---@field base integer The base of the positions in the hash chains.
+---@field settings table The settings of the compression level.
+---@field strategy integer
+
+--- Compresses positions up to `limit`, the unfinished block stays in `items`.
+---
+---@param state dreamwork.std.deflate.State
 ---@param data string
 ---@param data_length integer
----@param start integer
----@param settings table
----@param strategy integer
-local function compress_lazy( writer, data, data_length, start, settings, strategy )
+---@param limit integer
+local function compress_lazy( state, data, data_length, limit )
+    local settings, strategy = state.settings, state.strategy
     local good_length, max_lazy, nice_length, max_chain = settings[ 1 ], settings[ 2 ], settings[ 3 ], settings[ 4 ]
     local filtered = strategy == 2
 
-    local base = next_base
-    if base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
-        for i = 0, HASH_MASK, 1 do
-            heads[ i ] = 0
-        end
-
-        for i = 0, WINDOW_MASK, 1 do
-            chains[ i ] = 0
-        end
-
-        base = WINDOW_SIZE + 1
-    end
-
-    next_base = base + data_length + WINDOW_SIZE + 1
-
+    local base = state.base
     local input = get_input( data )
 
     -- the last position that has 3 bytes to hash
     local hash_limit = data_length - 2
 
-    local hash = 0
-    if data_length >= 2 then
-        hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, 1 ), HASH_SHIFT ), string_byte( data, 2 ) ), HASH_MASK )
+    local position = state.position
+
+    ---@type integer
+    local hash
+
+    if position < data_length then
+        hash = rbit_band( rbit_bxor(
+            rbit_lshift( string_byte( data, position ), HASH_SHIFT ),
+            string_byte( data, position + 1 )
+        ), HASH_MASK )
+    else
+        hash = 0
     end
 
-    -- the dictionary is only hashed
-    for position = 1, math_min( start - 1, hash_limit ), 1 do
-        hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
-        chains[ rbit_band( position, WINDOW_MASK ) ] = heads[ hash ]
-        heads[ hash ] = base + position
-    end
+    local item_count = state.item_count
+    local block_first = state.block_first
 
-    local item_count = 0
-    local block_first = start
+    local match_available = state.match_available
+    local match_length, match_start = state.match_length, state.match_start
 
-    local position = start
-    local match_available = false
-    local match_length, match_start = 2, 0
-
-    while position <= data_length do
+    while position <= limit do
         local candidate = -WINDOW_SIZE
 
         if position <= hash_limit then
-            hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+            hash = rbit_band( rbit_bxor(
+                rbit_lshift( hash, HASH_SHIFT ),
+                string_byte( data, position + 2 )
+            ), HASH_MASK )
 
             local head = heads[ hash ]
             candidate = head - base
@@ -1127,7 +1196,11 @@ local function compress_lazy( writer, data, data_length, start, settings, strate
             local last = position + previous_length - 2
 
             for inserted = position + 1, math_min( last, hash_limit ), 1 do
-                hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, inserted + 2 ) ), HASH_MASK )
+                hash = rbit_band( rbit_bxor(
+                    rbit_lshift( hash, HASH_SHIFT ),
+                    string_byte( data, inserted + 2 )
+                ), HASH_MASK )
+
                 chains[ rbit_band( inserted, WINDOW_MASK ) ] = heads[ hash ]
                 heads[ hash ] = base + inserted
             end
@@ -1137,7 +1210,7 @@ local function compress_lazy( writer, data, data_length, start, settings, strate
             match_length = 2
 
             if item_count == BLOCK_SYMBOLS then
-                write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+                write_block( state, data, block_first, position - 1, item_count, false, strategy )
                 block_first, item_count = position, 0
             end
         elseif match_available then
@@ -1150,7 +1223,7 @@ local function compress_lazy( writer, data, data_length, start, settings, strate
             position = position + 1
 
             if item_count == BLOCK_SYMBOLS then
-                write_block( writer, data, block_first, position - 2, item_count, false, strategy )
+                write_block( state, data, block_first, position - 2, item_count, false, strategy )
                 block_first, item_count = position - 1, 0
             end
         else
@@ -1159,67 +1232,50 @@ local function compress_lazy( writer, data, data_length, start, settings, strate
         end
     end
 
-    if match_available then
-        local byte = string_byte( data, position - 1 )
-
-        items[ item_count ] = byte
-        item_count = item_count + 1
-
-        literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
-    end
-
-    write_block( writer, data, block_first, data_length, item_count, true, strategy )
+    state.position, state.block_first, state.item_count = position, block_first, item_count
+    state.match_available, state.match_length, state.match_start = match_available, match_length, match_start
 end
 
----@param writer dreamwork.std.deflate.Writer
+--- Compresses positions up to `limit`, the unfinished block stays in `items`.
+---
+---@param state dreamwork.std.deflate.State
 ---@param data string
 ---@param data_length integer
----@param start integer
----@param settings table
----@param strategy integer
-local function compress_fast( writer, data, data_length, start, settings, strategy )
+---@param limit integer
+local function compress_fast( state, data, data_length, limit )
+    local settings, strategy = state.settings, state.strategy
     local max_insert, nice_length, max_chain = settings[ 2 ], settings[ 3 ], settings[ 4 ]
 
-    local base = next_base
-    if base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
-        for i = 0, HASH_MASK, 1 do
-            heads[ i ] = 0
-        end
-
-        for i = 0, WINDOW_MASK, 1 do
-            chains[ i ] = 0
-        end
-
-        base = WINDOW_SIZE + 1
-    end
-
-    next_base = base + data_length + WINDOW_SIZE + 1
-
+    local base = state.base
     local input = get_input( data )
 
     local hash_limit = data_length - 2
 
-    local hash = 0
-    if data_length >= 2 then
-        hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, 1 ), HASH_SHIFT ), string_byte( data, 2 ) ), HASH_MASK )
+    local position = state.position
+
+    ---@type integer
+    local hash
+
+    if position < data_length then
+        hash = rbit_band( rbit_bxor(
+            rbit_lshift( string_byte( data, position ), HASH_SHIFT ),
+            string_byte( data, position + 1 )
+        ), HASH_MASK )
+    else
+        hash = 0
     end
 
-    for position = 1, math_min( start - 1, hash_limit ), 1 do
-        hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
-        chains[ rbit_band( position, WINDOW_MASK ) ] = heads[ hash ]
-        heads[ hash ] = base + position
-    end
+    local item_count = state.item_count
+    local block_first = state.block_first
 
-    local item_count = 0
-    local block_first = start
-
-    local position = start
-
-    while position <= data_length do
+    while position <= limit do
         local candidate = -WINDOW_SIZE
 
         if position <= hash_limit then
-            hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, position + 2 ) ), HASH_MASK )
+            hash = rbit_band( rbit_bxor(
+                rbit_lshift( hash, HASH_SHIFT ),
+                string_byte( data, position + 2 )
+            ), HASH_MASK )
 
             local head = heads[ hash ]
             candidate = head - base
@@ -1253,13 +1309,20 @@ local function compress_fast( writer, data, data_length, start, settings, strate
 
             if match_length <= max_insert then
                 for inserted = position + 1, math_min( next_position - 1, hash_limit ), 1 do
-                    hash = rbit_band( rbit_bxor( rbit_lshift( hash, HASH_SHIFT ), string_byte( data, inserted + 2 ) ), HASH_MASK )
+                    hash = rbit_band( rbit_bxor(
+                        rbit_lshift( hash, HASH_SHIFT ),
+                        string_byte( data, inserted + 2 )
+                    ), HASH_MASK )
+
                     chains[ rbit_band( inserted, WINDOW_MASK ) ] = heads[ hash ]
                     heads[ hash ] = base + inserted
                 end
             elseif next_position < data_length then
                 -- the positions inside of the match are skipped, the hash starts over
-                hash = rbit_band( rbit_bxor( rbit_lshift( string_byte( data, next_position ), HASH_SHIFT ), string_byte( data, next_position + 1 ) ), HASH_MASK )
+                hash = rbit_band( rbit_bxor(
+                    rbit_lshift( string_byte( data, next_position ), HASH_SHIFT ),
+                    string_byte( data, next_position + 1 )
+                ), HASH_MASK )
             end
 
             position = next_position
@@ -1274,29 +1337,30 @@ local function compress_fast( writer, data, data_length, start, settings, strate
         end
 
         if item_count == BLOCK_SYMBOLS then
-            write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+            write_block( state, data, block_first, position - 1, item_count, false, strategy )
             block_first, item_count = position, 0
         end
     end
 
-    write_block( writer, data, block_first, data_length, item_count, true, strategy )
+    state.position, state.block_first, state.item_count = position, block_first, item_count
 end
 
---- Only literals, or only runs of the previous byte ( matches with the distance `1` ).
+--- Only literals, or only runs of the previous byte ( matches with the distance `1` ), up to `limit`.
 ---
----@param writer dreamwork.std.deflate.Writer
+---@param state dreamwork.std.deflate.State
 ---@param data string
 ---@param data_length integer
----@param start integer
----@param strategy integer
----@param runs boolean
-local function compress_simple( writer, data, data_length, start, strategy, runs )
-    local item_count = 0
-    local block_first = start
+---@param limit integer
+local function compress_simple( state, data, data_length, limit )
+    local strategy = state.strategy
+    local runs = strategy == 4
 
-    local position = start
+    local item_count = state.item_count
+    local block_first = state.block_first
 
-    while position <= data_length do
+    local position = state.position
+
+    while position <= limit do
         local byte = string_byte( data, position )
         local run = 0
 
@@ -1327,12 +1391,38 @@ local function compress_simple( writer, data, data_length, start, strategy, runs
         end
 
         if item_count == BLOCK_SYMBOLS then
-            write_block( writer, data, block_first, position - 1, item_count, false, strategy )
+            write_block( state, data, block_first, position - 1, item_count, false, strategy )
             block_first, item_count = position, 0
         end
     end
 
-    write_block( writer, data, block_first, data_length, item_count, true, strategy )
+    state.position, state.block_first, state.item_count = position, block_first, item_count
+end
+
+--- Writes the unfinished block, with the byte that waits for lazy matching,
+--- the last block is written even if it is empty.
+---
+---@param state dreamwork.std.deflate.State
+---@param data string
+---@param is_last boolean
+local function end_block( state, data, is_last )
+    local position, item_count = state.position, state.item_count
+
+    if state.match_available then
+        local byte = string_byte( data, position - 1 )
+
+        items[ item_count ] = byte
+        item_count = item_count + 1
+
+        literal_frequencies[ byte ] = literal_frequencies[ byte ] + 1
+        state.match_available, state.match_length = false, 2
+    end
+
+    if is_last or item_count ~= 0 then
+        write_block( state, data, state.block_first, position - 1, item_count, is_last, state.strategy )
+    end
+
+    state.block_first, state.item_count = position, 0
 end
 
 local STRATEGIES = {
@@ -1343,6 +1433,48 @@ local STRATEGIES = {
     rle = 4
 }
 
+---@param options dreamwork.std.deflate.Options?
+---@return integer level
+---@return integer strategy
+---@return string | nil dictionary The last 32768 bytes of the dictionary, `nil` if it is empty.
+local function parse_options( options )
+    local level, strategy, dictionary = 6, 0, nil
+
+    if options ~= nil then
+        local option_level = options.level
+        if option_level ~= nil then
+            if not (option_level % 1 == 0 and option_level >= 0 and option_level <= 9) then
+                error( "options.level must be an integer from 0 to 9", 3 )
+            end
+
+            level = option_level
+        end
+
+        if options.strategy ~= nil then
+            strategy = STRATEGIES[ options.strategy ]
+            if strategy == nil then
+                error( "options.strategy must be \"default\", \"filtered\", \"huffman_only\", \"rle\" or \"fixed\"", 3 )
+            end
+        end
+
+        dictionary = options.dictionary
+
+        if dictionary ~= nil then
+            local dictionary_length = #dictionary
+            if dictionary_length == 0 then
+                dictionary = nil
+            elseif dictionary_length > WINDOW_SIZE then
+                dictionary = string_sub( dictionary, -WINDOW_SIZE )
+            end
+        end
+    end
+
+    return level, strategy, dictionary
+end
+
+---@type fun( stream: dreamwork.std.deflate.Stream )
+local evict
+
 --- [SHARED AND MENU]
 ---
 --- Compresses a string into a raw DEFLATE stream.
@@ -1352,80 +1484,355 @@ local STRATEGIES = {
 ---@return string compressed_data The compressed string.
 ---@nodiscard
 function deflate.compress( raw_data, options )
-    local level, strategy, dictionary = 6, 0, nil
-
-    if options ~= nil then
-        if options.level ~= nil then
-            level = options.level
-            if not (level % 1 == 0 and level >= 0 and level <= 9) then
-                error( "options.level must be an integer from 0 to 9", 2 )
-            end
-        end
-
-        if options.strategy ~= nil then
-            strategy = STRATEGIES[ options.strategy ]
-            if strategy == nil then
-                error( "options.strategy must be \"default\", \"filtered\", \"huffman_only\", \"rle\" or \"fixed\"", 2 )
-            end
-        end
-
-        dictionary = options.dictionary
-    end
+    local level, strategy, dictionary = parse_options( options )
 
     local start = 1
 
     if dictionary ~= nil then
-        local dictionary_length = #dictionary
-        if dictionary_length > WINDOW_SIZE then
-            dictionary, dictionary_length = string_sub( dictionary, -WINDOW_SIZE ), WINDOW_SIZE
-        end
+        raw_data = dictionary .. raw_data
+        start = #dictionary + 1
+    end
 
-        if dictionary_length ~= 0 then
-            raw_data = dictionary .. raw_data
-            start = dictionary_length + 1
-        end
+    if owner ~= nil then
+        evict( owner )
     end
 
     local data_length = #raw_data
 
     local bytes, capacity = get_bytes( data_length - start + 1 + 0x400 )
 
-    ---@type dreamwork.std.deflate.Writer
-    local writer = {
+    ---@type dreamwork.std.deflate.State
+    local state = {
         bytes = bytes,
         length = 0,
         capacity = capacity,
         bit_buffer = 0,
-        bit_count = 0
+        bit_count = 0,
+        position = start,
+        block_first = start,
+        item_count = 0,
+        hash_end = 1,
+        match_available = false,
+        match_length = 2,
+        match_start = 0,
+        base = 0,
+        settings = LEVELS[ level ],
+        strategy = strategy
     }
 
     if level == 0 then
-        write_stored( writer, raw_data, start, data_length, true )
+        write_stored( state, raw_data, start, data_length, true )
     elseif strategy == 3 or strategy == 4 then
-        compress_simple( writer, raw_data, data_length, start, strategy, strategy == 4 )
+        compress_simple( state, raw_data, data_length, data_length )
+        end_block( state, raw_data, true )
     else
-        local settings = LEVELS[ level ]
-        if settings[ 5 ] then
-            compress_lazy( writer, raw_data, data_length, start, settings, strategy )
+        local base = take_base( data_length )
+        state.base = base
+
+        -- the dictionary is only hashed
+        insert_hashes( raw_data, base, 1, math_min( start - 1, data_length - 2 ) )
+
+        if state.settings[ 5 ] then
+            compress_lazy( state, raw_data, data_length, data_length )
         else
-            compress_fast( writer, raw_data, data_length, start, settings, strategy )
+            compress_fast( state, raw_data, data_length, data_length )
         end
+
+        end_block( state, raw_data, true )
     end
 
-    local length = writer.length
+    local length = state.length
 
-    if writer.bit_count ~= 0 then
-        writer.bytes[ length ] = writer.bit_buffer
+    if state.bit_count ~= 0 then
+        state.bytes[ length ] = state.bit_buffer
         length = length + 1
     end
 
-    local compressed_data = bytes_to_string( writer.bytes, 0, length )
-    release_bytes( writer.bytes, length )
+    local compressed_data = bytes_to_string( state.bytes, 0, length )
+    release_bytes( state.bytes, length )
 
     return compressed_data
 end
 
--- Decompression --
+--- Input is collected until there is this much, so short updates don't copy the kept data every time.
+local BUFFER_SIZE = 0x8000
+
+---@class dreamwork.std.deflate.Stream : dreamwork.std.deflate.State
+---@field level integer
+---@field dictionary string | nil
+---@field data string The kept bytes: up to 65535 bytes before `position` and the bytes that are not compressed yet.
+---@field pending string[] The input that is not added to `data` yet.
+---@field pending_count integer
+---@field pending_length integer
+---@field output string[] The compressed data that is not read yet.
+---@field output_count integer
+
+--- [SHARED AND MENU]
+---
+--- The DEFLATE stream compressor object.
+---
+---@class dreamwork.std.deflate.Compressor : dreamwork.std.Object, dreamwork.std.deflate.Stream
+---@field __class dreamwork.std.deflate.CompressorClass
+local Compressor = class.base( "deflate.Compressor", false )
+
+--- Moves the written whole bytes to the output.
+---
+---@param stream dreamwork.std.deflate.Stream
+local function drain( stream )
+    local length = stream.length
+
+    if length ~= 0 then
+        local output_count = stream.output_count + 1
+        stream.output[ output_count ] = bytes_to_string( stream.bytes, 0, length )
+        stream.output_count = output_count
+    end
+
+    release_bytes( stream.bytes, length )
+    stream.length = 0
+end
+
+--- Writes the unfinished block of the stream, so the block buffers and the hash chains can be used by someone else.
+function evict( stream )
+    owner = nil
+
+    if stream.item_count == 0 and not stream.match_available then
+        return
+    end
+
+    stream.bytes, stream.capacity = get_bytes( 0x400 )
+    end_block( stream, stream.data, false )
+    drain( stream )
+end
+
+--- Compresses the collected input.
+---
+--- Without `is_last` the bytes that the next input could extend a match with are kept,
+--- with it everything is compressed and the last block is written.
+---
+---@param stream dreamwork.std.deflate.Stream
+---@param is_last boolean
+local function process( stream, is_last )
+    local data = stream.data
+
+    local pending_count = stream.pending_count
+    if pending_count ~= 0 then
+        data = data .. table_concat( stream.pending, "", 1, pending_count )
+        stream.pending, stream.pending_count, stream.pending_length = {}, 0, 0
+    end
+
+    local data_length = #data
+    local position = stream.position
+
+    if stream.level == 0 then
+        local last = data_length
+
+        -- the last stored block has at least one byte, like in `deflate.compress`
+        if not is_last then
+            last = position - 1 + (data_length - position) - (data_length - position) % MAX_STORED
+        end
+
+        stream.bytes, stream.capacity = get_bytes( last - position + 1 + 0x400 )
+
+        if is_last or last >= position then
+            write_stored( stream, data, position, last, is_last )
+        end
+
+        stream.data, stream.position = string_sub( data, last + 1 ), 1
+        drain( stream )
+        return
+    end
+
+    local strategy = stream.strategy
+    local hashed = strategy ~= 3 and strategy ~= 4
+
+    local base = stream.base
+    local first = stream.hash_end
+
+    if owner ~= stream or base + data_length + WINDOW_SIZE > 0x7FFFFFFF then
+        if owner ~= nil and owner ~= stream then
+            evict( owner )
+        end
+
+        owner = stream
+
+        if hashed then
+            -- the positions are hashed again with a new base
+            base = take_base( data_length )
+            first = math_max( 1, position - WINDOW_SIZE )
+        end
+    end
+
+    if hashed then
+        insert_hashes( data, base, first, math_min( position - 1, data_length - 2 ) )
+        next_base = base + data_length + WINDOW_SIZE + 1
+    end
+
+    stream.base = base
+    stream.bytes, stream.capacity = get_bytes( data_length - position + 1 + 0x400 )
+
+    -- matches can be up to 258 bytes long, so positions closer to the end have to wait for more input
+    local limit = is_last and data_length or (data_length - MAX_MATCH)
+
+    if not hashed then
+        compress_simple( stream, data, data_length, limit )
+    elseif stream.settings[ 5 ] then
+        compress_lazy( stream, data, data_length, limit )
+    else
+        compress_fast( stream, data, data_length, limit )
+    end
+
+    if is_last then
+        end_block( stream, data, true )
+
+        if stream.bit_count ~= 0 then
+            reserve( stream, 1 )
+
+            stream.bytes[ stream.length ] = stream.bit_buffer
+            stream.length = stream.length + 1
+            stream.bit_buffer, stream.bit_count = 0, 0
+        end
+
+        drain( stream )
+        return
+    end
+
+    -- the last 2 bytes have no 3 bytes to hash, they are hashed with the next input
+    position = stream.position
+    stream.hash_end = math_min( position, data_length - 1 )
+
+    -- matches reach 32768 bytes back, older bytes are dropped in steps of 32768
+    local cut = (position - 1) - (position - 1) % WINDOW_SIZE - WINDOW_SIZE
+    if cut > 0 then
+        data = string_sub( data, cut + 1 )
+
+        stream.position = position - cut
+        stream.block_first = stream.block_first - cut
+        stream.match_start = stream.match_start - cut
+        stream.hash_end = stream.hash_end - cut
+        stream.base = base + cut
+    end
+
+    stream.data = data
+    drain( stream )
+end
+
+---@param options dreamwork.std.deflate.Options? The compression options.
+---@protected
+function Compressor:__init( options )
+    local level, strategy, dictionary = parse_options( options )
+
+    self.level, self.strategy, self.settings = level, strategy, LEVELS[ level ]
+
+    -- stored blocks don't use the dictionary
+    if level ~= 0 then
+        self.dictionary = dictionary
+    end
+
+    self:reset()
+end
+
+--- [SHARED AND MENU]
+---
+--- Drops all input and output, the next update starts a new stream with the same options.
+---
+---@return dreamwork.std.deflate.Compressor self
+function Compressor:reset()
+    if owner == self then
+        owner = nil
+
+        -- the unfinished block is dropped
+        if self.item_count ~= 0 then
+            clear_frequencies()
+        end
+    end
+
+    local data = self.dictionary or ""
+    local position = #data + 1
+
+    self.data = data
+    self.position, self.block_first, self.item_count = position, position, 0
+    self.hash_end = 1
+
+    self.match_available, self.match_length, self.match_start = false, 2, 0
+    self.base = 0
+
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    self.bytes, self.length, self.capacity = nil, 0, 0
+    self.bit_buffer, self.bit_count = 0, 0
+
+    self.pending, self.pending_count, self.pending_length = {}, 0, 0
+    self.output, self.output_count = {}, 0
+
+    return self
+end
+
+--- [SHARED AND MENU]
+---
+--- Adds the string to the stream.
+---
+--- Input is compressed in parts of at least 32768 bytes,
+--- the last 258 bytes always wait for more input, since a match can continue into it.
+---
+--- The output is the same as `deflate.compress` of all input,
+--- unless another stream or `deflate.compress` is used between the updates,
+--- then the unfinished block is written early, which costs a few bytes.
+---
+---@param raw_data string The string to add.
+---@return dreamwork.std.deflate.Compressor self
+function Compressor:update( raw_data )
+    local raw_length = #raw_data
+    if raw_length ~= 0 then
+        local pending_count = self.pending_count + 1
+        self.pending[ pending_count ] = raw_data
+        self.pending_count = pending_count
+
+        local pending_length = self.pending_length + raw_length
+        self.pending_length = pending_length
+
+        if pending_length >= BUFFER_SIZE then
+            process( self, false )
+        end
+    end
+
+    return self
+end
+
+--- [SHARED AND MENU]
+---
+--- Compresses all input, writes the last block and returns the compressed data.
+---
+--- The stream is reset after this, so the compressor can be used for the next stream.
+---
+---@return string compressed_data
+---@nodiscard
+function Compressor:flush()
+    process( self, true )
+
+    local compressed_data = table_concat( self.output, "", 1, self.output_count )
+    self:reset()
+
+    return compressed_data
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new DEFLATE stream compressors.
+---
+--- Compresses the data added by `update` parts into one raw DEFLATE stream,
+--- the same as `deflate.compress` of all of them together.
+---
+--- ```lua
+--- local compressor = std.deflate.Compressor( { level = 9 } )
+--- compressor:update( "hello, " ):update( "world" )
+--- local compressed_data = compressor:flush()
+--- ```
+---
+---@class dreamwork.std.deflate.CompressorClass : dreamwork.std.deflate.Compressor, dreamwork.std.Class
+---@field __base dreamwork.std.deflate.Compressor
+---@overload fun( options: dreamwork.std.deflate.Options? ): dreamwork.std.deflate.Compressor
+local CompressorClass = class.create( Compressor )
+deflate.Compressor = CompressorClass
+
 
 -- Decoding table entries are `( value * 8 + kind ) * 16 + bit count`, the bit count is how many bits the code takes,
 -- the value is a byte for literals, `base * 16 + extra bits` for lengths and distances,
@@ -1619,8 +2026,12 @@ end
 
 -- Second level tables take at most 1504 entries for literals/lengths and 384 for distances,
 -- a complete code needs `n + 1` codes for a table of `n` bits.
-local literal_table = new_integers( 4096 )
-local distance_table = new_integers( 1024 )
+local LITERAL_TABLE_SIZE = 4096
+local DISTANCE_TABLE_SIZE = 1024
+
+-- the tables of dynamic blocks for `deflate.decompress`, streams have their own
+local literal_table = new_integers( LITERAL_TABLE_SIZE )
+local distance_table = new_integers( DISTANCE_TABLE_SIZE )
 
 local code_length_table = new_integers( 128 )
 
@@ -1653,10 +2064,12 @@ local code_lengths = {}
 ---@param position integer
 ---@param bit_buffer integer
 ---@param bit_count integer
+---@param literals integer[] The literal/length table to build.
+---@param distances integer[] The distance table to build.
 ---@return integer | nil position
 ---@return integer | string bit_buffer The bit buffer, or the error message.
 ---@return integer? bit_count
-local function read_dynamic_tables( data, position, bit_buffer, bit_count )
+local function read_dynamic_tables( data, position, bit_buffer, bit_count, literals, distances )
     if bit_count < 16 then
         position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
     end
@@ -1756,12 +2169,12 @@ local function read_dynamic_tables( data, position, bit_buffer, bit_count )
         return nil, "missing end-of-block code"
     end
 
-    success, error_message = build_table( code_lengths, 0, literal_count, LITERAL_VALUES, LITERAL_BITS, literal_table, true )
+    success, error_message = build_table( code_lengths, 0, literal_count, LITERAL_VALUES, LITERAL_BITS, literals, true )
     if not success then
         return nil, "invalid literal/length code: " .. error_message
     end
 
-    success, error_message = build_table( code_lengths, literal_count, distance_count, DISTANCE_VALUES, DISTANCE_BITS, distance_table, true )
+    success, error_message = build_table( code_lengths, literal_count, distance_count, DISTANCE_VALUES, DISTANCE_BITS, distances, true )
     if not success then
         return nil, "invalid distance code: " .. error_message
     end
@@ -1769,10 +2182,12 @@ local function read_dynamic_tables( data, position, bit_buffer, bit_count )
     return position, bit_buffer, bit_count
 end
 
---- Decodes literals and matches until the end of the block.
+--- Decodes literals and matches until the end of the block,
+--- or until the position is past `suspend_limit`, so a symbol could be cut off by the end of the data.
 ---
 ---@param data string
 ---@param position_limit integer The data is truncated if the position is past it.
+---@param suspend_limit integer Decoding stops before a symbol that starts past it.
 ---@param position integer
 ---@param bit_buffer integer
 ---@param bit_count integer
@@ -1787,8 +2202,14 @@ end
 ---@return dreamwork.std.deflate.Bytes? bytes
 ---@return integer? length
 ---@return integer? capacity
-local function inflate_block( data, position_limit, position, bit_buffer, bit_count, bytes, length, capacity, literals, distances )
+---@return boolean? is_finished `true` at the end of the block, `false` if decoding stopped at `suspend_limit`.
+local function inflate_block( data, position_limit, suspend_limit, position, bit_buffer, bit_count, bytes, length, capacity, literals, distances )
     while true do
+        -- a symbol with its extra bits takes at most 48 bits, the bit buffer reads at most 8 bytes for it
+        if position > suspend_limit then
+            return position, bit_buffer, bit_count, bytes, length, capacity, false
+        end
+
         if bit_count < 16 then
             position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
 
@@ -1880,11 +2301,175 @@ local function inflate_block( data, position_limit, position, bit_buffer, bit_co
 
             length = length + match_length
         elseif kind == END_OF_BLOCK then
-            return position, bit_buffer, bit_count, bytes, length, capacity
+            return position, bit_buffer, bit_count, bytes, length, capacity, true
         else
             return nil, "invalid literal/length code"
         end
     end
+end
+
+local BLOCK_HEADER = 0
+local BLOCK_STORED = 1
+local BLOCK_CODES = 2
+local BLOCK_DONE = 3
+
+--- The most bytes a dynamic block header takes, 4498 bits with its 3 header bits and 4 bytes that the bit buffer reads ahead.
+local MAX_HEADER_SIZE = 0x240
+
+---@class dreamwork.std.deflate.InflateState
+---@field bytes dreamwork.std.deflate.Bytes The output, starting with the dictionary.
+---@field length integer
+---@field capacity integer
+---@field bit_buffer integer
+---@field bit_count integer
+---@field block integer `0` before a block header, `1` in a stored block, `2` in a block of codes, `3` after the last block.
+---@field is_last boolean The current block is the last one.
+---@field stored_size integer The number of bytes left in the stored block.
+---@field literals integer[] The literal/length decoding table of the current block.
+---@field distances integer[] The distance decoding table of the current block.
+---@field literal_table integer[] The literal/length table for dynamic blocks.
+---@field distance_table integer[] The distance table for dynamic blocks.
+
+--- Decodes blocks from the position.
+---
+--- Without `is_final` decoding stops before anything that could be cut off by the end of the data,
+--- the returned position is where it continues with more data.
+---
+---@param state dreamwork.std.deflate.InflateState
+---@param data string
+---@param position integer
+---@param is_final boolean The data ends here, a stream that is not complete is truncated.
+---@return integer | nil position
+---@return string? error_message
+local function inflate( state, data, position, is_final )
+    local data_length = #data
+
+    -- the bit buffer may read up to 4 bytes past the end of a valid stream
+    local position_limit = data_length + 5
+    local suspend_limit = is_final and math_huge or (data_length - 7)
+
+    local bytes, length, capacity = state.bytes, state.length, state.capacity
+    local bit_buffer, bit_count = state.bit_buffer, state.bit_count
+
+    local block, is_last, stored_size = state.block, state.is_last, state.stored_size
+    local literals, distances = state.literals, state.distances
+
+    while block ~= BLOCK_DONE do
+        if block == BLOCK_HEADER then
+            local available = data_length - position + 1
+            if not is_final and available < 8 then
+                break
+            end
+
+            local header_position, header_bit_buffer, header_bit_count = position, bit_buffer, bit_count
+
+            if bit_count < 16 then
+                position, bit_buffer, bit_count = refill( data, position, bit_buffer, bit_count )
+            end
+
+            is_last = rbit_band( bit_buffer, 1 ) == 1
+            local block_type = rbit_band( rbit_rshift( bit_buffer, 1 ), 3 )
+
+            bit_buffer = rbit_rshift( bit_buffer, 3 )
+            bit_count = bit_count - 3
+
+            if block_type == 0 then
+                -- the rest of the byte is skipped, buffered whole bytes go back to the data
+                position = position - rbit_rshift( bit_count, 3 )
+                bit_buffer, bit_count = 0, 0
+
+                local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( data, position, position + 3 )
+                if uint8_4 == nil then
+                    return nil, "truncated stored block"
+                end
+
+                stored_size = uint8_1 + uint8_2 * 0x100
+                if rbit_bxor( stored_size, 0xFFFF ) ~= uint8_3 + uint8_4 * 0x100 then
+                    return nil, "invalid stored block lengths"
+                end
+
+                position = position + 4
+                block = BLOCK_STORED
+            elseif block_type == 1 then
+                literals, distances = FIXED_LITERAL_TABLE, FIXED_DISTANCE_TABLE
+                block = BLOCK_CODES
+            elseif block_type == 2 then
+                -- the header is read again when there is more data
+                if not is_final and available < MAX_HEADER_SIZE then
+                    position, bit_buffer, bit_count = header_position, header_bit_buffer, header_bit_count
+                    break
+                end
+
+                literals, distances = state.literal_table, state.distance_table
+
+                local next_position, result, next_bit_count = read_dynamic_tables( data, position, bit_buffer, bit_count, literals, distances )
+                if next_position == nil then
+                    ---@cast result string
+                    return nil, result
+                end
+
+                ---@cast result integer
+                ---@cast next_bit_count integer
+                position, bit_buffer, bit_count = next_position, result, next_bit_count
+                block = BLOCK_CODES
+            else
+                return nil, "invalid block type"
+            end
+        elseif block == BLOCK_STORED then
+            local size = math_min( stored_size, data_length - position + 1 )
+
+            if size ~= 0 then
+                if length + size > capacity then
+                    bytes, capacity = grow_bytes( bytes, length, math_max( capacity * 2, length + size ) )
+                end
+
+                copy_string( bytes, length, data, position, size )
+
+                length = length + size
+                position = position + size
+                stored_size = stored_size - size
+            end
+
+            if stored_size ~= 0 then
+                if is_final then
+                    return nil, "truncated stored block"
+                end
+
+                break
+            end
+
+            block = is_last and BLOCK_DONE or BLOCK_HEADER
+        else
+            local next_position, result, next_bit_count, next_bytes, next_length, next_capacity, is_finished = inflate_block( data, position_limit, suspend_limit, position, bit_buffer, bit_count, bytes, length, capacity, literals, distances )
+            if next_position == nil then
+                ---@cast result string
+                return nil, result
+            end
+
+            ---@cast result integer
+            ---@cast next_bit_count integer
+            ---@cast next_bytes dreamwork.std.deflate.Bytes
+            ---@cast next_length integer
+            ---@cast next_capacity integer
+
+            position, bit_buffer, bit_count = next_position, result, next_bit_count
+            bytes, length, capacity = next_bytes, next_length, next_capacity
+
+            if not is_finished then
+                break
+            end
+
+            block = is_last and BLOCK_DONE or BLOCK_HEADER
+        end
+    end
+
+    state.bytes, state.length, state.capacity = bytes, length, capacity
+    state.bit_buffer, state.bit_count = bit_buffer, bit_count
+
+    state.block, state.is_last, state.stored_size = block, is_last, stored_size
+    state.literals, state.distances = literals, distances
+
+    return position
 end
 
 --- [SHARED AND MENU]
@@ -1911,9 +2496,6 @@ function deflate.decompress( compressed_data, dictionary, start_position )
 
     local data_length = #compressed_data
 
-    -- the bit buffer may read up to 4 bytes past the end of a valid stream
-    local position_limit = data_length + 5
-
     local dictionary_length = 0
     if dictionary ~= nil then
         dictionary_length = #dictionary
@@ -1923,106 +2505,222 @@ function deflate.decompress( compressed_data, dictionary, start_position )
     end
 
     local bytes, capacity = get_bytes( dictionary_length + math_max( (data_length - start_position + 1) * 4, 0x1000 ) )
-    local length = 0
 
     if dictionary_length ~= 0 then
         ---@cast dictionary string
         copy_string( bytes, 0, dictionary, 1, dictionary_length )
-        length = dictionary_length
     end
 
-    local position, bit_buffer, bit_count = start_position, 0, 0
+    ---@type dreamwork.std.deflate.InflateState
+    local state = {
+        bytes = bytes,
+        length = dictionary_length,
+        capacity = capacity,
+        bit_buffer = 0,
+        bit_count = 0,
+        block = BLOCK_HEADER,
+        is_last = false,
+        stored_size = 0,
+        literals = FIXED_LITERAL_TABLE,
+        distances = FIXED_DISTANCE_TABLE,
+        literal_table = literal_table,
+        distance_table = distance_table
+    }
 
-    while true do
-        if bit_count < 16 then
-            position, bit_buffer, bit_count = refill( compressed_data, position, bit_buffer, bit_count )
-        end
-
-        local is_last = rbit_band( bit_buffer, 1 ) == 1
-        local block_type = rbit_band( rbit_rshift( bit_buffer, 1 ), 3 )
-
-        bit_buffer = rbit_rshift( bit_buffer, 3 )
-        bit_count = bit_count - 3
-
-        -- the bit buffer, or the error message
-        ---@type integer | string
-        local result
-
-        if block_type == 0 then
-            -- the rest of the byte is skipped, buffered whole bytes go back to the data
-            position = position - rbit_rshift( bit_count, 3 )
-            bit_buffer, bit_count = 0, 0
-
-            local uint8_1, uint8_2, uint8_3, uint8_4 = string_byte( compressed_data, position, position + 3 )
-            if uint8_4 == nil then
-                error( "corrupt DEFLATE data: truncated stored block", 2 )
-            end
-
-            local size = uint8_1 + uint8_2 * 0x100
-            if rbit_bxor( size, 0xFFFF ) ~= uint8_3 + uint8_4 * 0x100 then
-                error( "corrupt DEFLATE data: invalid stored block lengths", 2 )
-            end
-
-            position = position + 4
-
-            if position + size - 1 > data_length then
-                error( "corrupt DEFLATE data: truncated stored block", 2 )
-            end
-
-            if length + size > capacity then
-                bytes, capacity = grow_bytes( bytes, length, math_max( capacity * 2, length + size ) )
-            end
-
-            copy_string( bytes, length, compressed_data, position, size )
-
-            length = length + size
-            position = position + size
-        else
-            -- `nil` on errors
-            local next_position, next_bit_count, next_bytes, next_length, next_capacity
-
-            if block_type == 1 then
-                next_position, result, next_bit_count, next_bytes, next_length, next_capacity = inflate_block( compressed_data, position_limit, position, bit_buffer, bit_count, bytes, length, capacity, FIXED_LITERAL_TABLE, FIXED_DISTANCE_TABLE )
-            elseif block_type == 2 then
-                next_position, result, next_bit_count = read_dynamic_tables( compressed_data, position, bit_buffer, bit_count )
-
-                if next_position ~= nil then
-                    ---@cast result integer
-                    ---@cast next_bit_count integer
-                    next_position, result, next_bit_count, next_bytes, next_length, next_capacity = inflate_block( compressed_data, position_limit, next_position, result, next_bit_count, bytes, length, capacity, literal_table, distance_table )
-                end
-            else
-                error( "corrupt DEFLATE data: invalid block type", 2 )
-            end
-
-            if next_position == nil then
-                error( "corrupt DEFLATE data: " .. result, 2 )
-            end
-
-            ---@cast next_bit_count integer
-            ---@cast next_bytes dreamwork.std.deflate.Bytes
-            ---@cast next_length integer
-            ---@cast next_capacity integer
-
-            position, bit_count, bytes, length, capacity = next_position, next_bit_count, next_bytes, next_length, next_capacity
-
-            ---@cast result integer
-            bit_buffer = result
-        end
-
-        if is_last then
-            break
-        end
+    local position, error_message = inflate( state, compressed_data, start_position, true )
+    if position == nil then
+        error( "corrupt DEFLATE data: " .. error_message, 2 )
     end
 
     -- the last byte of the stream is partially read, whole bytes in the buffer are not a part of it
-    local end_position = position - rbit_rshift( bit_count, 3 )
+    local end_position = position - rbit_rshift( state.bit_count, 3 )
     if end_position > data_length + 1 then
         error( "corrupt DEFLATE data: truncated data", 2 )
     end
 
-    local decompressed_data = bytes_to_string( bytes, dictionary_length, length - dictionary_length )
-    release_bytes( bytes, length )
+    local length = state.length
+
+    local decompressed_data = bytes_to_string( state.bytes, dictionary_length, length - dictionary_length )
+    release_bytes( state.bytes, length )
 
     return decompressed_data, end_position
 end
+
+---@class dreamwork.std.deflate.InflateStream : dreamwork.std.deflate.InflateState
+---@field dictionary string | nil
+---@field dictionary_length integer
+---@field data string The input that is not decoded yet, after the last block it is the data after the stream.
+---@field pending string[] The input that is not added to `data` yet.
+---@field pending_count integer
+---@field pending_length integer
+
+--- Larger output buffers are not kept between streams, so memory isn't held after one big stream.
+local MAX_KEPT_OUTPUT = 0x100000
+
+--- [SHARED AND MENU]
+---
+--- The DEFLATE stream decompressor object.
+---
+---@class dreamwork.std.deflate.Decompressor : dreamwork.std.Object, dreamwork.std.deflate.InflateStream
+---@field __class dreamwork.std.deflate.DecompressorClass
+local Decompressor = class.base( "deflate.Decompressor", false )
+
+--- Decodes the collected input, the stream is reset on errors, they are thrown from the caller of the caller.
+---
+---@param stream dreamwork.std.deflate.Decompressor
+---@param is_final boolean
+local function decode( stream, is_final )
+    local data = stream.data
+
+    local pending_count = stream.pending_count
+    if pending_count ~= 0 then
+        data = data .. table_concat( stream.pending, "", 1, pending_count )
+        stream.pending, stream.pending_count, stream.pending_length = {}, 0, 0
+    end
+
+    if stream.block == BLOCK_DONE then
+        stream.data = data
+        return
+    end
+
+    local position, error_message = inflate( stream, data, 1, is_final )
+
+    if position ~= nil and stream.block == BLOCK_DONE then
+        -- the last byte of the stream is partially read, whole bytes in the buffer are not a part of it
+        position = position - rbit_rshift( stream.bit_count, 3 )
+        stream.bit_buffer, stream.bit_count = 0, 0
+
+        if position > #data + 1 then
+            position, error_message = nil, "truncated data"
+        end
+    end
+
+    if position == nil then
+        -- `reset` of subclasses resets their state too
+        stream:reset()
+        error( "corrupt DEFLATE data: " .. error_message, 3 )
+    end
+
+    stream.data = string_sub( data, position )
+end
+
+---@param dictionary string? The preset dictionary the data was compressed with.
+---@protected
+function Decompressor:__init( dictionary )
+    if dictionary ~= nil then
+        local dictionary_length = #dictionary
+        if dictionary_length == 0 then
+            dictionary = nil
+        elseif dictionary_length > WINDOW_SIZE then
+            dictionary = string_sub( dictionary, -WINDOW_SIZE )
+        end
+    end
+
+    self.dictionary = dictionary
+    self.dictionary_length = dictionary == nil and 0 or #dictionary
+
+    self.literal_table = new_integers( LITERAL_TABLE_SIZE )
+    self.distance_table = new_integers( DISTANCE_TABLE_SIZE )
+
+    self:reset()
+end
+
+--- [SHARED AND MENU]
+---
+--- Drops all input and output, the next update starts a new stream with the same dictionary.
+---
+---@return dreamwork.std.deflate.Decompressor self
+function Decompressor:reset()
+    local dictionary_length = self.dictionary_length
+
+    -- the output buffer is kept for the next stream, unless it is large
+    local bytes, capacity = self.bytes, self.capacity
+    if bytes == nil or self.length > MAX_KEPT_OUTPUT then
+        bytes, capacity = new_bytes( dictionary_length + 0x4000 )
+    end
+
+    local dictionary = self.dictionary
+    if dictionary ~= nil then
+        copy_string( bytes, 0, dictionary, 1, dictionary_length )
+    end
+
+    self.bytes, self.length, self.capacity = bytes, dictionary_length, capacity
+    self.bit_buffer, self.bit_count = 0, 0
+
+    self.block, self.is_last, self.stored_size = BLOCK_HEADER, false, 0
+    self.literals, self.distances = FIXED_LITERAL_TABLE, FIXED_DISTANCE_TABLE
+
+    self.data = ""
+    self.pending, self.pending_count, self.pending_length = {}, 0, 0
+
+    return self
+end
+
+--- [SHARED AND MENU]
+---
+--- Adds the compressed string to the stream.
+---
+--- Input is decoded in parts of at least 32768 bytes, the decompressor is reset on malformed data.
+---
+--- Throws an error on malformed data; call via `pcall()` when processing untrusted input.
+---
+---@param compressed_data string The next part of the DEFLATE stream.
+---@return dreamwork.std.deflate.Decompressor self
+function Decompressor:update( compressed_data )
+    local compressed_length = #compressed_data
+    if compressed_length ~= 0 then
+        local pending_count = self.pending_count + 1
+        self.pending[ pending_count ] = compressed_data
+        self.pending_count = pending_count
+
+        local pending_length = self.pending_length + compressed_length
+        self.pending_length = pending_length
+
+        if pending_length >= BUFFER_SIZE then
+            decode( self, false )
+        end
+    end
+
+    return self
+end
+
+--- [SHARED AND MENU]
+---
+--- Decodes all input and returns the decompressed data.
+---
+--- The stream is reset after this, so the decompressor can be used for the next stream.
+---
+--- Throws an error on malformed or truncated data; call via `pcall()` when processing untrusted input.
+---
+---@return string decompressed_data The decompressed string.
+---@return string remaining_data The data after the end of the stream (like the zlib or gzip trailer).
+---@nodiscard
+function Decompressor:flush()
+    decode( self, true )
+
+    local dictionary_length = self.dictionary_length
+    local decompressed_data = bytes_to_string( self.bytes, dictionary_length, self.length - dictionary_length )
+    local remaining_data = self.data
+
+    self:reset()
+
+    return decompressed_data, remaining_data
+end
+
+--- [SHARED AND MENU]
+---
+--- The class used to create new DEFLATE stream decompressors.
+---
+--- Decompresses a raw DEFLATE stream added by `update` parts, the same as `deflate.decompress` of all of them together.
+---
+--- ```lua
+--- local decompressor = std.deflate.Decompressor()
+--- decompressor:update( part1 ):update( part2 )
+--- local decompressed_data = decompressor:flush()
+--- ```
+---
+---@class dreamwork.std.deflate.DecompressorClass : dreamwork.std.deflate.Decompressor, dreamwork.std.Class
+---@field __base dreamwork.std.deflate.Decompressor
+---@overload fun( dictionary: string? ): dreamwork.std.deflate.Decompressor
+local DecompressorClass = class.create( Decompressor )
+deflate.Decompressor = DecompressorClass
