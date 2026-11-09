@@ -1,4 +1,4 @@
-local glua_string = _G.string
+local glua_string = string
 
 ---@class dreamwork.std
 local std = dreamwork.std

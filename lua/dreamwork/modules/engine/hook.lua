@@ -433,6 +433,10 @@ if LUA_MENU then
     event_handlers[ "game_newmap" ] = handler_gameevent
     event_handlers[ "server_spawn" ] = handler_gameevent
     event_handlers[ "user_data_downloaded" ] = handler_gameevent
+
+    -- dreamwork
+
+    event_handlers[ "dreamwork.addon.presets" ] = handler_gameevent
 end
 
 if LUA_CLIENT then

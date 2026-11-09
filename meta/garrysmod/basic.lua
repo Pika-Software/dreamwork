@@ -215,3 +215,21 @@ function ScrH() end
 ---
 ---@param folder_path string The path of the folder, relative to the `garrysmod/` folder.
 function OpenFolder( folder_path ) end
+
+--- [MENU]
+---
+--- Returns the contents of addonpresets.txt located in the garrysmod/settings folder. By default, this file stores your addon presets as JSON.
+---
+---@see SaveAddonPresets
+---
+---@return string json_str The contents of the file.
+function LoadAddonPresets() end
+
+--- [MENU]
+---
+--- Sets the content of addonpresets.txt located in the garrysmod/settings folder. By default, this file stores your addon presets as JSON.
+---
+---@see LoadAddonPresets
+---
+---@param json_str string The new contents of the file.
+function SaveAddonPresets( json_str ) end

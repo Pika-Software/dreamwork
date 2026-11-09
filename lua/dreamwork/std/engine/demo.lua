@@ -20,5 +20,5 @@ local std = dreamwork.std
 -- demo.isPlaying = glua_engine.IsPlayingDemo
 
 -- if std.LUA_MENU then
---     demo.getFileDetails = _G.GetDemoFileDetails
+--     demo.getFileDetails = GetDemoFileDetails
 -- end

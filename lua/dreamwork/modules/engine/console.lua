@@ -20,11 +20,18 @@ local raw_pairs = raw.pairs
 local debug = std.debug
 local debug_fempty = debug.fempty
 
-local string = std.string
+local math = std.math
+local math_min = math.min
 
-local setmetatable = std.setmetatable
+local string = std.string
+local string_find = string.find
+
+local utf8 = std.utf8
+local utf8_sub, utf8_len = utf8.sub, utf8.len
+
 local error = std.error
 local pcall = std.pcall
+local setmetatable = std.setmetatable
 
 
 ---@class dreamwork.engine.console
@@ -548,8 +555,6 @@ do
 
     if std.LUA_CLIENT then
 
-        local string_find = string.find
-
         -- `notify` makes the engine print "Server cvar 'name' changed to value" in the chat,
         -- dreamwork variables use it only to reach the client, so their messages are hidden
         hook_catch( "ChatText", "modules.engine.console.notify", function( _, _, text, message_type )
@@ -564,12 +569,7 @@ end
 
 do
 
-    ---@type fun( msg: string )
-    local Msg = _G.Msg or _G.print
-    local math_min = math.min
-
-    local utf8 = std.utf8
-    local utf8_sub, utf8_len = utf8.sub, utf8.len
+    local glua_Msg = Msg or raw.print
 
     --- [SHARED AND MENU]
     ---
@@ -583,40 +583,40 @@ do
             -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
             -- by Retr0 ( 989 characters per message )
             local segment_length = math_min( 989, str_length )
-            Msg( utf8_sub( str, index, index + segment_length - 1, true ) )
+            glua_Msg( utf8_sub( str, index, index + segment_length - 1, true ) )
             str_length = str_length - segment_length
             index = index + segment_length
         end
     end
 
     ---@type fun( color: { r: integer, g: integer, b: integer, a: integer }, msg: string )
-    local MsgC = _G.MsgC
+    local MsgC = MsgC
     if MsgC == nil then
-        console.messageColored = console.message
-    else
-
-        local color_buffer = dreamwork_engine.ColorProxy( 255, 255, 255, 255 )
-
-        --- [SHARED AND MENU]
-        ---
-        --- Prints the given arguments to the console.
-        ---
-        ---@param str string The string to print.
-        ---@param color dreamwork.std.Color The color to print the string with.
-        function console.messageColored( str, color )
-            local index, str_length = 1, utf8_len( str, nil, nil, true )
-            color_buffer:update( color or 0xFFFFFF )
-
-            while str_length ~= 0 do
-                -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
-                -- by Retr0 ( 989 characters per message )
-                local segment_length = math_min( 989, str_length )
-                MsgC( color_buffer, utf8_sub( str, index, index + segment_length - 1, true ) )
-                str_length = str_length - segment_length
-                index = index + segment_length
-            end
+        function MsgC( _, str )
+            return glua_Msg( str )
         end
+    end
 
+    local color_buffer = dreamwork_engine.ColorProxy( 255, 255, 255, 255 )
+
+    --- [SHARED AND MENU]
+    ---
+    --- Prints the given arguments to the console.
+    ---
+    ---@param str string The string to print.
+    ---@param color dreamwork.std.Color The color to print the string with.
+    function console.messageColored( str, color )
+        local index, str_length = 1, utf8_len( str, nil, nil, true )
+        color_buffer:update( color or 0xFFFFFF )
+
+        while str_length ~= 0 do
+            -- https://developer.valvesoftware.com/wiki/Developer_Console_Control
+            -- by Retr0 ( 989 characters per message )
+            local segment_length = math_min( 989, str_length )
+            MsgC( color_buffer, utf8_sub( str, index, index + segment_length - 1, true ) )
+            str_length = str_length - segment_length
+            index = index + segment_length
+        end
     end
 
 end

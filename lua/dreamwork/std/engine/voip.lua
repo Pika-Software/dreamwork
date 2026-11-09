@@ -47,6 +47,6 @@
 
 -- end
 
--- client.setVoiceChat = _G.permissions.EnableVoiceChat
+-- client.setVoiceChat = permissions.EnableVoiceChat
 
 -- https://github.com/RaphaelIT7/gmod-holylib/blob/main/example-scripts/streamed_voicestream.lua

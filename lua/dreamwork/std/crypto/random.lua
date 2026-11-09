@@ -3,7 +3,9 @@ local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
 local std = dreamwork.std
+
 local ffi = std.ffi
+local _G = std._G
 
 local gc = std.gc
 

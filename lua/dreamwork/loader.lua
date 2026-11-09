@@ -741,7 +741,7 @@ end
 --- The global environment table (outside of DreamWork).
 ---
 ---@type _G
-std.global = std.getfenv( 1 )
+std._G = std.getfenv( 1 )
 
 dreamwork_load( "std/os.lua" )
 
@@ -1554,7 +1554,6 @@ dreamwork_load( "std/types/quaternion.lua" )
 dreamwork_load( "std/types/vmatrix.lua" )
 
 dreamwork_load( "modules/engine/proxies.lua" )
-dreamwork_load( "modules/engine/injection.lua" )
 
 dreamwork_load( "modules/engine/console.lua" )
 
@@ -2734,6 +2733,8 @@ dreamwork_load( "std/types/emitter.lua" )
 dreamwork_load( "std/types/timer.lua" )
 
 dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
+dreamwork_load( "modules/engine/injection.lua" )
+
 dreamwork_load( "std/io/console.lua" )
 
 local console = std.console

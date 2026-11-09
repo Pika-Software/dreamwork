@@ -1,7 +1,3 @@
-local _G = _G
-
----@type dreamwork
-local dreamwork = _G.dreamwork
 local dreamwork_engine = dreamwork.engine
 local transducers = dreamwork.transducers
 
@@ -57,7 +53,7 @@ end
 
 if std.LUA_CLIENT then
 
-    local GetHUDPanel = _G.GetHUDPanel
+    local GetHUDPanel = GetHUDPanel
 
     function PanelClass.getHUD()
         return transducers[ GetHUDPanel() ]
@@ -67,7 +63,7 @@ end
 
 if std.LUA_MENU then
 
-    local GetOverlayPanel = _G.GetOverlayPanel
+    local GetOverlayPanel = GetOverlayPanel
 
     function PanelClass.getOverlay()
         return transducers[ GetOverlayPanel() ]

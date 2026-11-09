@@ -57,6 +57,8 @@ local Network = std.Network
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
 
+local _G = std._G
+
 
 --- Max Lua payload accepted from the bridge / network (matches the native bridge).
 local MAX_LUA_CODE_BYTES = 60 * 1024
@@ -104,7 +106,7 @@ local PAYLOAD_LENGTH_BITS = 32
 
 --- Native `require( "mcp" )` library, captured before `dreamwork.mcp` shadows the global name.
 ---
----@type gm_mcp | nil
+---@class gm_mcp
 local bridge = LUA_SERVER and mcp or nil
 
 ---@class dreamwork.mcp
@@ -486,6 +488,8 @@ local function collect_payload( request_id, payload, realm )
     if string_find( payload, "\"errors\":", 1, true ) ~= nil then
         local ok, batch = pcall( json_deserialize, payload )
         if ok and isTable( batch ) and isTable( batch.errors ) then
+            ---@type dreamwork.mcp.ErrorEntry[]
+            ---@diagnostic disable-next-line: assign-type-mismatch
             local entries = batch.errors
             for index = 1, #entries, 1 do
                 local value = entries[ index ]
@@ -1620,11 +1624,11 @@ if LUA_CLIENT then
 
     -- clients have no native bridge, scripts reach this module through the global name
     do
-        local global_mcp = _G.mcp
-        if global_mcp == nil then
+        local glua_mcp = _G.mcp
+        if glua_mcp == nil then
             _G.mcp = mcp
-        elseif global_mcp ~= mcp then
-            global_mcp.returnResult = mcp.returnResult
+        elseif glua_mcp ~= mcp then
+            glua_mcp.returnResult = mcp.returnResult
         end
     end
 

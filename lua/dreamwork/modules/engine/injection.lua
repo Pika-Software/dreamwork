@@ -18,13 +18,17 @@ local raw_pairs = raw.pairs
 local debug = std.debug
 local debug_fempty = debug.fempty
 
+local json = std.json
+local json_deserialize = json.deserialize
+
 
 if LUA_MENU then
 
+    local LoadAddonPresets = LoadAddonPresets or function() return "{}" end
+
     detour.before( function()
-        ---@diagnostic disable-next-line: undefined-field
-        hook_call( "dreamwork.addon.presets", (_G.LoadAddonPresets or debug_fempty)() )
-    end, _G, "ListAddonPresets" )
+        hook_call( "dreamwork.addon.presets", json_deserialize( LoadAddonPresets() or "{}" ) )
+    end, nil, "ListAddonPresets" )
 
     ---@param server_name string
     ---@param loading_url string
@@ -41,7 +45,7 @@ if LUA_MENU then
             player_steamid64 = player_steamid64,
             gamemode_name = gamemode_name
         } )
-    end, _G, "GameDetails" )
+    end, nil, "GameDetails" )
 
 end
 

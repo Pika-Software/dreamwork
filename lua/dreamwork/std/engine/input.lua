@@ -1,6 +1,3 @@
-local _G = _G
-
-local dreamwork = dreamwork
 local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
 
@@ -97,7 +94,7 @@ if std.LUA_CLIENT_MENU then
             return clipboard_text
         end
 
-        local SetClipboardText = _G.SetClipboardText
+        local SetClipboardText = SetClipboardText
         if SetClipboardText == nil then
             SetClipboardText = std.debug.fempty
         end

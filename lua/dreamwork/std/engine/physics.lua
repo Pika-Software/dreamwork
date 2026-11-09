@@ -72,8 +72,8 @@ do
 
     ---@class dreamwork.std.physics.collide
     local collide = {
-        createFromModel = _G.CreatePhysCollidesFromModel,
-        createBox = _G.CreatePhysCollideBox,
+        createFromModel = CreatePhysCollidesFromModel,
+        createBox = CreatePhysCollideBox,
     }
 
     setmetatable( collide, { __index = std.debug.findmetatable( "PhysCollide" ) } )

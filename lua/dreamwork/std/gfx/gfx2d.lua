@@ -85,7 +85,7 @@ std.Font = FontClass
 --     local render_ReadPixel
 
 --     ---@diagnostic disable-next-line: undefined-field
---     local glua_render = _G.render
+--     local glua_render = render
 --     if glua_render ~= nil then
 --         render_ReadPixel = glua_render.ReadPixel
 --     end

@@ -18,10 +18,10 @@
 -- ? https://holylib.raphaelit7.com/HolyLib.ExitLadder
 --
 
--- local player = _G.player
+-- local player = player
 
 -- local player_getByConnectionID = player.GetByID
--- local player_getByUserID = _G.Player
+-- local player_getByUserID = Player
 
 -- ---@type dreamwork
 -- local dreamwork = dreamwork
@@ -59,8 +59,6 @@
 --     end
 -- } )
 
-local _G = _G
-local dreamwork = _G.dreamwork
 local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std
@@ -157,7 +155,7 @@ function client.getAll()
 
 end
 
--- client.getServerTime = client.getServerTime or _G.CurTime
+-- client.getServerTime = client.getServerTime or CurTime
 
 if LUA_CLIENT_MENU then
 
@@ -177,7 +175,7 @@ if LUA_CLIENT_MENU then
 
     if std.LUA_MENU then
 
-        client.connect = _G.JoinServer or dreamwork_engine.requireLibrary( "permissions" ).Connect
+        client.connect = JoinServer or dreamwork_engine.requireLibrary( "permissions" ).Connect
 
         --- [CLIENT AND MENU]
         ---
@@ -187,8 +185,8 @@ if LUA_CLIENT_MENU then
             std.menu.run( "Disconnect" )
         end
 
-        client.isConnected = _G.IsInGame
-        client.isConnecting = _G.IsInLoading
+        client.isConnected = IsInGame
+        client.isConnecting = IsInLoading
 
     else
 
@@ -270,7 +268,7 @@ if LUA_CLIENT_MENU then
 end
 
 -- if std.LUA_CLIENT then
---     game.getTimeoutInfo = _G.GetTimeoutInfo
+--     game.getTimeoutInfo = GetTimeoutInfo
 -- end
 
 -- TODO: separate package for teams, client teams

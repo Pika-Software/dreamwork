@@ -1,5 +1,3 @@
-local _G = _G
-local dreamwork = _G.dreamwork
 local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std
@@ -60,10 +58,10 @@ end
 
 if std.LUA_MENU then
 
-    menu.getWorkshopStatus = _G.GetAddonStatus
+    menu.getWorkshopStatus = GetAddonStatus
 
     ---@diagnostic disable-next-line: undefined-field
-    menu.run = menu.run or _G.RunGameUICommand
+    menu.run = menu.run or RunGameUICommand
 
     if menu.run == nil then
 
@@ -140,11 +138,11 @@ if std.LUA_MENU then
     ---@class dreamwork.std.menu.loading
     local loading = menu.loading or {}
 
-    loading.getDefaultURL = loading.getDefaultURL or _G.GetDefaultLoadingHTML
-    loading.getFileCount = loading.getFileCount or _G.NumDownloadables
-    loading.getFiles = loading.getFiles or _G.GetDownloadables
-    loading.getStatus = loading.getStatus or _G.GetLoadStatus
-    loading.cancel = loading.cancel or _G.CancelLoading
+    loading.getDefaultURL = loading.getDefaultURL or GetDefaultLoadingHTML
+    loading.getFileCount = loading.getFileCount or NumDownloadables
+    loading.getFiles = loading.getFiles or GetDownloadables
+    loading.getStatus = loading.getStatus or GetLoadStatus
+    loading.cancel = loading.cancel or CancelLoading
 
     -- TODO: Add getProgress
     -- TODO: https://github.com/Pika-Software/atmosphere/blob/master/lua/menu/atmosphere/components/loading.lua

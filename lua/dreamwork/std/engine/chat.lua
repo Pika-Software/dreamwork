@@ -40,7 +40,7 @@ std.chat = chat
 
 --]]
 
--- _G.util.FilterText
+-- util.FilterText
 
 -- addText = "AddText",
 -- close = "Close",

@@ -1,6 +1,5 @@
 -- TODO: https://holylib.raphaelit7.com/HolyLib.IsMapValid
 
-local dreamwork = _G.dreamwork
 local dreamwork_engine = dreamwork.engine
 
 local glua_game = dreamwork_engine.requireLibrary( "game" )
@@ -206,7 +205,7 @@ if std.LUA_MENU then
     local save = {}
     level.save = save
 
-    save.getFileDetails = _G.GetSaveFileDetails
+    save.getFileDetails = GetSaveFileDetails
 
     -- TODO: https://wiki.facepunch.com/gmod/engine.WriteSave
 

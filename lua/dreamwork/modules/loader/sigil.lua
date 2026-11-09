@@ -1,9 +1,10 @@
+---@class dreamwork
+local dreamwork = dreamwork
+
 local dreamwork_vfs = dreamwork.vfs
 local vfs_isFile = dreamwork_vfs.isFile
 local vfs_readFile = dreamwork_vfs.readFile
 
----@class dreamwork
-local dreamwork = _G.dreamwork
 local std = dreamwork.std
 
 local error = std.error
@@ -163,7 +164,7 @@ sigil.Error = SigilErrorClass
 ---@field name? string The chunk name used in errors and notices, defaults to `path` or `"sigil"`.
 ---@field path? string The path of processed file, used to resolve relative `#include` paths.
 ---@field defines? table<string, any> The initial local variables, values are converted with `tostring`.
----@field env? table The environment of `#if` expressions and `#compile` blocks, defaults to `_G`.
+---@field env? table The environment of `#if` expressions and `#compile` blocks, defaults to `std`.
 ---@field read? fun( file_path: string ): string | nil The file reader used by `#include`, defaults to `dreamwork.vfs.readFile`.
 ---@field logger? dreamwork.std.console.Logger | false The logger used by notices, `false` disables them, defaults to `dreamwork.Logger`.
 ---@field comments? boolean If `false`, comments will be removed from the result, defaults to `true`.
@@ -1034,7 +1035,7 @@ function sigil.preprocess( code, options )
         options = {}
     end
 
-    local env = options.env or _G
+    local env = options.env or std
 
     local logger = options.logger
     if logger == nil then
