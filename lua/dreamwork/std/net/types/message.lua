@@ -990,7 +990,7 @@ local function message_receive( message, sender, encoded )
         return
     end
 
-    events:emit( message, "receive", message, std.BinaryReader( table_concat( state.chunks, "", 1, count ) ), sender, realm )
+    events:emit( message, "receive", message, BinaryReader( table_concat( state.chunks, "", 1, count ) ), sender, realm )
 end
 
 if LUA_SERVER then

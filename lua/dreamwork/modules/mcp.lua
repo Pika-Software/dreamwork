@@ -1153,9 +1153,7 @@ if LUA_SERVER then
     ---@param reader dreamwork.std.BinaryReader
     ---@param sender garrysmod.Player | nil
     local function on_network_receive( _, reader, sender )
-        if sender == nil or not sender:IsValid() then
-            return
-        end
+        if sender == nil or not sender:IsValid() then return end
 
         local ok, err = pcall( function()
             local opcode = read_opcode( reader )
@@ -1384,9 +1382,7 @@ if LUA_SERVER then
 
     -- Fail waiting execs on Lua errors that did not go through dreamwork (those are sentinels here).
     engine_hook.catch( "dreamwork.error.occurred", "modules.mcp.error", function( err, realm, stack, source, client )
-        if err == exceptions_Sentinel then
-            return
-        end
+        if err == exceptions_Sentinel then return end
 
         if client == nil then
             if active_exec_request_id ~= nil then
@@ -1396,9 +1392,7 @@ if LUA_SERVER then
             return
         end
 
-        if not client:IsValid() then
-            return
-        end
+        if not client:IsValid() then return end
 
         for request_id, pending_ply in raw_pairs( pending_exec ) do
             if pending_ply == client then
@@ -1408,9 +1402,7 @@ if LUA_SERVER then
     end )
 
     engine_hook.catch( "dreamwork.entity.destroy", "modules.mcp.entities", function( entity, is_player )
-        if not is_player then
-            return
-        end
+        if not is_player then return end
 
         ---@cast entity garrysmod.Player
 
@@ -1453,8 +1445,9 @@ if LUA_SERVER then
 
     mcp.sync()
 
-    local running = false
     local status_ok, status = pcall( bridge.getStatus )
+    local running = false
+
     if status_ok and isTable( status ) then
         running = bridge.isRunning() == true
         dreamwork_Logger:info( "MCP: bridge module ready (listener %s, status='%s').", running and "running" or "stopped", tostring( status.message or "" ) )
@@ -1482,9 +1475,7 @@ if LUA_CLIENT then
     ---@param ok boolean
     ---@param payload string
     local function send_result( request_id, ok, payload )
-        if request_id == nil or request_id == "" then
-            return
-        end
+        if request_id == nil or request_id == "" then return end
 
         -- an open error window owns the response: failures join it, results are dropped
         if error_windows[ request_id ] ~= nil then
@@ -1500,9 +1491,7 @@ if LUA_CLIENT then
         end
 
         local channel = get_network()
-        if channel == nil then
-            return
-        end
+        if channel == nil then return end
 
         channel:transmit( function( _, writer )
             write_opcode( writer, MSG_EXEC_RESULT )
