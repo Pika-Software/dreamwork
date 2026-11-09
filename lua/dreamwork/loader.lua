@@ -2977,7 +2977,10 @@ dreamwork_load( "std/net/types/message.lua" )
 dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
 
 dreamwork_load( "std/net/steam.lua" )
-dreamwork_load( "std/types/addon.lua" )
+
+dreamwork_load( "std/compress/types/zip.lua" )
+dreamwork_load( "std/compress/types/tar.lua" )
+dreamwork_load( "std/compress/types/addon.lua" )
 
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )

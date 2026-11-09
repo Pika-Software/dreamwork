@@ -1,3 +1,16 @@
+local dreamwork_engine = dreamwork.engine
+
+
+local vfs           = dreamwork.vfs
+local vfs_isFile    = vfs.isFile
+local vfs_writeFile = vfs.writeFile
+
+
+---@type garrysmod.game
+local glua_game = dreamwork_engine.requireLibrary( "game" )
+local game_MountGMA = glua_game.MountGMA
+
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -22,10 +35,13 @@ local time = std.time
 local time_now = time.now
 
 local CRC32 = std.CRC32
-local crc32_digest = CRC32.digest
+local CRC32_digest = CRC32.digest
 
 local steam = std.steam
 local SteamIdentifier = steam.Identifier
+
+local uuid = std.uuid
+local uuid_unique = uuid.unique
 
 local BinaryReader = std.BinaryReader
 local BinaryWriter = std.BinaryWriter
@@ -659,7 +675,7 @@ function Addon:addFile( file_path, content )
     local file = {
         path = file_path,
         size = #content,
-        checksum = crc32_digest( content ),
+        checksum = CRC32_digest( content ),
         content = content
     }
 
@@ -714,7 +730,7 @@ end
 ---@nodiscard
 function Addon:verify()
     local data = self.data
-    if data ~= nil and self.checksum ~= 0 and crc32_digest( string_sub( data, 1, self.size ) ) ~= self.checksum then
+    if data ~= nil and self.checksum ~= 0 and CRC32_digest( string_sub( data, 1, self.size ) ) ~= self.checksum then
         return false, nil
     end
 
@@ -724,7 +740,7 @@ function Addon:verify()
         local file = files[ i ]
         local checksum = file.checksum
 
-        if checksum ~= 0 and crc32_digest( getContent( self, file ) ) ~= checksum then
+        if checksum ~= 0 and CRC32_digest( getContent( self, file ) ) ~= checksum then
             return false, file.path
         end
     end
@@ -740,7 +756,7 @@ end
 ---@return boolean is_valid `true` if the addon follows the rules.
 ---@return string | nil reason The reason why the addon is invalid.
 ---@nodiscard
-function Addon:validate()
+function Addon:isValid()
     if types[ self.type ] == nil then
         return false, "addon type '" .. self.type .. "' is not allowed"
     end
@@ -777,4 +793,40 @@ function Addon:validate()
     end
 
     return true, nil
+end
+
+Addon.__isvalid = Addon.isValid
+
+do
+
+    local TMP_DIRECTORY = "/garrysmod/data/dreamwork/tmp/"
+
+    if vfs.isDirectory( TMP_DIRECTORY ) then
+        vfs.deleteDirectory( TMP_DIRECTORY, true )
+    end
+
+    vfs.createDirectory( TMP_DIRECTORY )
+
+    ---@param uuid_str string
+    ---@return boolean
+    local function is_free( uuid_str )
+        return not vfs_isFile( TMP_DIRECTORY .. uuid_str .. ".gma" )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Compiles the addon into a temporary `.gma` in `/garrysmod/data/dreamwork/tmp/` and mounts it into the game.
+    ---
+    --- The file is written asynchronously when called from a coroutine.
+    --- Mounted addons cannot be unmounted, so the file stays until the game is closed.
+    ---
+    ---@return boolean success `true` if the addon was mounted.
+    ---@return string[] files If successful, a list of files that have been mounted.
+    ---@async
+    function Addon:mount()
+        local file_name = uuid_unique( is_free ) .. ".gma"
+        vfs_writeFile( TMP_DIRECTORY .. file_name, self:compile() )
+        return game_MountGMA( "data/dreamwork/tmp/" .. file_name )
+    end
+
 end
