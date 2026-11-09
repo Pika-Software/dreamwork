@@ -54,7 +54,7 @@ function Version.fromString(str) end
 ---@param str string The version string.
 ---@return boolean is_valid `true` if the string is a valid version, `false` otherwise.
 ---@nodiscard
-function Version.isValid(str) end
+function Version.validate(str) end
 
 ---@return string
 ---@protected

@@ -58,7 +58,7 @@ local __Addon = {}
 ---
 ---@class AddonClass : Addon, Class
 ---@field __base Addon
----@overload fun( data: string? ): Addon
+---@overload fun( data: string?, ratio: number? ): Addon
 Addon = {}
 
 --- `GMAD` as little endian uint32.
@@ -104,19 +104,25 @@ function Addon.isAllowedPath(file_path) end
 function __Addon:__represent() end
 
 ---@param data string?
+---@param ratio number?
 ---@protected
-function __Addon:__init(data) end
+function __Addon:__init(data, ratio) end
 
 --- [SHARED AND MENU]
 ---
 --- Replaces the addon with the parsed `.gma` data.
 ---
---- Legacy LZMA compressed addons are decompressed first.
+--- Legacy LZMA compressed addons are decompressed first, on a separate thread when HolyLib is installed and the call is made from a coroutine.
 ---
 --- File contents are not copied, they are read from the data on demand by `readFile`.
 ---
+--- `ratio` limits how much a legacy addon may expand, see `lzma.decompress`; pass a value like `0.99` for untrusted data,
+--- since a few bytes of crafted lzma data can claim up to 4 GiB of output.
+---
 ---@param data string The `.gma` data.
-function __Addon:parse(data) end
+---@param ratio number? The maximum allowed compression ratio of legacy addons, no limit by default.
+---@async
+function __Addon:parse(data, ratio) end
 
 --- [SHARED AND MENU]
 ---
@@ -186,7 +192,7 @@ function __Addon:verify() end
 ---@return boolean is_valid `true` if the addon follows the rules.
 ---@return string | nil reason The reason why the addon is invalid.
 ---@nodiscard
-function __Addon:isValid() end
+function __Addon:isAllowed() end
 
 --- [SHARED AND MENU]
 ---
