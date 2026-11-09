@@ -49,5 +49,3 @@ function level.setGravity(value) end
 local save = {}
 
 level.save = save
-
-save.getFileDetails = _G.GetSaveFileDetails

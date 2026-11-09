@@ -370,7 +370,7 @@ function range(from, to, step) end
 --- The global environment table (outside of DreamWork).
 ---
 ---@type _G
-global = nil
+_G = nil
 
 --- [SHARED AND MENU]
 ---

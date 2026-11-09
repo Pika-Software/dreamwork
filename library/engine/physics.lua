@@ -6,10 +6,6 @@ local physics = {}
 ---@class physics.collide
 local collide = {}
 
-collide.createFromModel = _G.CreatePhysCollidesFromModel
-
-collide.createBox = _G.CreatePhysCollideBox
-
 physics.collide = collide
 
 ---@type PhysObj
