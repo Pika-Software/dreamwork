@@ -1002,6 +1002,13 @@ crypto = {}
 
 --- [SHARED AND MENU]
 ---
+--- Lua 5.1 / LuaJIT / GLua code library: lexer, parser and generator.
+---
+---@class lua
+lua = {}
+
+--- [SHARED AND MENU]
+---
 --- Loads a string as
 --- a bytecode chunk in the specified environment
 --- and returns function as a compile result.

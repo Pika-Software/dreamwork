@@ -186,4 +186,16 @@ function __Addon:verify() end
 ---@return boolean is_valid `true` if the addon follows the rules.
 ---@return string | nil reason The reason why the addon is invalid.
 ---@nodiscard
-function __Addon:validate() end
+function __Addon:isValid() end
+
+--- [SHARED AND MENU]
+---
+--- Compiles the addon into a temporary `.gma` in `/garrysmod/data/dreamwork/tmp/` and mounts it into the game.
+---
+--- The file is written asynchronously when called from a coroutine.
+--- Mounted addons cannot be unmounted, so the file stays until the game is closed.
+---
+---@return boolean success `true` if the addon was mounted.
+---@return string[] files If successful, a list of files that have been mounted.
+---@async
+function __Addon:mount() end

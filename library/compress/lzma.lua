@@ -18,3 +18,7 @@ lzma.PROPS_SIZE = 5
 ---@return integer size The decompressed size in bytes.
 ---@nodiscard
 function lzma.size(str) end
+
+function lzma.asyncCompress(decompressed_data, level, dictionary_size, callback) end
+
+function lzma.asyncDecompress(compressed_data, callback, ratio) end
