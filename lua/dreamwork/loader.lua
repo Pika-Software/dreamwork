@@ -2716,6 +2716,17 @@ dreamwork_load( "std/compress/zlib.lua" )
 dreamwork_load( "std/compress/gzip.lua" )
 dreamwork_load( "std/compress/lzma.lua" )
 
+--- [SHARED AND MENU]
+---
+--- Lua 5.1 / LuaJIT / GLua code library: lexer, parser and generator.
+---
+---@class dreamwork.std.lua
+std.lua = std.lua or {}
+
+dreamwork_load( "std/lua/lexer.lua" )
+dreamwork_load( "std/lua/parser.lua" )
+dreamwork_load( "std/lua/generator.lua" )
+
 dreamwork_load( "std/types/mixin.lua" )
 dreamwork_load( "std/types/hook.lua" )
 dreamwork_load( "std/types/event.lua" )
