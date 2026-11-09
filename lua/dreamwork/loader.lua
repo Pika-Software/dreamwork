@@ -2927,6 +2927,7 @@ dreamwork_load( "std/io/fs.lua" )
 local vfs = dreamwork.vfs
 
 dreamwork_load( "modules/engine/events.lua" )
+dreamwork_load( "modules/loader/sigil.lua" )
 
 do
 
