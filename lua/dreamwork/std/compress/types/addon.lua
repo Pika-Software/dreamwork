@@ -29,6 +29,7 @@ local json_serialize = json.serialize
 local json_deserialize = json.deserialize
 
 local lzma = std.lzma
+local lzma_validate = lzma.validate
 local lzma_decompress = lzma.decompress
 
 local time = std.time
@@ -254,7 +255,7 @@ local Addon = class.base( "Addon", false, nil )
 ---
 ---@class dreamwork.std.AddonClass : dreamwork.std.Addon, dreamwork.std.Class
 ---@field __base dreamwork.std.Addon
----@overload fun( data: string? ): dreamwork.std.Addon
+---@overload fun( data: string?, ratio: number? ): dreamwork.std.Addon
 local AddonClass = class.create( Addon )
 std.Addon = AddonClass
 
@@ -316,8 +317,9 @@ function Addon:__represent()
 end
 
 ---@param data string?
+---@param ratio number?
 ---@protected
-function Addon:__init( data )
+function Addon:__init( data, ratio )
     self.format_version = GMA_VERSION
     self.steamid = SteamIdentifier.INVALID
     self.timestamp = time_now()
@@ -336,7 +338,7 @@ function Addon:__init( data )
     self.legacy = false
 
     if data ~= nil then
-        self:parse( data )
+        self:parse( data, ratio )
     end
 end
 
@@ -395,27 +397,30 @@ end
 ---
 --- Replaces the addon with the parsed `.gma` data.
 ---
---- Legacy LZMA compressed addons are decompressed first.
+--- Legacy LZMA compressed addons are decompressed first, on a separate thread when HolyLib is installed and the call is made from a coroutine.
 ---
 --- File contents are not copied, they are read from the data on demand by `readFile`.
 ---
+--- `ratio` limits how much a legacy addon may expand, see `lzma.decompress`; pass a value like `0.99` for untrusted data,
+--- since a few bytes of crafted lzma data can claim up to 4 GiB of output.
+---
 ---@param data string The `.gma` data.
-function Addon:parse( data )
+---@param ratio number? The maximum allowed compression ratio of legacy addons, no limit by default.
+---@async
+function Addon:parse( data, ratio )
     local reader = BinaryReader( data )
-
-    -- legacy addons are LZMA streams, the first byte is the `0x5D` properties byte
     local signature = reader:readUInt( 32, true )
 
-    local legacy = signature == 0x5D
+    -- legacy addons are whole `.gma` files compressed with `util.Compress`
+    local legacy = signature ~= GMA_SIGNATURE and lzma_validate( data )
     if legacy then
-        local lzma_data = lzma_decompress( data )
-        if lzma_data == nil then
-            error( DecodeError( "invalid addon signature", 1 ), 2 )
+        local success, result = pcall( lzma_decompress, data, ratio )
+        if not success then
+            error( DecodeError( "invalid addon signature and not a legacy lzma addon, " .. tostring( result ), 1 ), 2 )
         end
 
-        data = lzma_data
+        data = result
         reader:open( data )
-
         signature = reader:readUInt( 32, true )
     end
 
@@ -756,7 +761,7 @@ end
 ---@return boolean is_valid `true` if the addon follows the rules.
 ---@return string | nil reason The reason why the addon is invalid.
 ---@nodiscard
-function Addon:isValid()
+function Addon:isAllowed()
     if types[ self.type ] == nil then
         return false, "addon type '" .. self.type .. "' is not allowed"
     end
@@ -795,7 +800,7 @@ function Addon:isValid()
     return true, nil
 end
 
-Addon.__isvalid = Addon.isValid
+Addon.__isvalid = Addon.isAllowed
 
 do
 

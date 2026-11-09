@@ -419,7 +419,7 @@ end
 ---@param str string The version string.
 ---@return boolean is_valid `true` if the string is a valid version, `false` otherwise.
 ---@nodiscard
-function VersionClass.isValid( str )
+function VersionClass.validate( str )
     local error_message, major, minor, patch = parse( str, false )
     return error_message == nil and major <= 0x3ff and minor <= 0x7ff and patch <= 0x7ff
 end

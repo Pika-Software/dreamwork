@@ -27,6 +27,12 @@ VERSION = nil
 ---@type string | nil
 BRANCH = nil
 
+---@type table | nil
+GM = nil
+
+---@type table | nil
+GAMEMODE = nil
+
 --- Orthographic projection borders for `CameraData`.
 ---
 --- Each field is the distance of that border from the view position;
