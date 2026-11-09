@@ -10,10 +10,10 @@ util = {}
 ---
 --- The number of threads used is controlled by the `holylib_util_compressthreads` convar.
 ---
----@param decompressed_data string The data to compress.
+---@param data string The data to compress.
 ---@param callback fun( compressed_data: string | nil ) The function called with the compressed data, or `nil` on failure.
----@overload fun( decompressed_data: string, level: integer?, dictionary_size: integer?, callback: fun( compressed_data: string | nil ) )
-function util.AsyncCompress( decompressed_data, callback ) end
+---@overload fun( data: string, level: integer?, dictionary_size: integer?, callback: fun( compressed_data: ( string | nil ) ) )
+function util.AsyncCompress( data, callback ) end
 
 --- [SHARED AND MENU]
 ---
