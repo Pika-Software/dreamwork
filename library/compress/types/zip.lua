@@ -2,31 +2,9 @@
 
 --- [SHARED AND MENU]
 ---
---- The file inside of the zip archive.
----
---- `content` is `nil` for files of a parsed archive, the compressed data stays in the archive string at `offset`,
---- `compressed` is the compressed data of added files.
----
----@class Zip.File
----@field path string The path of the file inside of the archive, e.g. `docs/readme.txt`, directories end with `/`.
----@field size integer The uncompressed size of the file in bytes.
----@field compressed_size integer The compressed size of the file in bytes.
----@field checksum integer The CRC-32 checksum of the uncompressed content.
----@field method integer The compression method, `0` is stored, `8` is deflate, others can't be read.
----@field flags integer The general purpose flags, `1` means the file is encrypted.
----@field timestamp integer The Unix timestamp of the last modification in seconds.
----@field comment string The file comment.
----@field attributes integer The external file attributes, MS-DOS attributes or the Unix mode in the high 16 bits, depends on `system`.
----@field system integer The host system the file was created on, `0` is MS-DOS, `3` is Unix.
----@field content string | nil The uncompressed content, `nil` if it is still in the archive data.
----@field compressed string | nil The compressed content, `nil` if it is still in the archive data.
----@field offset integer | nil The `1`-based position of the compressed content in the archive data.
-
---- [SHARED AND MENU]
----
 --- The zip (`.zip`) archive.
 ---
---- Parses stored and deflated files (ZIP64 too), builds archives with deflated files,
+--- Parses stored, deflated and LZMA files (ZIP64 too), builds archives with deflated or LZMA files,
 --- the files of a parsed archive are copied without recompression.
 ---
 --- ```lua
@@ -114,13 +92,19 @@ function __Zip:readFile(file_path) end
 ---
 --- Adds the file to the archive, replaces the existing file with the same path.
 ---
---- The content is deflated right away, it is stored as is if deflate doesn't make it smaller.
+--- The content is compressed right away, it is stored as is if compression doesn't make it smaller.
+---
+--- LZMA uses `lzma.compress`, so it runs on a separate thread when HolyLib is installed and the call is made from a coroutine.
+---
+--- Throws an error if `method` is not `STORED`, `DEFLATE` or `LZMA`.
 ---
 ---@param file_path string The path of the file inside of the archive, e.g. `docs/readme.txt`.
 ---@param content string The file content.
----@param level integer? The deflate level ( 0 - 9 ), `0` stores the content without compression, `6` by default.
+---@param level integer? The compression level ( 0 - 9 ), `0` stores the content without compression, `6` by default for deflate, `5` for LZMA.
+---@param method Zip.Method? The compression method, `0` (stored), `8` (deflate) or `14` (LZMA), `8` by default.
 ---@return Zip.File file The added file.
-function __Zip:addFile(file_path, content, level) end
+---@async
+function __Zip:addFile(file_path, content, level, method) end
 
 --- [SHARED AND MENU]
 ---
