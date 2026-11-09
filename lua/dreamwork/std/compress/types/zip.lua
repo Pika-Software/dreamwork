@@ -30,6 +30,13 @@ local deflate = std.deflate
 local deflate_compress = deflate.compress
 local deflate_decompress = deflate.decompress
 
+local lzma = std.lzma
+local lzma_compress = lzma.compress
+local lzma_decompress = lzma.decompress
+
+local pack = std.pack
+local pack_writeUInt64LE = pack.writeUInt64LE
+
 local CRC32 = std.CRC32
 local crc32_digest = CRC32.digest
 
@@ -80,6 +87,16 @@ local TIMESTAMP_EXTRA_ID = 0x5455
 ---@type integer
 local VERSION_NEEDED = 20
 
+--- The version needed to extract LZMA files, `6.3`.
+---
+---@type integer
+local LZMA_VERSION_NEEDED = 63
+
+--- The LZMA SDK version written before the LZMA properties, `9.20`, only informative.
+---
+---@type string
+local LZMA_SDK_VERSION = "\9\20"
+
 --- The version needed to extract ZIP64 records, `4.5`.
 ---
 ---@type integer
@@ -111,31 +128,9 @@ local deflate_options = { level = 6 }
 
 --- [SHARED AND MENU]
 ---
---- The file inside of the zip archive.
----
---- `content` is `nil` for files of a parsed archive, the compressed data stays in the archive string at `offset`,
---- `compressed` is the compressed data of added files.
----
----@class dreamwork.std.Zip.File
----@field path string The path of the file inside of the archive, e.g. `docs/readme.txt`, directories end with `/`.
----@field size integer The uncompressed size of the file in bytes.
----@field compressed_size integer The compressed size of the file in bytes.
----@field checksum integer The CRC-32 checksum of the uncompressed content.
----@field method integer The compression method, `0` is stored, `8` is deflate, others can't be read.
----@field flags integer The general purpose flags, `1` means the file is encrypted.
----@field timestamp integer The Unix timestamp of the last modification in seconds.
----@field comment string The file comment.
----@field attributes integer The external file attributes, MS-DOS attributes or the Unix mode in the high 16 bits, depends on `system`.
----@field system integer The host system the file was created on, `0` is MS-DOS, `3` is Unix.
----@field content string | nil The uncompressed content, `nil` if it is still in the archive data.
----@field compressed string | nil The compressed content, `nil` if it is still in the archive data.
----@field offset integer | nil The `1`-based position of the compressed content in the archive data.
-
---- [SHARED AND MENU]
----
 --- The zip (`.zip`) archive.
 ---
---- Parses stored and deflated files (ZIP64 too), builds archives with deflated files,
+--- Parses stored, deflated and LZMA files (ZIP64 too), builds archives with deflated or LZMA files,
 --- the files of a parsed archive are copied without recompression.
 ---
 --- ```lua
@@ -456,13 +451,23 @@ local function getContent( zip, file )
 
     if method == 0 then
         return getCompressed( zip, file )
+    elseif file.size == 0 and (method == 8 or method == 14) then
+        -- libarchive writes empty LZMA files without the LZMA header
+        return ""
+    elseif method == 14 then
+        -- SDK version (2), properties size (2) and properties, converted into the `util.Compress` header
+        local compressed = getCompressed( zip, file )
+        local low, high = string_byte( compressed, 3, 4 )
+        local stream_start = 5 + low + high * 256
+
+        return lzma_decompress( string_sub( compressed, 5, stream_start - 1 ) .. pack_writeUInt64LE( file.size ) .. string_sub( compressed, stream_start ) )
     elseif method ~= 8 then
         error( "file '" .. file.path .. "' has unsupported compression method " .. method, 3 )
     end
 
     local compressed = file.compressed
     if compressed ~= nil then
-        return ( deflate_decompress( compressed ) )
+        return (deflate_decompress( compressed ))
     end
 
     local offset = file.offset
@@ -471,7 +476,7 @@ local function getContent( zip, file )
     end
 
     -- decompressed in place, without copying the compressed data out of the archive
-    return ( deflate_decompress( zip.data, nil, offset ) )
+    return (deflate_decompress( zip.data, nil, offset ))
 end
 
 --- [SHARED AND MENU]
@@ -503,6 +508,8 @@ function Zip:compile()
         local dos_date, dos_time = toDOSTime( timestamp )
 
         local flags = bit_band( file.flags, KEPT_FLAGS )
+        local method = file.method
+        local version_needed = method == 14 and LZMA_VERSION_NEEDED or VERSION_NEEDED
 
         local file_comment = file.comment
         if string_find( file_path, "[\128-\255]" ) ~= nil or string_find( file_comment, "[\128-\255]" ) ~= nil then
@@ -511,9 +518,9 @@ function Zip:compile()
 
         writer:open( "" )
         writer:writeUInt( LOCAL_HEADER_SIGNATURE, 32, true )
-        writer:writeUInt( VERSION_NEEDED, 16, true )
+        writer:writeUInt( version_needed, 16, true )
         writer:writeUInt( flags, 16, true )
-        writer:writeUInt( file.method, 16, true )
+        writer:writeUInt( method, 16, true )
         writer:writeUInt( dos_time, 16, true )
         writer:writeUInt( dos_date, 16, true )
         writer:writeUInt( file.checksum, 32, true )
@@ -534,10 +541,10 @@ function Zip:compile()
         buffer_size = buffer_size + 2
 
         directory:writeUInt( CENTRAL_HEADER_SIGNATURE, 32, true )
-        directory:writeUInt( bit_bor( bit_lshift( file.system, 8 ), VERSION_NEEDED ), 16, true )
-        directory:writeUInt( VERSION_NEEDED, 16, true )
+        directory:writeUInt( bit_bor( bit_lshift( file.system, 8 ), version_needed ), 16, true )
+        directory:writeUInt( version_needed, 16, true )
         directory:writeUInt( flags, 16, true )
-        directory:writeUInt( file.method, 16, true )
+        directory:writeUInt( method, 16, true )
         directory:writeUInt( dos_time, 16, true )
         directory:writeUInt( dos_date, 16, true )
         directory:writeUInt( file.checksum, 32, true )
@@ -657,23 +664,42 @@ end
 ---
 --- Adds the file to the archive, replaces the existing file with the same path.
 ---
---- The content is deflated right away, it is stored as is if deflate doesn't make it smaller.
+--- The content is compressed right away, it is stored as is if compression doesn't make it smaller.
+---
+--- LZMA uses `lzma.compress`, so it runs on a separate thread when HolyLib is installed and the call is made from a coroutine.
+---
+--- Throws an error if `method` is not `STORED`, `DEFLATE` or `LZMA`.
 ---
 ---@param file_path string The path of the file inside of the archive, e.g. `docs/readme.txt`.
 ---@param content string The file content.
----@param level integer? The deflate level ( 0 - 9 ), `0` stores the content without compression, `6` by default.
+---@param level integer? The compression level ( 0 - 9 ), `0` stores the content without compression, `6` by default for deflate, `5` for LZMA.
+---@param method dreamwork.std.Zip.Method? The compression method, `0` (stored), `8` (deflate) or `14` (LZMA), `8` by default.
 ---@return dreamwork.std.Zip.File file The added file.
-function Zip:addFile( file_path, content, level )
+---@async
+function Zip:addFile( file_path, content, level, method )
+    if method == nil then
+        method = 8
+    elseif not (method == 0 or method == 8 or method == 14) then
+        error( "unsupported compression method " .. method, 2 )
+    end
+
     local size = #content
+    local compressed = content
 
-    local method, compressed = 0, content
+    if method == 0 or level == 0 or size == 0 then
+        method = 0
+    else
+        if method == 8 then
+            deflate_options.level = level or 6
+            compressed = deflate_compress( content, deflate_options )
+        else
+            -- `util.Compress` header: properties (5) and size (8), the stream has no end marker
+            local lzma_data = lzma_compress( content, level )
+            compressed = LZMA_SDK_VERSION .. "\5\0" .. string_sub( lzma_data, 1, 5 ) .. string_sub( lzma_data, 14 )
+        end
 
-    if level ~= 0 and size ~= 0 then
-        deflate_options.level = level or 6
-
-        local deflated = deflate_compress( content, deflate_options )
-        if #deflated < size then
-            method, compressed = 8, deflated
+        if #compressed >= size then
+            method, compressed = 0, content
         end
     end
 
@@ -775,7 +801,7 @@ function Zip:verify()
         local file = files[ i ]
 
         local success, content = pcall( getContent, self, file )
-        if not ( success and #content == file.size and crc32_digest( content ) == file.checksum ) then
+        if not (success and #content == file.size and crc32_digest( content ) == file.checksum) then
             return false, file.path
         end
     end

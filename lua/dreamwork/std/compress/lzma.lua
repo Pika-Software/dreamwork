@@ -76,7 +76,7 @@ end
 ---@return boolean is_valid `true` if the header is valid, `false` otherwise.
 ---@return nil | string err_msg The reason why the header is invalid.
 ---@nodiscard
-function lzma.validate( compressed_data )
+local function validate( compressed_data )
     local length = #compressed_data
     if length <= 13 then
         return false, string_format( "data is too short, expected more than 13 bytes, got %d", length )
@@ -94,6 +94,8 @@ function lzma.validate( compressed_data )
 
     return true
 end
+
+lzma.validate = validate
 
 --- [SHARED AND MENU]
 ---
@@ -152,13 +154,19 @@ end
 ---@nodiscard
 ---@async
 function lzma.decompress( compressed_data, ratio )
-    local is_valid, err_msg = lzma.validate( compressed_data )
+    local is_valid, err_msg = validate( compressed_data )
     if not is_valid then
         error( "corrupt lzma data: " .. err_msg, 2 )
     end
 
-    local length = #compressed_data
     local decompressed_size = bytepack_readUInt32LE( string_byte( compressed_data, 6, 9 ) )
+
+    -- the engine returns garbage instead of an empty string for streams of 0 bytes
+    if decompressed_size == 0 then
+        return ""
+    end
+
+    local length = #compressed_data
 
     if ratio ~= nil then
         if ratio <= 0 then
