@@ -7,17 +7,6 @@
 ---@class steam
 steam = {}
 
---- [CLIENT AND MENU]
----
---- Returns the name of the player with the given Steam ID.
----
----@param id steam.Identifier The SteamID of the player.
----@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
----@return string name The name of the player.
----@nodiscard
----@async
-function steam.getUserName(id, timeout) end
-
 --- [SHARED AND MENU]
 ---
 --- The Steam Workshop API library.

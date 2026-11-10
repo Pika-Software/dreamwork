@@ -1,0 +1,57 @@
+---@meta _
+
+
+--- [SHARED AND MENU]
+---
+--- The compression method of the zip file (APPNOTE 6.3.10, section 4.4.5).
+---
+--- Only `0` (stored), `8` (deflate) and `14` (LZMA) can be read and written, the rest are listed to identify files.
+---
+---@alias Zip.Method
+---| 0 # Stored, no compression.
+---| 1 # Shrunk, LZW with partial clearing (PKZIP 1.x).
+---| 2 # Reduced with compression factor 1.
+---| 3 # Reduced with compression factor 2.
+---| 4 # Reduced with compression factor 3.
+---| 5 # Reduced with compression factor 4.
+---| 6 # Imploded, sliding dictionary with Shannon-Fano trees.
+---| 7 # Reserved for the tokenizing compression algorithm.
+---| 8 # Deflated.
+---| 9 # Enhanced deflate (deflate64), a 64 KiB window.
+---| 10 # PKWARE Data Compression Library imploding (old IBM TERSE).
+---| 12 # BZIP2.
+---| 14 # LZMA (EFS).
+---| 16 # IBM z/OS CMPSC.
+---| 18 # IBM TERSE (new).
+---| 19 # IBM LZ77 z Architecture (PFS).
+---| 20 # Zstandard, deprecated code, `93` is used now.
+---| 93 # Zstandard.
+---| 94 # MP3.
+---| 95 # XZ.
+---| 96 # JPEG variant (WinZip).
+---| 97 # WavPack.
+---| 98 # PPMd version I, revision 1.
+---| 99 # WinZip AES encryption marker, the real method is in the AES extra field.
+---| integer
+
+--- [SHARED AND MENU]
+---
+--- The file inside of the zip archive.
+---
+--- `content` is `nil` for files of a parsed archive, the compressed data stays in the archive string at `offset`,
+--- `compressed` is the compressed data of added files.
+---
+---@class Zip.File
+---@field path string The path of the file inside of the archive, e.g. `docs/readme.txt`, directories end with `/`.
+---@field size integer The uncompressed size of the file in bytes.
+---@field compressed_size integer The compressed size of the file in bytes.
+---@field checksum integer The CRC-32 checksum of the uncompressed content.
+---@field method Zip.Method The compression method, only `0` (stored), `8` (deflate) and `14` (LZMA) can be read.
+---@field flags integer The general purpose flags, `1` means the file is encrypted.
+---@field timestamp integer The Unix timestamp of the last modification in seconds.
+---@field comment string The file comment.
+---@field attributes integer The external file attributes, MS-DOS attributes or the Unix mode in the high 16 bits, depends on `system`.
+---@field system integer The host system the file was created on, `0` is MS-DOS, `3` is Unix.
+---@field content string | nil The uncompressed content, `nil` if it is still in the archive data.
+---@field compressed string | nil The compressed content, `nil` if it is still in the archive data.
+---@field offset integer | nil The `1`-based position of the compressed content in the archive data.

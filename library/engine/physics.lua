@@ -8,7 +8,7 @@ local collide = {}
 
 physics.collide = collide
 
----@type PhysObj
+---@type garrysmod.Physics
 physics.object = nil
 
 ---@class physics.surface
@@ -23,7 +23,7 @@ local surface = {}
 surface.Materials = nil
 
 --- Adds surface properties to the game's physics environment.
----@param data SurfacePropertyData | table The surface data to be added.
+---@param data garrysmod.SurfacePropertyData | table The surface data to be added.
 function surface.add(data) end
 
 physics.surface = surface

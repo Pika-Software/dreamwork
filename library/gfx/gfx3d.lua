@@ -68,34 +68,80 @@ function gfx3d.start(view) end
 ---@param scale number
 function gfx3d.start2d(origin, angles, scale) end
 
-function gfx3d.drawSprite() end
+--- [CLIENT]
+---
+--- Draws a sprite in 3D space.
+---
+---@param origin Vector3 The position of the sprite.
+---@param width number The width of the sprite.
+---@param height number The height of the sprite.
+---@param color Color? The color of the sprite, white by default.
+---@param alpha integer? The alpha of the sprite, `255` by default.
+function gfx3d.drawSprite(origin, width, height, color, alpha) end
 
 --- [CLIENT]
 ---
+--- Draws a straight beam.
 ---
----
----@param start_position Vector3
----@param end_position Vector3
----@param width number
----@param texture_end number
----@param color Color
+---@param start_position Vector3 The start of the beam.
+---@param end_position Vector3 The end of the beam.
+---@param width number The width of the beam.
+---@param texture_start number The texture coordinate at the start of the beam.
+---@param texture_end number The texture coordinate at the end of the beam.
+---@param color Color? The color of the beam, white by default.
+---@param alpha integer? The alpha of the beam, `255` by default.
 function gfx3d.drawBeam(start_position, end_position, width, texture_start, texture_end, color, alpha) end
 
-function gfx3d.drawBox() end
+--- [CLIENT]
+---
+--- Draws a box, solid or wireframe.
+---
+---@param origin Vector3 The origin of the box.
+---@param angles Angle3 The orientation of the box.
+---@param mins Vector3 The local minimum bounds.
+---@param maxs Vector3 The local maximum bounds.
+---@param color Color? The color of the box, white by default.
+---@param alpha integer? The alpha of the box, `255` by default.
+---@param wireframe boolean? If `true`, draws only the edges of the box.
+---@param write_z boolean? If `true`, the wireframe writes to the depth buffer (wireframe only).
+function gfx3d.drawBox(origin, angles, mins, maxs, color, alpha, wireframe, write_z) end
 
-function gfx3d.drawLine() end
+--- [CLIENT]
+---
+--- Draws a line between two points.
+---
+---@param start_position Vector3 The start of the line.
+---@param end_position Vector3 The end of the line.
+---@param color Color? The color of the line, white by default.
+---@param alpha integer? The alpha of the line, `255` by default.
+---@param write_z boolean? If `true`, the line writes to the depth buffer.
+function gfx3d.drawLine(start_position, end_position, color, alpha, write_z) end
 
-function gfx3d.drawSphere() end
+--- [CLIENT]
+---
+--- Draws a sphere, solid or wireframe.
+---
+---@param origin Vector3 The center of the sphere.
+---@param radius number The radius of the sphere.
+---@param longitude_steps integer The number of longitude steps.
+---@param latitude_steps integer The number of latitude steps.
+---@param color Color? The color of the sphere, white by default.
+---@param alpha integer? The alpha of the sphere, `255` by default.
+---@param wireframe boolean? If `true`, draws only the edges of the sphere.
+---@param write_z boolean? If `true`, the wireframe writes to the depth buffer (wireframe only).
+function gfx3d.drawSphere(origin, radius, longitude_steps, latitude_steps, color, alpha, wireframe, write_z) end
 
 ---@class gfx3d.ComplexBeamSegment
 ---@field origin Vector3
 ---@field width number
 ---@field texture_end number
----@field color Color
+---@field color Color | nil
+---@field alpha integer | nil
 
 --- [CLIENT]
 ---
+--- Draws a beam made of multiple segments.
 ---
----
----@param segments gfx3d.ComplexBeamSegment[]
+---@param segments gfx3d.ComplexBeamSegment[] The beam segments.
+---@param segment_count integer? The number of segments to draw, defaults to the length of `segments`.
 function gfx3d.drawComplexBeam(segments, segment_count) end
