@@ -1,72 +1,72 @@
-local dreamwork_engine = dreamwork.engine
-local transducers = dreamwork.transducers
+-- local dreamwork_engine = dreamwork.engine
+-- local transducers = dreamwork.transducers
 
----@class dreamwork.std
-local std = dreamwork.std
+-- ---@class dreamwork.std
+-- local std = dreamwork.std
 
-local glua_vgui = dreamwork_engine.requireLibrary( "vgui" )
+-- local glua_vgui = dreamwork_engine.requireLibrary( "vgui" )
 
---[[
+-- --[[
 
-    https://wiki.facepunch.com/gmod/Global.DisableClipping
+--     https://wiki.facepunch.com/gmod/Global.DisableClipping
 
-    https://wiki.facepunch.com/gmod/vgui
+--     https://wiki.facepunch.com/gmod/vgui
 
-]]
+-- ]]
 
----@class dreamwork.std.Panel : dreamwork.std.Object
----@field __class dreamwork.std.PanelClass
-local Panel = std.class.base( "Panel" )
+-- ---@class dreamwork.std.Panel : dreamwork.std.Object
+-- ---@field __class dreamwork.std.PanelClass
+-- local Panel = std.class.base( "Panel" )
 
----@protected
-function Panel:__init()
+-- ---@protected
+-- function Panel:__init()
 
-    -- TODO
+--     -- TODO
 
-end
+-- end
 
----@class dreamwork.std.PanelClass : dreamwork.std.Panel
----@field __base dreamwork.std.Panel
----@overload fun(): garrysmod.Panel
-local PanelClass = std.class.create( Panel )
-std.Panel = PanelClass
+-- ---@class dreamwork.std.PanelClass : dreamwork.std.Panel
+-- ---@field __base dreamwork.std.Panel
+-- ---@overload fun(): garrysmod.Panel
+-- local PanelClass = std.class.create( Panel )
+-- std.Panel = PanelClass
 
-do
+-- do
 
-    local vgui_GetWorldPanel = glua_vgui.GetWorldPanel
+--     local vgui_GetWorldPanel = glua_vgui.GetWorldPanel
 
-    function PanelClass.getMain()
-        return transducers[ vgui_GetWorldPanel() ]
-    end
+--     function PanelClass.getMain()
+--         return transducers[ vgui_GetWorldPanel() ]
+--     end
 
-end
+-- end
 
-do
+-- do
 
-    local vgui_GetHoveredPanel = glua_vgui.GetHoveredPanel
+--     local vgui_GetHoveredPanel = glua_vgui.GetHoveredPanel
 
-    function PanelClass.getHovered()
-        return transducers[ vgui_GetHoveredPanel() ]
-    end
+--     function PanelClass.getHovered()
+--         return transducers[ vgui_GetHoveredPanel() ]
+--     end
 
-end
+-- end
 
-if std.LUA_CLIENT then
+-- if std.LUA_CLIENT then
 
-    local GetHUDPanel = GetHUDPanel
+--     local GetHUDPanel = GetHUDPanel
 
-    function PanelClass.getHUD()
-        return transducers[ GetHUDPanel() ]
-    end
+--     function PanelClass.getHUD()
+--         return transducers[ GetHUDPanel() ]
+--     end
 
-end
+-- end
 
-if std.LUA_MENU then
+-- if std.LUA_MENU then
 
-    local GetOverlayPanel = GetOverlayPanel
+--     local GetOverlayPanel = GetOverlayPanel
 
-    function PanelClass.getOverlay()
-        return transducers[ GetOverlayPanel() ]
-    end
+--     function PanelClass.getOverlay()
+--         return transducers[ GetOverlayPanel() ]
+--     end
 
-end
+-- end

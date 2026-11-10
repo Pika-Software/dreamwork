@@ -239,3 +239,154 @@ function LoadAddonPresets() end
 ---
 ---@param json_str string The new contents of the file.
 function SaveAddonPresets( json_str ) end
+
+--- [MENU]
+---
+--- Joins the server with the specified IP.
+---
+---@param ip string The IP of the server to join.
+function JoinServer( ip ) end
+
+--- [MENU]
+---
+--- Returns `true` if the client is currently playing either a singleplayer or multiplayer game.
+---
+---@return boolean in_game `true` if we are in a game.
+function IsInGame() end
+
+--- [MENU]
+---
+--- Returns `true` when the loading panel is active.
+---
+---@return boolean in_loading `true` if the loading panel is active.
+function IsInLoading() end
+
+--- [CLIENT AND MENU]
+---
+--- Adds the given string to the computer's clipboard, which can then be pasted in or outside of GMod with Ctrl + V.
+---
+---@param text string The text to add to the clipboard.
+function SetClipboardText( text ) end
+
+--- [MENU]
+---
+--- Returns the default loading screen URL (`asset://garrysmod/html/loading.html`).
+---
+---@return string loading_url Default loading URL (`asset://garrysmod/html/loading.html`).
+function GetDefaultLoadingHTML() end
+
+--- [MENU]
+---
+--- Returns the number of files needed from the server you are currently joining.
+---
+---@return integer count The number of downloadables.
+function NumDownloadables() end
+
+--- [MENU]
+---
+--- Returns a table with the names of files needed from the server you are currently joining.
+---
+---@return string[] file_names Table of file names.
+function GetDownloadables() end
+
+--- [MENU]
+---
+--- Returns the current status of the server join progress.
+---
+---@return string status The current status.
+function GetLoadStatus() end
+
+--- [MENU]
+---
+--- Aborts joining of the server you are currently joining.
+---
+function CancelLoading() end
+
+--- [CLIENT]
+---
+--- Returns the panel that is used as a wrapper for the HUD. If you want your panel to be hidden when the main menu is opened, parent it to this. Child panels will also have their controls disabled.
+---
+--- See also [vgui.GetWorldPanel](https://wiki.facepunch.com/gmod/vgui.GetWorldPanel).
+---
+---@return garrysmod.Panel hud_panel The HUD panel.
+function GetHUDPanel() end
+
+--- [MENU]
+---
+--- Returns the menu overlay panel, a container for panels like the error panel created in [GM:OnLuaError](https://wiki.facepunch.com/gmod/GM:OnLuaError).
+---
+---@return garrysmod.Panel overlay_panel The overlay panel.
+function GetOverlayPanel() end
+
+--- [MENU]
+---
+--- Retrieves data about the save with the specified filename. Similar to [GetDemoFileDetails](https://wiki.facepunch.com/gmod/Global.GetDemoFileDetails).
+---
+---@param filename string The file name of the save.
+---@return table save_data Save data.
+function GetSaveFileDetails( filename ) end
+
+--- A [PhysCollide](https://wiki.facepunch.com/gmod/PhysCollide) holds collision data from VPhysics.
+--- These objects can be used to run (currently quite limited) collision tests, but do not represent actual physics objects.
+---
+--- Created by `CreatePhysCollideBox` or `CreatePhysCollidesFromModel`.
+---
+---@class garrysmod.PhysCollide : metatable
+
+--- [SHARED]
+---
+--- Creates a new [PhysCollide](https://wiki.facepunch.com/gmod/PhysCollide) from the given bounds.
+---
+--- > **BUG**: This fails to create planes or points - no components of the mins or maxs can be the same.
+--- > See [issue #3568](https://github.com/Facepunch/garrysmod-issues/issues/3568).
+---
+---@param mins garrysmod.Vector Min corner of the box. This is not automatically ordered with the maxs and must contain the smallest vector components. See [OrderVectors](https://wiki.facepunch.com/gmod/Global.OrderVectors).
+---@param maxs garrysmod.Vector Max corner of the box. This is not automatically ordered with the mins and must contain the largest vector components.
+---@return garrysmod.PhysCollide phys_collide The new PhysCollide. This will be a NULL PhysCollide (`PhysCollide:IsValid` returns `false`) if given bad vectors or no more PhysCollides can be created in the physics engine.
+function CreatePhysCollideBox( mins, maxs ) end
+
+--- [SHARED]
+---
+--- Creates [PhysCollide](https://wiki.facepunch.com/gmod/PhysCollide) objects for every physics object the model has. The model must be precached with [util.PrecacheModel](https://wiki.facepunch.com/gmod/util.PrecacheModel) before being used with this function.
+---
+---@param model_name string Model path to get the collision objects of.
+---@return garrysmod.PhysCollide[] | nil phys_collides Table of PhysCollide objects. The number of entries will match the model's physics object count. See also [Entity:GetPhysicsObjectCount](https://wiki.facepunch.com/gmod/Entity:GetPhysicsObjectCount). Returns no value if the model doesn't exist, or has not been precached.
+function CreatePhysCollidesFromModel( model_name ) end
+
+--- [MENU]
+---
+--- Returns if the game was started with either `-noaddons` or `-noworkshop`.
+---
+---@return boolean noaddons `true` if the game was started with `-noaddons`. See [Command Line Parameters](https://wiki.facepunch.com/gmod/Command_Line_Parameters).
+---@return boolean noworkshop `true` if the game was started with `-noworkshop`. See [Command Line Parameters](https://wiki.facepunch.com/gmod/Command_Line_Parameters).
+function GetAddonStatus() end
+
+--- [MENU]
+---
+--- Runs a menu command. Equivalent to `RunConsoleCommand( "gamemenucommand", command )` unless the command starts with the `"engine"` keyword in which case it is equivalent to `RunConsoleCommand( command )`.
+---
+--- > **WARNING**: Invoking engine commands no longer works, prints out `Not running engine cmd 'concommand'`.
+---
+--- Should be one of the following:
+--- * `Disconnect` - Disconnects from the current server.
+--- * `OpenBenchmarkDialog` - Opens the "Video Hardware Stress Test" dialog.
+--- * `OpenChangeGameDialog` - Does not work in GMod.
+--- * `OpenCreateMultiplayerGameDialog` - Opens the Source dialog for creating a listen server.
+--- * `OpenCustomMapsDialog` - Does nothing.
+--- * `OpenFriendsDialog` - Does nothing.
+--- * `OpenGameMenu` - Does not work in GMod.
+--- * `OpenLoadCommentaryDialog` - Opens the "Developer Commentary" selection dialog. Useless in GMod.
+--- * `OpenLoadDemoDialog` - Does nothing.
+--- * `OpenLoadGameDialog` - Opens the Source "Load Game" dialog.
+--- * `OpenNewGameDialog` - Opens the "New Game" dialog. Useless in GMod.
+--- * `OpenOptionsDialog` - Opens the options dialog.
+--- * `OpenPlayerListDialog` - Opens the "Mute Players" dialog that shows all players connected to the server and allows to mute them.
+--- * `OpenSaveGameDialog` - Opens the Source "Save Game" dialog.
+--- * `OpenServerBrowser` - Opens the legacy server browser.
+--- * `Quit` - Quits the game **without** confirmation (unlike other Source games).
+--- * `QuitNoConfirm` - Quits the game without confirmation (like other Source games).
+--- * `ResumeGame` - Closes the menu and returns to the game.
+--- * `engine 'concommand'` - Runs a console command. Unlike `RunConsoleCommand` it will ignore [Blocked ConCommands](https://wiki.facepunch.com/gmod/Blocked_ConCommands).
+---
+---@param command string The menu command to run.
+function RunGameUICommand( command ) end

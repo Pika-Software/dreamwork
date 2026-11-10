@@ -1,0 +1,38 @@
+---@meta dreamwork.std.Tar
+
+
+--- [SHARED AND MENU]
+---
+--- The type of the tar entry.
+---
+--- * `"0"` - regular file
+--- * `"1"` - hard link to `link`
+--- * `"2"` - symbolic link to `link`
+--- * `"3"` - character device
+--- * `"4"` - block device
+--- * `"5"` - directory
+--- * `"6"` - FIFO
+--- * `"7"` - contiguous file
+---
+---@alias dreamwork.std.Tar.FileType "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | string
+
+--- [SHARED AND MENU]
+---
+--- The entry of the tar archive.
+---
+--- `content` is `nil` for entries of a parsed archive until it is read with `Tar:readFile`,
+--- the data stays in the archive string at `offset`.
+---
+---@class dreamwork.std.Tar.File
+---@field path string The path of the entry inside of the archive, e.g. `docs/readme.txt`, directories end with `/`.
+---@field type dreamwork.std.Tar.FileType The type of the entry.
+---@field size integer The size of the content in bytes.
+---@field mode integer The permission bits, e.g. `420` (`0644`).
+---@field uid integer The user ID of the owner.
+---@field gid integer The group ID of the owner.
+---@field timestamp integer The Unix timestamp of the last modification in seconds.
+---@field link string The target of the link, `""` for other types.
+---@field user string The user name of the owner.
+---@field group string The group name of the owner.
+---@field content string | nil The content, `nil` if it is still in the archive data.
+---@field offset integer | nil The `1`-based position of the content in the archive data.

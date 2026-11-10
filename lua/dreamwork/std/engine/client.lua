@@ -251,12 +251,12 @@ if LUA_CLIENT_MENU then
             file_name = std.level.name
         end
 
-        local files = std.fs.select( "/garrysmod/screenshots", file_name .. "*.jpg" )
+        local files = dreamwork.vfs.search( "/garrysmod/screenshots", file_name .. "*.jpg" )
         local last_one = files[ #files ]
         local screenshot_count = 0
 
         if last_one ~= nil then
-            screenshot_count = (std.tonumber( std.string.sub( std.path.splitExtension( last_one.name, false ), #file_name + 2 ), 10 ) or 0) + 1
+            screenshot_count = (std.tonumber( std.string.sub( std.path.splitExtension( last_one, false ), #file_name + 2 ), 10 ) or 0) + 1
         end
 
         file_name = std.string.format( "%s_%04d", file_name, screenshot_count )

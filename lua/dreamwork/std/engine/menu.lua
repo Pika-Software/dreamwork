@@ -455,7 +455,7 @@ do
         ---@param width integer? The width of the game window.
         ---@param height integer? The height of the game window.
         function options.setScreenResolution( width, height )
-            command.run( "mat_setvideomode", width or window.width, height or window.height, window.isWindowed() and 1 or 0 )
+            command.run( "mat_setvideomode", tostring( width or window.width ), tostring( height or window.height ), window.isWindowed() and 1 or 0 )
         end
 
         --- [MENU]
@@ -472,7 +472,7 @@ do
         --- Sets the fullscreen state of the game window.
         ---@param value boolean `true` to set the game window to fullscreen, `false` to set it to windowed.
         function options.setFullscreen( value )
-            command.run( "mat_setvideomode", window.width, window.height, value == true and 0 or 1 )
+            command.run( "mat_setvideomode", tostring( window.width ), tostring( window.height ), value == true and 0 or 1 )
         end
 
         --[[

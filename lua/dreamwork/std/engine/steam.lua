@@ -21,13 +21,6 @@ local Future = std.Future
 local steam = {}
 std.steam = steam
 
-if glua_system ~= nil then
-
-    steam.getAwayTime = glua_system.UpTime or function() return 0 end
-    steam.getAppTime = glua_system.AppTime or steam.getAwayTime
-    steam.getTime = glua_system.SteamTime or std.time.now
-
-end
 
 --- [SHARED AND MENU]
 ---
@@ -191,43 +184,6 @@ local ERemoteStoragePublishedFileVisibility = {
     [ 3 ] = "unlisted"
 }
 
-local default_timeout = std.http.Timeout
-
-if std.LUA_CLIENT_MENU then
-
-    --- [CLIENT AND MENU]
-    ---
-    --- Returns the name of the player with the given Steam ID.
-    ---
-    ---@param id dreamwork.std.steam.Identifier The SteamID of the player.
-    ---@param timeout number? The timeout in seconds, if `nil` then the default timeout will be used.
-    ---@return string name The name of the player.
-    ---@nodiscard
-    ---@async
-    function steam.getUserName( id, timeout )
-        local f = Future()
-
-        glua_steamworks.RequestPlayerInfo( id:to64(), function( name )
-            if name == nil then
-                f:setError( "failed to get player name for '" .. id:toSteam3() .. "', unknown error" )
-            else
-                f:setResult( name )
-            end
-        end )
-
-        setTimeout( function()
-            if f:isPending() then
-                f:setError( "failed to get player name for '" .. id:toSteam3() .. "', timed out" )
-            end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
-
-        return f:await()
-    end
-
-end
-
 --- [SHARED AND MENU]
 ---
 --- The Steam Workshop API library.
@@ -258,7 +214,7 @@ do
     local Identifier_from64 = steam.Identifier.from64
     local HTTPError = std.HTTPError
     local json_deserialize = std.json.deserialize
-    local http_request = std.http.request
+    local http_request = std.http.client.request
     local string_lower = string.lower
 
     ---@param count_key string
@@ -311,6 +267,8 @@ do
                 error( "Wrong JSON format - wrong response format", 2 )
             end
 
+            ---@type table
+            ---@diagnostic disable-next-line: assign-type-mismatch
             local steam_response = json_data.response
             if steam_response == nil then
                 error( "No response - API returned invalid data", 2 )
@@ -397,6 +355,8 @@ do
             error( HTTPError( http_response.status, "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/" ), 2 )
         end
 
+        ---@type table
+        ---@diagnostic disable-next-line: assign-type-mismatch
         local json_data = json_deserialize( http_response.body or "" )
         if json_data == nil then
             error( "Wrong JSON format - wrong response format", 2 )
@@ -564,9 +524,7 @@ do
                 if f:isPending() then
                     f:setError( "fetch info for '" .. wsid .. "' timed out." )
                 end
-
-                ---@diagnostic disable-next-line: param-type-mismatch
-            end, timeout or default_timeout.value )
+            end, timeout or 30 )
 
             return f:await()
         end
@@ -638,9 +596,7 @@ if std.LUA_CLIENT_MENU then
             if f:isPending() then
                 f:setError( "failed to download icon file for '" .. wsid .. "', timed out." )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         return f:await()
     end
@@ -717,8 +673,8 @@ end
 
 do
 
-    local fs = std.fs
-    local fs_write = fs.write
+    local fs = dreamwork.vfs
+    local fs_write = fs.writeFile
     local fs_isFile = fs.isFile
 
     local futures_run = std.futures.run
@@ -727,7 +683,7 @@ do
     ---@param f dreamwork.std.Future
     ---@param wsid string
     ---@param file_path string?
-    ---@param file_class File?
+    ---@param file_class garrysmod.File?
     ---@async
     local function perform_response( f, wsid, file_path, file_class )
         if file_path ~= nil and fs_isFile( "/garrysmod/" .. file_path ) then
@@ -745,7 +701,7 @@ do
         f:setResult( new_path )
     end
 
-    fs.makeDirectory( "/garrysmod/data/dreamwork/cache/workshop", true )
+    fs.createDirectory( "/garrysmod/data/dreamwork/cache/workshop" )
 
     --- [SHARED AND MENU]
     ---
@@ -772,9 +728,7 @@ do
             if f:isPending() then
                 f:setError( "failed to download addon '" .. wsid .. "', timed out." )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         return f:await()
     end
@@ -819,9 +773,7 @@ do
             if f:isPending() then
                 f:setError( "failed to perform quick workshop search, timed out." )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         local data = f:await()
 
@@ -848,7 +800,6 @@ do
     function workshop.qickSearch( wtype, wtags, woffset, timeout )
         local f = Future()
 
-        ---@diagnostic disable-next-line: param-type-mismatch
         glua_steamworks.GetList( type2type[ wtype or "latest" ], wtags, math_max( 0, woffset or 0 ), 50, 365, "0", function( data )
             f:setResult( data )
         end )
@@ -857,9 +808,7 @@ do
             if f:isPending() then
                 f:setError( "failed to perform quick workshop search, timed out." )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         local data = f:await()
 
@@ -886,7 +835,6 @@ do
     function workshop.getPublished( wtype, wtags, woffset, timeout )
         local f = Future()
 
-        ---@diagnostic disable-next-line: param-type-mismatch
         glua_steamworks.GetList( type2type[ wtype or "latest" ], wtags, math_max( 0, woffset or 0 ), 50, 365, "1", function( data )
             f:setResult( data )
         end )
@@ -895,9 +843,7 @@ do
             if f:isPending() then
                 f:setError( "failed to perform quick workshop search, timed out." )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         local data = f:await()
 
@@ -950,9 +896,7 @@ if std.LUA_MENU then
             if f:isPending() then
                 f:setError( "failed to publish addon, timed out" )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         return f:await()
     end
@@ -993,9 +937,7 @@ if std.LUA_MENU then
             if f:isPending() then
                 f:setError( "failed to update addon '" .. wsid .. "', timed out" )
             end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-        end, timeout or default_timeout.value )
+        end, timeout or 30 )
 
         return f:await()
     end

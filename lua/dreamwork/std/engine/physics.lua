@@ -82,7 +82,7 @@ do
 
 end
 
----@type PhysObj
+---@type garrysmod.Physics
 ---@diagnostic disable-next-line: assign-type-mismatch
 physics.object = setmetatable( {}, { __index = std.debug.findmetatable( "PhysObj" ) } )
 
@@ -146,7 +146,7 @@ do
     }
 
     --- Adds surface properties to the game's physics environment.
-    ---@param data SurfacePropertyData | table The surface data to be added.
+    ---@param data garrysmod.SurfacePropertyData | table The surface data to be added.
     function surface.add( data )
         local buffer, length = {}, 0
 
