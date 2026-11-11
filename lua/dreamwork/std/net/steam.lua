@@ -23,7 +23,7 @@ local time = std.time
 local time_now = time.now
 local time_elapsed = time.elapsed
 
-local server = std.server
+-- local server = std.server
 
 local represent = std.represent
 local setTimeout = std.setTimeout
@@ -45,80 +45,81 @@ std.steam = steam
 
 dreamwork_load( "std/net/steam/types/error.lua" )
 dreamwork_load( "std/net/steam/types/identifier.lua" )
+dreamwork_load( "std/net/steam/achievements.lua", false, LUA_SERVER )
 
 local SteamError = std.SteamError
 
-if LUA_SERVER and server.dedicated then
+-- if LUA_SERVER and server.dedicated then
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the amount of seconds since the Steam user last moved their mouse.
-    ---
-    --- Always `0` on dedicated servers.
-    ---
-    ---@return number seconds The amount of seconds since the user was last active.
-    ---@nodiscard
-    function steam.getAwayTime()
-        return 0
-    end
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the amount of seconds since the Steam user last moved their mouse.
+--     ---
+--     --- Always `0` on dedicated servers.
+--     ---
+--     ---@return number seconds The amount of seconds since the user was last active.
+--     ---@nodiscard
+--     function steam.getAwayTime()
+--         return 0
+--     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the total uptime of the application in seconds as reported by Steam.
-    ---
-    --- Uses `time.elapsed` on dedicated servers.
-    ---
-    ---@return number seconds The uptime in seconds.
-    ---@nodiscard
-    function steam.getAppTime()
-        return time_elapsed()
-    end
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the total uptime of the application in seconds as reported by Steam.
+--     ---
+--     --- Uses `time.elapsed` on dedicated servers.
+--     ---
+--     ---@return number seconds The uptime in seconds.
+--     ---@nodiscard
+--     function steam.getAppTime()
+--         return time_elapsed()
+--     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the Steam synchronized Unix time in seconds.
-    ---
-    --- Uses `time.now` on dedicated servers.
-    ---
-    ---@return integer timestamp The Unix timestamp in seconds.
-    ---@nodiscard
-    function steam.getTime()
-        return time_now()
-    end
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the Steam synchronized Unix time in seconds.
+--     ---
+--     --- Uses `time.now` on dedicated servers.
+--     ---
+--     ---@return integer timestamp The Unix timestamp in seconds.
+--     ---@nodiscard
+--     function steam.getTime()
+--         return time_now()
+--     end
 
-else
+-- else
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the amount of seconds since the Steam user last moved their mouse.
-    ---
-    --- Always `0` on dedicated servers.
-    ---
-    ---@return number seconds The amount of seconds since the user was last active.
-    ---@nodiscard
-    steam.getAwayTime = glua_system.UpTime
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the amount of seconds since the Steam user last moved their mouse.
+--     ---
+--     --- Always `0` on dedicated servers.
+--     ---
+--     ---@return number seconds The amount of seconds since the user was last active.
+--     ---@nodiscard
+--     steam.getAwayTime = glua_system.UpTime
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the total uptime of the application in seconds as reported by Steam.
-    ---
-    --- Uses `time.elapsed` on dedicated servers.
-    ---
-    ---@return number seconds The uptime in seconds.
-    ---@nodiscard
-    steam.getAppTime = glua_system.AppTime
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the total uptime of the application in seconds as reported by Steam.
+--     ---
+--     --- Uses `time.elapsed` on dedicated servers.
+--     ---
+--     ---@return number seconds The uptime in seconds.
+--     ---@nodiscard
+--     steam.getAppTime = glua_system.AppTime
 
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the Steam synchronized Unix time in seconds.
-    ---
-    --- Uses `time.now` on dedicated servers.
-    ---
-    ---@return integer timestamp The Unix timestamp in seconds.
-    ---@nodiscard
-    steam.getTime = glua_system.SteamTime
+--     --- [SHARED AND MENU]
+--     ---
+--     --- Returns the Steam synchronized Unix time in seconds.
+--     ---
+--     --- Uses `time.now` on dedicated servers.
+--     ---
+--     ---@return integer timestamp The Unix timestamp in seconds.
+--     ---@nodiscard
+--     steam.getTime = glua_system.SteamTime
 
-end
+-- end
 
 if LUA_CLIENT_MENU then
 
@@ -166,5 +167,3 @@ if LUA_CLIENT_MENU then
     end
 
 end
-
-dreamwork_load( "std/net/steam/achievements.lua", false, LUA_SERVER )
