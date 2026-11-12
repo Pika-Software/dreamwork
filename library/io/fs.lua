@@ -18,18 +18,18 @@
 --- file.path = "/garrysmod/data/other/test.txt" -- move
 --- ```
 ---
----@class fs.File : Object
----@field __class fs.FileClass
+---@class File : Object
+---@field __class FileClass
 ---@field path string The absolute virtual path of the file, assigning moves the file without overwriting, the target directory must exist.
 ---@field name string The name of the file with its extension, assigning renames the file without overwriting.
 ---@field content string The file data, reading reads the whole file, assigning replaces it.
 ---@field size integer The size of the file in bytes, `0` if the file does not exist. **Read-only.**
----@field parent fs.Directory The directory the file is in, assigning moves the file into the directory without overwriting.
+---@field parent Directory The directory the file is in, assigning moves the file into the directory without overwriting.
 local __File = {}
 
----@class fs.FileClass : fs.File, Class
----@field __base fs.File
----@overload fun( file_path: string, touch: boolean? ): fs.File
+---@class FileClass : File, Class
+---@field __base File
+---@overload fun( file_path: string, touch: boolean? ): File
 File = {}
 
 --- [SHARED AND MENU]
@@ -46,22 +46,22 @@ File = {}
 --- local files, file_count = directory:search( "*.txt" )
 --- ```
 ---
----@class fs.Directory : Object
----@field __class fs.DirectoryClass
+---@class Directory : Object
+---@field __class DirectoryClass
 ---@field path string The absolute virtual path of the directory, assigning moves the directory without overwriting, the target directory must exist.
 ---@field name string The name of the directory, empty for the root, assigning renames the directory without overwriting.
 ---@field size integer The total size of everything in the directory in bytes, walked recursively, `0` if the directory does not exist. **Read-only.**
----@field parent fs.Directory The parent directory, the root returns itself, assigning moves the directory into the directory without overwriting.
+---@field parent Directory The parent directory, the root returns itself, assigning moves the directory into the directory without overwriting.
 local __Directory = {}
 
----@class fs.DirectoryClass : fs.Directory, Class
----@field __base fs.Directory
----@overload fun( directory_path: string, touch: boolean? ): fs.Directory
+---@class DirectoryClass : Directory, Class
+---@field __base Directory
+---@overload fun( directory_path: string, touch: boolean? ): Directory
 Directory = {}
 
 ---@param file_path string The absolute path to the file.
 ---@param touch boolean? If `true`, the file is created or touched right away, otherwise it waits for `write`, `append` or `touch`.
----@return fs.File object
+---@return File object
 ---@protected
 function File:__new(file_path, touch) end
 
@@ -126,7 +126,9 @@ function __File:append(data) end
 ---
 --- Deletes the file, the object stays usable and `write` or `touch` creates it again.
 ---
-function __File:delete() end
+---@param force boolean? If `true`, a missing file or a failed deletion are ignored instead of raising errors.
+---@return boolean deleted `true` if the file was deleted, can be `false` only when `force` is `true`.
+function __File:delete(force) end
 
 --- [SHARED AND MENU]
 ---
@@ -152,7 +154,7 @@ function __File:rename(name, overwrite) end
 
 ---@param directory_path string The absolute path to the directory.
 ---@param touch boolean? If `true`, the directory is created or touched right away, otherwise it waits for `touch` or a write inside of it.
----@return fs.Directory object
+---@return Directory object
 ---@protected
 function Directory:__new(directory_path, touch) end
 
@@ -187,7 +189,7 @@ function __Directory:exists() end
 --- Returns the file object for a name inside of the directory, the file does not have to exist.
 ---
 ---@param name string The name of the file.
----@return fs.File file The file object.
+---@return File file The file object.
 ---@nodiscard
 function __Directory:getFile(name) end
 
@@ -196,7 +198,7 @@ function __Directory:getFile(name) end
 --- Returns the directory object for a name inside of the directory, the directory does not have to exist.
 ---
 ---@param name string The name of the directory.
----@return fs.Directory directory The directory object.
+---@return Directory directory The directory object.
 ---@nodiscard
 function __Directory:getDirectory(name) end
 
@@ -209,9 +211,9 @@ function __Directory:getDirectory(name) end
 --- ```
 ---
 ---@param wildcard string? The wildcard names must match, see `path.wildcard`, `*` by default.
----@return fs.File[] files The found files.
+---@return File[] files The found files.
 ---@return integer file_count The number of the found files.
----@return fs.Directory[] directories The found directories.
+---@return Directory[] directories The found directories.
 ---@return integer directory_count The number of the found directories.
 ---@nodiscard
 function __Directory:search(wildcard) end
@@ -230,7 +232,7 @@ function __Directory:search(wildcard) end
 --- ```
 ---
 ---@param recursive boolean? If `true`, files of subdirectories are returned too, `false` by default.
----@return fun(): fs.File | nil iterator The iterator that returns the file objects.
+---@return fun(): File | nil iterator The iterator that returns the file objects.
 ---@nodiscard
 function __Directory:files(recursive) end
 
@@ -248,7 +250,7 @@ function __Directory:files(recursive) end
 --- ```
 ---
 ---@param recursive boolean? If `true`, directories of subdirectories are returned too, `false` by default.
----@return fun(): fs.Directory | nil iterator The iterator that returns the directory objects.
+---@return fun(): Directory | nil iterator The iterator that returns the directory objects.
 ---@nodiscard
 function __Directory:directories(recursive) end
 
@@ -263,7 +265,9 @@ function __Directory:touch() end
 --- Deletes the directory, the object stays usable and `touch` creates it again.
 ---
 ---@param recursive boolean? If `true`, the directory is deleted with everything in it, otherwise it must be empty.
-function __Directory:delete(recursive) end
+---@param force boolean? If `true`, the directory is deleted with everything in it, a missing directory or a failed deletion are ignored instead of raising errors.
+---@return boolean deleted `true` if the directory was deleted, can be `false` only when `force` is `true`.
+function __Directory:delete(recursive, force) end
 
 --- [SHARED AND MENU]
 ---
@@ -317,9 +321,9 @@ function Directory.exists(directory_path) end
 ---
 ---@param directory_path string The absolute path to the directory.
 ---@param wildcard string? The wildcard names must match, see `path.wildcard`, `*` by default.
----@return fs.File[] files The found files.
+---@return File[] files The found files.
 ---@return integer file_count The number of the found files.
----@return fs.Directory[] directories The found directories.
+---@return Directory[] directories The found directories.
 ---@return integer directory_count The number of the found directories.
 ---@nodiscard
 function Directory.search(directory_path, wildcard) end
