@@ -2044,3 +2044,17 @@ function Player:ViewPunchReset( tolerance ) end
 ---
 ---@return number volume The voice volume.
 function Player:VoiceVolume() end
+
+--- [SHARED]
+---
+--- The player library.
+---
+---@class garrysmod.player
+player = {}
+
+--- [SHARED]
+---
+--- Returns every player that is not a bot.
+---
+---@return garrysmod.Player[] players The human players.
+function player.GetHumans() end

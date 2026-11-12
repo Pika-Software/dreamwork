@@ -158,6 +158,9 @@ Command.hidden = nil
 ---
 --- Sends `1` if it's not blank/zero, `0` otherwise as value.
 ---
+--- Garry's Mod never calls `cvars.OnConVarChanged` for protected variables, so
+--- `console.Variable` keeps the first value it read and never emits `"change"`.
+---
 --- **READ-ONLY**
 ---
 ---@type boolean?
@@ -437,6 +440,9 @@ CommandOptions.hidden = nil
 --- It's a server cvar, but we don't send the data since it's a password, etc.
 ---
 --- Sends `1` if it's not blank/zero, `0` otherwise as value.
+---
+--- Garry's Mod never calls `cvars.OnConVarChanged` for protected variables, so
+--- `console.Variable` keeps the first value it read and never emits `"change"`.
 ---
 ---@type boolean?
 CommandOptions.protected = nil

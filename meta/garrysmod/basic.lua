@@ -215,6 +215,21 @@ function ScrW() end
 ---@return number height The height of the game's window in pixels.
 function ScrH() end
 
+--- [CLIENT]
+---
+--- Returns the player of the local client.
+---
+---@return garrysmod.Player pl The local player, `NULL` until the player entity is created.
+function LocalPlayer() end
+
+--- [SHARED]
+---
+--- Returns the entity with the given index.
+---
+---@param index integer The entity index.
+---@return garrysmod.Entity entity The entity, `NULL` if it does not exist.
+function Entity( index ) end
+
 --- [MENU]
 ---
 --- Opens a folder with the given name in the garrysmod folder using the operating system's file browser.

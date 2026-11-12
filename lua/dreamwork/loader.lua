@@ -2789,6 +2789,7 @@ do
         "They'll wait for me to give it up ♪",
         "This distance is getting shorter...",
         "I don't care who I'm meant to be ♪",
+        "Flip through the pages of reality ♪",
         "Take it in and breathe the light ♪",
         "T2gsIHlvdSdyZSBhIHNtYXJ0IG9uZS4=",
         "I'm tired of these darker days ♪",
@@ -2812,6 +2813,7 @@ do
         "Let the sun arise ♪",
         "so sHow me heAVEn ♪",
         "Looking For More ♪",
+        "Dreams get bigger!",
         "Hello, {username}!",
         "Faster than ever.",
         "Love Wins Again ♪",
@@ -2928,7 +2930,7 @@ dreamwork_load( "std/io/fs.lua" )
 local vfs = dreamwork.vfs
 
 dreamwork_load( "modules/engine/events.lua" )
-dreamwork_load( "modules/loader/sigil.lua" )
+dreamwork_load( "modules/sigil.lua" )
 
 do
 
@@ -2993,7 +2995,7 @@ if LUA_SERVER then
         dreamwork_load( "modules/mcp.lua" )
         logger:info( "'gm_mcp' was loaded & connected as MCP bridge." )
     end
-elseif LUA_CLIENT and vfs.isFile( "/lcl/lua/dreamwork/modules/mcp.lua" ) then
+elseif LUA_CLIENT and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
 end
 
@@ -3076,7 +3078,7 @@ do
     ---@return function fn The compiled function.
     ---@nodiscard
     function std.loadfile( file_path, env )
-        local content = vfs_readFile( file_path, 2 )
+        local content = vfs_readFile( file_path, false, 2 )
 
         if env == nil then
             env = getfenv( 2 )

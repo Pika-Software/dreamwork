@@ -42,25 +42,25 @@ local error = std.error
 
 --- The absolute virtual paths of files and directories.
 ---
----@type table<dreamwork.std.fs.File | dreamwork.std.fs.Directory, string>
+---@type table<dreamwork.std.File | dreamwork.std.Directory, string>
 local paths = {}
 gc_setTableRules( paths, true, false )
 
 --- The names of files and directories.
 ---
----@type table<dreamwork.std.fs.File | dreamwork.std.fs.Directory, string>
+---@type table<dreamwork.std.File | dreamwork.std.Directory, string>
 local names = {}
 gc_setTableRules( names, true, false )
 
 --- The file objects by their paths, the same path gives the same object.
 ---
----@type table<string, dreamwork.std.fs.File>
+---@type table<string, dreamwork.std.File>
 local file_objects = {}
 gc_setTableRules( file_objects, false, true )
 
 --- The directory objects by their paths, the same path gives the same object.
 ---
----@type table<string, dreamwork.std.fs.Directory>
+---@type table<string, dreamwork.std.Directory>
 local directory_objects = {}
 gc_setTableRules( directory_objects, false, true )
 
@@ -75,9 +75,9 @@ local function child_path( directory_path, name )
     return directory_path .. "/" .. name
 end
 
----@param object dreamwork.std.fs.File | dreamwork.std.fs.Directory
+---@param object dreamwork.std.File | dreamwork.std.Directory
 ---@param new_path string
----@param objects table<string, dreamwork.std.fs.File | dreamwork.std.fs.Directory>
+---@param objects table<string, dreamwork.std.File | dreamwork.std.Directory>
 local function set_path( object, new_path, objects )
     local old_path = paths[ object ]
     if old_path ~= nil and objects[ old_path ] == object then
@@ -89,52 +89,52 @@ local function set_path( object, new_path, objects )
     objects[ new_path ] = object
 end
 
----@param object dreamwork.std.fs.File | dreamwork.std.fs.Directory
+---@param object dreamwork.std.File | dreamwork.std.Directory
 ---@param name string
 ---@return string
 local function sibling_path( object, name )
     return child_path( path_getDirectory( paths[ object ], false ) or "/", name )
 end
 
----@param object dreamwork.std.fs.File
+---@param object dreamwork.std.File
 ---@param target_path string
 ---@param overwrite boolean?
 ---@param stack_level integer
 ---@async
 local function move_file( object, target_path, overwrite, stack_level )
     target_path = path_normalize( target_path, false )
-    vfs_moveFile( paths[ object ], target_path, overwrite, stack_level + 1 )
+    vfs_moveFile( paths[ object ], target_path, overwrite, false, stack_level + 1 )
     set_path( object, target_path, file_objects )
 end
 
----@param object dreamwork.std.fs.File
+---@param object dreamwork.std.File
 ---@param name string
 ---@param overwrite boolean?
 ---@param stack_level integer
 ---@async
 local function rename_file( object, name, overwrite, stack_level )
-    vfs_renameFile( paths[ object ], name, overwrite, stack_level + 1 )
+    vfs_renameFile( paths[ object ], name, overwrite, false, stack_level + 1 )
     set_path( object, sibling_path( object, name ), file_objects )
 end
 
----@param object dreamwork.std.fs.Directory
+---@param object dreamwork.std.Directory
 ---@param target_path string
 ---@param overwrite boolean?
 ---@param stack_level integer
 ---@async
 local function move_directory( object, target_path, overwrite, stack_level )
     target_path = path_normalize( target_path, false )
-    vfs_moveDirectory( paths[ object ], target_path, overwrite, stack_level + 1 )
+    vfs_moveDirectory( paths[ object ], target_path, overwrite, false, stack_level + 1 )
     set_path( object, target_path, directory_objects )
 end
 
----@param object dreamwork.std.fs.Directory
+---@param object dreamwork.std.Directory
 ---@param name string
 ---@param overwrite boolean?
 ---@param stack_level integer
 ---@async
 local function rename_directory( object, name, overwrite, stack_level )
-    vfs_renameDirectory( paths[ object ], name, overwrite, stack_level + 1 )
+    vfs_renameDirectory( paths[ object ], name, overwrite, false, stack_level + 1 )
     set_path( object, sibling_path( object, name ), directory_objects )
 end
 
@@ -156,18 +156,18 @@ end
 --- file.path = "/garrysmod/data/other/test.txt" -- move
 --- ```
 ---
----@class dreamwork.std.fs.File : dreamwork.std.Object
----@field __class dreamwork.std.fs.FileClass
+---@class dreamwork.std.File : dreamwork.std.Object
+---@field __class dreamwork.std.FileClass
 ---@field path string The absolute virtual path of the file, assigning moves the file without overwriting, the target directory must exist.
 ---@field name string The name of the file with its extension, assigning renames the file without overwriting.
 ---@field content string The file data, reading reads the whole file, assigning replaces it.
 ---@field size integer The size of the file in bytes, `0` if the file does not exist. **Read-only.**
----@field parent dreamwork.std.fs.Directory The directory the file is in, assigning moves the file into the directory without overwriting.
+---@field parent dreamwork.std.Directory The directory the file is in, assigning moves the file into the directory without overwriting.
 local File = class.base( "File", true )
 
----@class dreamwork.std.fs.FileClass : dreamwork.std.fs.File, dreamwork.std.Class
----@field __base dreamwork.std.fs.File
----@overload fun( file_path: string, touch: boolean? ): dreamwork.std.fs.File
+---@class dreamwork.std.FileClass : dreamwork.std.File, dreamwork.std.Class
+---@field __base dreamwork.std.File
+---@overload fun( file_path: string, touch: boolean? ): dreamwork.std.File
 local FileClass = class.create( File )
 std.File = FileClass
 
@@ -185,34 +185,34 @@ std.File = FileClass
 --- local files, file_count = directory:search( "*.txt" )
 --- ```
 ---
----@class dreamwork.std.fs.Directory : dreamwork.std.Object
----@field __class dreamwork.std.fs.DirectoryClass
+---@class dreamwork.std.Directory : dreamwork.std.Object
+---@field __class dreamwork.std.DirectoryClass
 ---@field path string The absolute virtual path of the directory, assigning moves the directory without overwriting, the target directory must exist.
 ---@field name string The name of the directory, empty for the root, assigning renames the directory without overwriting.
 ---@field size integer The total size of everything in the directory in bytes, walked recursively, `0` if the directory does not exist. **Read-only.**
----@field parent dreamwork.std.fs.Directory The parent directory, the root returns itself, assigning moves the directory into the directory without overwriting.
+---@field parent dreamwork.std.Directory The parent directory, the root returns itself, assigning moves the directory into the directory without overwriting.
 local Directory = class.base( "Directory", true )
 
----@class dreamwork.std.fs.DirectoryClass : dreamwork.std.fs.Directory, dreamwork.std.Class
----@field __base dreamwork.std.fs.Directory
----@overload fun( directory_path: string, touch: boolean? ): dreamwork.std.fs.Directory
+---@class dreamwork.std.DirectoryClass : dreamwork.std.Directory, dreamwork.std.Class
+---@field __base dreamwork.std.Directory
+---@overload fun( directory_path: string, touch: boolean? ): dreamwork.std.Directory
 local DirectoryClass = class.create( Directory )
 std.Directory = DirectoryClass
 
 ---@param directory_path string
 ---@param wildcard string?
 ---@param stack_level integer
----@return dreamwork.std.fs.File[] files
+---@return dreamwork.std.File[] files
 ---@return integer file_count
----@return dreamwork.std.fs.Directory[] directories
+---@return dreamwork.std.Directory[] directories
 ---@return integer directory_count
 local function search_directory( directory_path, wildcard, stack_level )
     local file_names, file_count, directory_names, directory_count = vfs_search( directory_path, wildcard, stack_level + 1 )
 
-    ---@type dreamwork.std.fs.File[]
+    ---@type dreamwork.std.File[]
     local files = {}
 
-    ---@type dreamwork.std.fs.Directory[]
+    ---@type dreamwork.std.Directory[]
     local directories = {}
 
     for index = 1, file_count, 1 do
@@ -230,7 +230,7 @@ end
 ---@param recursive boolean?
 ---@param directories boolean `true` to return directories, `false` to return files.
 ---@param stack_level integer
----@return fun(): dreamwork.std.fs.File | dreamwork.std.fs.Directory | nil
+---@return fun(): dreamwork.std.File | dreamwork.std.Directory | nil
 local function iterate_directory( directory_path, recursive, directories, stack_level )
     local cls = directories and DirectoryClass or FileClass
 
@@ -270,14 +270,14 @@ local function iterate_directory( directory_path, recursive, directories, stack_
     end
 end
 
----@param object dreamwork.std.fs.File | dreamwork.std.fs.Directory
----@return dreamwork.std.fs.Directory
+---@param object dreamwork.std.File | dreamwork.std.Directory
+---@return dreamwork.std.Directory
 local function get_parent( object )
     local object_path = paths[ object ]
 
     local parent_path = path_getDirectory( object_path, false )
     if parent_path == nil or parent_path == object_path then
-        ---@cast object dreamwork.std.fs.Directory
+        ---@cast object dreamwork.std.Directory
         return object
     end
 
@@ -286,7 +286,7 @@ end
 
 ---@param file_path string The absolute path to the file.
 ---@param touch boolean? If `true`, the file is created or touched right away, otherwise it waits for `write`, `append` or `touch`.
----@return dreamwork.std.fs.File object
+---@return dreamwork.std.File object
 ---@protected
 function FileClass:__new( file_path, touch )
     file_path = path_normalize( file_path, false )
@@ -298,7 +298,7 @@ function FileClass:__new( file_path, touch )
     end
 
     if touch then
-        vfs_touchFile( file_path, 3 )
+        vfs_touchFile( file_path, false, 3 )
     end
 
     return object
@@ -315,7 +315,7 @@ function File:__index( key )
     elseif key == "parent" then
         return get_parent( self )
     elseif key == "content" then
-        return vfs_readFile( paths[ self ], 2 )
+        return vfs_readFile( paths[ self ], false, 2 )
     elseif key == "size" then
         return vfs_size( paths[ self ], 2 )
     end
@@ -328,7 +328,7 @@ end
 ---@protected
 function File:__newindex( key, value )
     if key == "content" then
-        vfs_writeFile( paths[ self ], value, 2 )
+        vfs_writeFile( paths[ self ], value, false, 2 )
     elseif key == "name" then
         rename_file( self, value, false, 2 )
     elseif key == "path" then
@@ -367,7 +367,7 @@ end
 --- Like Linux `touch`: creates an empty file with missing directories, or updates the modification time keeping its content.
 ---
 function File:touch()
-    vfs_touchFile( paths[ self ], 2 )
+    vfs_touchFile( paths[ self ], false, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -378,7 +378,7 @@ end
 ---@nodiscard
 ---@async
 function File:read()
-    return vfs_readFile( paths[ self ], 2 )
+    return vfs_readFile( paths[ self ], false, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -388,7 +388,7 @@ end
 ---@param data string The new data.
 ---@async
 function File:write( data )
-    vfs_writeFile( paths[ self ], data, 2 )
+    vfs_writeFile( paths[ self ], data, false, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -398,15 +398,17 @@ end
 ---@param data string The data to append.
 ---@async
 function File:append( data )
-    vfs_appendFile( paths[ self ], data, 2 )
+    vfs_appendFile( paths[ self ], data, false, 2 )
 end
 
 --- [SHARED AND MENU]
 ---
 --- Deletes the file, the object stays usable and `write` or `touch` creates it again.
 ---
-function File:delete()
-    vfs_deleteFile( paths[ self ], 2 )
+---@param force boolean? If `true`, a missing file or a failed deletion are ignored instead of raising errors.
+---@return boolean deleted `true` if the file was deleted, can be `false` only when `force` is `true`.
+function File:delete( force )
+    return vfs_deleteFile( paths[ self ], force, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -437,7 +439,7 @@ end
 
 ---@param directory_path string The absolute path to the directory.
 ---@param touch boolean? If `true`, the directory is created or touched right away, otherwise it waits for `touch` or a write inside of it.
----@return dreamwork.std.fs.Directory object
+---@return dreamwork.std.Directory object
 ---@protected
 function DirectoryClass:__new( directory_path, touch )
     directory_path = path_normalize( directory_path, false )
@@ -449,7 +451,7 @@ function DirectoryClass:__new( directory_path, touch )
     end
 
     if touch then
-        vfs_touchDirectory( directory_path, 3 )
+        vfs_touchDirectory( directory_path, false, 3 )
     end
 
     return object
@@ -514,7 +516,7 @@ end
 --- Returns the file object for a name inside of the directory, the file does not have to exist.
 ---
 ---@param name string The name of the file.
----@return dreamwork.std.fs.File file The file object.
+---@return dreamwork.std.File file The file object.
 ---@nodiscard
 function Directory:getFile( name )
     return FileClass( child_path( paths[ self ], name ) )
@@ -525,7 +527,7 @@ end
 --- Returns the directory object for a name inside of the directory, the directory does not have to exist.
 ---
 ---@param name string The name of the directory.
----@return dreamwork.std.fs.Directory directory The directory object.
+---@return dreamwork.std.Directory directory The directory object.
 ---@nodiscard
 function Directory:getDirectory( name )
     return DirectoryClass( child_path( paths[ self ], name ) )
@@ -540,9 +542,9 @@ end
 --- ```
 ---
 ---@param wildcard string? The wildcard names must match, see `path.wildcard`, `*` by default.
----@return dreamwork.std.fs.File[] files The found files.
+---@return dreamwork.std.File[] files The found files.
 ---@return integer file_count The number of the found files.
----@return dreamwork.std.fs.Directory[] directories The found directories.
+---@return dreamwork.std.Directory[] directories The found directories.
 ---@return integer directory_count The number of the found directories.
 ---@nodiscard
 function Directory:search( wildcard )
@@ -563,7 +565,7 @@ end
 --- ```
 ---
 ---@param recursive boolean? If `true`, files of subdirectories are returned too, `false` by default.
----@return fun(): dreamwork.std.fs.File | nil iterator The iterator that returns the file objects.
+---@return fun(): dreamwork.std.File | nil iterator The iterator that returns the file objects.
 ---@nodiscard
 function Directory:files( recursive )
     ---@diagnostic disable-next-line: return-type-mismatch
@@ -584,7 +586,7 @@ end
 --- ```
 ---
 ---@param recursive boolean? If `true`, directories of subdirectories are returned too, `false` by default.
----@return fun(): dreamwork.std.fs.Directory | nil iterator The iterator that returns the directory objects.
+---@return fun(): dreamwork.std.Directory | nil iterator The iterator that returns the directory objects.
 ---@nodiscard
 function Directory:directories( recursive )
     ---@diagnostic disable-next-line: return-type-mismatch
@@ -596,7 +598,7 @@ end
 --- Like Linux `touch`: creates the directory with missing parent directories, or updates its modification time.
 ---
 function Directory:touch()
-    vfs_touchDirectory( paths[ self ], 2 )
+    vfs_touchDirectory( paths[ self ], false, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -604,8 +606,10 @@ end
 --- Deletes the directory, the object stays usable and `touch` creates it again.
 ---
 ---@param recursive boolean? If `true`, the directory is deleted with everything in it, otherwise it must be empty.
-function Directory:delete( recursive )
-    vfs_deleteDirectory( paths[ self ], recursive, 2 )
+---@param force boolean? If `true`, the directory is deleted with everything in it, a missing directory or a failed deletion are ignored instead of raising errors.
+---@return boolean deleted `true` if the directory was deleted, can be `false` only when `force` is `true`.
+function Directory:delete( recursive, force )
+    return vfs_deleteDirectory( paths[ self ], recursive, force, 2 )
 end
 
 --- [SHARED AND MENU]
@@ -668,9 +672,9 @@ end
 ---
 ---@param directory_path string The absolute path to the directory.
 ---@param wildcard string? The wildcard names must match, see `path.wildcard`, `*` by default.
----@return dreamwork.std.fs.File[] files The found files.
+---@return dreamwork.std.File[] files The found files.
 ---@return integer file_count The number of the found files.
----@return dreamwork.std.fs.Directory[] directories The found directories.
+---@return dreamwork.std.Directory[] directories The found directories.
 ---@return integer directory_count The number of the found directories.
 ---@nodiscard
 function DirectoryClass.search( directory_path, wildcard )

@@ -448,7 +448,7 @@ end
 --- /game/...                 GAME
 --- /game/lua/...             lsv | lcl | LuaMenu
 --- /hl2/materials/...        hl2 (mounted games)
---- /addons/gma_0001/...      addon title (mounted addons)
+--- /addons/gma_7a6b8089/...      addon title (mounted addons)
 --- ```
 ---
 --- Every function takes a path inside of the virtual file system, relative paths are resolved against the calling file, see `path.resolve`:
@@ -1306,10 +1306,11 @@ end
 ---@param relative_path string
 ---@param data string
 ---@param append_mode boolean
+---@param sync boolean If `true`, the data is written synchronously.
 ---@return boolean success
 ---@async
-local function write_data_async( search_path, relative_path, data, append_mode )
-    if search_path ~= "DATA" or file_AsyncWrite == nil or not coroutine_isyieldable() then
+local function write_data_async( search_path, relative_path, data, append_mode, sync )
+    if sync or search_path ~= "DATA" or file_AsyncWrite == nil or not coroutine_isyieldable() then
         return write_data( search_path, relative_path, data, append_mode )
     end
 
@@ -1352,11 +1353,12 @@ end
 --- Reads the file asynchronously where possible from a coroutine, synchronously otherwise.
 ---
 ---@param node dreamwork.vfs.Node
+---@param sync boolean If `true`, the file is read synchronously.
 ---@return string | nil data
 ---@return string | nil message
 ---@async
-local function read_node_async( node )
-    if file_AsyncRead == nil or node_data[ node ] ~= nil or not coroutine_isyieldable() then
+local function read_node_async( node, sync )
+    if sync or file_AsyncRead == nil or node_data[ node ] ~= nil or not coroutine_isyieldable() then
         return read_node( node )
     end
 
@@ -1514,12 +1516,13 @@ end
 ---@param name string
 ---@param data string
 ---@param append_mode boolean
+---@param sync boolean If `true`, the appended file is read synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function write_memory_file( directory, node, vfs_path, name, data, append_mode )
+local function write_memory_file( directory, node, vfs_path, name, data, append_mode, sync )
     if append_mode and node ~= nil then
-        local old_data, message = read_node_async( node )
+        local old_data, message = read_node_async( node, sync )
         if old_data == nil then
             return false, message
         end
@@ -1575,10 +1578,11 @@ end
 ---@param vfs_path string
 ---@param data string
 ---@param append_mode boolean
+---@param sync boolean If `true`, the file is written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function write_file( vfs_path, data, append_mode )
+local function write_file( vfs_path, data, append_mode, sync )
     local directory_path, name = path_split( vfs_path, false )
 
     local message = check_name( name )
@@ -1599,7 +1603,7 @@ local function write_file( vfs_path, data, append_mode )
 
     local mount = node_mounts[ directory ]
     if mount == nil or not mount.writable or node_memory[ node ] then
-        return write_memory_file( directory, node, vfs_path, name, data, append_mode )
+        return write_memory_file( directory, node, vfs_path, name, data, append_mode, sync )
     end
 
     if not is_allowed_extension( mount, name ) then
@@ -1608,7 +1612,7 @@ local function write_file( vfs_path, data, append_mode )
 
     local search_path, relative_path = mount.search_path, join_path( node_relative_paths[ directory ], name )
 
-    if not write_data_async( search_path, relative_path, data, append_mode ) then
+    if not write_data_async( search_path, relative_path, data, append_mode, sync ) then
         return false, string_format( "'%s' could not be written.", vfs_path )
     end
 
@@ -1633,29 +1637,30 @@ end
 --- Updates the modification time of the existing file without changing its content, like `touch` does.
 ---
 ---@param node dreamwork.vfs.Node
+---@param sync boolean If `true`, the file is rewritten synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function touch_file_node( node )
+local function touch_file_node( node, sync )
     local directory, vfs_path = node_parents[ node ], node_path( node )
 
     -- files of read-only search paths are copied into memory
     local mount = node_mounts[ directory ]
     if mount == nil or not mount.writable or node_memory[ node ] then
-        return write_memory_file( directory, node, vfs_path, node_names[ node ], "", true )
+        return write_memory_file( directory, node, vfs_path, node_names[ node ], "", true, sync )
     end
 
     if not is_allowed_extension( mount, node_names[ node ] ) then
         return false, string_format( "'%s' cannot be touched, extension is not allowed by '%s'.", vfs_path, mount.search_path )
     end
 
-    local data, message = read_node_async( node )
+    local data, message = read_node_async( node, sync )
     if data == nil then
         return false, message
     end
 
     -- the file system has no way to set the time, rewriting the same content makes it current
-    if not write_data_async( mount.search_path, node_relative_paths[ node ], data, false ) then
+    if not write_data_async( mount.search_path, node_relative_paths[ node ], data, false, sync ) then
         return false, string_format( "'%s' could not be written.", vfs_path )
     end
 
@@ -1666,10 +1671,11 @@ end
 --- Updates the modification time of the existing directory, creating and deleting a temporary file inside of it.
 ---
 ---@param node dreamwork.vfs.Node
+---@param sync boolean If `true`, the temporary file is written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function touch_directory_node( node )
+local function touch_directory_node( node, sync )
     if node_mounts[ node ] == nil then
         node_modified[ node ] = time_now()
 
@@ -1684,7 +1690,7 @@ local function touch_directory_node( node )
 
     local search_path, relative_path = mount.search_path, join_path( node_relative_paths[ node ], "^dreamwork_tmp$.dat" )
 
-    if not write_data_async( search_path, relative_path, "", false ) then
+    if not write_data_async( search_path, relative_path, "", false, sync ) then
         return false, string_format( "'%s' cannot be touched, temporary file could not be created.", node_path( node ) )
     end
 
@@ -2791,17 +2797,18 @@ end
 ---
 ---@param node dreamwork.vfs.Node
 ---@param target_path string
+---@param sync boolean If `true`, files are read and written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function copy_node( node, target_path )
+local function copy_node( node, target_path, sync )
     if node_children[ node ] == nil then
-        local data, message = read_node_async( node )
+        local data, message = read_node_async( node, sync )
         if data == nil then
             return false, message
         end
 
-        return write_file( target_path, data, false )
+        return write_file( target_path, data, false, sync )
     end
 
     local directory, message = make_directory_chain( target_path )
@@ -2818,7 +2825,7 @@ local function copy_node( node, target_path )
         local child = child_get( node, name )
         if child ~= nil then
             local success
-            success, message = copy_node( child, child_path( target_path, name ) )
+            success, message = copy_node( child, child_path( target_path, name ), sync )
 
             if not success then
                 return false, message
@@ -2883,16 +2890,17 @@ end
 ---@param target_path string
 ---@param overwrite boolean
 ---@param is_directory boolean
+---@param sync boolean If `true`, files are read and written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function copy( source_path, target_path, overwrite, is_directory )
+local function copy( source_path, target_path, overwrite, is_directory, sync )
     local source, _, message = transfer_lookup( source_path, target_path, overwrite, is_directory )
     if source == nil then
         return false, message
     end
 
-    return copy_node( source, target_path )
+    return copy_node( source, target_path, sync )
 end
 
 --- Moves the file or the directory into an existing directory, renames it in the search path if possible, otherwise copies and deletes it.
@@ -2901,10 +2909,11 @@ end
 ---@param target_path string
 ---@param overwrite boolean
 ---@param is_directory boolean
+---@param sync boolean If `true`, files are read and written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
-local function move( source_path, target_path, overwrite, is_directory )
+local function move( source_path, target_path, overwrite, is_directory, sync )
     local source, target, message = transfer_lookup( source_path, target_path, overwrite, is_directory )
     if source == nil then
         return false, message
@@ -2983,7 +2992,7 @@ local function move( source_path, target_path, overwrite, is_directory )
     end
 
     local success
-    success, message = copy_node( source, target_path )
+    success, message = copy_node( source, target_path, sync )
 
     if not success then
         return false, message
@@ -2999,11 +3008,12 @@ end
 --- Falls back to a synchronous read where the engine has no asynchronous reading.
 ---
 ---@param file_path string The path to the file.
+---@param sync boolean? If `true`, the file is read synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return string data The file data.
 ---@nodiscard
 ---@async
-function vfs.readFile( file_path, stack_level )
+function vfs.readFile( file_path, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local node, message = file_lookup( path_resolve( file_path, stack_level ) )
@@ -3012,7 +3022,7 @@ function vfs.readFile( file_path, stack_level )
     end
 
     local data
-    data, message = read_node_async( node )
+    data, message = read_node_async( node, sync == true )
     if data == nil then
         error( message, stack_level )
     end
@@ -3029,12 +3039,13 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The new data.
+---@param sync boolean? If `true`, the file is written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.writeFile( file_path, data, stack_level )
+function vfs.writeFile( file_path, data, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = write_file( path_resolve( file_path, stack_level ), data, false )
+    local success, message = write_file( path_resolve( file_path, stack_level ), data, false, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3049,12 +3060,13 @@ end
 ---
 ---@param file_path string The path to the file.
 ---@param data string The data to append.
+---@param sync boolean? If `true`, the file is written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.appendFile( file_path, data, stack_level )
+function vfs.appendFile( file_path, data, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = write_file( path_resolve( file_path, stack_level ), data, true )
+    local success, message = write_file( path_resolve( file_path, stack_level ), data, true, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3065,9 +3077,10 @@ end
 --- Creates an empty file with missing directories asynchronously when called from a coroutine, synchronously otherwise, fails if the path already exists.
 ---
 ---@param file_path string The path to the file.
+---@param sync boolean? If `true`, the file is written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.createFile( file_path, stack_level )
+function vfs.createFile( file_path, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( file_path, stack_level )
@@ -3076,7 +3089,7 @@ function vfs.createFile( file_path, stack_level )
         error( string_format( "'%s' already exists.", vfs_path ), stack_level )
     end
 
-    local success, message = write_file( vfs_path, "", false )
+    local success, message = write_file( vfs_path, "", false, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3089,16 +3102,17 @@ end
 --- Asynchronous when called from a coroutine, synchronously otherwise.
 ---
 ---@param file_path string The path to the file.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.touchFile( file_path, stack_level )
+function vfs.touchFile( file_path, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( file_path, stack_level )
 
     local node = lookup( vfs_path )
     if node == nil then
-        local success, message = write_file( vfs_path, "", false )
+        local success, message = write_file( vfs_path, "", false, sync == true )
         if not success then
             error( message, stack_level )
         end
@@ -3110,7 +3124,7 @@ function vfs.touchFile( file_path, stack_level )
         error( string_format( "'%s' is a directory.", vfs_path ), stack_level )
     end
 
-    local success, message = touch_file_node( node )
+    local success, message = touch_file_node( node, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3123,20 +3137,33 @@ end
 --- Files of search paths that do not allow deleting are hidden by a whiteout instead, see `vfs`.
 ---
 ---@param file_path string The path to the file.
+---@param force boolean? If `true`, a missing file, a directory at the path or a failed deletion are ignored instead of raising errors.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
-function vfs.deleteFile( file_path, stack_level )
+---@return boolean deleted `true` if the file was deleted, can be `false` only when `force` is `true`.
+function vfs.deleteFile( file_path, force, stack_level )
     stack_level = (stack_level or 1) + 1
+    force = force == true
 
     local node, message = file_lookup( path_resolve( file_path, stack_level ) )
     if node == nil then
+        if force then
+            return false
+        end
+
         error( message, stack_level )
     end
 
     local success
     success, message = delete_node( node, false )
     if not success then
+        if force then
+            return false
+        end
+
         error( message, stack_level )
     end
+
+    return true
 end
 
 --- [SHARED AND MENU]
@@ -3163,9 +3190,10 @@ end
 --- Asynchronous when called from a coroutine, synchronously otherwise.
 ---
 ---@param directory_path string The path to the directory.
+---@param sync boolean? If `true`, the temporary file is written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.touchDirectory( directory_path, stack_level )
+function vfs.touchDirectory( directory_path, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( directory_path, stack_level )
@@ -3179,7 +3207,7 @@ function vfs.touchDirectory( directory_path, stack_level )
 
     if existed then
         local success
-        success, message = touch_directory_node( directory )
+        success, message = touch_directory_node( directory, sync == true )
         if not success then
             error( message, stack_level )
         end
@@ -3197,20 +3225,33 @@ end
 ---
 ---@param directory_path string The path to the directory.
 ---@param recursive boolean? If `true`, the directory is deleted with everything in it, otherwise it must be empty.
+---@param force boolean? If `true`, the directory is deleted with everything in it, a missing directory, a file at the path or a failed deletion are ignored instead of raising errors.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
-function vfs.deleteDirectory( directory_path, recursive, stack_level )
+---@return boolean deleted `true` if the directory was deleted, can be `false` only when `force` is `true`.
+function vfs.deleteDirectory( directory_path, recursive, force, stack_level )
     stack_level = (stack_level or 1) + 1
+    force = force == true
 
     local node, message = directory_lookup( path_resolve( directory_path, stack_level ) )
     if node == nil then
+        if force then
+            return false
+        end
+
         error( message, stack_level )
     end
 
     local success
-    success, message = delete_node( node, recursive == true )
+    success, message = delete_node( node, force or recursive == true )
     if not success then
+        if force then
+            return false
+        end
+
         error( message, stack_level )
     end
+
+    return true
 end
 
 --- [SHARED AND MENU]
@@ -3222,12 +3263,13 @@ end
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
 ---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.copyFile( source_path, target_path, overwrite, stack_level )
+function vfs.copyFile( source_path, target_path, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = copy( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, false )
+    local success, message = copy( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, false, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3244,12 +3286,13 @@ end
 ---@param source_path string The path to the file.
 ---@param target_path string The new path of the file.
 ---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.moveFile( source_path, target_path, overwrite, stack_level )
+function vfs.moveFile( source_path, target_path, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = move( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, false )
+    local success, message = move( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, false, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3266,9 +3309,10 @@ end
 ---@param file_path string The path to the file.
 ---@param name string The new name of the file.
 ---@param overwrite boolean? If `true`, the existing file is replaced, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.renameFile( file_path, name, overwrite, stack_level )
+function vfs.renameFile( file_path, name, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( file_path, stack_level )
@@ -3279,7 +3323,7 @@ function vfs.renameFile( file_path, name, overwrite, stack_level )
     end
 
     local success
-    success, message = move( vfs_path, child_path( path_split( vfs_path, false ), name ), overwrite == true, false )
+    success, message = move( vfs_path, child_path( path_split( vfs_path, false ), name ), overwrite == true, false, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3296,12 +3340,13 @@ end
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
 ---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.copyDirectory( source_path, target_path, overwrite, stack_level )
+function vfs.copyDirectory( source_path, target_path, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = copy( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, true )
+    local success, message = copy( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, true, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3320,12 +3365,13 @@ end
 ---@param source_path string The path to the directory.
 ---@param target_path string The new path of the directory.
 ---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.moveDirectory( source_path, target_path, overwrite, stack_level )
+function vfs.moveDirectory( source_path, target_path, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
-    local success, message = move( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, true )
+    local success, message = move( path_resolve( source_path, stack_level ), path_resolve( target_path, stack_level ), overwrite == true, true, sync == true )
     if not success then
         error( message, stack_level )
     end
@@ -3342,9 +3388,10 @@ end
 ---@param directory_path string The path to the directory.
 ---@param name string The new name of the directory.
 ---@param overwrite boolean? If `true`, existing files are overwritten and directories are merged, otherwise the target must not exist.
+---@param sync boolean? If `true`, files are read and written synchronously even from a coroutine, `false` by default.
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@async
-function vfs.renameDirectory( directory_path, name, overwrite, stack_level )
+function vfs.renameDirectory( directory_path, name, overwrite, sync, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( directory_path, stack_level )
@@ -3355,7 +3402,7 @@ function vfs.renameDirectory( directory_path, name, overwrite, stack_level )
     end
 
     local success
-    success, message = move( vfs_path, child_path( path_split( vfs_path, false ), name ), overwrite == true, true )
+    success, message = move( vfs_path, child_path( path_split( vfs_path, false ), name ), overwrite == true, true, sync == true )
     if not success then
         error( message, stack_level )
     end

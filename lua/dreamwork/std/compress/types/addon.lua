@@ -793,10 +793,10 @@ do
     local TMP_DIRECTORY = "/garrysmod/data/dreamwork/tmp/"
 
     if vfs.isDirectory( TMP_DIRECTORY ) then
-        vfs.deleteDirectory( TMP_DIRECTORY, true )
+        vfs.deleteDirectory( TMP_DIRECTORY, true, true )
+    else
+        vfs.createDirectory( TMP_DIRECTORY )
     end
-
-    vfs.createDirectory( TMP_DIRECTORY )
 
     ---@param uuid_str string
     ---@return boolean

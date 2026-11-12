@@ -53,8 +53,7 @@ local token = console_Variable( {
     type = "string",
     default = "",
     archive = true,
-    hidden = true,
-    protected = true
+    hidden = true
 } )
 
 -- https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting

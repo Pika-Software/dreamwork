@@ -406,6 +406,17 @@ if LUA_SERVER then
             handlers[ i ]( err, ply, stack, addon_name )
         end
     end
+
+    ---@param handlers dreamwork.engine.hook.Handler[]
+    ---@param ply garrysmod.Player
+    ---@param is_transition boolean
+    event_handlers[ "PlayerInitialSpawn" ] = function( handlers, ply, is_transition )
+        is_transition = is_transition == true
+
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( ply, is_transition )
+        end
+    end
 end
 
 if LUA_MENU then

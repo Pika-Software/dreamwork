@@ -342,7 +342,7 @@ vfs_group:register( "read", {
             return
         end
 
-        local success, data = pcall( vfs_readFile, vfs_path, 1 )
+        local success, data = pcall( vfs_readFile, vfs_path, false, 1 )
         if not success then
             cli_error( "%s", data )
             return
@@ -452,13 +452,13 @@ do
             local old_content = ""
 
             if exists then
-                local read_success, data = pcall( vfs_readFile, vfs_path, 1 )
+                local read_success, data = pcall( vfs_readFile, vfs_path, false, 1 )
                 old_content = read_success and data or nil
             end
 
             local content = args[ 2 ]
 
-            local success, message = pcall( vfs_writeFile, vfs_path, content, 1 )
+            local success, message = pcall( vfs_writeFile, vfs_path, content, false, 1 )
             if not success then
                 cli_error( "%s", message )
                 return
@@ -514,9 +514,9 @@ do
                 return
             end
 
-            local read_success, old_content = pcall( vfs_readFile, vfs_path, 1 )
+            local read_success, old_content = pcall( vfs_readFile, vfs_path, false, 1 )
 
-            local success, message = pcall( vfs_deleteFile, vfs_path, 1 )
+            local success, message = pcall( vfs_deleteFile, vfs_path, false, 1 )
             if not success then
                 cli_error( "%s", message )
                 return

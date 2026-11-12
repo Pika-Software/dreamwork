@@ -706,7 +706,7 @@ do
             ---@type table | nil
             local env = getfenv( f )
             if env ~= nil then
-                ---@type dreamwork.std.fs.File | nil
+                ---@type dreamwork.std.File | nil
                 local file_path = env.__file
                 if file_path ~= nil then
                     return file_path.path

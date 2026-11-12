@@ -1018,6 +1018,7 @@ do
     ---@field variable string The name of the console variable.
     ---@field type dreamwork.cli.Setting.Type The type of the value, `toggle` is `true`, `false` or `nil` kept in a string variable as `"1"`, `"0"` or `""`.
     ---@field secret? boolean If `true`, the value is never printed.
+    ---@field choices? string[] The values a `string` setting accepts, any string if `nil`, used for completion too.
 
     ---@type table<string, boolean>
     local booleans = {
@@ -1065,7 +1066,18 @@ do
         local setting_type = setting.type
 
         if setting_type == "string" then
-            return str, nil
+            local choices = setting.choices
+            if choices == nil then
+                return str, nil
+            end
+
+            for index = 1, #choices, 1 do
+                if choices[ index ] == str then
+                    return str, nil
+                end
+            end
+
+            return nil, "is not one of: " .. table_concat( choices, ", " )
         elseif setting_type == "boolean" or setting_type == "toggle" then
             local value = booleans[ string_lower( str ) ]
             if value == nil then
@@ -1315,10 +1327,16 @@ do
             return
         end
 
-        -- strings keep the spaces
+        -- strings keep the spaces, a quoted string is unquoted (the engine can drop the closing quote)
         if setting.type == "string" then
             local _, tail = cli_shift( argument_string )
-            str = tail or str
+            if tail ~= nil then
+                if string_byte( tail, 1, 1 ) == 0x22 --[[ " ]] then
+                    str = cli.parseArguments( tail )[ 1 ] or ""
+                else
+                    str = tail
+                end
+            end
         end
 
         local success, reason = self:set( name, str )
@@ -1355,6 +1373,11 @@ do
         local setting_type = setting.type
         if setting_type == "boolean" or setting_type == "toggle" then
             cli_complete( value_prefix, boolean_names, suggestions, head )
+        end
+
+        local choices = setting.choices
+        if choices ~= nil then
+            cli_complete( value_prefix, choices, suggestions, head )
         end
 
         return suggestions
