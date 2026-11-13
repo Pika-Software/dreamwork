@@ -9,11 +9,14 @@ on:
       - "meta/dreamwork/**"
       - ".github/scripts/generate_meta.py"
       - ".github/scripts/check_meta.py"
+      - ".github/scripts/generate_docs.py"
       - ".github/workflows/meta.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: meta
@@ -86,3 +89,51 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit --quiet -m "meta: generated from ${GITHUB_SHA::8}"
           git push origin "HEAD:$META_BRANCH"
+
+      - name: Stage meta for docs
+        run: |
+          mkdir -p "$RUNNER_TEMP/meta-artifact"
+          cp -a "$RUNNER_TEMP/meta/library" "$RUNNER_TEMP/meta/config.json" "$RUNNER_TEMP/meta/README.md" \
+            "$RUNNER_TEMP/meta-artifact/"
+
+      - name: Upload meta artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-library
+          path: ${{ runner.temp }}/meta-artifact
+          retention-days: 7
+
+  docs:
+    needs: generate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Download meta artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: meta-library
+          path: ${{ runner.temp }}/meta
+
+      - name: Generate documentation
+        run: |
+          python3 .github/scripts/generate_docs.py \
+            --input "$RUNNER_TEMP/meta" \
+            --output "$RUNNER_TEMP/docs" \
+            --verbose
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
