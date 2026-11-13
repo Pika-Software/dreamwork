@@ -164,9 +164,9 @@ do
         default = 50,
         min = 0,
         max = 16384,
+        replicated = true,
         archive = true,
         hidden = true,
-        replicated = true,
         notify = true
     } )
 
@@ -178,9 +178,9 @@ do
         default = 8192,
         min = 0,
         max = 1048576,
+        replicated = true,
         archive = true,
         hidden = true,
-        replicated = true,
         notify = true
     } )
 
@@ -192,9 +192,9 @@ do
         default = 30,
         min = 0,
         max = 3650,
+        replicated = true,
         archive = true,
         hidden = true,
-        replicated = true,
         notify = true
     } )
 

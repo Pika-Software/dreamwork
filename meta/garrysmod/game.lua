@@ -222,7 +222,7 @@ function game.GetGlobalState( name ) end
 --- > NOTE: Returns `"0.0.0.0:<port>"` on the server when called too early, including in `GM:Initialize` and `GM:InitPostEntity`.
 --- > This bug seems to only happen the first time a server is launched, and will return the correct value after switching maps.
 ---
----@return string address The IP address and port in the format `"x.x.x.x:x"`.
+---@return "loopback" | string address The IP address and port in the format `"x.x.x.x:x"`.
 function game.GetIPAddress() end
 
 --- [SHARED AND MENU]

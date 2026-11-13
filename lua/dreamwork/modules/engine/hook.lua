@@ -357,6 +357,17 @@ event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name
     end
 end
 
+-- server address change, see `std/server.lua`
+---@param handlers dreamwork.engine.hook.Handler[]
+---@param address string
+---@param ipv4 dreamwork.std.IPv4
+---@param port integer
+event_handlers[ "dreamwork.server.address" ] = function( handlers, address, ipv4, port )
+    for i = 1, handlers[ 0 ], 1 do
+        handlers[ i ]( address, ipv4, port )
+    end
+end
+
 ---@param handlers dreamwork.engine.hook.Handler[]
 ---@param network_id integer
 ---@param unreliable boolean
@@ -551,9 +562,9 @@ if LUA_CLIENT or LUA_SERVER then
     ---@return string | nil name
     event_handlers[ "GetGameDescription" ] = function( handlers )
         for i = 1, handlers[ 0 ], 1 do
-            local name = handlers[ i ]()
-            if name ~= nil then
-                return name
+            local title = handlers[ i ]()
+            if title ~= nil then
+                return title
             end
         end
 

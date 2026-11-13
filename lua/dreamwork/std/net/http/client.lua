@@ -76,9 +76,9 @@ local timeout_default = console_Variable( {
     default = 60,
     min = 0,
     max = 300,
+    replicated = true,
     archive = true,
     hidden = true,
-    replicated = true,
     notify = true
 } )
 
@@ -90,9 +90,9 @@ local cache_ttl_default = console_Variable( {
     default = 1,
     min = 0,
     max = 40320,
+    replicated = true,
     archive = true,
     hidden = true,
-    replicated = true,
     notify = true
 } )
 
@@ -104,9 +104,9 @@ local cache_entries = console_Variable( {
     default = 256,
     min = 0,
     max = 65536,
+    replicated = true,
     archive = true,
     hidden = true,
-    replicated = true,
     notify = true
 } )
 
@@ -118,9 +118,9 @@ local max_redirects_default = console_Variable( {
     default = 10,
     min = 0,
     max = 100,
+    replicated = true,
     archive = true,
     hidden = true,
-    replicated = true,
     notify = true
 } )
 
@@ -132,9 +132,9 @@ local timeout_grace = console_Variable( {
     default = 1,
     min = 0,
     max = 60,
+    replicated = true,
     archive = true,
     hidden = true,
-    replicated = true,
     notify = true
 } )
 

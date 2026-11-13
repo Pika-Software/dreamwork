@@ -405,3 +405,88 @@ function GetAddonStatus() end
 ---
 ---@param command string The menu command to run.
 function RunGameUICommand( command ) end
+
+--- [SHARED AND MENU]
+---
+--- Returns the CurTime-based time in seconds it took to render the last frame.
+---
+--- This should be used for frame/tick based timing, such as movement prediction or animations.
+---
+--- > **NOTE**: This functions is contextual so in different contexts will return different results.
+---
+---@return number time (in seconds)
+function FrameTime() end
+
+--- Where [PrintMessage](https://wiki.facepunch.com/gmod/Global.PrintMessage) / [Player:PrintMessage](https://wiki.facepunch.com/gmod/Player:PrintMessage) displays the text ([Enums/HUD](https://wiki.facepunch.com/gmod/Enums/HUD)).
+---
+---@alias garrysmod.PrintMessageType
+---| 1 # `HUD_PRINTNOTIFY` — console notify (same destination as console in practice)
+---| 2 # `HUD_PRINTCONSOLE` — console only
+---| 3 # `HUD_PRINTTALK` — chat (and console)
+---| 4 # `HUD_PRINTCENTER` — center of the screen
+
+--- [SHARED]
+---
+--- Displays a message to every player in chat, console, or the center of the screen.
+---
+--- On the client, only the local player receives the message.
+---
+--- > **NOTE**: When called serverside, this uses the archaic user message system ([umsg](https://wiki.facepunch.com/gmod/umsg)) and is limited to ≈250 characters.
+--- >
+--- > `HUD_PRINTCENTER` will not work when this is called clientside.
+---
+--- See also [Player:PrintMessage](https://wiki.facepunch.com/gmod/Player:PrintMessage).
+---
+---@param type garrysmod.PrintMessageType Where to display the message.
+---@param message string The message to display.
+function PrintMessage( type, message ) end
+
+--- [CLIENT]
+---
+--- Creates or gets the rendertarget with the given name.
+---
+--- See `GetRenderTargetEx` for an advanced version of this function with more options.
+---
+--- Calling this function is equivalent to:
+--- ```lua
+--- GetRenderTargetEx( name,
+--- 	width, height,
+--- 	RT_SIZE_NO_CHANGE,
+--- 	MATERIAL_RT_DEPTH_SEPARATE,
+--- 	bit.bor( 2, 256 ),
+--- 	0,
+--- 	IMAGE_FORMAT_BGRA8888
+--- )
+--- ```
+---
+--- > **BUG**: This crashes when used on a cubemap texture.
+--- > See [issue #2885](https://github.com/Facepunch/garrysmod-issues/issues/2885).
+---
+--- > **WARNING**: Rendertargets are not garbage-collected, which means they will remain in memory until you disconnect. So make sure to avoid creating new ones unnecessarily and re-use as many of your existing rendertargets as possible to avoid filling up all your memory.
+---
+--- > **WARNING**: Drawing rendertargets on themself can produce odd and unexpected results.
+---
+---@param name string The internal name of the render target.
+---@param width integer The width of the render target, must be power of 2. If not set to PO2, the size will be automatically converted to the nearest PO2 size.
+---@param height integer The height of the render target, must be power of 2. If not set to PO2, the size will be automatically converted to the nearest PO2 size.
+---@return garrysmod.Texture texture The render target.
+function GetRenderTarget( name, width, height ) end
+
+--- [CLIENT]
+---
+--- Gets (or creates if it does not exist) the rendertarget with the given name. This function allows adjusting the creation of a rendertarget more than `GetRenderTarget`.
+---
+--- See also [render.PushRenderTarget](https://wiki.facepunch.com/gmod/render.PushRenderTarget) and [render.SetRenderTarget](https://wiki.facepunch.com/gmod/render.SetRenderTarget).
+---
+--- > **WARNING**: The name is treated like a path and gets its extension discarded. `"name.1"` and `"name.2"` are considered the same name and will result in the same render target being reused.
+---
+---@param name string The internal name of the render target.
+---@param width integer The width of the render target, must be power of 2.
+---@param height integer The height of the render target, must be power of 2.
+---@param size_mode integer Bitflag that influences the sizing of the render target, see [RT_SIZE](https://wiki.facepunch.com/gmod/Enums/RT_SIZE).
+---@param depth_mode integer Bitflag that determines the depth buffer usage of the render target, see [MATERIAL_RT_DEPTH](https://wiki.facepunch.com/gmod/Enums/MATERIAL_RT_DEPTH). PNGs may not render to non-`MATERIAL_RT_DEPTH_NONE` RenderTargets.
+---@param texture_flags integer Bitflag that configures the texture, see [TEXTUREFLAGS](https://wiki.facepunch.com/gmod/Enums/TEXTUREFLAGS). List of flags can also be found on the [Valve Texture Format](https://developer.valvesoftware.com/wiki/Valve_Texture_Format) wiki.
+---@param rt_flags integer Flags that control the HDR behaviour of the render target, see [CREATERENDERTARGETFLAGS](https://wiki.facepunch.com/gmod/Enums/CREATERENDERTARGETFLAGS).
+---@param image_format integer Image format, see [IMAGE_FORMAT](https://wiki.facepunch.com/gmod/Enums/IMAGE_FORMAT). Some additional image formats are accepted, but don't have enums. See [VTF Enumerations](https://developer.valvesoftware.com/wiki/Valve_Texture_Format#VTF_enumerations).
+---@return garrysmod.Texture texture The new render target.
+function GetRenderTargetEx( name, width, height, size_mode, depth_mode, texture_flags, rt_flags, image_format ) end

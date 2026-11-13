@@ -2950,11 +2950,21 @@ end
 
 -- https://github.com/WilliamVenner/gmsv_workshop
 if LUA_SERVER then
+
+    -- https://github.com/WilliamVenner/gmsv_workshop
     if std.loadbinary( "workshop" ) then
         logger:info( "`gmsv_workshop` was loaded & connected as server-side Steam Workshop API." )
     else
         logger:warn( "`gmsv_workshop` is missing, `steam.workshop.download` will cause an error on the server." )
     end
+
+    -- https://github.com/WilliamVenner/gmsv_serverstat
+    if std.loadbinary( "serverstat" ) then
+        logger:info( "`gmsv_serverstat` was loaded & connected as server performance stats API." )
+    else
+        logger:warn( "`gmsv_serverstat` is missing, server performance stats will be unavailable." )
+    end
+
 end
 
 dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
@@ -2966,6 +2976,8 @@ dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )
 
 dreamwork.storage.init()
+
+dreamwork_load( "std/server.lua" )
 
 dreamwork_load( "modules/engine/http.lua" )
 dreamwork_load( "std/net/http.lua" )

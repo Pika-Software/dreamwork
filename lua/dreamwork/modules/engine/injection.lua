@@ -126,8 +126,7 @@ if LUA_SERVER or LUA_CLIENT then
             ---@return table | nil
             ---@nodiscard
             function gamemode.Get( name )
-                local tbl = gamemodes[ name ]
-                return hook_call( "dreamwork.gamemode.select", name, tbl ) or tbl
+                return hook_call( "dreamwork.gamemode.select", name, gamemodes[ name ] )
             end
 
             if gamemode.Register == nil then
@@ -148,12 +147,11 @@ if LUA_SERVER or LUA_CLIENT then
 
         else
 
+            ---@param fn fun( name: string ): table
             ---@param name string
             ---@return table | nil
             detour.attach( function( fn, name )
-                ---@diagnostic disable-next-line: need-check-nil
-                local tbl = fn( name )
-                return hook_call( "dreamwork.gamemode.select", name, tbl ) or tbl
+                return hook_call( "dreamwork.gamemode.select", name, fn( name ) )
             end, gamemode, "Get" )
 
             gamemode.Register = gamemode.Register or debug_fempty

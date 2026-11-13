@@ -1227,7 +1227,7 @@ function Player:PlayStepSound( volume ) end
 --- >
 --- > `HUD_PRINTCENTER` will not work when this is called clientside.
 ---
----@param type integer Which type of message should be sent to the player ([Enums/HUD](https://wiki.facepunch.com/gmod/Enums/HUD)).
+---@param type garrysmod.PrintMessageType Which type of message should be sent to the player.
 ---@param message string Message to be sent to the player.
 function Player:PrintMessage( type, message ) end
 
