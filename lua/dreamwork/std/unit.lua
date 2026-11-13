@@ -558,6 +558,89 @@ do
 end
 
 
+--- Cached linear conversions: `unit_factors[from_unit][to_unit] = { source_anchor, bridge, target_anchor }`.
+---
+--- Filled lazily on the first conversion of a pair; units with an `anchor_shift`
+--- (temperature) or a transform bridge are never cached and always take the slow path.
+---
+--- The three factors are applied in the same order as the slow path,
+--- so cached results are bit-identical to uncached ones.
+---
+---@type table<dreamwork.std.unit.Type, table<dreamwork.std.unit.Type, number[]>>
+local unit_factors = {}
+
+--- Converts a pair that is not in `unit_factors` yet, caching it when it is linear.
+---
+---@param value number
+---@param from_unit dreamwork.std.unit.Type | string
+---@param to_unit dreamwork.std.unit.Type | string
+---@return number
+local function convert_uncached( value, from_unit, to_unit )
+    local source = unit_definitions[ from_unit ]
+    if source == nil then
+        error( ValueError( from_unit, "unsupported unit" ), 2 )
+    end
+
+    local target = unit_definitions[ to_unit ]
+    if target == nil then
+        error( ValueError( to_unit, "unsupported unit" ), 2 )
+    end
+
+    if source.measure ~= target.measure then
+        error( ValueError( to_unit, string_format( "cannot convert incompatible measures of %s and %s", source.measure, target.measure ) ), 2 )
+    end
+
+    ---@type number | fun( value: number ): number
+    local bridge = 1
+
+    if source.system ~= target.system then
+        local systems = measure_anchors[ source.measure ]
+        local from_system = systems and systems[ source.system ]
+        bridge = from_system and from_system[ target.system ]
+
+        if bridge == nil then
+            error( ValueError( to_unit, string_format( "missing anchor between %s and %s", source.system, target.system ) ), 2 )
+        end
+    end
+
+    local source_anchor, target_anchor = source.to_anchor, target.to_anchor
+    local source_shift, target_shift = source.anchor_shift, target.anchor_shift
+    local is_transform = isFunction( bridge )
+
+    if source_shift == nil and target_shift == nil and not is_transform then
+        ---@cast bridge number
+
+        local factors = unit_factors[ from_unit ]
+        if factors == nil then
+            factors = {}
+            unit_factors[ from_unit ] = factors
+        end
+
+        factors[ to_unit ] = { source_anchor, bridge, target_anchor }
+        return value * source_anchor * bridge / target_anchor
+    end
+
+    local result = value * source_anchor
+
+    if source_shift ~= nil then
+        result = result - source_shift
+    end
+
+    if is_transform then
+        ---@cast bridge fun( value: number ): number
+        result = bridge( result )
+    else
+        ---@cast bridge number
+        result = result * bridge
+    end
+
+    if target_shift ~= nil then
+        result = result + target_shift
+    end
+
+    return result / target_anchor
+end
+
 --- [CLIENT AND MENU]
 ---
 --- Converts `value` from `from_unit` into `to_unit` within one measure.
@@ -581,51 +664,15 @@ function unit.convert( value, from_unit, to_unit )
         return value
     end
 
-    local source = unit_definitions[ from_unit ]
-    if source == nil then
-        error( ValueError( from_unit, "unsupported unit" ), 2 )
-    end
-
-    local target = unit_definitions[ to_unit ]
-    if target == nil then
-        error( ValueError( to_unit, "unsupported unit" ), 2 )
-    end
-
-    if source.measure ~= target.measure then
-        error( ValueError( to_unit, string_format( "cannot convert incompatible measures of %s and %s", source.measure, target.measure ) ), 2 )
-    end
-
-    local result = value * source.to_anchor
-
-    local source_shift = source.anchor_shift
-    if source_shift ~= nil then
-        result = result - source_shift
-    end
-
-    if source.system ~= target.system then
-        local systems = measure_anchors[ source.measure ]
-        local from_system = systems and systems[ source.system ]
-        local bridge = from_system and from_system[ target.system ]
-
-        if bridge == nil then
-            error( ValueError( to_unit, string_format( "missing anchor between %s and %s", source.system, target.system ) ), 2 )
-        end
-
-        if isFunction( bridge ) then
-            ---@cast bridge fun( value: number ): number
-            result = bridge( result )
-        else
-            ---@cast bridge number
-            result = result * bridge
+    local factors = unit_factors[ from_unit ]
+    if factors ~= nil then
+        local factor = factors[ to_unit ]
+        if factor ~= nil then
+            return value * factor[ 1 ] * factor[ 2 ] / factor[ 3 ]
         end
     end
 
-    local target_shift = target.anchor_shift
-    if target_shift ~= nil then
-        result = result + target_shift
-    end
-
-    return result / target.to_anchor
+    return convert_uncached( value, from_unit, to_unit )
 end
 
 --- [CLIENT AND MENU]
