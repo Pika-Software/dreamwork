@@ -873,9 +873,40 @@ a:hover { text-decoration: underline; }
   color: var(--text-muted);
   font-weight: 600;
 }
+.nav-tree { margin: 0; padding: 0; list-style: none; }
+.nav-tree .nav-tree { margin-left: 0.55rem; padding-left: 0.45rem; border-left: 1px solid var(--border); }
+.nav-item { margin: 0; }
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  border-radius: 6px;
+  min-width: 0;
+}
+.nav-row:hover { background: var(--bg-hover); }
+.nav-twist {
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.65rem;
+  line-height: 1;
+  border-radius: 4px;
+}
+.nav-twist:hover { color: var(--text); background: var(--border); }
+.nav-twist[aria-hidden="true"] { visibility: hidden; pointer-events: none; }
+.nav-twist::before { content: "▸"; display: inline-block; transition: transform 0.12s ease; }
+.nav-item.open > .nav-row > .nav-twist::before { transform: rotate(90deg); }
+.nav-item:not(.open) > .nav-tree { display: none; }
 .nav-section a {
   display: block;
-  padding: 0.28rem 0.55rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.28rem 0.4rem 0.28rem 0.2rem;
   border-radius: 6px;
   color: var(--text);
   font-size: 0.88rem;
@@ -885,11 +916,10 @@ a:hover { text-decoration: underline; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.nav-section a:hover, .nav-section a.active {
-  background: var(--bg-hover);
-  text-decoration: none;
-}
+.nav-section a:hover { text-decoration: none; }
 .nav-section a.active { color: var(--accent); font-weight: 600; }
+.nav-row:has(a.active) { background: var(--bg-hover); }
+.nav-leaf-label { color: var(--text-muted); font-size: 0.75rem; margin-left: 0.15rem; }
 
 .content {
   flex: 1;
@@ -954,9 +984,8 @@ h3 {
   font-size: 1.05rem;
   color: var(--text);
   margin: 0 0 1.25rem;
-  white-space: pre-wrap;
 }
-.lead code, .prose code, td code, li code {
+.lead code, .prose code, td code, li code, .prose :not(pre) > code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--bg-code);
@@ -964,8 +993,72 @@ h3 {
   border-radius: 4px;
 }
 
-.prose { white-space: pre-wrap; margin: 0.35rem 0 0.75rem; color: var(--text); }
-.prose p { margin: 0.4rem 0; white-space: normal; }
+.prose { margin: 0.35rem 0 0.75rem; color: var(--text); }
+.prose p { margin: 0.55rem 0; }
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: var(--font-display);
+  margin: 1.1rem 0 0.45rem;
+  border: 0;
+  padding: 0;
+}
+.prose h1 { font-size: 1.35rem; }
+.prose h2 { font-size: 1.2rem; }
+.prose h3 { font-size: 1.05rem; font-family: var(--font); }
+.prose ul, .prose ol { margin: 0.45rem 0 0.75rem; padding-left: 1.35rem; }
+.prose li { margin: 0.2rem 0; }
+.prose blockquote {
+  margin: 0.75rem 0;
+  padding: 0.35rem 0.85rem;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.1rem 0;
+}
+.prose pre {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem;
+  background: #15202b;
+  color: #e8eef5;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.prose pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+.prose .code-lang {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #93a4b5;
+  margin-bottom: 0.45rem;
+  font-family: var(--font);
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 0.75rem 0;
+}
+.prose th, .prose td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.prose th { background: var(--bg-sidebar); }
+.prose a { text-decoration: underline; text-underline-offset: 2px; }
+.prose strong { font-weight: 600; }
+.prose em { font-style: italic; }
 
 .sig {
   font-family: var(--font-mono);
@@ -1083,11 +1176,26 @@ APP_JS = r"""
   const results = document.getElementById("search-results");
   const toggle = document.getElementById("menu-toggle");
   const sidebar = document.querySelector(".sidebar");
+  const base = document.body.getAttribute("data-base") || "";
+
+  document.querySelectorAll(".nav-twist").forEach((btn) => {
+    if (btn.getAttribute("aria-hidden") === "true") return;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const item = btn.closest(".nav-item");
+      if (!item) return;
+      const open = item.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+
+  if (toggle && sidebar) {
+    toggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+  }
+
   if (!input || !results) return;
 
   let index = null;
-  let base = document.body.getAttribute("data-base") || "";
-
   fetch(base + "search-index.json")
     .then((r) => r.json())
     .then((data) => { index = data; })
@@ -1104,6 +1212,14 @@ APP_JS = r"""
     if (full.includes(q)) return 45;
     if ((item.summary || "").toLowerCase().includes(q)) return 20;
     return 0;
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function render(q) {
@@ -1137,14 +1253,6 @@ APP_JS = r"""
     results.classList.add("open");
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   let timer = null;
   input.addEventListener("input", () => {
     clearTimeout(timer);
@@ -1162,29 +1270,292 @@ APP_JS = r"""
       results.classList.remove("open");
     }
   });
-
-  if (toggle && sidebar) {
-    toggle.addEventListener("click", () => sidebar.classList.toggle("open"));
-  }
 })();
 """
 
 
-def md_lite(text: str) -> str:
-    """Minimal formatting: backticks, existing indentation preserved via pre-wrap."""
+@dataclass
+class NavNode:
+    segment: str
+    full_name: str = ""
+    href: str = ""
+    children: dict[str, "NavNode"] = field(default_factory=dict)
+
+
+def build_nav_tree(items: list[tuple[str, str]]) -> list[NavNode]:
+    """Build a nested tree from dotted names: http.client → http → client."""
+    roots: dict[str, NavNode] = {}
+    for full_name, href in items:
+        display = "globals" if full_name == "_globals" else full_name
+        parts = display.split(".")
+        cursor_map = roots
+        path: list[str] = []
+        node: NavNode | None = None
+        for part in parts:
+            path.append(part)
+            key = ".".join(path)
+            if part not in cursor_map:
+                cursor_map[part] = NavNode(segment=part, full_name=key)
+            node = cursor_map[part]
+            cursor_map = node.children
+        assert node is not None
+        node.full_name = display
+        node.href = href
+
+    def sort_nodes(mapping: dict[str, NavNode]) -> list[NavNode]:
+        nodes = sorted(mapping.values(), key=lambda n: n.segment.lower())
+        for n in nodes:
+            # recurse sort by rewriting children order via list render
+            n.children = {c.segment: c for c in sort_nodes(n.children)}
+        return nodes
+
+    return sort_nodes(roots)
+
+
+def render_nav_tree(
+    nodes: list[NavNode],
+    section: str,
+    active: str,
+    base: str,
+) -> str:
+    active_name = active.split(":", 1)[1] if ":" in active and active.startswith(section + ":") else ""
+
+    def is_active_path(full_name: str) -> bool:
+        if not active_name:
+            return False
+        return active_name == full_name or active_name.startswith(full_name + ".")
+
+    def render_nodes(node_list: list[NavNode]) -> str:
+        parts: list[str] = []
+        for node in node_list:
+            children = list(node.children.values())
+            has_children = bool(children)
+            open_branch = has_children and is_active_path(node.full_name)
+            item_cls = "nav-item open" if open_branch else "nav-item"
+            link_cls = ' class="active"' if active == f"{section}:{node.full_name}" else ""
+            label = escape(node.segment)
+            if node.href:
+                link = f'<a href="{escape(base + node.href)}"{link_cls}>{label}</a>'
+            else:
+                # namespace folder without its own page
+                link = f'<a href="#"{link_cls} onclick="return false" style="cursor:default">{label}</a>'
+
+            if has_children:
+                twist = (
+                    f'<button type="button" class="nav-twist" aria-expanded="'
+                    f'{"true" if open_branch else "false"}" aria-label="Toggle {escape(node.segment)}"></button>'
+                )
+            else:
+                twist = '<button type="button" class="nav-twist" aria-hidden="true" tabindex="-1"></button>'
+
+            child_html = f'<ul class="nav-tree">{render_nodes(children)}</ul>' if has_children else ""
+            parts.append(
+                f'<li class="{item_cls}">'
+                f'<div class="nav-row">{twist}{link}</div>'
+                f"{child_html}</li>"
+            )
+        return "\n".join(parts)
+
+    return f'<ul class="nav-tree">{render_nodes(nodes)}</ul>'
+
+
+def md_inline(text: str) -> str:
+    """Escape and apply inline markdown: code, links, bold, italic."""
     if not text:
         return ""
-    # escape first, then restore code spans
-    escaped = escape(text)
-    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
-    # simple paragraphs for blank-line separated blocks when no heavy pre needed
-    return f'<div class="prose">{escaped}</div>'
+
+    placeholders: list[str] = []
+
+    def hold(html_snip: str) -> str:
+        placeholders.append(html_snip)
+        return f"\x00MD{len(placeholders) - 1}\x00"
+
+    # inline code first
+    def code_repl(match: re.Match[str]) -> str:
+        return hold(f"<code>{escape(match.group(1))}</code>")
+
+    text = re.sub(r"`([^`\n]+)`", code_repl, text)
+
+    # links [text](url)
+    def link_repl(match: re.Match[str]) -> str:
+        label, url = match.group(1), match.group(2)
+        return hold(
+            f'<a href="{escape(url)}" rel="noopener noreferrer">{escape(label)}</a>'
+        )
+
+    text = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", link_repl, text)
+
+    text = escape(text)
+
+    # bold / italic on escaped text (asterisks survive escape)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", text)
+    text = re.sub(r"__(.+?)__", r"<strong>\1</strong>", text)
+    text = re.sub(r"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", r"<em>\1</em>", text)
+
+    def restore(match: re.Match[str]) -> str:
+        return placeholders[int(match.group(1))]
+
+    return re.sub(r"\x00MD(\d+)\x00", restore, text)
+
+
+def _is_table_row(line: str) -> bool:
+    stripped = line.strip()
+    return stripped.startswith("|") and stripped.endswith("|")
+
+
+def _is_table_sep(line: str) -> bool:
+    stripped = line.strip().strip("|").replace(":", "").replace("-", "").replace("|", "").replace(" ", "")
+    return _is_table_row(line) and stripped == "" and "-" in line
+
+
+def _parse_table_row(line: str) -> list[str]:
+    body = line.strip().strip("|")
+    return [c.strip() for c in body.split("|")]
+
+
+def _render_markdown_blocks(text: str) -> str:
+    """Render markdown blocks without the outer prose wrapper."""
+    if not text:
+        return ""
+
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    out: list[str] = []
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        line = lines[i]
+
+        # fenced code block
+        fence = re.match(r"^```([\w+-]*)\s*$", line.strip())
+        if fence:
+            lang = fence.group(1)
+            i += 1
+            code_lines: list[str] = []
+            while i < n and not re.match(r"^```\s*$", lines[i].strip()):
+                code_lines.append(lines[i])
+                i += 1
+            if i < n:
+                i += 1
+            lang_html = f'<span class="code-lang">{escape(lang)}</span>' if lang else ""
+            out.append(
+                f"<pre>{lang_html}<code>{escape(chr(10).join(code_lines))}</code></pre>"
+            )
+            continue
+
+        # heading
+        heading = re.match(r"^(#{1,4})\s+(.+)$", line)
+        if heading:
+            level = len(heading.group(1))
+            out.append(f"<h{level}>{md_inline(heading.group(2).strip())}</h{level}>")
+            i += 1
+            continue
+
+        # hr
+        if re.match(r"^(\*{3,}|-{3,}|_{3,})\s*$", line.strip()):
+            out.append("<hr>")
+            i += 1
+            continue
+
+        # blockquote
+        if line.lstrip().startswith(">"):
+            quote: list[str] = []
+            while i < n and lines[i].lstrip().startswith(">"):
+                quote.append(re.sub(r"^\s*>\s?", "", lines[i]))
+                i += 1
+            out.append(f"<blockquote>{_render_markdown_blocks(chr(10).join(quote))}</blockquote>")
+            continue
+
+        # table
+        if i + 1 < n and _is_table_row(line) and _is_table_sep(lines[i + 1]):
+            headers = _parse_table_row(line)
+            i += 2
+            rows: list[list[str]] = []
+            while i < n and _is_table_row(lines[i]):
+                rows.append(_parse_table_row(lines[i]))
+                i += 1
+            thead = "<tr>" + "".join(f"<th>{md_inline(h)}</th>" for h in headers) + "</tr>"
+            body_rows = []
+            for row in rows:
+                cells = (row + [""] * len(headers))[: len(headers)]
+                body_rows.append(
+                    "<tr>" + "".join(f"<td>{md_inline(c)}</td>" for c in cells) + "</tr>"
+                )
+            out.append(
+                f"<table><thead>{thead}</thead><tbody>{''.join(body_rows)}</tbody></table>"
+            )
+            continue
+
+        # unordered list
+        if re.match(r"^\s*[-*+]\s+", line):
+            items: list[str] = []
+            while i < n and re.match(r"^\s*[-*+]\s+", lines[i]):
+                items.append(re.sub(r"^\s*[-*+]\s+", "", lines[i]))
+                i += 1
+            out.append(
+                "<ul>" + "".join(f"<li>{md_inline(item)}</li>" for item in items) + "</ul>"
+            )
+            continue
+
+        # ordered list
+        if re.match(r"^\s*\d+\.\s+", line):
+            items = []
+            while i < n and re.match(r"^\s*\d+\.\s+", lines[i]):
+                items.append(re.sub(r"^\s*\d+\.\s+", "", lines[i]))
+                i += 1
+            out.append(
+                "<ol>" + "".join(f"<li>{md_inline(item)}</li>" for item in items) + "</ol>"
+            )
+            continue
+
+        # blank
+        if not line.strip():
+            i += 1
+            continue
+
+        # paragraph (merge consecutive non-special lines)
+        para: list[str] = []
+        while i < n and lines[i].strip():
+            peek = lines[i]
+            if (
+                re.match(r"^```", peek.strip())
+                or re.match(r"^#{1,4}\s+", peek)
+                or re.match(r"^(\*{3,}|-{3,}|_{3,})\s*$", peek.strip())
+                or peek.lstrip().startswith(">")
+                or re.match(r"^\s*[-*+]\s+", peek)
+                or re.match(r"^\s*\d+\.\s+", peek)
+                or (i + 1 < n and _is_table_row(peek) and _is_table_sep(lines[i + 1]))
+            ):
+                break
+            para.append(peek)
+            i += 1
+        if para:
+            out.append(f"<p>{md_inline(' '.join(s.strip() for s in para))}</p>")
+
+    return "".join(out)
+
+
+def render_markdown(text: str) -> str:
+    """Render a useful subset of markdown used in EmmyLua docs."""
+    if not text:
+        return ""
+    return f'<div class="prose">{_render_markdown_blocks(text)}</div>'
+
+
+def md_lite(text: str) -> str:
+    """Back-compat alias used throughout the renderer."""
+    return render_markdown(text)
 
 
 def first_sentence(text: str, limit: int = 140) -> str:
     if not text:
         return ""
     line = text.strip().split("\n", 1)[0].strip()
+    # strip simple markdown markers for summaries
+    line = re.sub(r"`([^`]+)`", r"\1", line)
+    line = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line)
+    line = re.sub(r"[*_]+", "", line)
     if len(line) > limit:
         return line[: limit - 1] + "…"
     return line
@@ -1197,17 +1568,13 @@ def slugify(name: str) -> str:
 def page_shell(
     title: str,
     body: str,
-    nav_libs: list[tuple[str, str]],
-    nav_classes: list[tuple[str, str]],
+    nav_lib_tree: list[NavNode],
+    nav_class_tree: list[NavNode],
     base: str,
     active: str = "",
 ) -> str:
-    def nav_links(items: list[tuple[str, str]], section: str) -> str:
-        out = []
-        for name, href in items:
-            cls = ' class="active"' if active == f"{section}:{name}" else ""
-            out.append(f'<a href="{escape(base + href)}"{cls}>{escape(name)}</a>')
-        return "\n".join(out)
+    libs_html = render_nav_tree(nav_lib_tree, "lib", active, base)
+    classes_html = render_nav_tree(nav_class_tree, "class", active, base)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1231,11 +1598,11 @@ def page_shell(
   </div>
   <nav class="nav-section">
     <h3>Libraries</h3>
-    {nav_links(nav_libs, "lib")}
+    {libs_html}
   </nav>
   <nav class="nav-section">
     <h3>Classes</h3>
-    {nav_links(nav_classes, "class")}
+    {classes_html}
   </nav>
 </aside>
 <main class="content">
@@ -1257,7 +1624,7 @@ def render_params_table(params: list[Param]) -> str:
         rows.append(
             f"<tr><td><code>{escape(p.name)}{opt}</code></td>"
             f"<td><code>{escape(p.type)}</code></td>"
-            f"<td>{escape(p.description)}</td></tr>"
+            f"<td>{md_inline(p.description)}</td></tr>"
         )
     return (
         '<table class="api"><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>'
@@ -1273,7 +1640,7 @@ def render_returns_table(returns: list[Return]) -> str:
         rows.append(
             f"<tr><td><code>{escape(r.type)}</code></td>"
             f"<td><code>{escape(r.name)}</code></td>"
-            f"<td>{escape(r.description)}</td></tr>"
+            f"<td>{md_inline(r.description)}</td></tr>"
         )
     return (
         '<table class="api"><thead><tr><th>Type</th><th>Name</th><th>Description</th></tr></thead>'
@@ -1323,7 +1690,7 @@ def render_fields(fields: list[Field]) -> str:
             f"<tr id=\"field-{escape(slugify(f.name))}\">"
             f"<td><code>{escape(f.name)}</code></td>"
             f"<td><code>{escape(f.type)}</code></td>"
-            f"<td>{escape(f.description)}</td></tr>"
+            f"<td>{md_inline(f.description)}</td></tr>"
         )
     return (
         "<h2>Fields</h2>"
@@ -1364,14 +1731,19 @@ def write_docs(
         if info.is_class
     }
 
-    nav_libs = sorted(
-        ((name if name != "_globals" else "globals", href) for name, href in lib_pages.items()),
+    nav_lib_items = sorted(
+        (
+            (name if name != "_globals" else "globals", href)
+            for name, href in lib_pages.items()
+        ),
         key=lambda x: x[0].lower(),
     )
-    nav_classes = sorted(
+    nav_class_items = sorted(
         ((name, href) for name, href in class_pages.items()),
         key=lambda x: x[0].lower(),
     )
+    nav_lib_tree = build_nav_tree(nav_lib_items)
+    nav_class_tree = build_nav_tree(nav_class_items)
 
     search: list[dict[str, Any]] = []
 
@@ -1386,20 +1758,26 @@ def write_docs(
             }
         )
 
-    # index
+    # index — top-level library cards only (children live in the sidebar tree)
+    top_libs = [(n, h) for n, h in nav_lib_items if "." not in n]
     lib_cards = []
-    for name, href in nav_libs:
+    for name, href in top_libs:
         real = "_globals" if name == "globals" else name
         lib = libraries[real]
+        child_count = sum(1 for n, _ in nav_lib_items if n.startswith(name + "."))
+        suffix = f" · {child_count} sub" if child_count else ""
         lib_cards.append(
-            f'<a class="card" href="{escape(href)}"><div class="label">library</div>'
+            f'<a class="card" href="{escape(href)}"><div class="label">library{escape(suffix)}</div>'
             f'<div class="title">{escape(name)}</div>'
             f'<div class="sum">{escape(first_sentence(lib.description))}</div></a>'
         )
-        add_search(name, "library", href, lib.description)
+
+    for name, href in nav_lib_items:
+        real = "_globals" if name == "globals" else name
+        add_search(name, "library", href, libraries[real].description)
 
     class_cards = []
-    for name, href in nav_classes[:48]:
+    for name, href in nav_class_items[:48]:
         info = classes[name]
         class_cards.append(
             f'<a class="card" href="{escape(href)}"><div class="label">class</div>'
@@ -1407,14 +1785,14 @@ def write_docs(
             f'<div class="sum">{escape(first_sentence(info.description))}</div></a>'
         )
 
-    for name, href in nav_classes:
+    for name, href in nav_class_items:
         add_search(name, "class", href, classes[name].description)
 
     index_body = f"""
 <div class="crumbs">docs</div>
 <h1>dreamwork API</h1>
-<p class="lead">GitBook-style reference for the dreamwork <code>std</code> environment —
-libraries, constructible classes (callable tables that return objects), functions and methods.</p>
+<div class="lead"><p>GitBook-style reference for the dreamwork <code>std</code> environment —
+libraries, constructible classes (callable tables that return objects), functions and methods.</p></div>
 <div class="meta-row">
   <span class="badge lib">{len(lib_pages)} libraries</span>
   <span class="badge class">{len(class_pages)} classes</span>
@@ -1422,13 +1800,12 @@ libraries, constructible classes (callable tables that return objects), function
 <h2>Libraries</h2>
 <div class="card-grid">{''.join(lib_cards)}</div>
 <h2>Classes</h2>
-<p class="prose">Classes inherit from <code>Object</code> and are created by calling their class table
-(<code>---@overload fun(...): T</code>).</p>
+{render_markdown("Classes inherit from `Object` and are created by calling their class table (`---@overload fun(...): T`).")}
 <div class="card-grid">{''.join(class_cards)}</div>
-{f"<p class=\"prose\">{len(nav_classes) - 48} more classes in the sidebar.</p>" if len(nav_classes) > 48 else ""}
+{f"<p class=\"prose\">{len(nav_class_items) - 48} more classes in the sidebar.</p>" if len(nav_class_items) > 48 else ""}
 """
     (out / "index.html").write_text(
-        page_shell("API", index_body, nav_libs, nav_classes, base=""),
+        page_shell("API", index_body, nav_lib_tree, nav_class_tree, base=""),
         encoding="utf-8",
     )
 
@@ -1469,7 +1846,7 @@ libraries, constructible classes (callable tables that return objects), function
 {"<h2>Functions</h2>" + fns if fns else "<p class=\"prose\">No free functions.</p>"}
 """
         (out / href).write_text(
-            page_shell(display, body, nav_libs, nav_classes, base=base, active=f"lib:{display}"),
+            page_shell(display, body, nav_lib_tree, nav_class_tree, base=base, active=f"lib:{display}"),
             encoding="utf-8",
         )
         if verbose:
@@ -1543,7 +1920,7 @@ libraries, constructible classes (callable tables that return objects), function
 {"<h2>Static functions</h2>" + statics_html if statics_html else ""}
 """
         (out / href).write_text(
-            page_shell(name, body, nav_libs, nav_classes, base=base, active=f"class:{name}"),
+            page_shell(name, body, nav_lib_tree, nav_class_tree, base=base, active=f"class:{name}"),
             encoding="utf-8",
         )
         if verbose:
@@ -1566,7 +1943,7 @@ libraries, constructible classes (callable tables that return objects), function
 <tbody>{''.join(rows)}</tbody></table>
 """
         (out / "aliases.html").write_text(
-            page_shell("Aliases", body, nav_libs, nav_classes, base=""),
+            page_shell("Aliases", body, nav_lib_tree, nav_class_tree, base=""),
             encoding="utf-8",
         )
 
