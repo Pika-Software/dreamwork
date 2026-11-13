@@ -2681,6 +2681,8 @@ dreamwork_load( "std/futures.lua" )
 dreamwork_load( "std/codec/json.lua" )
 dreamwork_load( "std/codec/vdf.lua" )
 
+dreamwork_load( "std/fluent.lua" )
+
 dreamwork_load( "std/codec/types/xml.lua" )
 dreamwork_load( "std/codec/types/html.lua" )
 
