@@ -556,6 +556,18 @@ function isThread(value) end
 
 --- [SHARED AND MENU]
 ---
+--- Loads a string as a lua code chunk in the specified
+--- environment and returns new function as a compile result.
+---
+---@param lua_code string The lua code chunk.
+---@param chunk_name string | nil The lua code chunk name.
+---@param env table | nil The environment of compiled function.
+---@return function fn The compiled function.
+---@nodiscard
+function loadstring(lua_code, chunk_name, env) end
+
+--- [SHARED AND MENU]
+---
 --- Checks if the value is an instance of the given parent.
 ---
 ---@param object any The object to check for being an instance of the given parent.
@@ -619,18 +631,6 @@ function knext(tbl, key) end
 ---@return table<K, V>
 ---@nodiscard
 function kpairs(tbl) end
-
---- [SHARED AND MENU]
----
---- Loads a string as a lua code chunk in the specified
---- environment and returns new function as a compile result.
----
----@param lua_code string The lua code chunk.
----@param chunk_name string | nil The lua code chunk name.
----@param env table | nil The environment of compiled function.
----@return function fn The compiled function.
----@nodiscard
-function loadstring(lua_code, chunk_name, env) end
 
 ---@class String
 local __String = {}

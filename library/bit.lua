@@ -349,6 +349,26 @@ function bit.ctz(x, bit_count) end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the number of bits needed to store `x` as an unsigned `bit_count`-bit integer,
+--- i.e. the position of its highest set bit plus one.
+---
+--- Equivalent to `bit_count - bit.clz( x, bit_count )`, returns `0` if `x` is zero.
+---
+--- ```
+--- bit.width( 0 )    --> 0
+--- bit.width( 255 )  --> 8
+--- bit.width( 256 )  --> 9
+--- ```
+---
+---@generic T: integer | { __band: function, __bxor: function, __rshift: function }
+---@param x T The value to measure.
+---@param bit_count integer? The width, in bits, of the window to inspect. Defaults to `32`.
+---@return integer width The number of significant bits, from `0` to `bit_count`.
+---@nodiscard
+function bit.width(x, bit_count) end
+
+--- [SHARED AND MENU]
+---
 --- Bitwise multiplexer (also known as "choose"). For each bit position, selects the
 --- corresponding bit of `b` where `a` is `1`, and the corresponding bit of `c` where `a` is `0`.
 ---

@@ -248,6 +248,24 @@ function raw.bit.reverse(x, bit_count) end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the number of bits needed to store the specified 32-bit integer as unsigned,
+--- i.e. the position of its highest set bit plus one.
+---
+--- Returns `0` for `0` and `32` for negative values (they are read as unsigned).
+---
+--- ```lua
+--- rbit.width( 0 ) -- 0
+--- rbit.width( 255 ) -- 8
+--- rbit.width( 256 ) -- 9
+--- ```
+---
+---@param x integer The value to measure.
+---@return integer width The number of significant bits, from `0` to `32`.
+---@nodiscard
+function raw.bit.width(x) end
+
+--- [SHARED AND MENU]
+---
 --- Converts an unsigned `bit_count`-bit integer to its signed (two's complement) value,
 --- the inverse of `rbit.unsign`.
 ---

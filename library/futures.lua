@@ -36,15 +36,6 @@ futures.running = coroutine.running
 
 --- [SHARED AND MENU]
 ---
---- Returns the debug stack tracked for the current coroutine,
---- or `nil` if called outside of a coroutine.
----
----@return dreamwork.exceptions.Stack | nil
----@nodiscard
-function futures.stack() end
-
---- [SHARED AND MENU]
----
 --- Executes a function in a new coroutine
 --- you can use this function to call async functions even in sync code
 --- callback will be called when function returned or errored
