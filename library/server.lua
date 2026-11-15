@@ -56,6 +56,9 @@ function server.isCheatsEnabled() end
 ---@nodiscard
 function server.isUserScriptsAllowed() end
 
+---@param password_str string | nil
+function server.setPassword(password_str) end
+
 --- [SERVER]
 ---
 --- Shuts down the server immediately.
@@ -226,3 +229,17 @@ function server.getFrameTime() end
 --- Arguments: `details: table` with `server_name: string`, `loading_url: string`, `map_name: string`, `max_players: integer`, `player_steamid64: string` and `gamemode_name: string` keys.
 ---
 server.Details = nil
+
+--- [SHARED AND MENU]
+---
+--- Sets the server password.
+---
+--- On the client and menu it is the password sent to a password-protected server on the next connection attempt;
+--- it does not affect an already established connection.
+---
+--- On the server it is the password required to connect; players already connected are not affected.
+---
+--- Passing `nil` or an empty string clears the password.
+---
+---@param password_str string | nil The password to use, or `nil` / `""` to clear it.
+function server.setPassword(password_str) end
