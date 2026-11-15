@@ -22,7 +22,7 @@ lua.lexer.TOKEN_NEWLINE = 2
 
 --- [SHARED AND MENU]
 ---
---- `--`, `--[[ ]]`, `//`, `/* */` comments and the shebang line.
+--- `--`, `--[[ ]]` comments and the shebang line.
 lua.lexer.TOKEN_COMMENT = 3
 
 --- [SHARED AND MENU]
@@ -61,7 +61,7 @@ lua.lexer.TOKEN_NAMES = {}
 ---
 --- Reserved words of Lua 5.1 and LuaJIT ( `goto` ).
 ---
---- GLua `continue` is not here, the parser treats it as a keyword only at the start of a statement.
+--- `continue` is not here, the parser treats it as a keyword only at the start of a statement.
 ---
 ---@type table<string, boolean>
 lua.lexer.keywords = nil
@@ -70,7 +70,7 @@ lua.lexer.keywords = nil
 ---
 --- Checks if the string is a valid Lua name that is not a keyword.
 ---
---- GLua `continue` is rejected too, so the result is safe for both Lua and GLua.
+--- `continue` is rejected too, so the result is safe to use as a statement start.
 ---
 ---@param str string The string to check.
 ---@return boolean is_identifier `true` if the string can be used as a variable or field name.

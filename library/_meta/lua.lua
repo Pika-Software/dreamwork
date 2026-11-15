@@ -131,7 +131,7 @@
 ---@class lua.ast.Break : lua.ast.Node
 ---@field type 13 `lua.parser.NODE_BREAK`
 
---- GLua `continue`.
+--- `continue`.
 ---
 ---@class lua.ast.Continue : lua.ast.Node
 ---@field type 14 `lua.parser.NODE_CONTINUE`

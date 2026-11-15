@@ -35,11 +35,11 @@ lua.SyntaxError = {}
 
 --- [SHARED AND MENU]
 ---
---- Lua 5.1 / LuaJIT ( and GLua ) parser, builds an AST from code or tokens.
+--- Lua 5.1 / LuaJIT parser, builds an AST from code or tokens.
 ---
 --- AST nodes are plain tables with a `type` field, see `lua.ast.*`.
 ---
---- GLua operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
+--- `//` is the floor division, alternative operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
 ---
 ---@class lua.parser
 lua.parser = {}
