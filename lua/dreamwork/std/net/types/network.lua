@@ -7,9 +7,17 @@ local exceptions_call = dreamwork.exceptions.call
 local engine_hook = dreamwork_engine.hook
 
 local engine_network = dreamwork_engine.network
-local network_receiveById = engine_network.receiveById
+
+local network_readUInt = engine_network.readUInt
+local network_writeUInt = engine_network.writeUInt
+
+local network_readData = engine_network.readData
+local network_writeData = engine_network.writeData
+
+local network_getId = engine_network.getId
+local network_start = engine_network.start
 local network_register = engine_network.register
-local network_getID = engine_network.getID
+local network_receiveById = engine_network.receiveById
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -51,16 +59,6 @@ local BinaryReader = std.BinaryReader
 local BinaryWriter = std.BinaryWriter
 
 local LUA_SERVER = std.LUA_SERVER
-
-
----@class garrysmod.net
-local glua_net = dreamwork_engine.requireLibrary( "net" )
-
-local net_Start = glua_net.Start
-local net_WriteUInt = glua_net.WriteUInt
-local net_WriteData = glua_net.WriteData
-local net_ReadUInt = glua_net.ReadUInt
-local net_ReadData = glua_net.ReadData
 
 
 --[[
@@ -691,19 +689,19 @@ end
 
 if LUA_SERVER then
 
-    local net_Send = glua_net.Send
+    local network_send = engine_network.send
 
     ---@param peer garrysmod.Player
     function message_send( peer )
-        net_Send( peer )
+        network_send( peer )
     end
 
 else
 
-    local net_SendToServer = glua_net.SendToServer
+    local network_send = engine_network.send
 
     function message_send()
-        net_SendToServer()
+        network_send()
     end
 
 end
@@ -909,21 +907,21 @@ end
 ---@param opcode integer
 ---@param unreliable boolean
 local function message_start( network, opcode, unreliable )
-    net_Start( network_identifiers[ network ], unreliable )
-    net_WriteUInt( opcode, opcode_size )
+    network_start( network_identifiers[ network ], unreliable )
+    network_writeUInt( opcode, opcode_size )
 end
 
 --- Writes 32-bit unsigned integers in two halves, `WriteUInt` casts through a signed integer on some builds.
 ---
 ---@param value integer
 local function write_uint32( value )
-    net_WriteUInt( math_floor( value / 0x10000 ), 16 )
-    net_WriteUInt( value % 0x10000, 16 )
+    network_writeUInt( math_floor( value / 0x10000 ), 16 )
+    network_writeUInt( value % 0x10000, 16 )
 end
 
 ---@return integer
 local function read_uint32()
-    return net_ReadUInt( 16 ) * 0x10000 + net_ReadUInt( 16 )
+    return network_readUInt( 16 ) * 0x10000 + network_readUInt( 16 )
 end
 
 ---@param network dreamwork.std.Network
@@ -932,7 +930,7 @@ end
 ---@param peer garrysmod.Player | nil
 local function send_control( network, opcode, transfer_id, peer )
     message_start( network, opcode, false )
-    net_WriteUInt( transfer_id, transfer_id_size )
+    network_writeUInt( transfer_id, transfer_id_size )
     message_send( peer )
 end
 
@@ -1262,9 +1260,9 @@ local function send_segment( state, index )
     local length = segment_length( state, index )
 
     message_start( state.network, OP_SEGMENT, true )
-    net_WriteUInt( state.id, transfer_id_size )
-    net_WriteUInt( index, segment_index_size )
-    net_WriteData( string_sub( state.data, offset + 1, offset + length ), length )
+    network_writeUInt( state.id, transfer_id_size )
+    network_writeUInt( index, segment_index_size )
+    network_writeData( string_sub( state.data, offset + 1, offset + length ), length )
     message_send( state.peer )
 end
 
@@ -1350,9 +1348,9 @@ local function send_ack( state, now )
     end
 
     message_start( state.network, OP_ACK, true )
-    net_WriteUInt( state.id, transfer_id_size )
-    net_WriteUInt( base, segment_index_size )
-    net_WriteUInt( word_count, ack_words_size )
+    network_writeUInt( state.id, transfer_id_size )
+    network_writeUInt( base, segment_index_size )
+    network_writeUInt( word_count, ack_words_size )
 
     local index = base + 1
 
@@ -1386,7 +1384,7 @@ function transmit_start( network, data, peer, key, callback )
         message_start( network, OP_SINGLE, false )
 
         if size ~= 0 then
-            net_WriteData( data, size )
+            network_writeData( data, size )
         end
 
         message_send( peer )
@@ -1440,10 +1438,10 @@ function transmit_start( network, data, peer, key, callback )
     active_outgoing[ state ] = true
 
     message_start( network, OP_BEGIN, false )
-    net_WriteUInt( state.id, transfer_id_size )
+    network_writeUInt( state.id, transfer_id_size )
     write_uint32( size )
     write_uint32( crc32_digest( data ) )
-    net_WriteUInt( segment_size, segment_size_size )
+    network_writeUInt( segment_size, segment_size_size )
     message_send( peer )
 
     dreamwork_Logger:debug( "Transmission #%d of network '%s' to %s started, %d bytes in %d segments.", state.id, network_names[ network ], peer_tostring( peer ), size, state.count )
@@ -1583,7 +1581,7 @@ handlers[ OP_BEGIN ] = function( network, peer, key, transfer_id, remaining_bits
 
     local size = read_uint32()
     local checksum = read_uint32()
-    local segment_size = net_ReadUInt( segment_size_size )
+    local segment_size = network_readUInt( segment_size_size )
 
     local previous = incoming[ network ][ key ]
     if previous ~= nil then
@@ -1663,7 +1661,7 @@ handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bi
         return
     end
 
-    local index = net_ReadUInt( segment_index_size )
+    local index = network_readUInt( segment_index_size )
 
     local count = state.count
     if index < 1 or index > count then
@@ -1687,7 +1685,7 @@ handlers[ OP_SEGMENT ] = function( network, peer, key, transfer_id, remaining_bi
     local segments = state.segments
 
     received_flags[ index ] = true
-    segments[ index ] = net_ReadData( length )
+    segments[ index ] = network_readData( length )
 
     local received = state.received + 1
     state.received = received
@@ -1814,8 +1812,8 @@ handlers[ OP_ACK ] = function( network, peer, key, transfer_id, remaining_bits )
     local state = outgoing[ network ][ key ]
     if state == nil or state.id ~= transfer_id or remaining_bits < (segment_index_size + ack_words_size) then return end
 
-    local ack_base = net_ReadUInt( segment_index_size )
-    local word_count = net_ReadUInt( ack_words_size )
+    local ack_base = network_readUInt( segment_index_size )
+    local word_count = network_readUInt( ack_words_size )
 
     local count = state.count
     if ack_base < 1 or ack_base > count + 1 or word_count > max_ack_words or remaining_bits < (segment_index_size + ack_words_size + word_count * 32) then return end
@@ -1923,7 +1921,7 @@ function network_receive( network, remaining_bits, sender )
         return
     end
 
-    local opcode = net_ReadUInt( opcode_size )
+    local opcode = network_readUInt( opcode_size )
     remaining_bits = remaining_bits - opcode_size
 
     if opcode == OP_SINGLE then
@@ -1939,7 +1937,7 @@ function network_receive( network, remaining_bits, sender )
             return
         end
 
-        local data = (length == 0) and "" or net_ReadData( length )
+        local data = (length == 0) and "" or network_readData( length )
 
         perform_progress( network, sender, false, length, length )
 
@@ -1955,7 +1953,7 @@ function network_receive( network, remaining_bits, sender )
         return
     end
 
-    local transfer_id = net_ReadUInt( transfer_id_size )
+    local transfer_id = network_readUInt( transfer_id_size )
 
     handlers[ opcode ]( network, sender, sender or server_key, transfer_id, remaining_bits - transfer_id_size )
 end

@@ -14,9 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: meta
@@ -29,6 +27,8 @@ env:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -106,12 +106,19 @@ jobs:
   docs:
     needs: generate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout source
+      - name: Checkout scripts
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: false
 
       - name: Download meta artifact
         uses: actions/download-artifact@v4
@@ -119,15 +126,20 @@ jobs:
           name: meta-library
           path: ${{ runner.temp }}/meta
 
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Generate documentation
         run: |
+          # source links point at the meta branch, broken internal links fail the build
           python3 .github/scripts/generate_docs.py \
             --input "$RUNNER_TEMP/meta" \
             --output "$RUNNER_TEMP/docs" \
-            --verbose
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+            --repo-url "${{ github.server_url }}/${{ github.repository }}" \
+            --source-ref "$META_BRANCH" \
+            --base-path "${{ steps.pages.outputs.base_path }}" \
+            --strict
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

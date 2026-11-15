@@ -146,8 +146,14 @@ if ffi == nil then
         }, VMatrix )
     end
 
-    ---@param value any
-    ---@return boolean is_vmatrix
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `true` if the value is a `VMatrix`.
+    ---
+    --- Only tables with the exact `VMatrix` metatable are accepted.
+    ---
+    ---@param value any The value to check.
+    ---@return boolean is_vmatrix `true` if the value is a `VMatrix`, `false` otherwise.
     ---@nodiscard
     function isVMatrix( value )
         return debug_getmetatable( value ) == VMatrix

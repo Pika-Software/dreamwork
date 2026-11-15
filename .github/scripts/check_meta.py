@@ -15,6 +15,16 @@ from urllib.parse import unquote, urlparse
 SEVERITIES = {1: "error", 2: "warning", 3: "notice", 4: "notice"}
 
 
+def escape_data(text: str) -> str:
+    """Workflow command message escaping."""
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def escape_property(text: str) -> str:
+    """Workflow command property escaping, `:` and `,` end a property."""
+    return escape_data(text).replace(":", "%3A").replace(",", "%2C")
+
+
 def main() -> int:
     with open(sys.argv[1], encoding="utf-8") as file:
         report = json.load(file)
@@ -33,7 +43,8 @@ def main() -> int:
 
             start = diagnostic["range"]["start"]
             message = "%s (%s)" % (diagnostic["message"].replace("\n", " "), diagnostic.get("code", "?"))
-            print("::%s title=meta/%s:%d::%s" % (level, path, start["line"] + 1, message))
+            title = "meta/%s:%d" % (path, start["line"] + 1)
+            print("::%s title=%s::%s" % (level, escape_property(title), escape_data(message)))
 
     total = sum(len(diagnostics) for diagnostics in report.values())
     print("%d problems, %d errors" % (total, errors))

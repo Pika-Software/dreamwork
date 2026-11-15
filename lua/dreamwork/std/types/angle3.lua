@@ -136,8 +136,14 @@ if ffi == nil then
         return setmetatable( { pitch = pitch, yaw = yaw, roll = roll }, Angle3 )
     end
 
-    ---@param value any
-    ---@return boolean is_angle3
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `true` if the value is an `Angle3`.
+    ---
+    --- Only tables with the exact `Angle3` metatable are accepted.
+    ---
+    ---@param value any The value to check.
+    ---@return boolean is_angle3 `true` if the value is an `Angle3`, `false` otherwise.
     ---@nodiscard
     function isAngle3( value )
         return debug_getmetatable( value ) == Angle3

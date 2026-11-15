@@ -129,8 +129,14 @@ if ffi == nil then
         return setmetatable( { w = w, x = x, y = y, z = z }, Quaternion )
     end
 
-    ---@param value any
-    ---@return boolean is_quaternion
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `true` if the value is a `Quaternion`.
+    ---
+    --- Only tables with the exact `Quaternion` metatable are accepted.
+    ---
+    ---@param value any The value to check.
+    ---@return boolean is_quaternion `true` if the value is a `Quaternion`, `false` otherwise.
     ---@nodiscard
     function isQuaternion( value )
         return debug_getmetatable( value ) == Quaternion

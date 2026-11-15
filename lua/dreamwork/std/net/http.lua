@@ -1,9 +1,9 @@
+local dreamwork_storage = dreamwork.storage
 local dreamwork_load = dreamwork.load
 
-local dreamwork_storage = dreamwork.storage
-local storage_delete = dreamwork_storage.delete
-local storage_readJSON = dreamwork_storage.readJSON
-local storage_writeJSON = dreamwork_storage.writeJSON
+local storage_cookies = dreamwork_storage.cookies
+local cookies_read = storage_cookies.read
+local cookies_write = storage_cookies.write
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -32,18 +32,17 @@ local time_timestampFromCivil = time.timestampFromCivil
 
 local class = std.class
 
-local isString = std.isString
-local isNumber = std.isNumber
 local isTable = std.isTable
+local isString = std.isString
 
-local ValueError = std.ValueError
-local TypeError = std.TypeError
 local URL = std.URL
+local TypeError = std.TypeError
+local ValueError = std.ValueError
 
 local error = std.error
 
-local LUA_CLIENT = std.LUA_CLIENT
 local LUA_MENU = std.LUA_MENU
+local LUA_CLIENT = std.LUA_CLIENT
 
 
 --- [SHARED AND MENU]
@@ -700,15 +699,9 @@ function CookieJar:header( url )
     return table_concat( rows, "; ", 1, count )
 end
 
----@param name string
----@return string
-local function storage_key( name )
-    return "http.cookies." .. name
-end
-
 --- [SHARED AND MENU]
 ---
---- Saves the persistent cookies (the ones with `expires`) to `dreamwork.storage` under `name`,
+--- Saves the persistent cookies (the ones with `expires`) to `dreamwork.storage.cookies` under `name`,
 --- session cookies are skipped, like a browser does on exit.
 ---
 --- Saving a jar without persistent cookies removes the saved one.
@@ -722,7 +715,7 @@ function CookieJar:save( name )
     local now = time_now()
 
     -- without `created`, the creation order is the order in the list
-    ---@type table[]
+    ---@type dreamwork.storage.cookies.Record[]
     local cookies = {}
     local count = 0
 
@@ -746,18 +739,14 @@ function CookieJar:save( name )
         end
     end
 
-    if count == 0 then
-        storage_delete( storage_key( name ) )
-    else
-        storage_writeJSON( storage_key( name ), cookies )
-    end
+    cookies_write( name, cookies, count )
 end
 
 --- [SHARED AND MENU]
 ---
 --- Loads cookies saved with `CookieJar:save`, replacing the ones with the same name, domain and path.
 ---
---- Expired and malformed entries are skipped.
+--- Expired cookies are skipped.
 ---
 ---@param name string The name the jar was saved under.
 ---@return integer count The number of loaded cookies, `0` if nothing was saved.
@@ -766,40 +755,23 @@ function CookieJar:load( name )
         error( TypeError( 1, name, "string", "name", "http.CookieJar:load" ), 2 )
     end
 
-    local cookies = storage_readJSON( storage_key( name ) )
-    if not isTable( cookies ) then
-        return 0
-    end
+    local cookies, count = cookies_read( name )
 
-    ---@cast cookies table
-
-    local now = time_now()
-    local count = 0
-
-    for index = 1, #cookies, 1 do
+    for index = 1, count, 1 do
         local data = cookies[ index ]
 
-        if isTable( data ) and isString( data.name ) and isString( data.value ) and isString( data.domain ) and isString( data.path ) then
-            local expires = data.expires
-            if isNumber( expires ) and expires > now then
-                local same_site = data.same_site
-
-                store_cookie( self, {
-                    name = data.name,
-                    value = data.value,
-                    domain = data.domain,
-                    path = data.path,
-                    host_only = data.host_only == true,
-                    secure = data.secure == true,
-                    http_only = data.http_only == true,
-                    same_site = isString( same_site ) and same_site or nil,
-                    expires = expires,
-                    created = 0
-                } )
-
-                count = count + 1
-            end
-        end
+        store_cookie( self, {
+            name = data.name,
+            value = data.value,
+            domain = data.domain,
+            path = data.path,
+            host_only = data.host_only,
+            secure = data.secure,
+            http_only = data.http_only,
+            same_site = data.same_site,
+            expires = data.expires,
+            created = 0
+        } )
     end
 
     return count

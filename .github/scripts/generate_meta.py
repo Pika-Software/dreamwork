@@ -445,6 +445,24 @@ def parse_rhs(tokens: list[Token], i: int, ends=ends_statement) -> Rhs:
         if ends(tokens, j):
             return Rhs("ref", names)
 
+        # `Name( ... )`, a class constructor call when `Name` is a class
+        if j < len(tokens) and tokens[j].value == "(":
+            depth = tokens[j].depth
+            k = j + 1
+            while k < len(tokens) and not (
+                tokens[k].value == ")" and tokens[k].depth == depth + 1
+            ):
+                k += 1
+
+            if ends(tokens, k + 1):
+                return Rhs("call", names)
+
+        # `console.Visibility or Event( ... )`, reload-safe initialization
+        if j < len(tokens) and tokens[j].value == "or":
+            fallback = parse_rhs(tokens, j + 1, ends)
+            if fallback.kind == "call":
+                return fallback
+
     return Rhs("expr")
 
 
@@ -773,6 +791,7 @@ class FileExtractor:
         self.nested_docs: dict[
             int, Doc
         ] = {}  # docs inside expressions, e.g. table constructor fields
+        self.value_types: dict[str, str] = {}  # locals holding class instances
 
     # -- resolution ---------------------------------------------------------
 
@@ -974,6 +993,11 @@ class FileExtractor:
             self.env[name] = (FUNC, LocalFunction(rhs.value, doc))
             return
 
+        if rhs is not None and rhs.kind == "call":
+            instance_type = self.instance_type(rhs.value)
+            if instance_type is not None:
+                self.value_types[name] = instance_type
+
         if resolved is not None:
             self.env[name] = resolved
             return
@@ -993,8 +1017,42 @@ class FileExtractor:
             and lines[0].split()[-1] == "dreamwork.std." + ".".join(path)
         )
 
+    def instance_type(self, callee: list[str]) -> str | None:
+        """`Event( ... )` returns an `Event`, calling a class constructs its instance."""
+        resolved = self.resolve(callee)
+        if resolved is None or resolved[0] != PATH or not resolved[1]:
+            return None
+
+        if not resolved[1][-1][:1].isupper():
+            return None
+
+        return ".".join(resolved[1])
+
     def handle_assign(self, target: Target, rhs: Rhs, doc: Doc | None):
         kind = rhs.kind
+
+        instance_type = None
+        if kind == "call":
+            instance_type = self.instance_type(rhs.value)
+        elif kind == "ref" and len(rhs.value) == 1:
+            instance_type = self.value_types.get(rhs.value[0])
+
+        if instance_type is not None:
+            if doc is None:
+                binding = self.env.get(rhs.value[0]) if kind == "ref" else None
+                if binding is not None and binding[0] == VALUE:
+                    doc = binding[1]
+
+            if doc is not None and not doc.has_type and not doc.defines_types:
+                self.items.append(
+                    Item(
+                        doc,
+                        target=target,
+                        value="nil",
+                        rendered_doc=doc.render() + ["---@type " + instance_type],
+                    )
+                )
+                return
 
         if kind == "func":
             self.items.append(Item(doc, target=target, params=rhs.value))

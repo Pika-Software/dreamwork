@@ -41,7 +41,7 @@ Tree.truncated = nil
 ---
 --- A list of files and directories in the Tree.
 ---
----@class dreamwork.std.http.github.Tree.Item[]
+---@type dreamwork.std.http.github.Tree.Item[]
 Tree.tree = nil
 
 

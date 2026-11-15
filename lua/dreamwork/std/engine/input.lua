@@ -43,7 +43,7 @@ if std.LUA_CLIENT_MENU then
         ---
         --- The cursor module allows to manipulate the client's cursor.
         ---
-        ---@clas dreamwork.std.input.cursor
+        ---@class dreamwork.std.input.cursor
         local cursor = input.cursor or {}
         input.cursor = cursor
 

@@ -1,5 +1,8 @@
 local dreamwork_engine = dreamwork.engine
 
+---@class garrysmod.serverlist
+local glua_serverlist = dreamwork_engine.requireLibrary( "serverlist" )
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -7,6 +10,10 @@ local setTimeout = std.setTimeout
 local clearTimeout = std.clearTimeout
 
 local Future = std.Future
+
+
+---@class dreamwork.std.server
+local server = std.server
 
 --- The default timeout of server browser requests in seconds.
 local DEFAULT_TIMEOUT = 30
@@ -16,26 +23,13 @@ local DEFAULT_TIMEOUT = 30
 ---@field score integer The score of the player.
 ---@field time number The time the player has been connected, in seconds.
 
----@alias dreamwork.GModServerListCallback fun( server_ping: number, server_name: string, gamemode_title: string, level_name: string, player_count: number, player_limit: number, bot_count: number, has_password: boolean, last_played_time: number, server_address: string, gamemode_name: string, gamemode_workshopid: number, is_anonymous_server: boolean, gmod_version: string, server_localization: string, gamemode_category: string ): boolean?
-
----@class dreamwork.GModServerListLib
----@field PingServer fun( ip: string, callback: dreamwork.GModServerListCallback )
----@field PlayerList fun( ip: string, callback: fun( players: dreamwork.std.server.Player[] | nil ) )
----@field AddCurrentServerToFavorites fun( add: boolean? )
----@field IsCurrentServerFavorite fun(): boolean
----@field AddServerToFavorites fun( ip: string )
----@field RemoveServerFromFavorites fun( ip: string )
----@field IsServerFavorite fun( ip: string ): boolean
----@field Query fun( data: { GameDir: string, Type: string, AppID: integer, Callback: dreamwork.GModServerListCallback, CallbackFailed: function?, Finished: function? } )
-local glua_serverlist = dreamwork_engine.requireLibrary( "serverlist" )
-
 --- [MENU]
 ---
 --- The server browser library.
 ---
 ---@class dreamwork.std.server.browser
 local browser = {}
-std.server.browser = browser
+server.browser = browser
 
 ---@return dreamwork.std.server.Info info
 local function make_info( server_ping, server_name, gamemode_title, level_name, player_count, player_limit, bot_count, has_password, last_played_time, server_address, gamemode_name, gamemode_workshopid, is_anonymous_server, gmod_version, server_localization, gamemode_category )

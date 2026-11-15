@@ -112,8 +112,14 @@ if ffi == nil then
         return setmetatable( { x = x, y = y, z = z }, Vector3 )
     end
 
-    ---@param value any
-    ---@return boolean is_vector3
+    --- [SHARED AND MENU]
+    ---
+    --- Returns `true` if the value is a `Vector3`.
+    ---
+    --- Only tables with the exact `Vector3` metatable are accepted.
+    ---
+    ---@param value any The value to check.
+    ---@return boolean is_vector3 `true` if the value is a `Vector3`, `false` otherwise.
     ---@nodiscard
     function isVector3( value )
         return debug_getmetatable( value ) == Vector3
