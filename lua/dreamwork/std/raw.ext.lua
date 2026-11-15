@@ -145,7 +145,7 @@ rbit.operators = operators
 
 if not operators then
 
-    ---@class dreamwork.GModBitLib : bitlib
+    ---@class dreamwork.BitLibraryCompatLayer : bitlib
     ---@field bshift fun( x: integer, disp: integer ): integer
     ---@field brotate fun( x: integer, disp: integer ): integer
     ---@field btest fun( x: integer, ...: integer ): boolean
