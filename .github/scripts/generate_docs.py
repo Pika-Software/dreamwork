@@ -2788,27 +2788,45 @@ APP_JS = r"""
     });
   });
 
-  // table of contents scroll spy
+  // table of contents scroll spy: the current entry is the last target scrolled past the top bar
   var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
-  if (tocLinks.length && "IntersectionObserver" in window) {
-    var byId = {};
-    tocLinks.forEach(function (a) { byId[decodeURIComponent(a.getAttribute("href").slice(1))] = a; });
-    var visible = {};
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
-      var first = null;
-      for (var i = 0; i < tocLinks.length; i++) {
-        var id = decodeURIComponent(tocLinks[i].getAttribute("href").slice(1));
-        if (visible[id]) { first = tocLinks[i]; break; }
+  var tocBox = document.querySelector(".toc");
+  var spy = tocLinks.map(function (a) {
+    return { link: a, el: document.getElementById(decodeURIComponent(a.getAttribute("href").slice(1))) };
+  }).filter(function (x) { return x.el; });
+  if (spy.length) {
+    var current = null, pending = false;
+    var update = function () {
+      pending = false;
+      var line = (document.querySelector(".topbar") || {}).offsetHeight || 56;
+      line += 24;
+      var active = spy[0];
+      for (var i = 0; i < spy.length; i++) {
+        if (spy[i].el.getBoundingClientRect().top <= line) active = spy[i];
+        else break;
       }
-      if (first) {
-        tocLinks.forEach(function (a) { a.classList.toggle("current", a === first); });
+      // at the very bottom the last entries can never reach the line
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        active = spy[spy.length - 1];
       }
-    }, { rootMargin: "-56px 0px -60% 0px" });
-    Object.keys(byId).forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+      if (active === current) return;
+      if (current) current.link.classList.remove("current");
+      active.link.classList.add("current");
+      current = active;
+      if (tocBox) {
+        var r = active.link.getBoundingClientRect(), b = tocBox.getBoundingClientRect();
+        if (r.top < b.top + 40 || r.bottom > b.bottom - 40) {
+          tocBox.scrollTop += r.top - b.top - b.height / 2;
+        }
+      }
+    };
+    var schedule = function () {
+      if (!pending) { pending = true; requestAnimationFrame(update); }
+    };
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("hashchange", schedule);
+    update();
   }
 
   // search

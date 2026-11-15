@@ -573,12 +573,14 @@ end
 ---
 --- Returns whether the address is a multicast address (`ff00::/8`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
+---@return boolean
 IPv6.isMulticast = gen_in_range( "ff00::/8" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is a link-local unicast address (`fe80::/10`, [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291)).
 ---
+---@return boolean
 IPv6.isLinkLocal = gen_in_range( "fe80::/10" )
 
 --- [SHARED AND MENU]
@@ -587,42 +589,49 @@ IPv6.isLinkLocal = gen_in_range( "fe80::/10" )
 ---
 --- Site-local addresses are deprecated by [RFC 3879](https://datatracker.ietf.org/doc/html/rfc3879), but still recognized.
 ---
+---@return boolean
 IPv6.isSiteLocal = gen_in_range( "fec0::/10" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is a unique-local address (`fc00::/7`, [RFC 4193](https://datatracker.ietf.org/doc/html/rfc4193)).
 ---
+---@return boolean
 IPv6.isUniqueLocal = gen_in_range( "fc00::/7" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is reserved for documentation and examples (`2001:db8::/32`, [RFC 3849](https://datatracker.ietf.org/doc/html/rfc3849)).
 ---
+---@return boolean
 IPv6.isDocumentation = gen_in_range( "2001:db8::/32" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is reserved for network benchmarking (`2001:2::/48`, [RFC 5180](https://datatracker.ietf.org/doc/html/rfc5180)).
 ---
+---@return boolean
 IPv6.isBenchmarking = gen_in_range( "2001:2::/48" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is a discard-only address (`100::/64`, [RFC 6666](https://datatracker.ietf.org/doc/html/rfc6666)).
 ---
+---@return boolean
 IPv6.isDiscard = gen_in_range( "100::/64" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is a 6to4 address (`2002::/16`, [RFC 3056](https://datatracker.ietf.org/doc/html/rfc3056)).
 ---
+---@return boolean
 IPv6.is6to4 = gen_in_range( "2002::/16" )
 
 --- [SHARED AND MENU]
 ---
 --- Returns whether the address is a Teredo address (`2001::/32`, [RFC 4380](https://datatracker.ietf.org/doc/html/rfc4380)).
 ---
+---@return boolean
 IPv6.isTeredo = gen_in_range( "2001::/32" )
 
 --- [SHARED AND MENU]

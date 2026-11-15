@@ -38,7 +38,8 @@ local error = std.error
 ---
 --- Base64 encoding/decoding library.
 ---
----@see https://en.wikipedia.org/wiki/Base64
+--- See https://en.wikipedia.org/wiki/Base64
+---
 ---@class dreamwork.std.base64
 local base64 = {}
 std.base64 = base64

@@ -45,7 +45,7 @@ local SHA1_digest = crypto_SHA1.digest
 ---
 --- Random parts come from `math.random`, which is not cryptographically secure:
 --- the generated values are unique, but can be predicted, so never use them as secrets
---- (session tokens, password reset links, API keys).
+--- (session tokens, password reset links, API keys), use `crypto.random.bytes` for those.
 ---
 ---@class dreamwork.std.uuid
 local uuid = {}
@@ -231,7 +231,8 @@ end
 --- Unlike `uuid.v7`, it reveals nothing about when it was created, but it does not sort by creation time
 --- and scatters database index writes.
 ---
---- The bits come from `math.random`, unique in practice, but predictable, never use it as a secret.
+--- The bits come from `math.random`, unique in practice, but predictable, never use it as a secret,
+--- use `crypto.random.bytes` for secrets.
 ---
 --- ```lua
 --- uuid.v4() -- e.g. "3f2b8c1e-9a4d-4e7f-b215-0c6d8e9fa123"
@@ -330,22 +331,22 @@ end
 --- uuid.v8( 0xDE, 0xAD, 0xBE, 0xEF ) -- "deadbeef-0000-8000-8000-000000000000"
 --- ```
 ---
----@param uint8_1 integer? Unsigned byte (0..255)
----@param uint8_2 integer? Unsigned byte (0..255)
----@param uint8_3 integer? Unsigned byte (0..255)
----@param uint8_4 integer? Unsigned byte (0..255)
----@param uint8_5 integer? Unsigned byte (0..255)
----@param uint8_6 integer? Unsigned byte (0..255)
----@param uint8_7 integer? Unsigned byte (0..15)
----@param uint8_8 integer? Unsigned byte (0..255)
----@param uint8_9 integer? Unsigned byte (0..63)
----@param uint8_10 integer? Unsigned byte (0..255)
----@param uint8_11 integer? Unsigned byte (0..255)
----@param uint8_12 integer? Unsigned byte (0..255)
----@param uint8_13 integer? Unsigned byte (0..255)
----@param uint8_14 integer? Unsigned byte (0..255)
----@param uint8_15 integer? Unsigned byte (0..255)
----@param uint8_16 integer? Unsigned byte (0..255)
+---@param uint8_1 integer? Unsigned byte (0..255).
+---@param uint8_2 integer? Unsigned byte (0..255).
+---@param uint8_3 integer? Unsigned byte (0..255).
+---@param uint8_4 integer? Unsigned byte (0..255).
+---@param uint8_5 integer? Unsigned byte (0..255).
+---@param uint8_6 integer? Unsigned byte (0..255).
+---@param uint8_7 integer? Low 4 bits (0..15), the high 4 bits hold the version.
+---@param uint8_8 integer? Unsigned byte (0..255).
+---@param uint8_9 integer? Low 6 bits (0..63), the high 2 bits hold the variant.
+---@param uint8_10 integer? Unsigned byte (0..255).
+---@param uint8_11 integer? Unsigned byte (0..255).
+---@param uint8_12 integer? Unsigned byte (0..255).
+---@param uint8_13 integer? Unsigned byte (0..255).
+---@param uint8_14 integer? Unsigned byte (0..255).
+---@param uint8_15 integer? Unsigned byte (0..255).
+---@param uint8_16 integer? Unsigned byte (0..255).
 ---@return string uuid_str A UUID v8 string.
 ---@nodiscard
 function uuid.v8( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6, uint8_7, uint8_8, uint8_9, uint8_10, uint8_11, uint8_12, uint8_13, uint8_14, uint8_15, uint8_16 )
@@ -382,9 +383,9 @@ do
     --- Returns a fast, process-unique identifier formatted as a UUID version 8.
     ---
     --- Layout: `ssssssss-rrrr-8rrr-Nrrr-rrrrcccccccc`
-    --- * `s` - load time of the library in seconds, fixed per session.
-    --- * `N`, `r` - variant and 58 random bits, fixed per session.
-    --- * `c` - 32-bit counter, increments on every call.
+    --- * `s` - UNIX time in seconds when the prefix was rolled (library load).
+    --- * `N`, `r` - variant and 58 random bits, rolled together with `s`.
+    --- * `c` - 32-bit counter, increments on every call, the prefix is re-rolled when it overflows.
     ---
     --- Identifiers never repeat within the process, sort in creation order
     --- and practically never collide between sessions or machines.
@@ -401,7 +402,7 @@ do
     --- uuid.unique() -- e.g. "6902aa80-6ae3-8ad8-9f21-4c7b00000001"
     ---
     --- uuid.unique( function( uuid_str )
-    ---     return not File.exists( "cache/" .. uuid_str .. ".dat", "DATA" )
+    ---     return not std.File.exists( "/garrysmod/data/cache/" .. uuid_str .. ".dat" )
     --- end )
     --- ```
     ---
