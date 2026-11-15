@@ -229,15 +229,6 @@ function math.log1p(x) end
 
 --- [SHARED AND MENU]
 ---
---- Returns the base 2 logarithm of the given number.
----
----@param x number The number to calculate the logarithm of.
----@return number log2 The base 2 logarithm of the number.
----@nodiscard
-function math.log2(x) end
-
---- [SHARED AND MENU]
----
 --- Returns a random floating point number in the range [a, b).
 ---
 ---@param a number The minimum value.
