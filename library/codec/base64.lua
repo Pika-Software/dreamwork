@@ -4,7 +4,8 @@
 ---
 --- Base64 encoding/decoding library.
 ---
----@see https://en.wikipedia.org/wiki/Base64
+--- See https://en.wikipedia.org/wiki/Base64
+---
 ---@class base64
 base64 = {}
 
