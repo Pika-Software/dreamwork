@@ -777,12 +777,13 @@ local dreamwork_engine = dreamwork.engine
 
 ---@class dreamwork.std.string
 local string = std.string
+local string_sub = string.sub
 local string_byte = string.byte
 local string_match = string.match
 local string_format = string.format
-local string_sub = string.sub
 
 dreamwork.Copyright = string_format( "%s - Copyright (c) 2023-%s %s. Licensed under %s.", dreamwork.Prefix, os.date( "!%Y" ), dreamwork.DevTeam, dreamwork.License )
+
 std.LUA_VERSION = raw_tonumber( string_match( _VERSION or "0", "Lua ([%d.]+)" ) or 0, 10 ) or 0
 
 do
@@ -1060,7 +1061,6 @@ do
         do
 
             local math_ceil, math_log, math_isFinite = math.ceil, math.log, math.isFinite
-            local math_ln2 = math.ln2
 
             ---@param value number
             ---@private
@@ -1068,7 +1068,7 @@ do
                 if math_isFinite( value ) then
                     if (value % 1) == 0 then
                         return math_ceil( (
-                            math_ceil( math_log( value + 1 ) / math_ln2 ) +
+                            math_ceil( math_log( value + 1, 2 ) ) +
                             (((1 / value) > 0) and 1 or 0)
                         ) / 8 )
                     elseif value >= 1.175494351E-38 and value <= 3.402823466E+38 then
@@ -2750,7 +2750,7 @@ end )
 
 local logger = console.Logger( {
     color = color_scheme.dreamwork_main,
-    title = dreamwork.Prefix,
+    title = string.gsub( string.lower( dreamwork.DevTeam ), "[^%w]", "-" ) .. "/" .. dreamwork.Prefix,
     interpolation = false
 } )
 
@@ -2950,7 +2950,6 @@ do
 
 end
 
--- https://github.com/WilliamVenner/gmsv_workshop
 if LUA_SERVER then
 
     -- https://github.com/WilliamVenner/gmsv_workshop

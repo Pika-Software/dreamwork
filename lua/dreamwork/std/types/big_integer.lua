@@ -25,7 +25,7 @@ local debug = std.debug
 local debug_getmetatable = debug.getmetatable
 
 local math = std.math
-local math_log2 = math.log2
+local math_log = math.log
 local math_frexp = math.frexp
 local math_range = math.range
 local math_isNegative = math.isNegative
@@ -2037,7 +2037,7 @@ function BigInteger:log2()
     end
 
     local mantissa, exponent = math_frexp( value )
-    return math_log2( mantissa ) + exponent + (limb_count - take) * 16
+    return math_log( mantissa, 2 ) + exponent + (limb_count - take) * 16
 end
 
 --- [SHARED AND MENU]

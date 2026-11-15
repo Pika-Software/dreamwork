@@ -143,8 +143,6 @@ end
 
 if math.frexp == nil then
 
-    local math_ln2 = math.ln2
-
     --- [SHARED AND MENU]
     ---
     --- Returns `m` and `e` such that `x = m2e`, `e` is an integer and the absolute value of `m` is in the range ((0.5, 1) (or zero when x is zero).
@@ -165,7 +163,7 @@ if math.frexp == nil then
             return 0.0, 0.0
         end
 
-        local exponent = math_floor( math_log( math_abs( x ) ) / math_ln2 )
+        local exponent = math_floor( math_log( math_abs( x ), 2 ) )
         if exponent > 0.0 then
             x = x * (2.0 ^ -exponent)
         else
@@ -435,23 +433,6 @@ end
 ---@nodiscard
 function math.log1p( x )
     return math_log( x + 1 )
-end
-
-do
-
-    local math_ln2 = math.ln2
-
-    --- [SHARED AND MENU]
-    ---
-    --- Returns the base 2 logarithm of the given number.
-    ---
-    ---@param x number The number to calculate the logarithm of.
-    ---@return number log2 The base 2 logarithm of the number.
-    ---@nodiscard
-    function math.log2( x )
-        return math_log( x ) / math_ln2
-    end
-
 end
 
 do
