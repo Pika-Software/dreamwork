@@ -131,7 +131,7 @@
 ---@class dreamwork.std.lua.ast.Break : dreamwork.std.lua.ast.Node
 ---@field type 13 `std.lua.parser.NODE_BREAK`
 
---- GLua `continue`.
+--- `continue`.
 ---
 ---@class dreamwork.std.lua.ast.Continue : dreamwork.std.lua.ast.Node
 ---@field type 14 `std.lua.parser.NODE_CONTINUE`

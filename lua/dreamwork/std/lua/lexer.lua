@@ -36,7 +36,7 @@ lexer.TOKEN_NEWLINE = 2
 
 --- [SHARED AND MENU]
 ---
---- `--`, `--[[ ]]`, `//`, `/* */` comments and the shebang line.
+--- `--`, `--[[ ]]` comments and the shebang line.
 lexer.TOKEN_COMMENT = 3
 
 --- [SHARED AND MENU]
@@ -75,7 +75,7 @@ lexer.TOKEN_NAMES = { "space", "newline", "comment", "string", "number", "name",
 ---
 --- Reserved words of Lua 5.1 and LuaJIT ( `goto` ).
 ---
---- GLua `continue` is not here, the parser treats it as a keyword only at the start of a statement.
+--- `continue` is not here, the parser treats it as a keyword only at the start of a statement.
 ---
 ---@type table<string, boolean>
 local keywords = {
@@ -155,14 +155,15 @@ local double_symbols = {
     [ 0x3A --[[ : ]] ] = { [ 0x3A --[[ : ]] ] = true },
     [ 0x21 --[[ ! ]] ] = { [ 0x3D --[[ = ]] ] = true },
     [ 0x26 --[[ & ]] ] = { [ 0x26 --[[ & ]] ] = true },
-    [ 0x7C --[[ | ]] ] = { [ 0x7C --[[ | ]] ] = true }
+    [ 0x7C --[[ | ]] ] = { [ 0x7C --[[ | ]] ] = true },
+    [ 0x2F --[[ / ]] ] = { [ 0x2F --[[ / ]] ] = true }
 }
 
 --- [SHARED AND MENU]
 ---
 --- Checks if the string is a valid Lua name that is not a keyword.
 ---
---- GLua `continue` is rejected too, so the result is safe for both Lua and GLua.
+--- `continue` is rejected too, so the result is safe to use as a statement start.
 ---
 ---@param str string The string to check.
 ---@return boolean is_identifier `true` if the string can be used as a variable or field name.
@@ -415,14 +416,6 @@ function lexer.tokenize( code, is_directive )
         else
             end_position = long_end
         end
-    elseif byte == 0x2F --[[ / ]] and next_byte == 0x2F then
-        token_type = 3 --[[ comment ]]
-        end_position = (string_find( code, "\n", position, true ) or (length + 1)) - 1
-    elseif byte == 0x2F --[[ / ]] and next_byte == 0x2A --[[ * ]] then
-        token_type, multiline = 3 --[[ comment ]], true
-
-        local _, comment_end = string_find( code, "*/", position + 2, true )
-        end_position = comment_end or length
     elseif byte == 0x5B --[[ [ ]] and (next_byte == 0x5B or next_byte == 0x3D --[[ = ]]) then
         local long_end = scan_long_bracket( code, position, length )
         if long_end ~= nil then

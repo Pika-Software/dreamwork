@@ -2742,7 +2742,7 @@ dreamwork_load( "std/compress/lzma.lua" )
 
 --- [SHARED AND MENU]
 ---
---- Lua 5.1 / LuaJIT / GLua code library: lexer, parser and generator.
+--- Lua 5.1 / LuaJIT code library: lexer, parser and generator.
 ---
 ---@class dreamwork.std.lua
 std.lua = std.lua or {}

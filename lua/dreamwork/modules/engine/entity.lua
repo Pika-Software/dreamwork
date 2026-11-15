@@ -135,19 +135,22 @@ do
 
     --- [SHARED AND MENU]
     ---
+    --- Returns the first entity of the cached entity list that matches the predicate.
     ---
+    --- Entities are checked in the order of `getAll`, the search stops at the first match.
     ---
-    ---@param fn fun( entity: garrysmod.Entity ): boolean?
-    ---@return garrysmod.Entity | nil
-    function engine_entity.peek( fn )
+    ---@param fn fun( entity: garrysmod.Entity ): boolean? The predicate, a truthy result selects the entity.
+    ---@return garrysmod.Entity | nil entity The first matching entity, or `nil` if none matches.
+    ---@nodiscard
+    function engine_entity.find( fn )
         for i = 1, entity_count, 1 do
             local entity = entity_list[ i ]
             if fn( entity ) then
                 return entity
             end
-
-            return nil
         end
+
+        return nil
     end
 
 end

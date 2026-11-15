@@ -71,11 +71,11 @@ lua.SyntaxError = SyntaxErrorClass
 
 --- [SHARED AND MENU]
 ---
---- Lua 5.1 / LuaJIT ( and GLua ) parser, builds an AST from code or tokens.
+--- Lua 5.1 / LuaJIT parser, builds an AST from code or tokens.
 ---
 --- AST nodes are plain tables with a `type` field, see `dreamwork.std.lua.ast.*`.
 ---
---- GLua operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
+--- `//` is the floor division, alternative operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
 ---
 ---@class dreamwork.std.lua.parser
 local parser = {}
@@ -280,6 +280,7 @@ local binary_left = {
     [ "*" ] = 7,
     [ "/" ] = 7,
     [ "%" ] = 7,
+    [ "//" ] = 7,
     [ "^" ] = 10
 }
 
@@ -304,6 +305,7 @@ local binary_right = {
     [ "*" ] = 7,
     [ "/" ] = 7,
     [ "%" ] = 7,
+    [ "//" ] = 7,
     [ "^" ] = 9
 }
 
@@ -1353,7 +1355,7 @@ local function parse_statement()
             line = line,
         }
     elseif value == "continue" and types[ index ] == 6 --[[ name ]] then
-        -- GLua `continue`, still usable as a name in expressions
+        -- `continue`, still usable as a name in expressions
         local next_value = values[ index + 1 ]
         if next_value ~= "=" and next_value ~= "." and next_value ~= "[" and next_value ~= ":" and next_value ~= "(" and next_value ~= "," then
             index = index + 1
