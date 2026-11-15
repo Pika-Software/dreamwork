@@ -94,7 +94,7 @@ server.getTime = CurTime or dreamwork.getUpTime
 
 do
 
-    local address_ipv4, address_port = 0x7F000001, 27015
+    local address_ipv4, address_port = rbit_tobit( 0x7F000001 ), 27015
 
     ---@type string
     local address_str
@@ -112,21 +112,21 @@ do
     local game_GetIPAddress = glua_game.GetIPAddress or function() return address_str end
 
     ---@type dreamwork.std.console.Variable<integer>
-    local dreamwork_server_ipv4 = console_Variable( {
+    local server_ipv4 = console_Variable( {
         name = "dreamwork_server_ipv4",
         description = "The public IPv4 address of the server as a signed 32-bit integer, kept up to date by the server.",
-        default = rbit_tobit( address_ipv4 ),
+        default = address_ipv4,
         type = "integer",
         replicated = true,
         hidden = true,
         notify = true
     } )
 
-    address_ipv4 = rbit_unsign( dreamwork_server_ipv4.value )
+    address_ipv4 = rbit_unsign( server_ipv4.value )
     server.ipv4 = address_ipv4
 
     ---@type dreamwork.std.console.Variable<integer>
-    local dreamwork_server_port = console_Variable( {
+    local server_port = console_Variable( {
         name = "dreamwork_server_port",
         description = "The public UDP port of the server, kept up to date by the server.",
         default = address_port,
@@ -136,21 +136,20 @@ do
         notify = true
     } )
 
-    address_port = dreamwork_server_port.value
+    address_port = server_port.value
     server.port = address_port
 
     update_address_string()
 
-    dreamwork_server_ipv4:attach( function( _, value )
-        value = rbit_unsign( value )
-        address_ipv4 = value
-        server.ipv4 = value
+    server_ipv4:attach( function( _, value )
+        address_ipv4 = rbit_unsign( value )
+        server.ipv4 = address_ipv4
         update_address_string()
     end )
 
-    dreamwork_server_port:attach( function( _, value )
+    server_port:attach( function( _, value )
         address_port = value
-        server.port = value
+        server.port = address_port
         update_address_string()
     end )
 
@@ -190,7 +189,7 @@ do
 
             end
 
-            dreamwork_server_ipv4.value, dreamwork_server_port.value = rbit_tobit( address_ipv4 ), address_port
+            server_ipv4.value, server_port.value = rbit_tobit( address_ipv4 ), address_port
             server.ipv4, server.port = address_ipv4, address_port
 
             update_address_string()
@@ -280,6 +279,22 @@ if LUA_CLIENT or LUA_SERVER then
 end
 
 if LUA_SERVER then
+
+    server.getPassword = holylib_gameserver.GetPassword or debug_fempty
+
+    do
+
+        ---@param password_str string
+        local gameserver_SetPassword = holylib_gameserver.SetPassword or function( password_str )
+            Variable_set( "sv_password", password_str )
+        end
+
+        ---@param password_str string | nil
+        function server.setPassword( password_str )
+            gameserver_SetPassword( password_str or "" )
+        end
+
+    end
 
     --- [SERVER]
     ---
@@ -533,6 +548,26 @@ if LUA_MENU then
     local Details = Event( "server.Details" )
     engine_hook.catch( "dreamwork.server.details", "std.server.Details", Details )
     server.Details = Details
+
+end
+
+if LUA_CLIENT or LUA_MENU then
+
+    --- [SHARED AND MENU]
+    ---
+    --- Sets the server password.
+    ---
+    --- On the client and menu it is the password sent to a password-protected server on the next connection attempt;
+    --- it does not affect an already established connection.
+    ---
+    --- On the server it is the password required to connect; players already connected are not affected.
+    ---
+    --- Passing `nil` or an empty string clears the password.
+    ---
+    ---@param password_str string | nil The password to use, or `nil` / `""` to clear it.
+    function server.setPassword( password_str )
+        Variable_set( "password", password_str or "" )
+    end
 
 end
 
