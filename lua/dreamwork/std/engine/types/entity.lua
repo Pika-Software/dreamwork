@@ -12,13 +12,6 @@ local Entity = class.base( "Entity", true )
 local EntityClass = class.create( Entity )
 std.Entity = EntityClass
 
--- ---@field ClientLimit integer The maximum number of clients that can connect to the server.
--- if std.LUA_CLIENT_SERVER then
---     engine.ClientLimit = game.MaxPlayers()
--- else
---     engine.ClientLimit = 0
--- end
-
 -- ---@type table<Entity, integer>
 -- local entity_indexes = {}
 

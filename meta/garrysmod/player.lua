@@ -2052,9 +2052,101 @@ function Player:VoiceVolume() end
 ---@class garrysmod.player
 player = {}
 
+--- [SERVER]
+---
+--- Creates a new player bot with the given name. Similar to the serverside `bot` command.
+---
+--- This bot will not obey the usual `bot_*` commands, and uses the same bot base as TF2 and CS:S.
+---
+--- The best way to control its behaviour is to use the [GM:StartCommand](https://wiki.facepunch.com/gmod/GM:StartCommand) hook and modify its input serverside.
+---
+--- > NOTE: Despite being fake, it has to be removed with [Player:Kick](https://wiki.facepunch.com/gmod/Player:Kick) and **not** [Entity:Remove](https://wiki.facepunch.com/gmod/Entity:Remove).
+--- > Bots still use player slots, so they cannot be spawned in singleplayer.
+--- >
+--- > Any bot created with this method is considered unauthenticated by Garry's Mod.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.CreateNextBot)
+---
+---@param bot_name string The name of the bot. An already used name gets a numeric suffix, e.g. `"Bot(1)"`.
+---@return garrysmod.Player bot The newly created bot, or `NULL` if no player slots are available.
+function player.CreateNextBot( bot_name ) end
+
 --- [SHARED]
 ---
---- Returns every player that is not a bot.
+--- Gets all players currently in the server (not including connecting clients).
+---
+--- Includes bots and humans. See [player.GetBots](https://wiki.facepunch.com/gmod/player.GetBots) and [player.GetHumans](https://wiki.facepunch.com/gmod/player.GetHumans).
+---
+--- > NOTE: Returns a sequential table; loop with `ipairs` instead of `pairs`.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetAll)
+---
+---@return garrysmod.Player[] players All players currently in the server.
+---@nodiscard
+function player.GetAll() end
+
+--- [SHARED]
+---
+--- Returns a table of all bots on the server.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetBots)
+---
+---@return garrysmod.Player[] bots Only bots (AI / non-human players).
+---@nodiscard
+function player.GetBots() end
+
+--- [SHARED]
+---
+--- Gets the player with the specified connection ID.
+---
+--- Connection IDs can be retrieved via [gameevent.Listen](https://wiki.facepunch.com/gmod/gameevent.Listen) events.
+---
+--- For a player by [Entity:EntIndex](https://wiki.facepunch.com/gmod/Entity:EntIndex), see [Entity](https://wiki.facepunch.com/gmod/Global.Entity).
+--- For a player by [Player:UserID](https://wiki.facepunch.com/gmod/Player:UserID), see [Player](https://wiki.facepunch.com/gmod/Global.Player).
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetByID)
+---
+---@param connection_id integer The connection ID to find the player by.
+---@return garrysmod.Player | nil player The player if one is found, `NULL` otherwise.
+---@nodiscard
+function player.GetByID( connection_id ) end
+
+--- [SHARED]
+---
+--- Returns the active player count.
+---
+--- > NOTE: Similar to `#player.GetAll()` but faster because the player table does not have to be built. If `player.GetAll` is already used for iteration, `#` on that table is faster since it is JITted.
+--- >
+--- > Players who are currently connecting are not counted. See [player.GetCountConnecting](https://wiki.facepunch.com/gmod/player.GetCountConnecting).
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetCount)
+---
+---@return integer count Number of players.
+---@nodiscard
+function player.GetCount() end
+
+--- [SERVER]
+---
+--- Returns how many players are connecting to the server but have not spawned yet.
+---
+--- `player.GetCountConnecting() + player.GetCount()` is the total player count on this server.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetCountConnecting)
+---
+---@return integer count Number of players still connecting.
+---@nodiscard
+function player.GetCountConnecting() end
+
+--- [SHARED]
+---
+--- Returns every human player (non-bot / non-AI).
+---
+--- Unlike [player.GetAll](https://wiki.facepunch.com/gmod/player.GetAll), this does not include bots.
+---
+--- > NOTE: Returns a sequential table; loop with `ipairs` instead of `pairs`.
+---
+--- [View wiki](https://wiki.facepunch.com/gmod/player.GetHumans)
 ---
 ---@return garrysmod.Player[] players The human players.
+---@nodiscard
 function player.GetHumans() end

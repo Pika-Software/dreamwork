@@ -380,6 +380,10 @@ function Variable:__init( options )
 
     local cvar = console_variableGet( name )
     if cvar == nil then
+        if console_variableExists( name ) then
+            error( string_format( "console variable '%s' already exists as an engine-protected variable that Lua is not allowed to access", name ), 3 )
+        end
+
         local description = options.description or ""
         variable_descriptions[ self ] = description
 

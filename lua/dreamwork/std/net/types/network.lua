@@ -7,7 +7,7 @@ local exceptions_call = dreamwork.exceptions.call
 local engine_hook = dreamwork_engine.hook
 
 local engine_network = dreamwork_engine.network
-local network_receive_id = engine_network.receive
+local network_receiveById = engine_network.receiveById
 local network_register = engine_network.register
 local network_getID = engine_network.getID
 
@@ -1055,7 +1055,7 @@ do
         if LUA_SERVER then
             network_id = network_register( network_name )
         else
-            network_id = network_getID( network_name )
+            network_id = network_getId( network_name )
         end
 
         if network_id == nil then
@@ -1087,7 +1087,7 @@ do
 
         ---@param remaining_bits integer
         ---@param sender garrysmod.Player | nil
-        network_receive_id( network_id, function( remaining_bits, sender )
+        network_receiveById( network_id, function( remaining_bits, sender )
             network_receive( self, remaining_bits, sender )
         end )
     end
@@ -2004,15 +2004,15 @@ engine_hook.catch( "Tick", "net.network.class", function()
 
         ---@cast state dreamwork.std.Network.Incoming
 
-        if not active_incoming[ state ] then
-            -- removed by a callback of another state
-        elseif not peer_valid( state.peer ) then
-            incoming_close( state, false )
-        elseif (now - state.activity) > timeouts[ state.network ] then
-            incoming_reject( state, "timed out" )
-        elseif state.ack_pending or (state.received ~= 0 and (now - state.ack_time) >= ack_refresh_interval) then
-            -- the refresh repairs lost acks without waiting for the sender to resend
-            send_ack( state, now )
+        if active_incoming[ state ] then
+            if not peer_valid( state.peer ) then
+                incoming_close( state, false )
+            elseif (now - state.activity) > timeouts[ state.network ] then
+                incoming_reject( state, "timed out" )
+            elseif state.ack_pending or (state.received ~= 0 and (now - state.ack_time) >= ack_refresh_interval) then
+                -- the refresh repairs lost acks without waiting for the sender to resend
+                send_ack( state, now )
+            end
         end
     end
 end )

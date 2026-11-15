@@ -124,22 +124,6 @@ std.setmetatable( Stacks, {
 
 futures.running = coroutine_running
 
---- [SHARED AND MENU]
----
---- Returns the debug stack tracked for the current coroutine,
---- or `nil` if called outside of a coroutine.
----
----@return dreamwork.exceptions.Stack | nil
----@nodiscard
-function futures.stack()
-    local co = coroutine_running()
-    if co ~= nil then
-        return Stacks[ co ]
-    end
-
-    return nil
-end
-
 --- Turns the error into `Error` with the stack of the coroutine where it was raised,
 --- `ACTION_CANCEL` is passed through as is.
 ---

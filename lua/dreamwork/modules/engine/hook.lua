@@ -24,6 +24,8 @@ local string_format = string.format
 local table = std.table
 local table_sort = table.sort
 
+local loadstring = std.loadstring
+
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
 local LUA_MENU = std.LUA_MENU
@@ -155,20 +157,50 @@ function hook.listenEvents( ... )
     end
 end
 
----@param handlers dreamwork.engine.hook.Handler[]
-local function handler_empty( handlers )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]()
+local simple_handler
+do
+
+    ---@type table<integer, fun( handlers: dreamwork.engine.hook.Handler[], ...: any )>
+    local simple_handlers = {}
+
+    --- Returns a dispatcher that passes exactly `argument_count` arguments to every handler and returns nothing.
+    ---
+    --- Dispatchers are compiled with named parameters instead of varargs and cached per argument count.
+    ---
+    ---@param argument_count integer
+    ---@return fun( handlers: dreamwork.engine.hook.Handler[], ...: any ) dispatcher
+    function simple_handler( argument_count )
+        local dispatcher = simple_handlers[ argument_count ]
+        if dispatcher ~= nil then
+            return dispatcher
+        end
+
+        local arguments = ""
+
+        for i = 1, argument_count, 1 do
+            arguments = arguments .. (i == 1 and "a1" or ", a" .. i)
+        end
+
+        dispatcher = loadstring( string_format( [[
+        return function( handlers%s )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( %s )
+            end
+        end
+    ]], argument_count == 0 and "" or ", " .. arguments, arguments ), "=dreamwork.engine.hook.simple_handler(" .. argument_count .. ")", {} )()
+
+        simple_handlers[ argument_count ] = dispatcher
+        return dispatcher
     end
+
 end
 
----@param handlers dreamwork.engine.hook.Handler[]
----@param data table
-local function handler_gameevent( handlers, data )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( data )
-    end
-end
+local handler_empty = simple_handler( 0 )
+local handler_one = simple_handler( 1 )
+local handler_two = simple_handler( 2 )
+local handler_three = simple_handler( 3 )
+local handler_four = simple_handler( 4 )
+local handler_five = simple_handler( 5 )
 
 --- Dispatchers of the supported events, each one calls the attached handlers
 --- and decides how their results are combined and returned.
@@ -183,28 +215,28 @@ local event_handlers = {
     [ "Tick" ] = handler_empty,
 
     -- gameevents
-    [ "achievement_earned" ] = handler_gameevent,
-    [ "break_breakable" ] = handler_gameevent,
-    [ "break_prop" ] = handler_gameevent,
-    [ "entity_killed" ] = handler_gameevent,
-    [ "flare_ignite_npc" ] = handler_gameevent,
-    [ "hltv_status" ] = handler_gameevent,
-    [ "hltv_title" ] = handler_gameevent,
-    [ "host_quit" ] = handler_gameevent,
-    [ "OnRequestFullUpdate" ] = handler_gameevent,
-    [ "player_activate" ] = handler_gameevent,
-    [ "player_changename" ] = handler_gameevent,
-    [ "player_connect" ] = handler_gameevent,
-    [ "player_connect_client" ] = handler_gameevent,
-    [ "player_disconnect" ] = handler_gameevent,
-    [ "player_hurt" ] = handler_gameevent,
-    [ "player_info" ] = handler_gameevent,
-    [ "player_say" ] = handler_gameevent,
-    [ "player_spawn" ] = handler_gameevent,
-    [ "ragdoll_dissolved" ] = handler_gameevent,
-    [ "server_addban" ] = handler_gameevent,
-    [ "server_cvar" ] = handler_gameevent,
-    [ "server_removeban" ] = handler_gameevent,
+    [ "achievement_earned" ] = handler_one,
+    [ "break_breakable" ] = handler_one,
+    [ "break_prop" ] = handler_one,
+    [ "entity_killed" ] = handler_one,
+    [ "flare_ignite_npc" ] = handler_one,
+    [ "hltv_status" ] = handler_one,
+    [ "hltv_title" ] = handler_one,
+    [ "host_quit" ] = handler_one,
+    [ "OnRequestFullUpdate" ] = handler_one,
+    [ "player_activate" ] = handler_one,
+    [ "player_changename" ] = handler_one,
+    [ "player_connect" ] = handler_one,
+    [ "player_connect_client" ] = handler_one,
+    [ "player_disconnect" ] = handler_one,
+    [ "player_hurt" ] = handler_one,
+    [ "player_info" ] = handler_one,
+    [ "player_say" ] = handler_one,
+    [ "player_spawn" ] = handler_one,
+    [ "ragdoll_dissolved" ] = handler_one,
+    [ "server_addban" ] = handler_one,
+    [ "server_cvar" ] = handler_one,
+    [ "server_removeban" ] = handler_one,
 
     -- dreamwork
 
@@ -247,72 +279,23 @@ event_handlers[ "dreamwork.error.report" ] = function( handlers, error_value )
     return error_value
 end
 
----@param handlers dreamwork.engine.hook.Handler[]
----@param error_message string
----@param realm string
----@param stack table
----@param source string | nil
----@param client garrysmod.Player | nil
-event_handlers[ "dreamwork.error.occurred" ] = function( handlers, error_message, realm, stack, source, client )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( error_message, realm, stack, source, client )
-    end
-end
+-- ( error_message: string, realm: string, stack: table, source: string | nil, client: garrysmod.Player | nil )
+event_handlers[ "dreamwork.error.occurred" ] = handler_five
 
----@param handlers dreamwork.engine.hook.Handler[]
----@param err string
----@param realm string
----@param stack table
----@param addon_name string | nil
----@param addon_id string | nil
-event_handlers[ "OnLuaError" ] = function( handlers, err, realm, stack, addon_name, addon_id )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( err, realm, stack, addon_name, addon_id )
-    end
-end
+-- ( err: string, realm: string, stack: table, addon_name: string | nil, addon_id: string | nil )
+event_handlers[ "OnLuaError" ] = handler_five
 
-do
+-- ( info: dreamwork.engine.mounts.GameInfo | dreamwork.engine.mounts.AddonInfo, is_mounted: boolean )
+event_handlers[ "dreamwork.game.mount" ] = handler_two
+event_handlers[ "dreamwork.addon.mount" ] = handler_two
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param info dreamwork.engine.mounts.GameInfo | dreamwork.engine.mounts.AddonInfo
-    ---@param is_mounted boolean
-    local function handler_mount( handlers, info, is_mounted )
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( info, is_mounted )
-        end
-    end
+-- ( vfs_path: string, is_directory: boolean )
+event_handlers[ "dreamwork.vfs.created" ] = handler_two
+event_handlers[ "dreamwork.vfs.deleted" ] = handler_two
+event_handlers[ "dreamwork.vfs.modified" ] = handler_two
 
-    event_handlers[ "dreamwork.game.mount" ] = handler_mount
-    event_handlers[ "dreamwork.addon.mount" ] = handler_mount
-
-end
-
-do
-
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param vfs_path string
-    ---@param is_directory boolean
-    local function handler_vfs( handlers, vfs_path, is_directory )
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( vfs_path, is_directory )
-        end
-    end
-
-    event_handlers[ "dreamwork.vfs.created" ] = handler_vfs
-    event_handlers[ "dreamwork.vfs.deleted" ] = handler_vfs
-    event_handlers[ "dreamwork.vfs.modified" ] = handler_vfs
-
-end
-
----@param handlers dreamwork.engine.hook.Handler[]
----@param mount_path string
----@param search_path string
----@param is_mounted boolean
-event_handlers[ "dreamwork.vfs.directory.mount" ] = function( handlers, mount_path, search_path, is_mounted )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( mount_path, search_path, is_mounted )
-    end
-end
+-- ( mount_path: string, search_path: string, is_mounted: boolean )
+event_handlers[ "dreamwork.vfs.directory.mount" ] = handler_three
 
 ---@param handlers dreamwork.engine.hook.Handler[]
 ---@param pl garrysmod.Player | nil
@@ -347,26 +330,12 @@ event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers,
     return nil
 end
 
----@param handlers dreamwork.engine.hook.Handler[]
----@param name string
----@param old_value string
----@param new_value string
-event_handlers[ "dreamwork.console.variable.change" ] = function( handlers, name, old_value, new_value )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( name, old_value, new_value )
-    end
-end
+-- ( name: string, old_value: string, new_value: string )
+event_handlers[ "dreamwork.console.variable.change" ] = handler_three
 
 -- server address change, see `std/server.lua`
----@param handlers dreamwork.engine.hook.Handler[]
----@param address string
----@param ipv4 dreamwork.std.IPv4
----@param port integer
-event_handlers[ "dreamwork.server.address" ] = function( handlers, address, ipv4, port )
-    for i = 1, handlers[ 0 ], 1 do
-        handlers[ i ]( address, ipv4, port )
-    end
-end
+-- ( address: string, ipv4: dreamwork.std.IPv4, port: integer )
+event_handlers[ "dreamwork.server.address" ] = handler_three
 
 ---@param handlers dreamwork.engine.hook.Handler[]
 ---@param network_id integer
@@ -404,18 +373,29 @@ event_handlers[ "dreamwork.network.message.unhandled" ] = function( handlers, ne
 end
 
 if LUA_SERVER then
-    event_handlers[ "hltv_rank_camera" ] = handler_gameevent
-    event_handlers[ "hltv_rank_entity" ] = handler_gameevent
+    event_handlers[ "hltv_rank_camera" ] = handler_one
+    event_handlers[ "hltv_rank_entity" ] = handler_one
+
+    -- ( err: string, ply: garrysmod.Player, stack: table, addon_name: string )
+    event_handlers[ "OnClientLuaError" ] = handler_four
 
     ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param err string
-    ---@param ply garrysmod.Player
-    ---@param stack table
-    ---@param addon_name string
-    event_handlers[ "OnClientLuaError" ] = function( handlers, err, ply, stack, addon_name )
+    ---@param steamid64 string The SteamID64 of the connecting client.
+    ---@param address string The IP address and port of the client.
+    ---@param server_password string The `sv_password` of the server.
+    ---@param client_password string The password the client sent.
+    ---@param name string The name of the client.
+    ---@return boolean | nil is_allowed `false` rejects the client, `true` lets it in without the password check.
+    ---@return string | nil reason The message shown to the rejected client.
+    event_handlers[ "CheckPassword" ] = function( handlers, steamid64, address, server_password, client_password, name )
         for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( err, ply, stack, addon_name )
+            local is_allowed, reason = handlers[ i ]( steamid64, address, server_password, client_password, name )
+            if is_allowed ~= nil then
+                return is_allowed, reason
+            end
         end
+
+        return nil
     end
 
     ---@param handlers dreamwork.engine.hook.Handler[]
@@ -447,18 +427,18 @@ if LUA_MENU then
     event_handlers[ "MenuStart" ] = handler_empty
 
     -- server
-    event_handlers[ "dreamwork.server.details" ] = handler_gameevent
+    event_handlers[ "dreamwork.server.details" ] = handler_one
 
     -- gameevents
-    event_handlers[ "client_beginconnect" ] = handler_gameevent
-    event_handlers[ "client_connected" ] = handler_gameevent
-    event_handlers[ "game_newmap" ] = handler_gameevent
-    event_handlers[ "server_spawn" ] = handler_gameevent
-    event_handlers[ "user_data_downloaded" ] = handler_gameevent
+    event_handlers[ "client_beginconnect" ] = handler_one
+    event_handlers[ "client_connected" ] = handler_one
+    event_handlers[ "game_newmap" ] = handler_one
+    event_handlers[ "server_spawn" ] = handler_one
+    event_handlers[ "user_data_downloaded" ] = handler_one
 
     -- dreamwork
 
-    event_handlers[ "dreamwork.addon.presets" ] = handler_gameevent
+    event_handlers[ "dreamwork.addon.presets" ] = handler_one
 end
 
 if LUA_CLIENT then
@@ -525,29 +505,21 @@ if LUA_CLIENT or LUA_MENU then
     -- 2d render
     event_handlers[ "DrawOverlay" ] = handler_empty
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param old_width integer
-    ---@param old_height integer
-    ---@param new_width integer
-    ---@param new_height integer
-    event_handlers[ "OnScreenSizeChanged" ] = function( handlers, old_width, old_height, new_width, new_height )
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( old_width, old_height, new_width, new_height )
-        end
-    end
+    -- ( old_width: integer, old_height: integer, new_width: integer, new_height: integer )
+    event_handlers[ "OnScreenSizeChanged" ] = handler_four
 
     -- gameevents
-    event_handlers[ "achievement_event" ] = handler_gameevent
-    event_handlers[ "client_disconnect" ] = handler_gameevent
-    event_handlers[ "freezecam_started" ] = handler_gameevent
-    event_handlers[ "hide_freezepanel" ] = handler_gameevent
-    event_handlers[ "hltv_cameraman" ] = handler_gameevent
-    event_handlers[ "hltv_changed_mode" ] = handler_gameevent
-    event_handlers[ "hltv_changed_target" ] = handler_gameevent
-    event_handlers[ "hltv_chase" ] = handler_gameevent
-    event_handlers[ "hltv_fixed" ] = handler_gameevent
-    event_handlers[ "hltv_message" ] = handler_gameevent
-    event_handlers[ "show_freezepanel" ] = handler_gameevent
+    event_handlers[ "achievement_event" ] = handler_one
+    event_handlers[ "client_disconnect" ] = handler_one
+    event_handlers[ "freezecam_started" ] = handler_one
+    event_handlers[ "hide_freezepanel" ] = handler_one
+    event_handlers[ "hltv_cameraman" ] = handler_one
+    event_handlers[ "hltv_changed_mode" ] = handler_one
+    event_handlers[ "hltv_changed_target" ] = handler_one
+    event_handlers[ "hltv_chase" ] = handler_one
+    event_handlers[ "hltv_fixed" ] = handler_one
+    event_handlers[ "hltv_message" ] = handler_one
+    event_handlers[ "show_freezepanel" ] = handler_one
 end
 
 if LUA_CLIENT or LUA_SERVER then
@@ -573,14 +545,15 @@ if LUA_CLIENT or LUA_SERVER then
 
 
     -- entity
-    event_handlers[ "InitPostEntity" ]            = handler_empty
-    event_handlers[ "PostCleanupMap" ]            = handler_empty
-    event_handlers[ "PreCleanupMap" ]             = handler_empty
+    event_handlers[ "InitPostEntity" ] = handler_empty
+    event_handlers[ "PostCleanupMap" ] = handler_empty
+    event_handlers[ "PreCleanupMap" ]  = handler_empty
+
 
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@param entity garrysmod.Entity
     ---@param is_full_update boolean
-    event_handlers[ "EntityRemoved" ]             = function( handlers, entity, is_full_update )
+    event_handlers[ "EntityRemoved" ] = function( handlers, entity, is_full_update )
         is_full_update = is_full_update == true
 
         for i = 1, handlers[ 0 ], 1 do
@@ -588,52 +561,30 @@ if LUA_CLIENT or LUA_SERVER then
         end
     end
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity
-    ---@param is_player boolean
-    event_handlers[ "dreamwork.entity.spawn" ]    = function( handlers, entity, is_player )
-        if not is_player and debug_getmetatable( entity ) == engine_Player then
-            is_player = true
-        end
 
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( entity, is_player )
-        end
-    end
+    -- ( entity: garrysmod.Entity, is_player: boolean )
+    event_handlers[ "dreamwork.entity.spawn" ] = handler_two
+    event_handlers[ "dreamwork.entity.destroy" ] = handler_two
+    event_handlers[ "dreamwork.entity.gc" ] = handler_two
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity
-    ---@param is_player boolean
-    event_handlers[ "dreamwork.entity.destroy" ]  = function( handlers, entity, is_player )
-        if not is_player and debug_getmetatable( entity ) == engine_Player then
-            is_player = true
-        end
 
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( entity, is_player )
-        end
-    end
+    -- ( pl: garrysmod.Player )
+    event_handlers[ "dreamwork.client.spawn" ] = handler_one
+    event_handlers[ "dreamwork.client.destroy" ] = handler_one
+    event_handlers[ "dreamwork.client.gc" ] = handler_one
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entity garrysmod.Entity
-    event_handlers[ "dreamwork.entity.gc" ]       = function( handlers, entity )
-        local is_player = debug_getmetatable( entity ) == engine_Player
 
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( entity, is_player )
-        end
-    end
+    -- ( entities: garrysmod.Entity[], entity_count: integer )
+    event_handlers[ "dreamwork.entity.registry" ] = handler_two
 
-    ---@param handlers dreamwork.engine.hook.Handler[]
-    ---@param entities garrysmod.Entity[]
-    ---@param entity_count integer
-    event_handlers[ "dreamwork.entity.registry" ] = function( handlers, entities, entity_count )
-        for i = 1, handlers[ 0 ], 1 do
-            handlers[ i ]( entities, entity_count )
-        end
-    end
+    -- ( players: garrysmod.Player[], player_count: integer )
+    event_handlers[ "dreamwork.client.registry" ] = handler_two
 
-    -- TODO: NetworkEntityCreated
+
+    -- player
+
+    -- ( ply: garrysmod.Player, cmd: garrysmod.UserCommand )
+    event_handlers[ "StartCommand" ] = handler_two
 
 
     -- engine
@@ -818,11 +769,7 @@ end
 ---@nodiscard
 function hook.count( event_name )
     local handlers = raw_get( hook_handlers, event_name )
-    if handlers == nil then
-        return 0
-    end
-
-    return handlers[ 0 ]
+    return handlers == nil and 0 or handlers[ 0 ]
 end
 
 --- [SHARED AND MENU]

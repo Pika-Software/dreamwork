@@ -134,7 +134,6 @@ std.xpcall = xpcall
 std.pcall = pcall
 
 local setmetatable = std.setmetatable
-local xpcall = std.xpcall
 local pcall = std.pcall
 
 -- raw data library
@@ -251,7 +250,11 @@ if std.setfenv == nil then
             if func == nil then
                 error( "environment was corrupted; setfenv failed", 2 )
             end
+        else
+            func = location
         end
+
+        ---@cast func function
 
         local index = 1
 
@@ -261,10 +264,10 @@ if std.setfenv == nil then
         if name == "_ENV" then
             debug_setupvalue( func, index, env )
         elseif name ~= nil then
+            index = index + 1
             goto fenv_setup_loop
         end
 
-        index = index + 1
         return location
     end
 
@@ -772,9 +775,6 @@ dreamwork_load( "std/ascii.lua" )
 dreamwork_load( "std/string.lua" )
 dreamwork_load( "std/coroutine.lua" )
 
-dreamwork_load( "modules/engine.lua" )
-local dreamwork_engine = dreamwork.engine
-
 ---@class dreamwork.std.string
 local string = std.string
 local string_sub = string.sub
@@ -1249,6 +1249,71 @@ do
 
 end
 
+local isFunction = std.isFunction
+local isString = std.isString
+local isNumber = std.isNumber
+
+do
+
+    local getfenv = std.getfenv
+    local setfenv = std.setfenv
+
+    -- CompileString( code, name, false ) returns the error message instead of throwing,
+    -- loadstring / load return nil + error message; `nil` as third argument keeps
+    -- LuaJIT `loadstring` happy and selects the default mode in Lua 5.2+ `load`,
+    -- which also takes the environment as fourth argument, so `setfenv` is skipped.
+
+    ---@type fun( lua_code: string, chunk_name: string, handle_error: ( boolean | "t" | nil ), env: table ): ( function | string | nil ), ( string | nil )
+    local compiler = CompileString
+
+    ---@type boolean | "t" | nil
+    local handle_error = false
+    local native_env = false
+
+    if compiler == nil then
+        compiler, handle_error = loadstring, "t"
+
+        if compiler == nil then
+            compiler, native_env = load, true
+        end
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Loads a string as a lua code chunk in the specified
+    --- environment and returns new function as a compile result.
+    ---
+    ---@param lua_code string The lua code chunk.
+    ---@param chunk_name string | nil The lua code chunk name.
+    ---@param env table | nil The environment of compiled function.
+    ---@return function fn The compiled function.
+    ---@nodiscard
+    function std.loadstring( lua_code, chunk_name, env )
+        if env == nil then
+            env = getfenv( 2 )
+        end
+
+        ---@diagnostic disable-next-line: param-type-mismatch
+        local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
+        if isFunction( fn ) then
+            ---@cast fn function
+
+            if not native_env then
+                setfenv( fn, env )
+            end
+
+            return fn
+        end
+
+        ---@cast fn string | nil
+        error( err_msg or fn or "lua code compilation failed", 2 )
+    end
+
+end
+
+dreamwork_load( "modules/engine.lua" )
+local dreamwork_engine = dreamwork.engine
+
 -- class library
 dreamwork_load( "std/class.lua" )
 
@@ -1307,10 +1372,6 @@ end
 dreamwork_load( "std/types/stack.lua" )
 dreamwork_load( "std/types/queue.lua" )
 dreamwork_load( "std/types/node.lua" )
-
-local isFunction = std.isFunction
-local isString = std.isString
-local isNumber = std.isNumber
 
 if ffi == nil then
 
@@ -1428,44 +1489,6 @@ do
     function std.kpairs( tbl )
         return knext, tbl
     end
-
-end
-
-do
-
-    local CompileString = CompileString
-
-    local getfenv = std.getfenv
-    local setfenv = std.setfenv
-
-    --- [SHARED AND MENU]
-    ---
-    --- Loads a string as a lua code chunk in the specified
-    --- environment and returns new function as a compile result.
-    ---
-    ---@param lua_code string The lua code chunk.
-    ---@param chunk_name string | nil The lua code chunk name.
-    ---@param env table | nil The environment of compiled function.
-    ---@return function fn The compiled function.
-    ---@nodiscard
-    function std.loadstring( lua_code, chunk_name, env )
-        local fn = CompileString( lua_code, chunk_name or "=(loadstring)", false )
-        if fn == nil then
-            error( "lua code compilation failed", 2 )
-        end
-
-        if isString( fn ) then
-            ---@cast fn string
-            error( fn, 2 )
-        end
-
-        ---@cast fn function
-
-        setfenv( fn, env or getfenv( 2 ) )
-        return fn
-    end
-
-    -- TODO: check for load/loadstring if no CompileString
 
 end
 
@@ -2734,7 +2757,6 @@ dreamwork_load( "std/types/event.lua" )
 dreamwork_load( "std/types/emitter.lua" )
 dreamwork_load( "std/types/timer.lua" )
 
-dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
 dreamwork_load( "modules/engine/injection.lua" )
 
 dreamwork_load( "std/io/console.lua" )
@@ -2931,7 +2953,6 @@ dreamwork_load( "std/io/fs.lua" )
 
 local vfs = dreamwork.vfs
 
-dreamwork_load( "modules/engine/events.lua" )
 dreamwork_load( "modules/sigil.lua" )
 
 do
@@ -2989,8 +3010,9 @@ dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
 dreamwork_load( "modules/engine/websocket.lua" )
 dreamwork_load( "std/net/types/websocket.lua" )
 
-dreamwork_load( "std/net/types/message.lua" )
+dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
 dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
+dreamwork_load( "std/net/types/message.lua" )
 
 dreamwork_load( "std/net/steam.lua" )
 
@@ -3000,6 +3022,7 @@ dreamwork_load( "std/compress/types/addon.lua" )
 
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
+
 dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 
 -- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
@@ -3012,6 +3035,7 @@ elseif LUA_CLIENT and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
 end
 
+dreamwork_load( "modules/engine/events.lua" )
 dreamwork_load( "modules/cli/init.lua" )
 
 do

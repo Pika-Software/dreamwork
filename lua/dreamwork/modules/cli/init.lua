@@ -15,29 +15,29 @@ local console_Variable = console.Variable
 local dreamwork_vfs = dreamwork.vfs
 local vfs_search = dreamwork_vfs.search
 
-
 local raw = std.raw
 local raw_pairs = raw.pairs
+local raw_select = raw.select
 local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
-local tostring = std.tostring
 
 local string = std.string
+local string_rep = string.rep
 local string_sub = string.sub
 local string_byte = string.byte
 local string_find = string.find
-local string_gmatch = string.gmatch
 local string_lower = string.lower
 local string_match = string.match
+local string_gmatch = string.gmatch
 local string_format = string.format
-local string_rep = string.rep
 
-local utf8_len = std.utf8.len
+local utf8 = std.utf8
+local utf8_len = utf8.len
 
 local table = std.table
 local table_sort = table.sort
-local table_concat = table.concat
 local table_slice = table.slice
+local table_concat = table.concat
 
 local path = std.path
 local path_normalize = path.normalize
@@ -46,10 +46,13 @@ local math = std.math
 local math_ceil = math.ceil
 local math_floor = math.floor
 
-local pcall = std.pcall
-local raw_select = raw.select
 local class = std.class
 local class_isInherited = class.isInherited
+
+local server = std.server
+
+local pcall = std.pcall
+local tostring = std.tostring
 
 local LUA_SERVER = std.LUA_SERVER
 
@@ -149,21 +152,17 @@ do
     ---@field horizontal string
     ---@field vertical string
 
-    --- The dedicated server console is a terminal, it draws box-drawing characters as wide as the text,
-    --- the in-game console (client, menu and the listen server host) draws them with a wider fallback font.
+    --- [SHARED AND MENU]
     ---
-    ---@type boolean
-    local is_terminal = false
-
-    if LUA_SERVER then
-        local glua_game = dreamwork_engine.requireLibrary( "game" )
-        is_terminal = glua_game.IsDedicated ~= nil and glua_game.IsDedicated() == true
-    end
+    --- `true` in the dedicated server console, it draws box-drawing characters as wide as the text,
+    --- `false` in the in-game console, where they need an ASCII fallback.
+    ---
+    cli.IS_TERMINAL = LUA_SERVER and server.dedicated
 
     ---@type dreamwork.cli.BoxStyle
     local box_style
 
-    if is_terminal then
+    if cli.IS_TERMINAL then
         box_style = {
             top_left = "┌",
             top_right = "┐",

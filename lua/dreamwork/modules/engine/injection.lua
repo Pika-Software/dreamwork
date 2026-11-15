@@ -1,4 +1,5 @@
 local dreamwork_engine = dreamwork.engine
+local engine_Player = dreamwork_engine.Player
 local engine_requireLibrary = dreamwork_engine.requireLibrary
 
 local detour = dreamwork.detour
@@ -8,18 +9,19 @@ local hook_call = engine_hook.call
 
 local std = dreamwork.std
 
-local LUA_SERVER = std.LUA_SERVER
-local LUA_CLIENT = std.LUA_CLIENT
-local LUA_MENU = std.LUA_MENU
-
 local raw = std.raw
 local raw_pairs = raw.pairs
 
 local debug = std.debug
 local debug_fempty = debug.fempty
+local debug_getmetatable = debug.getmetatable
 
 local json = std.json
 local json_deserialize = json.deserialize
+
+local LUA_SERVER = std.LUA_SERVER
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_MENU = std.LUA_MENU
 
 
 if LUA_MENU then
@@ -174,7 +176,12 @@ if LUA_SERVER or LUA_CLIENT then
         for i = 1, #entity_metatables, 1 do
             local metatable = entity_metatables[ i ]
             detour.before( function( entity_userdata )
-                hook_call( "dreamwork.entity.gc", entity_userdata )
+                local is_player = debug_getmetatable( entity_userdata ) == engine_Player
+                hook_call( "dreamwork.entity.gc", entity_userdata, is_player )
+
+                if is_player then
+                    hook_call( "dreamwork.client.gc", entity_userdata )
+                end
             end, metatable, "__gc" )
         end
 

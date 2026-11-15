@@ -59,6 +59,12 @@ if LUA_CLIENT or LUA_SERVER then
     local Entity = debug_initmetatable( "Entity" )
     engine.Entity = Entity
 
+    if Entity.EntIndex == nil then
+        function Entity.EntIndex()
+            return 0 -- well
+        end
+    end
+
     --- The metatable of the engine `Player` class.
     ---
     ---@class garrysmod.Player : garrysmod.Entity

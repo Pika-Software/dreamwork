@@ -7,10 +7,10 @@ local vfs_readFile = dreamwork_vfs.readFile
 
 local std = dreamwork.std
 
-local error = std.error
-local pcall = std.pcall
-local tostring = std.tostring
-local setmetatable = std.setmetatable
+local raw = std.raw
+
+local rbit = raw.bit
+local rbit_operators = rbit.operators
 
 local string = std.string
 local string_rep = string.rep
@@ -27,7 +27,11 @@ local table_concat = table.concat
 
 local class = std.class
 
+local error = std.error
+local pcall = std.pcall
+local tostring = std.tostring
 local loadstring = std.loadstring
+local setmetatable = std.setmetatable
 
 
 --- [SHARED AND MENU]

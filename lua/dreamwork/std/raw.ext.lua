@@ -718,6 +718,54 @@ end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the number of bits needed to store the specified 32-bit integer as unsigned,
+--- i.e. the position of its highest set bit plus one.
+---
+--- Returns `0` for `0` and `32` for negative values (they are read as unsigned).
+---
+--- ```lua
+--- rbit.width( 0 ) -- 0
+--- rbit.width( 255 ) -- 8
+--- rbit.width( 256 ) -- 9
+--- ```
+---
+---@param x integer The value to measure.
+---@return integer width The number of significant bits, from `0` to `32`.
+---@nodiscard
+function rbit.width( x )
+    local width = 0
+
+    if rbit_rshift( x, 16 ) ~= 0 then
+        width = 16
+        x = rbit_rshift( x, 16 )
+    end
+
+    if rbit_rshift( x, 8 ) ~= 0 then
+        width = width + 8
+        x = rbit_rshift( x, 8 )
+    end
+
+    if rbit_rshift( x, 4 ) ~= 0 then
+        width = width + 4
+        x = rbit_rshift( x, 4 )
+    end
+
+    if rbit_rshift( x, 2 ) ~= 0 then
+        width = width + 2
+        x = rbit_rshift( x, 2 )
+    end
+
+    if rbit_rshift( x, 1 ) ~= 0 then
+        return width + 2
+    elseif x ~= 0 then
+        return width + 1
+    end
+
+    return width
+end
+
+--- [SHARED AND MENU]
+---
 --- Converts an unsigned `bit_count`-bit integer to its signed (two's complement) value,
 --- the inverse of `rbit.unsign`.
 ---

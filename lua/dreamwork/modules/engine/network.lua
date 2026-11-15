@@ -4,7 +4,6 @@ local dreamwork_Logger = dreamwork.Logger
 
 local engine_hook = dreamwork_engine.hook
 local hook_call = engine_hook.call
-local hook_count = engine_hook.count
 
 local engine_console = dreamwork_engine.console
 local console_commandRun = engine_console.commandRun
@@ -25,7 +24,14 @@ local LUA_SERVER = std.LUA_SERVER
 
 --- [SHARED]
 ---
+--- Network message engine, wraps Garry's Mod `net` / `util` networking.
 ---
+--- Registers named channels, maps them to IDs, and dispatches incoming packets
+--- through ID or name receivers (taking priority over `net.Receivers`).
+---
+--- Each message header is `HeaderSize` bits: the network ID plus an unreliable flag.
+--- Unregistered or unexpected traffic is kicked/logged unless a
+--- `dreamwork.network.message.unhandled` hook handles it first.
 ---
 ---@class dreamwork.engine.network
 ---@field HeaderSize integer The size of the network header in bits.
@@ -51,18 +57,34 @@ local glua_util = dreamwork_engine.requireLibrary( "util" )
 ---@class garrysmod.net
 local glua_net = dreamwork_engine.requireLibrary( "net" )
 
+local net_Abort = glua_net.Abort or debug_fempty
+local net_SendToServer = glua_net.SendToServer or debug_fempty
+local net_Send, net_Broadcast = glua_net.Send or debug_fempty, glua_net.Broadcast
+
+local net_ReadBit, net_WriteBit = glua_net.ReadBit or function() return 0 end, glua_net.WriteBit or debug_fempty
+local net_ReadInt, net_WriteInt = glua_net.ReadInt or function() return 0 end, glua_net.WriteInt or debug_fempty
+local net_ReadUInt, net_WriteUInt = glua_net.ReadUInt or function() return 0 end, glua_net.WriteUInt or debug_fempty
+
+local net_ReadData, net_WriteData = glua_net.ReadData or function() return "" end, glua_net.WriteData or debug_fempty
+
+---@alias dreamwork.engine.network.Receiver fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean )
+
+---@type table<string, dreamwork.engine.network.Receiver>
+local receivers = glua_net.Receivers or {}
+glua_net.Receivers = receivers
+
 ---@type fun( network_name: string ): integer | nil
-local network_register = glua_util.AddNetworkString or debug_fempty
+local util_AddNetworkString = glua_util.AddNetworkString or debug_fempty
 
 ---@type fun( network_id: integer ): string | nil
-local network_get_name = glua_util.NetworkIDToString or debug_fempty
+local util_NetworkIDToString = glua_util.NetworkIDToString or debug_fempty
 
 ---@type fun( network_name: string ): integer | nil
-local network_get_id = glua_util.NetworkStringToID or debug_fempty
+local util_NetworkStringToID = glua_util.NetworkStringToID or debug_fempty
 
-local full_header_size = network.HeaderSize
+local FULL_HEADER_SIZE = network.HeaderSize
 
-local header_size = full_header_size - 1 -- take unreliable flag
+local HEADER_SIZE = FULL_HEADER_SIZE - 1 -- take unreliable flag
 
 ---@type table<string, integer>
 local network_ids = {}
@@ -71,13 +93,13 @@ local network_ids = {}
 local network_names = {}
 
 ---@type integer
-local network_limit = (2 ^ header_size) - 1
+local NETWORK_LIMIT = (2 ^ HEADER_SIZE) - 1
 
 setmetatable( network_ids, {
     __index = function( self, network_name )
-        local network_id = network_get_id( network_name )
+        local network_id = util_NetworkStringToID( network_name )
 
-        if network_id == nil or network_id <= 0 or network_id > network_limit then
+        if network_id == nil or network_id <= 0 or network_id > NETWORK_LIMIT then
             return nil
         end
 
@@ -89,11 +111,11 @@ setmetatable( network_ids, {
 
 setmetatable( network_names, {
     __index = function( self, network_id )
-        if network_id <= 0 or network_id > network_limit then
+        if network_id <= 0 or network_id > NETWORK_LIMIT then
             return nil
         end
 
-        local network_name = network_get_name( network_id )
+        local network_name = util_NetworkIDToString( network_id )
 
         if network_name ~= nil then
             network_ids[ network_name ] = network_id
@@ -104,6 +126,39 @@ setmetatable( network_names, {
     end
 } )
 
+function network.readBit()
+    return net_ReadBit() == 1
+end
+
+network.writeBit = net_WriteBit
+
+network.readInt = net_ReadInt
+network.writeInt = net_WriteInt
+
+network.readUInt = net_ReadUInt
+network.writeUInt = net_WriteUInt
+
+network.readData = net_ReadData
+network.writeData = net_WriteData
+
+network.readFloat = glua_net.ReadFloat or function() return 0.0 end
+network.writeFloat = glua_net.WriteFloat or debug_fempty
+
+network.readDouble = glua_net.ReadDouble or function() return 0.0 end
+network.writeDouble = glua_net.WriteDouble or debug_fempty
+
+network.readString = glua_net.ReadString or function() return "" end
+network.writeString = glua_net.WriteString or debug_fempty
+
+if LUA_SERVER then
+    network.broadcast = net_Broadcast
+    network.send = net_Send
+else
+    network.send = net_SendToServer
+end
+
+network.abort = net_Abort
+
 --- [SHARED]
 ---
 --- Get the names of all registered networks.
@@ -112,13 +167,13 @@ setmetatable( network_names, {
 ---@return integer network_count The number of registered networks.
 ---@nodiscard
 function network.getNetworks()
-    local networks, network_count = {}, 0
+    ---@type string[]
+    local networks = {}
+    local network_count = 0
 
-    for network_id = 1, network_limit, 1 do
-        local network_name = network_get_name( network_id )
-        if network_name == nil then
-            break
-        end
+    for network_id = 1, NETWORK_LIMIT, 1 do
+        local network_name = util_NetworkIDToString( network_id )
+        if network_name == nil then break end
 
         network_ids[ network_name ] = network_id
         network_names[ network_id ] = network_name
@@ -148,7 +203,7 @@ end
 ---@param network_name string The name of the network.
 ---@return integer | nil network_id The ID of the network, or `nil` if the network does not exist.
 ---@nodiscard
-function network.getID( network_name )
+function network.getId( network_name )
     return network_ids[ network_name ]
 end
 
@@ -178,7 +233,7 @@ function network.register( network_name )
 
         ---@type integer
         ---@diagnostic disable-next-line: assign-type-mismatch
-        network_id = network_register( network_name )
+        network_id = util_AddNetworkString( network_name )
 
         if network_id == nil then
             error( string_format( "Failed to register network '%s', unknown error.", network_name ), 2 )
@@ -193,19 +248,11 @@ end
 
 -- TODO: integration with https://github.com/RaphaelIT7/gmod-holylib/blob/main/example-scripts/networkchannel.lua
 
-
-local net_WriteBool = glua_net.WriteBool
-local net_ReadUInt = glua_net.ReadUInt
-local net_ReadBit = glua_net.ReadBit
-
----@alias dreamwork.engine.network.Receiver fun( remaining_bits: integer, sender: ( garrysmod.Player | nil ), unreliable: boolean )
-
----@type table<string, dreamwork.engine.network.Receiver>
-local receivers = glua_net.Receivers or {}
-glua_net.Receivers = receivers
-
 ---@type table<integer, dreamwork.engine.network.Receiver>
 local id_receivers = {}
+
+---@type table<string, dreamwork.engine.network.Receiver>
+local name_receivers = {}
 
 --- [SHARED]
 ---
@@ -213,10 +260,16 @@ local id_receivers = {}
 ---
 --- Takes priority over receivers from `net.Receive`.
 ---
----@param network_id integer The ID of the network.
+---@param network_id integer | string The ID of the network.
 ---@param fn dreamwork.engine.network.Receiver | nil The receiver, `nil` to remove it.
-function network.receive( network_id, fn )
+function network.receiveById( network_id, fn )
     id_receivers[ network_id ] = fn
+end
+
+---@param name string
+---@param fn dreamwork.engine.network.Receiver | nil
+function network.receiveByName( name, fn )
+    name_receivers[ string_lower( name ) ] = fn
 end
 
 ---@param network_id integer
@@ -226,9 +279,7 @@ end
 ---@param remaining_bits integer
 ---@param sender garrysmod.Player | nil
 local function message_unhandled( network_id, network_name, reason, unreliable, remaining_bits, sender )
-    if hook_count( "dreamwork.network.message.unhandled" ) ~= 0 and hook_call( "dreamwork.network.message.unhandled", network_id, network_name, reason, unreliable, remaining_bits, sender ) then
-        return
-    end
+    if hook_call( "dreamwork.network.message.unhandled", network_id, network_name, reason, unreliable, remaining_bits, sender ) then return end
 
     local protocol = unreliable and "UDP" or "TCP"
 
@@ -254,14 +305,12 @@ end
 ---@param remaining_bits integer
 ---@param sender garrysmod.Player | nil
 function glua_net.Incoming( remaining_bits, sender )
-    local network_id = net_ReadUInt( header_size )
+    local network_id = net_ReadUInt( HEADER_SIZE )
     local unreliable = net_ReadBit() == 1
 
-    remaining_bits = remaining_bits - full_header_size
+    remaining_bits = remaining_bits - FULL_HEADER_SIZE
 
-    if hook_count( "dreamwork.network.message.incoming" ) ~= 0 and hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender ) ~= nil then
-        return
-    end
+    if hook_call( "dreamwork.network.message.incoming", network_id, unreliable, remaining_bits, sender ) ~= nil then return end
 
     local fn = id_receivers[ network_id ]
     if fn == nil then
@@ -271,9 +320,11 @@ function glua_net.Incoming( remaining_bits, sender )
             return
         end
 
-        fn = receivers[ string_lower( network_name ) ]
+        local lowered_name = string_lower( network_name )
+
+        fn = name_receivers[ lowered_name ] or receivers[ lowered_name ]
         if fn == nil then
-            message_unhandled( network_id, network_name, "unexpected", unreliable, remaining_bits, sender )
+            message_unhandled( network_id, lowered_name, "unexpected", unreliable, remaining_bits, sender )
             return
         end
     end
@@ -281,7 +332,9 @@ function glua_net.Incoming( remaining_bits, sender )
     fn( remaining_bits, sender, unreliable )
 end
 
-if glua_net.Start ~= nil then
+if glua_net.Start == nil then
+    network.start = debug_fempty
+else
 
     ---@param fn fun( network_name: string, unreliable: boolean? )
     ---@param network_name string
@@ -298,7 +351,9 @@ if glua_net.Start ~= nil then
         end
 
         fn( network_name, unreliable )
-        net_WriteBool( unreliable == true )
+        net_WriteBit( unreliable == true )
     end, glua_net, "Start" )
+
+    network.start = glua_net.Start
 
 end
