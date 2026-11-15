@@ -30,6 +30,7 @@ function console.toggle() end
 ---
 --- An event that is called with the new visibility when the console is shown or hidden.
 ---
+---@type Event
 console.Visibility = nil
 
 --- [SHARED AND MENU]

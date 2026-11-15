@@ -1,22 +1,12 @@
 ---@meta _
 
+---@class garrysmod.serverlist
+local glua_serverlist = {}
+
 ---@class server.Player
 ---@field name string The name of the player.
 ---@field score integer The score of the player.
 ---@field time number The time the player has been connected, in seconds.
-
----@alias dreamwork.GModServerListCallback fun( server_ping: number, server_name: string, gamemode_title: string, level_name: string, player_count: number, player_limit: number, bot_count: number, has_password: boolean, last_played_time: number, server_address: string, gamemode_name: string, gamemode_workshopid: number, is_anonymous_server: boolean, gmod_version: string, server_localization: string, gamemode_category: string ): boolean?
-
----@class dreamwork.GModServerListLib
----@field PingServer fun( ip: string, callback: dreamwork.GModServerListCallback )
----@field PlayerList fun( ip: string, callback: fun( players: server.Player[] | nil ) )
----@field AddCurrentServerToFavorites fun( add: boolean? )
----@field IsCurrentServerFavorite fun(): boolean
----@field AddServerToFavorites fun( ip: string )
----@field RemoveServerFromFavorites fun( ip: string )
----@field IsServerFavorite fun( ip: string ): boolean
----@field Query fun( data: { GameDir: string, Type: string, AppID: integer, Callback: dreamwork.GModServerListCallback, CallbackFailed: function?, Finished: function? } )
-local glua_serverlist = {}
 
 --- [MENU]
 ---

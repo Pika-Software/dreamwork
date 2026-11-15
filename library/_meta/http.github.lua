@@ -41,7 +41,7 @@ Tree.truncated = nil
 ---
 --- A list of files and directories in the Tree.
 ---
----@class http.github.Tree.Item[]
+---@type http.github.Tree.Item[]
 Tree.tree = nil
 
 

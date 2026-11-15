@@ -1,8 +1,5 @@
 ---@meta _
 
----@class garrysmod.net
-local glua_net = {}
-
 --- [SHARED]
 ---
 --- A named two-way channel between the server and the clients

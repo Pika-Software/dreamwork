@@ -228,6 +228,7 @@ function server.getFrameTime() end
 ---
 --- Arguments: `details: table` with `server_name: string`, `loading_url: string`, `map_name: string`, `max_players: integer`, `player_steamid64: string` and `gamemode_name: string` keys.
 ---
+---@type Event
 server.Details = nil
 
 --- [SHARED AND MENU]

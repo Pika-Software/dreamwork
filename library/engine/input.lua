@@ -14,8 +14,10 @@ input = {}
 ---
 --- The cursor module allows to manipulate the client's cursor.
 ---
----@clas input.cursor
-input.cursor = nil
+---@class input.cursor
+local cursor = {}
+
+input.cursor = cursor
 
 --- [CLIENT AND MENU]
 ---

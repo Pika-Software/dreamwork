@@ -111,7 +111,7 @@ function CookieJar:header(url) end
 
 --- [SHARED AND MENU]
 ---
---- Saves the persistent cookies (the ones with `expires`) to `dreamwork.storage` under `name`,
+--- Saves the persistent cookies (the ones with `expires`) to `dreamwork.storage.cookies` under `name`,
 --- session cookies are skipped, like a browser does on exit.
 ---
 --- Saving a jar without persistent cookies removes the saved one.
@@ -123,7 +123,7 @@ function CookieJar:save(name) end
 ---
 --- Loads cookies saved with `CookieJar:save`, replacing the ones with the same name, domain and path.
 ---
---- Expired and malformed entries are skipped.
+--- Expired cookies are skipped.
 ---
 ---@param name string The name the jar was saved under.
 ---@return integer count The number of loaded cookies, `0` if nothing was saved.
