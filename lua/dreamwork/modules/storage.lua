@@ -15,12 +15,9 @@ dreamwork.storage = storage
 local std = dreamwork.std
 
 local isTable = std.isTable
-local isNumber = std.isNumber
 local isString = std.isString
 
 local raw = std.raw
-local raw_pairs = raw.pairs
-local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
 
 local string = std.string
@@ -34,9 +31,9 @@ local json_encode, json_decode = json.encode, json.decode
 local sqlite = std.sqlite
 local SQLiteBlob = sqlite.Blob
 local sqlite_cast = sqlite.cast
+local sqlite_queryFirst = sqlite.queryFirst
 local sqlite_transaction = sqlite.transaction
 local sqlite_query, sqlite_rawQuery = sqlite.query, sqlite.rawQuery
-local sqlite_queryFirst, sqlite_queryValue = sqlite.queryFirst, sqlite.queryValue
 
 local time = std.time
 local time_now = time.now
@@ -49,8 +46,6 @@ local error = std.error
 local pcall = std.pcall
 local assert = std.assert
 local tonumber = std.tonumber
-
-local LUA_SERVER = std.LUA_SERVER
 
 
 do
@@ -310,299 +305,196 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- A storage of file records (size, timestamp and hash), used to detect changed files.
+    --- The records of the files downloaded by `dreamwork.transport`, by their SHA-256 hashes:
+    --- the size and CRC-32 to check the cached file quickly and the last use for the cleanup.
     ---
-    ---@class dreamwork.storage.file
-    local file = {}
-    storage.file = file
+    ---@class dreamwork.storage.transport
+    local transport = {}
+    storage.transport = transport
 
-    ---@class dreamwork.storage.file.Record
-    ---@field path string The path to the file.
+    ---@class dreamwork.storage.transport.Record
+    ---@field hash string The SHA-256 hash of the file, lowercase hex, the name of the cached file.
     ---@field size integer The size of the file in bytes.
-    ---@field timestamp integer The modification timestamp of the file.
-    ---@field hash string The hash of the file, as it was written.
+    ---@field checksum integer The CRC-32 of the file.
+    ---@field timestamp integer The last use of the file, unix time in milliseconds.
 
     ---@type table<string, dreamwork.std.sqlite.ColumnType>
-    local record_types = { size = "number", timestamp = "number", hash = "blob" }
-
-    ---@type table<string, dreamwork.storage.file.Record>
-    local cache = {}
+    local record_types = { size = "number", checksum = "number", timestamp = "number" }
 
     --- [SHARED AND MENU]
     ---
-    --- Returns the file record for the specified path.
+    --- Returns the record of the file.
     ---
-    --- The returned record is shared with the in-memory cache, do not modify it.
-    ---
-    ---@param file_path string The path to the file.
-    ---@return dreamwork.storage.file.Record | nil record The file record, or `nil` if the path is not stored.
+    ---@param hash string The SHA-256 hash of the file, lowercase hex.
+    ---@return dreamwork.storage.transport.Record | nil record The record, or `nil` if the file is not stored.
     ---@nodiscard
-    function file.read( file_path )
-        local record = cache[ file_path ]
-        if record ~= nil then
-            return record
-        end
-
-        ---@diagnostic disable-next-line: cast-local-type
-        record = sqlite_cast( sqlite_queryFirst( "SELECT path, size, timestamp, hex( hash ) AS hash FROM 'dreamwork.storage.files' WHERE path=?", file_path ), record_types )
-        if record ~= nil then
-            cache[ file_path ] = record
-        end
-
-        return record
+    function transport.read( hash )
+        ---@type dreamwork.storage.transport.Record | nil
+        return sqlite_cast( sqlite_queryFirst( "SELECT hash, size, checksum, timestamp FROM 'dreamwork.storage.transport' WHERE hash=?", hash ), record_types )
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Stores the file record for the specified path, replacing the previous one.
+    --- Stores the record of the file, marked as used now.
     ---
-    ---@param file_path string The path to the file.
-    ---@param file_size integer The size of the file in bytes.
-    ---@param file_timestamp integer The modification timestamp of the file.
-    ---@param file_hash string The hash of the file (SHA256/MD5), raw or hex digest.
-    function file.write( file_path, file_size, file_timestamp, file_hash )
-        sqlite_query( "INSERT INTO 'dreamwork.storage.files' (path, size, timestamp, hash) VALUES (?, ?, ?, ?) ON CONFLICT( path ) DO UPDATE SET size = excluded.size, timestamp = excluded.timestamp, hash = excluded.hash", file_path, file_size, file_timestamp, SQLiteBlob( file_hash ) )
-        cache[ file_path ] = { path = file_path, size = file_size, timestamp = file_timestamp, hash = file_hash }
+    ---@param hash string The SHA-256 hash of the file, lowercase hex.
+    ---@param size integer The size of the file in bytes.
+    ---@param checksum integer The CRC-32 of the file.
+    function transport.write( hash, size, checksum )
+        sqlite_query( "INSERT INTO 'dreamwork.storage.transport' (hash, size, checksum, timestamp) VALUES (?, ?, ?, ?) ON CONFLICT( hash ) DO UPDATE SET size = excluded.size, checksum = excluded.checksum, timestamp = excluded.timestamp", hash, size, checksum, time_now( "ms", false ) )
     end
 
     --- [SHARED AND MENU]
     ---
-    --- Removes the file record for the specified path, does nothing if the path is not stored.
+    --- Marks the file as used now, so the cleanup keeps it.
     ---
-    ---@param file_path string The path to the file.
-    function file.delete( file_path )
-        sqlite_query( "DELETE FROM 'dreamwork.storage.files' WHERE path=?", file_path )
-        cache[ file_path ] = nil
+    ---@param hash string The SHA-256 hash of the file, lowercase hex.
+    function transport.touch( hash )
+        sqlite_query( "UPDATE 'dreamwork.storage.transport' SET timestamp=? WHERE hash=?", time_now( "ms", false ), hash )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the record of the file, does nothing if the file is not stored.
+    ---
+    ---@param hash string The SHA-256 hash of the file, lowercase hex.
+    function transport.delete( hash )
+        sqlite_query( "DELETE FROM 'dreamwork.storage.transport' WHERE hash=?", hash )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the records of the files not used since `used_before`: the ones older than `lifetime`,
+    --- then the oldest ones until the files take no more than `total_size`, and returns their hashes, so their files can be deleted.
+    ---
+    ---@param used_before integer The files used at or after this unix time in milliseconds are never removed (e.g. the ones used in this session).
+    ---@param lifetime integer The time a file is kept for since its last use, in milliseconds, `0` keeps it forever.
+    ---@param total_size integer The size of all files in bytes, `0` does not limit it.
+    ---@return string[] hashes The hashes of the removed files.
+    ---@return integer hash_count
+    function transport.prune( used_before, lifetime, total_size )
+        ---@type string[]
+        local hashes = {}
+        local hash_count = 0
+
+        -- running total from the most recently used file, everything past the limit goes
+        local rows = sqlite_query( string.unindentLines( [[
+            SELECT hash FROM (
+                SELECT hash, timestamp, SUM( size ) OVER ( ORDER BY timestamp DESC, hash ) AS total_size
+                FROM 'dreamwork.storage.transport'
+            ) WHERE timestamp < ? AND ((? > 0 AND timestamp < ?) OR (? > 0 AND total_size > ?))
+        ]], 12 ), used_before, lifetime, time_now( "ms", false ) - lifetime, total_size, total_size )
+
+        if rows == nil then
+            return hashes, 0
+        end
+
+        for index = 1, #rows, 1 do
+            local hash = raw_tostring( rows[ index ].hash )
+            hash_count = hash_count + 1
+            hashes[ hash_count ] = hash
+        end
+
+        if hash_count ~= 0 then
+            sqlite_transaction( function( query )
+                for index = 1, hash_count, 1 do
+                    query( "DELETE FROM 'dreamwork.storage.transport' WHERE hash=?", hashes[ index ] )
+                end
+            end )
+        end
+
+        return hashes, hash_count
     end
 
 end
 
-if LUA_SERVER then
+do
 
-    --- [SERVER]
+    --- [SHARED AND MENU]
     ---
-    --- A storage for package repositories, the packages they provide and the versions of these packages.
+    --- The persistent cookies of `http.CookieJar:save`, by the names of the jars.
     ---
-    ---@class dreamwork.repositories
-    local repositories = {}
-    dreamwork.repositories = repositories
+    ---@class dreamwork.storage.cookies
+    local cookies = {}
+    storage.cookies = cookies
 
-    ---@class dreamwork.repositories.Repository
-    ---@field id integer The repository ID.
-    ---@field url string The repository URL.
-
-    ---@class dreamwork.repositories.PackageVersion
-    ---@field version string The version of the package.
-    ---@field metadata string | dreamwork.std.null The metadata of the version.
-
-    ---@class dreamwork.repositories.Package
-    ---@field id integer The package ID.
-    ---@field name string The package name, unique within its repository.
-    ---@field url string The package URL.
-    ---@field type integer The package type.
-    ---@field repositoryID integer The ID of the repository that provides the package.
-    ---@field versions dreamwork.repositories.PackageVersion[] The versions of the package.
-
-    ---@class dreamwork.repositories.PackageInfo
-    ---@field name string The package name, unique within its repository.
-    ---@field url string The package URL.
-    ---@field type integer The package type.
-    ---@field versions? dreamwork.repositories.PackageVersion[] The versions of the package, all old versions are replaced.
-
-    ---@alias dreamwork.repositories.RepositoryValue dreamwork.repositories.Repository | integer | string
+    ---@class dreamwork.storage.cookies.Record
+    ---@field name string The cookie name.
+    ---@field value string The cookie value.
+    ---@field domain string The domain of the cookie.
+    ---@field path string The path of the cookie.
+    ---@field host_only boolean `true` if the cookie is sent only to `domain` itself.
+    ---@field secure boolean `true` if the cookie is sent only over HTTPS.
+    ---@field http_only boolean `true` if the cookie was set with `HttpOnly`.
+    ---@field same_site string | nil The `SameSite` attribute.
+    ---@field expires number The expiration time, unix time in seconds.
 
     ---@type table<string, dreamwork.std.sqlite.ColumnType>
-    local repository_types = { id = "number" }
+    local record_types = { host_only = "boolean", secure = "boolean", http_only = "boolean", expires = "number" }
 
-    ---@type table<string, dreamwork.std.sqlite.ColumnType>
-    local package_types = { id = "number", type = "number", repositoryID = "number" }
-
-    --- [SERVER]
+    --- [SHARED AND MENU]
     ---
-    --- Returns a list of all repositories.
+    --- Returns the not expired cookies of the jar, in the order they were written.
     ---
-    ---@return dreamwork.repositories.Repository[] list The list of repositories.
+    ---@param jar string The name of the jar.
+    ---@return dreamwork.storage.cookies.Record[] records The cookies.
+    ---@return integer record_count
     ---@nodiscard
-    function repositories.getRepositories()
-        local rows = sqlite_query( "SELECT id, url FROM 'dreamwork.repositories' ORDER BY id" )
+    function cookies.read( jar )
+        local rows = sqlite_query( "SELECT name, value, domain, path, host_only, secure, http_only, same_site, expires FROM 'dreamwork.storage.cookies' WHERE jar=? AND expires>? ORDER BY position", jar, time_now() )
         if rows == nil then
-            return {}
+            return {}, 0
         end
 
-        for i = 1, #rows, 1 do
-            sqlite_cast( rows[ i ], repository_types )
-        end
+        local row_count = #rows
 
-        ---@diagnostic disable-next-line: return-type-mismatch
-        return rows
-    end
+        for index = 1, row_count, 1 do
+            local row = rows[ index ]
+            sqlite_cast( row, record_types )
 
-    --- [SERVER]
-    ---
-    --- Adds a new repository to the database, an existing repository with the same URL is kept as is.
-    ---
-    ---@param url string The repository URL.
-    ---@return dreamwork.repositories.Repository repository The added or existing repository.
-    function repositories.addRepository( url )
-        -- gmod's sqlite is older than the `RETURNING` clause
-        sqlite_query( "INSERT INTO 'dreamwork.repositories' (url) VALUES (?) ON CONFLICT( url ) DO NOTHING", url )
-
-        ---@diagnostic disable-next-line: return-type-mismatch
-        return sqlite_cast( sqlite_queryFirst( "SELECT id, url FROM 'dreamwork.repositories' WHERE url=?", url ), repository_types )
-    end
-
-    --- Returns the repository ID for the specified repository.
-    ---
-    ---@param value dreamwork.repositories.RepositoryValue The repository, its ID or its URL.
-    ---@return integer | nil id The repository ID, or `nil` if the repository does not exist.
-    local function get_repository_id( value )
-        if isTable( value ) then
-            ---@cast value dreamwork.repositories.Repository
-            return value.id or get_repository_id( value.url )
-        elseif isNumber( value ) then
-            ---@cast value integer
-            return value
-        elseif isString( value ) then
-            ---@cast value string
-            return raw_tonumber( sqlite_queryValue( "SELECT id FROM 'dreamwork.repositories' WHERE url=?", value ) )
-        end
-
-        return nil
-    end
-
-    --- Returns the repository ID for the specified repository, or throws an error if it does not exist.
-    ---
-    ---@param value dreamwork.repositories.RepositoryValue The repository, its ID or its URL.
-    ---@return integer id The repository ID.
-    local function resolve_repository_id( value )
-        local repository_id = get_repository_id( value )
-        if repository_id == nil then
-            error( string_format( "Repository '%s' does not exist.", value ), 3 )
-        end
-
-        return repository_id
-    end
-
-    --- [SERVER]
-    ---
-    --- Removes the specified repository from the database, together with all its packages and their versions.
-    ---
-    ---@param repository dreamwork.repositories.RepositoryValue The repository to remove, its ID or its URL.
-    function repositories.removeRepository( repository )
-        -- packages and versions are removed by `ON DELETE CASCADE`
-        sqlite_query( "DELETE FROM 'dreamwork.repositories' WHERE id=?", resolve_repository_id( repository ) )
-    end
-
-    --- [SERVER]
-    ---
-    --- Returns the package for the specified repository and name.
-    ---
-    ---@param repository dreamwork.repositories.RepositoryValue The repository to get the package from, its ID or its URL.
-    ---@param name string The name of the package to get.
-    ---@return dreamwork.repositories.Package | nil pkg The package, or `nil` if the package does not exist.
-    ---@nodiscard
-    function repositories.getPackage( repository, name )
-        local pkg = sqlite_cast( sqlite_queryFirst( "SELECT id, name, url, type, repositoryID FROM 'dreamwork.packages' WHERE repositoryID=? AND name=?", resolve_repository_id( repository ), name ), package_types )
-        if pkg == nil then
-            return nil
-        end
-
-        pkg.versions = sqlite_query( "SELECT version, metadata FROM 'dreamwork.package_versions' WHERE packageID=?", pkg.id ) or {}
-
-        ---@diagnostic disable-next-line: return-type-mismatch
-        return pkg
-    end
-
-    --- [SERVER]
-    ---
-    --- Returns a list of packages for the specified repository.
-    ---
-    ---@param repository dreamwork.repositories.RepositoryValue The repository to get the packages from, its ID or its URL.
-    ---@return dreamwork.repositories.Package[] list The list of packages.
-    ---@nodiscard
-    function repositories.getPackages( repository )
-        local repository_id = resolve_repository_id( repository )
-
-        local packages = sqlite_query( "SELECT id, name, url, type, repositoryID FROM 'dreamwork.packages' WHERE repositoryID=?", repository_id )
-        if packages == nil then
-            return {}
-        end
-
-        ---@type table<integer, dreamwork.repositories.PackageVersion[]>
-        local package_versions = {}
-
-        for i = 1, #packages, 1 do
-            local pkg = sqlite_cast( packages[ i ], package_types )
-            ---@cast pkg dreamwork.repositories.Package
-
-            local versions = {}
-            pkg.versions = versions
-            package_versions[ pkg.id ] = versions
-        end
-
-        -- all versions in one query instead of one query per package
-        local rows = sqlite_query( "SELECT v.packageID AS packageID, v.version AS version, v.metadata AS metadata FROM 'dreamwork.package_versions' AS v JOIN 'dreamwork.packages' AS p ON p.id = v.packageID WHERE p.repositoryID=?", repository_id )
-        if rows ~= nil then
-            for i = 1, #rows, 1 do
-                local row = rows[ i ]
-
-                local versions = package_versions[ raw_tonumber( row.packageID ) ]
-                versions[ #versions + 1 ] = { version = row.version, metadata = row.metadata }
+            -- `NOT NULL` keeps the columns of every row, no `SameSite` is an empty string
+            if row.same_site == "" then
+                row.same_site = nil
             end
         end
 
-        ---@diagnostic disable-next-line: return-type-mismatch
-        return packages
+        ---@cast rows dreamwork.storage.cookies.Record[]
+        return rows, row_count
     end
 
-    --- [SERVER]
+    --- [SHARED AND MENU]
     ---
-    --- Replaces the packages of the specified repository.
+    --- Replaces the cookies of the jar, an empty list removes the jar.
     ---
-    --- Packages that are not in `packages` are removed, existing packages keep their IDs.
+    --- Expired cookies of every jar are removed on the way.
     ---
-    ---@param repository dreamwork.repositories.RepositoryValue The repository to update, its ID or its URL.
-    ---@param packages dreamwork.repositories.PackageInfo[] | table<any, dreamwork.repositories.PackageInfo> The new packages of the repository.
-    function repositories.updateRepository( repository, packages )
-        local repository_id = resolve_repository_id( repository )
+    ---@param jar string The name of the jar.
+    ---@param records dreamwork.storage.cookies.Record[] The cookies, kept in this order.
+    ---@param record_count integer? The number of cookies, `#records` by default.
+    function cookies.write( jar, records, record_count )
+        if record_count == nil then
+            record_count = #records
+        end
 
         sqlite_transaction( function( query )
-            -- IDs stay as returned by sqlite, they are only used as keys and query parameters
-            ---@type table<string, boolean>
-            local kept_packages = {}
+            query( "DELETE FROM 'dreamwork.storage.cookies' WHERE jar=? OR expires<=?", jar, time_now() )
 
-            for _, pkg in raw_pairs( packages ) do
-                -- upsert instead of `REPLACE`, so the package keeps its ID and its versions are not orphaned
-                query( "INSERT INTO 'dreamwork.packages' (name, url, type, repositoryID) VALUES (?, ?, ?, ?) ON CONFLICT( repositoryID, name ) DO UPDATE SET url = excluded.url, type = excluded.type", pkg.name, pkg.url, pkg.type, repository_id )
-
-                -- the row always exists after the upsert above
-                local package_id = sqlite_queryValue( "SELECT id FROM 'dreamwork.packages' WHERE repositoryID=? AND name=?", repository_id, pkg.name )
-                ---@cast package_id string
-
-                kept_packages[ package_id ] = true
-
-                query( "DELETE FROM 'dreamwork.package_versions' WHERE packageID=?", package_id )
-
-                local versions = pkg.versions
-                if versions ~= nil then
-                    for i = 1, #versions, 1 do
-                        local package_version = versions[ i ]
-                        query( "INSERT INTO 'dreamwork.package_versions' (version, metadata, packageID) VALUES (?, ?, ?) ON CONFLICT( packageID, version ) DO UPDATE SET metadata = excluded.metadata", package_version.version, package_version.metadata, package_id )
-                    end
-                end
-            end
-
-            -- remove packages that are gone, their versions are removed by `ON DELETE CASCADE`
-            local rows = query( "SELECT id FROM 'dreamwork.packages' WHERE repositoryID=?", repository_id )
-            if rows ~= nil then
-                for i = 1, #rows, 1 do
-                    local package_id = rows[ i ].id
-                    if not kept_packages[ package_id ] then
-                        query( "DELETE FROM 'dreamwork.packages' WHERE id=?", package_id )
-                    end
-                end
+            for index = 1, record_count, 1 do
+                local record = records[ index ]
+                query( "INSERT INTO 'dreamwork.storage.cookies' (jar, position, name, value, domain, path, host_only, secure, http_only, same_site, expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    jar, index, record.name, record.value, record.domain, record.path, record.host_only, record.secure, record.http_only, record.same_site or "", record.expires
+                )
             end
         end )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the cookies of the jar, does nothing if the jar is not stored.
+    ---
+    ---@param jar string The name of the jar.
+    function cookies.delete( jar )
+        sqlite_query( "DELETE FROM 'dreamwork.storage.cookies' WHERE jar=?", jar )
     end
 
 end
@@ -618,12 +510,10 @@ do
         {
             name = "0.1.0",
             queries = {
-                -- added key-value store
+                -- key-value store
                 "CREATE TABLE 'dreamwork.storage' (key TEXT UNIQUE, value BLOB)",
 
                 -- http_cache add primary key
-                "DROP TABLE IF EXISTS 'dreamwork.storage.http'",
-
                 [[
                     CREATE TABLE 'dreamwork.storage.http' (
                         url TEXT PRIMARY KEY,
@@ -633,36 +523,31 @@ do
                     )
                 ]],
 
-                -- initial file table
+                -- transport data
                 [[
-                    CREATE TABLE 'dreamwork.storage.files' (
-                        path TEXT PRIMARY KEY,
+                    CREATE TABLE 'dreamwork.storage.transport' (
+                        hash TEXT PRIMARY KEY,
                         size INTEGER NOT NULL CHECK(size >= 0),
-                        timestamp INTEGER,
-                        hash BLOB
+                        checksum INTEGER NOT NULL,
+                        timestamp INTEGER NOT NULL
                     )
                 ]],
 
-                "CREATE TABLE 'dreamwork.repositories' (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL)",
-
-                -- `UNIQUE` leads with the parent ID, so its index also serves lookups by repository / package
+                -- persistent cookies of `http.CookieJar:save`
                 [[
-                    CREATE TABLE 'dreamwork.packages' (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CREATE TABLE 'dreamwork.storage.cookies' (
+                        jar TEXT NOT NULL,
+                        position INTEGER NOT NULL,
                         name TEXT NOT NULL,
-                        url TEXT NOT NULL,
-                        type INTEGER NOT NULL,
-                        repositoryID INTEGER NOT NULL REFERENCES 'dreamwork.repositories' (id) ON DELETE CASCADE,
-                        UNIQUE( repositoryID, name )
-                    )
-                ]],
-
-                [[
-                    CREATE TABLE 'dreamwork.package_versions' (
-                        version TEXT NOT NULL,
-                        metadata TEXT,
-                        packageID INTEGER NOT NULL REFERENCES 'dreamwork.packages' (id) ON DELETE CASCADE,
-                        UNIQUE( packageID, version )
+                        value TEXT NOT NULL,
+                        domain TEXT NOT NULL,
+                        path TEXT NOT NULL,
+                        host_only INTEGER NOT NULL,
+                        secure INTEGER NOT NULL,
+                        http_only INTEGER NOT NULL,
+                        same_site TEXT NOT NULL,
+                        expires REAL NOT NULL,
+                        PRIMARY KEY ( jar, name, domain, path )
                     )
                 ]]
             }
