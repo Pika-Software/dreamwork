@@ -2,7 +2,8 @@
 
 --- [CLIENT AND MENU]
 ---
---- An error raised by the WebAssembly runtime (compile / link / trap / bad export access).
+--- An error raised by the WebAssembly runtime (compile / link / trap / bad export access)
+--- or by a request to a closed or collected `WASM` instance.
 ---
 ---@class WASMError : Error
 ---@field __class WASMErrorClass
@@ -18,9 +19,7 @@ local __WASMError = {}
 ---@field __base WASMError
 ---@field __parent ErrorClass
 ---@overload fun( message: ( string | nil ) ): WASMError
-
----@type WASMErrorClass
-WASMError = nil
+WASMError = {}
 
 ---@alias WASM.ValueType
 ---| "i32"
