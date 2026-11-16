@@ -33,7 +33,9 @@ local isBoolean = std.isBoolean
 local isFunction = std.isFunction
 local isBigInteger = std.isBigInteger
 
-local exceptions_call = dreamwork.exceptions.call
+local exceptions = dreamwork.exceptions
+local exceptions_call = exceptions.call
+local exceptions_hide = exceptions.hide
 
 local json = std.json
 local json_encode = json.encode
@@ -52,7 +54,8 @@ local ValueError = std.ValueError
 
 --- [CLIENT AND MENU]
 ---
---- An error raised by the WebAssembly runtime (compile / link / trap / bad export access).
+--- An error raised by the WebAssembly runtime (compile / link / trap / bad export access)
+--- or by a request to a closed or collected `WASM` instance.
 ---
 ---@class dreamwork.std.WASMError : dreamwork.std.Error
 ---@field __class dreamwork.std.WASMErrorClass
@@ -68,9 +71,7 @@ local WASMError = class.base( "WASMError", false, std.Error )
 ---@field __base dreamwork.std.WASMError
 ---@field __parent dreamwork.std.ErrorClass
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.WASMError
-
----@type dreamwork.std.WASMErrorClass
-local WASMErrorClass = class.create( WASMError ) --[[@as dreamwork.std.WASMErrorClass]]
+local WASMErrorClass = class.create( WASMError )
 std.WASMError = WASMErrorClass
 
 
@@ -273,7 +274,25 @@ local function encode_value( value )
         return json_encode( value )
     end
 
-    error( ValueError( value, "WASM values must be numbers, BigIntegers, strings, booleans or nil" ), 4 )
+    error( ValueError( value, "WASM values must be numbers, BigIntegers, strings, booleans or nil" ), 2 )
+end
+
+--- Encodes the export name and call arguments as `__dw.call` arguments.
+---
+---@param name string
+---@param ... any
+---@return string
+local function encode_call( name, ... )
+    local count = raw_select( "#", ... )
+
+    ---@type any[]
+    local arguments = { ... }
+
+    for i = 1, count, 1 do
+        arguments[ i ] = encode_value( arguments[ i ] )
+    end
+
+    return json_encode( name ) .. ",[" .. table_concat( arguments, ",", 1, count ) .. "]"
 end
 
 --- Export results: nothing, the single value, or an array for multi-value returns.
@@ -312,6 +331,7 @@ end
 local function fail_all( wasm, message )
     local load = loads[ wasm ]
     if load ~= nil and load:isPending() then
+        ---@diagnostic disable-next-line: param-type-mismatch
         load:setError( message, WASMErrorClass )
     end
 
@@ -323,6 +343,7 @@ local function fail_all( wasm, message )
 
     for _, future in raw_pairs( futures ) do
         if future:isPending() then
+            ---@diagnostic disable-next-line: param-type-mismatch
             future:setError( message, WASMErrorClass )
         end
     end
@@ -343,7 +364,7 @@ end
 ---@return dreamwork.std.WebClient
 local function require_client( wasm )
     if not is_alive( wasm ) then
-        error( "WASM instance is closed", 3 )
+        error( WASMErrorClass( "WASM instance is closed" ), 2 )
     end
 
     return clients[ wasm ]
@@ -383,6 +404,9 @@ local function encode_memory( name )
     return json_encode( name )
 end
 
+-- errors of the helpers below blame the caller of the public method
+exceptions_hide( encode_value, encode_call, require_client, request )
+
 
 --- [CLIENT AND MENU]
 ---
@@ -418,7 +442,7 @@ function exports_metatable.__index( proxy, name )
     local fn = function( ... )
         local wasm = holder[ 1 ]
         if wasm == nil then
-            error( "WASM instance was collected", 2 )
+            error( WASMErrorClass( "WASM instance was collected" ), 2 )
         end
 
         return wasm:call( name, ... )
@@ -486,7 +510,7 @@ function WASM:__init( binary, imports )
     if imports ~= nil then
         for module_name, entries in raw_pairs( imports ) do
             if not (isString( module_name ) and isTable( entries )) then
-                error( ValueError( module_name, "WASM import modules must map names to tables" ), 3 )
+                error( ValueError( module_name, "WASM import modules must map names to tables" ), 4 )
             end
 
             local module_spec = {}
@@ -497,7 +521,7 @@ function WASM:__init( binary, imports )
                 elseif isString( value ) then
                     module_spec[ name ] = value
                 else
-                    error( ValueError( value, string_format( "import '%s.%s' must be a Lua function or a JavaScript expression", module_name, raw_tostring( name ) ) ), 3 )
+                    error( ValueError( value, string_format( "import '%s.%s' must be a Lua function or a JavaScript expression", module_name, raw_tostring( name ) ) ), 4 )
                 end
             end
 
@@ -550,6 +574,7 @@ function WASM:__init( binary, imports )
 
         local load = loads[ wasm ]
         if load:isPending() then
+            ---@diagnostic disable-next-line: param-type-mismatch
             load:setError( message, WASMErrorClass )
         end
     end )
@@ -573,6 +598,7 @@ function WASM:__init( binary, imports )
         if success then
             future:setResult( decoder( (decode_values( payload )) ) )
         else
+            ---@diagnostic disable-next-line: param-type-mismatch
             future:setError( payload, WASMErrorClass )
         end
     end )
@@ -692,16 +718,7 @@ end
 ---@param ... any Arguments: numbers, `BigInteger`s (`i64`), strings or booleans.
 ---@return dreamwork.std.Future future
 function WASM:invoke( name, ... )
-    local count = raw_select( "#", ... )
-
-    ---@type any[]
-    local arguments = { ... }
-
-    for i = 1, count, 1 do
-        arguments[ i ] = encode_value( arguments[ i ] )
-    end
-
-    return request( self, decode_results, "call", json_encode( name ) .. ",[" .. table_concat( arguments, ",", 1, count ) .. "]" )
+    return request( self, decode_results, "call", encode_call( name, ... ) )
 end
 
 --- [CLIENT AND MENU]
@@ -719,7 +736,7 @@ end
 ---@return any ... The results, multi-value returns are unpacked.
 ---@async
 function WASM:call( name, ... )
-    local result = self:invoke( name, ... ):await()
+    local result = request( self, decode_results, "call", encode_call( name, ... ) ):await()
 
     local export = self:getExport( name )
     if export ~= nil and export.results ~= nil and #export.results > 1 then
@@ -752,7 +769,7 @@ end
 ---@return string data
 ---@async
 function WASM:read( offset, length, memory )
-    return self:readFuture( offset, length, memory ):await()
+    return request( self, decode_bytes, "read", string_format( "%s,%d,%d", encode_memory( memory ), offset, length ) ):await()
 end
 
 --- [CLIENT AND MENU]
@@ -776,7 +793,7 @@ end
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@async
 function WASM:write( offset, data, memory )
-    self:writeFuture( offset, data, memory ):await()
+    request( self, decode_nothing, "write", string_format( "%s,%d,%s", encode_memory( memory ), offset, json_encode( base64_encode( data ) ) ) ):await()
 end
 
 --- [CLIENT AND MENU]
