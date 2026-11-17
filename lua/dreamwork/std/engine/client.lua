@@ -64,49 +64,6 @@ local dreamwork_engine = dreamwork.engine
 ---@class dreamwork.std
 local std = dreamwork.std
 
-
----@class dreamwork.std.client
-local client = {}
-std.client = client
-
----@class dreamwork.std.Client : dreamwork.std.Object
-local Instance = std.class.base( "client.Instance", true )
-
----@type table<garrysmod.Player, dreamwork.std.Client>
-local registry = {}
-
----@type metatable<garrysmod.Player, dreamwork.std.Client>
-local metatable = {
-    __mode = "k"
-}
-
-function metatable:__index( pl )
-    ---@type dreamwork.std.Client
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    local instance = std.class.new( Instance )
-    registry[ pl ] = instance
-    return instance
-end
-
-std.setmetatable( registry, metatable )
-
----@type table<dreamwork.std.Client, string>
-local names = {}
-
-
--- do
-
---     local names = {}
-
---     function client.getName( client_id )
---         return names[ client_id ]
---     end
-
--- end
-
-
-
-
 local gc_setTableRules = std.gc.setTableRules
 local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
 
@@ -118,32 +75,6 @@ gc_setTableRules( entities, true, true )
 local names = {}
 gc_setTableRules( names, true, false )
 
----@class dreamwork.std.Client : dreamwork.std.Object
-local Client = std.class.base( "Client", true )
-
----@class dreamwork.std.ClientClass : dreamwork.std.Client, dreamwork.std.Class
-local ClientClass = std.class.create( Client )
--- std.Client = ClientClass
-
-function Client:__init( name, steam_id )
-
-end
-
-function Client:runConsoleCommand()
-
-end
-
-function Client:getSteamIdentifier()
-
-end
-
-function ClientClass.getAll( ignore_bots, ignore_humans )
-
-end
-
-function ClientClass.findByName( name )
-
-end
 
 --- [SHARED AND MENU]
 ---

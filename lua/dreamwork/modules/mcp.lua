@@ -1,6 +1,9 @@
 ---@class dreamwork
 local dreamwork = dreamwork
 
+---@class _G
+local dreamwork_global = dreamwork.global
+
 local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
 
@@ -56,8 +59,6 @@ local Network = std.Network
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
-
-local _G = std._G
 
 
 --- Max Lua payload accepted from the bridge / network (matches the native bridge).
@@ -1624,9 +1625,9 @@ if LUA_CLIENT then
 
     -- clients have no native bridge, scripts reach this module through the global name
     do
-        local glua_mcp = _G.mcp
+        local glua_mcp = dreamwork_global.mcp
         if glua_mcp == nil then
-            _G.mcp = mcp
+            dreamwork_global.mcp = mcp
         elseif glua_mcp ~= mcp then
             glua_mcp.returnResult = mcp.returnResult
         end

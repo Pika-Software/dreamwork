@@ -230,6 +230,17 @@ function LocalPlayer() end
 ---@return garrysmod.Entity entity The entity, `NULL` if it does not exist.
 function Entity( index ) end
 
+--- [SHARED]
+---
+--- Returns the player with the matching [Player:UserID](https://wiki.facepunch.com/gmod/Player:UserID).
+---
+--- For a player by [Entity:EntIndex](https://wiki.facepunch.com/gmod/Entity:EntIndex), see [Entity](https://wiki.facepunch.com/gmod/Global.Entity).
+--- For a player by connection ID, see [player.GetByID](https://wiki.facepunch.com/gmod/player.GetByID).
+---
+---@param user_id integer The player's user ID.
+---@return garrysmod.Player player The player, `NULL` if it does not exist.
+function Player( user_id ) end
+
 --- [MENU]
 ---
 --- Opens a folder with the given name in the garrysmod folder using the operating system's file browser.

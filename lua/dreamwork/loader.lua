@@ -27,7 +27,7 @@ if dreamwork == nil then
 end
 
 ---@class dreamwork.std
----@field _G table The global environment of Lua.
+---@field _G dreamwork.std
 ---@field _R table The registry of Lua.
 ---@field LUA_VERSION integer The version of the Lua interpreter.
 ---@field GAME_VERSION integer Contains the version number of the Garrys Mod. For example: `201211` = `01.01.2012`
@@ -45,6 +45,7 @@ end
 ---@field TPS number The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
 ---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
+std._G = std
 
 std.GAME_VERSION = VERSION or 0
 std.GAME_BRANCH = BRANCH or "unknown"
@@ -744,7 +745,7 @@ end
 --- The global environment table (outside of DreamWork).
 ---
 ---@type _G
-std._G = std.getfenv( 1 )
+dreamwork.global = std.getfenv( 1 )
 
 dreamwork_load( "std/os.lua" )
 

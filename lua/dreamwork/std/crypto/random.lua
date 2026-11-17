@@ -1,11 +1,11 @@
 local dreamwork_getUpTime = dreamwork.getUpTime
 local dreamwork_engine = dreamwork.engine
+local dreamwork_global = dreamwork.global
 local engine_hook = dreamwork_engine.hook
 
 local std = dreamwork.std
 
 local ffi = std.ffi
-local _G = std._G
 
 local gc = std.gc
 
@@ -161,7 +161,7 @@ local function collect_entropy()
 
     -- Garry's Mod clocks, absent in some realms
     for _, name in ipairs( { "SysTime", "RealTime", "CurTime", "FrameTime", "UnPredictedCurTime" } ) do
-        local fn = _G[ name ]
+        local fn = dreamwork_global[ name ]
         if fn ~= nil then
             length = length + 1
             samples[ length ] = fn()

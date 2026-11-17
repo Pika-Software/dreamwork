@@ -86,6 +86,17 @@ function b64d(s){var b=atob(s),n=b.length,u=new Uint8Array(n);for(var i=0;i<n;i+
 function b64e(u){var s='';for(var i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)}
 function enc(v){return JSON.stringify(v,function(k,x){if(typeof x==='bigint')return{i64:x.toString()};if(typeof x==='number'&&!isFinite(x))return{f:String(x)};return x})}
 function msg(e){return(e&&e.message!==undefined)?((e.name&&e.name!=='Error'?e.name+': ':'')+e.message):String(e)}
+var FEAT={simd:'SIMD128',eh:'exception handling',reftypes:'reference types','return-call':'tail calls',threads:'threads',gc:'GC',memory64:'memory64','extended-const':'extended constant expressions'};
+function hint(e){var s=msg(e),f=/--experimental-wasm-([\w-]+)/.exec(s),n=f?(FEAT[f[1] ]||f[1]):(/<(Exception|Tag)>/.test(s)?FEAT.eh:null);if(!n)return s;var v=/Chrome\/(\d+)/.exec(navigator.userAgent);return s+' [the module uses WebAssembly '+n+', which Chromium '+(v?v[1]:'?')+' does not support: rebuild it for the MVP feature set, e.g. emcc -mcpu=mvp -msign-ext -mnontrapping-fptoint -mbulk-memory -mmutable-globals -sMIN_CHROME_VERSION='+(v?v[1]:'86')+' without -msimd128 / -fwasm-exceptions]'}
+function ready(mod){var e=mod?WebAssembly.Module.exports(mod):[],l=e.map(function(d){var s=W.s[d.name];return(s&&d.kind==='function')?{name:d.name,kind:d.kind,params:s.p,results:s.r}:{name:d.name,kind:d.kind}}),h={};e.forEach(function(d){h[d.name]=1});if(W.m)for(var k in W.m)if(!h[k]&&typeof W.m[k]==='function')l.push({name:k,kind:'function'});dwasm.ready(JSON.stringify(l))}
+function glue(u,src){
+var m=/\bexport\s+default\s+([\w$]+)/.exec(src)||/\bexport\s*\{\s*([\w$]+)\s+as\s+default\s*\}/.exec(src)||/module\.exports\s*=\s*([\w$]+)/.exec(src)||/^(?:var|let|const)\s+([\w$]+)\s*=/m.exec(src);
+if(!m)throw new Error('Emscripten factory not found (link with -sMODULARIZE)');
+var factory=(0,eval)(src.replace(/\bexport\s+default\s+[\w$]+\s*;?|\bexport\s*\{[^}]*\}\s*;?/g,'').replace(/import\.meta\.url/g,'location.href').replace(/import\.meta/g,'({url:location.href})')+'\n;'+m[1]);
+if(typeof factory!=='function')throw new Error("Emscripten factory '"+m[1]+"' is not a function (link with -sMODULARIZE)");
+var mod=null,cfg={locateFile:function(p){return p}};
+if(u)cfg.instantiateWasm=function(imp,recv){WebAssembly.instantiate(u,imp).then(function(r){W.i=r.instance;mod=r.module;recv(r.instance,r.module)},function(e){dwasm.fail(hint(e))});return{}};
+return factory(cfg).then(function(M){W.m=M;if(!W.i)W.i={exports:{}};ready(mod)})}
 function sigs(u){
 var p=8,T=[],F=[],R={},V={127:'i32',126:'i64',125:'f32',124:'f64',123:'v128',112:'funcref',111:'externref'};
 function b(){return u[p++]}
@@ -102,13 +113,14 @@ else if(id===7)vec(function(){var m=str(),k=b(),i=n();if(k===0&&F[i])R[m]=F[i]})
 p=e}}catch(x){}
 return R}
 function ok(id,v){dwasm.reply(id,true,enc(v))}
-function op(id,f){if(!W.p){dwasm.reply(id,false,'module is not loaded');return}W.p.then(function(){ok(id,f())}).catch(function(e){dwasm.reply(id,false,msg(e))})}
+function op(id,f){if(!W.p){dwasm.reply(id,false,'module is not loaded');return}W.p.then(f).then(function(v){ok(id,v)}).catch(function(e){dwasm.reply(id,false,msg(e))})}
 function ex(n,c,t){var v=W.i.exports[n];if(!(v instanceof c))throw new Error("export '"+n+"' is not a "+t);return v}
 function mem(n){if(n)return ex(n,WebAssembly.Memory,'memory');var e=W.i.exports;for(var k in e)if(e[k] instanceof WebAssembly.Memory)return e[k];throw new Error('module exports no memory')}
 window.__dw={
-load:function(b,spec){
+load:function(b,spec,g){
 if(typeof WebAssembly!=='object'){dwasm.fail('WebAssembly is not supported by this browser (x86-64 Chromium branch required)');return}
-var u=b64d(b);W.s=sigs(u);
+var u=b.length?b64d(b):null;W.s=u?sigs(u):{};
+if(g!=null){W.p=Promise.resolve().then(function(){return glue(u,g)});W.p.catch(function(e){dwasm.fail(hint(e))});return}
 W.p=WebAssembly.compile(u).then(function(mod){
 var imp={};
 WebAssembly.Module.imports(mod).forEach(function(d){
@@ -118,14 +130,15 @@ else if(typeof v==='string')m[d.name]=(0,eval)('('+v+')');
 else if(d.kind==='function')m[d.name]=function(){throw new Error("missing import '"+d.module+"."+d.name+"'")}});
 return WebAssembly.instantiate(mod,imp).then(function(inst){
 W.i=inst;
-dwasm.ready(JSON.stringify(WebAssembly.Module.exports(mod).map(function(d){var s=W.s[d.name];return(s&&d.kind==='function')?{name:d.name,kind:d.kind,params:s.p,results:s.r}:{name:d.name,kind:d.kind}})))})});
-W.p.catch(function(e){dwasm.fail(msg(e))})},
-call:function(id,n,a){op(id,function(){var f=W.i.exports[n];if(typeof f!=='function')throw new Error("export '"+n+"' is not a function");var s=W.s[n];if(s)for(var i=0;i<s.p.length;i++)if(s.p[i]==='i64')a[i]=BigInt(a[i]===undefined?0:a[i]);var r=f.apply(null,a);if(s)return s.r.length===0?[]:(s.r.length===1?[r]:r);return r===undefined?[]:(Array.isArray(r)?r:[r])})},
+ready(mod)})});
+W.p.catch(function(e){dwasm.fail(hint(e))})},
+call:function(id,n,a){op(id,function(){if(W.m&&typeof W.m[n]==='function'){var v=W.m[n].apply(W.m,a);return v===undefined?[]:[v]}var f=W.i.exports[n];if(typeof f!=='function')throw new Error("export '"+n+"' is not a function");var s=W.s[n];if(s)for(var i=0;i<s.p.length;i++)if(s.p[i]==='i64')a[i]=BigInt(a[i]===undefined?0:a[i]);var r=f.apply(null,a);if(s)return s.r.length===0?[]:(s.r.length===1?[r]:r);return r===undefined?[]:(Array.isArray(r)?r:[r])})},
 read:function(id,n,o,l){op(id,function(){return[b64e(new Uint8Array(mem(n).buffer,o,l))]})},
 write:function(id,n,o,b){op(id,function(){new Uint8Array(mem(n).buffer).set(b64d(b),o);return[]})},
 size:function(id,n){op(id,function(){return[mem(n).buffer.byteLength]})},
 grow:function(id,n,d){op(id,function(){return[mem(n).grow(d)]})},
 get:function(id,n){op(id,function(){return[ex(n,WebAssembly.Global,'global').value]})},
+eval:function(id,c){op(id,function(){var f;try{f=new Function('Module','exports','return ('+c+'\n)')}catch(e){f=new Function('Module','exports',c)}return Promise.resolve(f(W.m,W.i.exports)).then(function(v){return v===undefined?[]:[v]})})},
 set:function(id,n,v){op(id,function(){var g=ex(n,WebAssembly.Global,'global');g.value=(typeof g.value==='bigint')?BigInt(v):v;return[]})}
 };
 })();
@@ -283,21 +296,20 @@ end
 ---@param ... any
 ---@return string
 local function encode_call( name, ... )
-    local count = raw_select( "#", ... )
-
-    ---@type any[]
+    local argument_count = raw_select( "#", ... )
     local arguments = { ... }
 
-    for i = 1, count, 1 do
+    for i = 1, argument_count, 1 do
         arguments[ i ] = encode_value( arguments[ i ] )
     end
 
-    return json_encode( name ) .. ",[" .. table_concat( arguments, ",", 1, count ) .. "]"
+    return json_encode( name ) .. ",[" .. table_concat( arguments, ",", 1, argument_count ) .. "]"
 end
 
 --- Export results: nothing, the single value, or an array for multi-value returns.
 ---
----@type dreamwork.std.WASM.Decoder
+---@param values any[]
+---@return any | any[] | nil
 local function decode_results( values )
     local count = #values
     if count == 0 then
@@ -309,17 +321,19 @@ local function decode_results( values )
     return values
 end
 
----@type dreamwork.std.WASM.Decoder
+---@param values any[]
+---@return any
 local function decode_first( values )
     return values[ 1 ]
 end
 
----@type dreamwork.std.WASM.Decoder
+---@param values any[]
+---@return string
 local function decode_bytes( values )
     return base64_decode( values[ 1 ] )
 end
 
----@type dreamwork.std.WASM.Decoder
+---@return nil
 local function decode_nothing()
     return nil
 end
@@ -422,7 +436,14 @@ exceptions_hide( encode_value, encode_call, require_client, request )
 --- are fire-and-forget, the bridge cannot return a value to WebAssembly synchronously, so they act
 --- as `undefined` (`0` for numeric results, a trap for `i64`).
 ---
+--- Emscripten builds that need their JS glue (Embind, `-sMODULARIZE`, classic or `-sEXPORT_ES6`) load by
+--- passing the glue source instead of `imports`; `exports` then also lists the `Module` functions
+--- (Embind functions, `_name` wrappers), and `evaluate` reaches anything else, e.g. Embind classes.
+---
 --- Requires the x86-64 (Chromium) branch of Garry's Mod, Awesomium has no WebAssembly.
+--- Its Chromium 86 has no SIMD128, Wasm exceptions or reference types: modules must be built
+--- for the MVP feature set (+ sign-ext, non-trapping float-to-int, bulk memory, mutable globals),
+--- a compile error names the missing feature.
 ---
 ---@class dreamwork.std.WASM : dreamwork.std.Object
 ---@field __class dreamwork.std.WASMClass
@@ -500,14 +521,22 @@ function WASM:__represent()
     return string_format( "%s: %p [%s]", type( self ), self, status )
 end
 
----@param binary string The raw `.wasm` module bytes.
----@param imports dreamwork.std.WASM.Imports? Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`.
+---@param binary string The raw `.wasm` module bytes, `""` for a `-sSINGLE_FILE` Emscripten glue.
+---@param imports ( dreamwork.std.WASM.Imports | string | nil ) Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
 ---@protected
 function WASM:__init( binary, imports )
     ---@type table<string, table<string, boolean | string>>
     local spec = {}
 
-    if imports ~= nil then
+    ---@type string | nil
+    local glue
+
+    if isString( imports ) then
+        ---@cast imports string
+        glue, imports = imports, nil
+    elseif imports ~= nil then
+        ---@cast imports dreamwork.std.WASM.Imports
+
         for module_name, entries in raw_pairs( imports ) do
             if not (isString( module_name ) and isTable( entries )) then
                 error( ValueError( module_name, "WASM import modules must map names to tables" ), 4 )
@@ -625,11 +654,9 @@ function WASM:__init( binary, imports )
     end )
 
     client.html = RUNTIME_HTML
-    client:run( string_format( "__dw.load(%s,%s)", json_encode( base64_encode( binary ) ), json_serialize( spec ) ) )
+    client:run( string_format( "__dw.load(%s,%s,%s)", json_encode( base64_encode( binary ) ), json_serialize( spec ), glue == nil and "null" or json_encode( glue ) ) )
 end
 
---- Closes the hosting client when the object is collected.
----
 ---@protected
 function WASM:__gc()
     local client = clients[ self ]
@@ -638,12 +665,8 @@ function WASM:__gc()
     end
 end
 
---- [CLIENT AND MENU]
----
---- Returns `true` while the hosting client is alive.
----
 ---@return boolean is_valid
----@nodiscard
+---@protected
 function WASM:__isvalid()
     return is_alive( self )
 end
@@ -745,6 +768,38 @@ function WASM:call( name, ... )
     end
 
     return result
+end
+
+--- [CLIENT AND MENU]
+---
+--- Evaluates JavaScript in the page and returns a `Future` with its JSON-compatible result.
+---
+--- `code` is an expression or, if it is not one, a function body (`return` the result);
+--- `Module` (Emscripten glue only) and `exports` (the raw instance exports) are in scope,
+--- promises are awaited.
+---
+---@param code string The JavaScript code.
+---@return dreamwork.std.Future future
+function WASM:evaluateFuture( code )
+    return request( self, decode_first, "eval", json_encode( code ) )
+end
+
+--- [CLIENT AND MENU]
+---
+--- Evaluates JavaScript in the page and waits for its JSON-compatible result.
+---
+--- ```lua
+--- futures.run( function()
+---     wasm:evaluate( "globalThis.world = new Module.SteamAudioWorld( Module.defaultWorldConfig() ), 0" )
+---     print( wasm:evaluate( "world.addSource( 1, 2, 3 )" ) )
+--- end )
+--- ```
+---
+---@param code string The JavaScript code: an expression, or a function body that `return`s; `Module` and `exports` are in scope.
+---@return any result
+---@async
+function WASM:evaluate( code )
+    return request( self, decode_first, "eval", json_encode( code ) ):await()
 end
 
 --- [CLIENT AND MENU]
@@ -875,5 +930,5 @@ end
 ---
 ---@class dreamwork.std.WASMClass : dreamwork.std.WASM, dreamwork.std.Class
 ---@field __base dreamwork.std.WASM
----@overload fun( binary: string, imports: dreamwork.std.WASM.Imports? ): dreamwork.std.WASM
+---@overload fun( binary: string, imports: ( dreamwork.std.WASM.Imports | string | nil ) ): dreamwork.std.WASM
 std.WASM = class.create( WASM )
