@@ -23,6 +23,9 @@ local math = std.math
 local math_huge = math.huge
 local math_nan = math.nan
 
+-- built at runtime, constant folding can turn a `-0.0` literal into `0`
+local negative_zero = 1 / -math_huge
+
 local type = std.type
 local error = std.error
 local setmetatable = std.setmetatable
@@ -78,13 +81,13 @@ std.WASMError = WASMErrorClass
 --- Browser side of the runtime: loads one module per page and answers requests through `dwasm.*`.
 ---
 --- Every request replies with `dwasm.reply( id, ok, payload )`, `payload` is a JSON array of results
---- (`{"i64":"..."}` for BigInt, `{"f":"NaN"}` for non-finite floats) or the error message.
+--- (`{"i64":"..."}` for BigInt, `{"f":"NaN"}` for non-finite floats and `-0`) or the error message.
 local RUNTIME_HTML = [[<!DOCTYPE html><html><head><meta charset="utf-8"><script>
 (function(){
 var W={p:null,i:null,s:{}};
 function b64d(s){var b=atob(s),n=b.length,u=new Uint8Array(n);for(var i=0;i<n;i++)u[i]=b.charCodeAt(i);return u}
 function b64e(u){var s='';for(var i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)}
-function enc(v){return JSON.stringify(v,function(k,x){if(typeof x==='bigint')return{i64:x.toString()};if(typeof x==='number'&&!isFinite(x))return{f:String(x)};return x})}
+function enc(v){return JSON.stringify(v,function(k,x){if(typeof x==='bigint')return{i64:x.toString()};if(typeof x==='number'&&(!isFinite(x)||(x===0&&1/x<0)))return{f:x===0?'-0':String(x)};return x})}
 function msg(e){return(e&&e.message!==undefined)?((e.name&&e.name!=='Error'?e.name+': ':'')+e.message):String(e)}
 var FEAT={simd:'SIMD128',eh:'exception handling',reftypes:'reference types','return-call':'tail calls',threads:'threads',gc:'GC',memory64:'memory64','extended-const':'extended constant expressions'};
 function hint(e){var s=msg(e),f=/--experimental-wasm-([\w-]+)/.exec(s),n=f?(FEAT[f[1] ]||f[1]):(/<(Exception|Tag)>/.test(s)?FEAT.eh:null);if(!n)return s;var v=/Chrome\/(\d+)/.exec(navigator.userAgent);return s+' [the module uses WebAssembly '+n+', which Chromium '+(v?v[1]:'?')+' does not support: rebuild it for the MVP feature set, e.g. emcc -mcpu=mvp -msign-ext -mnontrapping-fptoint -mbulk-memory -mmutable-globals -sMIN_CHROME_VERSION='+(v?v[1]:'86')+' without -msimd128 / -fwasm-exceptions]'}
@@ -158,7 +161,8 @@ set:function(id,n,v){op(id,function(){var g=ex(n,WebAssembly.Global,'global');g.
 ---
 --- Description of one module export.
 ---
---- `params` / `results` are present for functions when the module type section could be parsed.
+--- `params` / `results` are present for functions when the module type section could be parsed,
+--- never for `Module` functions of an Emscripten glue.
 ---
 ---@class dreamwork.std.WASM.Export
 ---@field name string The export name.
@@ -240,6 +244,8 @@ local function decode_value( value )
             return math_huge
         elseif f == "-Infinity" then
             return -math_huge
+        elseif f == "-0" then
+            return negative_zero
         end
     end
 
@@ -390,7 +396,7 @@ end
 ---@param decoder dreamwork.std.WASM.Decoder
 ---@param method string
 ---@param arguments string Already encoded JS arguments, after the request id.
----@return dreamwork.std.Future
+---@return dreamwork.std.Future<any>
 local function request( wasm, decoder, method, arguments )
     local client = require_client( wasm )
 
@@ -448,7 +454,7 @@ exceptions_hide( encode_value, encode_call, require_client, request )
 ---@class dreamwork.std.WASM : dreamwork.std.Object
 ---@field __class dreamwork.std.WASMClass
 ---@field exports table<string, async fun( ...: any ): ...: any> Async callable proxy: `wasm.exports.add( 2, 3 )` behaves like `wasm:call( "add", 2, 3 )`.
----@field client dreamwork.std.WebClient | nil The hosting `WebClient`, `nil` once closed.
+---@field client ( dreamwork.std.WebClient | nil ) The hosting `WebClient`, `nil` once closed.
 local WASM = class.base( "WASM", true, nil )
 
 ---@type table<string, function>
@@ -522,7 +528,7 @@ function WASM:__represent()
 end
 
 ---@param binary string The raw `.wasm` module bytes, `""` for a `-sSINGLE_FILE` Emscripten glue.
----@param imports ( dreamwork.std.WASM.Imports | string | nil ) Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
+---@param imports ( dreamwork.std.WASM.Imports | string )? Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
 ---@protected
 function WASM:__init( binary, imports )
     ---@type table<string, table<string, boolean | string>>
@@ -739,7 +745,7 @@ end
 ---
 ---@param name string The export name.
 ---@param ... any Arguments: numbers, `BigInteger`s (`i64`), strings or booleans.
----@return dreamwork.std.Future future
+---@return dreamwork.std.Future<any> future
 function WASM:invoke( name, ... )
     return request( self, decode_results, "call", encode_call( name, ... ) )
 end
@@ -779,7 +785,7 @@ end
 --- promises are awaited.
 ---
 ---@param code string The JavaScript code.
----@return dreamwork.std.Future future
+---@return dreamwork.std.Future<any> future
 function WASM:evaluateFuture( code )
     return request( self, decode_first, "eval", json_encode( code ) )
 end
@@ -810,6 +816,7 @@ end
 ---@param length integer The number of bytes.
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return dreamwork.std.Future<string> future
+---@nodiscard
 function WASM:readFuture( offset, length, memory )
     return request( self, decode_bytes, "read", string_format( "%s,%d,%d", encode_memory( memory ), offset, length ) )
 end
@@ -822,6 +829,7 @@ end
 ---@param length integer The number of bytes.
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return string data
+---@nodiscard
 ---@async
 function WASM:read( offset, length, memory )
     return request( self, decode_bytes, "read", string_format( "%s,%d,%d", encode_memory( memory ), offset, length ) ):await()
@@ -834,7 +842,7 @@ end
 ---@param offset integer The byte offset.
 ---@param data string The bytes to write.
 ---@param memory string? The memory export name, defaults to the first exported memory.
----@return dreamwork.std.Future future
+---@return dreamwork.std.Future<nil> future
 function WASM:writeFuture( offset, data, memory )
     return request( self, decode_nothing, "write", string_format( "%s,%d,%s", encode_memory( memory ), offset, json_encode( base64_encode( data ) ) ) )
 end
@@ -857,6 +865,7 @@ end
 ---
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return integer size
+---@nodiscard
 ---@async
 function WASM:getMemorySize( memory )
     return request( self, decode_first, "size", encode_memory( memory ) ):await()
@@ -880,6 +889,7 @@ end
 ---
 ---@param name string The global export name.
 ---@return number | dreamwork.std.BigInteger value
+---@nodiscard
 ---@async
 function WASM:getGlobal( name )
     return request( self, decode_first, "get", json_encode( name ) ):await()
@@ -890,7 +900,7 @@ end
 --- Sets the value of the exported mutable global `name`.
 ---
 ---@param name string The global export name.
----@param value number | dreamwork.std.BigInteger The new value.
+---@param value number | string | dreamwork.std.BigInteger The new value, strings are decimal `i64` values.
 ---@async
 function WASM:setGlobal( name, value )
     request( self, decode_nothing, "set", json_encode( name ) .. "," .. encode_value( value ) ):await()
@@ -930,5 +940,5 @@ end
 ---
 ---@class dreamwork.std.WASMClass : dreamwork.std.WASM, dreamwork.std.Class
 ---@field __base dreamwork.std.WASM
----@overload fun( binary: string, imports: ( dreamwork.std.WASM.Imports | string | nil ) ): dreamwork.std.WASM
+---@overload fun( binary: string, imports: ( dreamwork.std.WASM.Imports | string )? ): dreamwork.std.WASM
 std.WASM = class.create( WASM )

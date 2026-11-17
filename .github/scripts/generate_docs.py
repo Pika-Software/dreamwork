@@ -696,6 +696,30 @@ EVENT_TYPES = {"Event", "Hook"}
 # loader / engine namespaces, documented apart from the package environment
 INTERNAL_ROOTS = {"dreamwork"}
 
+# sidebar categories follow the `std/<dir>/` layout; top level files are "core"
+CATEGORY_TITLES = {
+    "core": "Core",
+    "types": "Types",
+    "checksum": "Checksums",
+    "codec": "Codecs",
+    "compress": "Compression",
+    "crypto": "Cryptography",
+    "db": "Databases",
+    "engine": "Engine",
+    "gfx": "Graphics",
+    "io": "I/O",
+    "lua": "Lua",
+    "net": "Networking",
+    "server": "Server",
+    "internal": "Internal",
+}
+CATEGORY_FIRST = ("core", "types")
+CATEGORY_LAST = ("internal",)
+
+
+def category_title(key: str) -> str:
+    return CATEGORY_TITLES.get(key, key.replace("_", " ").capitalize())
+
 # LuaLS names builtin library classes `<name>lib`, e.g. `stringlib`, `ffilib`
 LUA_LIBRARIES = {
     "bit", "bit32", "buffer", "coroutine", "debug", "ffi", "io", "jit", "math", "os",
@@ -1116,6 +1140,7 @@ class Page:
     href: str
     title: str
     summary: str = ""
+    category: str = ""
 
 
 @dataclass
@@ -1214,13 +1239,98 @@ class Site:
             for f in info.fields:
                 self.symbol_links.setdefault(f"{name}.{f.name}", f"{page.href}#{field_anchor(f.name)}")
 
+        self.assign_categories()
         self.nav_roots = self.build_nav()
         self.order = self.flatten_nav()
+
+    # -- categories -----------------------------------------------------------
+
+    def assign_categories(self) -> None:
+        """Category = `std/<dir>/` of the defining file, `_meta/<dir>/` files count for the same dir.
+
+        Pages without a usable source (hand-written `_meta/x.lua`, `_core`) take the category of
+        the nearest parent page, then of their members, then of their children. A top level file
+        named like a directory (`server.lua` next to `server/`) joins that directory.
+        """
+        sources: dict[str, tuple[str, list[str]]] = {}
+        for name, page in self.pages.items():
+            if page.kind not in ("library", "class", "type"):
+                continue
+
+            info = self.libraries.get(name) if page.kind == "library" else self.classes.get(name)
+            if info is None:
+                continue
+
+            members = getattr(info, "functions", []) + getattr(info, "methods", []) + getattr(info, "statics", []) + info.fields
+            sources[name] = (info.source, [m.source for m in members if m.source])
+
+        known = {src.split("/")[0] for own, members in sources.values() for src in [own, *members]
+                 if "/" in src and not src.startswith("_")}
+
+        def of_source(source: str) -> str | None:
+            parts = source.split("/")
+            if not source or parts[0] == "_core":
+                return None
+
+            if parts[0] == "_meta":
+                return parts[1] if len(parts) > 2 and parts[1] in known else None
+
+            return parts[0] if len(parts) > 1 else "core"
+
+        def majority(values: Iterable[str | None]) -> str | None:
+            counts: dict[str, int] = defaultdict(int)
+            for value in values:
+                if value:
+                    counts[value] += 1
+
+            return max(counts, key=lambda k: (counts[k], k == "core")) if counts else None
+
+        def intrinsic(name: str) -> str | None:
+            own, members = sources.get(name, ("", []))
+            return of_source(own) or majority(of_source(m) for m in members)
+
+        resolved: dict[str, str] = {}
+
+        def resolve(name: str) -> str:
+            if name in resolved:
+                return resolved[name]
+
+            category = "internal" if name.split(".")[0] in INTERNAL_ROOTS else intrinsic(name)
+            if category is None:
+                segments = name.split(".")
+                for depth in range(len(segments) - 1, 0, -1):
+                    parent = ".".join(segments[:depth])
+                    if parent in self.pages and parent in sources:
+                        category = resolve(parent)
+                        break
+
+            if category is None:
+                prefix = name + "."
+                category = majority(intrinsic(child) for child in sources if child.startswith(prefix))
+
+            # `std/server.lua` belongs with `std/server/*`
+            head = name.split(".")[0]
+            if category in (None, "core") and head in known:
+                category = head
+
+            if category is None:
+                category = "core"
+
+            resolved[name] = category
+            return category
+
+        for name in sorted(sources, key=lambda n: n.count(".")):
+            self.pages[name].category = resolve(name)
+
+    def categories(self) -> list[str]:
+        present = {p.category for p in self.pages.values() if p.category}
+        middle = sorted((c for c in present if c not in CATEGORY_FIRST + CATEGORY_LAST), key=category_title)
+        return [c for c in CATEGORY_FIRST if c in present] + middle + [c for c in CATEGORY_LAST if c in present]
 
     # -- navigation -----------------------------------------------------------
 
     def build_nav(self) -> dict[str, list[NavNode]]:
-        roots: dict[str, dict[str, NavNode]] = {"libraries": {}, "classes": {}, "types": {}, "internal": {}}
+        roots: dict[str, dict[str, NavNode]] = {c: {} for c in self.categories()}
 
         def insert(group: dict[str, NavNode], page: Page) -> None:
             parts = page.name.split(".")
@@ -1234,26 +1344,9 @@ class Site:
             assert node is not None
             node.page = page
 
-        def internal(page: Page) -> bool:
-            return page.name.split(".")[0] in INTERNAL_ROOTS
-
         for page in self.pages.values():
-            if page.kind == "library":
-                insert(roots["internal" if internal(page) else "libraries"], page)
-
-        # nested classes go under their library / class when it is in the same tree
-        for page in sorted(self.pages.values(), key=lambda p: p.name.count(".")):
-            if page.kind not in ("class", "type"):
-                continue
-
-            group = "classes" if page.kind == "class" else "types"
-            head = page.name.split(".")[0]
-            if internal(page):
-                insert(roots["internal"], page)
-            elif head in roots["libraries"] and page.kind == "class":
-                insert(roots["libraries"], page)
-            else:
-                insert(roots[group], page)
+            if page.category:
+                insert(roots[page.category], page)
 
         def ordered(mapping: dict[str, NavNode]) -> list[NavNode]:
             nodes = sorted(mapping.values(), key=lambda n: (n.segment[:1].isupper(), n.segment.lower()))
@@ -1274,8 +1367,8 @@ class Site:
 
                 walk(node.children.values())
 
-        for group in ("libraries", "classes", "types", "internal"):
-            walk(self.nav_roots[group])
+        for nodes in self.nav_roots.values():
+            walk(nodes)
 
         if "@aliases" in self.pages:
             order.append(self.pages["@aliases"])
@@ -1710,10 +1803,12 @@ class Renderer:
             f'{single(self.site.pages.get("@aliases"), "Aliases")}'
             "</ul></div>"
         ]
-        for key, title in (("libraries", "Libraries"), ("classes", "Classes"), ("types", "Types"), ("internal", "Internal")):
-            nodes = self.site.nav_roots[key]
+        for key, nodes in self.site.nav_roots.items():
             if nodes:
-                groups.append(f'<div class="nav-group"><div class="nav-title">{title}</div><ul class="nav-tree">{render(nodes)}</ul></div>')
+                groups.append(
+                    f'<div class="nav-group"><a class="nav-title" href="{escape(base)}index.html#cat-{key}">{escape(category_title(key))}</a>'
+                    f'<ul class="nav-tree">{render(nodes)}</ul></div>'
+                )
 
         return "".join(groups)
 
@@ -1801,6 +1896,10 @@ class Renderer:
 
     def crumbs(self, name: str, base: str, kind: str) -> str:
         parts = [f'<a href="{base}index.html">Docs</a>']
+        page = self.site.pages.get(name)
+        if page is not None and page.category:
+            parts.append(f'<a href="{base}index.html#cat-{page.category}">{escape(category_title(page.category))}</a>')
+
         segments = name.split(".")
         for depth in range(1, len(segments)):
             prefix = ".".join(segments[:depth])
@@ -2265,6 +2364,40 @@ class Renderer:
         functions = sum(1 for e in self.search if e["k"] in ("function", "method", "static"))
 
         globals_card = self.cards(["_G"], base) if "_G" in site.pages else ""
+
+        # per category: libraries and classes that are not nested under another page of the same category
+        def headline(page: Page) -> bool:
+            if page.kind not in ("library", "class"):
+                return False
+
+            segments = page.name.split(".")
+            for depth in range(len(segments) - 1, 0, -1):
+                parent = site.pages.get(".".join(segments[:depth]))
+                if parent is not None and parent.category == page.category:
+                    return False
+
+            return True
+
+        sections, toc = [], []
+        for category in site.categories():
+            members = [p for p in site.pages.values() if p.category == category]
+            names = sorted((p.name for p in members if headline(p)),
+                           key=lambda n: (site.pages[n].kind != "library", n.lower()))
+            counts = defaultdict(int)
+            for member in members:
+                counts[member.kind] += 1
+
+            stats = ", ".join(f"{counts[k]} {one if counts[k] == 1 else many}" for k, one, many in
+                              (("library", "library", "libraries"), ("class", "class", "classes"), ("type", "type", "types"))
+                              if counts[k])
+            title = category_title(category)
+            sections.append(
+                f'<h2 id="cat-{category}">{escape(title)} <span class="cat-count">{stats}</span></h2>'
+                f"{self.cards(names, base)}"
+            )
+            toc.append(TocEntry(f"cat-{category}", title))
+
+        sections = "\n".join(sections)
         body = f"""
 <div class="hero">
   <h1>dreamwork API</h1>
@@ -2284,14 +2417,10 @@ Every entry shows the realms it is available in:
 <p>Press <kbd>Ctrl</kbd> <kbd>K</kbd> or <kbd>/</kbd> to search.</p>
 </div>
 {globals_card}
-<h2 id="libraries">Libraries</h2>
-{self.cards(top_libs, base)}
-<h2 id="classes">Classes</h2>
 <div class="prose"><p>Classes inherit from <code>Object</code> and are created by calling the class table, e.g. <code>Queue()</code>.</p></div>
-{self.cards(classes, base)}
+{sections}
 """
-        self.write(None, "index.html", "API", body,
-                   [TocEntry("libraries", "Libraries"), TocEntry("classes", "Classes")])
+        self.write(None, "index.html", "API", body, toc)
 
     def not_found_page(self, base_path: str) -> None:
         # GitHub Pages serves 404.html for a missing path at any depth, so links are site absolute
@@ -2573,7 +2702,8 @@ kbd {
 
 /* navigation */
 .nav-group { margin-bottom: 1rem; }
-.nav-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); padding: 0.35rem 0.5rem; }
+.nav-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); padding: 0.35rem 0.5rem; display: block; text-decoration: none; }
+.nav-title:hover { color: var(--text); }
 .nav-tree { list-style: none; margin: 0; padding: 0; }
 .nav-tree .nav-tree { margin-left: 0.75rem; padding-left: 0.3rem; border-left: 1px solid var(--border); }
 .nav-item:not(.open) > .nav-tree { display: none; }
@@ -2609,6 +2739,7 @@ kbd {
 .crumb-kind { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--accent); margin-right: 0.4rem; }
 h1 { font-size: 2.1rem; line-height: 1.2; letter-spacing: -0.025em; margin: 0 0 0.6rem; font-weight: 700; word-break: break-word; }
 h2 { font-size: 1.4rem; letter-spacing: -0.015em; margin: 2.6rem 0 0.9rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); font-weight: 650; }
+.cat-count { font-size: 0.8rem; font-weight: 400; color: var(--text-muted); margin-left: 0.4rem; letter-spacing: 0; }
 h3 { font-size: 1.05rem; margin: 0; font-family: var(--font-mono); font-weight: 600; word-break: break-word; }
 .page-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 1rem; }
 .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--bg-code); color: var(--text-muted); border: 1px solid var(--border); line-height: 1.5; }
