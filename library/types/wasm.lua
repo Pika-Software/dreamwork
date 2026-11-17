@@ -34,7 +34,8 @@ WASMError = {}
 ---
 --- Description of one module export.
 ---
---- `params` / `results` are present for functions when the module type section could be parsed.
+--- `params` / `results` are present for functions when the module type section could be parsed,
+--- never for `Module` functions of an Emscripten glue.
 ---
 ---@class WASM.Export
 ---@field name string The export name.
@@ -77,7 +78,7 @@ WASMError = {}
 ---@class WASM : Object
 ---@field __class WASMClass
 ---@field exports table<string, async fun( ...: any ): ...: any> Async callable proxy: `wasm.exports.add( 2, 3 )` behaves like `wasm:call( "add", 2, 3 )`.
----@field client WebClient | nil The hosting `WebClient`, `nil` once closed.
+---@field client ( WebClient | nil ) The hosting `WebClient`, `nil` once closed.
 local __WASM = {}
 
 ---@param key string
@@ -90,7 +91,7 @@ function __WASM:__index(key) end
 function __WASM:__represent() end
 
 ---@param binary string The raw `.wasm` module bytes, `""` for a `-sSINGLE_FILE` Emscripten glue.
----@param imports ( WASM.Imports | string | nil ) Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
+---@param imports ( WASM.Imports | string )? Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
 ---@protected
 function __WASM:__init(binary, imports) end
 
@@ -152,7 +153,7 @@ function __WASM:getExport(name) end
 ---
 ---@param name string The export name.
 ---@param ... any Arguments: numbers, `BigInteger`s (`i64`), strings or booleans.
----@return Future future
+---@return Future<any> future
 function __WASM:invoke(name, ...) end
 
 --- [CLIENT AND MENU]
@@ -180,7 +181,7 @@ function __WASM:call(name, ...) end
 --- promises are awaited.
 ---
 ---@param code string The JavaScript code.
----@return Future future
+---@return Future<any> future
 function __WASM:evaluateFuture(code) end
 
 --- [CLIENT AND MENU]
@@ -207,6 +208,7 @@ function __WASM:evaluate(code) end
 ---@param length integer The number of bytes.
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return Future<string> future
+---@nodiscard
 function __WASM:readFuture(offset, length, memory) end
 
 --- [CLIENT AND MENU]
@@ -217,6 +219,7 @@ function __WASM:readFuture(offset, length, memory) end
 ---@param length integer The number of bytes.
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return string data
+---@nodiscard
 ---@async
 function __WASM:read(offset, length, memory) end
 
@@ -227,7 +230,7 @@ function __WASM:read(offset, length, memory) end
 ---@param offset integer The byte offset.
 ---@param data string The bytes to write.
 ---@param memory string? The memory export name, defaults to the first exported memory.
----@return Future future
+---@return Future<nil> future
 function __WASM:writeFuture(offset, data, memory) end
 
 --- [CLIENT AND MENU]
@@ -246,6 +249,7 @@ function __WASM:write(offset, data, memory) end
 ---
 ---@param memory string? The memory export name, defaults to the first exported memory.
 ---@return integer size
+---@nodiscard
 ---@async
 function __WASM:getMemorySize(memory) end
 
@@ -265,6 +269,7 @@ function __WASM:growMemory(pages, memory) end
 ---
 ---@param name string The global export name.
 ---@return number | BigInteger value
+---@nodiscard
 ---@async
 function __WASM:getGlobal(name) end
 
@@ -273,7 +278,7 @@ function __WASM:getGlobal(name) end
 --- Sets the value of the exported mutable global `name`.
 ---
 ---@param name string The global export name.
----@param value number | BigInteger The new value.
+---@param value number | string | BigInteger The new value, strings are decimal `i64` values.
 ---@async
 function __WASM:setGlobal(name, value) end
 
@@ -304,5 +309,5 @@ function __WASM:close() end
 ---
 ---@class WASMClass : WASM, Class
 ---@field __base WASM
----@overload fun( binary: string, imports: ( WASM.Imports | string | nil ) ): WASM
+---@overload fun( binary: string, imports: ( WASM.Imports | string )? ): WASM
 WASM = {}
