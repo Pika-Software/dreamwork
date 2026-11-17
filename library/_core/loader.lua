@@ -1,8 +1,6 @@
 ---@meta _
 
---- The global environment of Lua.
----
----@type table
+---@type dreamwork.std
 _G = nil
 
 --- The registry of Lua.
@@ -364,13 +362,6 @@ function ipairs(t) end
 ---@return integer start The initial value, passed to the iterator on the first call.
 ---@nodiscard
 function range(from, to, step) end
-
---- [SHARED AND MENU]
----
---- The global environment table (outside of DreamWork).
----
----@type _G
-_G = nil
 
 --- [SHARED AND MENU]
 ---

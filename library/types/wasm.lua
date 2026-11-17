@@ -65,7 +65,14 @@ WASMError = {}
 --- are fire-and-forget, the bridge cannot return a value to WebAssembly synchronously, so they act
 --- as `undefined` (`0` for numeric results, a trap for `i64`).
 ---
+--- Emscripten builds that need their JS glue (Embind, `-sMODULARIZE`, classic or `-sEXPORT_ES6`) load by
+--- passing the glue source instead of `imports`; `exports` then also lists the `Module` functions
+--- (Embind functions, `_name` wrappers), and `evaluate` reaches anything else, e.g. Embind classes.
+---
 --- Requires the x86-64 (Chromium) branch of Garry's Mod, Awesomium has no WebAssembly.
+--- Its Chromium 86 has no SIMD128, Wasm exceptions or reference types: modules must be built
+--- for the MVP feature set (+ sign-ext, non-trapping float-to-int, bulk memory, mutable globals),
+--- a compile error names the missing feature.
 ---
 ---@class WASM : Object
 ---@field __class WASMClass
@@ -82,22 +89,16 @@ function __WASM:__index(key) end
 ---@protected
 function __WASM:__represent() end
 
----@param binary string The raw `.wasm` module bytes.
----@param imports WASM.Imports? Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`.
+---@param binary string The raw `.wasm` module bytes, `""` for a `-sSINGLE_FILE` Emscripten glue.
+---@param imports ( WASM.Imports | string | nil ) Import object, `{ env = { log = function( x ) end, now = "() => Date.now()" } }`, or the source of the Emscripten JS glue that builds them.
 ---@protected
 function __WASM:__init(binary, imports) end
 
---- Closes the hosting client when the object is collected.
----
 ---@protected
 function __WASM:__gc() end
 
---- [CLIENT AND MENU]
----
---- Returns `true` while the hosting client is alive.
----
 ---@return boolean is_valid
----@nodiscard
+---@protected
 function __WASM:__isvalid() end
 
 --- [CLIENT AND MENU]
@@ -169,6 +170,34 @@ function __WASM:invoke(name, ...) end
 ---@return any ... The results, multi-value returns are unpacked.
 ---@async
 function __WASM:call(name, ...) end
+
+--- [CLIENT AND MENU]
+---
+--- Evaluates JavaScript in the page and returns a `Future` with its JSON-compatible result.
+---
+--- `code` is an expression or, if it is not one, a function body (`return` the result);
+--- `Module` (Emscripten glue only) and `exports` (the raw instance exports) are in scope,
+--- promises are awaited.
+---
+---@param code string The JavaScript code.
+---@return Future future
+function __WASM:evaluateFuture(code) end
+
+--- [CLIENT AND MENU]
+---
+--- Evaluates JavaScript in the page and waits for its JSON-compatible result.
+---
+--- ```lua
+--- futures.run( function()
+---     wasm:evaluate( "globalThis.world = new Module.SteamAudioWorld( Module.defaultWorldConfig() ), 0" )
+---     print( wasm:evaluate( "world.addSource( 1, 2, 3 )" ) )
+--- end )
+--- ```
+---
+---@param code string The JavaScript code: an expression, or a function body that `return`s; `Module` and `exports` are in scope.
+---@return any result
+---@async
+function __WASM:evaluate(code) end
 
 --- [CLIENT AND MENU]
 ---
@@ -275,5 +304,5 @@ function __WASM:close() end
 ---
 ---@class WASMClass : WASM, Class
 ---@field __base WASM
----@overload fun( binary: string, imports: WASM.Imports? ): WASM
+---@overload fun( binary: string, imports: ( WASM.Imports | string | nil ) ): WASM
 WASM = {}
