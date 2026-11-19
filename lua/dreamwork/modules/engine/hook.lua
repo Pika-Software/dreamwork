@@ -24,6 +24,7 @@ local string_format = string.format
 local table = std.table
 local table_sort = table.sort
 
+local pcall = std.pcall
 local loadstring = std.loadstring
 
 local LUA_SERVER = std.LUA_SERVER
@@ -163,6 +164,23 @@ do
     ---@type table<integer, fun( handlers: dreamwork.engine.hook.Handler[], ...: any )>
     local simple_handlers = {}
 
+    local dispatch_template = string.unindentLines( [[
+        return function( handlers%s )
+            for i = 1, handlers[ 0 ], 1 do
+                handlers[ i ]( %s )
+            end
+        end
+    ]], 8 )
+
+    local fallback_dispatcher = function( handlers, ... )
+        for i = 1, handlers[ 0 ], 1 do
+            handlers[ i ]( ... )
+        end
+    end
+
+    --- a simple empty table for created handlers
+    local empty_env = {}
+
     --- Returns a dispatcher that passes exactly `argument_count` arguments to every handler and returns nothing.
     ---
     --- Dispatchers are compiled with named parameters instead of varargs and cached per argument count.
@@ -181,13 +199,17 @@ do
             arguments = arguments .. (i == 1 and "a1" or ", a" .. i)
         end
 
-        dispatcher = loadstring( string_format( [[
-        return function( handlers%s )
-            for i = 1, handlers[ 0 ], 1 do
-                handlers[ i ]( %s )
-            end
+        local success, result = pcall( loadstring,
+            string_format( dispatch_template, argument_count == 0 and "" or ", " .. arguments, arguments ),
+            "=dreamwork.engine.hook.simple_handler(" .. argument_count .. ")",
+            empty_env
+        )
+
+        if success then
+            dispatcher = result()
+        else
+            dispatcher = fallback_dispatcher
         end
-    ]], argument_count == 0 and "" or ", " .. arguments, arguments ), "=dreamwork.engine.hook.simple_handler(" .. argument_count .. ")", {} )()
 
         simple_handlers[ argument_count ] = dispatcher
         return dispatcher
@@ -211,6 +233,7 @@ local handler_five = simple_handler( 5 )
 local event_handlers = {
     -- engine
     [ "GameContentChanged" ] = handler_empty,
+    [ "ShutDown" ] = handler_empty,
     [ "Think" ] = handler_empty,
     [ "Tick" ] = handler_empty,
 
@@ -238,8 +261,6 @@ local event_handlers = {
     [ "server_cvar" ] = handler_one,
     [ "server_removeban" ] = handler_one,
 
-    -- dreamwork
-
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@return integer total_game_changes
     ---@return integer total_addon_changes
@@ -262,7 +283,7 @@ local event_handlers = {
         end
 
         return total_game_changes, total_addon_changes
-    end,
+    end
 }
 
 ---@param handlers dreamwork.engine.hook.Handler[]
@@ -581,22 +602,14 @@ if LUA_CLIENT or LUA_SERVER then
     event_handlers[ "dreamwork.client.registry" ] = handler_two
 
 
-    -- player
-
     -- ( ply: garrysmod.Player, cmd: garrysmod.UserCommand )
     event_handlers[ "StartCommand" ] = handler_two
-
-
-    -- engine
-    event_handlers[ "ShutDown" ] = handler_empty
 
 
     -- save/load system
     event_handlers[ "Restored" ] = handler_empty
     event_handlers[ "Saved" ]    = handler_empty
 
-
-    -- gamemode
 
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@param name string

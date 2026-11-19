@@ -16,11 +16,11 @@
 ---
 --- Parameters:
 --- - `command`: the command that was executed.
---- - `client`: the player who executed the command, `nil` when executed from the server console.
+--- - `client`: the client who executed the command, `nil` when executed from the server console and in the menu.
 --- - `args`: the parsed arguments.
 --- - `argument_string`: the raw argument string typed after the command name (surrounding quotes are stripped).
 ---
----@alias dreamwork.std.console.Command.Callback fun( command: dreamwork.std.console.Command, client: garrysmod.Player | nil, args: string[], argument_string: string )
+---@alias dreamwork.std.console.Command.Callback fun( command: dreamwork.std.console.Command, client: dreamwork.std.Client | nil, args: string[], argument_string: string )
 
 ---
 --- Simple autocomplete callback.

@@ -1,21 +1,18 @@
 local HolyLib = HolyLib
 local glua_os = os
 
-local SysTime = SysTime
-local CurTime = CurTime
-
 ---@class dreamwork.std
 local std = dreamwork.std
-
 local debug = std.debug
+
 
 --- [SHARED AND MENU]
 ---
---- This library is implemented through table `os`.
+--- The os library, a GMod-safe subset of Lua's [os](http://www.lua.org/manual/5.1/manual.html#pdf-os).
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os)
 ---
----@class dreamwork.std.os
+---@class dreamwork.std.os : oslib
 local os = {
     clock = glua_os.clock,
     difftime = glua_os.difftime,
@@ -34,20 +31,20 @@ if os.clock == nil then
         local int = 0
 
         function os.clock()
-            int = int + 1
+            int = int + 1 -- well, we cooked
             return int
         end
     end
+end
+
+if os.time == nil then
+    os.time = os.clock
 end
 
 if os.difftime == nil then
     function os.difftime( a, b )
         return a - b
     end
-end
-
-if os.time == nil then
-    os.time = CurTime or function() return 0 end
 end
 
 if os.date == nil then

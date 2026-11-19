@@ -1273,41 +1273,49 @@ do
 
     if compiler == nil then
         compiler, handle_error = loadstring, "t"
-
         if compiler == nil then
             compiler, native_env = load, true
+            if compiler == nil then
+                function compiler()
+                    return "Lua compiler is missing"
+                end
+            end
         end
     end
 
-    --- [SHARED AND MENU]
-    ---
-    --- Loads a string as a lua code chunk in the specified
-    --- environment and returns new function as a compile result.
-    ---
-    ---@param lua_code string The lua code chunk.
-    ---@param chunk_name string | nil The lua code chunk name.
-    ---@param env table | nil The environment of compiled function.
-    ---@return function fn The compiled function.
-    ---@nodiscard
-    function std.loadstring( lua_code, chunk_name, env )
-        if env == nil then
-            env = getfenv( 2 )
-        end
+    if compiler ~= nil then
 
-        ---@diagnostic disable-next-line: param-type-mismatch
-        local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
-        if isFunction( fn ) then
-            ---@cast fn function
-
-            if not native_env then
-                setfenv( fn, env )
+        --- [SHARED AND MENU]
+        ---
+        --- Loads a string as a lua code chunk in the specified
+        --- environment and returns new function as a compile result.
+        ---
+        ---@param lua_code string The lua code chunk.
+        ---@param chunk_name string | nil The lua code chunk name.
+        ---@param env table | nil The environment of compiled function.
+        ---@return function fn The compiled function.
+        ---@nodiscard
+        function std.loadstring( lua_code, chunk_name, env )
+            if env == nil then
+                env = getfenv( 2 )
             end
 
-            return fn
+            ---@diagnostic disable-next-line: param-type-mismatch
+            local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
+            if isFunction( fn ) then
+                ---@cast fn function
+
+                if not native_env then
+                    setfenv( fn, env )
+                end
+
+                return fn
+            end
+
+            ---@cast fn string | nil
+            error( err_msg or fn or "lua code compilation failed", 2 )
         end
 
-        ---@cast fn string | nil
-        error( err_msg or fn or "lua code compilation failed", 2 )
     end
 
 end

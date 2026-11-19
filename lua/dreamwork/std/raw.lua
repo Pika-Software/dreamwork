@@ -3,34 +3,35 @@ local std = dreamwork.std
 
 --- [SHARED AND MENU]
 ---
---- Library containing functions for working with raw data. (ignoring metatables)
+--- The raw library, low-level Lua primitives and table access that skips metamethods.
+---
+--- Holds bootstrap copies of core builtins (`assert`, `error`, `tostring`,
+--- `tonumber`, `ipairs`, `pairs`, `print`, `select`) plus true raw accessors:
+--- `get` / `set` / `len` / `equal` (`rawget` / `rawset` / `rawlen` / `rawequal`),
+--- and the `inext` / `next` iterators. Also hosts `raw.bit`, the native 32-bit
+--- integer bit library used under `std.bit`.
 ---
 ---@class dreamwork.std.raw
-local raw = std.raw
+local raw = {
+    assert = assert,
+    error = error,
 
-if raw == nil then
-    ---@class dreamwork.std.raw
-    raw = {
-        assert = assert,
-        error = error,
+    tostring = tostring,
+    tonumber = tonumber,
 
-        tostring = tostring,
-        tonumber = tonumber,
+    ipairs = ipairs,
+    pairs = pairs,
 
-        ipairs = ipairs,
-        pairs = pairs,
+    equal = rawequal,
 
-        equal = rawequal,
+    get = rawget,
+    set = rawset,
+    len = rawlen,
 
-        get = rawget,
-        set = rawset,
-        len = rawlen,
+    print = print
+}
 
-        print = print
-    }
-
-    std.raw = raw
-end
+std.raw = raw
 
 if raw.len == nil then
 

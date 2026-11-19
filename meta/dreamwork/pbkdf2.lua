@@ -5,7 +5,7 @@
 ---
 --- The options for the pbkdf2 function.
 ---
----@class dreamwork.std.pbkdf2.Options
+---@class dreamwork.std.crypto.pbkdf2.Options
 local options = {}
 
 ---

@@ -14,28 +14,22 @@ local error = std.error
 
 --- [SHARED AND MENU]
 ---
---- The debug library is intended to help you debug your scripts,
---- however it also has several other powerful uses.
----
----@class dreamwork.std.debug : debuglib
---- [SHARED AND MENU]
----
 --- Just empty function, do nothing.
 ---
 --- Sometimes makes jit happy :>
 ---
----@field fempty fun()
+local function debug_fempty() end
+
 --- [SHARED AND MENU]
 ---
---- Sets the metatable for the given value to the given table (which can be `nil`).
+--- The debug library is intended to help you debug your scripts,
+--- however it also has several other powerful uses.
 ---
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
----
----@field setmetatable fun( object: any, metatable: ( metatable | nil ) )
+---@class dreamwork.std.debug : debuglib
 local debug = {
     -- LuaJIT
     newproxy = newproxy,
-    fempty = function() end, -- yep, it's literally empty function
+    fempty = debug_fempty, -- yep, it's literally empty function
 
     -- Lua 5.1
     debug = glua_debug.debug, -- dont answer me
@@ -50,8 +44,8 @@ local debug = {
     getmetatable = glua_debug.getmetatable or std.getmetatable,
     setmetatable = glua_debug.setmetatable,
 
-    getupvalue = glua_debug.getupvalue, -- fucked up in menu
-    setupvalue = glua_debug.setupvalue, -- fucked up in menu
+    getupvalue = glua_debug.getupvalue or debug_fempty, -- fucked up in menu
+    setupvalue = glua_debug.setupvalue or debug_fempty, -- fucked up in menu
 
     ---@diagnostic disable-next-line: deprecated
     getfenv = glua_debug.getfenv or getfenv,
@@ -63,11 +57,11 @@ local debug = {
     sethook = glua_debug.sethook,
 
     -- Lua 5.2/jit
-    upvalueid = glua_debug.upvalueid,       -- fucked up in menu
-    upvaluejoin = glua_debug.upvaluejoin,   -- fucked up in menu
+    upvalueid = glua_debug.upvalueid or debug_fempty,       -- fucked up in menu
+    upvaluejoin = glua_debug.upvaluejoin or debug_fempty,   -- fucked up in menu
 
-    getuservalue = glua_debug.getuservalue, -- fucked up in menu
-    setuservalue = glua_debug.setuservalue, -- fucked up in menu
+    getuservalue = glua_debug.getuservalue or debug_fempty, -- fucked up in menu
+    setuservalue = glua_debug.setuservalue or debug_fempty, -- fucked up in menu
 }
 
 std.debug = debug
@@ -77,7 +71,6 @@ if debug.getmetatable == nil or debug.setmetatable == nil or debug.getinfo == ni
 end
 
 local debug_getinfo = debug.getinfo
-local debug_fempty = debug.fempty
 
 --- [SHARED AND MENU]
 ---
@@ -88,36 +81,6 @@ local debug_fempty = debug.fempty
 ---@return any ... The result of execution.
 function debug.fcall( f, ... )
     return f( ... )
-end
-
-if debug.newproxy == nil or (_HOLYLIB_RUN_NUMBER ~= nil and (raw_tonumber( _HOLYLIB_RUN_NUMBER ) or 0) < 5952) then
-
-    local setmetatable = std.setmetatable
-
-    function debug.newproxy( add_metatable )
-        local fake_userdata = {}
-
-        if add_metatable then
-            ---@type metatable | nil
-            local metatable
-
-            if add_metatable == true then
-                metatable = {}
-            else
-                metatable = debug.getmetatable( add_metatable )
-            end
-
-            setmetatable( fake_userdata, metatable )
-        end
-
-        ---@diagnostic disable-next-line: cast-type-mismatch
-        ---@cast fake_userdata userdata
-
-        return fake_userdata
-    end
-
-    raw.print( "newproxy is missing or broken, fallback created!" )
-
 end
 
 do

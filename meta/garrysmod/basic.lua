@@ -428,6 +428,19 @@ function RunGameUICommand( command ) end
 ---@return number time (in seconds)
 function FrameTime() end
 
+--- [CLIENT]
+---
+--- Returns whether the client is timing out, and how long since the last ping from the server.
+---
+--- Similar to the server-side [Player:IsTimingOut](https://wiki.facepunch.com/gmod/Player:IsTimingOut).
+---
+--- [View documents](https://wiki.facepunch.com/gmod/Global.GetTimeoutInfo)
+---
+---@return boolean is_timing_out `true` if the client is timing out.
+---@return number time_since_ping Time in seconds since the last ping was received from the server.
+---@nodiscard
+function GetTimeoutInfo() end
+
 --- Where [PrintMessage](https://wiki.facepunch.com/gmod/Global.PrintMessage) / [Player:PrintMessage](https://wiki.facepunch.com/gmod/Player:PrintMessage) displays the text ([Enums/HUD](https://wiki.facepunch.com/gmod/Enums/HUD)).
 ---
 ---@alias garrysmod.PrintMessageType

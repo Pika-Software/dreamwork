@@ -4,3 +4,6 @@ todos.md
 caddy
 compose.yml
 .github/scripts/__pycache__
+
+tests/
+lua/dreamwork/steamaudio.lua

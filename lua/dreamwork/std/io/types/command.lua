@@ -38,6 +38,7 @@ local tostring = std.tostring
 
 local Emitter = std.Emitter
 
+
 ---@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, string>
 local names = {}
 gc_setTableRules( names, true, false )

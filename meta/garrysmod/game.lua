@@ -321,10 +321,8 @@ function game.IsDedicated() end
 ---
 --- Kicks a player from the server. This can be ran before the player has spawned.
 ---
----@param id string The `Player:UserID`, `Player:SteamID` or `Player:SteamID64` of the player to kick, uses SteamID32 e.g. `STEAM_0:0:00000000`.
----@param reason string? The reason to display to the player, this can span across multiple lines.
---- This will be shortened to ~512 chars, though this includes the command itself and the player index so it will realistically be more around ~483.
---- It is recommended to avoid going near the limit to avoid truncation.
+---@param id integer | string The `Player:UserID`, `Player:SteamID` or `Player:SteamID64` of the player to kick, uses SteamID32 e.g. `STEAM_0:0:00000000`.
+---@param reason string? The reason to display to the player, this can span across multiple lines. This will be shortened to ~512 chars, though this includes the command itself and the player index so it will realistically be more around ~483. It is recommended to avoid going near the limit to avoid truncation.
 function game.KickID( id, reason ) end
 
 --- [SERVER]

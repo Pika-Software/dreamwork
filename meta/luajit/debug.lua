@@ -326,7 +326,7 @@ function debug.setlocal( thread, level, index, value ) end
 ---
 ---@generic T
 ---@param value T The value to set the metatable of.
----@param meta table? The new metatable, or `nil` to remove it.
+---@param meta ( metatable | table | nil ) The new metatable, or `nil` to remove it.
 ---@return T value The given `value`.
 function debug.setmetatable( value, meta ) end
 

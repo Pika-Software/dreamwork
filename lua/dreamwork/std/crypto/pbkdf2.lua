@@ -31,7 +31,7 @@ local hmac_digestWithPads = hmac.digestWithPads
 ---
 --- See [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2) for the algorithm.
 ---
----@param options dreamwork.std.pbkdf2.Options
+---@param options dreamwork.std.crypto.pbkdf2.Options
 ---@return string pbkdf2_str The derived key as a binary string of `length` bytes.
 ---@nodiscard
 function crypto.pbkdf2( options )
