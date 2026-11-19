@@ -2,8 +2,12 @@
 
 --- [SHARED AND MENU]
 ---
---- Provides utility functions for selecting, accessing, modifying, slicing,
---- packing, and unpacking variable-length argument lists.
+--- The vararg library, utilities for working with `...` without losing `nil`s.
+---
+--- Select and index with `select` / `get` / `set` (negative indexes count from
+--- the end), take a range with `slice`, flip with `reverse`, map each value
+--- with `map`, and join with `concat`. `pack` stores the count at index `0` so
+--- holes survive, and `unpack` restores that table to an argument list.
 ---
 ---@class vararg
 vararg = {}

@@ -2,7 +2,7 @@
 
 --- [SHARED AND MENU]
 ---
---- This library is implemented through table `os`.
+--- The os library, a GMod-safe subset of Lua's [os](http://www.lua.org/manual/5.1/manual.html#pdf-os).
 ---
 --- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-os)
 ---

@@ -1,10 +1,19 @@
 ---@meta _
 
+--- A packed 24-bit RGB color as an integer: `0xRRGGBB`
+--- ( red in bits 16-23, green in 8-15, blue in 0-7 ). No alpha channel.
+---
 ---@alias Color integer
 
 --- [SHARED AND MENU]
 ---
---- Library for color manipulation.
+--- The color library, packed `0xRRGGBB` integers for RGB color math and conversion.
+---
+--- Colors are plain integers ( see `Color` ), not tables: create them
+--- with `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB` or `fromCMYK`, and
+--- unpack with the matching `to*` functions. Channel arithmetic (`add`, `sub`,
+--- `mul`, `div`, `lerp`, `invert`) and HSL/HSV/HWB getters/setters operate
+--- per-component and return a new packed color.
 ---
 ---@class color
 color = {}

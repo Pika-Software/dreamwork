@@ -6,24 +6,16 @@
 --- however it also has several other powerful uses.
 ---
 ---@class debuglib
+debug = {}
+
+debug.newproxy = newproxy
+
 --- [SHARED AND MENU]
 ---
 --- Just empty function, do nothing.
 ---
 --- Sometimes makes jit happy :>
 ---
----@field fempty fun()
---- [SHARED AND MENU]
----
---- Sets the metatable for the given value to the given table (which can be `nil`).
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-debug.setmetatable)
----
----@field setmetatable fun( object: any, metatable: ( metatable | nil ) )
-debug = {}
-
-debug.newproxy = newproxy
-
 function debug.fempty() end
 
 --- [SHARED AND MENU]

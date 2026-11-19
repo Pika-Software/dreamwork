@@ -2,11 +2,14 @@
 
 --- [SHARED AND MENU]
 ---
---- Library containing functions for working with raw data. (ignoring metatables)
+--- The raw library, low-level Lua primitives and table access that skips metamethods.
 ---
----@class raw
-raw = {}
-
+--- Holds bootstrap copies of core builtins (`assert`, `error`, `tostring`,
+--- `tonumber`, `ipairs`, `pairs`, `print`, `select`) plus true raw accessors:
+--- `get` / `set` / `len` / `equal` (`rawget` / `rawset` / `rawlen` / `rawequal`),
+--- and the `inext` / `next` iterators. Also hosts `raw.bit`, the native 32-bit
+--- integer bit library used under `bit`.
+---
 ---@class raw
 raw = {}
 

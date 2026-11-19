@@ -2,15 +2,19 @@
 
 --- [SHARED AND MENU]
 ---
---- The string type is a sequence of characters.
+--- The string library, Lua's standard string ops plus dreamwork byte-oriented helpers.
 ---
---- The string library is a standard Lua library which provides functions for the manipulation of strings.
+--- Strings are immutable byte sequences. Keeps the usual `find` / `gsub` / `sub` /
+--- `format` / etc., and adds prefix/suffix checks, insert/remove/pad/trim, split and
+--- extract, byte search (`findByte`, `containsByte`), counting, pattern escaping
+--- via `PatternBytes`, interpolation, and pack/unpack of byte arrays.
 ---
---- In dreamwork string library contains additional functions.
+--- Lengths and positions are in bytes unless a function says otherwise; for display
+--- width and Unicode code points see `unicode` / `utf8`.
 ---
 ---@class stringlib
----@field buffer string.bufferlib | nil The string buffer library allows high-performance manipulation of string-like data.
----@field PatternBytes table<integer, string>
+---@field buffer string.bufferlib | nil High-performance mutable string buffer (`string.buffer`), or `nil` if unavailable.
+---@field PatternBytes table<integer, string> Maps Lua pattern-special bytes to their escaped `%…` forms for `escapePattern`.
 string = {}
 
 --- A table of bytes that map to pattern sequences.

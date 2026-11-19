@@ -5,7 +5,7 @@
 ---
 --- The options for the pbkdf2 function.
 ---
----@class pbkdf2.Options
+---@class crypto.pbkdf2.Options
 local options = {}
 
 ---

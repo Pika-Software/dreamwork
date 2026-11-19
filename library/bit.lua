@@ -2,7 +2,17 @@
 
 --- [SHARED AND MENU]
 ---
---- The bit library.
+--- The bit library, 32-bit integer bitwise operations with metamethod support.
+---
+--- Wraps `raw.bit` and, when the left operand defines a matching metamethod
+--- (`__bor`, `__bxor`, `__band`, `__bnot`, `__shl`, `__shr`, `__shar`, `__brol`,
+--- `__bror`, `__bswp`), dispatches to that instead of the raw integer path.
+--- When native bit operators are available (`raw.bit.operators`), the core ops
+--- are taken from `raw.bit` directly and skip metamethod lookup.
+---
+--- Beyond the usual `bor` / `band` / shifts, this also provides field extract/replace,
+--- bit reverse, leading/trailing zero counts, width, mux/maj helpers, and
+--- signed/unsigned conversion.
 ---
 ---@class bitlib
 bit = {}

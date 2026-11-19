@@ -2,8 +2,17 @@
 
 --- [SHARED AND MENU]
 ---
---- This library provides Python-like futures for asynchronous programming,
---- such as `Futures`, `Tasks`, `Channels`, and async iterators.
+--- The futures library, Python-like async primitives on top of coroutines.
+---
+--- Bridge sync and async code with `run` (spawn an async function and get a
+--- callback), park a coroutine with `pending` / `wakeup`, cancel it with
+--- `cancel` / `isCancel`, and sleep with `sleep`. Awaitables can be raced or
+--- gathered with `any` / `all`.
+---
+--- Async iterators use `yield` inside a producer and `apairs` / `anext` /
+--- `collect` / `collectTable` on the consumer side. Related types live on
+--- `std`: `Future` (manual result/error), `Task` (Future that immediately runs
+--- an async function), and `Channel` (bounded queue between coroutines).
 ---
 --- Author: [Retr0](https://github.com/dankmolot)
 ---

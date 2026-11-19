@@ -2,7 +2,16 @@
 
 --- [SHARED AND MENU]
 ---
---- The table library is a standard Lua library which provides functions to manipulate tables.
+--- The table library, Lua's standard table ops plus dreamwork sequence and map helpers.
+---
+--- Keeps the usual `concat` / `insert` / `remove` / `sort` / `pack` / `unpack` /
+--- `move` (with Lua 5.2+ polyfills where needed). Beyond that: slice and
+--- inject/eject ranges, truncate/copy/`shallowCopy`, reverse/shuffle/random
+--- picks, key/value enumeration (`keys`, `values`, `count`, `pairs`, `flip`),
+--- lookup (`getIndex` / `getKey`), and `map` / `foreach` / `transform`.
+---
+--- Many sequence functions take an optional `*_length` argument so callers that
+--- already know `#tbl` can skip a length pass.
 ---
 ---@class tablelib
 table = {}
