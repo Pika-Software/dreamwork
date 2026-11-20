@@ -18,6 +18,8 @@ local glua_file = dreamwork_engine.requireLibrary( "file" )
 local filesystem = filesystem
 local has_filesystem = filesystem ~= nil
 
+dreamwork_Logger:info( "'%s' was loaded & connected as core file system driver.", has_filesystem and "holylib" or "garrysmod" )
+
 local driver = filesystem or glua_file
 
 local driver_Time = driver.Time
@@ -71,7 +73,11 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local class = std.class
+
 local Future = std.Future
+
+local CRC32 = std.CRC32
+local CRC32_digest = CRC32.digest
 
 local coroutine = std.coroutine
 local coroutine_isyieldable = coroutine.isyieldable
@@ -149,6 +155,9 @@ do
     function std.loadbinary( name )
         if lookupbinary( name ) then
             if sv_allowcslua ~= nil and sv_allowcslua.value then
+                -- https://wiki.facepunch.com/gmod/Global.require
+                -- with `sv_allowcslua 1` `require` also loads local files of clients
+                dreamwork_Logger:warn( "'sv_allowcslua' was disabled to load binary module '%s', with it enabled `require` loads local files of clients.", name )
                 sv_allowcslua.value = false
             end
 
@@ -174,7 +183,7 @@ do
     for i = 1, 2, 1 do
         local name = queue[ i ]
         if std.loadbinary( name ) then
-            dreamwork_Logger:info( "'%s' was loaded & connected as file system driver.", name )
+            dreamwork_Logger:info( "'%s' was loaded & connected as async file system driver.", name )
             driver_name = name
             break
         end
@@ -278,12 +287,14 @@ do
                 return -1
             end
 
+            -- case-sensitive like in the module, a job it rejects is never called back
             local extension = string_match( file_path, "%.([^%./\\]+)$" )
             if extension == nil or not extensions[ extension ] then
                 return -1
             end
 
-            local key = path_stripLeadingSlash( path_normalize( file_path, false ) )
+            -- names differing only by case can be one file on case-insensitive file systems, they share the queue
+            local key = string_lower( path_stripLeadingSlash( path_normalize( file_path, false ) ) )
             if key == ".." or string_sub( key, 1, 3 ) == "../" then
                 return -1
             end
@@ -363,6 +374,12 @@ if asyncio ~= nil then
     if file_AsyncWrite == nil then
         local asyncio_AsyncWrite = asyncio.AsyncWrite
 
+        --- `file.AsyncWrite` from gm_asyncio, replaces the file data in `DATA`.
+        ---
+        ---@param relative_path string The path inside of `DATA`.
+        ---@param data string
+        ---@param callback gm_async_write.Callback
+        ---@return garrysmod.file.AsyncStatus status
         function file_AsyncWrite( relative_path, data, callback )
             return asyncio_AsyncWrite( relative_path, data, function( file_name, _, status )
                 return callback( file_name, status )
@@ -374,6 +391,12 @@ if asyncio ~= nil then
     if file_AsyncAppend == nil then
         local asyncio_AsyncAppend = asyncio.AsyncAppend
 
+        --- `file.AsyncAppend` from gm_asyncio, appends to the file in `DATA`.
+        ---
+        ---@param relative_path string The path inside of `DATA`.
+        ---@param data string
+        ---@param callback gm_async_write.Callback
+        ---@return garrysmod.file.AsyncStatus status
         function file_AsyncAppend( relative_path, data, callback )
             return asyncio_AsyncAppend( relative_path, data, function( file_name, _, status )
                 return callback( file_name, status )
@@ -405,21 +428,6 @@ end
 ---@param relative_path string
 ---@param search_path string
 ---@return boolean
-local function file_Exists( relative_path, search_path )
-    if driver_Exists( relative_path, search_path ) then
-        return true
-    end
-
-    if string_byte( relative_path, 1, 1 ) == nil then
-        return false
-    end
-
-    return (probe_listing( relative_path, search_path ))
-end
-
----@param relative_path string
----@param search_path string
----@return boolean
 local function file_IsDir( relative_path, search_path )
     if driver_IsDir( relative_path, search_path ) then
         return true
@@ -433,6 +441,101 @@ local function file_IsDir( relative_path, search_path )
     return is_directory
 end
 
+--- Checks if the file or directory exists.
+---
+---@type fun( relative_path: string, search_path: string ): boolean
+local file_Exists
+
+--- Checks if the file or directory exists and what it is, with as few calls to the engine as possible.
+---
+--- The listing costs as much as both and is needed only for directories reported as missing.
+---
+---@type fun( relative_path: string, search_path: string, expect_directory: boolean ): boolean, boolean
+local file_Stat
+
+if has_filesystem then
+    -- HolyLib: `Exists` is `FileExists` (files only), `IsDir` is directories
+
+    function file_Exists( relative_path, search_path )
+        if driver_Exists( relative_path, search_path ) or driver_IsDir( relative_path, search_path ) then
+            return true
+        end
+
+        if string_byte( relative_path, 1, 1 ) == nil then
+            return false
+        end
+
+        return (probe_listing( relative_path, search_path ))
+    end
+
+    ---@param relative_path string
+    ---@param search_path string
+    ---@param expect_directory boolean `true` to check for a directory first, `false` for a file.
+    ---@return boolean exists
+    ---@return boolean is_directory
+    function file_Stat( relative_path, search_path, expect_directory )
+        if expect_directory then
+            if driver_IsDir( relative_path, search_path ) then
+                return true, true
+            end
+
+            if driver_Exists( relative_path, search_path ) then
+                return true, false
+            end
+        elseif driver_Exists( relative_path, search_path ) then
+            return true, false
+        elseif driver_IsDir( relative_path, search_path ) then
+            return true, true
+        end
+
+        if string_byte( relative_path, 1, 1 ) == nil then
+            return false, false
+        end
+
+        return probe_listing( relative_path, search_path )
+    end
+
+else
+    -- GMod: `Exists` is true for files and directories, `IsDir` and `Exists` cost about the same
+
+    function file_Exists( relative_path, search_path )
+        if driver_Exists( relative_path, search_path ) then
+            return true
+        end
+
+        if string_byte( relative_path, 1, 1 ) == nil then
+            return false
+        end
+
+        return (probe_listing( relative_path, search_path ))
+    end
+
+    ---@param relative_path string
+    ---@param search_path string
+    ---@param expect_directory boolean `true` to check for a directory first, `false` for a file.
+    ---@return boolean exists
+    ---@return boolean is_directory
+    function file_Stat( relative_path, search_path, expect_directory )
+        if expect_directory then
+            if driver_IsDir( relative_path, search_path ) then
+                return true, true
+            end
+
+            if driver_Exists( relative_path, search_path ) then
+                return true, false
+            end
+        elseif driver_Exists( relative_path, search_path ) then
+            return true, driver_IsDir( relative_path, search_path )
+        end
+
+        if string_byte( relative_path, 1, 1 ) == nil then
+            return false, false
+        end
+
+        return probe_listing( relative_path, search_path )
+    end
+
+end
 
 --- [SHARED AND MENU]
 ---
@@ -467,8 +570,12 @@ end
 --- * memory directories created over directories of the search path are merged with them;
 --- * deleting from a search path that does not allow deleting hides the file or directory with a whiteout,
 ---   writing into the path again replaces the whiteout;
---- * memory content stays at its path when mounts change, it is lost on reload and is never written to the disk,
----   see `vfs.getMemoryUsage` and `vfs.setMemoryLimit`.
+--- * memory content stays at its path when mounts change and is lost on reload, see `vfs.getMemoryUsage`.
+---
+--- Only the tree of the memory layer is held in RAM, the data of memory files is kept in `garrysmod/data/dreamwork/vfs/<server|client|menu>`
+--- under generated names, the directory is cleared when the library is loaded.
+--- Their CRC-32 checksums stay in RAM, a memory file changed or swapped outside of `vfs` fails to be read,
+--- it is a guard against stray changes, not against a client that is set on cheating.
 ---
 --- Memory files exist only for `vfs` and functions built on it, like `std.loadfile`, a memory `.lua` file under `/game/lua`
 --- is loaded by them instead of the real one. The engine, `include` and the `file` library never see memory files and whiteouts.
@@ -686,11 +793,55 @@ gc_setTableRules( node_modified, true, false )
 local node_memory = {}
 gc_setTableRules( node_memory, true, false )
 
---- The data of memory files.
+--- The files in `DATA` that keep the data of memory files, only the tree of the memory layer is held in RAM.
 ---
 ---@type table<dreamwork.vfs.Node, string>
-local node_data = {}
-gc_setTableRules( node_data, true, false )
+local node_storage = {}
+gc_setTableRules( node_storage, true, false )
+
+--- The size of memory files in bytes.
+---
+---@type table<dreamwork.vfs.Node, integer>
+local node_sizes = {}
+gc_setTableRules( node_sizes, true, false )
+
+--- The checksums of memory files, pairs of the chunk size and its CRC-32 in the order of the data,
+--- the files in `DATA` can be changed by anyone, only checksums held in RAM can be trusted.
+---
+--- CRC-32 can be forged, but a client that does so could inject into the process as well,
+--- SHA-256 costs 5 times more where `util.SHA256` exists and 600 times more where it does not.
+---
+--- Every write is a chunk, appends smaller than `CHECKSUM_CHUNK_SIZE` are merged into the last one,
+--- they are merged into one chunk by the next read.
+---
+---@type table<dreamwork.vfs.Node, integer[]>
+local node_checksums = {}
+gc_setTableRules( node_checksums, true, false )
+
+--- The chunks of checksums smaller than this are merged with appended data.
+local CHECKSUM_CHUNK_SIZE = 8192
+
+--- The number of changes of memory files, a read that raced a write is repeated instead of failing the checksum.
+---
+---@type table<dreamwork.vfs.Node, integer>
+local node_versions = {}
+gc_setTableRules( node_versions, true, false )
+
+--- The directory in `DATA` with the data of memory files, every Lua state has its own one,
+--- the server and the client of a listen server share `DATA`.
+local storage_directory = "dreamwork/vfs/" .. std.LUA_REALM
+
+--- The number of files allocated in the storage directory, their names.
+local storage_count = 0
+
+--- Returns a new file in the storage directory, every write of a whole memory file goes to a new one,
+--- so reads never see a half-written file and writes awaited at the same time cannot mix.
+---
+---@return string relative_path The path inside of `DATA`.
+local function storage_allocate()
+    storage_count = storage_count + 1
+    return storage_directory .. "/" .. storage_count .. ".dat"
+end
 
 --- The whiteouts, memory files without data that hide files and directories of search paths that cannot be deleted.
 ---
@@ -713,9 +864,6 @@ local memory_count = 0
 
 --- The total size of memory files in bytes.
 local memory_bytes = 0
-
---- The maximal total size of memory files in bytes, `0` for no limit.
-local memory_limit = 0
 
 --- A file or directory of the map.
 ---
@@ -807,10 +955,11 @@ local function memory_release( node )
         node_memory[ node ], node_whiteout[ node ] = nil, nil
         memory_count = memory_count - 1
 
-        local data = node_data[ node ]
-        if data ~= nil then
-            node_data[ node ] = nil
-            memory_bytes = memory_bytes - #data
+        local storage_path = node_storage[ node ]
+        if storage_path ~= nil then
+            memory_bytes = memory_bytes - node_sizes[ node ]
+            node_storage[ node ], node_sizes[ node ], node_checksums[ node ], node_versions[ node ] = nil, nil, nil, nil
+            driver_Delete( storage_path, "DATA" )
         end
     elseif node_merged[ node ] ~= nil then
         node_merged[ node ] = nil
@@ -879,11 +1028,12 @@ local function discover( directory, name, is_directory )
     local relative_path = join_path( node_relative_paths[ directory ], name )
 
     if is_directory == nil then
-        if not file_Exists( relative_path, search_path ) then
+        local exists
+        exists, is_directory = file_Stat( relative_path, search_path, false )
+
+        if not exists then
             return nil
         end
-
-        is_directory = file_IsDir( relative_path, search_path )
     end
 
     local node = NodeClass( name, mount, relative_path, is_directory )
@@ -928,16 +1078,14 @@ local function child_get( directory, name )
         end
 
         -- a file could be replaced by a directory and vice versa
-        local search_path, relative_path = mount.search_path, node_relative_paths[ child ]
-        if node_children[ child ] ~= nil then
-            if file_IsDir( relative_path, search_path ) then
-                return child
-            end
-        elseif file_Exists( relative_path, search_path ) and not file_IsDir( relative_path, search_path ) then
+        local was_directory = node_children[ child ] ~= nil
+
+        local exists, is_directory = file_Stat( node_relative_paths[ child ], mount.search_path, was_directory )
+        if exists and is_directory == was_directory then
             return child
         end
 
-        if node_children[ child ] == nil then
+        if not was_directory then
             detach( child )
         else
             -- memory files and directories and mounts nested in the gone directory stay at their paths
@@ -957,6 +1105,13 @@ local function child_get( directory, name )
                 return child
             end
         end
+
+        -- the search path was checked already
+        if not exists then
+            return nil
+        end
+
+        return discover( directory, name, is_directory )
     end
 
     return discover( directory, name, nil )
@@ -1084,8 +1239,10 @@ function reattach( nodes, paths, count )
                 local mount = node_mounts[ node ]
                 mounts[ mount.path ] = nil
                 hook_call( "dreamwork.vfs.directory.mount", mount.path, mount.search_path, false )
-            elseif node_children[ node ] ~= nil then
-                -- mounts nested in the dropped memory directory stay at their paths
+            end
+
+            if node_children[ node ] ~= nil then
+                -- mounts nested in the dropped mount root or memory directory stay at their paths
                 local nested_nodes, nested_paths = {}, {}
                 reattach( nested_nodes, nested_paths, collect_upper( node, vfs_path, nested_nodes, nested_paths, 0, false ) )
             end
@@ -1330,41 +1487,30 @@ local function write_data_async( search_path, relative_path, data, append_mode, 
     return f:await() == 0
 end
 
----@param node dreamwork.vfs.Node
----@return string | nil data
----@return string | nil message
-local function read_node( node )
-    local data = node_data[ node ]
-    if data ~= nil then
-        return data
-    end
-
-    local handle = driver_Open( node_relative_paths[ node ], "rb", node_mounts[ node ].search_path )
-    if handle == nil then
-        return nil, string_format( "'%s' could not be opened for reading.", node_path( node ) )
-    end
-
-    data = handle:Read( handle:Size() ) or ""
-    handle:Close()
-
-    return data
-end
-
---- Reads the file asynchronously where possible from a coroutine, synchronously otherwise.
+--- Reads the whole file asynchronously where possible from a coroutine, synchronously otherwise.
 ---
----@param node dreamwork.vfs.Node
+---@param relative_path string
+---@param search_path string
 ---@param sync boolean If `true`, the file is read synchronously.
 ---@return string | nil data
----@return string | nil message
+---@return integer | nil status The status of the asynchronous read, `nil` if the file could not be opened.
 ---@async
-local function read_node_async( node, sync )
-    if sync or file_AsyncRead == nil or node_data[ node ] ~= nil or not coroutine_isyieldable() then
-        return read_node( node )
+local function read_data_async( relative_path, search_path, sync )
+    if sync or file_AsyncRead == nil or not coroutine_isyieldable() then
+        local handle = driver_Open( relative_path, "rb", search_path )
+        if handle == nil then
+            return nil, nil
+        end
+
+        local data = handle:Read( handle:Size() ) or ""
+        handle:Close()
+
+        return data
     end
 
     local f = Future()
 
-    local status = file_AsyncRead( node_relative_paths[ node ], node_mounts[ node ].search_path, function( _, _, read_status, data )
+    local status = file_AsyncRead( relative_path, search_path, function( _, _, read_status, data )
         if f:isPending() then
             f:setResult( read_status == 0 and (data or "") or read_status )
         end
@@ -1379,7 +1525,112 @@ local function read_node_async( node, sync )
         return result
     end
 
-    return nil, string_format( "'%s' could not be read, status %d.", node_path( node ), result )
+    return nil, result
+end
+
+---@param vfs_path string
+---@param status integer | nil
+---@return string message
+local function read_error( vfs_path, status )
+    if status == nil then
+        return string_format( "'%s' could not be opened for reading.", vfs_path )
+    end
+
+    return string_format( "'%s' could not be read, status %d.", vfs_path, status )
+end
+
+--- Checks the data of the memory file against its checksums, they are merged into one once it matches.
+---
+---@param node dreamwork.vfs.Node
+---@param data string
+---@return boolean matches
+local function checksum_verify( node, data )
+    local checksums = node_checksums[ node ]
+    local data_size, count = #data, #checksums
+
+    if count == 2 then
+        return data_size == checksums[ 1 ] and CRC32_digest( data ) == checksums[ 2 ]
+    end
+
+    local offset = 0
+
+    for index = 1, count, 2 do
+        local chunk_size = checksums[ index ]
+        if offset + chunk_size > data_size or CRC32_digest( string_sub( data, offset + 1, offset + chunk_size ) ) ~= checksums[ index + 1 ] then
+            return false
+        end
+
+        offset = offset + chunk_size
+    end
+
+    if offset ~= data_size then
+        return false
+    end
+
+    node_checksums[ node ] = { data_size, CRC32_digest( data ) }
+    return true
+end
+
+---@param vfs_path string
+---@param storage_path string
+---@return string message
+local function checksum_mismatch( vfs_path, storage_path )
+    dreamwork_Logger:warn( "'%s' was changed outside of vfs, '%s' does not match its checksum.", vfs_path, storage_path )
+    return string_format( "'%s' was changed outside of vfs, its checksum does not match.", vfs_path )
+end
+
+--- Reads the file asynchronously where possible from a coroutine, synchronously otherwise.
+---
+--- Memory files are checked against their checksums, a read that raced a write into the file is repeated.
+---
+---@param node dreamwork.vfs.Node
+---@param sync boolean If `true`, the file is read synchronously.
+---@return string | nil data
+---@return string | nil message
+---@async
+local function read_node_async( node, sync )
+    if not node_memory[ node ] then
+        local data, status = read_data_async( node_relative_paths[ node ], node_mounts[ node ].search_path, sync )
+        if data == nil then
+            return nil, read_error( node_path( node ), status )
+        end
+
+        return data
+    end
+
+    -- the node loses its path once it is deleted while the read is awaited
+    local vfs_path = node_path( node )
+
+    for _ = 1, 4, 1 do
+        local storage_path, version = node_storage[ node ], node_versions[ node ]
+        if storage_path == nil then
+            return nil, string_format( "'%s' was deleted while it was read.", vfs_path )
+        end
+
+        local data, status = read_data_async( storage_path, "DATA", sync )
+
+        -- deleted or rewritten while the read was awaited, the checksums are gone or belong to another file,
+        -- a rewrite changes the version too, so the read is repeated
+        local current_path = node_storage[ node ]
+        if current_path == nil then
+            return nil, string_format( "'%s' was deleted while it was read.", vfs_path )
+        end
+
+        if data ~= nil and current_path == storage_path and checksum_verify( node, data ) then
+            return data
+        end
+
+        -- the file was written meanwhile, the data could be from before or in the middle of it
+        if node_versions[ node ] == version then
+            if data == nil then
+                return nil, read_error( vfs_path, status )
+            end
+
+            return nil, checksum_mismatch( vfs_path, storage_path )
+        end
+    end
+
+    return nil, string_format( "'%s' was written too often while it was read.", vfs_path )
 end
 
 --- Reports the change made by `vfs` right away, file systems do not always update the modification time.
@@ -1443,8 +1694,12 @@ local function make_directory( parent, name )
         return nil, message
     end
 
+    -- the whiteout hides what is left in the search path that does not allow deleting,
+    -- a memory directory has no search path, so the hidden content does not come back
+    local hidden = node_children[ parent ][ name ]
+
     local mount = node_mounts[ parent ]
-    if mount == nil or not mount.writable then
+    if mount == nil or not mount.writable or (hidden ~= nil and node_whiteout[ hidden ]) then
         local directory = memory_directory( name, time_now() )
         attach( parent, directory )
 
@@ -1508,7 +1763,85 @@ local function make_directory_chain( vfs_path )
     return directory
 end
 
+--- Checks if the node is still in the tree, it could be detached while a write was awaited.
+---
+---@param node dreamwork.vfs.Node
+---@return boolean
+local function is_attached( node )
+    ::parent_walker::
+
+    if node == root then
+        return true
+    end
+
+    node = node_parents[ node ]
+    if node == nil then
+        return false
+    end
+
+    ---@diagnostic disable-next-line: missing-return
+    goto parent_walker
+end
+
+--- Appends the data to the file of the memory file in place, synchronously, so its checksums always follow the file.
+---
+--- The last chunk is read back and checked when the data is merged into it.
+---
+---@param node dreamwork.vfs.Node
+---@param vfs_path string
+---@param data string
+---@param data_size integer
+---@return string | nil message
+local function append_memory_file( node, vfs_path, data, data_size )
+    local storage_path, checksums = node_storage[ node ], node_checksums[ node ]
+    local count = #checksums
+
+    ---@type string | nil
+    local merged
+
+    local chunk_size = checksums[ count - 1 ]
+    if (chunk_size + data_size) <= CHECKSUM_CHUNK_SIZE then
+        local chunk = ""
+
+        if chunk_size ~= 0 then
+            local handle = driver_Open( storage_path, "rb", "DATA" )
+            if handle == nil then
+                return read_error( vfs_path, nil )
+            end
+
+            handle:Seek( node_sizes[ node ] - chunk_size )
+            chunk = handle:Read( chunk_size ) or ""
+            handle:Close()
+        end
+
+        if CRC32_digest( chunk ) ~= checksums[ count ] then
+            return checksum_mismatch( vfs_path, storage_path )
+        end
+
+        merged = chunk .. data
+    end
+
+    if not write_data( "DATA", storage_path, data, true ) then
+        return string_format( "'%s' could not be written into '%s'.", vfs_path, storage_path )
+    end
+
+    if merged == nil then
+        checksums[ count + 1 ], checksums[ count + 2 ] = data_size, CRC32_digest( data )
+    else
+        checksums[ count - 1 ], checksums[ count ] = #merged, CRC32_digest( merged )
+    end
+
+    memory_bytes = memory_bytes + data_size
+    node_sizes[ node ] = node_sizes[ node ] + data_size
+    node_versions[ node ] = node_versions[ node ] + 1
+
+    return nil
+end
+
 --- Writes the memory file, the file of the search path is shadowed by it and copied into memory first when appended to.
+---
+--- The data goes to a file in the storage directory, memory files are appended in place,
+--- whole writes go to a new file that replaces the old one once it is written.
 ---
 ---@param directory dreamwork.vfs.Node
 ---@param node dreamwork.vfs.Node | nil The existing file.
@@ -1516,43 +1849,82 @@ end
 ---@param name string
 ---@param data string
 ---@param append_mode boolean
----@param sync boolean If `true`, the appended file is read synchronously.
+---@param sync boolean If `true`, the file is read and written synchronously.
 ---@return boolean success
 ---@return string | nil message
 ---@async
 local function write_memory_file( directory, node, vfs_path, name, data, append_mode, sync )
+    local data_size = #data
+
     if append_mode and node ~= nil then
+        if node_memory[ node ] then
+            if data_size ~= 0 then
+                local message = append_memory_file( node, vfs_path, data, data_size )
+                if message ~= nil then
+                    return false, message
+                end
+            end
+
+            node_modified[ node ] = time_now()
+
+            watchdog_change( "dreamwork.vfs.modified", vfs_path, false )
+            return true
+        end
+
         local old_data, message = read_node_async( node, sync )
         if old_data == nil then
             return false, message
         end
 
         data = old_data .. data
+        data_size = #data
     end
 
-    local is_memory = node ~= nil and node_memory[ node ] == true
+    local storage_path = storage_allocate()
 
-    local old_size = 0
-    if is_memory then
-        old_size = #node_data[ node ]
+    local checksums = { data_size, CRC32_digest( data ) }
+
+    if not write_data_async( "DATA", storage_path, data, false, sync ) then
+        -- the storage directory could be deleted through `/garrysmod/data`
+        driver_CreateDir( storage_directory, "DATA" )
+
+        if not write_data_async( "DATA", storage_path, data, false, sync ) then
+            driver_Delete( storage_path, "DATA" )
+            return false, string_format( "'%s' could not be written into '%s'.", vfs_path, storage_path )
+        end
     end
 
-    -- shrinking writes are allowed over the limit, the limit could be lowered after the file was written
-    local new_bytes = memory_bytes - old_size + #data
-    if memory_limit ~= 0 and new_bytes > memory_limit and new_bytes > memory_bytes then
-        return false, string_format( "'%s' cannot be kept in memory, %d bytes in memory would exceed the limit of %d bytes.", vfs_path, new_bytes, memory_limit )
+    -- the tree could change while the data was written
+    if not is_attached( directory ) then
+        driver_Delete( storage_path, "DATA" )
+        return false, string_format( "'%s' could not be written, its directory was deleted.", vfs_path )
     end
 
     local unix_time = time_now()
-    local existed = node ~= nil
 
-    if not is_memory then
-        if node ~= nil then
+    node = node_children[ directory ][ name ]
+
+    local existed = node ~= nil and not node_whiteout[ node ]
+
+    if existed and node_children[ node ] ~= nil then
+        driver_Delete( storage_path, "DATA" )
+        return false, string_format( "'%s' is a directory.", vfs_path )
+    end
+
+    if existed and node_memory[ node ] then
+        ---@cast node dreamwork.vfs.Node
+        driver_Delete( node_storage[ node ], "DATA" )
+        memory_bytes = memory_bytes - node_sizes[ node ]
+        node_versions[ node ] = node_versions[ node ] + 1
+    else
+        -- the file of the search path is shadowed, a whiteout is replaced by `attach`
+        if existed then
+            ---@cast node dreamwork.vfs.Node
             detach( node )
         end
 
         node = NodeClass( name, nil, "", false )
-        node_created[ node ] = unix_time
+        node_created[ node ], node_versions[ node ] = unix_time, 0
         memory_add( node )
 
         attach( directory, node )
@@ -1564,8 +1936,8 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
 
     ---@cast node dreamwork.vfs.Node
 
-    memory_bytes = new_bytes
-    node_data[ node ], node_modified[ node ] = data, unix_time
+    memory_bytes = memory_bytes + data_size
+    node_storage[ node ], node_sizes[ node ], node_checksums[ node ], node_modified[ node ] = storage_path, data_size, checksums, unix_time
 
     watchdog_change( existed and "dreamwork.vfs.modified" or "dreamwork.vfs.created", vfs_path, false )
     return true
@@ -1722,6 +2094,10 @@ local function delete_tree( search_path, relative_path )
     driver_Delete( relative_path, search_path )
 end
 
+-- memory files of the previous load are lost like the rest of the memory layer
+delete_tree( "DATA", storage_directory )
+driver_CreateDir( storage_directory, "DATA" )
+
 --- Returns the mount of the file or directory of the search path that is deleted or moved away.
 ---
 ---@param node dreamwork.vfs.Node
@@ -1862,9 +2238,6 @@ function delete_node( node, recursive )
     local search_path, relative_path = mount.search_path, node_relative_paths[ node ]
 
     if node_children[ node ] ~= nil then
-        local files, directories = driver_Find( join_path( relative_path, "*" ), search_path )
-        local has_content = (files ~= nil and files[ 1 ] ~= nil) or (directories ~= nil and directories[ 1 ] ~= nil)
-
         if not recursive then
             local _, _, count = list_children( node )
             if count ~= 0 then
@@ -1872,7 +2245,8 @@ function delete_node( node, recursive )
             end
         end
 
-        if has_content then
+        local files, directories = driver_Find( join_path( relative_path, "*" ), search_path )
+        if (files ~= nil and files[ 1 ] ~= nil) or (directories ~= nil and directories[ 1 ] ~= nil) then
             delete_tree( search_path, relative_path )
         end
     end
@@ -2195,14 +2569,7 @@ do
         if exists then
             local mount = node_mounts[ node ]
             if mount == nil then
-                file_time = node_modified[ node ] or 0
-
-                local data = node_data[ node ]
-                if data == nil then
-                    file_size = 0
-                else
-                    file_size = #data
-                end
+                file_time, file_size = node_modified[ node ] or 0, node_sizes[ node ] or 0
             else
                 local search_path, relative_path = mount.search_path, node_relative_paths[ node ]
                 file_time, file_size = driver_Time( relative_path, search_path ) or 0, driver_Size( relative_path, search_path ) or 0
@@ -2278,6 +2645,103 @@ do
         report_new_children( vfs_path, content, old_content )
     end
 
+    --- Removes the entry from the directory content, the scan of the content keeps its position.
+    ---
+    ---@param content dreamwork.vfs.WatchContent
+    ---@param index integer
+    local function content_remove( content, index )
+        local names, directories, times, sizes, indexes = content.names, content.directories, content.times, content.sizes, content.indexes
+        local count = content.count
+
+        indexes[ names[ index ] ] = nil
+
+        for i = index, count - 1, 1 do
+            local name = names[ i + 1 ]
+            names[ i ], directories[ i ], times[ i ], sizes[ i ] = name, directories[ i + 1 ], times[ i + 1 ], sizes[ i + 1 ]
+            indexes[ name ] = i
+        end
+
+        names[ count ], directories[ count ], times[ count ], sizes[ count ] = nil, nil, nil, nil
+        content.count = count - 1
+
+        if index <= content.overlay_count then
+            content.overlay_count = content.overlay_count - 1
+        end
+
+        if scan_watch ~= nil and scan_watch.content == content and index < scan_index then
+            scan_index = scan_index - 1
+        end
+    end
+
+    --- Inserts the entry into the directory content, the scan of the content keeps its position.
+    ---
+    ---@param content dreamwork.vfs.WatchContent
+    ---@param index integer
+    ---@param name string
+    ---@param is_directory boolean
+    ---@param is_overlay boolean
+    local function content_insert( content, index, name, is_directory, is_overlay )
+        local names, directories, times, sizes, indexes = content.names, content.directories, content.times, content.sizes, content.indexes
+
+        for i = content.count, index, -1 do
+            local moved_name = names[ i ]
+            names[ i + 1 ], directories[ i + 1 ], times[ i + 1 ], sizes[ i + 1 ] = moved_name, directories[ i ], times[ i ], sizes[ i ]
+            indexes[ moved_name ] = i + 1
+        end
+
+        -- files of the search path are not checked yet, see `list_directory`
+        local unix_time = (is_directory or is_overlay) and 0 or -1
+
+        names[ index ], directories[ index ], times[ index ], sizes[ index ] = name, is_directory, unix_time, unix_time
+        indexes[ name ] = index
+
+        content.count = content.count + 1
+
+        if is_overlay then
+            content.overlay_count = content.overlay_count + 1
+        end
+
+        if scan_watch ~= nil and scan_watch.content == content and index < scan_index then
+            scan_index = scan_index + 1
+        end
+    end
+
+    --- Updates the entry of the directory content to the current state of the child, like `list_directory` would list it.
+    ---
+    ---@param content dreamwork.vfs.WatchContent
+    ---@param name string
+    ---@param node dreamwork.vfs.Node | nil The child, `nil` if it does not exist.
+    local function content_update( content, name, node )
+        local index = content.indexes[ name ]
+
+        if node == nil then
+            if index ~= nil then
+                content_remove( content, index )
+            end
+
+            return
+        end
+
+        local is_directory = node_children[ node ] ~= nil
+
+        -- mount roots, intermediate directories and memory files and directories go first, they shadow the search path
+        local is_overlay = node_mounts[ node ] == nil or node_is_mount_root( node )
+
+        if index ~= nil then
+            if (index <= content.overlay_count) == is_overlay and content.directories[ index ] == is_directory then
+                return
+            end
+
+            content_remove( content, index )
+        end
+
+        if is_overlay then
+            content_insert( content, content.overlay_count + 1, name, is_directory, true )
+        else
+            content_insert( content, content.count + 1, name, is_directory, false )
+        end
+    end
+
     --- Checks the watched path.
     ---
     ---@param vfs_path string
@@ -2313,10 +2777,19 @@ do
 
                 watch = watches[ directory_path ]
                 if watch ~= nil then
-                    watch_update( directory_path, watch, false )
+                    local content = watch.content
+
+                    -- the directory could be pruned or replaced by the change, then it is listed again
+                    local directory = lookup( directory_path )
+                    if content == nil or directory == nil or node_children[ directory ] == nil then
+                        watch_update( directory_path, watch, false )
+                        content = watch.content
+                    else
+                        -- only the changed entry is updated, listing the whole directory on every change is quadratic
+                        content_update( content, name, child_get( directory, name ) )
+                    end
 
                     -- the time and size of the changed file are taken right away, so the scan does not report it again
-                    local content = watch.content
                     if content ~= nil then
                         local index = content.indexes[ name ]
                         if index ~= nil then
@@ -2767,12 +3240,12 @@ end
 ---@return integer size
 local function node_size( node )
     if node_children[ node ] == nil then
-        local data = node_data[ node ]
-        if data ~= nil then
-            return #data
+        local size = node_sizes[ node ]
+        if size ~= nil then
+            return size
         end
 
-        local size = driver_Size( node_relative_paths[ node ], node_mounts[ node ].search_path )
+        size = driver_Size( node_relative_paths[ node ], node_mounts[ node ].search_path )
         if size == nil or size < 0 then
             return 0
         end
@@ -3572,34 +4045,6 @@ end
 
 --- [SHARED AND MENU]
 ---
---- Returns the maximal total size of memory files.
----
----@return integer bytes The limit in bytes, `0` if there is no limit.
----@nodiscard
-function vfs.getMemoryLimit()
-    return memory_limit
-end
-
---- [SHARED AND MENU]
----
---- Sets the maximal total size of memory files, writes into memory that would exceed it fail.
----
---- Files already in memory are kept when the limit is lowered, writes that shrink them are still allowed.
----
----@param bytes integer? The limit in bytes, `0` or `nil` for no limit (default).
----@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it.
-function vfs.setMemoryLimit( bytes, stack_level )
-    if bytes == nil then
-        bytes = 0
-    elseif not isNumber( bytes ) or bytes < 0 or bytes % 1 ~= 0 then
-        error( "memory limit must be a non-negative integer", (stack_level or 1) + 1 )
-    end
-
-    memory_limit = bytes
-end
-
---- [SHARED AND MENU]
----
 --- Returns the last access time of a file or directory.
 ---
 --- Without HolyLib the last modification time is returned.
@@ -3846,28 +4291,44 @@ end
 
 do
 
+    --- Mounts or unmounts the search path of a mounted game or addon, mounts of anything else at the path are kept.
+    ---
+    ---@param mount_path string
+    ---@param search_path string
+    ---@param is_mounted boolean
+    local function engine_mount( mount_path, search_path, is_mounted )
+        local mount = mounts[ mount_path ]
+        if mount ~= nil then
+            if mount.search_path ~= search_path then
+                if is_mounted then
+                    dreamwork_Logger:warn( "'%s' cannot be mounted at '%s', '%s' is mounted there.", search_path, mount_path, mount.search_path )
+                end
+
+                return
+            end
+
+            unmount_path( mount_path )
+        end
+
+        if is_mounted then
+            local success, message = mount_search_path( mount_path, search_path )
+            if not success then
+                dreamwork_Logger:warn( "'%s' cannot be mounted at '%s': %s", search_path, mount_path, message )
+            end
+        end
+    end
+
     ---@param game_info dreamwork.engine.mounts.GameInfo
     ---@param is_mounted boolean
     local function game_mount( game_info, is_mounted )
         local folder = game_info.folder
-        local mount_path = "/" .. folder
-
-        unmount_path( mount_path )
-
-        if is_mounted then
-            mount_search_path( mount_path, folder )
-        end
+        engine_mount( "/" .. folder, folder, is_mounted )
     end
 
     ---@param addon_info dreamwork.engine.mounts.AddonInfo
     ---@param is_mounted boolean
     local function addon_mount( addon_info, is_mounted )
-        local mount_path = "/addons/" .. addon_info.folder
-        unmount_path( mount_path )
-
-        if is_mounted then
-            mount_search_path( mount_path, addon_info.title )
-        end
+        engine_mount( "/addons/" .. addon_info.folder, addon_info.title, is_mounted )
     end
 
     hook_catch( "dreamwork.game.mount", "modules.vfs.mount", game_mount, 2 )
