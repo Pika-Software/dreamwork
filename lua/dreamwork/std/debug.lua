@@ -7,7 +7,6 @@ local std = dreamwork.std
 local raw = std.raw
 local raw_get = raw.get
 local raw_select = raw.select
-local raw_tonumber = raw.tonumber
 
 local error = std.error
 
@@ -432,7 +431,6 @@ local registry
 ---
 --- Returns the registry table.
 ---
----@diagnostic disable-next-line: duplicate-set-field
 function debug.getregistry()
     return registry
 end

@@ -1,6 +1,8 @@
 local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_call = dreamwork_exceptions.call
 
+local sandbox_track = dreamwork.sandbox.track
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -161,6 +163,8 @@ end
 ---@param handler dreamwork.std.Emitter.Handler
 ---@param once boolean
 local function add( emitter, object, event_name, handler, once )
+    sandbox_track( handler, Emitter.detach, emitter, object, event_name, handler )
+
     ---@type table<any, dreamwork.std.Emitter.List>
     local lists = raw_get( emitter, object )
     if lists == nil then

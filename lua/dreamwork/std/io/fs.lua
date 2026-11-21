@@ -16,6 +16,9 @@ local vfs_touchDirectory = vfs.touchDirectory
 local vfs_deleteDirectory = vfs.deleteDirectory
 local vfs_renameDirectory = vfs.renameDirectory
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_path = dreamwork_sandbox.path
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -284,12 +287,12 @@ local function get_parent( object )
     return DirectoryClass( parent_path )
 end
 
----@param file_path string The absolute path to the file.
+---@param file_path string The path to the file, relative paths of package code point into its root directory.
 ---@param touch boolean? If `true`, the file is created or touched right away, otherwise it waits for `write`, `append` or `touch`.
 ---@return dreamwork.std.File object
 ---@protected
 function FileClass:__new( file_path, touch )
-    file_path = path_normalize( file_path, false )
+    file_path = path_normalize( sandbox_path( file_path, 2 ), false )
 
     local object = file_objects[ file_path ]
     if object == nil then
@@ -437,12 +440,12 @@ function File:rename( name, overwrite )
     rename_file( self, name, overwrite, 2 )
 end
 
----@param directory_path string The absolute path to the directory.
+---@param directory_path string The path to the directory, relative paths of package code point into its root directory.
 ---@param touch boolean? If `true`, the directory is created or touched right away, otherwise it waits for `touch` or a write inside of it.
 ---@return dreamwork.std.Directory object
 ---@protected
 function DirectoryClass:__new( directory_path, touch )
-    directory_path = path_normalize( directory_path, false )
+    directory_path = path_normalize( sandbox_path( directory_path, 2 ), false )
 
     local object = directory_objects[ directory_path ]
     if object == nil then

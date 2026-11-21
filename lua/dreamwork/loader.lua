@@ -39,10 +39,6 @@ end
 ---@field LUA_CLIENT_SERVER boolean `true` if code is running on the client or server, `false` otherwise.
 ---@field LUA_SERVER boolean `true` if code is running on the server, `false` otherwise.
 ---@field DEVELOPER integer A cached value of `developer` console variable.
----@field FRAME_TIME number The time it takes to run one frame in seconds. **Client-only**
----@field FPS number The number of frames per second. **Client-only**
----@field TICK_TIME number The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
----@field TPS number The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
 ---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
 std._G = std
@@ -76,6 +72,20 @@ elseif LUA_MENU then
     std.LUA_REALM = "menu"
 else
     std.LUA_REALM = "unknown"
+end
+
+--- [SHARED AND MENU]
+---
+--- Small util function for internal console variables.
+---
+---@param name string
+---@return string full_name
+function dreamwork.selectVariableName( name )
+    if LUA_MENU then
+        return "dreamwork_menu_" .. name
+    end
+
+    return "dreamwork_" .. name
 end
 
 local error = error
@@ -686,7 +696,7 @@ do
 end
 
 -- math library
-dreamwork_load( "std/math.lua" )
+dreamwork_load( "std/math/init.lua" )
 
 ---@class dreamwork.std.math
 local math = std.math
@@ -772,9 +782,12 @@ local table = std.table
 local table_concat = table.concat
 local table_unpack = table.unpack
 
-dreamwork_load( "std/ascii.lua" )
+dreamwork_load( "std/ascii/init.lua" )
+
 dreamwork_load( "std/string.lua" )
 dreamwork_load( "std/coroutine.lua" )
+
+local coroutine = std.coroutine
 
 ---@class dreamwork.std.string
 local string = std.string
@@ -1213,7 +1226,7 @@ do
     -- thread ( 8 )
     do
 
-        local object = std.coroutine.create( debug_fempty )
+        local object = coroutine.create( debug_fempty )
 
         ---@class dreamwork.std.Thread : metatable
         local Thread = debug_getmetatable( object )
@@ -1283,104 +1296,39 @@ do
         end
     end
 
-    if compiler ~= nil then
-
-        --- [SHARED AND MENU]
-        ---
-        --- Loads a string as a lua code chunk in the specified
-        --- environment and returns new function as a compile result.
-        ---
-        ---@param lua_code string The lua code chunk.
-        ---@param chunk_name string | nil The lua code chunk name.
-        ---@param env table | nil The environment of compiled function.
-        ---@return function fn The compiled function.
-        ---@nodiscard
-        function std.loadstring( lua_code, chunk_name, env )
-            if env == nil then
-                env = getfenv( 2 )
-            end
-
-            ---@diagnostic disable-next-line: param-type-mismatch
-            local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
-            if isFunction( fn ) then
-                ---@cast fn function
-
-                if not native_env then
-                    setfenv( fn, env )
-                end
-
-                return fn
-            end
-
-            ---@cast fn string | nil
-            error( err_msg or fn or "lua code compilation failed", 2 )
+    --- [SHARED AND MENU]
+    ---
+    --- Loads a string as a lua code chunk in the specified
+    --- environment and returns new function as a compile result.
+    ---
+    ---@param lua_code string The lua code chunk.
+    ---@param chunk_name string | nil The lua code chunk name.
+    ---@param env table | nil The environment of compiled function.
+    ---@return function fn The compiled function.
+    ---@nodiscard
+    function std.loadstring( lua_code, chunk_name, env )
+        if env == nil then
+            env = getfenv( 2 )
         end
 
+        ---@diagnostic disable-next-line: param-type-mismatch
+        local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
+        if isFunction( fn ) then
+            ---@cast fn function
+
+            if not native_env then
+                setfenv( fn, env )
+            end
+
+            return fn
+        end
+
+        ---@cast fn string | nil
+        error( err_msg or fn or "lua code compilation failed", 2 )
     end
 
 end
 
-dreamwork_load( "modules/engine.lua" )
-local dreamwork_engine = dreamwork.engine
-
--- class library
-dreamwork_load( "std/class.lua" )
-
-do
-
-    local isInherited = std.class.isInherited
-    local isClass = std.isClass
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the value is an instance of the given parent.
-    ---
-    ---@param object any The object to check for being an instance of the given parent.
-    ---@param ... any The parent classes/metatables to check against.
-    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
-    ---@nodiscard
-    function std.isInstance( object, ... )
-        local metatable = debug_getmetatable( object )
-
-        for i = 1, raw_select( "#", ... ) do
-            local parent = raw_select( i, ... )
-            if isClass( parent ) then
-                if isInherited( object, parent ) then
-                    return true
-                end
-            elseif metatable == parent then
-                return true
-            end
-        end
-
-        return false
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- Checks if the value is an instance of the given parent.
-    ---
-    ---@param object any The object to check for being an instance of the given parent.
-    ---@param value any The parent class/metatable to check against.
-    ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
-    ---@nodiscard
-    function std.isType( object, value )
-        if isClass( value ) then
-            if isInherited( object, value ) then
-                return true
-            end
-        elseif debug_getmetatable( object ) == value then
-            return true
-        end
-
-        return false
-    end
-
-end
-
-dreamwork_load( "std/types/stack.lua" )
-dreamwork_load( "std/types/queue.lua" )
-dreamwork_load( "std/types/node.lua" )
 
 if ffi == nil then
 
@@ -1501,6 +1449,106 @@ do
 
 end
 
+do
+
+    local native_newproxy = debug.newproxy
+
+    local ok, result = coroutine.resume( coroutine.create( function()
+        return native_newproxy( true )
+    end ) )
+
+    if not ok or std.type( result ) ~= "userdata" then
+
+        function debug.newproxy( add_metatable )
+            local fake_userdata = {}
+
+            if add_metatable then
+                ---@type metatable | nil
+                local metatable
+
+                if add_metatable == true then
+                    metatable = {}
+                else
+                    metatable = debug.getmetatable( add_metatable )
+                end
+
+                setmetatable( fake_userdata, metatable )
+            end
+
+            ---@diagnostic disable-next-line: cast-type-mismatch
+            ---@cast fake_userdata userdata
+
+            return fake_userdata
+        end
+
+        raw.print( "newproxy is missing or broken, fallback created!" )
+
+    end
+
+end
+
+dreamwork_load( "modules/engine.lua" )
+local dreamwork_engine = dreamwork.engine
+
+-- class library
+dreamwork_load( "std/class.lua" )
+
+do
+
+    local isInherited = std.class.isInherited
+    local isClass = std.isClass
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param ... any The parent classes/metatables to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
+    ---@nodiscard
+    function std.isInstance( object, ... )
+        local metatable = debug_getmetatable( object )
+
+        for i = 1, raw_select( "#", ... ) do
+            local parent = raw_select( i, ... )
+            if isClass( parent ) then
+                if isInherited( object, parent ) then
+                    return true
+                end
+            elseif metatable == parent then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Checks if the value is an instance of the given parent.
+    ---
+    ---@param object any The object to check for being an instance of the given parent.
+    ---@param value any The parent class/metatable to check against.
+    ---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+    ---@nodiscard
+    function std.isType( object, value )
+        if isClass( value ) then
+            if isInherited( object, value ) then
+                return true
+            end
+        elseif debug_getmetatable( object ) == value then
+            return true
+        end
+
+        return false
+    end
+
+end
+
+dreamwork_load( "std/types/stack.lua" )
+dreamwork_load( "std/types/queue.lua" )
+dreamwork_load( "std/types/node.lua" )
+
 dreamwork_load( "std/raw.ext.lua" )
 dreamwork_load( "std/bit.lua" )
 
@@ -1578,12 +1626,12 @@ local represent = std.represent
 dreamwork_load( "std/path.lua" )
 dreamwork_load( "std/color.lua" )
 
-dreamwork_load( "std/types/vector2.lua" )
-dreamwork_load( "std/types/vector3.lua" )
-dreamwork_load( "std/types/angle3.lua" )
+dreamwork_load( "std/math/types/vector2.lua" )
+dreamwork_load( "std/math/types/vector3.lua" )
 
-dreamwork_load( "std/types/quaternion.lua" )
-dreamwork_load( "std/types/vmatrix.lua" )
+dreamwork_load( "std/math/types/quaternion.lua" )
+dreamwork_load( "std/math/types/vmatrix.lua" )
+dreamwork_load( "std/math/types/angle3.lua" )
 
 dreamwork_load( "modules/engine/proxies.lua" )
 
@@ -1690,6 +1738,12 @@ do
     color_scheme.turquoise = 0x40e0d0
     color_scheme.dark_turquoise = 0x00D0D0
 
+    -- https://palettehex.com/palette/star-sky-color-palette/
+    color_scheme.starlight = 0x87CEEB
+
+    -- https://officialcolorregistry.com/colors/lists/space-and-galaxy-colors
+    color_scheme.moonlight = 0xF5DEB3
+
     -- Garry's Mod
     -- Thank you code_gs <3
     -- https://discord.com/channels/565105920414318602/565108080300261398/905385921283756062
@@ -1756,8 +1810,8 @@ do
 
 end
 
-dreamwork_load( "std/types/big_integer.lua" )
-dreamwork_load( "std/types/big_fixed.lua" )
+dreamwork_load( "std/math/types/big_integer.lua" )
+dreamwork_load( "std/math/types/big_fixed.lua" )
 
 dreamwork_load( "std/gc.ext.lua", false, LUA_MENU )
 dreamwork_load( "std/time.lua" )
@@ -2538,6 +2592,7 @@ do
 
 end
 
+dreamwork_load( "modules/sandbox.lua" )
 dreamwork_load( "modules/engine/timer.lua" )
 
 do
@@ -2546,6 +2601,14 @@ do
     local exceptions_call      = dreamwork_exceptions.call
 
     local timer                = dreamwork_engine.timer
+    local timer_create         = timer.create
+    local timer_remove         = timer.remove
+    local timer_simple         = timer.simple
+
+    local sandbox              = dreamwork.sandbox
+    local sandbox_owner        = sandbox.owner
+    local sandbox_claim        = sandbox.claim
+    local sandbox_unclaim      = sandbox.unclaim
 
     do
 
@@ -2557,6 +2620,9 @@ do
 
         local timeout_count     = 0
 
+        ---@type fun( timeout_id: integer ): boolean
+        local clear_timeout
+
         ---@param timeout_id integer
         local function timeout_call( timeout_id )
             local fn = timeouts[ timeout_id ]
@@ -2566,6 +2632,7 @@ do
 
             timeouts[ timeout_id ] = nil
             timeout_arguments[ timeout_id ] = nil
+            sandbox_unclaim( timeout_id )
 
             if args == nil then
                 exceptions_call( fn )
@@ -2603,7 +2670,12 @@ do
                 timeout_arguments[ timeout_id ] = { [ 0 ] = arg_count, ... }
             end
 
-            timer.simple( delay or 0, function()
+            local owner = sandbox_owner( 2 )
+            if owner ~= nil then
+                sandbox_claim( owner, timeout_id, clear_timeout )
+            end
+
+            timer_simple( delay or 0, function()
                 return timeout_call( timeout_id )
             end )
 
@@ -2634,9 +2706,12 @@ do
 
             timeout_arguments[ timeout_id ] = nil
             timeouts[ timeout_id ] = nil
+            sandbox_unclaim( timeout_id )
 
             return true
         end
+
+        clear_timeout = std.clearTimeout
 
     end
 
@@ -2678,7 +2753,13 @@ do
             end
 
             local name = string_format( "dreamwork.interval.%d", interval_count )
-            timer.create( name, delay or 1, 0, fn, true )
+            timer_create( name, delay or 1, 0, fn, true )
+
+            local owner = sandbox_owner( 2 )
+            if owner ~= nil then
+                -- keyed by the timer name, interval and timeout identifiers overlap
+                sandbox_claim( owner, name, timer.remove )
+            end
 
             return interval_count
         end
@@ -2700,7 +2781,9 @@ do
         ---@param interval_id integer The identifier of the interval returned by `std.setInterval`.
         ---@return boolean is_cleared Returns `true` if the interval was found and cancelled, otherwise `false`.
         function std.clearInterval( interval_id )
-            return timer.remove( string_format( "dreamwork.interval.%d", interval_id ) )
+            local name = string_format( "dreamwork.interval.%d", interval_id )
+            sandbox_unclaim( name )
+            return timer_remove( name )
         end
 
     end
@@ -2766,8 +2849,6 @@ dreamwork_load( "std/types/event.lua" )
 dreamwork_load( "std/types/emitter.lua" )
 dreamwork_load( "std/types/timer.lua" )
 
-dreamwork_load( "modules/engine/injection.lua" )
-
 dreamwork_load( "std/io/console.lua" )
 
 local console = std.console
@@ -2787,9 +2868,14 @@ local logger = console.Logger( {
 
 dreamwork.Logger = logger
 
+dreamwork_load( "std/server/init.lua" )
+
+dreamwork_load( "std/ascii/art.lua" )
+
 -- Welcome message
 do
 
+    ---@type table<string, string>
     local variables = {}
 
     local cvar = console.Variable.get( LUA_SERVER and "hostname" or "name", "string" )
@@ -2875,75 +2961,197 @@ do
         "𓆤"
     }
 
-    local count = #splashes + 1
-    splashes[ count ] = "Wow, there are over " .. (count - 1) .. " splashes here!"
+    local splash_count = #splashes + 1
+    splashes[ splash_count ] = "Wow, there are over " .. (splash_count - 1) .. " splashes here!"
 
-    local scheme
+    local star = color_scheme.starlight
+    local moon = color_scheme.moonlight
+    local title = color_scheme.dreamwork_main
+    local splash_color = color_scheme.light_gray
+    local frame = color_scheme.dark_gray
+    local label = color_scheme.dreamwork_main
+    local value = color_scheme.light_gray
+    local bullet = color_scheme.dreamwork_debug
 
-    if std.SYSTEM_WINDOWS --[[ ha-ha microslop ]] and false --[[proton is broken]] then
-        scheme = {
-            "       / *    .      +                                                         ⣀⣀⣤⠤⢤⣀⠀ ",
-            "  .   /                        /  '           '                         ⢀⣠⠴⠒⢋⣉⣀⣠⣄⣀⣈⡇   ",
-            "     *   .         '          /           *                   ⠀⠀⠀⠀⣠⣴⣾⣯⠴⠚⠉⠉⠀⠀⠀⠀⣤⠏⣿      ",
-            "   *    * %s                                                 ⠀⣠⣴⡿⠿⢛⠁⠁⣸⠀⠀⠀⠀⠀⣤⣾⠵⠚⠁      ",
-            "'                +   +                    _|_     '    *  ⠀⣠⣴⠿⠋⠁⠀⠀⠀⠀⠘⣿⠀⣀⡠⠞⠛⠁⠂⠁⠀⠀      ",
-            "       .                             .      |         ⠀⠀⣀⣴⠟⠋⠁⠀⠀⠀⠀⠐⠠⡤⣾⣙⣶⡶⠃⠀⠀⠀⠀⠀⠀⠀       ",
-            "⠉                ____    o  +   .    +                ⣤⢾⣋⠉        __ ⡴⢿⢛⠃              ",
-            "⠄       o       / __ \\_____ __  __ _ _ __ _____     ⣴⡼⢏⠑__  _____/ /__ ⢿               ",
-            "⠂⠂      .      / / / /⠁⠁⠁//_ \\/ _` | '_ ` _ \\ \\ /\\ / / _  \\/ ___/ //_/                 ",
-            "⠁   +       ⣀⣴/ /_/ / /⠞⠁/ __/ (_) | | | | | \\ V  V / (_) / /  / ,<                    ",
-            "         ⣠⢴⣿⠟/_____/_/  ⠞\\___|\\__,_|_| |_| |_|\\_/\\_/ \\___/_/  /_/|_|                   ",
-            "⠀⠀⠀⠀⠀⢀⡴⢏⡵⠛⠀⠀⠀⠀⠀⠀⠀⣀⣴⠞⠛                                                                  ",
-            "⠀⠀⠀⣀⣼⠛⣲⡏⠁⠀⠀⠀⠀⠀⢀⣠⡾⠋⠉⠁⠁⠁        .-.    o  +   .    |                                     ",
-            "⠀⠀⡴⠟⠀⢰⡯⠄⠀⠀⠀⠀⣠⢴⠟⠉ ⠁              ) )             --o--                                  ",
-            "⠀⡾⠁⠁⠀⠘⠧⠤⢤⣤⠶⠏⠙⠁    *     *       '-´   ⠁   ⠁    ⠁  |                                    ",
-            "⠘⣇⠂⢀⣀⣀⠤⠞⠋                                                                              ",
-            "⠀⠈⠉⠉⠉     .      +                      *   '      '        +                          ",
-            "╭────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       ",
-            "┊  GitHub: https://github.com/Pika-Software                                            ",
-            "┊  Discord: https://discord.gg/Gzak99XGvv                                              ",
-            "┊  Website: https://p1ka.eu                                                            ",
-            "┊  DevTeam: %s                                                                         ",
-            "┊  License: %s                                                                         ",
-            "╰────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──────⋆⋅☆⋅⋆──ˎˊ˗                                       "
+    local sky = { { 1, star } }
+    local row_map = { { 1, frame }, { 3, bullet }, { 5, label }, { 16, value }, { 57, frame } }
+    local row_star_map = { { 1, frame }, { 3, bullet }, { 5, label }, { 16, value }, { 57, frame }, { 59, star } }
+    local top_map = { { 1, frame }, { 58, star } }
+    local rule_map = { { 1, frame } }
+
+    local string_interpolate = string.interpolate
+    local unicode_pad = std.unicode.pad
+
+    local splash = string_interpolate( splashes[ math.random( 1, splash_count ) ], variables )
+
+    local lines = {
+        "               /          .      +           /                                    ",
+        "          .   *                             /  '           '     .                ",
+        "   .             .             '           /           *                `         ",
+        "                     +                    *        *                         .    ",
+        "     '              /                                 _|_     '    *              ",
+        "           ,       +            .            .         |              +     |     ",
+        "            '       \\            \\                       .     '          --o--   ",
+        "  `      * .         +            \\          ,                         '    |     ",
+        "             ____                  \\        __        __            __            ",
+        "    .       / __ \\ ____ __   __ __  __ ____\\  \\      /  /___  _____/ /__ ` .     .",
+        "   /   .   / / / / __// _ \\ /  _` || '_ ` _ \\  \\ __ /  / _  \\/ ___/ //_/  `     / ",
+        "  /   /   / /_/ / /  /  __//  (_) || | | | | \\  V  V  / (_) / /  / ,<\\         /  ",
+        " *   *   /_____/_/   \\ ___|\\ __/__||_| |_| |_|\\ _/\\_/ \\ ___/_/  /_/|_|        /   ",
+        "  ,                 .      +              \\                 '                *    ",
+        "       +         \\  %s `",
+        "  .               \\              *           \\               *              ,     ",
+        "     .-.    `      *                          *        |         '                ",
+        "      ) )               *     '                      --o--         ,   +          ",
+        "     '-´                           *                   |                          ",
+        "         '        +           *           *   '               +                   ",
+        ""
+    }
+
+    local maps = {
+        sky, sky, sky, sky, sky, sky, sky, sky,
+
+        -- title
+        { { 1, star }, { 14, title }, { 18, star }, { 45, title }, { 47, star }, { 55, title }, { 57, star }, { 69, title }, { 71, star } },
+        { { 1, star }, { 13, title }, { 78, star } },
+        { { 1, star }, { 12, title }, { 77, star } },
+        { { 1, star }, { 11, title }, { 80, star } },
+        { { 1, star }, { 10, title }, { 79, star } },
+        sky,
+
+        -- splash
+        { { 1, star }, { 21, splash_color }, { 72, star } },
+        sky,
+
+        -- moon
+        { { 1, star }, { 6, moon },          { 9, star } },
+        { { 1, star }, { 7, moon },          { 10, star } },
+        { { 1, star }, { 6, moon },          { 9, star } },
+        sky,
+
+        -- empty
+        sky
+    }
+
+    local box_lines = std.ascii.art.keyValues( {
+        {
+            { "GitHub",  "https://github.com/Pika-Software" },
+            { "Discord", "https://discord.gg/Gzak99XGvv" },
+            { "Website", "https://p1ka.eu" },
+            { "DevTeam", dreamwork.DevTeam },
+            { "License", dreamwork.License }
+        },
+        {
+            { "JIT",      jit.version .. " (" .. (jit.status() and "on" or "off") .. ")" },
+            { "Lua",      string_format( "%.1f (%s)", std.LUA_VERSION, std.LUA_REALM ) },
+            { "Game",     string_format( "%d (%s)", std.GAME_VERSION, std.GAME_BRANCH ) },
+            { "Platform", string_format( "%s %s", jit.os, jit.arch ) }
         }
-    else
-        scheme = {
-            "               /          .      +           /                                    ",
-            "          .   *                             /  '           '     .                ",
-            "   .             .             '           /           *                `         ",
-            "                     +                    *        *                         .    ",
-            "     '              /                                 _|_     '    *              ",
-            "           ,       +            .            .         |              +     |     ",
-            "            '       \\            \\                       .     '          --o--   ",
-            "  `      * .         +            \\          ,                         '    |     ",
-            "             ____                  \\        __        __            __            ",
-            "    .       / __ \\ ____ __   __ __  __ ____\\  \\      /  /___  _____/ /__ ` .     .",
-            "   /   .   / / / / __// _ \\ /  _` || '_ ` _ \\  \\ __ /  / _  \\/ ___/ //_/  `     / ",
-            "  /   /   / /_/ / /  /  __//  (_) || | | | | \\  V  V  / (_) / /  / ,<\\         /  ",
-            " *   *   /_____/_/   \\ ___|\\ __/__||_| |_| |_|\\ _/\\_/ \\ ___/_/  /_/|_|        /   ",
-            "  ,                 .      +              \\                 '                *    ",
-            "       +         \\  %s                                                  `          ",
-            "  .               \\              *           \\               *              ,     ",
-            "     .-.    `      *                          *        |         '                ",
-            "      ) )               *     '                      --o--         ,   +          ",
-            "     '-´                           *                   |                          ",
-            "         '        +           *           *   '               +                   ",
-            "|>|================================================= ` .                          ",
-            "|=| -  GitHub:   https://github.com/Pika-Software  /  `                           ",
-            "|<| - Discord:   https://discord.gg/Gzak99XGvv    /                               ",
-            "|=| - Website:   https://p1ka.eu                 /                                ",
-            "|<| - DevTeam:   %s   /                                 ",
-            "|=| - License:   %s  /                                  ",
-            "|>|___________________________________________/                                   "
-        }
+    } )
+
+    do
+
+        local first_row = true
+
+        for i = 1, #box_lines do
+            local item = box_lines[ i ]
+            local line = item.text
+            local map = rule_map
+
+            if item.kind == "top" then
+                line = line .. " ` ."
+                map = top_map
+            elseif item.kind == "text" then
+                if first_row then
+                    line = line .. " `"
+                    map = row_star_map
+                    first_row = false
+                else
+                    map = row_map
+                end
+            end
+
+            lines[ #lines + 1 ] = line
+            maps[ #maps + 1 ] = map
+        end
+
     end
 
-    local welcome_art = string.gsub( table_concat( scheme, "\n", 1 ), "%%s" .. string.rep( " ", 50 - 1 ), "%%s" )
-    local splash = string.interpolate( splashes[ math.random( 1, count ) ], variables )
+    for i = 1, #lines, 1 do
+        lines[ i ] = unicode_pad( string_format( lines[ i ], unicode_pad( splash, 50, true, true ) ), 82, false, true )
+    end
 
-    local unicode_pad = std.unicode.pad
-    console.write( color_scheme.realm, string_format( "\n" .. welcome_art .. "\n\n", unicode_pad( splash, 50 ), unicode_pad( dreamwork.DevTeam, 28, false, true ), unicode_pad( dreamwork.License, 28, false, true ) ) )
+    local utf8_charpattern = std.utf8.charpattern
+    local string_gmatch = string.gmatch
+    local string_find = string.find
+
+    local function color_at( map, column )
+        local color = map[ 1 ][ 2 ]
+
+        for i = 2, #map, 1 do
+            if map[ i ][ 1 ] > column then
+                break
+            end
+
+            color = map[ i ][ 2 ]
+        end
+
+        return color
+    end
+
+    local function write_mapped_line( line, map )
+        local color = frame
+        local buffer = {}
+        local buffer_size = 0
+        local column = 0
+
+        for ch in string_gmatch( line, utf8_charpattern ) do
+            column = column + 1
+
+            local next_color = color
+            if ch ~= " " then
+                next_color = color_at( map, column )
+            end
+
+            if next_color ~= color then
+                if buffer_size ~= 0 then
+                    console.write( color, table_concat( buffer, "", 1, buffer_size ) )
+                    buffer_size = 0
+                end
+
+                color = next_color
+            end
+
+            buffer_size = buffer_size + 1
+            buffer[ buffer_size ] = ch
+        end
+
+        if buffer_size ~= 0 then
+            console.write( color, table_concat( buffer, "", 1, buffer_size ) )
+        end
+    end
+
+    console.write( "\n" )
+
+    local welcome_art = table_concat( lines, "\n", 1 )
+    local line_index = 1
+    local position = 1
+
+    while position <= (#welcome_art + 1) do
+        local ending = string_find( welcome_art, "\n", position, true ) or (#welcome_art + 1)
+
+        write_mapped_line(
+            string_sub( welcome_art, position, ending - 1 ),
+            maps[ line_index ] or sky
+        )
+
+        console.write( "\n" )
+
+        line_index = line_index + 1
+        position = ending + 1
+    end
+
+    console.write( "\n" )
 
 end
 
@@ -3002,26 +3210,23 @@ dreamwork_load( "modules/engine/gui.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
 dreamwork_load( "std/gfx/types/viewport_layout.lua", false, LUA_SERVER )
+dreamwork_load( "std/gfx/types/font.lua", false, LUA_SERVER )
 
 dreamwork_load( "std/db/sqlite.lua" )
 dreamwork_load( "modules/storage.lua" )
 
 dreamwork.storage.init()
 
-dreamwork_load( "std/server.lua" )
+dreamwork_load( "std/menu/init.lua" )
 
+dreamwork_load( "std/game/types/game.lua" )
+dreamwork_load( "std/game/init.lua" )
+
+dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
 dreamwork_load( "modules/engine/http.lua" )
 dreamwork_load( "std/net/http.lua" )
 
-dreamwork_load( "std/types/web_client.lua", false, LUA_SERVER )
-dreamwork_load( "std/types/wasm.lua", false, LUA_SERVER )
-
-dreamwork_load( "modules/engine/websocket.lua" )
-dreamwork_load( "std/net/types/websocket.lua" )
-
-dreamwork_load( "modules/engine/network.lua", false, LUA_MENU )
-dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
-dreamwork_load( "std/net/types/message.lua" )
+dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
 
 dreamwork_load( "std/net/steam.lua" )
 
@@ -3029,19 +3234,34 @@ dreamwork_load( "std/compress/types/zip.lua" )
 dreamwork_load( "std/compress/types/tar.lua" )
 dreamwork_load( "std/compress/types/addon.lua" )
 
+dreamwork_load( "modules/engine/client.lua", false, LUA_MENU )
+dreamwork_load( "modules/engine/injection.lua" )
+
+dreamwork_load( "std/net/types/web_client.lua", false, LUA_SERVER )
+dreamwork_load( "std/net/types/wasm.lua", false, LUA_SERVER )
+
+dreamwork_load( "modules/engine/websocket.lua" )
+dreamwork_load( "std/net/types/websocket.lua" )
+
+dreamwork_load( "std/net/types/network.lua", false, LUA_MENU )
+dreamwork_load( "std/net/types/message.lua" )
+
+dreamwork_load( "std/i18n.lua" )
+
 dreamwork_load( "modules/engine/material.lua" )
 dreamwork_load( "modules/engine/matproxy.lua", false, not LUA_CLIENT )
 
-dreamwork_load( "modules/engine/entity.lua", false, LUA_MENU )
+dreamwork_load( "std/net/steam/workshop.lua" )
 
 -- MCP bridge: https://github.com/unknown-gd/gm_mcp (`require( "mcp" )` / `gmsv_mcp_*`)
-if LUA_SERVER then
+if (LUA_SERVER or LUA_MENU) then
     if std.loadbinary( "mcp" ) then
         dreamwork_load( "modules/mcp.lua" )
         logger:info( "'gm_mcp' was loaded & connected as MCP bridge." )
     end
-elseif LUA_CLIENT and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
+elseif (LUA_CLIENT or LUA_MENU) and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
+    -- TODO: server request to check is mcp available
 end
 
 dreamwork_load( "modules/engine/events.lua" )
@@ -3139,46 +3359,10 @@ do
 
 end
 
---- [SHARED AND MENU]
----
----
----
----@param package_name string
----@param package_version string
----@return any
-function std.import( package_name, package_version )
-    -- TODO: implement
-end
+dreamwork_load( "modules/transport.lua", false, LUA_MENU )
 
---- [SHARED AND MENU]
----
---- Opens the named file and executes its content as a Lua chunk.
----
---- When called without arguments, `dofile` executes the content of the standard input (`stdin`).
----
---- Returns all values returned by the chunk. In case of errors, `dofile` propagates the error to its caller. (That is, `dofile` does not run in protected mode.)
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-dofile)
----
----@param file_path string
----@param ... any
----@return any ...
-function std.dofile( file_path, ... )
-    -- TODO: reimplement
-end
-
---- [SHARED AND MENU]
----
---- Loads the given module, returns any value returned by the searcher(`true` when `nil`). Besides that value, also returns as a second result the loader data returned by the searcher, which indicates how `require` found the module. (For instance, if the module came from a file, this loader data is the file path.)
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-require)
----
----@param modname string
----@param ... any
----@return ...
-function std.require( modname, ... )
-    -- TODO: reimplement
-end
+dreamwork_load( "modules/loader/init.lua" )
+dreamwork_load( "modules/loading.lua", false, not LUA_CLIENT )
 
 local total_memory = gc.getMemory()
 logger:info( "Start-up time: %.2f ms, memory used during startup: %.02f MB.", (dreamwork_getUpTime() - dreamwork.InitTime) * 1000, (total_memory - startup_memory) / 1024 )

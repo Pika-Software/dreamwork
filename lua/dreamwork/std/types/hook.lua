@@ -1,6 +1,9 @@
 local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_catch = dreamwork_exceptions.catch
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_track = dreamwork_sandbox.track
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -293,6 +296,8 @@ function Hook:attach( type, handler, priority )
         error( "attempt to create circular hook reference", 2 )
     end
 
+    sandbox_track( handler, Hook.detach, self, type, handler )
+
     if type == "provide" then
         return attach_type( self, self.provide_handlers, self.provide_priorities, handler, priority )
     elseif type == "peek" then
@@ -517,6 +522,9 @@ function Hook:once( type, handler, priority )
         self:detach( type, temp_func )
         return handler( ... )
     end
+
+    -- `temp_func` is what gets attached, so it is the one detached when the package unloads
+    sandbox_track( handler, Hook.detach, self, type, temp_func )
 
     return self:attach( type, temp_func, priority )
 end

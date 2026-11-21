@@ -131,6 +131,22 @@ sigil.Error = SigilErrorClass
     #compile / #endcompile -> lua code executed during preprocessing, non-nil result is inserted into the code
 
 
+    > syntax sugar ( applied after all directives, `sugar = false` disables it ):
+
+    <target> += <expression> -> <target> = <target> + ( <expression> ), same for `-=`, `*=`, `/=`, `%=`, `^=` and `..=`
+    <target> //= <expression> -> <target> = math.fdiv( <target>, <expression> )
+    <a> // <b> -> math.fdiv( <a>, <b> ), floor division, `__idiv` metamethod is supported
+    <target> |= &= <<= >>= <expression> -> bit compound assignments, there is no xor one ( `~=` is the inequality )
+
+    Bit operators `|`, `~`, `&`, `<<`, `>>` and unary `~` are kept when `bit_operators` is `true` ( native support ),
+    otherwise they are rewritten into `bit.bor`, `bit.bxor`, `bit.band`, `bit.lshift`, `bit.rshift` and `bit.bnot` calls.
+
+    All operators use Lua 5.3 precedence: or < and < comparison < | < ~ < & < shift < .. < + - < * / // % < unary < ^
+
+    Compound assignments are statements only, targets with calls or computed keys are evaluated once
+    ( `t[ f() ] += 1` -> `do local o, k = t, f(); o[ k ] = o[ k ] + ( 1 ) end` ).
+
+
     > notices:
 
     #info <message> -> produces an information notice
@@ -160,6 +176,8 @@ sigil.Error = SigilErrorClass
 ---@field read fun( file_path: string ): string | nil
 ---@field logger dreamwork.std.console.Logger | false
 ---@field comments boolean
+---@field sugar boolean
+---@field bit_operators boolean
 ---@field hide table<string, boolean>
 ---@field included table<string, boolean>
 ---@field including table<string, boolean>
@@ -172,6 +190,8 @@ sigil.Error = SigilErrorClass
 ---@field read? fun( file_path: string ): string | nil The file reader used by `#include`, defaults to `dreamwork.vfs.readFile`.
 ---@field logger? dreamwork.std.console.Logger | false The logger used by notices, `false` disables them, defaults to `dreamwork.Logger`.
 ---@field comments? boolean If `false`, comments will be removed from the result, defaults to `true`.
+---@field sugar? boolean If `false`, compound assignments ( `+=`, `//=`, ... ), `//` floor division and bit operators are left as is, defaults to `true`.
+---@field bit_operators? boolean If `true`, the result keeps native bit operators ( `|`, `&`, `~`, `<<`, `>>` ), otherwise they are rewritten into `bit` library calls, defaults to `dreamwork.std.raw.bit.operators` ( set `false` for code that runs in another realm ).
 
 ---@alias dreamwork.sigil.Directive fun( context: dreamwork.sigil.Context, file: dreamwork.sigil.File, parameters: string ): string | nil
 
@@ -578,11 +598,645 @@ function expand_text( context, file, code, is_condition )
     return table_concat( buffer, "", 1, buffer_size )
 end
 
+local desugar
+
+do
+
+    local keywords = lexer.keywords
+
+    --- Operators of compound assignments, `<operator>=`.
+    ---
+    --- There is no xor assignment, `~=` is the inequality.
+    ---
+    ---@type table<string, boolean>
+    local compound_operators = {
+        [ "+" ] = true,
+        [ "-" ] = true,
+        [ "*" ] = true,
+        [ "/" ] = true,
+        [ "//" ] = true,
+        [ "%" ] = true,
+        [ "^" ] = true,
+        [ ".." ] = true,
+        [ "|" ] = true,
+        [ "&" ] = true,
+        [ "<<" ] = true,
+        [ ">>" ] = true
+    }
+
+    --- Priorities of binary operators, Lua 5.3 order.
+    ---
+    ---@type table<string, integer>
+    local binary_priorities = {
+        [ "or" ] = 1,
+        [ "||" ] = 1,
+        [ "and" ] = 2,
+        [ "&&" ] = 2,
+        [ "<" ] = 3,
+        [ ">" ] = 3,
+        [ "<=" ] = 3,
+        [ ">=" ] = 3,
+        [ "~=" ] = 3,
+        [ "!=" ] = 3,
+        [ "==" ] = 3,
+        [ "|" ] = 4,
+        [ "~" ] = 5,
+        [ "&" ] = 6,
+        [ "<<" ] = 7,
+        [ ">>" ] = 7,
+        [ ".." ] = 9,
+        [ "+" ] = 10,
+        [ "-" ] = 10,
+        [ "*" ] = 11,
+        [ "/" ] = 11,
+        [ "//" ] = 11,
+        [ "%" ] = 11,
+        [ "^" ] = 14
+    }
+
+    --- Unary operators bind tighter than all binary operators except `^`.
+    local UNARY_PRIORITY = 12
+
+    ---@type table<string, boolean>
+    local unary_operators = {
+        [ "-" ] = true,
+        [ "~" ] = true,
+        [ "not" ] = true,
+        [ "#" ] = true,
+        [ "!" ] = true
+    }
+
+    --- Binary operators that are rewritten into function calls, `bit` ones only without native bit operators.
+    ---
+    ---@type table<string, string>
+    local binary_functions = {
+        [ "//" ] = "__sigil_fdiv",
+        [ "|" ] = "__sigil_bor",
+        [ "~" ] = "__sigil_bxor",
+        [ "&" ] = "__sigil_band",
+        [ "<<" ] = "__sigil_lshift",
+        [ ">>" ] = "__sigil_rshift"
+    }
+
+    --- Locals of the rewritten operators, in the order of declaration.
+    ---
+    ---@type string[]
+    local function_names = { "__sigil_fdiv", "__sigil_bor", "__sigil_bxor", "__sigil_band", "__sigil_bnot", "__sigil_lshift", "__sigil_rshift" }
+
+    ---@type string[]
+    local function_sources = { "math.fdiv", "bit.bor", "bit.bxor", "bit.band", "bit.bnot", "bit.lshift", "bit.rshift" }
+
+    --- Tokens after which a new statement can start, besides the ends of expressions.
+    ---
+    ---@type table<string, boolean>
+    local statement_starts = {
+        [ ";" ] = true,
+        [ "::" ] = true,
+        [ "do" ] = true,
+        [ "then" ] = true,
+        [ "else" ] = true,
+        [ "repeat" ] = true,
+        [ "end" ] = true,
+        [ "break" ] = true
+    }
+
+    ---@type table<string, string>
+    local closing_brackets = {
+        [ "(" ] = ")",
+        [ "[" ] = "]",
+        [ "{" ] = "}"
+    }
+
+    --- Significant tokens ( without spaces, newlines and comments ) of the current code.
+    ---@type integer[]
+    local sugar_types = {}
+
+    ---@type string[]
+    local sugar_values = {}
+
+    --- Indexes of significant tokens in the full token list.
+    ---@type integer[]
+    local sugar_tokens = {}
+
+    ---@type integer[]
+    local sugar_lines = {}
+
+    local sugar_count = 0
+
+    --- Matching bracket indexes, in both directions.
+    ---@type table<integer, integer>
+    local sugar_match = {}
+
+    local sugar_name = "sigil"
+
+    ---@param message string
+    ---@param index integer
+    local function sugar_error( message, index )
+        error( SigilErrorClass( message, sugar_name, sugar_lines[ index ] or sugar_lines[ sugar_count ] or 1 ), 2 )
+    end
+
+    --- Checks that the token can end an expression.
+    ---
+    ---@param index integer
+    ---@return boolean
+    local function is_value_end( index )
+        local token_type, value = sugar_types[ index ], sugar_values[ index ]
+        if token_type == 6 --[[ name ]] then
+            return keywords[ value ] == nil or value == "nil" or value == "true" or value == "false"
+        elseif token_type == 7 --[[ symbol ]] then
+            return value == ")" or value == "]" or value == "}" or value == "..."
+        end
+
+        return token_type == 4 --[[ string ]] or token_type == 5 --[[ number ]]
+    end
+
+    --- Checks that the token can end a prefix expression, which can be called or indexed.
+    ---
+    ---@param index integer
+    ---@return boolean
+    local function is_prefix_end( index )
+        local token_type, value = sugar_types[ index ], sugar_values[ index ]
+        if token_type == 6 --[[ name ]] then
+            return keywords[ value ] == nil
+        elseif token_type == 7 --[[ symbol ]] then
+            return value == ")" or value == "]" or value == "}"
+        end
+
+        return token_type == 4 --[[ string ]]
+    end
+
+    --- Checks that the token is a unary operator, `-` and `~` are binary after a value.
+    ---
+    ---@param index integer
+    ---@return boolean
+    local function is_unary( index )
+        local value = sugar_values[ index ]
+        if value == "-" or value == "~" then
+            return sugar_types[ index ] == 7 --[[ symbol ]] and not is_value_end( index - 1 )
+        end
+
+        return unary_operators[ value ] == true and sugar_types[ index ] ~= 4 --[[ string ]]
+    end
+
+    ---@param index integer
+    ---@return integer
+    local function closing_of( index )
+        local closing_index = sugar_match[ index ]
+        if closing_index == nil then
+            sugar_error( string_format( "Unbalanced '%s'.", sugar_values[ index ] ), index )
+        end
+
+        ---@cast closing_index integer
+
+        return closing_index
+    end
+
+    --- Finds the `end` of the `function` at `index`.
+    ---
+    ---@param index integer
+    ---@return integer
+    local function function_end( index )
+        local depth = 0
+
+        for i = index, sugar_count, 1 do
+            if sugar_types[ i ] == 6 --[[ name ]] then
+                local value = sugar_values[ i ]
+                if value == "function" or value == "if" or value == "do" or value == "repeat" then
+                    depth = depth + 1
+                elseif value == "end" or value == "until" then
+                    depth = depth - 1
+
+                    if depth == 0 then
+                        return i
+                    end
+                end
+            end
+        end
+
+        sugar_error( "'end' expected to close 'function'.", index )
+        return sugar_count
+    end
+
+    --- Finds the end of the suffixed expression ( `a.b[c]( d ):e()` ) that starts at `index`.
+    ---
+    ---@param index integer
+    ---@return integer
+    local function suffix_end( index )
+        local token_type, value = sugar_types[ index ], sugar_values[ index ]
+
+        if token_type == 7 --[[ symbol ]] then
+            if value == "{" then
+                return closing_of( index )
+            elseif value == "..." then
+                return index
+            elseif value ~= "(" then
+                sugar_error( string_format( "Unexpected '%s', expected an expression.", value ), index )
+            end
+
+            index = closing_of( index )
+        elseif token_type == 6 --[[ name ]] then
+            if value == "function" then
+                return function_end( index )
+            elseif keywords[ value ] ~= nil then
+                if value == "nil" or value == "true" or value == "false" then
+                    return index
+                end
+
+                sugar_error( string_format( "Unexpected '%s', expected an expression.", value ), index )
+            end
+        elseif token_type == 4 --[[ string ]] or token_type == 5 --[[ number ]] then
+            return index
+        else
+            sugar_error( "Unexpected end of code, expected an expression.", index )
+        end
+
+        ::suffix_scanner::
+
+        local next_type, next_value = sugar_types[ index + 1 ], sugar_values[ index + 1 ]
+        if next_type == 7 --[[ symbol ]] then
+            if next_value == "." or next_value == ":" then
+                index = index + 2
+                goto suffix_scanner
+            elseif closing_brackets[ next_value ] ~= nil then
+                index = closing_of( index + 1 )
+                goto suffix_scanner
+            end
+        elseif next_type == 4 --[[ string ]] then
+            index = index + 1
+            goto suffix_scanner
+        end
+
+        return index
+    end
+
+    --- Finds the start of the suffixed expression that ends at `index`.
+    ---
+    ---@param index integer
+    ---@return integer
+    local function suffix_start( index )
+        ::prefix_scanner::
+
+        local token_type, value = sugar_types[ index ], sugar_values[ index ]
+
+        if token_type == 7 --[[ symbol ]] and (value == ")" or value == "]" or value == "}") then
+            local opening_index = closing_of( index )
+            if is_prefix_end( opening_index - 1 ) then
+                index = opening_index - 1
+                goto prefix_scanner
+            end
+
+            return opening_index
+        elseif token_type == 6 --[[ name ]] and keywords[ value ] == nil then
+            local previous_value = sugar_values[ index - 1 ]
+            if sugar_types[ index - 1 ] == 7 --[[ symbol ]] and (previous_value == "." or previous_value == ":") then
+                index = index - 2
+                goto prefix_scanner
+            end
+
+            return index
+        elseif token_type == 4 --[[ string ]] then
+            if is_prefix_end( index - 1 ) then
+                index = index - 1
+                goto prefix_scanner
+            end
+
+            return index
+        elseif is_value_end( index ) then
+            return index
+        end
+
+        sugar_error( string_format( "Unexpected '%s', expected an expression.", tostring( value ) ), index )
+        return index
+    end
+
+    --- Checks that the token is a binary operator, `-` and `~` must not be unary.
+    ---
+    ---@param index integer
+    ---@return integer | nil priority
+    local function binary_priority( index )
+        if sugar_types[ index ] ~= 7 --[[ symbol ]] and sugar_types[ index ] ~= 6 --[[ name ]] then
+            return nil
+        end
+
+        local priority = binary_priorities[ sugar_values[ index ] ]
+        if priority == nil or is_unary( index ) then
+            return nil
+        end
+
+        return priority
+    end
+
+    --- Finds the start of the left operand of the binary operator at `index`.
+    ---
+    ---@param index integer
+    ---@param priority integer The priority of the operator, operators with the same or higher priority continue the operand.
+    ---@return integer
+    local function left_operand( index, priority )
+        if index == 1 then
+            sugar_error( string_format( "Missing left operand of '%s'.", sugar_values[ index ] ), index )
+        end
+
+        local start_index = index - 1
+
+        ::operand_scanner::
+
+        start_index = suffix_start( start_index )
+
+        while is_unary( start_index - 1 ) do
+            start_index = start_index - 1
+        end
+
+        local previous_priority = binary_priority( start_index - 1 )
+        if previous_priority ~= nil and previous_priority >= priority then
+            start_index = start_index - 2
+            goto operand_scanner
+        end
+
+        return start_index
+    end
+
+    --- Finds the end of the right operand of the operator at `index`.
+    ---
+    ---@param index integer
+    ---@param priority integer The priority of the operator, operators with a higher priority continue the operand.
+    ---@return integer
+    local function right_operand( index, priority )
+        ::operand_scanner::
+
+        index = index + 1
+
+        while unary_operators[ sugar_values[ index ] ] and sugar_types[ index ] ~= 4 --[[ string ]] do
+            index = index + 1
+        end
+
+        index = suffix_end( index )
+
+        local next_priority = binary_priority( index + 1 )
+        if next_priority ~= nil and next_priority > priority then
+            index = index + 1
+            goto operand_scanner
+        end
+
+        return index
+    end
+
+    --- Checks that the suffixed expression is a plain lookup ( `a.b[c][1]` ), safe to evaluate twice.
+    ---
+    ---@param start_index integer
+    ---@param end_index integer
+    ---@return boolean
+    local function is_plain_lookup( start_index, end_index )
+        local depth = 0
+
+        for i = start_index, end_index, 1 do
+            local token_type, value = sugar_types[ i ], sugar_values[ i ]
+            if token_type == 6 --[[ name ]] then
+                if keywords[ value ] ~= nil then
+                    return false
+                end
+            elseif token_type == 7 --[[ symbol ]] then
+                if value == "[" then
+                    depth = depth + 1
+                elseif value == "]" then
+                    depth = depth - 1
+                elseif value ~= "." then
+                    return false
+                end
+            elseif depth == 0 then
+                return false
+            end
+        end
+
+        return true
+    end
+
+    --- Checks that the code may contain something to rewrite.
+    ---
+    ---@param code string
+    ---@param bit_operators boolean
+    ---@return boolean
+    local function has_sugar( code, bit_operators )
+        if string_find( code, "//", 1, true ) ~= nil or string_find( code, "[%+%-%*/%%%^%.|&]=" ) ~= nil or string_find( code, "<<=", 1, true ) ~= nil or string_find( code, ">>=", 1, true ) ~= nil then
+            return true
+        end
+
+        return not bit_operators and (string_find( code, "[|&]" ) ~= nil or string_find( code, "<<", 1, true ) ~= nil or string_find( code, ">>", 1, true ) ~= nil or string_find( code, "~[^=]" ) ~= nil)
+    end
+
+    --- Rewrites compound assignments, `//` floor divisions and bit operators ( without native ones ) into plain Lua.
+    ---
+    --- Tokens are edited in place, so line numbers are preserved.
+    ---
+    ---@param code string
+    ---@param name string The chunk name used in errors.
+    ---@param bit_operators boolean If `false`, bit operators are rewritten into `bit` library calls.
+    ---@return string
+    function desugar( code, name, bit_operators )
+        if not has_sugar( code, bit_operators ) then
+            return code
+        end
+
+        local types, values, lines, count = tokenize( code )
+
+        sugar_types, sugar_values, sugar_tokens, sugar_lines, sugar_match = {}, {}, {}, {}, {}
+        sugar_count, sugar_name = 0, name
+
+        ---@type integer[]
+        local stack, stack_size = {}, 0
+
+        for i = 1, count, 1 do
+            local token_type = types[ i ]
+            if token_type ~= 1 --[[ space ]] and token_type ~= 2 --[[ newline ]] and token_type ~= 3 --[[ comment ]] then
+                local value = values[ i ]
+
+                sugar_count = sugar_count + 1
+                sugar_types[ sugar_count ], sugar_values[ sugar_count ], sugar_tokens[ sugar_count ], sugar_lines[ sugar_count ] = token_type, value, i, lines[ i ]
+
+                if token_type == 7 --[[ symbol ]] then
+                    if closing_brackets[ value ] ~= nil then
+                        stack_size = stack_size + 1
+                        stack[ stack_size ] = sugar_count
+                    elseif value == ")" or value == "]" or value == "}" then
+                        local opening_index = stack[ stack_size ]
+                        if opening_index ~= nil and closing_brackets[ sugar_values[ opening_index ] ] == value then
+                            sugar_match[ opening_index ], sugar_match[ sugar_count ] = sugar_count, opening_index
+                            stack[ stack_size ] = nil
+                            stack_size = stack_size - 1
+                        end
+                    end
+                end
+            end
+        end
+
+        ---@type table<integer, string>
+        local prefixes, suffixes = {}, {}
+        ---@type table<string, boolean>
+        local used = {}
+        local changed = false
+
+        local index = 1
+        while index <= sugar_count do
+            local value = sugar_values[ index ]
+
+            if sugar_types[ index ] == 7 --[[ symbol ]] then
+                if compound_operators[ value ] and sugar_values[ index + 1 ] == "=" and sugar_tokens[ index + 1 ] == sugar_tokens[ index ] + 1 then
+                    if index == 1 then
+                        sugar_error( string_format( "Missing target of '%s='.", value ), index )
+                    end
+
+                    local target_end = index - 1
+                    local target_start = suffix_start( target_end )
+
+                    if target_start ~= 1 and not (is_value_end( target_start - 1 ) or statement_starts[ sugar_values[ target_start - 1 ] ]) then
+                        sugar_error( string_format( "Compound assignment '%s=' must be a statement.", value ), index )
+                    end
+
+                    local target_type, target_value = sugar_types[ target_end ], sugar_values[ target_end ]
+                    if not (target_value == "]" or (target_type == 6 --[[ name ]] and keywords[ target_value ] == nil and sugar_values[ target_end - 1 ] ~= ":")) then
+                        sugar_error( string_format( "Cannot assign to a function call with '%s='.", value ), index )
+                    end
+
+                    local expression_last = right_operand( index + 1, 0 )
+
+                    ---@type string
+                    local target
+
+                    -- `= ` for plain targets, `; <target> = ` for hoisted ones
+                    ---@type string
+                    local assignment
+
+                    local closing = " )"
+
+                    if is_plain_lookup( target_start, target_end ) then
+                        local buffer, buffer_size = {}, 0
+
+                        for i = sugar_tokens[ target_start ], sugar_tokens[ target_end ], 1 do
+                            local token_type = types[ i ]
+
+                            buffer_size = buffer_size + 1
+                            buffer[ buffer_size ] = (token_type == 2 --[[ newline ]] or token_type == 3 --[[ comment ]]) and " " or values[ i ]
+                        end
+
+                        target = table_concat( buffer, "", 1, buffer_size )
+                        assignment = "= "
+                    elseif target_value == "]" then
+                        local opening_index = sugar_match[ target_end ]
+                        ---@cast opening_index integer
+
+                        prefixes[ sugar_tokens[ target_start ] ] = "do local __sigil_object, __sigil_key = " .. (prefixes[ sugar_tokens[ target_start ] ] or "")
+                        values[ sugar_tokens[ opening_index ] ] = ","
+                        values[ sugar_tokens[ target_end ] ] = ""
+
+                        target, closing = "__sigil_object[ __sigil_key ]", " ) end"
+                        assignment = "; " .. target .. " = "
+                    else
+                        prefixes[ sugar_tokens[ target_start ] ] = "do local __sigil_object = " .. (prefixes[ sugar_tokens[ target_start ] ] or "")
+                        values[ sugar_tokens[ target_end - 1 ] ] = ""
+                        values[ sugar_tokens[ target_end ] ] = ""
+
+                        target, closing = "__sigil_object." .. target_value, " ) end"
+                        assignment = "; " .. target .. " = "
+                    end
+
+                    local function_name = binary_functions[ value ]
+                    if function_name ~= nil and (value == "//" or not bit_operators) then
+                        values[ sugar_tokens[ index ] ] = assignment .. function_name .. "( " .. target .. ","
+                        used[ function_name ] = true
+                    else
+                        values[ sugar_tokens[ index ] ] = assignment .. target .. " " .. value .. " ("
+                    end
+
+                    values[ sugar_tokens[ index + 1 ] ] = ""
+
+                    local last_token = sugar_tokens[ expression_last ]
+                    suffixes[ last_token ] = closing .. (suffixes[ last_token ] or "")
+
+                    changed = true
+                    index = index + 1
+                elseif value == "//" or (not bit_operators and binary_functions[ value ] ~= nil) then
+                    if is_unary( index ) then
+                        if value ~= "~" then
+                            sugar_error( string_format( "Missing left operand of '%s'.", value ), index )
+                        end
+
+                        local last_token = sugar_tokens[ right_operand( index, UNARY_PRIORITY ) ]
+
+                        values[ sugar_tokens[ index ] ] = "__sigil_bnot( "
+                        suffixes[ last_token ] = " )" .. (suffixes[ last_token ] or "")
+
+                        used.__sigil_bnot = true
+                    else
+                        local priority = binary_priorities[ value ]
+                        local function_name = binary_functions[ value ]
+
+                        local first_token = sugar_tokens[ left_operand( index, priority ) ]
+                        local last_token = sugar_tokens[ right_operand( index, priority ) ]
+
+                        prefixes[ first_token ] = function_name .. "( " .. (prefixes[ first_token ] or "")
+                        suffixes[ last_token ] = " )" .. (suffixes[ last_token ] or "")
+                        values[ sugar_tokens[ index ] ] = ","
+
+                        used[ function_name ] = true
+                    end
+
+                    changed = true
+                end
+            end
+
+            index = index + 1
+        end
+
+        sugar_types, sugar_values, sugar_tokens, sugar_lines, sugar_match = {}, {}, {}, {}, {}
+        sugar_count = 0
+
+        if not changed then
+            return code
+        end
+
+        ---@type string[]
+        local locals, sources, local_count = {}, {}, 0
+
+        for i = 1, #function_names, 1 do
+            local function_name = function_names[ i ]
+            if used[ function_name ] then
+                local_count = local_count + 1
+                locals[ local_count ], sources[ local_count ] = function_name, function_sources[ i ]
+            end
+        end
+
+        if local_count ~= 0 then
+            local declaration = "local " .. table_concat( locals, ", ", 1, local_count ) .. " = " .. table_concat( sources, ", ", 1, local_count ) .. "; "
+
+            if types[ 1 ] == 3 --[[ comment ]] and string_byte( values[ 1 ], 1 ) == 0x23 --[[ # ]] then
+                -- right after the shebang line, without adding a line
+                suffixes[ 2 ] = (suffixes[ 2 ] or "") .. declaration
+            else
+                prefixes[ 1 ] = declaration .. (prefixes[ 1 ] or "")
+            end
+        end
+
+        for i = 1, count, 1 do
+            local prefix, suffix = prefixes[ i ], suffixes[ i ]
+            if prefix ~= nil or suffix ~= nil then
+                values[ i ] = (prefix or "") .. values[ i ] .. (suffix or "")
+            end
+        end
+
+        return table_concat( values, "", 1, count )
+    end
+
+end
+
 ---@param context dreamwork.sigil.Context
 ---@param file dreamwork.sigil.File
 ---@param code string
 ---@return any
 local function execute( context, file, code )
+    if context.sugar then
+        -- runs here, so the native support of this realm decides
+        code = desugar( code, file.name, rbit_operators )
+    end
+
     return loadstring( code, file.name, context.sandbox )()
 end
 
@@ -1054,6 +1708,8 @@ function sigil.preprocess( code, options )
         read = options.read or read_file,
         logger = logger,
         comments = options.comments ~= false,
+        sugar = options.sugar ~= false,
+        bit_operators = options.bit_operators == nil and rbit_operators or options.bit_operators == true,
         hide = {},
         included = {},
         including = {}
@@ -1089,5 +1745,13 @@ function sigil.preprocess( code, options )
         context.including[ file_path ] = true
     end
 
-    return process( context, code, options.name or file_path or "sigil", file_path )
+    local name = options.name or file_path or "sigil"
+
+    code = process( context, code, name, file_path )
+
+    if context.sugar then
+        code = desugar( code, name, context.bit_operators )
+    end
+
+    return code
 end

@@ -48,7 +48,7 @@ http.github = github
 
 ---@type dreamwork.std.console.Variable<string>
 local token = console_Variable( {
-    name = "dreamwork_github_token",
+    name = dreamwork.selectVariableName( "github_token" ),
     description = "The personal access token sent with every request, empty sends none, see https://github.com/settings/tokens",
     type = "string",
     default = "",

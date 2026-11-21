@@ -41,7 +41,6 @@ if coroutine.isyieldable == nil then
     ---
     ---@return boolean is_yieldable
     ---@nodiscard
-    ---@diagnostic disable-next-line: duplicate-set-field
     function coroutine.isyieldable()
         local co = coroutine_running()
         return co ~= nil and coroutine_status( co ) == "running"

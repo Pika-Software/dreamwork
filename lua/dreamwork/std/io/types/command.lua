@@ -39,15 +39,15 @@ local tostring = std.tostring
 local Emitter = std.Emitter
 
 
----@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, string>
+---@type table<( dreamwork.std.console.Command | dreamwork.std.console.Variable ), string>
 local names = {}
 gc_setTableRules( names, true, false )
 
----@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, string>
+---@type table<( dreamwork.std.console.Command | dreamwork.std.console.Variable ), string>
 local descriptions = {}
 gc_setTableRules( descriptions, true, false )
 
----@type table<dreamwork.std.console.Command | dreamwork.std.console.Variable, integer>
+---@type table<( dreamwork.std.console.Command | dreamwork.std.console.Variable ), integer>
 local flags = {}
 gc_setTableRules( flags, true, false )
 
@@ -262,7 +262,7 @@ end
 --- Waits for the console command to be executed.
 ---
 ---@return dreamwork.std.console.Command command
----@return garrysmod.Player | nil client
+---@return dreamwork.std.Client | nil client
 ---@return string[] args
 ---@return string argument_string
 ---@async
@@ -270,10 +270,10 @@ function Command:await()
     return events:await( self, "execute" )
 end
 
----@param client garrysmod.Player | nil
+---@param client dreamwork.std.Client | nil
 ---@param name string
----@param argument_string string
 ---@param args string[]
+---@param argument_string string
 engine_hook.catch( "dreamwork.console.command.execute", "console.command.execute", function( client, name, args, argument_string )
     local command = commands[ name ]
     if command == nil then
@@ -284,31 +284,30 @@ engine_hook.catch( "dreamwork.console.command.execute", "console.command.execute
         argument_string = string_sub( argument_string, 2, -2 )
     end
 
-    -- TODO: review this after client class will be created
-
     events:emit( command, "execute", command, client, args, argument_string )
 
     return true
 end, -500 )
 
----@param name string
----@param argument_string string
+---@param client dreamwork.std.Client | nil
+---@param command_name string
 ---@param args string[]
-engine_hook.catch( "dreamwork.console.command.autocomplete", "console.command.autocomplete", function( name, argument_string, args )
-    local command = commands[ name ]
+---@param argument_string string
+engine_hook.catch( "dreamwork.console.command.autocomplete", "console.command.autocomplete", function( client, command_name, args, argument_string )
+    local command = commands[ command_name ]
     if command == nil then return end
 
     local fn = autocomplete[ command ]
     if fn == nil then return end
 
-    local success, value1, value2 = exceptions_call( fn, command, argument_string, args )
+    local success, value1, value2 = exceptions_call( fn, command, argument_string, args, client )
     if not success or value1 == nil then return end
 
     if value1 == false then
         return value2
     end
 
-    local prefix = name .. " "
+    local prefix = command_name .. " "
 
     ---@type string[]
     local suggestions = {}

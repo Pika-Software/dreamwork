@@ -73,59 +73,12 @@ do
 
 end
 
-if LUA_CLIENT or LUA_MENU then
-
-    local last_call = dreamwork_getUpTime()
-
-    std.FRAME_TIME = 1 / 60
-    std.FPS = 60
-
-    engine_hook.catch( "Think", "modules.engine.events.frame.capture", function()
-        local elapsed_time = dreamwork_getUpTime()
-
-        local frame_time = elapsed_time - last_call
-        last_call = elapsed_time
-
-        std.FRAME_TIME = frame_time
-        std.FPS = 1 / frame_time
-    end, 1000 )
-
-end
-
 if LUA_MENU then
 
     -- the menu has no ticks, a timer imitates them once per frame
     engine_timer.create( "modules.engine.events.tick", 0, 0, function()
         hook_call( "Tick" )
     end, true )
-
-end
-
-do
-
-    local tick_time = (glua_engine.TickInterval or debug_fempty)() or (1 / 60)
-
-    std.TICK_TIME = tick_time
-    std.TPS = 1 / tick_time
-
-    local window_start = dreamwork_getUpTime()
-    local window_ticks = 0
-
-    -- ticks can run back to back while the engine catches up,
-    -- so the rate is measured over a window instead of a single tick
-    engine_hook.catch( "Tick", "modules.engine.events.tick.capture", function()
-        window_ticks = window_ticks + 1
-
-        local now = dreamwork_getUpTime()
-        local elapsed = now - window_start
-
-        if elapsed >= 0.5 then
-            std.TICK_TIME = elapsed / window_ticks
-            std.TPS = window_ticks / elapsed
-
-            window_start, window_ticks = now, 0
-        end
-    end, 1000 )
 
 end
 

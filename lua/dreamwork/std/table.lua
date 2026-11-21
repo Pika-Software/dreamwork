@@ -58,7 +58,6 @@ if table.pack == nil then
     ---@param ... V
     ---@return V[]
     ---@nodiscard
-    ---@diagnostic disable-next-line: duplicate-set-field
     function table.pack( ... )
         return { n = raw_select( "#", ... ), ... }
     end
@@ -77,7 +76,6 @@ end
 ---@param value V The value to insert.
 ---@param tbl_length integer? The length of the table. Optionally, it should be used to speed up calculations.
 ---@return integer index The index of the inserted value.
----@diagnostic disable-next-line: duplicate-set-field
 function table.insert( tbl, index, value, tbl_length )
     if tbl_length == nil then
         tbl_length = len( tbl )
@@ -137,7 +135,6 @@ if table.move == nil then
     ---@param destination V[]? The destination table, defaults to the source table.
     ---@param source_length integer? The length of the source table. Optionally, it should be used to speed up calculations.
     ---@return V[] destination Selected destination table.
-    ---@diagnostic disable-next-line: duplicate-set-field
     function table.move( source, start_position, end_position, offset, destination, source_length )
         if destination == nil then
             destination = source

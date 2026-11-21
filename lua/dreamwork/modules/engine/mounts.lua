@@ -17,6 +17,8 @@ local string = std.string
 local string_fnv1a = string.fnv1a
 local string_format = string.format
 
+local table_sort = std.table.sort
+
 
 --- [SHARED AND MENU]
 ---
@@ -28,7 +30,10 @@ local string_format = string.format
 ---@class dreamwork.engine.mounts
 ---@field GameList dreamwork.engine.mounts.GameInfo[] The list of currently mounted games.
 ---@field GameCount integer The length of the `GameList` array.
+---@field GameCatalog dreamwork.engine.mounts.GameInfo[] All games the engine can mount content from, sorted by depot (app) ID.
+---@field GameCatalogCount integer The length of the `GameCatalog` array.
 ---@field GameMap table<integer, dreamwork.engine.mounts.GameInfo> All games the engine can mount content from, by depot (app) ID.
+---@field GameFolders table<string, dreamwork.engine.mounts.GameInfo> Preferred game per folder name (mounted wins, then lowest depot).
 ---@field AddonList dreamwork.engine.mounts.AddonInfo[] The list of currently mounted addons.
 ---@field AddonCount integer The length of the `AddonList` array.
 ---@field AddonMap table<integer, dreamwork.engine.mounts.AddonInfo> The currently mounted addons, by local addon ID (`laid`).
@@ -62,11 +67,20 @@ local game_list = {}
 ---@type integer
 local game_count = 0
 
+---@type dreamwork.engine.mounts.GameInfo[]
+local game_catalog = {}
+
+---@type integer
+local game_catalog_count = 0
+
 ---@type table<integer, dreamwork.engine.mounts.GameInfo>
 local game_map = {}
 
 ---@type integer
 local game_map_size = 0
+
+---@type table<string, dreamwork.engine.mounts.GameInfo>
+local game_folders = {}
 
 ---@type table<integer, dreamwork.engine.mounts.GameInfo>
 local mounted_games = {}
@@ -95,8 +109,17 @@ local addon_files = {}
 ---@type integer
 local update_stamp = 0
 
-mounts.GameList, mounts.GameCount, mounts.GameMap = game_list, game_count, game_map
+mounts.GameList, mounts.GameCount = game_list, game_count
+mounts.GameCatalog, mounts.GameCatalogCount = game_catalog, game_catalog_count
+mounts.GameMap, mounts.GameFolders = game_map, game_folders
 mounts.AddonList, mounts.AddonCount, mounts.AddonMap = addon_list, addon_count, addon_map
+
+---@param a dreamwork.engine.mounts.GameInfo
+---@param b dreamwork.engine.mounts.GameInfo
+---@return boolean
+local function sort_games_by_depot( a, b )
+    return a.depot < b.depot
+end
 
 ---@param addon_file string
 ---@return integer laid
@@ -147,6 +170,10 @@ engine_hook.catch( "dreamwork.content.update", "modules.engine.mounts.update", f
     ---@type integer
     local new_game_count = 0
 
+    for folder in raw_pairs( game_folders ) do
+        game_folders[ folder ] = nil
+    end
+
     for i = 1, engine_game_count, 1 do
         local game_info = engine_games[ i ]
         local depot = game_info.depot
@@ -157,6 +184,19 @@ engine_hook.catch( "dreamwork.content.update", "modules.engine.mounts.update", f
 
         game_map[ depot ] = game_info
         game_stamps[ depot ] = stamp
+        game_catalog[ i ] = game_info
+
+        local folder = game_info.folder
+        local preferred = game_folders[ folder ]
+        if preferred == nil then
+            game_folders[ folder ] = game_info
+        elseif game_info.mounted ~= preferred.mounted then
+            if game_info.mounted then
+                game_folders[ folder ] = game_info
+            end
+        elseif game_info.depot < preferred.depot then
+            game_folders[ folder ] = game_info
+        end
 
         if game_info.mounted then
             new_game_count = new_game_count + 1
@@ -213,8 +253,18 @@ engine_hook.catch( "dreamwork.content.update", "modules.engine.mounts.update", f
         game_list[ i ] = nil
     end
 
+    for i = engine_game_count + 1, game_catalog_count, 1 do
+        game_catalog[ i ] = nil
+    end
+
+    if engine_game_count > 1 then
+        table_sort( game_catalog, sort_games_by_depot )
+    end
+
     game_count = new_game_count
+    game_catalog_count = engine_game_count
     mounts.GameCount = new_game_count
+    mounts.GameCatalogCount = engine_game_count
 
     ---@type dreamwork.engine.mounts.AddonInfo[]
     local engine_addons = engine_GetAddons()

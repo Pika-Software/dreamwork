@@ -45,11 +45,13 @@ function filesystem.Delete( relative_path, mount ) end
 
 --- [SHARED AND MENU]
 ---
---- Returns whether the given file or directory exists.
+--- Returns whether the given file exists.
 ---
----@param relative_path string The path of the file or directory.
+--- Unlike `file.Exists`, directories return `false`. Use `filesystem.IsDir` for them.
+---
+---@param relative_path string The path of the file.
 ---@param mount string The mount to search in.
----@return boolean exists `true` if the file or directory exists.
+---@return boolean exists `true` if the file exists.
 function filesystem.Exists( relative_path, mount ) end
 
 --- [SHARED AND MENU]

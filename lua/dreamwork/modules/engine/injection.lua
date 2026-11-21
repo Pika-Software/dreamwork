@@ -2,6 +2,9 @@ local dreamwork_engine = dreamwork.engine
 local engine_Player = dreamwork_engine.Player
 local engine_requireLibrary = dreamwork_engine.requireLibrary
 
+local engine_client = dreamwork_engine.client
+local client_fromEntity = engine_client.fromEntity
+
 local detour = dreamwork.detour
 
 local engine_hook = dreamwork_engine.hook
@@ -18,6 +21,11 @@ local debug_getmetatable = debug.getmetatable
 
 local json = std.json
 local json_deserialize = json.deserialize
+
+local server = std.server
+
+local Client = std.Client
+local Client_getLocal = Client.getLocal
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
@@ -85,29 +93,43 @@ do
 
     local fallback_exists = concommand.Run ~= nil
 
-    ---@param ply garrysmod.Player
+    ---@param pl garrysmod.Player | nil
     ---@param cmd string
     ---@param args string[]
     ---@param argument_string string
-    detour.simple( function( ply, cmd, args, argument_string )
-        local is_command_found = hook_call( "dreamwork.console.command.execute", ply, cmd, args, argument_string ) == true
+    detour.simple( function( pl, cmd, args, argument_string )
+        local client
+
+        if LUA_SERVER then
+            if server.dedicated then
+                if pl ~= nil then
+                    client = client_fromEntity( pl )
+                end
+            else
+                client = Client_getLocal() -- we can get "local" player on non dedicated server
+            end
+        elseif LUA_CLIENT then
+            client = Client_getLocal() -- only local client can exists on the client in this call
+        end
+
+        local is_command_found = hook_call( "dreamwork.console.command.execute", client, cmd, args, argument_string ) == true
         if not is_command_found then
             if fallback_exists then
                 return nil
             end
 
-            dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", ply )
+            dreamwork.Logger:error( "Catched attempt to run unknown console command '%s %s' by %s.", cmd, argument_string or "", client )
         end
 
         return is_command_found
     end, concommand, "Run" )
 
-    ---@param cmd string
+    ---@param command string
     ---@param argument_string string
     ---@param args string[]
     ---@return string[] | nil
-    detour.simple( function( cmd, argument_string, args )
-        return hook_call( "dreamwork.console.command.autocomplete", cmd, argument_string, args )
+    detour.simple( function( command, argument_string, args )
+        return hook_call( "dreamwork.console.command.autocomplete", Client_getLocal(), command, args, argument_string )
     end, concommand, "AutoComplete" )
 
 end
@@ -176,11 +198,11 @@ if LUA_SERVER or LUA_CLIENT then
         for i = 1, #entity_metatables, 1 do
             local metatable = entity_metatables[ i ]
             detour.before( function( entity_userdata )
-                local is_player = debug_getmetatable( entity_userdata ) == engine_Player
-                hook_call( "dreamwork.entity.gc", entity_userdata, is_player )
+                local is_client = debug_getmetatable( entity_userdata ) == engine_Player
+                hook_call( "dreamwork.entity.gc", entity_userdata, is_client )
 
-                if is_player then
-                    hook_call( "dreamwork.client.gc", entity_userdata )
+                if is_client then
+                    hook_call( "dreamwork.entity.client.gc", entity_userdata )
                 end
             end, metatable, "__gc" )
         end

@@ -151,9 +151,11 @@ do
     local http = {}
     storage.http = http
 
+    -- TODO: rename cvars with mn_ for menu
+
     ---@type dreamwork.std.console.Variable<integer>
     local cache_size = console_Variable( {
-        name = "dreamwork_http_cache_size",
+        name = dreamwork.selectVariableName( "http_cache_size" ),
         description = "The maximum size of cached content in KB, used for etag caching in http library.",
         type = "integer",
         default = 50,
@@ -167,7 +169,7 @@ do
 
     ---@type dreamwork.std.console.Variable<integer>
     local cache_total_size = console_Variable( {
-        name = "dreamwork_http_cache_total_size",
+        name = dreamwork.selectVariableName( "http_cache_total_size" ),
         description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
         type = "integer",
         default = 8192,
@@ -181,7 +183,7 @@ do
 
     ---@type dreamwork.std.console.Variable<integer>
     local cache_lifetime = console_Variable( {
-        name = "dreamwork_http_cache_lifetime",
+        name = dreamwork.selectVariableName( "http_cache_lifetime" ),
         description = "The number of days cached content is kept for, 0 keeps it forever.",
         type = "integer",
         default = 30,

@@ -1,0 +1,25 @@
+---@meta dreamwork.std.font
+
+
+--- [CLIENT AND MENU]
+---
+--- The options of `Font`, mirrors [FontData](https://wiki.facepunch.com/gmod/Structures/FontData)
+--- except `size`, which is a display length resolved by `ViewportLayout.parse`.
+---
+---@class dreamwork.std.Font.Options
+---@field name string? The unique font name, a generated one by default. Fonts created by a package get its id as the prefix, `{id}::{name}`.
+---@field size string The font size as a length quantity string (`"<number><ViewportUnit>"`), e.g. `"2vmin"`, `"12pt"`, `"16px"`.
+---@field font string? The font source, a font name or a `.ttf` file name in `resource/fonts`. Default is `"Arial"`.
+---@field weight integer? The font boldness. Default is `500`.
+---@field blursize integer? The strength of the font blurring, must be > 0 to apply. Default is `0`.
+---@field scanlines integer? The "scanline" interval, must be > 1 to apply. Default is `0`.
+---@field extended boolean? Allows characters outside of Latin-1. Default is `true`.
+---@field antialias boolean? Smooths the font. Default is `true`.
+---@field underline boolean? Adds an underline. Default is `false`.
+---@field italic boolean? Makes the font italic. Default is `false`.
+---@field strikeout boolean? Adds a strike through. Default is `false`.
+---@field symbol boolean? Enables the use of symbolic fonts such as Webdings. Default is `false`.
+---@field rotary boolean? Seems to add a line in the middle of each letter. Default is `false`.
+---@field shadow boolean? Adds shadow casting to the font. Default is `false`.
+---@field additive boolean? Additive rendering. Default is `false`.
+---@field outline boolean? Adds a black outline. Default is `false`.

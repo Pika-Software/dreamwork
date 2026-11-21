@@ -20,8 +20,9 @@ local time_now = std.time.now
 local tostring = std.tostring
 local string_format = std.string.format
 
+
 --- The Github API token variable, created by `std.http.github`.
-local TOKEN_VARIABLE = "dreamwork_github_token"
+local TOKEN_VARIABLE = dreamwork.selectVariableName( "github_token" )
 
 --- [SHARED AND MENU]
 ---

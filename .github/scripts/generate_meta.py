@@ -1272,9 +1272,6 @@ def deduplicate(files: list[tuple[str, list[Item]]]) -> list[tuple[str, list[Ite
     return result
 
 
-# sources that are kept in the tree for reference but never loaded
-EXCLUDED_SOURCES = {"std/io/fs-ref.lua"}
-
 README = """# dreamwork meta
 
 Generated [LuaLS](https://luals.github.io) definitions for the dreamwork `std` environment,
@@ -1327,9 +1324,6 @@ def generate(
     files: list[tuple[str, list[Item]]] = []
 
     for path in sorted(lua_root.rglob("*.lua")):
-        if str(path.relative_to(lua_root)) in EXCLUDED_SOURCES:
-            continue
-
         std_file = std_root in path.parents
         name = (
             str(path.relative_to(std_root))

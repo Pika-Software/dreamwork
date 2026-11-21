@@ -147,7 +147,7 @@ do
 
     if LUA_SERVER then
         enabled_variable = console_Variable( {
-            name = "dreamwork_mcp_enabled",
+            name = dreamwork.selectVariableName( "mcp_enabled" ),
             description = "When unset (reset), follows the developer convar; 1/0 (true/false) overrides. When 0, tool calls are rejected.",
             type = "string",
             default = "",
@@ -161,7 +161,7 @@ do
     if LUA_CLIENT then
         ---@type dreamwork.std.console.Variable<boolean>
         local variable = console_Variable( {
-            name = "dreamwork_mcp_allow_exec",
+            name = dreamwork.selectVariableName( "mcp_allow_exec" ),
             description = "When false, this client refuses remote MCP Lua execution.",
             type = "boolean",
             default = true,
@@ -177,7 +177,7 @@ do
 
         ---@type dreamwork.std.console.Variable<boolean>
         variable = console_Variable( {
-            name = "dreamwork_mcp_allow_capture",
+            name = dreamwork.selectVariableName( "mcp_allow_capture" ),
             description = "When false, this client refuses remote MCP screenshot capture.",
             type = "boolean",
             default = true,
@@ -564,10 +564,13 @@ if LUA_SERVER then
     local ents_GetAll = glua_ents.GetAll
     local team_GetName = glua_team.GetName
 
-    ---@type table<string, garrysmod.Player>
+    local Client = std.Client
+    local Client_getAll = Client.getAll
+
+    ---@type table<string, dreamwork.std.Client>
     local pending_exec = {}
 
-    ---@type table<string, garrysmod.Player>
+    ---@type table<string, dreamwork.std.Client>
     local pending_screenshots = {}
 
     local POLL_TIMER_NAME = "dreamwork.mcp.poll"
@@ -848,12 +851,12 @@ if LUA_SERVER then
 
     --- [SERVER]
     ---
-    --- Resolves a player by nick, SteamID or SteamID64.
+    --- Resolves a client by name, SteamID or SteamID64.
     ---
     ---@param target string
-    ---@return garrysmod.Player | nil
+    ---@return dreamwork.std.Client | nil
     ---@return string | nil
-    function mcp.resolvePlayer( target )
+    function mcp.resolveClient( target )
         if not isString( target ) then
             return nil, "client target must be a string."
         end
@@ -869,16 +872,17 @@ if LUA_SERVER then
 
         local lowered = string_lower( normalized )
         local matches = {}
-        local list = player_GetAll()
+        local list, count = Client_getAll()
 
-        for index = 1, #list, 1 do
-            local ply = list[ index ]
-            if ply ~= nil and ply:IsValid() then
-                if string_lower( ply:Nick() ) == lowered
-                    or ply:SteamID() == normalized
-                    or ply:SteamID64() == normalized then
-                    matches[ #matches + 1 ] = ply
-                end
+        for index = 1, count, 1 do
+            local client = list[ index ]
+
+            local name = client.name
+            local steam_id = client.steam_id
+
+            if (name ~= nil and string_lower( name ) == lowered)
+                or (steam_id ~= nil and (steam_id:toSteam2() == normalized or steam_id:to64() == normalized)) then
+                matches[ #matches + 1 ] = client
             end
         end
 
@@ -956,8 +960,8 @@ if LUA_SERVER then
                 return false, "return_result is not supported with target 'all'."
             end
 
-            local list = player_GetAll()
-            if #list == 0 then
+            local list, count = Client_getAll( true )
+            if count == 0 then
                 return false, "no connected players."
             end
 
@@ -975,8 +979,8 @@ if LUA_SERVER then
             return true, nil
         end
 
-        local ply, resolve_error = mcp.resolvePlayer( target )
-        if ply == nil then
+        local client, resolve_error = mcp.resolveClient( target )
+        if client == nil then
             return false, resolve_error
         end
 
@@ -987,12 +991,12 @@ if LUA_SERVER then
 
         if request_id ~= nil and request_id ~= "" then
             clear_pending_exec( request_id )
-            pending_exec[ request_id ] = ply
+            pending_exec[ request_id ] = client
 
             local timer_name = "dreamwork.mcp.exec." .. request_id
 
             engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
-                if pending_exec[ request_id ] == ply then
+                if pending_exec[ request_id ] == client then
                     clear_pending_exec( request_id )
                     respond_lua_raw( request_id, false, "Client Lua result timed out." )
                 end
@@ -1003,7 +1007,7 @@ if LUA_SERVER then
             write_opcode( writer, MSG_EXEC )
             write_request_id( writer, request_id or "" )
             write_payload( writer, code )
-        end, ply )
+        end, client )
 
         return true, nil
     end
@@ -1015,8 +1019,8 @@ if LUA_SERVER then
             error( "screenshot request is missing its id", 2 )
         end
 
-        local ply, resolve_error = mcp.resolvePlayer( command.target )
-        if ply == nil then
+        local client, resolve_error = mcp.resolveClient( command.target )
+        if client == nil then
             ---@cast resolve_error string
             respond_screenshot( request_id, false, resolve_error )
             return
@@ -1029,12 +1033,12 @@ if LUA_SERVER then
         end
 
         clear_pending_screenshot( request_id )
-        pending_screenshots[ request_id ] = ply
+        pending_screenshots[ request_id ] = client
 
         local timer_name = "dreamwork.mcp.shot." .. request_id
 
         engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
-            if pending_screenshots[ request_id ] == ply then
+            if pending_screenshots[ request_id ] == client then
                 clear_pending_screenshot( request_id )
                 respond_screenshot( request_id, false, "Screenshot timed out." )
             end
@@ -1043,7 +1047,7 @@ if LUA_SERVER then
         channel:transmit( function( _, writer )
             write_opcode( writer, MSG_SCREENSHOT )
             write_request_id( writer, request_id )
-        end, ply )
+        end, client )
     end
 
     --- [SERVER]
@@ -1156,9 +1160,9 @@ if LUA_SERVER then
     end
 
     ---@param reader dreamwork.std.BinaryReader
-    ---@param sender garrysmod.Player | nil
+    ---@param sender dreamwork.std.Client | nil
     local function on_network_receive( _, reader, sender )
-        if sender == nil or not sender:IsValid() then return end
+        if sender == nil then return end
 
         local ok, err = pcall( function()
             local opcode = read_opcode( reader )
@@ -1209,8 +1213,11 @@ if LUA_SERVER then
         end )
 
         if not ok then
-            report_error( "failed to handle client message from %s [%s]: %s", sender:Nick(), sender:SteamID64(), err, {
-                sender = sender:SteamID64()
+            local steam_id = sender.steam_id
+            local steam_id64 = steam_id ~= nil and steam_id:to64() or "BOT"
+
+            report_error( "failed to handle client message from %s [%s]: %s", sender.name or "unknown", steam_id64, err, {
+                sender = steam_id64
             } )
         end
     end
@@ -1386,10 +1393,11 @@ if LUA_SERVER then
     end, 2000 )
 
     -- Fail waiting execs on Lua errors that did not go through dreamwork (those are sentinels here).
-    engine_hook.catch( "dreamwork.error.occurred", "modules.mcp.error", function( err, realm, stack, source, client )
+    ---@param pl garrysmod.Player | nil
+    engine_hook.catch( "dreamwork.error.occurred", "modules.mcp.error", function( err, realm, stack, source, pl )
         if err == exceptions_Sentinel then return end
 
-        if client == nil then
+        if pl == nil then
             if active_exec_request_id ~= nil then
                 collect_error( active_exec_request_id, lua_error_entry( err, realm, stack, source ) )
             end
@@ -1397,33 +1405,30 @@ if LUA_SERVER then
             return
         end
 
-        if not client:IsValid() then return end
+        if not pl:IsValid() then return end
 
-        for request_id, pending_ply in raw_pairs( pending_exec ) do
-            if pending_ply == client then
+        for request_id, client in raw_pairs( pending_exec ) do
+            if client:getEntity() == pl then
                 collect_error( request_id, lua_error_entry( err, realm, stack, source ) )
             end
         end
     end )
 
-    engine_hook.catch( "dreamwork.entity.destroy", "modules.mcp.entities", function( entity, is_player )
-        if not is_player then return end
-
-        ---@cast entity garrysmod.Player
-
-        for request_id, ply in raw_pairs( pending_exec ) do
-            if ply == entity then
+    ---@param client dreamwork.std.Client
+    engine_hook.catch( "dreamwork.client.disconnected", "modules.mcp.clients", function( client )
+        for request_id, pending_client in raw_pairs( pending_exec ) do
+            if pending_client == client then
                 clear_pending_exec( request_id )
                 respond_lua_raw( request_id, false, "Client disconnected." )
-                dreamwork_Logger:debug( "MCP: cancelled pending Lua result (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
+                dreamwork_Logger:debug( "MCP: cancelled pending Lua result (request=%s) after %s [%d] disconnected.", request_id, client.name or "unknown", client.user_id )
             end
         end
 
-        for request_id, ply in raw_pairs( pending_screenshots ) do
-            if ply == entity then
+        for request_id, pending_client in raw_pairs( pending_screenshots ) do
+            if pending_client == client then
                 clear_pending_screenshot( request_id )
                 respond_screenshot( request_id, false, "Client disconnected." )
-                dreamwork_Logger:debug( "MCP: cancelled pending screenshot (request=%s) after %s [%s] disconnected.", request_id, ply:Nick(), ply:SteamID64() )
+                dreamwork_Logger:debug( "MCP: cancelled pending screenshot (request=%s) after %s [%d] disconnected.", request_id, client.name or "unknown", client.user_id )
             end
         end
     end )

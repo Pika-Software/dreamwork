@@ -70,7 +70,7 @@ http.client = client
 
 ---@type dreamwork.std.console.Variable<number>
 local timeout_default = console_Variable( {
-    name = "dreamwork_http_timeout",
+    name = dreamwork.selectVariableName( "http_timeout" ),
     description = "The default timeout for http requests in seconds.",
     type = "number",
     default = 60,
@@ -84,7 +84,7 @@ local timeout_default = console_Variable( {
 
 ---@type dreamwork.std.console.Variable<number>
 local cache_ttl_default = console_Variable( {
-    name = "dreamwork_http_cache_ttl",
+    name = dreamwork.selectVariableName( "http_cache_ttl" ),
     description = "The cache time to live for the dreamwork http library in minutes.",
     type = "number",
     default = 1,
@@ -98,7 +98,7 @@ local cache_ttl_default = console_Variable( {
 
 ---@type dreamwork.std.console.Variable<integer>
 local cache_entries = console_Variable( {
-    name = "dreamwork_http_cache_entries",
+    name = dreamwork.selectVariableName( "http_cache_entries" ),
     description = "The maximum number of responses kept in the dreamwork http session cache, 0 disables it.",
     type = "integer",
     default = 256,
@@ -112,7 +112,7 @@ local cache_entries = console_Variable( {
 
 ---@type dreamwork.std.console.Variable<integer>
 local max_redirects_default = console_Variable( {
-    name = "dreamwork_http_max_redirects",
+    name = dreamwork.selectVariableName( "http_max_redirects" ),
     description = "The default maximum number of redirects followed in Lua by the dreamwork http library (with cookies and chttp).",
     type = "integer",
     default = 10,
@@ -126,7 +126,7 @@ local max_redirects_default = console_Variable( {
 
 ---@type dreamwork.std.console.Variable<number>
 local timeout_grace = console_Variable( {
-    name = "dreamwork_http_timeout_grace",
+    name = dreamwork.selectVariableName( "http_timeout_grace" ),
     description = "Extra seconds the dreamwork http library waits on top of the request timeout, so the http client's own timeout error comes first.",
     type = "number",
     default = 1,

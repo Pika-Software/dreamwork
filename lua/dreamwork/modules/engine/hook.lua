@@ -319,14 +319,14 @@ event_handlers[ "dreamwork.vfs.modified" ] = handler_two
 event_handlers[ "dreamwork.vfs.directory.mount" ] = handler_three
 
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param pl garrysmod.Player | nil
+---@param client dreamwork.std.Client | nil
 ---@param command string
 ---@param args string[]
 ---@param argument_string string
 ---@return boolean is_command_found
-event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, pl, command, args, argument_string )
+event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, client, command, args, argument_string )
     for i = 1, handlers[ 0 ], 1 do
-        local is_command_found = handlers[ i ]( pl, command, args, argument_string )
+        local is_command_found = handlers[ i ]( client, command, args, argument_string )
         if is_command_found ~= nil then
             return is_command_found
         end
@@ -336,13 +336,14 @@ event_handlers[ "dreamwork.console.command.execute" ] = function( handlers, pl, 
 end
 
 ---@param handlers dreamwork.engine.hook.Handler[]
----@param name string
----@param argument_string string
+---@param client dreamwork.std.Client | nil
+---@param command string
 ---@param args string[]
+---@param argument_string string
 ---@return string[] | nil suggestions
-event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers, name, argument_string, args )
+event_handlers[ "dreamwork.console.command.autocomplete" ] = function( handlers, client, command, args, argument_string )
     for i = 1, handlers[ 0 ], 1 do
-        local suggestions = handlers[ i ]( name, argument_string, args )
+        local suggestions = handlers[ i ]( client, command, args, argument_string )
         if suggestions ~= nil then
             return suggestions
         end
@@ -399,6 +400,9 @@ if LUA_SERVER then
 
     -- ( err: string, ply: garrysmod.Player, stack: table, addon_name: string )
     event_handlers[ "OnClientLuaError" ] = handler_four
+
+    -- ( ply: garrysmod.Player, steamid: string, uniqueid: string )
+    event_handlers[ "PlayerAuthed" ] = handler_three
 
     ---@param handlers dreamwork.engine.hook.Handler[]
     ---@param steamid64 string The SteamID64 of the connecting client.
@@ -565,6 +569,29 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
 
+    -- ( user_id: integer, old_state: integer, new_state: integer )
+    event_handlers[ "ClientSignOnStateChanged" ] = handler_three
+
+
+    -- client stages in their order, see `dreamwork.std.Client.Stage`
+    -- `established` is a separate moment only on the server for humans, elsewhere it comes right before `spawning`
+    -- ( client: dreamwork.std.Client )
+    event_handlers[ "dreamwork.client.connected" ] = handler_one
+    event_handlers[ "dreamwork.client.established" ] = handler_one
+    event_handlers[ "dreamwork.client.spawning" ] = handler_one
+    event_handlers[ "dreamwork.client.spawned" ] = handler_one
+    event_handlers[ "dreamwork.client.initialized" ] = handler_one
+
+    -- ( client: dreamwork.std.Client )
+    event_handlers[ "dreamwork.client.identified" ] = handler_one
+
+    -- ( client: dreamwork.std.Client, previous_name: string )
+    event_handlers[ "dreamwork.client.renamed" ] = handler_two
+
+    -- ( client: dreamwork.std.Client, reason: string | nil )
+    event_handlers[ "dreamwork.client.disconnected" ] = handler_two
+
+
     -- entity
     event_handlers[ "InitPostEntity" ] = handler_empty
     event_handlers[ "PostCleanupMap" ] = handler_empty
@@ -583,16 +610,16 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
 
-    -- ( entity: garrysmod.Entity, is_player: boolean )
+    -- ( entity: garrysmod.Entity, is_client: boolean )
     event_handlers[ "dreamwork.entity.spawn" ] = handler_two
     event_handlers[ "dreamwork.entity.destroy" ] = handler_two
     event_handlers[ "dreamwork.entity.gc" ] = handler_two
 
 
-    -- ( pl: garrysmod.Player )
-    event_handlers[ "dreamwork.client.spawn" ] = handler_one
-    event_handlers[ "dreamwork.client.destroy" ] = handler_one
-    event_handlers[ "dreamwork.client.gc" ] = handler_one
+    -- ( entity: garrysmod.Player )
+    event_handlers[ "dreamwork.entity.client.spawn" ] = handler_one
+    event_handlers[ "dreamwork.entity.client.destroy" ] = handler_one
+    event_handlers[ "dreamwork.entity.client.gc" ] = handler_one
 
 
     -- ( entities: garrysmod.Entity[], entity_count: integer )

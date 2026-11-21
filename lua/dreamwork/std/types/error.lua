@@ -4,6 +4,7 @@ local dreamwork_engine = dreamwork.engine
 local dreamwork_detour = dreamwork.detour
 
 local engine_hook = dreamwork_engine.hook
+local engine_mounts = dreamwork_engine.mounts
 
 local engine_console = dreamwork_engine.console
 local console_messageColored = engine_console.messageColored
@@ -257,6 +258,59 @@ do
 
     local realm_name = unicode.capitalize( std.LUA_REALM )
 
+    --- Returns what the function was loaded from, read from its raw chunk name,
+    --- the normalized `/game/...` path of a frame no longer has the addon or gamemode folder.
+    ---
+    ---@param func function | nil
+    ---@return string | nil kind `"package"`, `"addon"`, `"gamemode"`, `"workshop"` or `"game"`.
+    ---@return string | nil name
+    local function get_origin( func )
+        if func == nil then
+            return nil, nil
+        end
+
+        local source = debug.getfsource( func )
+        if source == nil then
+            return nil, nil
+        end
+
+        local name = string_match( source, "^@/packages/([^/]+/[^/]+)/", 1 )
+        if name ~= nil then
+            return "package", name
+        end
+
+        name = string_match( source, "^@addons/([^/]+)/", 1 )
+        if name ~= nil then
+            return "addon", name
+        end
+
+        name = string_match( source, "^@gamemodes/([^/]+)/", 1 )
+        if name ~= nil then
+            return "gamemode", name
+        end
+
+        local relative_path = string_match( source, "^@(lua/.+)$", 1 )
+        if relative_path == nil then
+            return nil, nil
+        end
+
+        -- files of workshop addons are merged into 'lua/', `vfs` is loaded after this file
+        local vfs = dreamwork.vfs
+        if vfs ~= nil then
+            local vfs_isFile = vfs.isFile
+            local addon_list = engine_mounts.AddonList
+
+            for index = 1, engine_mounts.AddonCount, 1 do
+                local addon_info = addon_list[ index ]
+                if vfs_isFile( "/addons/" .. addon_info.folder .. "/" .. relative_path ) then
+                    return "workshop", string_format( "%s [%s]", addon_info.title, addon_info.wsid )
+                end
+            end
+        end
+
+        return "game", "garrysmod"
+    end
+
     --- [SHARED AND MENU]
     ---
     --- Prints the error and its captured call stack directly to the console
@@ -308,6 +362,13 @@ do
             console_messageColored( tostring( top_frame.currentline or -1 ), COLOR_SPRAY )
             console_messageColored( "\n", COLOR_SUVA_GRAY )
 
+            local origin_kind, origin_name = get_origin( func )
+            if origin_kind ~= nil then
+                console_messageColored( "         by ", COLOR_SUVA_GRAY )
+                console_messageColored( origin_kind .. " ", COLOR_LIGHT_GRAY )
+                console_messageColored( origin_name .. "\n", COLOR_SANDSTONE )
+            end
+
             console_messageColored( "         in ", COLOR_SUVA_GRAY )
 
             local thread = top_frame.thread
@@ -316,12 +377,6 @@ do
             else
                 console_messageColored( represent( thread ) .. "\n", COLOR_SPRAY )
             end
-
-            -- TODO: Add error source, aka addon/package/folder in basic error throw info
-            -- create std.File.get( path_to_file ).mount / `whereis` alternative
-
-            -- console_messageColored( "  thrown by ", COLOR_SUVA_GRAY )
-            -- console_messageColored( file_path or "=[C]", COLOR_SANDSTONE )
         end
 
         local head_fn = self.__head

@@ -208,9 +208,15 @@ local function update_source( stack_level, current_thread )
     local source = stack_level.source
 
     if source ~= nil and source ~= "=[C]" then
-        ---@type string
-        local relative_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
-        stack_level.source = "/game/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
+        -- chunks compiled from vfs paths ( packages, memory files ) are already absolute
+        local vfs_path = string_match( source, "^@?(/.*)$", 1 )
+        if vfs_path == nil then
+            ---@type string
+            local relative_path = string_match( source, "^@?.-(lua/.*)$", 1 ) or source
+            stack_level.source = "/game/" .. (string_match( relative_path, "^.-([%w_]+/gamemode/.*)$", 1 ) or relative_path)
+        else
+            stack_level.source = vfs_path
+        end
     end
 
     stack_level.thread = current_thread

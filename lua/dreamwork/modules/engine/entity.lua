@@ -35,7 +35,7 @@ local math = std.math
 local math_max = math.max
 
 
---- [SHARED AND MENU]
+--- [SHARED]
 ---
 ---
 ---
@@ -67,7 +67,20 @@ do
         entity_map[ entity_list[ i ] ] = i
     end
 
-    detour.before( function()
+    --- [SHARED]
+    ---
+    --- Rebuilds the cached entity list from `ents.GetAll`.
+    ---
+    --- Entities that appeared call `dreamwork.entity.spawn` ( and `dreamwork.client.spawn` for players ),
+    --- entities that disappeared call `dreamwork.entity.destroy` ( and `dreamwork.client.destroy` for players ).
+    --- `dreamwork.entity.registry` is called once when the list changed.
+    ---
+    --- The engine runs this from `InvalidateInternalEntityCache`.
+    ---
+    --- Call it when an entity is already valid but not registered yet,
+    --- so the cache catches up without waiting for the engine.
+    ---
+    function engine_entity.update()
         local new_entities = ents_GetAll()
         local new_count = #new_entities
 
@@ -82,11 +95,11 @@ do
             new_map[ entity ] = i
 
             if entity_map[ entity ] == nil then
-                local is_player = debug_getmetatable( entity ) == engine_Player
-                hook_call( "dreamwork.entity.spawn", entity, is_player )
+                local is_client = debug_getmetatable( entity ) == engine_Player
+                hook_call( "dreamwork.entity.spawn", entity, is_client )
 
-                if is_player then
-                    hook_call( "dreamwork.client.spawn", entity )
+                if is_client then
+                    hook_call( "dreamwork.entity.client.spawn", entity )
                 end
 
                 has_changes = true
@@ -100,11 +113,11 @@ do
         for i = 1, entity_count, 1 do
             local entity = entity_list[ i ]
             if new_map[ entity ] == nil then
-                local is_player = debug_getmetatable( entity ) == engine_Player
-                hook_call( "dreamwork.entity.destroy", entity, is_player )
+                local is_client = debug_getmetatable( entity ) == engine_Player
+                hook_call( "dreamwork.entity.destroy", entity, is_client )
 
-                if is_player then
-                    hook_call( "dreamwork.client.destroy", entity )
+                if is_client then
+                    hook_call( "dreamwork.entity.client.destroy", entity )
                 end
 
                 has_changes = true
@@ -118,9 +131,11 @@ do
         if has_changes then
             hook_call( "dreamwork.entity.registry", new_entities, new_count )
         end
-    end, nil, "InvalidateInternalEntityCache" )
+    end
 
-    --- [SHARED AND MENU]
+    detour.before( engine_entity.update, nil, "InvalidateInternalEntityCache" )
+
+    --- [SHARED]
     ---
     --- Returns the cached list of all entities and its size.
     ---
@@ -133,7 +148,20 @@ do
         return entity_list, entity_count
     end
 
-    --- [SHARED AND MENU]
+    --- [SHARED]
+    ---
+    --- Checks if the entity is in the cached entity list, i.e. its `dreamwork.entity.spawn` event has been called.
+    ---
+    --- > NOTE: An engine entity can be valid before it is registered. The list follows the engine entity cache, and `update` rebuilds it immediately.
+    ---
+    ---@param entity garrysmod.Entity The entity to check.
+    ---@return boolean is_registered `true` if the entity is in the cached entity list, `false` otherwise.
+    ---@nodiscard
+    function engine_entity.isRegistered( entity )
+        return entity_map[ entity ] ~= nil
+    end
+
+    --- [SHARED]
     ---
     --- Returns the first entity of the cached entity list that matches the predicate.
     ---

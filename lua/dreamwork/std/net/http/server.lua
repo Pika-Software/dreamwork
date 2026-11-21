@@ -8,6 +8,11 @@ local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_call = dreamwork_exceptions.call
 local exceptions_report = dreamwork_exceptions.report
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_owner = dreamwork_sandbox.owner
+local sandbox_claim = dreamwork_sandbox.claim
+local sandbox_prefix = dreamwork_sandbox.prefix
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -15,6 +20,7 @@ local std = dreamwork.std
 local http = std.http
 
 local debug = std.debug
+local debug_fempty = debug.fempty
 local debug_newproxy = debug.newproxy
 local debug_getmetatable = debug.getmetatable
 
@@ -44,6 +50,7 @@ local type = std.type
 local error = std.error
 
 local Future = std.Future
+local Client = std.Client
 
 
 ---@type fun(): holylib.HttpServer
@@ -161,8 +168,8 @@ end
 ---@field method string The HTTP method, e.g. `"GET"` or `"POST"`. **Read-only.**
 ---@field content_length integer The request `Content-Length`. **Read-only.**
 ---@field authorization_count integer The number of `Authorization` credentials parsed from the request. **Read-only.**
----@field client holylib.CBaseClient | nil The HolyLib `CBaseClient` for the connected player that matched this request's IP, if any. **Read-only.**
----@field player garrysmod.Player | nil The `Player` for the connected player that matched this request's IP, if any. **Read-only.**
+---@field base_client holylib.CBaseClient | nil The HolyLib `CBaseClient` of the connected client that matched this request's IP, if any. **Read-only.**
+---@field client dreamwork.std.Client | nil The connected client that matched this request's IP, if any. **Read-only.**
 local Request = class.base( "http.Server.Request" )
 
 ---@type table<string, string>
@@ -176,8 +183,23 @@ local request_getters = {
     method = "GetMethod",
     content_length = "GetContentLength",
     authorization_count = "GetAuthorizationCount",
-    client = "GetClient",
-    player = "GetPlayer"
+    base_client = "GetClient",
+    client = "GetClient"
+}
+
+--- Converts the raw values of `request_getters` that differ from the property.
+---
+---@type table<string, fun( value: any ): any>
+local request_converters = {
+    ---@param base_client holylib.CBaseClient | nil
+    ---@return dreamwork.std.Client | nil
+    client = function( base_client )
+        if base_client ~= nil then
+            return Client.get( base_client:GetUserID() )
+        end
+
+        return nil
+    end
 }
 
 --- Returns the raw request or throws if it was already finished.
@@ -226,6 +248,12 @@ function Request:__index( key )
 
     -- cached, so it outlives `:finish`
     local value = raw_request[ getter ]( raw_request )
+
+    local convert = request_converters[ key ]
+    if convert ~= nil then
+        value = convert( value )
+    end
+
     cache[ key ] = value
     return value
 end
@@ -862,16 +890,42 @@ function Server:__represent()
     return string_format( "%s: %p [%s:%d - %s]", type( self ), self, handle:GetAddress(), handle:GetPort(), handle:GetName() )
 end
 
----@param name string?
----@protected
-function Server:__init( name )
-    if not httpserver_available then
-        error( "http.Server requires HolyLib's httpserver module", 2 )
+do
+
+    ---@param uuid_str string
+    ---@return boolean
+    local function is_unique( uuid_str )
+        return (httpserver_FindByName or debug_fempty)( uuid_str ) == nil
     end
 
-    local server = httpserver_Create()
-    server:SetName( name or uuid_unique() )
-    create_server( self, server, true )
+    ---@param name string?
+    ---@protected
+    function Server:__init( name )
+        if not httpserver_available then
+            error( "http.Server requires HolyLib's httpserver module", 2 )
+        end
+
+        local owner = sandbox_owner( 2 )
+        if owner == nil then
+            if name == nil then
+                name = uuid_unique( is_unique )
+            end
+        else
+            if name == nil then
+                name = uuid_unique( is_unique )
+            else
+                name = sandbox_prefix( owner, name )
+            end
+
+            sandbox_claim( owner, self, Server.destroy )
+        end
+
+        local server = httpserver_Create()
+        server:SetName( name )
+
+        create_server( self, server, true )
+    end
+
 end
 
 --- Destroys the HolyLib server when the object is collected, only if this wrapper created it.
@@ -1082,18 +1136,23 @@ end
 
 --- [SERVER]
 ---
---- Queues a prepared response for the next matching request from the given player `user_id`.
+--- Queues a prepared response for the next matching request from the given client.
 ---
 --- `handler` runs immediately to fill the response, matching requests are then answered
 --- on the worker thread without any Lua call. The response is invalid after `handler` returns.
 ---
----@param user_id integer The player's UserID (`-1` for non-player / unmatched clients).
+---@param client dreamwork.std.Client | nil The client, `nil` for requests that match no connected client.
 ---@param path string Exact request path to match.
 ---@param method dreamwork.std.http.RequestMethod | string Exact HTTP method to match.
 ---@param required_headers table<string, string> Headers that must be present with these values.
 ---@param handler fun( response: dreamwork.std.http.Server.Response ) Fills the prepared response.
 ---@param uses integer? How many times this entry may match. Defaults to `1`.
-function Server:prepare( user_id, path, method, required_headers, handler, uses )
+function Server:prepare( client, path, method, required_headers, handler, uses )
+    local user_id = -1
+    if client ~= nil then
+        user_id = client.user_id
+    end
+
     require_state( self ).handle:AddPreparedResponse( user_id, path, string_upper( method ), required_headers, function( raw_response )
         ---@type dreamwork.std.http.Server.Exchange
         local exchange = {

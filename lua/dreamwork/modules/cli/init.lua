@@ -21,6 +21,9 @@ local raw_select = raw.select
 local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
 
+local ascii = std.ascii
+local ascii_art = ascii.art
+
 local string = std.string
 local string_rep = string.rep
 local string_sub = string.sub
@@ -30,9 +33,6 @@ local string_lower = string.lower
 local string_match = string.match
 local string_gmatch = string.gmatch
 local string_format = string.format
-
-local utf8 = std.utf8
-local utf8_len = utf8.len
 
 local table = std.table
 local table_sort = table.sort
@@ -48,8 +48,6 @@ local math_floor = math.floor
 
 local class = std.class
 local class_isInherited = class.isInherited
-
-local server = std.server
 
 local pcall = std.pcall
 local tostring = std.tostring
@@ -90,12 +88,13 @@ local colors = {
 
 cli.colors = colors
 
---- [SHARED AND MENU]
----
 --- The maximal number of suggestions returned by `cli.complete`.
 ---
 local SUGGESTION_LIMIT = 64
-cli.SUGGESTION_LIMIT = SUGGESTION_LIMIT
+
+--- The maximal width of the text in boxes, longer lines are wrapped.
+---
+local BOX_WIDTH = 64
 
 do
 
@@ -142,64 +141,6 @@ do
         print( colors.error, fmt, ... )
     end
 
-    ---@class dreamwork.cli.BoxStyle
-    ---@field top_left string
-    ---@field top_right string
-    ---@field bottom_left string
-    ---@field bottom_right string
-    ---@field middle_left string
-    ---@field middle_right string
-    ---@field horizontal string
-    ---@field vertical string
-
-    --- [SHARED AND MENU]
-    ---
-    --- `true` in the dedicated server console, it draws box-drawing characters as wide as the text,
-    --- `false` in the in-game console, where they need an ASCII fallback.
-    ---
-    cli.IS_TERMINAL = LUA_SERVER and server.dedicated
-
-    ---@type dreamwork.cli.BoxStyle
-    local box_style
-
-    if cli.IS_TERMINAL then
-        box_style = {
-            top_left = "┌",
-            top_right = "┐",
-            bottom_left = "└",
-            bottom_right = "┘",
-            middle_left = "├",
-            middle_right = "┤",
-            horizontal = "─",
-            vertical = "│"
-        }
-    else
-        box_style = {
-            top_left = "+",
-            top_right = "+",
-            bottom_left = "+",
-            bottom_right = "+",
-            middle_left = "+",
-            middle_right = "+",
-            horizontal = "-",
-            vertical = "|"
-        }
-    end
-
-    ---@param str string
-    ---@return integer
-    local function text_width( str )
-        -- lax, so broken UTF-8 still has a width
-        return utf8_len( str, nil, nil, true ) or #str
-    end
-
-    --- [SHARED AND MENU]
-    ---
-    --- The maximal width of the text in boxes, longer lines are wrapped.
-    ---
-    local BOX_WIDTH = 64
-    cli.BOX_WIDTH = BOX_WIDTH
-
     --- [SHARED AND MENU]
     ---
     --- Wraps the text into lines no longer than the width, words longer than the width are split.
@@ -219,7 +160,7 @@ do
         local line, line_width = "", 0
 
         for word in string_gmatch( text, "%S+" ) do
-            local word_width = text_width( word )
+            local word_width = ascii_art.width( word )
 
             -- too long for any line, split by bytes, paths are the usual case
             if word_width > width then
@@ -235,7 +176,7 @@ do
 
                 line = lines[ line_count ]
                 line_count = line_count - 1
-                line_width = text_width( line )
+                line_width = ascii_art.width( line )
             elseif line_width == 0 then
                 line, line_width = word, word_width
             elseif line_width + 1 + word_width > width then
@@ -257,12 +198,12 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Prints the lines inside of the box, the width is taken from the longest line, lines longer than `cli.BOX_WIDTH` are wrapped.
+    --- Prints the lines inside of the box, the width is taken from the longest line.
     ---
     --- When `title` is given, it fills a separated top part of the box.
     ---
     --- The dedicated server console uses box-drawing characters, the in-game console draws them with a wider fallback font,
-    --- so it gets an ASCII border.
+    --- so it gets the ASCII scheme.
     ---
     --- ```
     --- ┌───────────────┐    +---------------+
@@ -281,70 +222,45 @@ do
         color = color or colors.name
         border_color = border_color or colors.description
 
-        ---@type string[]
-        local title_lines = {}
-        local title_count = 0
+        ---@type string[][]
+        local sections = {}
 
         if title ~= nil and title ~= "" then
-            title_lines, title_count = wrap( title, BOX_WIDTH )
+            sections[ #sections + 1 ] = wrap( title, BOX_WIDTH )
         end
 
         ---@type string[]
         local wrapped = {}
-        local line_count = 0
 
-        for index = 1, #lines, 1 do
-            wrapped, line_count = wrap( lines[ index ], BOX_WIDTH, wrapped )
+        for index = 1, #lines do
+            wrapped = wrap( lines[ index ], BOX_WIDTH, wrapped )
         end
 
-        lines = wrapped
+        if #wrapped ~= 0 then
+            sections[ #sections + 1 ] = wrapped
+        end
 
-        ---@type integer[]
-        local title_widths = {}
-        ---@type integer[]
-        local widths = {}
-        local max_width = 0
+        if #sections == 0 then
+            return
+        end
 
-        for index = 1, title_count, 1 do
-            local width = text_width( title_lines[ index ] )
-            title_widths[ index ] = width
+        local scheme = ascii_art.scheme
+        local box_lines = ascii_art.box( sections, nil, scheme )
+        local vertical = scheme.box_vertical
+        local vertical_prefix = vertical .. " "
+        local vertical_suffix = " " .. vertical .. "\n"
 
-            if width > max_width then
-                max_width = width
+        for index = 1, #box_lines do
+            local item = box_lines[ index ]
+
+            if item.kind == "text" then
+                write( vertical_prefix, border_color )
+                write( item.content .. string_rep( " ", item.width - ascii_art.width( item.content ) ), color )
+                write( vertical_suffix, border_color )
+            else
+                write( item.text .. "\n", border_color )
             end
         end
-
-        for index = 1, line_count, 1 do
-            local width = text_width( lines[ index ] )
-            widths[ index ] = width
-
-            if width > max_width then
-                max_width = width
-            end
-        end
-
-        local horizontal = string_rep( box_style.horizontal, max_width + 2 )
-        local vertical = box_style.vertical
-
-        write( box_style.top_left .. horizontal .. box_style.top_right .. "\n", border_color )
-
-        for index = 1, title_count, 1 do
-            write( vertical .. " ", border_color )
-            write( title_lines[ index ] .. string_rep( " ", max_width - title_widths[ index ] ), color )
-            write( " " .. vertical .. "\n", border_color )
-        end
-
-        if title_count ~= 0 and line_count ~= 0 then
-            write( box_style.middle_left .. horizontal .. box_style.middle_right .. "\n", border_color )
-        end
-
-        for index = 1, line_count, 1 do
-            write( vertical .. " ", border_color )
-            write( lines[ index ] .. string_rep( " ", max_width - widths[ index ] ), color )
-            write( " " .. vertical .. "\n", border_color )
-        end
-
-        write( box_style.bottom_left .. horizontal .. box_style.bottom_right .. "\n", border_color )
     end
 
     --- [SHARED AND MENU]
@@ -557,7 +473,7 @@ local cli_readNumber = cli.readNumber
 
 --- [SHARED AND MENU]
 ---
---- Appends the names that start with the prefix to the suggestions, stops at `cli.SUGGESTION_LIMIT` suggestions.
+--- Appends the names that start with the prefix to the suggestions.
 ---
 ---@param prefix string The typed prefix.
 ---@param names string[] The candidate names.
@@ -927,14 +843,14 @@ end
 
 --- Players can send server console commands too, so on the server only the console and the listen server host are accepted.
 ---
----@param client garrysmod.Player | nil
+---@param client dreamwork.std.Client | nil
 ---@return boolean
 local function is_allowed( client )
-    if not LUA_SERVER or client == nil or not client:IsValid() then
+    if not LUA_SERVER or client == nil then
         return true
     end
 
-    return client:IsListenServerHost()
+    return client:isLocal()
 end
 
 local futures_run = std.futures.run
@@ -1421,3 +1337,5 @@ end
 dreamwork_load( "modules/cli/commands/vfs.lua" )
 dreamwork_load( "modules/cli/commands/http.lua" )
 dreamwork_load( "modules/cli/commands/mcp.lua", false, not std.LUA_CLIENT_SERVER )
+dreamwork_load( "modules/cli/commands/transport.lua", false, std.LUA_MENU )
+dreamwork_load( "modules/cli/commands/package.lua" )

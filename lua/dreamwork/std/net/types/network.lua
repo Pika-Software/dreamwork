@@ -1,10 +1,22 @@
 local dreamwork_engine = dreamwork.engine
 local dreamwork_Logger = dreamwork.Logger
 
+local engine_client = dreamwork_engine.client
+local client_toEntity = engine_client.toEntity
+local client_fromEntity = engine_client.fromEntity
+
 local dreamwork_getUpTime = dreamwork.getUpTime
 local exceptions_call = dreamwork.exceptions.call
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_owner = dreamwork_sandbox.owner
+local sandbox_claim = dreamwork_sandbox.claim
+local sandbox_prefix = dreamwork_sandbox.prefix
+
 local engine_hook = dreamwork_engine.hook
+
+local Entity_IsValid = dreamwork_engine.Entity.IsValid
+local Player_GetInfoNum = dreamwork_engine.Player.GetInfoNum
 
 local engine_network = dreamwork_engine.network
 
@@ -52,7 +64,7 @@ local class = std.class
 local CRC32 = std.CRC32
 local crc32_digest = CRC32.digest
 
-local isTable = std.isTable
+local isObject = std.isObject
 
 local Emitter = std.Emitter
 local BinaryReader = std.BinaryReader
@@ -293,30 +305,30 @@ std.Network = NetworkClass
 
 --- Called when a message is fully received and its checksum matches.
 ---
---- `sender` is the player on the server and `nil` on the client.
+--- `sender` is the client on the server and `nil` on the client.
 ---
----@alias dreamwork.std.Network.ReceiveFn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, sender: garrysmod.Player | nil )
+---@alias dreamwork.std.Network.ReceiveFn fun( network: dreamwork.std.Network, reader: dreamwork.std.BinaryReader, sender: ( dreamwork.std.Client | nil ) )
 
 --- Called on every transfer progress, both incoming and outgoing.
 ---
---- `peer` is the other side, the player on the server and `nil` on the client,
+--- `peer` is the other side, the client on the server and `nil` on the client,
 --- `is_outgoing` is `true` for sent data, `done_bytes` counts the received
 --- or acknowledged bytes out of `total_bytes`.
 ---
----@alias dreamwork.std.Network.ProgressFn fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
+---@alias dreamwork.std.Network.ProgressFn fun( network: dreamwork.std.Network, peer: ( dreamwork.std.Client | nil ), is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
 
 --- Called for every chunk of incoming data in order, while it arrives.
 ---
 --- `chunk` is the data at the zero-based byte `offset` out of `total` bytes.
 --- The last call has `chunk = nil` and `success`, `offset` is the number of delivered bytes then.
 ---
----@alias dreamwork.std.Network.StreamFn fun( network: dreamwork.std.Network, sender: garrysmod.Player | nil, chunk: string | nil, offset: integer, total: integer, success: boolean | nil )
+---@alias dreamwork.std.Network.StreamFn fun( network: dreamwork.std.Network, sender: ( dreamwork.std.Client | nil ), chunk: ( string | nil ), offset: integer, total: integer, success: ( boolean | nil ) )
 
 --- Called when an outgoing transmission is finished.
 ---
 --- `success` is `false` if it was rejected, cancelled, timed out or the peer left.
 ---
----@alias dreamwork.std.Network.FinishFn fun( network: dreamwork.std.Network, success: boolean, peer: garrysmod.Player | nil )
+---@alias dreamwork.std.Network.FinishFn fun( network: dreamwork.std.Network, success: boolean, peer: ( dreamwork.std.Client | nil ) )
 
 --- The prefixed names the engine knows the networks by.
 ---
@@ -368,7 +380,7 @@ local networks = {}
 
 --- Parses an incoming engine message of the network and dispatches it by opcode.
 ---
----@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: ( garrysmod.Player | nil ) )
+---@type fun( network: dreamwork.std.Network, remaining_bits: integer, sender: ( dreamwork.std.Client | nil ) )
 local network_receive
 
 --- [SHARED]
@@ -416,7 +428,7 @@ end
 ---
 ---@return dreamwork.std.Network network The network.
 ---@return dreamwork.std.BinaryReader reader The reader of the message.
----@return garrysmod.Player | nil sender The sender, `nil` on the client.
+---@return dreamwork.std.Client | nil sender The sender, `nil` on the client.
 ---@async
 function Network:await()
     return events:await( self, "receive" )
@@ -469,7 +481,7 @@ end
 
 ---@param network dreamwork.std.Network
 ---@param data string
----@param sender garrysmod.Player | nil
+---@param sender dreamwork.std.Client | nil
 local function perform_callbacks( network, data, sender )
     if events:count( network, "receive" ) == 0 then
         if events:count( network, "stream" ) ~= 0 then return end
@@ -482,7 +494,7 @@ local function perform_callbacks( network, data, sender )
 end
 
 ---@param network dreamwork.std.Network
----@param peer garrysmod.Player | nil
+---@param peer dreamwork.std.Client | nil
 ---@param is_outgoing boolean
 ---@param done_bytes integer
 ---@param total_bytes integer
@@ -493,43 +505,50 @@ end
 --- The key of the server in the per-peer tables on the client.
 local server_key = "server"
 
----@param peer garrysmod.Player | nil
+---@param peer dreamwork.std.Client | nil
 ---@return string
 local function peer_tostring( peer )
     if peer == nil then
         return "server"
     end
 
-    return string_format( "%s [%s]", peer:Nick(), peer:SteamID() )
+    return string_format( "%s [%d]", peer.name or "unknown", peer.user_id )
 end
 
----@param peer garrysmod.Player | nil
+--- Checks if the peer can receive messages, the server always can, a client needs a valid player entity.
+---
+---@param peer dreamwork.std.Client | nil
 ---@return boolean
 local function peer_valid( peer )
-    return peer == nil or peer:IsValid()
+    if peer == nil then
+        return true
+    end
+
+    local pl = client_toEntity( peer )
+    return pl ~= nil and Entity_IsValid( pl )
 end
 
----@type fun( peer: garrysmod.Player | nil )
+---@type fun( peer: ( dreamwork.std.Client | nil ) )
 local message_send
 
 --- Returns the data rate of the channel to the peer.
 ---
----@type fun( peer: garrysmod.Player | nil ): integer
+---@type fun( peer: ( dreamwork.std.Client | nil ) ): integer
 local peer_rate
 
 --- Returns the round trip time the acks see ( the engine latency + one tick ), `nil` if unknown.
 ---
----@type fun( peer: garrysmod.Player | nil ): number | nil
+---@type fun( peer: ( dreamwork.std.Client | nil ) ): number | nil
 local peer_latency
 
 --- Returns the number of bytes written to the reliable stream of the peer in the current tick, `0` if unknown.
 ---
----@type fun( peer: garrysmod.Player | nil ): integer
+---@type fun( peer: ( dreamwork.std.Client | nil ) ): integer
 local peer_reliable_written
 
 --- Returns `true` if the channel to the peer is choking.
 ---
----@type fun( peer: garrysmod.Player | nil ): boolean
+---@type fun( peer: ( dreamwork.std.Client | nil ) ): boolean
 local peer_choked
 
 if LUA_SERVER then
@@ -546,10 +565,15 @@ if LUA_SERVER then
 
     if glua_gameserver == nil or glua_gameserver.GetClient == nil then
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return integer
         function peer_rate( peer )
-            local rate = peer:GetInfoNum( "rate", default_rate )
+            local pl = client_toEntity( peer )
+            if pl == nil then
+                return default_rate
+            end
+
+            local rate = Player_GetInfoNum( pl, "rate", default_rate )
 
             local max_rate = sv_maxrate.value
             if max_rate > 0 and rate > max_rate then
@@ -583,17 +607,17 @@ if LUA_SERVER then
 
         local FLOW_OUTGOING = glua_gameserver.FLOW_OUTGOING
 
-        --- The cached HolyLib net channel access of a player.
+        --- The cached HolyLib net channel access of a client.
         ---
         ---@class dreamwork.std.Network.GameClient
         ---@field client holylib.CGameClient The HolyLib `GameClient`.
         ---@field reliable holylib.bf_write The reliable stream ( `bf_write` ) of the client.
 
-        ---@type table<garrysmod.Player, dreamwork.std.Network.GameClient>
+        ---@type table<dreamwork.std.Client, dreamwork.std.Network.GameClient>
         local game_clients = {}
         gc_setTableRules( game_clients, true, false )
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return dreamwork.std.Network.GameClient | nil
         local function game_client( peer )
             local entry = game_clients[ peer ]
@@ -601,7 +625,12 @@ if LUA_SERVER then
                 return entry
             end
 
-            local client = gameserver_GetClient( peer:EntIndex() - 1 )
+            local entity_id = peer.entity_id
+            if entity_id == nil then
+                return nil
+            end
+
+            local client = gameserver_GetClient( entity_id - 1 )
             if client == nil or not client:IsValid() then
                 return nil
             end
@@ -615,7 +644,7 @@ if LUA_SERVER then
             return entry
         end
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return integer
         function peer_rate( peer )
             local entry = game_client( peer )
@@ -627,7 +656,7 @@ if LUA_SERVER then
             return entry.client:GetRate()
         end
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return number | nil
         function peer_latency( peer )
             local entry = game_client( peer )
@@ -643,7 +672,7 @@ if LUA_SERVER then
             return latency + gameserver_GetTickInterval()
         end
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return integer
         function peer_reliable_written( peer )
             local entry = game_client( peer )
@@ -654,7 +683,7 @@ if LUA_SERVER then
             return entry.reliable:GetNumBytesWritten()
         end
 
-        ---@param peer garrysmod.Player
+        ---@param peer dreamwork.std.Client
         ---@return boolean
         function peer_choked( peer )
             local entry = game_client( peer )
@@ -691,9 +720,10 @@ if LUA_SERVER then
 
     local network_send = engine_network.send
 
-    ---@param peer garrysmod.Player
+    ---@param peer dreamwork.std.Client
     function message_send( peer )
-        network_send( peer )
+        ---@diagnostic disable-next-line: param-type-mismatch
+        network_send( client_toEntity( peer ) )
     end
 
 else
@@ -712,14 +742,14 @@ end
 ---@field tokens number The number of bytes that can be sent as singles right now.
 ---@field time number The uptime of the last refill.
 
---- The single buckets, keyed by the player on the server and `server_key` on the client.
+--- The single buckets, keyed by the client on the server and `server_key` on the client.
 ---
----@type table<garrysmod.Player | string, dreamwork.std.Network.Bucket>
+---@type table<dreamwork.std.Client | string, dreamwork.std.Network.Bucket>
 local single_buckets = {}
 gc_setTableRules( single_buckets, true, false )
 
----@param peer garrysmod.Player | nil
----@param key garrysmod.Player | string
+---@param peer dreamwork.std.Client | nil
+---@param key dreamwork.std.Client | string
 ---@param size integer
 ---@return boolean allowed `true` if the data can be sent as a single message right now.
 local function single_allowed( peer, key, size )
@@ -746,17 +776,17 @@ end
 ---
 --- `reason` is a format string for `...`.
 ---
----@type fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, weight: integer, reason: string, ...: any )
+---@type fun( network: dreamwork.std.Network, peer: ( dreamwork.std.Client | nil ), weight: integer, reason: string, ...: any )
 local violation
 
 --- Reserves a new incoming transfer of `size` bytes for the peer, returns the reason if it is not allowed.
 ---
----@type fun( peer: garrysmod.Player | nil, size: integer ): string | nil
+---@type fun( peer: ( dreamwork.std.Client | nil ), size: integer ): string | nil
 local client_admit
 
 --- Releases an incoming transfer of `size` bytes reserved by `client_admit`.
 ---
----@type fun( peer: garrysmod.Player | nil, size: integer )
+---@type fun( peer: ( dreamwork.std.Client | nil ), size: integer )
 local client_release
 
 if LUA_SERVER then
@@ -807,11 +837,11 @@ if LUA_SERVER then
     ---@field begins number The token bucket of new transfers.
     ---@field begin_time number The uptime of the last `begins` refill.
 
-    ---@type table<garrysmod.Player, dreamwork.std.Network.Client>
+    ---@type table<dreamwork.std.Client, dreamwork.std.Network.Client>
     local clients = {}
     gc_setTableRules( clients, true, false )
 
-    ---@param peer garrysmod.Player
+    ---@param peer dreamwork.std.Client
     ---@return dreamwork.std.Network.Client
     local function client_get( peer )
         local client = clients[ peer ]
@@ -846,14 +876,13 @@ if LUA_SERVER then
         local message = string_format( reason, ... )
         dreamwork_Logger:warn( "%s violated the protocol of network '%s': %s [%.0f/%d strikes]", peer_tostring( peer ), network_names[ network ], message, strikes, max_strikes )
 
-        if strikes > max_strikes and peer:IsValid() then
+        if strikes > max_strikes and peer:disconnect( string_format( "Network protocol violation: %s", message ) ) then
             clients[ peer ] = nil
-            peer:Kick( string_format( "Network protocol violation: %s", message ) )
         end
     end
 
     function client_admit( peer, size )
-        ---@cast peer garrysmod.Player
+        ---@cast peer dreamwork.std.Client
         local client = client_get( peer )
         local now = dreamwork_getUpTime()
 
@@ -927,7 +956,7 @@ end
 ---@param network dreamwork.std.Network
 ---@param opcode integer
 ---@param transfer_id integer
----@param peer garrysmod.Player | nil
+---@param peer dreamwork.std.Client | nil
 local function send_control( network, opcode, transfer_id, peer )
     message_start( network, opcode, false )
     network_writeUInt( transfer_id, transfer_id_size )
@@ -938,8 +967,8 @@ end
 ---
 ---@class dreamwork.std.Network.Outgoing
 ---@field network dreamwork.std.Network The network of the transfer.
----@field peer garrysmod.Player | nil The receiver, `nil` on the client.
----@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field peer dreamwork.std.Client | nil The receiver, `nil` on the client.
+---@field key dreamwork.std.Client | string The key of the peer in the per-peer tables.
 ---@field id integer The transfer ID, `[0, 255]`.
 ---@field data string The whole data.
 ---@field size integer The size of the data in bytes.
@@ -970,8 +999,8 @@ end
 ---
 ---@class dreamwork.std.Network.Incoming
 ---@field network dreamwork.std.Network The network of the transfer.
----@field peer garrysmod.Player | nil The sender, `nil` on the client.
----@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field peer dreamwork.std.Client | nil The sender, `nil` on the client.
+---@field key dreamwork.std.Client | string The key of the peer in the per-peer tables.
 ---@field id integer The transfer ID, `[0, 255]`.
 ---@field size integer The size of the data in bytes.
 ---@field segment_size integer The size of every segment except the last one, in bytes.
@@ -998,17 +1027,17 @@ end
 
 --- The running outgoing transfer of every network, keyed by the peer.
 ---
----@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Outgoing>>
+---@type table<dreamwork.std.Network, table<dreamwork.std.Client | string, dreamwork.std.Network.Outgoing>>
 local outgoing = {}
 
 --- The running incoming transfer of every network, keyed by the peer.
 ---
----@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Incoming>>
+---@type table<dreamwork.std.Network, table<dreamwork.std.Client | string, dreamwork.std.Network.Incoming>>
 local incoming = {}
 
 --- The transmissions waiting behind the running outgoing one, keyed by the peer.
 ---
----@type table<dreamwork.std.Network, table<garrysmod.Player | string, dreamwork.std.Network.Queued[]>>
+---@type table<dreamwork.std.Network, table<dreamwork.std.Client | string, dreamwork.std.Network.Queued[]>>
 local queues = {}
 
 --- All running outgoing transfers, walked every tick.
@@ -1032,6 +1061,11 @@ do
     ---@return dreamwork.std.Network | nil object The existing network with this name.
     ---@protected
     function NetworkClass:__new( name )
+        local owner = sandbox_owner( 2 )
+        if owner ~= nil then
+            name = sandbox_prefix( owner, name )
+        end
+
         return networks[ name ]
     end
 
@@ -1045,6 +1079,12 @@ do
     ---@param can_receive boolean? `true` if the network accepts incoming messages, `false` by default.
     ---@protected
     function Network:__init( name, can_receive )
+        local owner = sandbox_owner( 2 )
+        if owner ~= nil then
+            name = sandbox_prefix( owner, name )
+            sandbox_claim( owner, self, Network.clear )
+        end
+
         local network_name = name_prefix .. name
 
         ---@type integer | nil
@@ -1084,8 +1124,27 @@ do
         queues[ self ] = queue_lists
 
         ---@param remaining_bits integer
-        ---@param sender garrysmod.Player | nil
-        network_receiveById( network_id, function( remaining_bits, sender )
+        ---@param pl garrysmod.Player | nil
+        network_receiveById( network_id, function( remaining_bits, pl )
+            if not LUA_SERVER then
+                network_receive( self, remaining_bits, nil )
+                return
+            end
+
+            ---@cast pl garrysmod.Player
+
+            ---@type dreamwork.std.Client | nil
+            local sender
+
+            if pl ~= nil then
+                sender = client_fromEntity( pl )
+            end
+
+            if sender == nil then
+                dreamwork_Logger:debug( "Network '%s' dropped a message from an unknown client.", name )
+                return
+            end
+
             network_receive( self, remaining_bits, sender )
         end )
     end
@@ -1145,12 +1204,12 @@ local function segment_length( state, index )
     return state.segment_size
 end
 
----@type fun( network: dreamwork.std.Network, data: string, peer: garrysmod.Player | nil, key: garrysmod.Player | string, callback: dreamwork.std.Network.FinishFn | nil )
+---@type fun( network: dreamwork.std.Network, data: string, peer: ( dreamwork.std.Client | nil ), key: dreamwork.std.Client | string, callback: dreamwork.std.Network.FinishFn | nil )
 local transmit_start
 
 ---@param network dreamwork.std.Network
----@param key garrysmod.Player | string
----@param peer garrysmod.Player | nil
+---@param key dreamwork.std.Client | string
+---@param peer dreamwork.std.Client | nil
 local function transmit_next( network, key, peer )
     local queue = queues[ network ][ key ]
     if queue == nil then return end
@@ -1168,8 +1227,8 @@ local function transmit_next( network, key, peer )
 end
 
 ---@param network dreamwork.std.Network
----@param key garrysmod.Player | string
----@param peer garrysmod.Player | nil
+---@param key dreamwork.std.Client | string
+---@param peer dreamwork.std.Client | nil
 local function queue_flush( network, key, peer )
     local queue = queues[ network ][ key ]
     if queue == nil then return end
@@ -1374,8 +1433,8 @@ end
 
 ---@param network dreamwork.std.Network
 ---@param data string
----@param peer garrysmod.Player | nil
----@param key garrysmod.Player | string
+---@param peer dreamwork.std.Client | nil
+---@param key dreamwork.std.Client | string
 ---@param callback dreamwork.std.Network.FinishFn | nil
 function transmit_start( network, data, peer, key, callback )
     local size = #data
@@ -1449,9 +1508,19 @@ end
 
 ---@param network dreamwork.std.Network
 ---@param data string
----@param peer garrysmod.Player | nil
+---@param peer dreamwork.std.Client | nil
 ---@param callback dreamwork.std.Network.FinishFn | nil
 local function transmit( network, data, peer, callback )
+    if not peer_valid( peer ) then
+        dreamwork_Logger:debug( "Network '%s' can not send to %s, it has no player entity.", network_names[ network ], peer_tostring( peer ) )
+
+        if callback ~= nil then
+            exceptions_call( callback, network, false, peer )
+        end
+
+        return
+    end
+
     local key = peer or server_key
 
     if outgoing[ network ][ key ] == nil then
@@ -1473,7 +1542,7 @@ end
 
 ---@param network dreamwork.std.Network
 ---@param data string
----@param target garrysmod.Player | garrysmod.Player[] | nil
+---@param target dreamwork.std.Client | dreamwork.std.Client[] | nil
 ---@param callback dreamwork.std.Network.FinishFn | nil
 local function transmit_to( network, data, target, callback )
     if #data > max_transfer_size then
@@ -1483,14 +1552,14 @@ local function transmit_to( network, data, target, callback )
     if not LUA_SERVER then
         transmit( network, data, nil, callback )
     elseif target == nil then
-        error( "Target player is required on the server.", 3 )
-    elseif isTable( target ) then
-        ---@cast target garrysmod.Player[]
+        error( "Target client is required on the server.", 3 )
+    elseif not isObject( target ) then
+        ---@cast target dreamwork.std.Client[]
         for i = 1, #target, 1 do
             transmit( network, data, target[ i ], callback )
         end
     else
-        ---@cast target garrysmod.Player
+        ---@cast target dreamwork.std.Client
         transmit( network, data, target, callback )
     end
 end
@@ -1505,7 +1574,7 @@ end
 --- If the target is already receiving a transmission from this network, the data is queued behind it.
 ---
 ---@param data string The data to send.
----@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param target ( dreamwork.std.Client | dreamwork.std.Client[] )? The target client(s), required on the server, ignored on the client.
 ---@param callback dreamwork.std.Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function Network:send( data, target, callback )
     transmit_to( self, data, target, callback )
@@ -1516,7 +1585,7 @@ end
 --- Builds the data with a binary writer and sends it to the target.
 ---
 ---@param fn fun( network: dreamwork.std.Network, writer: dreamwork.std.BinaryWriter ) The function that writes the data.
----@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param target ( dreamwork.std.Client | dreamwork.std.Client[] )? The target client(s), required on the server, ignored on the client.
 ---@param callback dreamwork.std.Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function Network:transmit( fn, target, callback )
     local writer = BinaryWriter()
@@ -1528,7 +1597,7 @@ end
 ---
 --- Cancels the outgoing transmission to the target and all queued ones.
 ---
----@param target garrysmod.Player? The target player, required on the server, ignored on the client.
+---@param target dreamwork.std.Client? The target client, required on the server, ignored on the client.
 ---@return boolean cancelled `true` if anything was cancelled.
 function Network:abort( target )
     local key = (LUA_SERVER and target) or server_key
@@ -1550,7 +1619,7 @@ end
 ---
 --- Checks if the network is sending data to the target.
 ---
----@param target garrysmod.Player? The target player, required on the server, ignored on the client.
+---@param target dreamwork.std.Client? The target client, required on the server, ignored on the client.
 ---@return boolean is_sending `true` if a transmission to the target is running.
 ---@nodiscard
 function Network:isSending( target )
@@ -1561,14 +1630,14 @@ end
 ---
 --- Checks if the network is receiving data from the sender.
 ---
----@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
+---@param sender dreamwork.std.Client? The sender client, required on the server, ignored on the client.
 ---@return boolean is_receiving `true` if a transmission from the sender is running.
 ---@nodiscard
 function Network:isReceiving( sender )
     return incoming[ self ][ (LUA_SERVER and sender) or server_key ] ~= nil
 end
 
----@type table<integer, fun( network: dreamwork.std.Network, peer: garrysmod.Player | nil, key: garrysmod.Player | string, transfer_id: integer, remaining_bits: integer )>
+---@type table<integer, fun( network: dreamwork.std.Network, peer: ( dreamwork.std.Client | nil ), key: dreamwork.std.Client | string, transfer_id: integer, remaining_bits: integer )>
 local handlers = {}
 
 -- receiver side
@@ -1910,12 +1979,8 @@ end
 
 ---@param network dreamwork.std.Network
 ---@param remaining_bits integer
----@param sender garrysmod.Player | nil
+---@param sender dreamwork.std.Client | nil
 function network_receive( network, remaining_bits, sender )
-    if not LUA_SERVER then
-        sender = nil
-    end
-
     if remaining_bits < opcode_size then
         violation( network, sender, 8, "empty message" )
         return

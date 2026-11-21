@@ -26,6 +26,11 @@ local engine_timer_getTimeLeft = engine_timer.getTimeLeft
 local engine_timer_getStartTime = engine_timer.getStartTime
 local engine_timer_timeTotal = engine_timer.timeTotal
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_owner = dreamwork_sandbox.owner
+local sandbox_claim = dreamwork_sandbox.claim
+local sandbox_prefix = dreamwork_sandbox.prefix
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -102,13 +107,38 @@ do
 
     dreamwork_exceptions.hide( timer_call )
 
+    --- Stops the timer of an unloaded package.
+    ---
+    ---@param timer dreamwork.std.Timer
+    local function release( timer )
+        timer:stop()
+        timer:clear()
+    end
+
+    ---@param uuid_str string
+    ---@return boolean
+    local function is_unique( uuid_str )
+        return objects[ uuid_str ] == nil
+    end
+
     ---@param interval number | nil
     ---@param repetition_count integer | nil
     ---@param name string | nil
     ---@protected
     function Timer:__init( interval, repetition_count, name )
-        if name == nil then
-            name = uuid_unique()
+        local owner = sandbox_owner( 2 )
+        if owner == nil then
+            if name == nil then
+                name = uuid_unique( is_unique )
+            end
+        else
+            if name == nil then
+                name = uuid_unique( is_unique )
+            else
+                name = sandbox_prefix( owner, name )
+            end
+
+            sandbox_claim( owner, self, release )
         end
 
         names[ self ] = name

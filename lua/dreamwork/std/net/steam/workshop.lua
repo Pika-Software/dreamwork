@@ -1,0 +1,2 @@
+-- TODO: implement getWorkshopStatus as steam.workshop.isAvaliable
+-- menu.getWorkshopStatus = GetAddonStatus

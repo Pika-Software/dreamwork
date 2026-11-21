@@ -1,6 +1,9 @@
 local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_call = dreamwork_exceptions.call
 
+local dreamwork_sandbox = dreamwork.sandbox
+local sandbox_track = dreamwork_sandbox.track
+
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -188,6 +191,8 @@ local function attach( self, handler, priority, once )
         contains_parent( handler, self ) then
         error( "attempt to create circular event reference", 3 )
     end
+
+    sandbox_track( handler, Event.detach, self, handler )
 
     ---@diagnostic disable-next-line: invisible
     self.once_handlers[ handler ] = once or nil
