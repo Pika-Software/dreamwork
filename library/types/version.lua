@@ -80,6 +80,14 @@ function __Version:__represent() end
 ---@protected
 function __Version:__tonumber() end
 
+---@param writer BinaryWriter
+---@protected
+function __Version:__serialize(writer) end
+
+---@param reader BinaryReader
+---@protected
+function __Version:__deserialize(reader) end
+
 ---@return integer
 ---@protected
 function __Version:__sizeof(as_bytes) end
