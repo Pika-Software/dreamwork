@@ -25,6 +25,7 @@ local function debug_fempty() end
 --- however it also has several other powerful uses.
 ---
 ---@class dreamwork.std.debug : debuglib
+---@field newproxy fun( proxy: ( boolean | table | userdata ) ): userdata
 local debug = {
     -- LuaJIT
     newproxy = newproxy,
