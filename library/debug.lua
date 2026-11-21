@@ -6,6 +6,7 @@
 --- however it also has several other powerful uses.
 ---
 ---@class debuglib
+---@field newproxy fun( proxy: ( boolean | table | userdata ) ): userdata
 debug = {}
 
 debug.newproxy = newproxy

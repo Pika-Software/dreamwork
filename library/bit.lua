@@ -19,6 +19,14 @@
 --- print( bit.band( 0xFF, 0x0F ) ) -- 15
 --- print( bit.lshift( 1, 4 ) ) -- 16
 --- print( bit.tohex( 255 ) ) -- 000000ff
+---
+--- -- metamethods also accept BigInteger (beyond the 32-bit limit of plain integers)
+---
+--- print( tostring( bit.band( BigInteger( 0xFF ), BigInteger( 0x0F ) ) ) ) -- 15
+--- print( tostring( bit.bor( BigInteger( 0x0F ), BigInteger( 0xF0 ) ) ) ) -- 255
+--- print( tostring( bit.bxor( BigInteger( 0xFF ), BigInteger( 0x0F ) ) ) ) -- 240
+--- print( tostring( bit.lshift( BigInteger( 1 ), 40 ) ) ) -- 1099511627776
+--- print( tostring( bit.extract( BigInteger( 0xB4 ), 2, 3 ) ) ) -- 5
 --- ```
 ---
 ---@class bitlib
