@@ -475,6 +475,28 @@ function Version:__tonumber()
     return rbit_unsign( rbit_bor( rbit_lshift( self.major, 22 ), rbit_lshift( self.minor, 11 ), self.patch ), 32 )
 end
 
+---@param writer dreamwork.std.BinaryWriter
+---@protected
+function Version:__serialize( writer )
+    writer:writeUInt( self.major, 10 )
+    writer:writeUInt( self.minor, 11 )
+    writer:writeUInt( self.patch, 11 )
+
+    writer:writeTerminatedString( self.pre_release or "", 0 )
+    writer:writeTerminatedString( self.build or "", 0 )
+end
+
+---@param reader dreamwork.std.BinaryReader
+---@protected
+function Version:__deserialize( reader )
+    self.major = reader:readUInt( 10 )
+    self.minor = reader:readUInt( 11 )
+    self.patch = reader:readUInt( 11 )
+
+    self.pre_release = reader:readTerminatedString( 0 )
+    self.build = reader:readTerminatedString( 0 )
+end
+
 ---@return integer
 ---@protected
 function Version:__sizeof( as_bytes )

@@ -559,7 +559,7 @@ end
 ---@return string
 ---@protected
 function Identifier:__represent()
-    return string_format( "Steam Identifier: %p [%s]", self, toSteam3( self ) )
+    return string_format( "steam.Identifier: %p %s", self, toSteam3( self ) )
 end
 
 --- [SHARED AND MENU]
