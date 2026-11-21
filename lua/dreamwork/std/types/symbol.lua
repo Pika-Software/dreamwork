@@ -26,7 +26,7 @@ local debug_getmetatable = debug.getmetatable
 --- print( mark ) -- x
 --- ```
 ---
----@class dreamwork.std.Symbol : userdata
+---@class dreamwork.std.Symbol : dreamwork.std.Object, userdata
 
 ---@type table<string, dreamwork.std.Symbol>
 local symbols = {}

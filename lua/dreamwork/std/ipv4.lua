@@ -317,8 +317,6 @@ ipv4.cidr = cidr
 ---
 --- Returns the network address and broadcast address for a given IPv4 address and CIDR prefix length.
 ---
----@deprecated Use `ipv4.cidr` instead, this is a misspelled alias kept for compatibility.
----
 ---@param ip_address dreamwork.std.IPv4 The IP address.
 ---@param prefix_length integer The CIDR prefix length. <0-32>
 ---@return dreamwork.std.IPv4 network_address The network (first) address.

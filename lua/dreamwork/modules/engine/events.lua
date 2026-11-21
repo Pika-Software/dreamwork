@@ -31,7 +31,7 @@ do
     ---@class dreamwork.std
     ---@field SYSTEM_COUNTRY string The country code of the operating system. (ISO 3166-1 alpha-2)
     ---@field SYSTEM_HAS_BATTERY boolean `true` if the operating system has a battery, `false` if not.
-    ---@field SYSTEM_BATTERY_LEVEL garrysmod.system.BatteryPower The battery level, from `0` to `100`.
+    ---@field SYSTEM_BATTERY_LEVEL integer The battery level, from `0` to `100`.
 
     ---@type garrysmod.system
     local glua_system         = dreamwork_engine.requireLibrary( "system" )
