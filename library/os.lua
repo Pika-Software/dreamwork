@@ -23,6 +23,12 @@
 --- ```
 ---
 ---@class oslib
+---@field clock fun(): number
+---@field difftime fun( t2: integer, t1: integer ): integer
+---@field time fun( date: osdateparam? ): integer
+---@field date ( fun( fmt: ( "*t" | "!*t" ), timestamp: integer? ): osdate )|( fun( fmt: string?, timestamp: integer? ): string )
+---@field getenv fun( varname: string ): string?
+---@field exit fun( code: ( boolean | integer )?, close: boolean? )
 os = {}
 
 function os.clock() end
