@@ -7,6 +7,13 @@
 --- Tokens are returned as flat arrays ( `types`, `values`, `lines` ) instead of token tables,
 --- whitespace, newlines and comments are kept as tokens, so concatenating all values gives back the original code.
 ---
+--- ```lua
+--- local _, _, _, count = lua.lexer.tokenize( "return 1" )
+---
+--- print( count ) -- 3
+--- print( lua.lexer.isIdentifier( "hi" ) ) -- true
+--- ```
+---
 ---@class lua.lexer
 lua.lexer = {}
 

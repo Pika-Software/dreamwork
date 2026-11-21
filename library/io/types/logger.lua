@@ -17,6 +17,13 @@ local Logger = {}
 ---
 --- The logger class.
 ---
+--- ```lua
+--- local logger = console.Logger( { title = "game" } )
+--- print( logger.title ) -- game
+---
+--- logger:info( "test %d %s %f", 1, 2, 3 ) -- 21-11-2026 09:41:52.909 [ Server ] INFO  --> game : test 1 2 3.000000
+--- ```
+---
 ---@class console.LoggerClass : console.Logger, Class
 ---@field __base console.Logger
 ---@overload fun( options: console.LoggerOptions? ) : console.Logger

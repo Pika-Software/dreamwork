@@ -222,11 +222,15 @@ local ResponseClass = {}
 --- ```lua
 --- local server = http.Server()
 ---
---- server:get( "/hello", function( req, res )
----     res.content = "hello " .. req.remote_addr
+--- server:get( "/ip", function( req, res )
+---     res.content = ipv4.toString( server.ipv4 )
 --- end )
 ---
 --- server:start( "0.0.0.0", 8080 )
+---
+--- local response = http.client.get( "http://127.0.0.1:8080/ip" )
+--- print( response.status ) -- 200
+--- print( response.body ) -- 90.190.194.12
 --- ```
 ---
 --- Handlers can defer the reply:
@@ -418,6 +422,22 @@ function Server:prepare(client, path, method, required_headers, handler, uses) e
 --- The class used to create new `http.Server` instances.
 ---
 --- Requires HolyLib's `httpserver` module.
+---
+--- ```lua
+--- print( http.Server.available ) -- true
+---
+--- local server = http.Server()
+---
+--- server:get( "/ip", function( req, res )
+---     res.content = ipv4.toString( server.ipv4 )
+--- end )
+---
+--- server:start( "0.0.0.0", 8080 )
+---
+--- local response = http.client.get( "http://127.0.0.1:8080/ip" )
+--- print( response.status ) -- 200
+--- print( response.body ) -- {server ip} :>
+--- ```
 ---
 ---@class http.ServerClass : http.Server, Class
 ---@field __base http.Server

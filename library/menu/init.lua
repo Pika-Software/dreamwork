@@ -4,6 +4,10 @@
 ---
 --- The game's main menu library.
 ---
+--- ```lua
+--- print( menu.visible ) -- false
+--- ```
+---
 ---@class menu
 ---@field visible boolean `true` if the menu is visible, `false` otherwise.
 menu = {}

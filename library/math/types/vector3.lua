@@ -9,6 +9,10 @@
 --- * `vec3 / vec3`, `vec3 / number`
 --- * `-vec3`
 ---
+--- ```lua
+--- print( tostring( Vector3( 1, 2, 3 ) ) ) -- 1.000000 2.000000 3.000000
+--- ```
+---
 ---@class Vector3 : Object
 ---@field __class Vector3Class
 ---@operator add( Vector3 | number ): Vector3

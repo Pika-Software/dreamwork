@@ -4,6 +4,12 @@
 ---
 --- The Steam API library.
 ---
+--- ```lua
+--- local id = steam.Identifier.parse( "STEAM_0:0:11101" )
+---
+--- print( tostring( id ) ) -- [U:1:22202]
+--- ```
+---
 ---@class steam
 steam = {}
 

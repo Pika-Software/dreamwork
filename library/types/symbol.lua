@@ -9,6 +9,13 @@
 ---
 --- They hold no data and are collected once nothing references them.
 ---
+--- ```lua
+--- local mark = Symbol( "x" )
+---
+--- print( mark == Symbol( "x" ) ) -- true
+--- print( mark ) -- x
+--- ```
+---
 ---@class Symbol : userdata
 
 --- [SHARED AND MENU]

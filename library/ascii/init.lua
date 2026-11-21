@@ -9,6 +9,11 @@
 ---
 --- Figures drawn from characters (schemes, boxes, grids, bars, trees) are `ascii.art`.
 ---
+--- ```lua
+--- print( ascii.isLower( string.byte( "a" ) ) ) -- true
+--- print( ascii.isUpper( string.byte( "A" ) ) ) -- true
+--- ```
+---
 ---@class ascii
 ---@field art ascii.art
 ascii = {}

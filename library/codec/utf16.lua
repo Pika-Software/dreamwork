@@ -11,6 +11,10 @@
 --- Functions that take `lax` raise an error on the first invalid sequence (an unpaired surrogate
 --- or an odd trailing byte), unless `lax` is `true`; in lax mode each invalid sequence counts as one code point, decoded as U+FFFD.
 ---
+--- ```lua
+--- local text = utf16.char( 0x68, 0x69 )
+--- print( utf16.len( text ) ) -- 2
+--- ```
 ---@class utf16
 utf16 = {}
 

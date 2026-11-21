@@ -11,6 +11,11 @@
 ---
 --- Nothing here touches the file system; all functions work on the strings only.
 ---
+--- ```lua
+--- print( path.join( { "/game", "lua/", "autorun/init.lua" } ) ) -- /game/lua/autorun/init.lua
+--- print( path.getExtension( "/game/lua/init.lua" ) ) -- lua
+--- ```
+---
 ---@class path
 ---@field delimiter string The delimiter between paths in a path list, always `":"`.
 ---@field sep string The path segment separator, always `"/"`.

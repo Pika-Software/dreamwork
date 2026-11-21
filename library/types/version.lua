@@ -6,6 +6,13 @@
 ---
 --- See https://semver.org/
 ---
+--- ```lua
+--- local version = Version( 1, 2, 3, "beta" )
+---
+--- print( tostring( version ) ) -- 1.2.3-beta
+--- print( version < Version( 1, 2, 3 ) ) -- true
+--- ```
+---
 ---@class Version : Object
 ---@field __class VersionClass
 ---@field major integer The major version number. (0-1023)
@@ -30,6 +37,11 @@ function __Version:__isvalid() end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Version` instances.
+---
+--- ```lua
+--- local version = Version( 1, 2, 3, "beta", "build.1" )
+--- print( tostring( version ) ) -- 1.2.3-beta+build.1
+--- ```
 ---
 ---@class VersionClass : Version, Class
 ---@field __base Version

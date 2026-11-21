@@ -28,6 +28,12 @@ local __Zip = {}
 ---
 --- The class used to create new `Zip` objects.
 ---
+--- ```lua
+--- local zip = Zip()
+--- zip:addFile( "docs/readme.txt", "hello" )
+--- print( Zip( zip:compile() ):readFile( "docs/readme.txt" ) ) -- hello
+--- ```
+---
 ---@class ZipClass : Zip, Class
 ---@field __base Zip
 ---@overload fun( data: string? ): Zip

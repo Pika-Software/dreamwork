@@ -6,6 +6,10 @@
 ---
 --- See https://en.wikipedia.org/wiki/Hexadecimal
 ---
+--- ```lua
+--- print( base16.encode( "hi" ) ) -- 6869
+--- print( base16.decode( "6869" ) ) -- hi
+--- ```
 ---@class base16
 base16 = {}
 

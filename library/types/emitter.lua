@@ -141,6 +141,12 @@ function __Emitter:await(object, event_name, abort_event, abort_message) end
 ---
 --- The class used to create new `Emitter` registries.
 ---
+--- ```lua
+--- local events = Emitter( "Thing" )
+--- local thing = {}
+--- events:attach( thing, "open", print )
+--- ```
+---
 ---@class EmitterClass : Emitter, Class
 ---@field __base Emitter
 ---@overload fun( name: string ): Emitter

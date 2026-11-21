@@ -12,6 +12,17 @@
 --- * Iterators — `inext`, `next`
 --- * `raw.bit` — native 32-bit integer bit ops used by `bit`
 ---
+--- ```lua
+--- local obj = setmetatable( { hidden = 1 }, {
+---     __index = function()
+---         return "meta"
+---     end
+--- } )
+---
+--- print( raw.get( obj, "hidden" ) ) -- 1
+--- print( obj.missing ) -- meta
+--- ```
+---
 ---@class raw
 raw = {}
 

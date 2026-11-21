@@ -11,6 +11,14 @@
 --- The stack can also be iterated destructively with `iterator`, which pops
 --- values one by one until it is empty.
 ---
+--- ```lua
+--- local stack = Stack()
+---
+--- stack:push( "a" )
+--- stack:push( "b" )
+--- print( stack:pop() ) -- b
+--- ```
+---
 ---@class Stack<T>: Object
 ---@field __class StackClass
 ---@field size integer The size of the stack. **Read-only**
@@ -126,6 +134,11 @@ function __Stack:iterator() end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Stack` instances.
+---
+--- ```lua
+--- local stack = Stack()
+--- stack:push( "a" )
+--- ```
 ---
 ---@class StackClass : Stack, Class
 ---@field __base Stack

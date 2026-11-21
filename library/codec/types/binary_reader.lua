@@ -40,6 +40,11 @@ local __BinaryReader = {}
 ---
 --- Any value is converted to a string with `tostring`, so `BinaryReader( writer )` reads what the `BinaryWriter` wrote.
 ---
+--- ```lua
+--- local reader = BinaryReader( "hi" )
+---
+--- print( reader:read( 2 ) ) -- hi
+--- ```
 ---@class BinaryReaderClass : BinaryReader, Class
 ---@field __base BinaryReader
 ---@overload fun( data: any ): BinaryReader

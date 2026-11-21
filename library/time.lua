@@ -12,6 +12,51 @@
 --- By default the local timezone follows the host, including its daylight saving rules.
 --- Assigning a different value to `time.zone` switches to a fixed UTC offset without DST.
 ---
+--- ```lua
+--- print( time.daysInYear( 2024 ) ) -- 366
+--- print( time.daysInYear( 2025 ) ) -- 365
+--- print( time.isLeapYear( 2024 ) ) -- true
+--- print( time.isLeapYear( 2025 ) ) -- false
+--- print( time.daysInMonth( 2, 2024 ) ) -- 29
+--- print( time.daysInMonth( 2, 2025 ) ) -- 28
+--- print( time.dayOfYear( 2024, 2, 29 ) ) -- 60
+---
+--- print( time.daysFromCivil( 1970, 1, 1 ) ) -- 0
+--- print( time.civilFromDays( 0 ) ) -- 1970 1 1
+--- print( time.weekdayFromDays( 0 ) ) -- 4
+--- print( time.weekdayFromCivil( 1970, 1, 1 ) ) -- 4
+--- print( time.nextWeekday( 4 ) ) -- 5
+--- print( time.prevWeekday( 4 ) ) -- 3
+---
+--- print( time.transform( 1, "s", "ms" ) ) -- 1000
+--- print( time.transform( 1, "s", "us" ) ) -- 1000000
+--- print( time.transform( 120, "s", "m" ) ) -- 2
+--- print( time.transform( 1, "d", "h" ) ) -- 24
+--- print( time.transform( 7, "d", "w" ) ) -- 1
+--- print( time.transform( 1500, "ms", "s", true ) ) -- 1.5
+---
+--- print( time.timestampFromCivil( 1970, 1, 1, 0, 0, 0 ) ) -- 0
+--- print( time.civilFromTimestamp( 0 ) ) -- 1970 1 1 0 0 0 4
+--- print( time.isoWeek( 2024, 1, 1 ) ) -- 2024 1 1
+--- print( time.isoWeeksInYear( 2024 ) ) -- 52
+---
+--- print( time.toISOString( 0, "s", true ) ) -- 1970-01-01T00:00:00Z
+--- print( time.format( "{year}-{month}-{day}", 0, "s", true ) ) -- 1970-01-01
+--- print( time.format( "{hours}:{minutes}:{seconds}", 3661, "s", true ) ) -- 01:01:01
+--- print( time.format( "{weekday_short_name}", 0, "s", true ) ) -- Thu
+---
+--- print( time.fromDuration( "1h30m" ) ) -- 5400
+--- print( time.fromDuration( "1h 30m 15s" ) ) -- 5415
+--- print( time.fromDuration( "500ms", "ms" ) ) -- 500
+--- print( time.fromDuration( "1.5s", "s", true ) ) -- 1.5
+--- print( time.toDuration( 90 ) ) -- 1m 30s
+--- print( time.toDuration( 3661 ) ) -- 1h 1m 1s
+--- print( time.toDuration( -90 ) ) -- -1m -30s
+--- print( time.toDuration( 1500, "ms" ) ) -- 1s 500ms
+--- print( time.add( 0, "s", "1h30m" ) ) -- 5400
+--- print( time.sub( 3600, "s", "30m" ) ) -- 1800
+--- ```
+---
 ---@class time
 ---@field zone number The standard (non-DST) UTC offset of the local timezone in hours, may be fractional (e.g. `5.5`). Assign a different value to use a fixed UTC offset instead of the host's timezone.
 ---@field dst boolean Whether the host's timezone is currently in daylight saving time.

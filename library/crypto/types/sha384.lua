@@ -7,6 +7,10 @@
 --- SHA384 is SHA512 with a different initial state and the digest truncated to 48 bytes,
 --- so it inherits all methods from `SHA512` and only overrides the initial state.
 ---
+--- ```lua
+--- print( crypto.SHA384.digest( "hi", true ) ) -- 0791006df8128477244f53d0fdce210db81f55757510e26acee35c18a6bceaa28dcdbbfd6dc041b9b4dc7b1b54e37f52
+--- ```
+---
 ---@class crypto.SHA384 : crypto.SHA512
 ---@field __class crypto.SHA384Class
 ---@field protected initial_state integer[] The initial hash state as `hi, lo` pairs, overridden by SHA384.
@@ -21,6 +25,10 @@ local SHA384 = {}
 --- Like other hash classes, it takes input data ( string )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
+---
+--- ```lua
+--- print( crypto.SHA384.digest( "hi", true ) ) -- 0791006df8128477244f53d0fdce210db81f55757510e26acee35c18a6bceaa28dcdbbfd6dc041b9b4dc7b1b54e37f52
+--- ```
 ---
 ---@class crypto.SHA384Class : crypto.SHA384, crypto.SHA512Class
 ---@field __base crypto.SHA384

@@ -13,6 +13,15 @@
 ---
 --- See [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) for the algorithm.
 ---
+--- ```lua
+--- local key = string.rep( "k", 32 )
+--- local nonce = string.rep( "n", 12 )
+--- local boxed = crypto.chacha20.encrypt( "hi", key, nonce )
+---
+--- print( base16.encode( boxed ) ) -- EEB1
+--- print( crypto.chacha20.encrypt( boxed, key, nonce ) ) -- hi
+--- ```
+---
 ---@class crypto.chacha20
 crypto.chacha20 = {}
 
@@ -59,6 +68,14 @@ function crypto.chacha20.block(key, nonce, counter) end
 --- XChaCha20 alone does not authenticate the data, use a MAC ( e.g. `crypto.hmac` ) over the ciphertext to detect tampering.
 ---
 --- See [draft-irtf-cfrg-xchacha](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha) for the algorithm.
+---
+--- ```lua
+--- local key = string.rep( "k", 32 )
+--- local nonce = string.rep( "n", 24 )
+--- local boxed = crypto.xchacha20.encrypt( "hi", key, nonce )
+---
+--- print( crypto.xchacha20.encrypt( boxed, key, nonce ) ) -- hi
+--- ```
 ---
 ---@class crypto.xchacha20
 crypto.xchacha20 = {}

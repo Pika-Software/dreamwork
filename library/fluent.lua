@@ -338,6 +338,12 @@ function FluentResource:parse(text) end
 ---
 --- The class used to create new `FluentResource` objects.
 ---
+--- ```lua
+--- local resource = fluent.Resource( "welcome = Welcome, { $name }!\n" )
+---
+--- print( #resource.errors ) -- 0
+--- ```
+---
 ---@class FluentResourceClass : FluentResource, Class
 ---@field __base FluentResource
 ---@overload fun( text: string? ): FluentResource
@@ -455,6 +461,13 @@ function FluentBundle:setFunction(name, fn) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `FluentBundle` objects.
+---
+--- ```lua
+--- local bundle = fluent.Bundle( "en-US" )
+---
+--- bundle:addResource( fluent.Resource( "welcome = Welcome, { $name }!\n" ) )
+--- print( bundle:format( "welcome", { name = "Player" } ) ) -- Welcome, Player!
+--- ```
 ---
 ---@class FluentBundleClass : FluentBundle, Class
 ---@field __base FluentBundle

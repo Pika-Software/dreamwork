@@ -4,6 +4,10 @@
 ---
 --- The Adler-32 checksum calculation object.
 ---
+--- ```lua
+--- print( Adler32():update( "hi" ):digest() ) -- 20644050
+--- ```
+---
 ---@class Adler32 : Object
 ---@field __class Adler32Class
 ---@field DigestSize integer The size of the checksum in bytes.
@@ -49,6 +53,10 @@ function __Adler32:digest() end
 --- See [RFC1950](https://tools.ietf.org/html/rfc1950) for the definition of the Adler-32 checksum.
 ---
 --- [Adler32 Online](https://md5calc.com/hash/adler32)
+---
+--- ```lua
+--- print( Adler32.digest( "hi" ) ) -- 20644050
+--- ```
 ---
 ---@class Adler32Class : Adler32, Class
 ---@field __base Adler32

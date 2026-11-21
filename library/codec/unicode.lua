@@ -5,6 +5,10 @@
 --- The unicode library provides functions for working with unicode code points,
 --- unicode escape sequences, case mapping, display width and blocks of UTF-8 strings.
 ---
+--- ```lua
+--- print( unicode.escape( "A", "es6" ) ) -- \u{41}
+--- print( unicode.isValid( 0x41 ) ) -- true
+--- ```
 ---@class unicode
 ---@field MAX integer The largest valid unicode code point, `U+10FFFF`.
 ---@field REPLACEMENT integer The replacement character code point, `U+FFFD`.

@@ -16,6 +16,10 @@
 --- * `quat ^ number` - raises to the power ( scales the rotation angle ), `number ^ quat` - exponent.
 --- * `-quat` - negates all components.
 ---
+--- ```lua
+--- print( tostring( Quaternion( 1, 0, 0, 0 ) ) ) -- 1.000000 0.000000 0.000000 0.000000
+--- ```
+---
 ---@class Quaternion : Object
 ---@field __class QuaternionClass
 ---@operator add( Quaternion | number ): Quaternion

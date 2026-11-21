@@ -15,6 +15,44 @@
 --- Many sequence functions take an optional `*_length` argument
 --- so callers that already know `#tbl` can skip a length pass.
 ---
+--- ```lua
+--- local part = table.slice( { "a", "b", "c" }, 2 )
+--- print( table.concat( part ) ) -- bc
+---
+--- local doubled = table.map( { 1, 2, 3 }, function( _, value )
+---     return value * 2
+--- end )
+---
+--- print( table.concat( doubled, "," ) ) -- 2,4,6
+---
+--- print( table.getIndex( { "a", "b", "c" }, "b" ) ) -- 2
+--- print( table.getKey( { a = 1, b = 2 }, 2 ) ) -- b
+--- print( table.count( { a = 1, b = 2, c = 3 } ) ) -- 3
+--- print( table.isEmpty( {} ) ) -- true
+--- print( table.isSequential( { 1, 2, 3 } ) ) -- true
+---
+--- local keys = table.keys( { a = 1, b = 2 } )
+--- table.sort( keys )
+--- print( table.concat( keys, "," ) ) -- a,b
+---
+--- print( table.flipped( { a = 1 } )[ 1 ] ) -- a
+---
+--- local copy = table.shallowCopy( { 1, 2, 3 } )
+--- print( table.concat( copy, "," ) ) -- 1,2,3
+---
+--- local reversed = { 1, 2, 3 }
+--- table.reverse( reversed )
+--- print( table.concat( reversed, "," ) ) -- 3,2,1
+---
+--- local injected = { "a", "c" }
+--- table.inject( injected, { "b" }, 2 )
+--- print( table.concat( injected ) ) -- abc
+---
+--- local sequence = { "a", "b", "c" }
+--- print( table.concat( table.eject( sequence, 2, 2 ) ) ) -- b
+--- print( table.concat( sequence ) ) -- ac
+--- ```
+---
 ---@class tablelib
 table = {}
 

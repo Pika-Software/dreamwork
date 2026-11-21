@@ -4,6 +4,10 @@
 ---
 --- SHA512 object.
 ---
+--- ```lua
+--- print( crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
+--- ```
+---
 ---@class crypto.SHA512 : Object
 ---@field __class crypto.SHA512Class
 ---@field protected state integer[] | ffi.cdata* The hash state, 8 words as `hi, lo` pairs ( int32 high and uint32 low halves ) or `uint64_t[8]` if FFI is available.
@@ -21,6 +25,10 @@ local SHA512 = {}
 --- Like other hash classes, it takes input data ( string )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
+---
+--- ```lua
+--- print( crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
+--- ```
 ---
 ---@class crypto.SHA512Class : crypto.SHA512, crypto.HashClass
 ---@field __base crypto.SHA512

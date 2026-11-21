@@ -7,6 +7,11 @@
 --- Produces and consumes raw [LZ4 blocks](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md)
 --- (no frame header, no checksum, no stored size) compatible with the reference `LZ4_compress_fast` / `LZ4_decompress_safe`.
 ---
+--- ```lua
+--- local packed = lz4.compress( "hello" )
+--- print( lz4.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class lz4
 lz4 = {}
 

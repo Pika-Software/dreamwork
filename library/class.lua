@@ -8,6 +8,22 @@
 --- * **base** ( `class.base` ) - the metatable of every object, holds methods and metamethods;
 --- * **class** ( `class.create` ) - the callable table that creates objects, holds static fields.
 ---
+--- ```lua
+--- local Point = class.base( "Point" )
+--- function Point:__init( x, y )
+---     self.x, self.y = x, y
+--- end
+---
+--- local PointClass = class.create( Point )
+--- local point = PointClass( 1, 2 )
+---
+--- print( point.x, point.y ) -- 1  2
+---
+--- print( isObject( point ) ) -- true
+--- print( isType( point, PointClass ) ) -- true
+--- print( type( point ) ) -- Point
+--- ```
+---
 ---@class class
 class = {}
 
@@ -18,6 +34,10 @@ class = {}
 --- [SHARED AND MENU]
 ---
 --- A base for objects that were created by `class` library.
+---
+--- ```lua
+--- print( isObject( Vector2( 1, 2 ) ) ) -- true
+--- ```
 ---
 ---@class Object : metatable
 ---@field __type string The name of object type. **READ ONLY**
@@ -31,6 +51,10 @@ class = {}
 --- [SHARED AND MENU]
 ---
 --- A general structure for every class that created with `class` library.
+---
+--- ```lua
+--- print( isClass( Vector2 ) ) -- true
+--- ```
 ---
 ---@class Class : Object
 ---@field __base Object The base of the class. **READ ONLY**

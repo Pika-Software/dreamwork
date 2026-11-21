@@ -6,6 +6,11 @@
 ---
 --- Requires [gmsv_serverstat](https://github.com/WilliamVenner/gmsv_serverstat), all functions return zeros without it.
 ---
+--- ```lua
+--- print( server.hardware.available ) -- false
+--- print( server.hardware.getCPUUsage() ) -- 0
+--- ```
+---
 ---@class server.hardware
 ---@field available boolean `true` if `gmsv_serverstat` is installed, `false` otherwise. **READ-ONLY**
 ---@field physical_cores integer The number of physical CPU cores, `1` if unknown. **READ-ONLY**

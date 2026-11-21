@@ -4,6 +4,10 @@
 ---
 --- Library that packs & unpacks types as bytes.
 ---
+--- ```lua
+--- local hi, lo = bytepack.writeUInt16BE( 300 )
+--- print( bytepack.readUInt16BE( hi, lo ) ) -- 300
+--- ```
 ---@class bytepack
 bytepack = {}
 

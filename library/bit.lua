@@ -15,6 +15,12 @@
 --- * Mux / maj helpers
 --- * Signed / unsigned conversion
 ---
+--- ```lua
+--- print( bit.band( 0xFF, 0x0F ) ) -- 15
+--- print( bit.lshift( 1, 4 ) ) -- 16
+--- print( bit.tohex( 255 ) ) -- 000000ff
+--- ```
+---
 ---@class bitlib
 bit = {}
 

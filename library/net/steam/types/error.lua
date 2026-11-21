@@ -43,6 +43,10 @@ function __SteamError:__message(error_message) end
 ---
 --- The class used to create new `SteamError` instances.
 ---
+--- ```lua
+--- print( tostring( SteamError( 16 ) ) ) -- Steam EResult 16: Operation timed out
+--- ```
+---
 ---@class SteamErrorClass : SteamError, ErrorClass
 ---@field __base SteamError
 ---@field __parent ErrorClass

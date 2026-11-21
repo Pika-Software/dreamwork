@@ -4,6 +4,10 @@
 ---
 --- An error raised when Lua code cannot be parsed.
 ---
+--- ```lua
+--- print( tostring( lua.SyntaxError( "bad token", "demo.lua", 3 ) ) ) -- demo.lua:3: bad token
+--- ```
+---
 ---@class lua.SyntaxError : Error
 ---@field __class lua.SyntaxErrorClass
 ---@field __parent Error
@@ -40,6 +44,12 @@ lua.SyntaxError = {}
 --- AST nodes are plain tables with a `type` field, see `lua.ast.*`.
 ---
 --- `//` is the floor division, alternative operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
+---
+--- ```lua
+--- local chunk = lua.parser.parse( "return 1" )
+---
+--- print( lua.generator.generate( chunk ) ) -- return 1
+--- ```
 ---
 ---@class lua.parser
 lua.parser = {}

@@ -42,6 +42,10 @@ local __BigInteger = {}
 --- Supports the standard arithmetic, comparison, and bitwise operators
 --- through metamethods.
 ---
+--- ```lua
+--- print( tostring( BigInteger( 2 ) + BigInteger( 40 ) ) ) -- 42
+--- ```
+---
 ---@class BigIntegerClass : BigInteger, Class
 ---@field __base BigInteger
 ---@overload fun( value: ( BigInteger | string | integer | nil ), base: ( integer | nil ) ): BigInteger

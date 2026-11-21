@@ -4,6 +4,10 @@
 ---
 --- MD5 object.
 ---
+--- ```lua
+--- print( crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
+--- ```
+---
 ---@class crypto.MD5 : Object
 ---@field __class crypto.MD5Class
 ---@field protected a integer The first word of the hash state ( int32 ).
@@ -32,6 +36,10 @@ local MD5 = {}
 ---
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
+---
+--- ```lua
+--- print( crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
+--- ```
 ---
 ---@class crypto.MD5Class : crypto.MD5, crypto.HashClass
 ---@field __base crypto.MD5

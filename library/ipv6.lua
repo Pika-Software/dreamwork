@@ -10,6 +10,10 @@
 --- comparison operators (`==`, `<`, `<=`), the length operator (`#address` is always `8`)
 --- and unary minus (`-address` is the bitwise NOT of the address).
 ---
+--- ```lua
+--- print( IPv6( 0x2001, 0xdb8, 0, 0, 0, 0, 0, 1 ):toString() ) -- 2001:db8::1
+--- ```
+---
 ---@class IPv6 : Object
 ---@field __class IPv6Class
 ---@field [ 1 ] integer The first group. <0-65535>

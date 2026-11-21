@@ -4,6 +4,10 @@
 ---
 --- The Fletcher-16 checksum calculation object.
 ---
+--- ```lua
+--- print( Fletcher16():update( "hi" ):digest() ) -- 15057
+--- ```
+---
 ---@class Fletcher16 : Object
 ---@field __class Fletcher16Class
 ---@field DigestSize integer The size of the checksum in bytes.
@@ -47,6 +51,10 @@ function __Fletcher16:digest() end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
+--- ```lua
+--- print( Fletcher16.digest( "hi" ) ) -- 15057
+--- ```
+---
 ---@class Fletcher16Class : Fletcher16, Class
 ---@field __base Fletcher16
 ---@overload fun(): Fletcher16
@@ -64,6 +72,10 @@ function Fletcher16.digest(raw_str) end
 --- [SHARED AND MENU]
 ---
 --- The Fletcher-32 checksum calculation object.
+---
+--- ```lua
+--- print( Fletcher32():update( "hi" ):digest() ) -- 1768450408
+--- ```
 ---
 ---@class Fletcher32 : Fletcher16
 ---@field __parent Fletcher16
@@ -110,6 +122,10 @@ function __Fletcher32:digest() end
 --- See [Fletcher's checksum](https://en.wikipedia.org/wiki/Fletcher%27s_checksum) for the definition of the Fletcher-32 checksum.
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
+---
+--- ```lua
+--- print( Fletcher32.digest( "hi" ) ) -- 1768450408
+--- ```
 ---
 ---@class Fletcher32Class : Fletcher32, Fletcher16Class
 ---@field __parent Fletcher16Class

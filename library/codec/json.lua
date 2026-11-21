@@ -6,6 +6,9 @@
 ---
 --- Follows [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) strictly: objects, arrays, strings, numbers, `true`, `false` and `null`.
 ---
+--- ```lua
+--- print( json.encode( { ok = true } ) ) -- {"ok":true}
+--- ```
 ---@class json
 json = {}
 

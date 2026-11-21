@@ -161,6 +161,12 @@ function __Hook:await(type) end
 ---
 --- The class used to create new `Hook` instances.
 ---
+--- ```lua
+--- local hook = Hook( "say" )
+--- hook:attach( "provide", function() return "ok" end )
+--- print( hook:call() ) -- ok
+--- ```
+---
 ---@class HookClass : Hook, Class
 ---@field __base Hook
 ---@overload fun( name: string? ): Hook

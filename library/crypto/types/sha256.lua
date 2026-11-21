@@ -4,6 +4,12 @@
 ---
 --- SHA256 object.
 ---
+--- ```lua
+--- local sha = crypto.SHA256()
+---
+--- print( sha:update( "hi" ):digest( true ) ) -- 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4
+--- ```
+---
 ---@class crypto.SHA256 : Object
 ---@field __class crypto.SHA256Class
 ---@field protected h1 integer The first word of the hash state ( int32 ).
@@ -29,6 +35,12 @@ local SHA256 = {}
 --- Like other hash classes, it takes input data ( string )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
+---
+--- ```lua
+--- local sha = crypto.SHA256
+---
+--- print( sha.digest( "hi", true ) ) -- 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4
+--- ```
 ---
 ---@class crypto.SHA256Class : crypto.SHA256, crypto.HashClass
 ---@field __base crypto.SHA256

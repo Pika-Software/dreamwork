@@ -12,6 +12,16 @@ local dreamwork = {}
 ---
 --- The timer object.
 ---
+--- ```lua
+--- local timer = Timer( 1, 3 )
+---
+--- timer:attach( function( timer )
+---     print( timer.name )
+--- end )
+---
+--- timer:start()
+--- ```
+---
 ---@class Timer : Object
 ---@field __class TimerClass
 ---@field name string The internal name of the timer. **Read-only.**
@@ -136,6 +146,11 @@ function __Timer:resume() end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Timer` instances.
+---
+--- ```lua
+--- local timer = Timer( 1, 1, "once" )
+--- timer:start()
+--- ```
 ---
 ---@class TimerClass : Timer, Class
 ---@field __base Timer

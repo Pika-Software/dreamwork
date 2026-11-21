@@ -19,6 +19,10 @@ function sqlite.getLastError() end
 ---
 --- Converts a string to a safe string for use in an SQL query.
 ---
+--- ```lua
+--- print( sqlite.escape( "a'b" ) ) -- 'a''b'
+--- ```
+---
 ---@param str string | null | nil The string to convert.
 ---@return string str The safe string.
 ---@nodiscard
@@ -65,6 +69,10 @@ function sqlite.isExists(kind_name, kind_type) end
 --- `sql.Query` cuts blob results at the first null byte,
 --- so read them back as `hex( column )` and decode with `sqlite.cast` using the `"blob"` type.
 ---
+--- ```lua
+--- print( sqlite.Blob( "hi" ).data ) -- hi
+--- ```
+---
 ---@class sqlite.Blob : Object
 ---@field __class sqlite.BlobClass
 ---@field data string The raw bytes of the blob.
@@ -77,6 +85,10 @@ function Blob:__init(data) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Blob` instances.
+---
+--- ```lua
+--- print( sqlite.Blob( "hi" ).data ) -- hi
+--- ```
 ---
 ---@class sqlite.BlobClass : sqlite.Blob, Class
 ---@field __base sqlite.Blob

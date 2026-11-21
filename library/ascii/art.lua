@@ -90,6 +90,10 @@
 --- Assigning `art.scheme` changes that default for later calls. `art.tree` reads the
 --- `tree_` prefixes from the same scheme.
 ---
+--- ```lua
+--- print( ascii.art.bar( 0.3, 10, true ) ) -- ###-------
+--- ```
+---
 ---@class ascii.art
 ---@field schemes ascii.art.Schemes Preset schemes, keyed by name.
 ---@field scheme ascii.art.Scheme Scheme used when a call omits one.

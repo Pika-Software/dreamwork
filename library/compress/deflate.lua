@@ -7,6 +7,11 @@
 --- Produces and consumes raw [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951) streams (no header, no checksum)
 --- compatible with zlib's `deflate` / `inflate` with negative window bits, see `zlib` for the zlib format.
 ---
+--- ```lua
+--- local packed = deflate.compress( "hello" )
+--- print( deflate.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class deflate
 deflate = {}
 
@@ -56,6 +61,12 @@ function deflate.compress(raw_data, options) end
 --- [SHARED AND MENU]
 ---
 --- The DEFLATE stream compressor object.
+---
+--- ```lua
+--- local compressor = deflate.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( deflate.decompress( packed ) ) -- hello
+--- ```
 ---
 ---@class deflate.Compressor : Object, deflate.Stream
 ---@field __class deflate.CompressorClass
@@ -159,6 +170,13 @@ function deflate.decompress(compressed_data, dictionary, start_position) end
 --- [SHARED AND MENU]
 ---
 --- The DEFLATE stream decompressor object.
+---
+--- ```lua
+--- local packed = deflate.compress( "hello" )
+--- local decompressor = deflate.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class deflate.Decompressor : Object, deflate.InflateStream
 ---@field __class deflate.DecompressorClass

@@ -4,6 +4,13 @@
 ---
 --- The source engine console library.
 ---
+--- ```lua
+--- local timescale = console.Variable.get( "host_timescale", "number" )
+--- print( timescale.name ) -- host_timescale
+---
+--- print( timescale.value ) -- 1
+--- ```
+---
 ---@class console
 ---@field visible boolean `true` if the console is visible, `false` otherwise.
 console = {}

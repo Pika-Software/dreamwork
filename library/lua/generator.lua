@@ -8,6 +8,12 @@
 ---
 --- Comments are not part of the AST and are not generated.
 ---
+--- ```lua
+--- local chunk = lua.parser.parse( "return 1" )
+---
+--- print( lua.generator.generate( chunk ) ) -- return 1
+--- ```
+---
 ---@class lua.generator
 lua.generator = {}
 

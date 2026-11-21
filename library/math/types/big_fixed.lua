@@ -31,6 +31,10 @@ local __BigFixed = {}
 ---
 --- Arbitrary-precision fixed-point decimal type, backed by `BigInteger`.
 ---
+--- ```lua
+--- print( tostring( BigFixed( "1.50" ) + BigFixed( "0.50" ) ) ) -- 2.000000000000000000
+--- ```
+---
 ---@class BigFixedClass : BigFixed, Class
 ---@field __base BigFixed
 ---@field DEFAULT_SCALE integer

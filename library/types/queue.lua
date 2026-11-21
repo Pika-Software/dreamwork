@@ -15,6 +15,13 @@
 --- which are advanced/rewound as values are pushed and popped,
 --- and are reset to `0` whenever the queue becomes empty.
 ---
+--- ```lua
+--- local queue = Queue()
+---
+--- queue:push( "a" )
+--- print( queue:pop() ) -- a
+--- ```
+---
 ---@class Queue<T> : Object
 ---@field __class QueueClass
 ---@field front integer The front of the queue. **Read-only**
@@ -128,6 +135,11 @@ function __Queue:iterator(from_tail) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Queue` instances.
+---
+--- ```lua
+--- local queue = Queue()
+--- queue:push( "a" )
+--- ```
 ---
 ---@class QueueClass : Queue, Class
 ---@field __base Queue

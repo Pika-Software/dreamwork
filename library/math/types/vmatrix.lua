@@ -11,6 +11,10 @@
 ---
 --- There is no division operator, use `getInverse` explicitly, it can fail for singular matrices.
 ---
+--- ```lua
+--- print( VMatrix().m11 ) -- 1
+--- ```
+---
 ---@class VMatrix : Object
 ---@field __class VMatrixClass
 ---@operator add( VMatrix ): VMatrix

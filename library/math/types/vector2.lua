@@ -9,6 +9,12 @@
 --- * `vec2 / vec2`, `vec2 / number`
 --- * `-vec2`
 ---
+--- ```lua
+--- local vec = Vector2( 3, 4 )
+---
+--- print( vec:getLength() ) -- 5
+--- ```
+---
 ---@class Vector2 : Object
 ---@field __class Vector2Class
 ---@operator add( Vector2 | number ): Vector2

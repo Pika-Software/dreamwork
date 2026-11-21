@@ -11,6 +11,10 @@
 --- Functions that take `lax` raise an error on the first invalid sequence, unless `lax` is `true`;
 --- in lax mode each maximal invalid subpart counts as one code point, decoded as U+FFFD.
 ---
+--- ```lua
+--- print( utf8.char( 0x68, 0x69 ) ) -- hi
+--- print( utf8.len( "hi" ) ) -- 2
+--- ```
 ---@class utf8lib
 ---@field charpattern string The pattern (a string, not a function) that matches exactly one UTF-8 byte sequence, assuming that the subject is a valid UTF-8 string.
 utf8 = {}

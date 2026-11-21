@@ -17,6 +17,11 @@
 --- Roughly 10 (FFI) to 30 (pure Lua) times slower than `math.random` per integer,
 --- keep `math.random` for gameplay and identifiers.
 ---
+--- ```lua
+--- local str = crypto.random.bytes( 16 )
+--- printf( "%d - %s", #str, base16.encode( str ) ) -- 16 - D1F1D0D74766AE25C5499CBB81D403DB
+--- ```
+---
 ---@class crypto.random
 ---@field source "os" | "jitter" The source the generator is seeded from.
 crypto.random = {}

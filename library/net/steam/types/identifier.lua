@@ -41,6 +41,10 @@ local Identifier = {}
 ---
 --- Use `parse`, `from64`, `fromSteam2`, `fromSteam3` or `fromAccountID` to create one from an existing ID.
 ---
+--- ```lua
+--- print( tostring( steam.Identifier.parse( "STEAM_0:0:11101" ) ) ) -- [U:1:22202]
+--- ```
+---
 ---@class steam.IdentifierClass : steam.Identifier, Class
 ---@field __base steam.Identifier
 ---@overload fun( universe: steam.IdentifierUniverse?, type: steam.IdentifierType?, id: integer?, instance: integer? ): steam.Identifier

@@ -30,6 +30,12 @@ local __Tar = {}
 ---
 --- The class used to create new `Tar` objects.
 ---
+--- ```lua
+--- local tar = Tar()
+--- tar:addFile( "docs/readme.txt", "hello" )
+--- print( Tar( tar:compile() ):readFile( "docs/readme.txt" ) ) -- hello
+--- ```
+---
 ---@class TarClass : Tar, Class
 ---@field __base Tar
 ---@overload fun( data: string? ): Tar

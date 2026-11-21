@@ -42,6 +42,12 @@ local __Addon = {}
 ---
 --- The class used to create new `Addon` objects.
 ---
+--- ```lua
+--- local addon = Addon()
+--- addon:addFile( "lua/autorun/test.lua", "print( 'hello' )" )
+--- print( Addon( addon:compile() ):readFile( "lua/autorun/test.lua" ) ) -- print( 'hello' )
+--- ```
+---
 ---@class AddonClass : Addon, Class
 ---@field __base Addon
 ---@overload fun( data: string?, ratio: number? ): Addon

@@ -4,6 +4,18 @@
 ---
 --- The game's server library.
 ---
+--- ```lua
+--- print( server.singleplayer ) -- false
+--- print( server.dedicated ) -- true
+--- print( server.tickrate ) -- 66
+--- print( server.slots ) -- 16
+--- print( server.gamemode ) -- sandbox
+--- print( server.ipv4 ) -- {your_server_address_as_integer}
+--- print( ipv4.toString( server.ipv4 ) ) -- {your_server_address}
+--- print( server.port ) -- {your_server_port}
+--- print( server.address ) -- {your_server_address}:{your_server_port}
+--- ```
+---
 ---@class server
 ---@field singleplayer boolean `true` if server is running in singleplayer mode, `false` otherwise. **READ-ONLY**
 ---@field dedicated boolean `true` if server is running as a dedicated server, `false` otherwise. **READ-ONLY**

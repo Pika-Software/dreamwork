@@ -6,6 +6,11 @@
 ---
 --- All memory used by Lua is subject to automatic management: strings, tables, userdata, functions, threads, internal structures, etc.
 ---
+--- ```lua
+--- gc.collect()
+--- print( gc.isRunning() ) -- true
+--- ```
+---
 ---@class gc
 gc = {}
 

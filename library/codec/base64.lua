@@ -6,6 +6,10 @@
 ---
 --- See https://en.wikipedia.org/wiki/Base64
 ---
+--- ```lua
+--- print( base64.encode( "hi" ) ) -- aGk=
+--- print( base64.decode( "aGk=" ) ) -- hi
+--- ```
 ---@class base64
 base64 = {}
 
@@ -13,6 +17,12 @@ base64 = {}
 ---
 --- The base64 encoding/decoding alphabet, created by `base64.alphabet`.
 ---
+--- ```lua
+--- local upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+--- local lower = "abcdefghijklmnopqrstuvwxyz"
+--- local custom = base64.alphabet( upper .. lower .. "0123456789-_" )
+--- print( base64.encode( "hi", { alphabet = custom, pad = false } ) ) -- aGk
+--- ```
 ---@class base64.Alphabet
 ---@field [1] table<integer, integer> | ffi.cdata* The encoding map, value ( 0 - 63 ) to character byte.
 ---@field [2] table<integer, integer> | ffi.cdata* The decoding map, character byte ( 0 - 255 ) to value, `-1` for characters outside the alphabet.
@@ -30,6 +40,9 @@ function base64.alphabet(alphabet_str) end
 ---
 --- Base64 encoding/decoding options variant.
 ---
+--- ```lua
+--- print( base64.encode( "hello", { wrap = 4, eol = "\n" } ) ) -- aGVs\nbG8=
+--- ```
 ---@class base64.Variant
 ---@field alphabet base64.Alphabet The 64-character alphabet used for encoding and decoding.
 ---@field pad string | false | nil Padding character (usually "="), `false` disables padding.
@@ -42,6 +55,10 @@ function base64.alphabet(alphabet_str) end
 ---
 --- Fields that are `nil` are taken from the variant, `custom` has the standard alphabet without padding and wrapping.
 ---
+--- ```lua
+--- print( base64.encode( "hi", { variant = "custom" } ) ) -- aGk
+--- print( base64.decode( "aGk", { variant = "custom" } ) ) -- hi
+--- ```
 ---@class base64.Options : base64.Variant
 ---@field variant "standard" | "urlsafe" | "mime" | "jwt" | "custom" | nil The base64 variant to use, default is `"standard"`.
 ---@field alphabet base64.Alphabet | nil The 64-character alphabet used for encoding and decoding.

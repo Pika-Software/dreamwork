@@ -4,6 +4,15 @@
 ---
 --- The console command object.
 ---
+--- ```lua
+--- local command = console.Command( {
+---     name = "example_ping",
+---     description = "example"
+--- } )
+---
+--- print( command.name ) -- example_ping
+--- ```
+---
 ---@class console.Command : Object
 ---@field __class console.Command
 ---@field name string The name of the command.
@@ -29,6 +38,15 @@ function Command:__newindex(key, value) end
 --- [SHARED AND MENU]
 ---
 --- The console command class.
+---
+--- ```lua
+--- local command = console.Command( {
+---     name = "example_ping",
+---     description = "example"
+--- } )
+---
+--- print( command.name ) -- example_ping
+--- ```
 ---
 ---@class console.CommandClass : console.Command, Class
 ---@field __base console.Command

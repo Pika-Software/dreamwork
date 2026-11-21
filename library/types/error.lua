@@ -12,6 +12,14 @@ local dreamwork_exceptions = {}
 --- turn that stack into a human-readable string (`toString`/`__tostring`)
 --- or print it directly to the console with colors (`display`).
 ---
+--- ```lua
+--- local err = Error( "disk full" )
+---
+--- err:capture()
+--- print( tostring( err ) ) -- disk full
+--- err:display()
+--- ```
+---
 ---@class Error : Object
 ---@field __class ErrorClass
 ---@field stack dreamwork.exceptions.Stack | nil The captured call stack this error carries.
@@ -81,6 +89,11 @@ function __Error:display() end
 ---
 --- The class used to create new `Error` instances.
 ---
+--- ```lua
+--- local err = Error( "disk full" )
+--- err:capture()
+--- ```
+---
 ---@class ErrorClass : Error, Class
 ---@field __base Error
 ---@overload fun( message: ( string | nil ) ): Error
@@ -100,6 +113,13 @@ function isError(value) end
 --- An error raised for generic runtime failures that don't fall into
 --- any more specific error category.
 ---
+--- ```lua
+--- local err = RuntimeError( "future was cancelled" )
+---
+--- print( tostring( err ) ) -- future was cancelled
+--- error( err )
+--- ```
+---
 ---@class RuntimeError : Error
 ---@field __class RuntimeErrorClass
 ---@field __parent Error
@@ -109,6 +129,11 @@ local __RuntimeError = {}
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `RuntimeError` instances.
+---
+--- ```lua
+--- local err = RuntimeError( "future was cancelled" )
+--- error( err )
+--- ```
 ---
 ---@class RuntimeErrorClass : RuntimeError, ErrorClass
 ---@field __base RuntimeError
@@ -248,6 +273,13 @@ function assert(value, message, ...) end
 --- An error raised when a called feature, method, or function
 --- has not been implemented yet.
 ---
+--- ```lua
+--- local err = NotImplementedError( "vfs is missing" )
+---
+--- print( tostring( err ) ) -- This feature is not implemented, because vfs is missing.
+--- error( err )
+--- ```
+---
 ---@class NotImplementedError : Error
 ---@field __class NotImplementedErrorClass
 ---@field __parent Error
@@ -263,6 +295,11 @@ function __NotImplementedError:__message(error_message) end
 ---
 --- The class used to create new `NotImplementedError` instances.
 ---
+--- ```lua
+--- local err = NotImplementedError( "vfs is missing" )
+--- error( err )
+--- ```
+---
 ---@class NotImplementedErrorClass : NotImplementedError, ErrorClass
 ---@field __base NotImplementedError
 ---@field __parent ErrorClass
@@ -274,6 +311,13 @@ NotImplementedError = {}
 --- An error raised during asynchronous/coroutine execution, whose
 --- traceback additionally reports the thread it occurred in.
 ---
+--- ```lua
+--- local err = AsyncError( "thread failed" )
+---
+--- print( tostring( err ) ) -- thread failed
+--- error( err )
+--- ```
+---
 ---@class AsyncError : Error
 ---@field __class AsyncErrorClass
 ---@field __parent Error
@@ -283,6 +327,11 @@ local __AsyncError = {}
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `AsyncError` instances.
+---
+--- ```lua
+--- local err = AsyncError( "thread failed" )
+--- error( err )
+--- ```
 ---
 ---@class AsyncErrorClass : AsyncError, ErrorClass
 ---@field __base AsyncError
@@ -294,6 +343,13 @@ AsyncError = {}
 ---
 --- An error raised when a value does not match the type
 --- expected by an operation, function argument, or field.
+---
+--- ```lua
+--- local err = TypeError( 1, 5, "string", "path", "read" )
+---
+--- print( tostring( err ) ) -- bad argument #1 to `read` (`string` expected, got `integer`)
+--- error( err )
+--- ```
 ---
 ---@class TypeError : Error
 ---@field __class TypeErrorClass
@@ -325,6 +381,11 @@ function __TypeError:__message() end
 ---
 --- The class used to create new `TypeError` instances.
 ---
+--- ```lua
+--- local err = TypeError( 1, 5, "string", "path", "read" )
+--- error( err )
+--- ```
+---
 ---@class TypeErrorClass : TypeError, ErrorClass
 ---@field __base TypeError
 ---@field __parent ErrorClass
@@ -335,6 +396,12 @@ TypeError = {}
 ---
 --- An error raised when a value has the correct type but is
 --- otherwise invalid or out of the accepted range for an operation.
+---
+--- ```lua
+--- local err = ValueError( -1, "size must be positive" )
+---
+--- error( err )
+--- ```
 ---
 ---@class ValueError : Error
 ---@field __class ValueErrorClass
@@ -357,6 +424,11 @@ function __ValueError:__message(error_message) end
 ---
 --- The class used to create new `ValueError` instances.
 ---
+--- ```lua
+--- local err = ValueError( -1, "size must be positive" )
+--- error( err )
+--- ```
+---
 ---@class ValueErrorClass : ValueError, ErrorClass
 ---@field __base ValueError
 ---@field __parent ErrorClass
@@ -367,6 +439,13 @@ ValueError = {}
 ---
 --- An error raised when a read operation unexpectedly reaches
 --- the end of a stream, file, or buffer before completing.
+---
+--- ```lua
+--- local err = EndOfFileError( 8, 1 )
+---
+--- print( tostring( err ) ) -- unexpected end of data at byte 8 (expected 1 more byte)
+--- error( err )
+--- ```
 ---
 ---@class EndOfFileError : Error
 ---@field __class EndOfFileErrorClass
@@ -388,6 +467,11 @@ function __EndOfFileError:__message() end
 ---
 --- The class used to create new `EndOfFileError` instances.
 ---
+--- ```lua
+--- local err = EndOfFileError( 8, 1 )
+--- error( err )
+--- ```
+---
 ---@class EndOfFileErrorClass : EndOfFileError, ErrorClass
 ---@field __base EndOfFileError
 ---@field __parent ErrorClass
@@ -398,6 +482,13 @@ EndOfFileError = {}
 ---
 --- An error raised when encoded data (JSON, VDF, ...) cannot be decoded
 --- because it is malformed.
+---
+--- ```lua
+--- local err = DecodeError( "unterminated string", 12 )
+---
+--- print( tostring( err ) ) -- unterminated string at position 12
+--- error( err )
+--- ```
 ---
 ---@class DecodeError : Error
 ---@field __class DecodeErrorClass
@@ -420,6 +511,11 @@ function __DecodeError:__message(error_message) end
 ---
 --- The class used to create new `DecodeError` instances.
 ---
+--- ```lua
+--- local err = DecodeError( "unterminated string", 12 )
+--- error( err )
+--- ```
+---
 ---@class DecodeErrorClass : DecodeError, ErrorClass
 ---@field __base DecodeError
 ---@field __parent ErrorClass
@@ -430,6 +526,13 @@ DecodeError = {}
 ---
 --- An error raised when a value cannot be encoded into a data format
 --- (JSON, VDF, ...) because the format cannot represent it.
+---
+--- ```lua
+--- local err = EncodeError( "unable to serialize non-finite number", 1 / 0 )
+---
+--- print( tostring( err ) ) -- unable to serialize non-finite number
+--- error( err )
+--- ```
 ---
 ---@class EncodeError : Error
 ---@field __class EncodeErrorClass
@@ -452,6 +555,11 @@ function __EncodeError:__message(error_message) end
 ---
 --- The class used to create new `EncodeError` instances.
 ---
+--- ```lua
+--- local err = EncodeError( "unable to serialize non-finite number", 1 / 0 )
+--- error( err )
+--- ```
+---
 ---@class EncodeErrorClass : EncodeError, ErrorClass
 ---@field __base EncodeError
 ---@field __parent ErrorClass
@@ -462,6 +570,12 @@ EncodeError = {}
 ---
 --- An error that occurs when the compiler encounters an issue.
 ---
+--- ```lua
+--- local err = CompileError()
+---
+--- error( err )
+--- ```
+---
 ---@class CompileError : Object
 ---@field __class CompileErrorClass
 ---@field __parent Error
@@ -470,6 +584,11 @@ local __CompileError = {}
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `CompileError` instances.
+---
+--- ```lua
+--- local err = CompileError()
+--- error( err )
+--- ```
 ---
 ---@class CompileErrorClass : CompileError, ErrorClass
 ---@field __base CompileError
@@ -480,6 +599,13 @@ CompileError = {}
 --- [SHARED AND MENU]
 ---
 --- An error raised when an asynchronous file system operation fails.
+---
+--- ```lua
+--- local err = AsyncFileSystemError( -1 )
+---
+--- print( tostring( err ) ) -- reading failed, file could not be opened (bad path, not exist, etc)
+--- error( err )
+--- ```
 ---
 ---@class AsyncFileSystemError : Error
 ---@field __class AsyncFileSystemErrorClass
@@ -499,6 +625,11 @@ function __AsyncFileSystemError:__init(error_id, is_writing) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `AsyncFileSystemError` instances.
+---
+--- ```lua
+--- local err = AsyncFileSystemError( -1, true )
+--- error( err )
+--- ```
 ---
 ---@class AsyncFileSystemErrorClass : AsyncFileSystemError, ErrorClass
 ---@field __base AsyncFileSystemError
@@ -544,6 +675,11 @@ function __HTTPError:__message(error_message) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `HTTPError` instances.
+---
+--- ```lua
+--- local err = HTTPError( 404, "https://example.com/a" )
+--- error( err )
+--- ```
 ---
 ---@class HTTPErrorClass : HTTPError, ErrorClass
 ---@field __base HTTPError

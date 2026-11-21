@@ -11,6 +11,10 @@
 ---
 --- Multiplying or dividing two angles is not supported, it has no geometric meaning.
 ---
+--- ```lua
+--- print( tostring( Angle3( 0, 90, 0 ) ) ) -- 0.000000 90.000000 0.000000
+--- ```
+---
 ---@class Angle3 : Object
 ---@field __class Angle3Class
 ---@operator add( Angle3 | number ): Angle3

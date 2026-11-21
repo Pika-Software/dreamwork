@@ -38,6 +38,20 @@ function Variable:__init(options) end
 ---
 --- The console variable class.
 ---
+--- ```lua
+--- local variable = console.Variable( {
+---     name = "example_debug",
+---     type = "boolean",
+---     default = false,
+---     description = "example",
+---     archive = true
+--- } )
+---
+--- print( variable.name ) -- example_debug
+--- print( variable.value ) -- false
+--- print( variable.archive ) -- true
+--- ```
+---
 ---@class console.VariableClass : console.Variable, Class
 ---@field __base console.Variable
 ---@overload fun( options: console.VariableOptions ): console.Variable

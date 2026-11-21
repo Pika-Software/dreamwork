@@ -133,6 +133,13 @@ function CookieJar:load(name) end
 ---
 --- The class used to create new `http.CookieJar` instances.
 ---
+--- ```lua
+--- local jar = http.CookieJar()
+---
+--- jar:set( "a", "b", { url = "https://example.com/" } )
+--- print( jar:get( "a", "https://example.com/" ).value ) -- b
+--- ```
+---
 ---@class http.CookieJarClass : http.CookieJar, Class
 ---@field __base http.CookieJar
 ---@overload fun(): http.CookieJar

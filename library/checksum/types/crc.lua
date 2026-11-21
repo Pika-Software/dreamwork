@@ -6,6 +6,10 @@
 ---
 --- The CRC-8 checksum calculation object.
 ---
+--- ```lua
+--- print( CRC8():update( "hi" ):digest() ) -- 69
+--- ```
+---
 ---@class checksum.CRC8 : Object
 ---@field __class checksum.CRC8Class
 ---@field protected poly integer The polynomial is used to calculate checksum.
@@ -59,6 +63,10 @@ function __CRC8:digest() end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
+--- ```lua
+--- print( CRC8.digest( "hi" ) ) -- 69
+--- ```
+---
 ---@class checksum.CRC8Class : checksum.CRC8, Class
 ---@field __base checksum.CRC8
 ---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): checksum.CRC8
@@ -106,6 +114,10 @@ function CRC8.CDMA2000() end
 ---
 --- The class used to create new CRC-16 checksum calculation instances.
 ---
+--- ```lua
+--- print( CRC16():update( "hi" ):digest() ) -- 29040
+--- ```
+---
 ---@class checksum.CRC16 : checksum.CRC8
 ---@field __parent checksum.CRC8
 ---@field __class checksum.CRC16Class
@@ -145,6 +157,10 @@ function __CRC16:digest() end
 --- See https://en.wikipedia.org/wiki/Cyclic_redundancy_check for the definition of the CRC-16 checksum.
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
+---
+--- ```lua
+--- print( CRC16.digest( "hi" ) ) -- 29040
+--- ```
 ---
 ---@class checksum.CRC16Class : checksum.CRC16, checksum.CRC8Class
 ---@field __parent checksum.CRC8Class
@@ -198,6 +214,10 @@ function CRC16.USB() end
 ---
 --- The CRC-32 checksum calculation object.
 ---
+--- ```lua
+--- print( CRC32.digest( "hi" ) ) -- 3633523372
+--- ```
+---
 ---@class checksum.CRC32 : checksum.CRC16
 ---@field __parent checksum.CRC16
 ---@field __class checksum.CRC32Class
@@ -237,6 +257,10 @@ function __CRC32:digest() end
 --- See https://en.wikipedia.org/wiki/Cyclic_redundancy_check for the definition of the CRC-32 checksum.
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
+---
+--- ```lua
+--- print( CRC32.digest( "hi" ) ) -- 3633523372
+--- ```
 ---
 ---@class checksum.CRC32Class : checksum.CRC32, checksum.CRC16Class
 ---@field __parent checksum.CRC16Class

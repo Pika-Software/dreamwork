@@ -48,6 +48,11 @@ local __BinaryWriter = {}
 ---
 --- Optional data is converted to a string with `tostring`, the cursor is placed after it (append).
 ---
+--- ```lua
+--- local writer = BinaryWriter( "hi" )
+---
+--- print( writer:compile() ) -- hi
+--- ```
 ---@class BinaryWriterClass : BinaryWriter, Class
 ---@field __base BinaryWriter
 ---@overload fun( data: any? ): BinaryWriter

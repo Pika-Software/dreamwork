@@ -9,6 +9,11 @@
 --- When HolyLib is installed and the call is made from a coroutine, the work is done on a separate thread
 --- with `util.AsyncCompress` / `util.AsyncDecompress` and the coroutine waits for the result, otherwise the call is synchronous.
 ---
+--- ```lua
+--- local packed = lzma.compress( "hello" )
+--- print( lzma.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class lzma
 ---@field PROPS_SIZE integer The size of the lzma properties in bytes.
 lzma = {}

@@ -4,6 +4,10 @@
 ---
 --- The game's menu options module.
 ---
+--- ```lua
+--- print( menu.options.getMasterVolume() ) -- 0
+--- ```
+---
 ---@class menu.options
 menu.options = {}
 

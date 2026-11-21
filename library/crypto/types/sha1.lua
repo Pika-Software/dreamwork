@@ -4,6 +4,10 @@
 ---
 --- SHA1 object.
 ---
+--- ```lua
+--- print( crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
+--- ```
+---
 ---@class crypto.SHA1 : Object
 ---@field __class crypto.SHA1Class
 ---@field protected h1 integer The first word of the hash state ( int32 ).
@@ -33,6 +37,10 @@ local SHA1 = {}
 ---
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
+---
+--- ```lua
+--- print( crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
+--- ```
 ---
 ---@class crypto.SHA1Class : crypto.SHA1, crypto.HashClass
 ---@field __base crypto.SHA1

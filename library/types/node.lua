@@ -12,6 +12,14 @@
 --- and expose helpers to link/unlink from a parent,
 --- traverse the subtree, and measure its size.
 ---
+--- ```lua
+--- local root = Node( "root" )
+--- local child = Node( "leaf", root )
+---
+--- print( child.parent == root ) -- true
+--- print( root:size() ) -- 2
+--- ```
+---
 ---@class Node<T> : Object
 ---@field __class NodeClass
 ---@field value T The value stored in the node.
@@ -122,6 +130,11 @@ function __Node:size() end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Node` instances.
+---
+--- ```lua
+--- local root = Node( "root" )
+--- local child = Node( "leaf", root )
+--- ```
 ---
 ---@generic T
 ---@class NodeClass : Node, Class

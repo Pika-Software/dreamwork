@@ -8,6 +8,11 @@
 --- Produces and consumes [gzip](https://www.rfc-editor.org/rfc/rfc1952) streams
 --- compatible with the `gzip` tool, `Content-Encoding: gzip` and zlib's `gzopen` / `inflateInit2`.
 ---
+--- ```lua
+--- local packed = gzip.compress( "hello" )
+--- print( gzip.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class gzip
 gzip = {}
 
@@ -42,6 +47,12 @@ function gzip.decompress(compressed_data, start_position) end
 --- [SHARED AND MENU]
 ---
 --- The gzip stream compressor object.
+---
+--- ```lua
+--- local compressor = gzip.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( gzip.decompress( packed ) ) -- hello
+--- ```
 ---
 ---@class gzip.Compressor : deflate.Compressor
 ---@field __class gzip.CompressorClass
@@ -105,6 +116,13 @@ gzip.Compressor = CompressorClass
 --- [SHARED AND MENU]
 ---
 --- The gzip stream decompressor object.
+---
+--- ```lua
+--- local packed = gzip.compress( "hello" )
+--- local decompressor = gzip.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class gzip.Decompressor : deflate.Decompressor
 ---@field __class gzip.DecompressorClass

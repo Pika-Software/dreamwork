@@ -120,6 +120,10 @@ function __ViewportLayout:await() end
 ---
 --- The class used to create `ViewportLayout` instances and parse display lengths.
 ---
+--- ```lua
+--- print( ViewportLayout.parse( "120px" ) ) -- 120
+--- ```
+---
 ---@class ViewportLayoutClass : ViewportLayout, Class
 ---@field __base ViewportLayout The instance prototype shared by all `ViewportLayout` objects.
 ---@overload fun( definitions: table<string, string> ): table<string, integer>

@@ -23,6 +23,18 @@
 ---
 --- Author: [Retr0](https://github.com/dankmolot)
 ---
+--- ```lua
+--- local futures = futures
+---
+--- futures.run( function()
+---     futures.sleep( 3 )
+---     return "done"
+--- end, function( ok, result )
+---     print( ok ) -- true (after 3 seconds)
+---     print( result ) -- done
+--- end )
+--- ```
+---
 ---@class futures
 futures = {}
 

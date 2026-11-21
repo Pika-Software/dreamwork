@@ -7,6 +7,11 @@
 --- Produces and consumes [zlib](https://www.rfc-editor.org/rfc/rfc1950) streams
 --- compatible with zlib's `compress` / `uncompress`.
 ---
+--- ```lua
+--- local packed = zlib.compress( "hello" )
+--- print( zlib.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class zlib
 zlib = {}
 
@@ -37,6 +42,12 @@ function zlib.decompress(compressed_data, dictionary) end
 --- [SHARED AND MENU]
 ---
 --- The zlib stream compressor object.
+---
+--- ```lua
+--- local compressor = zlib.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( zlib.decompress( packed ) ) -- hello
+--- ```
 ---
 ---@class zlib.Compressor : deflate.Compressor
 ---@field __class zlib.CompressorClass
@@ -99,6 +110,13 @@ zlib.Compressor = CompressorClass
 --- [SHARED AND MENU]
 ---
 --- The zlib stream decompressor object.
+---
+--- ```lua
+--- local packed = zlib.compress( "hello" )
+--- local decompressor = zlib.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class zlib.Decompressor : deflate.Decompressor
 ---@field __class zlib.DecompressorClass

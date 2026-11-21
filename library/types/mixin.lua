@@ -11,6 +11,13 @@
 --- Mixins are themselves callable and can be nested inside
 --- one another as handlers.
 ---
+--- ```lua
+--- local mixin = Mixin( "score" )
+---
+--- mixin:attach( function( _, new ) return new + 1 end )
+--- print( mixin:call( nil, 1 ) ) -- 2
+--- ```
+---
 ---@class Mixin<T> : Object
 ---@field __class MixinClass
 ---@field name string The name of the mixin.
@@ -67,6 +74,11 @@ function __Mixin:call(old_value, new_value, ...) end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Mixin` instances.
+---
+--- ```lua
+--- local mixin = Mixin( "score" )
+--- mixin:attach( function( _, new ) return new end )
+--- ```
 ---
 ---@class MixinClass : Mixin, Class
 ---@field __base Mixin
