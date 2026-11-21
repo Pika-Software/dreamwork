@@ -9,7 +9,7 @@
 --- A named channel that sends data through hidden console commands,
 --- so it also works between the menu and the client states, where the `net` library doesn't.
 ---
---- The server sends to the client state of players, the client sends to the server or the menu,
+--- The server sends to the client state of the clients, the client sends to the server or the menu,
 --- the menu sends to the client. The data is split into url-safe base64 packets of one console
 --- line each, paced by a per-frame byte budget, and is delivered to the handlers only when complete.
 ---
@@ -40,17 +40,17 @@ Message = {}
 
 --- Called when a message is fully received.
 ---
---- `sender` is the player on the server and `nil` on the client and menu,
+--- `sender` is the client on the server and `nil` on the client and menu,
 --- `realm` is the realm the message claims to come from.
 ---
----@alias Message.ReceiveFn fun( message: Message, reader: BinaryReader, sender: garrysmod.Player | nil, realm: Message.Realm )
+---@alias Message.ReceiveFn fun( message: Message, reader: BinaryReader, sender: Client | nil, realm: Message.Realm )
 
 --- Called when an outgoing message is finished.
 ---
 --- `success` is `true` when the last packet is handed to the engine, the delivery is not confirmed,
---- `false` if it was aborted or the target player left.
+--- `false` if it was aborted or the target client left.
 ---
----@alias Message.FinishFn fun( message: Message, success: boolean, target: garrysmod.Player | Message.Realm )
+---@alias Message.FinishFn fun( message: Message, success: boolean, target: Client | Message.Realm )
 
 --- [SHARED AND MENU]
 ---
@@ -89,7 +89,7 @@ function __Message:clear() end
 ---
 ---@return Message message The message.
 ---@return BinaryReader reader The reader of the message.
----@return garrysmod.Player | nil sender The sender, `nil` on the client and menu.
+---@return Client | nil sender The sender, `nil` on the client and menu.
 ---@return Message.Realm realm The realm the message claims to come from.
 ---@async
 function __Message:await() end
@@ -121,7 +121,7 @@ function __Message:__newindex(key, value) end
 ---
 ---@class Message.Outgoing
 ---@field message Message The message of the transfer.
----@field target garrysmod.Player | Message.Realm The target player on the server, the target realm otherwise.
+---@field target Client | Message.Realm The target client on the server, the target realm otherwise.
 ---@field command string The receiving console command.
 ---@field packets string[] The encoded packets, the sent ones are dropped.
 ---@field count integer The number of packets.
@@ -136,13 +136,13 @@ function __Message:__newindex(key, value) end
 --- the ~8 kb per frame console limit makes it slow ( ~45 kb/s with a 20 fps client ), so prefer `Network`
 --- for large data between the server and the client.
 ---
---- The server sends to the client state of the target players,
+--- The server sends to the client state of the target clients,
 --- the client sends to `"server"` ( default ) or `"menu"`, the menu sends to the client.
 ---
 --- Messages to the same target are queued and sent in order.
 ---
 ---@param data string The data to send.
----@param target ( garrysmod.Player | garrysmod.Player[] | Message.Realm )? The target player(s) on the server, the target realm on the client, ignored in the menu.
+---@param target ( Client | Client[] | Message.Realm )? The target client(s) on the server, the target realm on the client, ignored in the menu.
 ---@param callback Message.FinishFn? The callback that is called when the last packet is handed to the engine, or the target left.
 function __Message:send(data, target, callback) end
 
@@ -151,7 +151,7 @@ function __Message:send(data, target, callback) end
 --- Builds the data with a binary writer and sends it to the target.
 ---
 ---@param fn fun( message: Message, writer: BinaryWriter ) The function that writes the data.
----@param target ( garrysmod.Player | garrysmod.Player[] | Message.Realm )? The target player(s) on the server, the target realm on the client, ignored in the menu.
+---@param target ( Client | Client[] | Message.Realm )? The target client(s) on the server, the target realm on the client, ignored in the menu.
 ---@param callback Message.FinishFn? The callback that is called when the last packet is handed to the engine, or the target left.
 function __Message:transmit(fn, target, callback) end
 
@@ -159,7 +159,7 @@ function __Message:transmit(fn, target, callback) end
 ---
 --- Cancels the outgoing transfers of this message to the target, the packets already sent are not recalled.
 ---
----@param target ( garrysmod.Player | Message.Realm )? The target player on the server, the target realm on the client, ignored in the menu.
+---@param target ( Client | Message.Realm )? The target client on the server, the target realm on the client, ignored in the menu.
 ---@return boolean cancelled `true` if anything was cancelled.
 function __Message:abort(target) end
 
@@ -167,7 +167,7 @@ function __Message:abort(target) end
 ---
 --- Checks if the message has queued outgoing packets to the target.
 ---
----@param target ( garrysmod.Player | Message.Realm )? The target player on the server, the target realm on the client, ignored in the menu.
+---@param target ( Client | Message.Realm )? The target client on the server, the target realm on the client, ignored in the menu.
 ---@return boolean is_sending `true` if a transfer of this message to the target is queued.
 ---@nodiscard
 function __Message:isSending(target) end
@@ -186,7 +186,7 @@ function __Message:isSending(target) end
 ---
 --- Checks if the message is receiving data from the sender.
 ---
----@param sender ( garrysmod.Player | Message.Realm )? The sender player on the server, the sender realm on the client, ignored in the menu.
+---@param sender ( Client | Message.Realm )? The sender client on the server, the sender realm on the client, ignored in the menu.
 ---@return boolean is_receiving `true` if an incomplete transfer from the sender is in progress.
 ---@nodiscard
 function __Message:isReceiving(sender) end

@@ -36,8 +36,9 @@
 --- - `command`: the command that is being autocompleted.
 --- - `argument_string`: the raw argument string typed after the command name.
 --- - `args`: the parsed arguments.
+--- - `client`: the local client who is typing the completion, `nil` on a dedicated server and when no local client is known (the menu).
 ---
----@alias console.Command.SimpleAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): string[] | nil
+---@alias console.Command.SimpleAutoComplete fun( command: console.Command, argument_string: string, args: string[], client: Client | nil ): string[] | nil
 
 ---
 --- Full autocomplete callback.
@@ -52,8 +53,9 @@
 --- - `command`: the command that is being autocompleted.
 --- - `argument_string`: the raw argument string typed after the command name.
 --- - `args`: the parsed arguments.
+--- - `client`: the local client who is typing the completion, `nil` on a dedicated server and when no local client is known (the menu).
 ---
----@alias console.Command.FullAutoComplete fun( command: console.Command, argument_string: string, args: string[] ): boolean, string[] | nil
+---@alias console.Command.FullAutoComplete fun( command: console.Command, argument_string: string, args: string[], client: Client | nil ): boolean, string[] | nil
 
 ---
 --- Autocomplete callback of a console command, either simple or full.

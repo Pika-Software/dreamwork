@@ -7,7 +7,10 @@
 --- All functions operate on single bytes (integers in the range 0x00–0xFF),
 --- as returned by `string.byte`, and do not accept `nil`.
 ---
+--- Figures drawn from characters (schemes, boxes, grids, bars, trees) are `ascii.art`.
+---
 ---@class ascii
+---@field art ascii.art
 ascii = {}
 
 --- [SHARED AND MENU]

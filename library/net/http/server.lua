@@ -50,8 +50,8 @@
 ---@field method string The HTTP method, e.g. `"GET"` or `"POST"`. **Read-only.**
 ---@field content_length integer The request `Content-Length`. **Read-only.**
 ---@field authorization_count integer The number of `Authorization` credentials parsed from the request. **Read-only.**
----@field client holylib.CBaseClient | nil The HolyLib `CBaseClient` for the connected player that matched this request's IP, if any. **Read-only.**
----@field player garrysmod.Player | nil The `Player` for the connected player that matched this request's IP, if any. **Read-only.**
+---@field base_client holylib.CBaseClient | nil The HolyLib `CBaseClient` of the connected client that matched this request's IP, if any. **Read-only.**
+---@field client Client | nil The connected client that matched this request's IP, if any. **Read-only.**
 local Request = {}
 
 ---@param exchange http.Server.Exchange
@@ -400,18 +400,18 @@ function Server:addProxy(proxy_address, header_name, use_last_ip) end
 
 --- [SERVER]
 ---
---- Queues a prepared response for the next matching request from the given player `user_id`.
+--- Queues a prepared response for the next matching request from the given client.
 ---
 --- `handler` runs immediately to fill the response, matching requests are then answered
 --- on the worker thread without any Lua call. The response is invalid after `handler` returns.
 ---
----@param user_id integer The player's UserID (`-1` for non-player / unmatched clients).
+---@param client Client | nil The client, `nil` for requests that match no connected client.
 ---@param path string Exact request path to match.
 ---@param method http.RequestMethod | string Exact HTTP method to match.
 ---@param required_headers table<string, string> Headers that must be present with these values.
 ---@param handler fun( response: http.Server.Response ) Fills the prepared response.
 ---@param uses integer? How many times this entry may match. Defaults to `1`.
-function Server:prepare(user_id, path, method, required_headers, handler, uses) end
+function Server:prepare(client, path, method, required_headers, handler, uses) end
 
 --- [SERVER]
 ---

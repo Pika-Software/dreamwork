@@ -58,26 +58,6 @@ LUA_SERVER = nil
 ---@type integer
 DEVELOPER = nil
 
---- The time it takes to run one frame in seconds. **Client-only**
----
----@type number
-FRAME_TIME = nil
-
---- The number of frames per second. **Client-only**
----
----@type number
-FPS = nil
-
---- The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
----
----@type number
-TICK_TIME = nil
-
---- The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
----
----@type number
-TPS = nil
-
 --- A sentinel symbol that represents an explicit "no value", compare it by identity.
 ---
 ---@type null
@@ -559,26 +539,6 @@ function loadstring(lua_code, chunk_name, env) end
 
 --- [SHARED AND MENU]
 ---
---- Checks if the value is an instance of the given parent.
----
----@param object any The object to check for being an instance of the given parent.
----@param ... any The parent classes/metatables to check against.
----@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
----@nodiscard
-function isInstance(object, ...) end
-
---- [SHARED AND MENU]
----
---- Checks if the value is an instance of the given parent.
----
----@param object any The object to check for being an instance of the given parent.
----@param value any The parent class/metatable to check against.
----@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
----@nodiscard
-function isType(object, value) end
-
---- [SHARED AND MENU]
----
 --- Returns a string representing the name of the type of the passed object.
 ---
 ---@param value any The value to get the type of.
@@ -622,6 +582,28 @@ function knext(tbl, key) end
 ---@return table<K, V>
 ---@nodiscard
 function kpairs(tbl) end
+
+function debug.newproxy(add_metatable) end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is an instance of the given parent.
+---
+---@param object any The object to check for being an instance of the given parent.
+---@param ... any The parent classes/metatables to check against.
+---@return boolean is_instance `true` if `object` is an instance of any of the given parent classes/metatables, `false` otherwise.
+---@nodiscard
+function isInstance(object, ...) end
+
+--- [SHARED AND MENU]
+---
+--- Checks if the value is an instance of the given parent.
+---
+---@param object any The object to check for being an instance of the given parent.
+---@param value any The parent class/metatable to check against.
+---@return boolean is_instance `true` if `object` is an instance of the given parent class/metatable, `false` otherwise.
+---@nodiscard
+function isType(object, value) end
 
 ---@class String
 local __String = {}
@@ -691,6 +673,10 @@ color.Scheme.suva_gray = 0x8A8A8A
 color.Scheme.turquoise = 0x40e0d0
 
 color.Scheme.dark_turquoise = 0x00D0D0
+
+color.Scheme.starlight = 0x87CEEB
+
+color.Scheme.moonlight = 0xF5DEB3
 
 --- [SHARED AND MENU]
 ---
@@ -1020,38 +1006,3 @@ function loadbytecode(bytecode, env) end
 ---@return function fn The compiled function.
 ---@nodiscard
 function loadfile(file_path, env) end
-
---- [SHARED AND MENU]
----
----
----
----@param package_name string
----@param package_version string
----@return any
-function import(package_name, package_version) end
-
---- [SHARED AND MENU]
----
---- Opens the named file and executes its content as a Lua chunk.
----
---- When called without arguments, `dofile` executes the content of the standard input (`stdin`).
----
---- Returns all values returned by the chunk. In case of errors, `dofile` propagates the error to its caller. (That is, `dofile` does not run in protected mode.)
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-dofile)
----
----@param file_path string
----@param ... any
----@return any ...
-function dofile(file_path, ...) end
-
---- [SHARED AND MENU]
----
---- Loads the given module, returns any value returned by the searcher(`true` when `nil`). Besides that value, also returns as a second result the loader data returned by the searcher, which indicates how `require` found the module. (For instance, if the module came from a file, this loader data is the file path.)
----
---- [View documents](http://www.lua.org/manual/5.1/manual.html#pdf-require)
----
----@param modname string
----@param ... any
----@return ...
-function require(modname, ...) end

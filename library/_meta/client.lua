@@ -1,0 +1,49 @@
+---@meta _
+
+
+--- [SHARED]
+---
+--- The connection stage of a client, stages only go forward:
+--- * `none` - only the user ID is known, the client is not announced yet.
+--- * `connected` - the server accepted the connection (`SIGNONSTATE_CONNECTED`).
+--- * `established` - the client got the server info and loads the map (`SIGNONSTATE_NEW` and `SIGNONSTATE_PRESPAWN`).
+--- * `spawning` - the client is entering the game (`SIGNONSTATE_SPAWN` and `SIGNONSTATE_FULL`), its player entity may not exist yet.
+--- * `spawned` - the player entity of the client exists.
+--- * `initialized` - the client is loaded, it can send and receive network messages.
+--- * `disconnected` - the client left the server.
+---
+--- Every stage hook (`dreamwork.client.<stage>`) is called once per client and in this order,
+--- a stage the engine skips is still called, right before the next one.
+---
+--- > NOTE: `established` and `spawning` are separate moments only on the server and only for humans,
+--- `established` starts the download and map loading phase, which can take seconds.
+--- Bots go from `SIGNONSTATE_CONNECTED` straight to `SIGNONSTATE_FULL`, and the client gets no sign-on states
+--- of the other players (the local one starts at `SIGNONSTATE_SPAWN`), so there both hooks are called back to back.
+---
+---@alias Client.Stage
+---| "none"
+---| "connected"
+---| "established"
+---| "spawning"
+---| "spawned"
+---| "initialized"
+---| "disconnected"
+
+--- [SHARED]
+---
+--- The data collected about a client from the engine hooks, game events and its player entity.
+---
+---@class Client.Data
+---@field user_id integer The user ID of the client, unique during the map.
+---@field entity_id integer | nil The entity index of the player entity, known before the entity exists.
+---@field entity garrysmod.Player | nil The player entity, kept until the client disconnects or the entity is removed.
+---@field name string | nil The name of the client, `nil` until a non-temporary name is known.
+---@field polled_name string | nil The last name read from the player entity, including temporary names.
+---@field steam_id steam.Identifier | nil The Steam ID of the client, `nil` for bots and until it is known.
+---@field ip IPv4 | nil The IPv4 address of the client as an unsigned 32-bit integer, server only.
+---@field port integer | nil The port of the client, server only.
+---@field is_bot boolean `true` if the client is a bot.
+---@field is_local boolean `true` if the client is the local one, see `Client:isLocal`.
+---@field stage integer The connection stage, an index of `Client.Stage`.
+---@field announced boolean `true` once the `dreamwork.client.connected` hook is called for the client.
+---@field initialize_pending boolean | nil `true` if the server reported the client as initialized before its entity arrived, client only.

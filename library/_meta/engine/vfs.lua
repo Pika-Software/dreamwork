@@ -47,5 +47,5 @@
 ---@field relative_path string | nil The path of the file or directory inside of the search path, `nil` for intermediate directories.
 ---@field storage dreamwork.vfs.Storage Where the file or directory is stored.
 ---@field is_mount_root boolean `true` if the path is the root directory of the mount.
----@field writable boolean If `true`, files and directories can be created, written and deleted.
----@field deletable boolean If `true`, files and directories can be deleted.
+---@field writable boolean If `true`, the storage itself accepts writes, writes into read-only mounts and intermediate directories go to memory instead, see `vfs.isWritable`.
+---@field deletable boolean If `true`, files and directories can be deleted from the storage, otherwise they are hidden by whiteouts, intermediate directories cannot be deleted.

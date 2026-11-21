@@ -40,30 +40,30 @@ Network = {}
 
 --- Called when a message is fully received and its checksum matches.
 ---
---- `sender` is the player on the server and `nil` on the client.
+--- `sender` is the client on the server and `nil` on the client.
 ---
----@alias Network.ReceiveFn fun( network: Network, reader: BinaryReader, sender: garrysmod.Player | nil )
+---@alias Network.ReceiveFn fun( network: Network, reader: BinaryReader, sender: ( Client | nil ) )
 
 --- Called on every transfer progress, both incoming and outgoing.
 ---
---- `peer` is the other side, the player on the server and `nil` on the client,
+--- `peer` is the other side, the client on the server and `nil` on the client,
 --- `is_outgoing` is `true` for sent data, `done_bytes` counts the received
 --- or acknowledged bytes out of `total_bytes`.
 ---
----@alias Network.ProgressFn fun( network: Network, peer: garrysmod.Player | nil, is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
+---@alias Network.ProgressFn fun( network: Network, peer: ( Client | nil ), is_outgoing: boolean, done_bytes: integer, total_bytes: integer )
 
 --- Called for every chunk of incoming data in order, while it arrives.
 ---
 --- `chunk` is the data at the zero-based byte `offset` out of `total` bytes.
 --- The last call has `chunk = nil` and `success`, `offset` is the number of delivered bytes then.
 ---
----@alias Network.StreamFn fun( network: Network, sender: garrysmod.Player | nil, chunk: string | nil, offset: integer, total: integer, success: boolean | nil )
+---@alias Network.StreamFn fun( network: Network, sender: ( Client | nil ), chunk: ( string | nil ), offset: integer, total: integer, success: ( boolean | nil ) )
 
 --- Called when an outgoing transmission is finished.
 ---
 --- `success` is `false` if it was rejected, cancelled, timed out or the peer left.
 ---
----@alias Network.FinishFn fun( network: Network, success: boolean, peer: garrysmod.Player | nil )
+---@alias Network.FinishFn fun( network: Network, success: boolean, peer: ( Client | nil ) )
 
 --- [SHARED]
 ---
@@ -102,7 +102,7 @@ function __Network:clear() end
 ---
 ---@return Network network The network.
 ---@return BinaryReader reader The reader of the message.
----@return garrysmod.Player | nil sender The sender, `nil` on the client.
+---@return Client | nil sender The sender, `nil` on the client.
 ---@async
 function __Network:await() end
 
@@ -143,7 +143,7 @@ function __Network:watch(handler) end
 ---@return boolean removed `true` if the handler was attached.
 function __Network:unwatch(handler) end
 
---- The cached HolyLib net channel access of a player.
+--- The cached HolyLib net channel access of a client.
 ---
 ---@class Network.GameClient
 ---@field client holylib.CGameClient The HolyLib `GameClient`.
@@ -169,8 +169,8 @@ function __Network:unwatch(handler) end
 ---
 ---@class Network.Outgoing
 ---@field network Network The network of the transfer.
----@field peer garrysmod.Player | nil The receiver, `nil` on the client.
----@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field peer Client | nil The receiver, `nil` on the client.
+---@field key Client | string The key of the peer in the per-peer tables.
 ---@field id integer The transfer ID, `[0, 255]`.
 ---@field data string The whole data.
 ---@field size integer The size of the data in bytes.
@@ -201,8 +201,8 @@ function __Network:unwatch(handler) end
 ---
 ---@class Network.Incoming
 ---@field network Network The network of the transfer.
----@field peer garrysmod.Player | nil The sender, `nil` on the client.
----@field key garrysmod.Player | string The key of the peer in the per-peer tables.
+---@field peer Client | nil The sender, `nil` on the client.
+---@field key Client | string The key of the peer in the per-peer tables.
 ---@field id integer The transfer ID, `[0, 255]`.
 ---@field size integer The size of the data in bytes.
 ---@field segment_size integer The size of every segment except the last one, in bytes.
@@ -260,7 +260,7 @@ function __Network:__newindex(key, value) end
 --- If the target is already receiving a transmission from this network, the data is queued behind it.
 ---
 ---@param data string The data to send.
----@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param target ( Client | Client[] )? The target client(s), required on the server, ignored on the client.
 ---@param callback Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function __Network:send(data, target, callback) end
 
@@ -269,7 +269,7 @@ function __Network:send(data, target, callback) end
 --- Builds the data with a binary writer and sends it to the target.
 ---
 ---@param fn fun( network: Network, writer: BinaryWriter ) The function that writes the data.
----@param target ( garrysmod.Player | garrysmod.Player[] )? The target player(s), required on the server, ignored on the client.
+---@param target ( Client | Client[] )? The target client(s), required on the server, ignored on the client.
 ---@param callback Network.FinishFn? The callback that is called when the transmission is finished or failed.
 function __Network:transmit(fn, target, callback) end
 
@@ -277,7 +277,7 @@ function __Network:transmit(fn, target, callback) end
 ---
 --- Cancels the outgoing transmission to the target and all queued ones.
 ---
----@param target garrysmod.Player? The target player, required on the server, ignored on the client.
+---@param target Client? The target client, required on the server, ignored on the client.
 ---@return boolean cancelled `true` if anything was cancelled.
 function __Network:abort(target) end
 
@@ -285,7 +285,7 @@ function __Network:abort(target) end
 ---
 --- Checks if the network is sending data to the target.
 ---
----@param target garrysmod.Player? The target player, required on the server, ignored on the client.
+---@param target Client? The target client, required on the server, ignored on the client.
 ---@return boolean is_sending `true` if a transmission to the target is running.
 ---@nodiscard
 function __Network:isSending(target) end
@@ -294,7 +294,7 @@ function __Network:isSending(target) end
 ---
 --- Checks if the network is receiving data from the sender.
 ---
----@param sender garrysmod.Player? The sender player, required on the server, ignored on the client.
+---@param sender Client? The sender client, required on the server, ignored on the client.
 ---@return boolean is_receiving `true` if a transmission from the sender is running.
 ---@nodiscard
 function __Network:isReceiving(sender) end

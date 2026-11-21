@@ -2,79 +2,10 @@
 
 --- [CLIENT AND MENU]
 ---
---- The game's main menu library.
----
----@class menu
----@field visible boolean `true` if the menu is visible, `false` otherwise.
-menu = {}
-
-menu.open = debug.fempty
-
-menu.openURL = debug.fempty
-
---- [MENU]
----
---- Runs a menu command.
----
---- Equivalent to `console.Command.run( "gamemenucommand", command )` unless the command starts with the "engine" keyword in which case it is equivalent to `console.Command.run( command )`.
----
----@param cmd string The command to run.
-function menu.run(cmd) end
-
---- [MENU]
----
---- Closes the menu and returns to the game.
----
-function menu.close() end
-
---- [MENU]
----
---- Opens the legacy server browser.
----
-function menu.openServerBrowser() end
-
---- [MENU]
----
---- Opens the Source "Load Game" dialog.
----
-function menu.openGameLoadDialog() end
-
---- [MENU]
----
---- Opens the Source "Save Game" dialog.
----
-function menu.openGameSaveDialog() end
-
---- [MENU]
----
---- Opens the "Mute Players" dialog that shows all players connected to the server and allows to mute them.
----
-function menu.openPlayerList() end
-
---- [MENU]
----
---- Quits the game.
----
---- **NOTE**: confirmation dialog is broken in Garry's mod and `no_confirm` do nothing.
----
----@param no_confirm boolean Whether to skip the confirmation prompt.
-function menu.quit(no_confirm) end
-
---- [MENU]
----
---- The game's menu loading ( connecting to the server ) module.
----
----@class menu.loading
-local loading = {}
-
-menu.loading = loading
-
---- [CLIENT AND MENU]
----
 --- The game's menu options module.
 ---
 ---@class menu.options
-local options = {}
+menu.options = {}
 
 --- [CLIENT AND MENU]
 ---
@@ -82,7 +13,7 @@ local options = {}
 ---
 ---@return number master_volume The volume, from 0 to 1.
 ---@nodiscard
-function options.getMasterVolume() end
+function menu.options.getMasterVolume() end
 
 --- [CLIENT AND MENU]
 ---
@@ -90,7 +21,7 @@ function options.getMasterVolume() end
 ---
 ---@return number sfx_volume The volume, from 0 to 1.
 ---@nodiscard
-function options.getEffectsVolume() end
+function menu.options.getEffectsVolume() end
 
 --- [CLIENT AND MENU]
 ---
@@ -98,7 +29,7 @@ function options.getEffectsVolume() end
 ---
 ---@return number music_volume The volume, from 0 to 1.
 ---@nodiscard
-function options.getMusicVolume() end
+function menu.options.getMusicVolume() end
 
 --- [CLIENT AND MENU]
 ---
@@ -106,7 +37,7 @@ function options.getMusicVolume() end
 ---
 ---@return number hev_volume The volume, from 0 to 1.
 ---@nodiscard
-function options.getSuitVolume() end
+function menu.options.getSuitVolume() end
 
 --- [CLIENT AND MENU]
 ---
@@ -114,7 +45,7 @@ function options.getSuitVolume() end
 ---
 ---@return boolean muted Whether to mute the volume.
 ---@nodiscard
-function options.getMuteVolumeOnLoseFocus() end
+function menu.options.getMuteVolumeOnLoseFocus() end
 
 --- [CLIENT AND MENU]
 ---
@@ -124,7 +55,7 @@ function options.getMuteVolumeOnLoseFocus() end
 ---
 ---@return string language_code ISO 639-1 language code.
 ---@nodiscard
-function options.getLanguage() end
+function menu.options.getLanguage() end
 
 --- [CLIENT AND MENU]
 ---
@@ -132,7 +63,7 @@ function options.getLanguage() end
 ---
 ---@return boolean enabled Whether the fast weapon switch is enabled.
 ---@nodiscard
-function options.getFastWeaponSwitch() end
+function menu.options.getFastWeaponSwitch() end
 
 --- [CLIENT AND MENU]
 ---
@@ -140,7 +71,7 @@ function options.getFastWeaponSwitch() end
 ---
 ---@return boolean enabled Whether the quick info is enabled.
 ---@nodiscard
-function options.getQuickInfo() end
+function menu.options.getQuickInfo() end
 
 --- [CLIENT AND MENU]
 ---
@@ -148,7 +79,7 @@ function options.getQuickInfo() end
 ---
 ---@return boolean enabled Whether the crosshair is enabled.
 ---@nodiscard
-function options.getCrosshair() end
+function menu.options.getCrosshair() end
 
 --- [CLIENT AND MENU]
 ---
@@ -156,7 +87,7 @@ function options.getCrosshair() end
 ---
 ---@return boolean enabled Whether the HUD render is enabled.
 ---@nodiscard
-function options.getDrawHUD() end
+function menu.options.getDrawHUD() end
 
 --- [CLIENT AND MENU]
 ---
@@ -164,7 +95,7 @@ function options.getDrawHUD() end
 ---
 ---@return number sensitivity The mouse sensitivity.
 ---@nodiscard
-function options.getMouseSensitivity() end
+function menu.options.getMouseSensitivity() end
 
 --- [CLIENT AND MENU]
 ---
@@ -172,7 +103,7 @@ function options.getMouseSensitivity() end
 ---
 ---@return boolean allowed Whether the loading URL is enabled.
 ---@nodiscard
-function options.isCustomLoadingScreenAllowed() end
+function menu.options.isCustomLoadingScreenAllowed() end
 
 --- [CLIENT AND MENU]
 ---
@@ -181,9 +112,9 @@ function options.isCustomLoadingScreenAllowed() end
 ---@return number width The width of the game's window (in pixels).
 ---@return number height The height of the game's window (in pixels).
 ---@nodiscard
-function options.getScreenResolution() end
+function menu.options.getScreenResolution() end
 
-options.getFullscreen = window.isFullscreen
+menu.options.getFullscreen = window.isFullscreen
 
 --- [CLIENT AND MENU]
 ---
@@ -191,7 +122,7 @@ options.getFullscreen = window.isFullscreen
 ---
 ---@return boolean is_on `true` if the game is running in VSync mode, `false` if not.
 ---@nodiscard
-function options.getVSync() end
+function menu.options.getVSync() end
 
 --- [CLIENT AND MENU]
 ---
@@ -199,14 +130,58 @@ function options.getVSync() end
 ---
 ---@return boolean is_enabled `true` if close captions are enabled, `false` otherwise.
 ---@nodiscard
-function options.getCloseCaptions() end
+function menu.options.getCloseCaptions() end
 
 --- [CLIENT AND MENU]
 ---
 --- Enables or disables close captions.
 ---
 ---@param state boolean `true` to enable close captions, `false` to disable them.
-function options.setCloseCaptions(state) end
+function menu.options.setCloseCaptions(state) end
+
+--- [CLIENT AND MENU]
+---
+--- Returns whether materials and models are unloaded on disconnect.
+---
+--- Unstable. Use at your own risk.
+---
+---@return boolean enabled `true` if assets are unloaded on disconnect, `false` otherwise.
+---@nodiscard
+function menu.options.getUnloadOnDisconnect() end
+
+--- [CLIENT AND MENU]
+---
+--- Returns whether experimental multicore rendering is enabled.
+---
+---@return boolean enabled `true` if multicore rendering is enabled, `false` otherwise.
+---@nodiscard
+function menu.options.getMulticoreRendering() end
+
+--- [CLIENT AND MENU]
+---
+--- Returns whether temporary files downloaded from servers (such as sprays) are deleted.
+---
+---@return boolean enabled `true` if temporary files are deleted, `false` otherwise.
+---@nodiscard
+function menu.options.getDeleteTempFiles() end
+
+--- [CLIENT AND MENU]
+---
+--- Returns the filesystem debug level.
+---
+--- `0` = off, `1` = on, `2` = extra.
+---
+---@return integer level The filesystem debug level.
+---@nodiscard
+function menu.options.getFilesystemDebug() end
+
+--- [CLIENT AND MENU]
+---
+--- Returns how long the engine sleeps per frame when the game window is unfocused.
+---
+---@return number milliseconds Sleep duration in milliseconds per frame.
+---@nodiscard
+function menu.options.getNoFocusSleep() end
 
 --- [MENU]
 ---
@@ -219,35 +194,35 @@ function menu.reloadAddons() end
 --- Sets the master volume.
 ---
 ---@param volume number The volume to set, from 0 to 1.
-function options.setMasterVolume(volume) end
+function menu.options.setMasterVolume(volume) end
 
 --- [MENU]
 ---
 --- Sets the effects volume.
 ---
 ---@param volume number The volume to set, from 0 to 1.
-function options.setEffectsVolume(volume) end
+function menu.options.setEffectsVolume(volume) end
 
 --- [MENU]
 ---
 --- Sets the music volume.
 ---
 ---@param volume number The volume to set, from 0 to 1.
-function options.setMusicVolume(volume) end
+function menu.options.setMusicVolume(volume) end
 
 --- [MENU]
 ---
 --- Sets the HEV suit volume.
 ---
 ---@param volume number The volume to set, from 0 to 1.
-function options.setSuitVolume(volume) end
+function menu.options.setSuitVolume(volume) end
 
 --- [MENU]
 ---
 --- Sets whether to mute the volume when the game loses focus.
 ---
 ---@param mute boolean Whether to mute the volume.
-function options.setMuteVolumeOnLoseFocus(mute) end
+function menu.options.setMuteVolumeOnLoseFocus(mute) end
 
 --- [MENU]
 ---
@@ -256,49 +231,49 @@ function options.setMuteVolumeOnLoseFocus(mute) end
 --- All language codes https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes.
 ---
 ---@param language string ISO 639-1 language code.
-function options.setLanguage(language) end
+function menu.options.setLanguage(language) end
 
 --- [MENU]
 ---
 --- Sets whether the fast weapon switch is enabled.
 ---
 ---@param value boolean Whether the fast weapon switch is enabled.
-function options.setFastWeaponSwitch(value) end
+function menu.options.setFastWeaponSwitch(value) end
 
 --- [MENU]
 ---
 --- Sets whether the quick info is enabled.
 ---
 ---@param value boolean Whether the quick info is enabled.
-function options.setQuickInfo(value) end
+function menu.options.setQuickInfo(value) end
 
 --- [MENU]
 ---
 --- Sets whether the crosshair is enabled.
 ---
 ---@param value boolean Whether the crosshair is enabled.
-function options.setCrosshair(value) end
+function menu.options.setCrosshair(value) end
 
 --- [MENU]
 ---
 --- Sets whether the HUD render (health, ammo, etc) is enabled.
 ---
 ---@param value boolean Whether the HUD render is enabled.
-function options.setDrawHUD(value) end
+function menu.options.setDrawHUD(value) end
 
 --- [MENU]
 ---
 --- Sets the mouse sensitivity.
 ---
 ---@param value number The mouse sensitivity.
-function options.setMouseSensitivity(value) end
+function menu.options.setMouseSensitivity(value) end
 
 --- [MENU]
 ---
 --- Sets whether the loading URL is enabled.
 ---
 ---@param value boolean Whether the loading URL is enabled.
-function options.allowCustomLoadingScreen(value) end
+function menu.options.allowCustomLoadingScreen(value) end
 
 --- [MENU]
 ---
@@ -306,25 +281,68 @@ function options.allowCustomLoadingScreen(value) end
 ---
 ---@param width integer? The width of the game window.
 ---@param height integer? The height of the game window.
-function options.setScreenResolution(width, height) end
+function menu.options.setScreenResolution(width, height) end
 
 --- [MENU]
 ---
 --- Sets whether the game is running in VSync mode.
 ---
 ---@param value boolean `true` to enable VSync, `false` to disable it.
-function options.setVSync(value) end
+function menu.options.setVSync(value) end
 
 --- [MENU]
 ---
 --- Sets the fullscreen state of the game window.
 ---@param value boolean `true` to set the game window to fullscreen, `false` to set it to windowed.
-function options.setFullscreen(value) end
+function menu.options.setFullscreen(value) end
+
+--- [MENU]
+---
+--- Sets whether materials and models are unloaded on disconnect.
+---
+--- Unstable. Use at your own risk.
+---
+---@param value boolean `true` to unload assets on disconnect, `false` to keep them cached.
+function menu.options.setUnloadOnDisconnect(value) end
+
+--- [MENU]
+---
+--- Sets whether experimental multicore rendering is enabled.
+---
+---@param value boolean `true` to enable multicore rendering, `false` to disable it.
+function menu.options.setMulticoreRendering(value) end
+
+--- [MENU]
+---
+--- Sets whether temporary files downloaded from servers (such as sprays) are deleted.
+---
+---@param value boolean `true` to delete temporary files, `false` to keep them.
+function menu.options.setDeleteTempFiles(value) end
+
+--- [MENU]
+---
+--- Sets the filesystem debug level.
+---
+--- Causes the filesystem to print actions. `0` = off, `1` = on, `2` = extra.
+---
+---@param level integer The filesystem debug level (`0`, `1`, or `2`).
+function menu.options.setFilesystemDebug(level) end
+
+--- [MENU]
+---
+--- Sets how long the engine sleeps per frame when the game window is unfocused.
+---
+---@param milliseconds number Sleep duration in milliseconds per frame. Use `0` to disable.
+function menu.options.setNoFocusSleep(milliseconds) end
+
+--- [MENU]
+---
+--- Opens the color correction tools UI.
+---
+function menu.options.openColorCorrectionUI() end
 
 --- [MENU]
 ---
 --- Opens the options dialog.
 ---
-function options.open() end
-
-menu.options = options
+function menu.options.open() end

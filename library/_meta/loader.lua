@@ -1,0 +1,150 @@
+---@meta _
+
+
+--- [SHARED AND MENU]
+---
+--- The validated content of a `package.json` file.
+---
+--- ```json
+--- {
+---     "name": "my_lib",
+---     "version": "0.1.0",
+---     "author": "Unknown Developer",
+---     "license": "MIT",
+---     "description": "My library.",
+---     "main": { "server": "lua/init.lua", "client": "lua/cl_init.lua" },
+---     "realms": [ "server", "client" ],
+---     "repository": "user/my_lib",
+---     "dependencies": {
+---         "user/other_lib": "^1.0.0",
+---         "user/edge_lib": ""
+---     }
+--- }
+--- ```
+---
+---@class dreamwork.PackageManifest
+---@field name string The name of the package, letters, digits, `_`, `-` and `.`.
+---@field version string The semantic version of the package.
+---@field author string The author of the package, `"unknown"` by default.
+---@field license string The license of the package, `"unknown"` by default.
+---@field description string The description of the package, empty by default.
+---@field main table<dreamwork.PackageRealm, string> The entrypoints by realm, relative to the package root; a string in `package.json` is used for every realm, `"lua/init.lua"` by default. Every realm in `realms` has one.
+---@field realms table<dreamwork.PackageRealm, boolean> The realms the package runs in, `server` and `client` by default.
+---@field dependencies table<string, string> The dependencies, repository (`user/repo`, `host/user/repo` or `https://host/user/repo`) -> version range, `""` installs the default branch if the package is missing.
+---@field repository string | nil The repository of the package, e.g. `"user/my_lib"` or `"https://github.com/user/my_lib"`, the download source for repository packages without it.
+---@field client_files string[] | nil The wildcards of the files sent to clients (see `path.wildcard`), relative to the package root, e.g. `"lua/**"`. `package.json` and `main.client` are always sent, `nil` sends only them.
+---@field color Color | nil The title color of the package logger, `"#RGB"` or `"#RRGGBB"` in `package.json` (`#` is optional), the DreamWork color by default.
+
+---@alias dreamwork.PackageRealm
+---| "server"
+---| "client"
+---| "menu"
+
+---@alias dreamwork.PackageStatus
+---| "installed" # Registered, not running.
+---| "loading" # The entrypoint or the dependencies are being loaded.
+---| "loaded" # Running.
+---| "failed" # The last load failed, see `Package.error`.
+
+--- [SHARED AND MENU]
+---
+--- Where the files of a package come from.
+---
+---@class dreamwork.loader.Source
+---@field kind "folder" | "archive" The kind of the source.
+---@field path string | nil The absolute virtual path of the local folder or archive, `nil` for repository archives and client bundles.
+---@field archive Zip | nil The archive, for `archive` sources.
+---@field base string | nil The directory of `package.json` inside of the archive, with the trailing `/`, empty for the archive root.
+---@field preprocessed boolean `true` if the Lua files were already preprocessed by `sigil` (client bundles).
+---@field repository string | nil The repository the archive was downloaded from, e.g. `"github.com/user/my_lib"`.
+---@field hash string | nil The hash of the transported bundle, for client bundles.
+---@field extra table<string, string> | nil The files of the package outside of the archive by their paths relative to the package root, the large files of client bundles sent on their own.
+---@field file string | nil The path the downloaded archive is kept at, for repository packages.
+---@field tag string | nil The tag the archive was downloaded from (its file name for archives found on start), `nil` for the default branch and other sources.
+
+--- [SHARED AND MENU]
+---
+--- The internal state of a package.
+---
+---@class dreamwork.Package.State : dreamwork.sandbox.Owner
+---@field name string
+---@field version Version
+---@field id string The unique id, `{author}/{name}@{version}`.
+---@field manifest dreamwork.PackageManifest
+---@field source dreamwork.loader.Source
+---@field realms table<dreamwork.PackageRealm, boolean>
+---@field root string The absolute virtual path of the package directory, `/packages/{id}`.
+---@field main string | nil The absolute virtual path of the entrypoint of the current realm, `nil` if the package does not run in it.
+---@field status dreamwork.PackageStatus
+---@field error Error | nil The error of the last failed load.
+---@field exports any The value returned by the entrypoint.
+---@field logger console.Logger
+---@field environment table | nil The package environment, `nil` while the package is not running.
+---@field modules table<string, dreamwork.Module> The modules loaded by `require`, by their paths.
+---@field dependencies table<dreamwork.Package, boolean> The packages this package depends on.
+---@field dependents table<dreamwork.Package, boolean> The packages that depend on this package.
+---@field thread thread | nil The coroutine loading the package.
+---@field waiting thread[] The coroutines waiting for the package to load.
+---@field published boolean `true` if the client bundle was given to the transport.
+---@field external_files string[] | nil The transport names of the large files sent on their own with the client bundle, `{id}/{path}`.
+
+--- [SHARED AND MENU]
+---
+--- The internal state of a module.
+---
+---@class dreamwork.Module.State
+---@field public package dreamwork.Package
+---@field path string The absolute virtual path of the file.
+---@field file File
+---@field environment table The module environment.
+---@field result any The value returned by the file, `true` if it returned nothing.
+---@field loading boolean `true` while the file is running for `require`.
+
+--- [SHARED AND MENU]
+---
+--- A tag of a repository with a semantic version.
+---
+---@class dreamwork.Repository.Release
+---@field version Version The version from the tag.
+---@field tag string The name of the tag.
+
+--- [SHARED AND MENU]
+---
+--- A hosting service of repositories, chosen by the origin (`scheme://host`) of the repository URL.
+---
+---@class dreamwork.loader.RepositoryProvider
+---@field getTags async fun( owner: string, name: string ): boolean, string[] | string Fetches the tag names, or the error message.
+---@field fetchFile async fun( owner: string, name: string, path: string, ref: string? ): boolean, string Fetches the raw file at the tag (the default branch if `nil`), or the error message.
+---@field fetchArchive async fun( owner: string, name: string, ref: string? ): boolean, string Fetches the `.zip` of the tag (the default branch if `nil`), or the error message.
+
+--- [SHARED AND MENU]
+---
+--- The state and functions shared by the files of the package manager (`modules/loader/*.lua`), not a public API.
+---
+---@class dreamwork.loader.Internal
+---@field package_states table<dreamwork.Package, dreamwork.Package.State>
+---@field module_states table<dreamwork.Module, dreamwork.Module.State>
+---@field environment_modules table<table, dreamwork.Module> The modules by their environments.
+---@field packages table<string, dreamwork.Package> The registered packages by their ids.
+---@field package_lists table<string, dreamwork.Package[]> The registered packages by their names, the newest version first.
+---@field sorted_keys fun( tbl: table ): string[], integer
+---@field is_inside fun( vfs_path: string, directory_path: string ): boolean
+---@field by_id fun( a: dreamwork.Package, b: dreamwork.Package ): boolean
+---@field create_sigil_env fun( realm: string ): table
+---@field source_files fun( source: dreamwork.loader.Source ): string[], integer
+---@field source_read async fun( source: dreamwork.loader.Source, file_path: string ): string
+---@field is_lua_file fun( file_path: string ): boolean
+---@field include_reader fun( state: dreamwork.Package.State, read_fn: fun( vfs_path: string ): string | nil ): fun( file_path: string ): string | nil
+---@field parse_manifest fun( json_str: string ): dreamwork.PackageManifest | nil, string | nil
+---@field register fun( manifest: dreamwork.PackageManifest, source: dreamwork.loader.Source ): dreamwork.Package, boolean
+---@field version_matches fun( version: Version, selector: string | nil ): boolean
+---@field load_package async fun( package: dreamwork.Package ): boolean
+---@field parse_spec fun( spec: string ): string, string | nil `repositories.lua`, `user/repo@range` -> repository, range.
+---@field resolve_package async fun( repository: string, selector: string | nil ): dreamwork.Package | nil `repositories.lua`
+---@field discover_archives async fun() `repositories.lua`
+---@field providers table<string, dreamwork.loader.RepositoryProvider> `repositories.lua`, the hosting services by their origins (`https://github.com`).
+---@field publish async fun( state: dreamwork.Package.State ) `bundles.lua`
+---@field unpublish fun( state: dreamwork.Package.State ) `bundles.lua`
+---@field synchronize fun( files: table<string, dreamwork.transport.File> ) `bundles.lua`
+---@field watcher_start fun() `watcher.lua`, watches the local package folders while `developer` is not `0`, not on the client.
+---@field watcher_stop fun() `watcher.lua`, stops watching, not on the client.

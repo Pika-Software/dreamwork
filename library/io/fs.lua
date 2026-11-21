@@ -59,7 +59,7 @@ local __Directory = {}
 ---@overload fun( directory_path: string, touch: boolean? ): Directory
 Directory = {}
 
----@param file_path string The absolute path to the file.
+---@param file_path string The path to the file, relative paths of package code point into its root directory.
 ---@param touch boolean? If `true`, the file is created or touched right away, otherwise it waits for `write`, `append` or `touch`.
 ---@return File object
 ---@protected
@@ -152,7 +152,7 @@ function __File:move(target_path, overwrite) end
 ---@async
 function __File:rename(name, overwrite) end
 
----@param directory_path string The absolute path to the directory.
+---@param directory_path string The path to the directory, relative paths of package code point into its root directory.
 ---@param touch boolean? If `true`, the directory is created or touched right away, otherwise it waits for `touch` or a write inside of it.
 ---@return Directory object
 ---@protected

@@ -116,7 +116,7 @@ function Command:clear() end
 --- Waits for the console command to be executed.
 ---
 ---@return console.Command command
----@return garrysmod.Player | nil client
+---@return Client | nil client
 ---@return string[] args
 ---@return string argument_string
 ---@async
