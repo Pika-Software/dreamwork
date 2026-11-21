@@ -326,6 +326,7 @@ dreamwork_transport_http_url https://example.com/dreamwork/transport/
 ## Developer Tools
 
 - **CLI**: `dreamwork_sci` (server) and `dreamwork_cci` (client and menu) console interfaces. They provide grouped commands with `help`, autocompletion and colored output:
+  - `package`: install, upgrade, remove and export packages (see [Packages](#packages));
   - `vfs`: browse and manage the virtual file system;
   - `http` / `http github`: HTTP tools and the GitHub token and rate limit;
   - `transport`: shows and changes the [file transport](#file-transport) settings;
@@ -336,13 +337,17 @@ dreamwork_transport_http_url https://example.com/dreamwork/transport/
 
 DreamWork works without any of these, but picks them up when they are installed:
 
-| Module                                     | Used for                                                                           |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| [HolyLib](https://holylib.raphaelit7.com/) | FFI access, threaded LZMA, the HTTP server, and fixed `newproxy`/`__gc` behaviour. |
-| `reqwest` / `chttp`                        | Better HTTP clients.                                                               |
-| `gwsockets`                                | Native WebSocket backend.                                                          |
-| `gmsv_workshop`                            | Workshop access on the server.                                                     |
-| `gm_mcp`                                   | The MCP bridge.                                                                    |
+| Module | Used for |
+| ------ | -------- |
+| [HolyLib](https://holylib.raphaelit7.com/) | FFI (`std.ffi`), `debug.getregistry`, threaded LZMA, `http.Server` / transport `http`, `os.getenv`, and fixed `newproxy`/`__gc` behaviour. |
+| [`gm_getregistry`](https://github.com/wrefgtzweve/gm_getregistry) | `debug.getregistry` when HolyLib is not present. |
+| [`reqwest`](https://github.com/WilliamVenner/gmsv_reqwest) / [`chttp`](https://github.com/timschumi/gmod-chttp) | Preferred HTTP clients (then the built-in `HTTP`). |
+| [`gwsockets`](https://github.com/FredyH/GWSockets) / [`gm_tungstenite`](https://github.com/shockpast/gm_tungstenite) | Native WebSocket backends (then a `WebClient` / browser fallback on client and menu). |
+| [`gm_asyncio`](https://github.com/Pika-Software/gm_asyncio) / [`gm_async_write`](https://github.com/WilliamVenner/gm_async_write) | Async file I/O for the VFS (`DATA` reads/writes). |
+| [`gmsv_workshop`](https://github.com/WilliamVenner/gmsv_workshop) | Server-side Steam Workshop downloads (`steam.workshop`). |
+| [`gmsv_serverstat`](https://github.com/WilliamVenner/gmsv_serverstat) | Server hardware / process stats (`std.server.hardware`). |
+| [`gm_bytecode`](https://github.com/unknown-gd/gm_bytecode) | LuaJIT bytecode loading (`std.loadbytecode`). |
+| [`gm_mcp`](https://github.com/unknown-gd/gm_mcp) | The MCP bridge. |
 
 ## Bugs and Suggestions
 
