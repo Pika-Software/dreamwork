@@ -16,7 +16,7 @@
 --- print( mark ) -- x
 --- ```
 ---
----@class Symbol : userdata
+---@class Symbol : Object, userdata
 
 --- [SHARED AND MENU]
 ---

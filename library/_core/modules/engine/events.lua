@@ -12,5 +12,5 @@ SYSTEM_HAS_BATTERY = nil
 
 --- The battery level, from `0` to `100`.
 ---
----@type garrysmod.system.BatteryPower
+---@type integer
 SYSTEM_BATTERY_LEVEL = nil
