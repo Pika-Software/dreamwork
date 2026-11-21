@@ -27,19 +27,24 @@ local table_concat = table.concat
 
 --- [SHARED AND MENU]
 ---
---- The string library, Lua's standard string ops plus dreamwork byte-oriented helpers.
+--- The string library.
 ---
---- Strings are immutable byte sequences. Keeps the usual `find` / `gsub` / `sub` /
---- `format` / etc., and adds prefix/suffix checks, insert/remove/pad/trim, split and
---- extract, byte search (`findByte`, `containsByte`), counting, pattern escaping
---- via `PatternBytes`, interpolation, and pack/unpack of byte arrays.
+--- Strings are immutable byte sequences.
+--- Standard Lua string ops plus dreamwork byte helpers.
 ---
---- Lengths and positions are in bytes unless a function says otherwise; for display
---- width and Unicode code points see `std.unicode` / `std.utf8`.
+--- What it adds:
+--- * Prefix / suffix checks, insert, remove, pad, trim
+--- * Split, extract, count
+--- * Byte search — `findByte`, `containsByte`
+--- * Pattern escaping via `PatternBytes`
+--- * Interpolation, pack / unpack of byte arrays
+---
+--- Lengths and positions are in bytes unless noted.
+--- For display width and Unicode, see `std.unicode` / `std.utf8`.
 ---
 ---@class dreamwork.std.string
----@field buffer string.bufferlib | nil High-performance mutable string buffer (`string.buffer`), or `nil` if unavailable.
----@field PatternBytes table<integer, string> Maps Lua pattern-special bytes to their escaped `%…` forms for `escapePattern`.
+---@field buffer string.bufferlib | nil Mutable `string.buffer`, or `nil` if unavailable.
+---@field PatternBytes table<integer, string> Escaped `%…` forms for pattern-special bytes.
 local string = {
     buffer = glua_string.buffer,
 

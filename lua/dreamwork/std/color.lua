@@ -34,13 +34,17 @@ local DIV255_CONST = 1 / 255
 
 --- [SHARED AND MENU]
 ---
---- The color library, packed `0xRRGGBB` integers for RGB color math and conversion.
+--- The color library.
 ---
---- Colors are plain integers ( see `dreamwork.std.Color` ), not tables: create them
---- with `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB` or `fromCMYK`, and
---- unpack with the matching `to*` functions. Channel arithmetic (`add`, `sub`,
---- `mul`, `div`, `lerp`, `invert`) and HSL/HSV/HWB getters/setters operate
---- per-component and return a new packed color.
+--- Packed `0xRRGGBB` integers for RGB math and conversion
+--- (see `dreamwork.std.Color`). Colors are plain integers, not tables.
+---
+--- Creating / unpacking:
+--- * `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
+--- * Matching `to*` functions
+---
+--- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
+--- and HSL / HSV / HWB getters / setters return a new packed color.
 ---
 ---@class dreamwork.std.color
 local color_lib = {}

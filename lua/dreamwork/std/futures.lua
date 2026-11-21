@@ -48,17 +48,24 @@ local RuntimeError = std.RuntimeError
 
 --- [SHARED AND MENU]
 ---
---- The futures library, Python-like async primitives on top of coroutines.
+--- The futures library.
 ---
---- Bridge sync and async code with `run` (spawn an async function and get a
---- callback), park a coroutine with `pending` / `wakeup`, cancel it with
---- `cancel` / `isCancel`, and sleep with `sleep`. Awaitables can be raced or
---- gathered with `any` / `all`.
+--- Python-like async primitives on top of coroutines.
 ---
---- Async iterators use `yield` inside a producer and `apairs` / `anext` /
---- `collect` / `collectTable` on the consumer side. Related types live on
---- `std`: `Future` (manual result/error), `Task` (Future that immediately runs
---- an async function), and `Channel` (bounded queue between coroutines).
+--- Bridging sync and async:
+--- * `run` — spawn an async function, get a callback
+--- * `pending` / `wakeup` — park and resume a coroutine
+--- * `cancel` / `isCancel` / `sleep`
+--- * `any` / `all` — race or gather awaitables
+---
+--- Async iterators:
+--- * Producer — `yield`
+--- * Consumer — `apairs`, `anext`, `collect`, `collectTable`
+---
+--- Related types on `std`:
+--- * `Future` — manual result / error
+--- * `Task` — Future that immediately runs an async function
+--- * `Channel` — bounded queue between coroutines
 ---
 --- Author: [Retr0](https://github.com/dankmolot)
 ---

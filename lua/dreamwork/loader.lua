@@ -696,7 +696,7 @@ do
 end
 
 -- math library
-dreamwork_load( "std/math.lua" )
+dreamwork_load( "std/math/init.lua" )
 
 ---@class dreamwork.std.math
 local math = std.math

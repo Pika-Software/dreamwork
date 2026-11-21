@@ -15,12 +15,15 @@ local tostring = std.tostring
 
 --- [SHARED AND MENU]
 ---
---- The vararg library, utilities for working with `...` without losing `nil`s.
+--- The vararg library.
 ---
---- Select and index with `select` / `get` / `set` (negative indexes count from
---- the end), take a range with `slice`, flip with `reverse`, map each value
---- with `map`, and join with `concat`. `pack` stores the count at index `0` so
---- holes survive, and `unpack` restores that table to an argument list.
+--- Utilities for working with `...` without losing `nil`s.
+--- Negative indexes count from the end.
+---
+--- What it provides:
+--- * Indexing — `select`, `get`, `set`
+--- * Ranges — `slice`, `reverse`, `map`, `concat`
+--- * Tables — `pack` keeps the count at index `0`, `unpack` restores it
 ---
 ---@class dreamwork.std.vararg
 local vararg = {}

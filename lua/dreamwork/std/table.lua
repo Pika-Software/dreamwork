@@ -24,16 +24,18 @@ local math_relative = math.relative
 
 --- [SHARED AND MENU]
 ---
---- The table library, Lua's standard table ops plus dreamwork sequence and map helpers.
+--- The table library.
 ---
---- Keeps the usual `concat` / `insert` / `remove` / `sort` / `pack` / `unpack` /
---- `move` (with Lua 5.2+ polyfills where needed). Beyond that: slice and
---- inject/eject ranges, truncate/copy/`shallowCopy`, reverse/shuffle/random
---- picks, key/value enumeration (`keys`, `values`, `count`, `pairs`, `flip`),
---- lookup (`getIndex` / `getKey`), and `map` / `foreach` / `transform`.
+--- Standard Lua table ops plus dreamwork sequence and map helpers.
+--- Polyfills Lua 5.2+ `pack`, `unpack`, and `move` when missing.
 ---
---- Many sequence functions take an optional `*_length` argument so callers that
---- already know `#tbl` can skip a length pass.
+--- What it adds:
+--- * Sequences — slice, inject/eject, truncate, copy, reverse, shuffle
+--- * Lookup — `keys`, `values`, `count`, `getIndex`, `getKey`, `flip`
+--- * Mapping — `map`, `foreach`, `transform`
+---
+--- Many sequence functions take an optional `*_length` argument
+--- so callers that already know `#tbl` can skip a length pass.
 ---
 ---@class dreamwork.std.table
 local table = {}
