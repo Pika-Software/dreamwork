@@ -87,8 +87,8 @@ function i18n.setFallback(tag) end
 --- Translation files are read lazily with `vfs`, on the first lookup of a language,
 --- asynchronously if that lookup happens inside a coroutine.
 ---
----@class Localization : Object
----@field __class LocalizationClass
+---@class i18n.Localization : Object
+---@field __class i18n.LocalizationClass
 ---@field name string The name of the localization, `{id}::{name}` for packages. **READ-ONLY**
 ---@field Received Event The client event of messages sent by `Localization:send`, arguments: `l10n: Localization`, `id: string`, `text: string`, `args: table | nil`.
 ---@field protected sources table<string, string[]> The sources added by `Localization:addSource` by language tags.
@@ -166,15 +166,15 @@ function Localization:reload() end
 ---
 --- The class used to create or get `Localization` objects.
 ---
----@class LocalizationClass : Localization, Class
----@field __base Localization
----@overload fun( name: string ): Localization
+---@class i18n.LocalizationClass : i18n.Localization, Class
+---@field __base i18n.Localization
+---@overload fun( name: string ): i18n.Localization
 local LocalizationClass = {}
 
 i18n.Localization = LocalizationClass
 
 ---@param name string
----@return Localization | nil
+---@return i18n.Localization | nil
 ---@protected
 function LocalizationClass:__new(name) end
 
@@ -183,7 +183,7 @@ function LocalizationClass:__new(name) end
 --- Returns the existing localization.
 ---
 ---@param name string The name of the localization, the package prefix is added for package code.
----@return Localization | nil l10n The localization, `nil` if it was not created.
+---@return i18n.Localization | nil l10n The localization, `nil` if it was not created.
 ---@nodiscard
 function i18n.getLocalization(name) end
 
