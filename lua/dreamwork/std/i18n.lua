@@ -176,7 +176,7 @@ end
 
 i18n.getChain = getChain
 
----@type table<string, dreamwork.std.Localization>
+---@type table<string, dreamwork.std.i18n.Localization>
 local registry = {}
 
 --- Clears the cached bundles of every localization.
@@ -282,8 +282,8 @@ local format_errors = {}
 --- Translation files are read lazily with `vfs`, on the first lookup of a language,
 --- asynchronously if that lookup happens inside a coroutine.
 ---
----@class dreamwork.std.Localization : dreamwork.std.Object
----@field __class dreamwork.std.LocalizationClass
+---@class dreamwork.std.i18n.Localization : dreamwork.std.Object
+---@field __class dreamwork.std.i18n.LocalizationClass
 ---@field name string The name of the localization, `{id}::{name}` for packages. **READ-ONLY**
 ---@field Received dreamwork.std.Event The client event of messages sent by `Localization:send`, arguments: `l10n: dreamwork.std.Localization`, `id: string`, `text: string`, `args: table | nil`.
 ---@field protected sources table<string, string[]> The sources added by `Localization:addSource` by language tags.
@@ -296,7 +296,7 @@ local Localization = class.base( "i18n.Localization", false, nil )
 
 --- Unregisters the localization of an unloaded package.
 ---
----@param l10n dreamwork.std.Localization
+---@param l10n dreamwork.std.i18n.Localization
 local function release( l10n )
     local name = l10n.name
     if registry[ name ] == l10n then
@@ -560,14 +560,14 @@ end
 ---
 --- The class used to create or get `Localization` objects.
 ---
----@class dreamwork.std.LocalizationClass : dreamwork.std.Localization, dreamwork.std.Class
----@field __base dreamwork.std.Localization
----@overload fun( name: string ): dreamwork.std.Localization
+---@class dreamwork.std.i18n.LocalizationClass : dreamwork.std.i18n.Localization, dreamwork.std.Class
+---@field __base dreamwork.std.i18n.Localization
+---@overload fun( name: string ): dreamwork.std.i18n.Localization
 local LocalizationClass = class.create( Localization )
 i18n.Localization = LocalizationClass
 
 ---@param name string
----@return dreamwork.std.Localization | nil
+---@return dreamwork.std.i18n.Localization | nil
 ---@protected
 function LocalizationClass:__new( name )
     local owner = sandbox_owner( 2 )
@@ -583,7 +583,7 @@ end
 --- Returns the existing localization.
 ---
 ---@param name string The name of the localization, the package prefix is added for package code.
----@return dreamwork.std.Localization | nil l10n The localization, `nil` if it was not created.
+---@return dreamwork.std.i18n.Localization | nil l10n The localization, `nil` if it was not created.
 ---@nodiscard
 function i18n.getLocalization( name )
     local owner = sandbox_owner( 2 )
