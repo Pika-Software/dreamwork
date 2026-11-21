@@ -781,6 +781,13 @@ end
 ---
 --- The class used to create new `http.CookieJar` instances.
 ---
+--- ```lua
+--- local jar = std.http.CookieJar()
+---
+--- jar:set( "a", "b", { url = "https://example.com/" } )
+--- print( jar:get( "a", "https://example.com/" ).value ) -- b
+--- ```
+---
 ---@class dreamwork.std.http.CookieJarClass : dreamwork.std.http.CookieJar, dreamwork.std.Class
 ---@field __base dreamwork.std.http.CookieJar
 ---@overload fun(): dreamwork.std.http.CookieJar

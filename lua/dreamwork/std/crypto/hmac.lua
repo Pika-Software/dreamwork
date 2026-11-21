@@ -23,6 +23,11 @@ local bit_bxor = bit.bxor
 --- See [RFC 2104](https://datatracker.ietf.org/doc/html/rfc2104) for the algorithm.
 ---
 --- [About HMAC](https://en.wikipedia.org/wiki/HMAC)
+---
+--- ```lua
+--- print( std.crypto.hmac.sha256( "hi", "key", true ) ) -- 1c9dc82e5f8e5ed5a0180aad33b8204dea12fde2fb62ffb5e963035bf324a7a4
+--- ```
+---
 ---@class dreamwork.std.crypto.hmac
 local hmac = {}
 crypto.hmac = hmac

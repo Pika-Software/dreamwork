@@ -39,6 +39,12 @@ local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
 ---
 --- The Steam API library.
 ---
+--- ```lua
+--- local id = std.steam.Identifier.parse( "STEAM_0:0:11101" )
+---
+--- print( tostring( id ) ) -- [U:1:22202]
+--- ```
+---
 ---@class dreamwork.std.steam
 local steam = std.steam or {}
 std.steam = steam

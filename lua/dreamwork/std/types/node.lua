@@ -24,6 +24,14 @@ local class_new = class.new
 --- and expose helpers to link/unlink from a parent,
 --- traverse the subtree, and measure its size.
 ---
+--- ```lua
+--- local root = std.Node( "root" )
+--- local child = std.Node( "leaf", root )
+---
+--- print( child.parent == root ) -- true
+--- print( root:size() ) -- 2
+--- ```
+---
 ---@class dreamwork.std.Node<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.NodeClass
 ---@field value T The value stored in the node.
@@ -273,6 +281,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Node` instances.
+---
+--- ```lua
+--- local root = std.Node( "root" )
+--- local child = std.Node( "leaf", root )
+--- ```
 ---
 ---@generic T
 ---@class dreamwork.std.NodeClass : dreamwork.std.Node, dreamwork.std.Class

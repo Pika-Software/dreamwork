@@ -69,6 +69,18 @@ local RuntimeError = std.RuntimeError
 ---
 --- Author: [Retr0](https://github.com/dankmolot)
 ---
+--- ```lua
+--- local futures = std.futures
+---
+--- futures.run( function()
+---     futures.sleep( 3 )
+---     return "done"
+--- end, function( ok, result )
+---     print( ok ) -- true (after 3 seconds)
+---     print( result ) -- done
+--- end )
+--- ```
+---
 ---@class dreamwork.std.futures
 local futures = {}
 std.futures = futures

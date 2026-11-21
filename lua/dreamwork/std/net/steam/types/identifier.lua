@@ -176,6 +176,10 @@ local Identifier = class.base( "Identifier" )
 ---
 --- Use `parse`, `from64`, `fromSteam2`, `fromSteam3` or `fromAccountID` to create one from an existing ID.
 ---
+--- ```lua
+--- print( tostring( std.steam.Identifier.parse( "STEAM_0:0:11101" ) ) ) -- [U:1:22202]
+--- ```
+---
 ---@class dreamwork.std.steam.IdentifierClass : dreamwork.std.steam.Identifier, dreamwork.std.Class
 ---@field __base dreamwork.std.steam.Identifier
 ---@overload fun( universe: dreamwork.std.steam.IdentifierUniverse?, type: dreamwork.std.steam.IdentifierType?, id: integer?, instance: integer? ): dreamwork.std.steam.Identifier

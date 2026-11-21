@@ -84,6 +84,10 @@ local Vector3Class = std.Vector3
 ---
 --- Multiplying or dividing two angles is not supported, it has no geometric meaning.
 ---
+--- ```lua
+--- print( tostring( std.Angle3( 0, 90, 0 ) ) ) -- 0.000000 90.000000 0.000000
+--- ```
+---
 ---@class dreamwork.std.Angle3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Angle3Class
 ---@operator add( dreamwork.std.Angle3 | number ): dreamwork.std.Angle3

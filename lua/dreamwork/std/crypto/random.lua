@@ -49,6 +49,11 @@ local chacha20_encrypt = crypto.chacha20.encrypt
 --- Roughly 10 (FFI) to 30 (pure Lua) times slower than `math.random` per integer,
 --- keep `math.random` for gameplay and identifiers.
 ---
+--- ```lua
+--- local str = std.crypto.random.bytes( 16 )
+--- std.printf( "%d - %s", #str, std.base16.encode( str ) ) -- 16 - D1F1D0D74766AE25C5499CBB81D403DB
+--- ```
+---
 ---@class dreamwork.std.crypto.random
 ---@field source "os" | "jitter" The source the generator is seeded from.
 local random = {}

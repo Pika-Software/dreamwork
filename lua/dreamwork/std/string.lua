@@ -42,6 +42,23 @@ local table_concat = table.concat
 --- Lengths and positions are in bytes unless noted.
 --- For display width and Unicode, see `std.unicode` / `std.utf8`.
 ---
+--- ```lua
+--- print( string.hasPrefix( "dreamwork", "dream" ) ) -- true
+--- print( string.hasSuffix( "dreamwork", "work" ) ) -- true
+--- print( string.trimSpaces( "  hi  " ) ) -- hi
+--- print( string.insert( "dream", 6, "work" ) ) -- dreamwork
+--- print( string.remove( "dreamwork", 6, 9 ) ) -- dream
+--- print( string.pad( "hi", 6, ".", true, true ) ) -- ..hi..
+--- print( string.indexOf( "dreamwork", "work" ) ) -- 6
+--- print( string.contains( "dreamwork", "work" ) ) -- true
+--- print( string.count( "aba", "a" ) ) -- 2
+--- print( string.findByte( "abc", 0x62 ) ) -- 2
+--- print( string.containsByte( "abc", 0x62 ) ) -- true
+--- print( string.replace( "a-b-c", "-", "_" ) ) -- a_b_c
+--- print( string.interpolate( "hi {name}", { name = "ukdev" } ) ) -- hi ukdev
+--- print( string.isEmpty( "" ) ) -- true
+--- ```
+---
 ---@class dreamwork.std.string
 ---@field buffer string.bufferlib | nil Mutable `string.buffer`, or `nil` if unavailable.
 ---@field PatternBytes table<integer, string> Escaped `%…` forms for pattern-special bytes.

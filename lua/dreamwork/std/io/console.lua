@@ -19,6 +19,13 @@ local isNumber = std.isNumber
 ---
 --- The source engine console library.
 ---
+--- ```lua
+--- local timescale = std.console.Variable.get( "host_timescale", "number" )
+--- print( timescale.name ) -- host_timescale
+---
+--- print( timescale.value ) -- 1
+--- ```
+---
 ---@class dreamwork.std.console
 ---@field visible boolean `true` if the console is visible, `false` otherwise.
 local console = std.console or {

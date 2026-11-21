@@ -69,6 +69,10 @@ local QuaternionClass = std.Quaternion
 ---
 --- There is no division operator, use `getInverse` explicitly, it can fail for singular matrices.
 ---
+--- ```lua
+--- print( std.VMatrix().m11 ) -- 1
+--- ```
+---
 ---@class dreamwork.std.VMatrix : dreamwork.std.Object
 ---@field __class dreamwork.std.VMatrixClass
 ---@operator add( dreamwork.std.VMatrix ): dreamwork.std.VMatrix

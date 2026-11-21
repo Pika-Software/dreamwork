@@ -17,6 +17,14 @@ local class = std.class
 --- The stack can also be iterated destructively with `iterator`, which pops
 --- values one by one until it is empty.
 ---
+--- ```lua
+--- local stack = std.Stack()
+---
+--- stack:push( "a" )
+--- stack:push( "b" )
+--- print( stack:pop() ) -- b
+--- ```
+---
 ---@class dreamwork.std.Stack<T>: dreamwork.std.Object
 ---@field __class dreamwork.std.StackClass
 ---@field size integer The size of the stack. **Read-only**
@@ -203,6 +211,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Stack` instances.
+---
+--- ```lua
+--- local stack = std.Stack()
+--- stack:push( "a" )
+--- ```
 ---
 ---@class dreamwork.std.StackClass : dreamwork.std.Stack, dreamwork.std.Class
 ---@field __base dreamwork.std.Stack

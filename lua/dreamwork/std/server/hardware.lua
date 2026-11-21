@@ -24,6 +24,11 @@ local server = std.server
 ---
 --- Requires [gmsv_serverstat](https://github.com/WilliamVenner/gmsv_serverstat), all functions return zeros without it.
 ---
+--- ```lua
+--- print( std.server.hardware.available ) -- false
+--- print( std.server.hardware.getCPUUsage() ) -- 0
+--- ```
+---
 ---@class dreamwork.std.server.hardware
 ---@field available boolean `true` if `gmsv_serverstat` is installed, `false` otherwise. **READ-ONLY**
 ---@field physical_cores integer The number of physical CPU cores, `1` if unknown. **READ-ONLY**

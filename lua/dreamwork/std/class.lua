@@ -29,6 +29,22 @@ local isString = std.isString
 --- * **base** ( `class.base` ) - the metatable of every object, holds methods and metamethods;
 --- * **class** ( `class.create` ) - the callable table that creates objects, holds static fields.
 ---
+--- ```lua
+--- local Point = class.base( "Point" )
+--- function Point:__init( x, y )
+---     self.x, self.y = x, y
+--- end
+---
+--- local PointClass = class.create( Point )
+--- local point = PointClass( 1, 2 )
+---
+--- print( point.x, point.y ) -- 1  2
+---
+--- print( std.isObject( point ) ) -- true
+--- print( std.isType( point, PointClass ) ) -- true
+--- print( std.type( point ) ) -- Point
+--- ```
+---
 ---@class dreamwork.std.class
 local class = {}
 std.class = class
@@ -40,6 +56,10 @@ std.class = class
 --- [SHARED AND MENU]
 ---
 --- A base for objects that were created by `class` library.
+---
+--- ```lua
+--- print( std.isObject( std.Vector2( 1, 2 ) ) ) -- true
+--- ```
 ---
 ---@class dreamwork.std.Object : metatable
 ---@field __type string The name of object type. **READ ONLY**
@@ -53,6 +73,10 @@ std.class = class
 --- [SHARED AND MENU]
 ---
 --- A general structure for every class that created with `class` library.
+---
+--- ```lua
+--- print( std.isClass( std.Vector2 ) ) -- true
+--- ```
 ---
 ---@class dreamwork.std.Class : dreamwork.std.Object
 ---@field __base dreamwork.std.Object The base of the class. **READ ONLY**

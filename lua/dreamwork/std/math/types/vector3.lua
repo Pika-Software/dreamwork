@@ -60,6 +60,10 @@ local setmetatable = std.setmetatable
 --- * `vec3 / vec3`, `vec3 / number`
 --- * `-vec3`
 ---
+--- ```lua
+--- print( tostring( std.Vector3( 1, 2, 3 ) ) ) -- 1.000000 2.000000 3.000000
+--- ```
+---
 ---@class dreamwork.std.Vector3 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector3Class
 ---@operator add( dreamwork.std.Vector3 | number ): dreamwork.std.Vector3

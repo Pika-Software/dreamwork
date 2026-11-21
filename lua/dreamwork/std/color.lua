@@ -46,6 +46,12 @@ local DIV255_CONST = 1 / 255
 --- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
 --- and HSL / HSV / HWB getters / setters return a new packed color.
 ---
+--- ```lua
+--- local orange = color.fromRGB( 255, 128, 0 )
+--- local r, g, b = color.toRGB( orange )
+--- print( r .. ", " .. g .. ", " .. b ) -- 255, 128, 0
+--- ```
+---
 ---@class dreamwork.std.color
 local color_lib = {}
 std.color = color_lib

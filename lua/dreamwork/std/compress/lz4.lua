@@ -35,6 +35,11 @@ local error = std.error
 --- Produces and consumes raw [LZ4 blocks](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md)
 --- (no frame header, no checksum, no stored size) compatible with the reference `LZ4_compress_fast` / `LZ4_decompress_safe`.
 ---
+--- ```lua
+--- local packed = lz4.compress( "hello" )
+--- print( lz4.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.lz4
 local lz4 = {}
 std.lz4 = lz4
@@ -115,11 +120,11 @@ if holylib_CompressLZ4 == nil then
         local output = {}
         local output_size = 0
 
-        local index, dataLen = 1, #data -- 1-indexed
-        local nextUnencodedPos = index               -- Sometimes called the "anchor" in other implementations
+        local index, dataLen = 1, #data            -- 1-indexed
+        local nextUnencodedPos = index             -- Sometimes called the "anchor" in other implementations
 
-        local mfLimit = dataLen - MFLIMIT + 1        -- Last index a match may start at
-        local matchLimit = dataLen - LAST_LITERALS   -- Last index a match may cover
+        local mfLimit = dataLen - MFLIMIT + 1      -- Last index a match may start at
+        local matchLimit = dataLen - LAST_LITERALS -- Last index a match may cover
 
         local base = hashBase
         if base > 0x10000000000000 then -- 2^52, keeps the stored positions exact

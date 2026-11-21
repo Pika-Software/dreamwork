@@ -755,6 +755,15 @@ end
 ---
 --- See [RFC 8439](https://datatracker.ietf.org/doc/html/rfc8439) for the algorithm.
 ---
+--- ```lua
+--- local key = string.rep( "k", 32 )
+--- local nonce = string.rep( "n", 12 )
+--- local boxed = std.crypto.chacha20.encrypt( "hi", key, nonce )
+---
+--- print( std.base16.encode( boxed ) ) -- EEB1
+--- print( std.crypto.chacha20.encrypt( boxed, key, nonce ) ) -- hi
+--- ```
+---
 ---@class dreamwork.std.crypto.chacha20
 local chacha20 = {}
 crypto.chacha20 = chacha20
@@ -848,6 +857,14 @@ end
 --- XChaCha20 alone does not authenticate the data, use a MAC ( e.g. `crypto.hmac` ) over the ciphertext to detect tampering.
 ---
 --- See [draft-irtf-cfrg-xchacha](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha) for the algorithm.
+---
+--- ```lua
+--- local key = string.rep( "k", 32 )
+--- local nonce = string.rep( "n", 24 )
+--- local boxed = std.crypto.xchacha20.encrypt( "hi", key, nonce )
+---
+--- print( std.crypto.xchacha20.encrypt( boxed, key, nonce ) ) -- hi
+--- ```
 ---
 ---@class dreamwork.std.crypto.xchacha20
 local xchacha20 = {}

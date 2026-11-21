@@ -154,6 +154,12 @@ local Zip = class.base( "Zip", false, nil )
 ---
 --- The class used to create new `Zip` objects.
 ---
+--- ```lua
+--- local zip = std.Zip()
+--- zip:addFile( "docs/readme.txt", "hello" )
+--- print( std.Zip( zip:compile() ):readFile( "docs/readme.txt" ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.ZipClass : dreamwork.std.Zip, dreamwork.std.Class
 ---@field __base dreamwork.std.Zip
 ---@overload fun( data: string? ): dreamwork.std.Zip

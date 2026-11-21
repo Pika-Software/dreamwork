@@ -690,11 +690,15 @@ end
 --- ```lua
 --- local server = std.http.Server()
 ---
---- server:get( "/hello", function( req, res )
----     res.content = "hello " .. req.remote_addr
+--- server:get( "/ip", function( req, res )
+---     res.content = std.ipv4.toString( std.server.ipv4 )
 --- end )
 ---
 --- server:start( "0.0.0.0", 8080 )
+---
+--- local response = std.http.client.get( "http://127.0.0.1:8080/ip" )
+--- print( response.status ) -- 200
+--- print( response.body ) -- 90.190.194.12
 --- ```
 ---
 --- Handlers can defer the reply:
@@ -1171,6 +1175,22 @@ end
 --- The class used to create new `http.Server` instances.
 ---
 --- Requires HolyLib's `httpserver` module.
+---
+--- ```lua
+--- print( std.http.Server.available ) -- true
+---
+--- local server = std.http.Server()
+---
+--- server:get( "/ip", function( req, res )
+---     res.content = std.ipv4.toString( std.server.ipv4 )
+--- end )
+---
+--- server:start( "0.0.0.0", 8080 )
+---
+--- local response = std.http.client.get( "http://127.0.0.1:8080/ip" )
+--- print( response.status ) -- 200
+--- print( response.body ) -- {server ip} :>
+--- ```
 ---
 ---@class dreamwork.std.http.ServerClass : dreamwork.std.http.Server, dreamwork.std.Class
 ---@field __base dreamwork.std.http.Server

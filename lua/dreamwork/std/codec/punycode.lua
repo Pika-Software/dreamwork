@@ -121,6 +121,9 @@ end
 ---
 --- RFC 3492: https://datatracker.ietf.org/doc/html/rfc3492
 ---
+--- ```lua
+--- print( punycode.encode( "münchen.de" ) ) -- xn--mnchen-3ya.de
+--- ```
 ---@class dreamwork.std.punycode
 local punycode = {}
 std.punycode = punycode

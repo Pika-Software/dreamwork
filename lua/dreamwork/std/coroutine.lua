@@ -13,6 +13,11 @@ local std = dreamwork.std
 ---
 --- They offer a way to split up tasks and dynamically pause & resume functions.
 ---
+--- ```lua
+--- local co = coroutine.create( function() end )
+--- print( coroutine.status( co ) ) -- suspended
+--- ```
+---
 ---@class dreamwork.std.coroutine
 local coroutine = {
     create = glua_coroutine.create,

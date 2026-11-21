@@ -23,6 +23,10 @@ local LUA_MENU = std.LUA_MENU
 ---
 --- The game's main menu library.
 ---
+--- ```lua
+--- print( std.menu.visible ) -- false
+--- ```
+---
 ---@class dreamwork.std.menu
 ---@field visible boolean `true` if the menu is visible, `false` otherwise.
 local menu = std.menu or { visible = false }

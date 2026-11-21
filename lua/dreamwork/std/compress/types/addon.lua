@@ -239,6 +239,12 @@ local Addon = class.base( "Addon", false, nil )
 ---
 --- The class used to create new `Addon` objects.
 ---
+--- ```lua
+--- local addon = std.Addon()
+--- addon:addFile( "lua/autorun/test.lua", "print( 'hello' )" )
+--- print( std.Addon( addon:compile() ):readFile( "lua/autorun/test.lua" ) ) -- print( 'hello' )
+--- ```
+---
 ---@class dreamwork.std.AddonClass : dreamwork.std.Addon, dreamwork.std.Class
 ---@field __base dreamwork.std.Addon
 ---@overload fun( data: string?, ratio: number? ): dreamwork.std.Addon

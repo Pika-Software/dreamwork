@@ -45,6 +45,10 @@ local error = std.error
 --- Functions that take `lax` raise an error on the first invalid code unit (a surrogate, a value above U+10FFFF
 --- or a truncated tail), unless `lax` is `true`; in lax mode each invalid code unit counts as one code point, decoded as U+FFFD.
 ---
+--- ```lua
+--- local text = utf32.char( 0x68, 0x69 )
+--- print( utf32.len( text ) ) -- 2
+--- ```
 ---@class dreamwork.std.utf32
 local utf32 = {}
 std.utf32 = utf32

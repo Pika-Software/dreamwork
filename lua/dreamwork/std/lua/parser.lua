@@ -32,6 +32,10 @@ local lexer_tokenize = lexer.tokenize
 ---
 --- An error raised when Lua code cannot be parsed.
 ---
+--- ```lua
+--- print( tostring( std.lua.SyntaxError( "bad token", "demo.lua", 3 ) ) ) -- demo.lua:3: bad token
+--- ```
+---
 ---@class dreamwork.std.lua.SyntaxError : dreamwork.std.Error
 ---@field __class dreamwork.std.lua.SyntaxErrorClass
 ---@field __parent dreamwork.std.Error
@@ -76,6 +80,12 @@ lua.SyntaxError = SyntaxErrorClass
 --- AST nodes are plain tables with a `type` field, see `dreamwork.std.lua.ast.*`.
 ---
 --- `//` is the floor division, alternative operators are normalized: `!=` -> `~=`, `&&` -> `and`, `||` -> `or`, `!` -> `not`.
+---
+--- ```lua
+--- local chunk = std.lua.parser.parse( "return 1" )
+---
+--- print( std.lua.generator.generate( chunk ) ) -- return 1
+--- ```
 ---
 ---@class dreamwork.std.lua.parser
 local parser = {}

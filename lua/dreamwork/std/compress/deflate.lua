@@ -39,6 +39,11 @@ local class = std.class
 --- Produces and consumes raw [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951) streams (no header, no checksum)
 --- compatible with zlib's `deflate` / `inflate` with negative window bits, see `std.zlib` for the zlib format.
 ---
+--- ```lua
+--- local packed = deflate.compress( "hello" )
+--- print( deflate.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.deflate
 local deflate = {}
 std.deflate = deflate
@@ -1571,6 +1576,12 @@ local BUFFER_SIZE = 0x8000
 ---
 --- The DEFLATE stream compressor object.
 ---
+--- ```lua
+--- local compressor = std.deflate.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( std.deflate.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.deflate.Compressor : dreamwork.std.Object, dreamwork.std.deflate.Stream
 ---@field __class dreamwork.std.deflate.CompressorClass
 local Compressor = class.base( "deflate.Compressor", false )
@@ -2560,6 +2571,13 @@ local MAX_KEPT_OUTPUT = 0x100000
 --- [SHARED AND MENU]
 ---
 --- The DEFLATE stream decompressor object.
+---
+--- ```lua
+--- local packed = std.deflate.compress( "hello" )
+--- local decompressor = std.deflate.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class dreamwork.std.deflate.Decompressor : dreamwork.std.Object, dreamwork.std.deflate.InflateStream
 ---@field __class dreamwork.std.deflate.DecompressorClass

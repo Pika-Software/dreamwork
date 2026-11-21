@@ -52,6 +52,16 @@ local Future = std.Future
 --- Calls may nest, handlers attached during a call run from the next call on,
 --- handlers detached during a call are skipped right away.
 ---
+--- ```lua
+--- local opened = std.Event( "open" )
+---
+--- opened:attach( function( path )
+---     print( path ) -- a.txt
+--- end )
+---
+--- opened:call( "a.txt" )
+--- ```
+---
 ---@class dreamwork.std.Event : dreamwork.std.Object
 ---@field __class dreamwork.std.EventClass
 ---@field name string The name of the event.
@@ -338,6 +348,12 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Event` instances.
+---
+--- ```lua
+--- local opened = std.Event( "open" )
+--- opened:attach( print )
+--- opened:call( "a.txt" )
+--- ```
 ---
 ---@class dreamwork.std.EventClass : dreamwork.std.Event, dreamwork.std.Class
 ---@field __base dreamwork.std.Event

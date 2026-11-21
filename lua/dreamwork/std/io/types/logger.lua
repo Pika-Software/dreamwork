@@ -54,6 +54,13 @@ local Logger = class.base( "console.Logger" )
 ---
 --- The logger class.
 ---
+--- ```lua
+--- local logger = std.console.Logger( { title = "game" } )
+--- print( logger.title ) -- game
+---
+--- logger:info( "test %d %s %f", 1, 2, 3 ) -- 21-11-2026 09:41:52.909 [ Server ] INFO  --> game : test 1 2 3.000000
+--- ```
+---
 ---@class dreamwork.std.console.LoggerClass : dreamwork.std.console.Logger, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Logger
 ---@overload fun( options: dreamwork.std.console.LoggerOptions? ) : dreamwork.std.console.Logger

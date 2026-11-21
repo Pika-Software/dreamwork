@@ -201,6 +201,10 @@ end
 ---
 --- The class used to create new `SteamError` instances.
 ---
+--- ```lua
+--- print( tostring( std.SteamError( 16 ) ) ) -- Steam EResult 16: Operation timed out
+--- ```
+---
 ---@class dreamwork.std.SteamErrorClass : dreamwork.std.SteamError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.SteamError
 ---@field __parent dreamwork.std.ErrorClass

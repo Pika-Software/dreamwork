@@ -28,6 +28,11 @@ local error = std.error
 ---
 --- Lempel–Ziv–Welch (LZW) is a universal lossless compression algorithm created by Abraham Lempel, Jacob Ziv, and Terry Welch.
 ---
+--- ```lua
+--- local packed = lzw.compress( "hello" )
+--- print( lzw.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.lzw
 local lzw = {}
 std.lzw = lzw

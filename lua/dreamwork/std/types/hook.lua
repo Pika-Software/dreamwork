@@ -552,6 +552,12 @@ end
 ---
 --- The class used to create new `Hook` instances.
 ---
+--- ```lua
+--- local hook = std.Hook( "say" )
+--- hook:attach( "provide", function() return "ok" end )
+--- print( hook:call() ) -- ok
+--- ```
+---
 ---@class dreamwork.std.HookClass : dreamwork.std.Hook, dreamwork.std.Class
 ---@field __base dreamwork.std.Hook
 ---@overload fun( name: string? ): dreamwork.std.Hook

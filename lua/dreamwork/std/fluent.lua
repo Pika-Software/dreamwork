@@ -2639,6 +2639,12 @@ end
 ---
 --- The class used to create new `FluentResource` objects.
 ---
+--- ```lua
+--- local resource = std.fluent.Resource( "welcome = Welcome, { $name }!\n" )
+---
+--- print( #resource.errors ) -- 0
+--- ```
+---
 ---@class dreamwork.std.FluentResourceClass : dreamwork.std.FluentResource, dreamwork.std.Class
 ---@field __base dreamwork.std.FluentResource
 ---@overload fun( text: string? ): dreamwork.std.FluentResource
@@ -3266,6 +3272,13 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `FluentBundle` objects.
+---
+--- ```lua
+--- local bundle = std.fluent.Bundle( "en-US" )
+---
+--- bundle:addResource( std.fluent.Resource( "welcome = Welcome, { $name }!\n" ) )
+--- print( bundle:format( "welcome", { name = "Player" } ) ) -- Welcome, Player!
+--- ```
 ---
 ---@class dreamwork.std.FluentBundleClass : dreamwork.std.FluentBundle, dreamwork.std.Class
 ---@field __base dreamwork.std.FluentBundle

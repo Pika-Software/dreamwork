@@ -21,6 +21,13 @@ local class = std.class
 --- which are advanced/rewound as values are pushed and popped,
 --- and are reset to `0` whenever the queue becomes empty.
 ---
+--- ```lua
+--- local queue = std.Queue()
+---
+--- queue:push( "a" )
+--- print( queue:pop() ) -- a
+--- ```
+---
 ---@class dreamwork.std.Queue<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.QueueClass
 ---@field front integer The front of the queue. **Read-only**
@@ -235,6 +242,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Queue` instances.
+---
+--- ```lua
+--- local queue = std.Queue()
+--- queue:push( "a" )
+--- ```
 ---
 ---@class dreamwork.std.QueueClass : dreamwork.std.Queue, dreamwork.std.Class
 ---@field __base dreamwork.std.Queue

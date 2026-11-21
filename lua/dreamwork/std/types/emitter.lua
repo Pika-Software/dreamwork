@@ -402,6 +402,12 @@ end
 ---
 --- The class used to create new `Emitter` registries.
 ---
+--- ```lua
+--- local events = std.Emitter( "Thing" )
+--- local thing = {}
+--- events:attach( thing, "open", print )
+--- ```
+---
 ---@class dreamwork.std.EmitterClass : dreamwork.std.Emitter, dreamwork.std.Class
 ---@field __base dreamwork.std.Emitter
 ---@overload fun( name: string ): dreamwork.std.Emitter

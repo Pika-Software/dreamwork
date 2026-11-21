@@ -10,6 +10,10 @@ local class = std.class
 ---
 --- The Adler-32 checksum calculation object.
 ---
+--- ```lua
+--- print( std.Adler32():update( "hi" ):digest() ) -- 20644050
+--- ```
+---
 ---@class dreamwork.std.Adler32 : dreamwork.std.Object
 ---@field __class dreamwork.std.Adler32Class
 ---@field DigestSize integer The size of the checksum in bytes.
@@ -93,6 +97,10 @@ end
 --- See [RFC1950](https://tools.ietf.org/html/rfc1950) for the definition of the Adler-32 checksum.
 ---
 --- [Adler32 Online](https://md5calc.com/hash/adler32)
+---
+--- ```lua
+--- print( std.Adler32.digest( "hi" ) ) -- 20644050
+--- ```
 ---
 ---@class dreamwork.std.Adler32Class : dreamwork.std.Adler32, dreamwork.std.Class
 ---@field __base dreamwork.std.Adler32

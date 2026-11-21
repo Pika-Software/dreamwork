@@ -76,6 +76,12 @@ local Tar = class.base( "Tar", false, nil )
 ---
 --- The class used to create new `Tar` objects.
 ---
+--- ```lua
+--- local tar = std.Tar()
+--- tar:addFile( "docs/readme.txt", "hello" )
+--- print( std.Tar( tar:compile() ):readFile( "docs/readme.txt" ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.TarClass : dreamwork.std.Tar, dreamwork.std.Class
 ---@field __base dreamwork.std.Tar
 ---@overload fun( data: string? ): dreamwork.std.Tar

@@ -36,6 +36,10 @@ local class             = std.class
 --- comparison operators (`==`, `<`, `<=`), the length operator (`#address` is always `8`)
 --- and unary minus (`-address` is the bitwise NOT of the address).
 ---
+--- ```lua
+--- print( std.IPv6( 0x2001, 0xdb8, 0, 0, 0, 0, 0, 1 ):toString() ) -- 2001:db8::1
+--- ```
+---
 ---@class dreamwork.std.IPv6 : dreamwork.std.Object
 ---@field __class dreamwork.std.IPv6Class
 ---@field [ 1 ] integer The first group. <0-65535>

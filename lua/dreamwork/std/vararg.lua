@@ -25,6 +25,25 @@ local tostring = std.tostring
 --- * Ranges — `slice`, `reverse`, `map`, `concat`
 --- * Tables — `pack` keeps the count at index `0`, `unpack` restores it
 ---
+--- ```lua
+--- print( vararg.select( "#", "a", nil, "c" ) ) -- 3
+--- print( vararg.get( 1, "a", nil, "c" ) ) -- a
+--- print( vararg.get( -1, "a", nil, "c" ) ) -- c
+---
+--- print( vararg.concat( ",", vararg.set( 2, "b", "a", nil, "c" ) ) ) -- a,b,c
+--- print( vararg.concat( ",", vararg.slice( 2, 3, "a", "b", "c", "d" ) ) ) -- b,c
+--- print( vararg.concat( ",", vararg.reverse( "a", "b", "c" ) ) ) -- c,b,a
+---
+--- print( vararg.concat( ",", vararg.map( function( index, value )
+---     return value .. index
+--- end, "a", "b", "c" ) ) ) -- a1,b2,c3
+---
+--- local packed = vararg.pack( "a", nil, "c" )
+--- print( packed[ 0 ] ) -- 3
+--- print( packed[ 3 ] ) -- c
+--- print( vararg.concat( ",", vararg.unpack( packed ) ) ) -- a,nil,c
+--- ```
+---
 ---@class dreamwork.std.vararg
 local vararg = {}
 std.vararg = vararg

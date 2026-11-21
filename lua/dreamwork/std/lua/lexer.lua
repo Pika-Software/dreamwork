@@ -20,6 +20,13 @@ local string_byteRep = string.byteRep
 --- Tokens are returned as flat arrays ( `types`, `values`, `lines` ) instead of token tables,
 --- whitespace, newlines and comments are kept as tokens, so concatenating all values gives back the original code.
 ---
+--- ```lua
+--- local _, _, _, count = std.lua.lexer.tokenize( "return 1" )
+---
+--- print( count ) -- 3
+--- print( std.lua.lexer.isIdentifier( "hi" ) ) -- true
+--- ```
+---
 ---@class dreamwork.std.lua.lexer
 local lexer = {}
 lua.lexer = lexer

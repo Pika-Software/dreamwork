@@ -163,6 +163,14 @@ end
 --- turn that stack into a human-readable string (`toString`/`__tostring`)
 --- or print it directly to the console with colors (`display`).
 ---
+--- ```lua
+--- local err = std.Error( "disk full" )
+---
+--- err:capture()
+--- print( tostring( err ) ) -- disk full
+--- err:display()
+--- ```
+---
 ---@class dreamwork.std.Error : dreamwork.std.Object
 ---@field __class dreamwork.std.ErrorClass
 ---@field stack dreamwork.exceptions.Stack | nil The captured call stack this error carries.
@@ -457,6 +465,11 @@ end
 ---
 --- The class used to create new `Error` instances.
 ---
+--- ```lua
+--- local err = std.Error( "disk full" )
+--- err:capture()
+--- ```
+---
 ---@class dreamwork.std.ErrorClass : dreamwork.std.Error, dreamwork.std.Class
 ---@field __base dreamwork.std.Error
 ---@overload fun( message: ( string | nil ) ): dreamwork.std.Error
@@ -482,6 +495,13 @@ std.isError             = isError
 --- An error raised for generic runtime failures that don't fall into
 --- any more specific error category.
 ---
+--- ```lua
+--- local err = std.RuntimeError( "future was cancelled" )
+---
+--- print( tostring( err ) ) -- future was cancelled
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.RuntimeError : dreamwork.std.Error
 ---@field __class dreamwork.std.RuntimeErrorClass
 ---@field __parent dreamwork.std.Error
@@ -491,6 +511,11 @@ local RuntimeError      = class.base( "RuntimeError", false, ErrorClass )
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `RuntimeError` instances.
+---
+--- ```lua
+--- local err = std.RuntimeError( "future was cancelled" )
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.RuntimeErrorClass : dreamwork.std.RuntimeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.RuntimeError
@@ -856,6 +881,13 @@ exceptions_hide(
 --- An error raised when a called feature, method, or function
 --- has not been implemented yet.
 ---
+--- ```lua
+--- local err = std.NotImplementedError( "vfs is missing" )
+---
+--- print( tostring( err ) ) -- This feature is not implemented, because vfs is missing.
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.NotImplementedError : dreamwork.std.Error
 ---@field __class dreamwork.std.NotImplementedErrorClass
 ---@field __parent dreamwork.std.Error
@@ -893,6 +925,11 @@ end
 ---
 --- The class used to create new `NotImplementedError` instances.
 ---
+--- ```lua
+--- local err = std.NotImplementedError( "vfs is missing" )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.NotImplementedErrorClass : dreamwork.std.NotImplementedError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.NotImplementedError
 ---@field __parent dreamwork.std.ErrorClass
@@ -904,6 +941,13 @@ std.NotImplementedError = class.create( NotImplementedError )
 --- An error raised during asynchronous/coroutine execution, whose
 --- traceback additionally reports the thread it occurred in.
 ---
+--- ```lua
+--- local err = std.AsyncError( "thread failed" )
+---
+--- print( tostring( err ) ) -- thread failed
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.AsyncError : dreamwork.std.Error
 ---@field __class dreamwork.std.AsyncErrorClass
 ---@field __parent dreamwork.std.Error
@@ -913,6 +957,11 @@ local AsyncError = class.base( "AsyncError", false, ErrorClass )
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `AsyncError` instances.
+---
+--- ```lua
+--- local err = std.AsyncError( "thread failed" )
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.AsyncErrorClass : dreamwork.std.AsyncError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.AsyncError
@@ -924,6 +973,13 @@ std.AsyncError = class.create( AsyncError )
 ---
 --- An error raised when a value does not match the type
 --- expected by an operation, function argument, or field.
+---
+--- ```lua
+--- local err = std.TypeError( 1, 5, "string", "path", "read" )
+---
+--- print( tostring( err ) ) -- bad argument #1 to `read` (`string` expected, got `integer`)
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.TypeError : dreamwork.std.Error
 ---@field __class dreamwork.std.TypeErrorClass
@@ -992,6 +1048,11 @@ end
 ---
 --- The class used to create new `TypeError` instances.
 ---
+--- ```lua
+--- local err = std.TypeError( 1, 5, "string", "path", "read" )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.TypeErrorClass : dreamwork.std.TypeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.TypeError
 ---@field __parent dreamwork.std.ErrorClass
@@ -1002,6 +1063,12 @@ std.TypeError = class.create( TypeError )
 ---
 --- An error raised when a value has the correct type but is
 --- otherwise invalid or out of the accepted range for an operation.
+---
+--- ```lua
+--- local err = std.ValueError( -1, "size must be positive" )
+---
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.ValueError : dreamwork.std.Error
 ---@field __class dreamwork.std.ValueErrorClass
@@ -1037,6 +1104,11 @@ end
 ---
 --- The class used to create new `ValueError` instances.
 ---
+--- ```lua
+--- local err = std.ValueError( -1, "size must be positive" )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.ValueErrorClass : dreamwork.std.ValueError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.ValueError
 ---@field __parent dreamwork.std.ErrorClass
@@ -1047,6 +1119,13 @@ std.ValueError = class.create( ValueError )
 ---
 --- An error raised when a read operation unexpectedly reaches
 --- the end of a stream, file, or buffer before completing.
+---
+--- ```lua
+--- local err = std.EndOfFileError( 8, 1 )
+---
+--- print( tostring( err ) ) -- unexpected end of data at byte 8 (expected 1 more byte)
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.EndOfFileError : dreamwork.std.Error
 ---@field __class dreamwork.std.EndOfFileErrorClass
@@ -1080,6 +1159,11 @@ end
 ---
 --- The class used to create new `EndOfFileError` instances.
 ---
+--- ```lua
+--- local err = std.EndOfFileError( 8, 1 )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.EndOfFileErrorClass : dreamwork.std.EndOfFileError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.EndOfFileError
 ---@field __parent dreamwork.std.ErrorClass
@@ -1090,6 +1174,13 @@ std.EndOfFileError = class.create( EndOfFileError )
 ---
 --- An error raised when encoded data (JSON, VDF, ...) cannot be decoded
 --- because it is malformed.
+---
+--- ```lua
+--- local err = std.DecodeError( "unterminated string", 12 )
+---
+--- print( tostring( err ) ) -- unterminated string at position 12
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.DecodeError : dreamwork.std.Error
 ---@field __class dreamwork.std.DecodeErrorClass
@@ -1125,6 +1216,11 @@ end
 ---
 --- The class used to create new `DecodeError` instances.
 ---
+--- ```lua
+--- local err = std.DecodeError( "unterminated string", 12 )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.DecodeErrorClass : dreamwork.std.DecodeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.DecodeError
 ---@field __parent dreamwork.std.ErrorClass
@@ -1135,6 +1231,13 @@ std.DecodeError = class.create( DecodeError )
 ---
 --- An error raised when a value cannot be encoded into a data format
 --- (JSON, VDF, ...) because the format cannot represent it.
+---
+--- ```lua
+--- local err = std.EncodeError( "unable to serialize non-finite number", 1 / 0 )
+---
+--- print( tostring( err ) ) -- unable to serialize non-finite number
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.EncodeError : dreamwork.std.Error
 ---@field __class dreamwork.std.EncodeErrorClass
@@ -1166,6 +1269,11 @@ end
 ---
 --- The class used to create new `EncodeError` instances.
 ---
+--- ```lua
+--- local err = std.EncodeError( "unable to serialize non-finite number", 1 / 0 )
+--- std.error( err )
+--- ```
+---
 ---@class dreamwork.std.EncodeErrorClass : dreamwork.std.EncodeError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.EncodeError
 ---@field __parent dreamwork.std.ErrorClass
@@ -1176,6 +1284,12 @@ std.EncodeError = class.create( EncodeError )
 ---
 --- An error that occurs when the compiler encounters an issue.
 ---
+--- ```lua
+--- local err = std.CompileError()
+---
+--- error( err )
+--- ```
+---
 ---@class dreamwork.std.CompileError : dreamwork.std.Object
 ---@field __class dreamwork.std.CompileErrorClass
 ---@field __parent dreamwork.std.Error
@@ -1184,6 +1298,11 @@ local CompileError = class.base( "CompileError" )
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `CompileError` instances.
+---
+--- ```lua
+--- local err = std.CompileError()
+--- error( err )
+--- ```
 ---
 ---@class dreamwork.std.CompileErrorClass : dreamwork.std.CompileError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.CompileError
@@ -1196,6 +1315,13 @@ std.CompileError = class.create( CompileError )
 --- [SHARED AND MENU]
 ---
 --- An error raised when an asynchronous file system operation fails.
+---
+--- ```lua
+--- local err = std.AsyncFileSystemError( -1 )
+---
+--- print( tostring( err ) ) -- reading failed, file could not be opened (bad path, not exist, etc)
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.AsyncFileSystemError : dreamwork.std.Error
 ---@field __class dreamwork.std.AsyncFileSystemErrorClass
@@ -1238,6 +1364,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `AsyncFileSystemError` instances.
+---
+--- ```lua
+--- local err = std.AsyncFileSystemError( -1, true )
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.AsyncFileSystemErrorClass : dreamwork.std.AsyncFileSystemError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.AsyncFileSystemError
@@ -1380,6 +1511,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `HTTPError` instances.
+---
+--- ```lua
+--- local err = std.HTTPError( 404, "https://example.com/a" )
+--- std.error( err )
+--- ```
 ---
 ---@class dreamwork.std.HTTPErrorClass : dreamwork.std.HTTPError, dreamwork.std.ErrorClass
 ---@field __base dreamwork.std.HTTPError

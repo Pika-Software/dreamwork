@@ -454,6 +454,20 @@ end
 ---
 --- The console variable class.
 ---
+--- ```lua
+--- local variable = std.console.Variable( {
+---     name = "example_debug",
+---     type = "boolean",
+---     default = false,
+---     description = "example",
+---     archive = true
+--- } )
+---
+--- print( variable.name ) -- example_debug
+--- print( variable.value ) -- false
+--- print( variable.archive ) -- true
+--- ```
+---
 ---@class dreamwork.std.console.VariableClass : dreamwork.std.console.Variable, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Variable
 ---@overload fun( options: dreamwork.std.console.VariableOptions ): dreamwork.std.console.Variable

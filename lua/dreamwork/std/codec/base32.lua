@@ -31,6 +31,10 @@ local error = std.error
 ---
 --- See https://en.wikipedia.org/wiki/Base32
 ---
+--- ```lua
+--- print( base32.encode( "hi" ) ) -- NBUQ====
+--- print( base32.decode( base32.encode( "hi" ) ) ) -- hi
+--- ```
 ---@class dreamwork.std.base32
 local base32 = {}
 std.base32 = base32
@@ -39,6 +43,12 @@ std.base32 = base32
 ---
 --- The base32 encoding/decoding alphabet, created by `base32.alphabet`.
 ---
+--- ```lua
+--- local digits = "0123456789"
+--- local letters = "ABCDEFGHIJKLMNOPQRSTUV"
+--- local custom = base32.alphabet( digits .. letters )
+--- print( base32.encode( "hi", nil, custom ) ) -- D1KG====
+--- ```
 ---@class dreamwork.std.base32.Alphabet
 ---@field [1] table<integer, integer> | ffi.cdata* The encoding map, value ( 0 - 31 ) to character byte.
 ---@field [2] table<integer, integer> | ffi.cdata* The decoding map, character byte ( 0 - 255 ) to value, `-1` for characters outside the alphabet.

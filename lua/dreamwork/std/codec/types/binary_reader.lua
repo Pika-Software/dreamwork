@@ -82,6 +82,11 @@ local BinaryReader = class.base( "BinaryReader", false, nil )
 ---
 --- Any value is converted to a string with `tostring`, so `BinaryReader( writer )` reads what the `BinaryWriter` wrote.
 ---
+--- ```lua
+--- local reader = std.BinaryReader( "hi" )
+---
+--- print( reader:read( 2 ) ) -- hi
+--- ```
 ---@class dreamwork.std.BinaryReaderClass : dreamwork.std.BinaryReader, dreamwork.std.Class
 ---@field __base dreamwork.std.BinaryReader
 ---@overload fun( data: any ): dreamwork.std.BinaryReader

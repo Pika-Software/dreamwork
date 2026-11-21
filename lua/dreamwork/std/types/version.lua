@@ -193,6 +193,13 @@ end
 ---
 --- See https://semver.org/
 ---
+--- ```lua
+--- local version = std.Version( 1, 2, 3, "beta" )
+---
+--- print( tostring( version ) ) -- 1.2.3-beta
+--- print( version < std.Version( 1, 2, 3 ) ) -- true
+--- ```
+---
 ---@class dreamwork.std.Version : dreamwork.std.Object
 ---@field __class dreamwork.std.VersionClass
 ---@field major integer The major version number. (0-1023)
@@ -262,6 +269,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Version` instances.
+---
+--- ```lua
+--- local version = std.Version( 1, 2, 3, "beta", "build.1" )
+--- print( tostring( version ) ) -- 1.2.3-beta+build.1
+--- ```
 ---
 ---@class dreamwork.std.VersionClass : dreamwork.std.Version, dreamwork.std.Class
 ---@field __base dreamwork.std.Version

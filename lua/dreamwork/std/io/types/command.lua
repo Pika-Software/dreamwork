@@ -66,6 +66,15 @@ gc_setTableRules( autocomplete, true, false )
 ---
 --- The console command object.
 ---
+--- ```lua
+--- local command = std.console.Command( {
+---     name = "example_ping",
+---     description = "example"
+--- } )
+---
+--- print( command.name ) -- example_ping
+--- ```
+---
 ---@class dreamwork.std.console.Command : dreamwork.std.Object
 ---@field __class dreamwork.std.console.Command
 ---@field name string The name of the command.
@@ -134,6 +143,15 @@ end
 --- [SHARED AND MENU]
 ---
 --- The console command class.
+---
+--- ```lua
+--- local command = std.console.Command( {
+---     name = "example_ping",
+---     description = "example"
+--- } )
+---
+--- print( command.name ) -- example_ping
+--- ```
 ---
 ---@class dreamwork.std.console.CommandClass : dreamwork.std.console.Command, dreamwork.std.Class
 ---@field __base dreamwork.std.console.Command

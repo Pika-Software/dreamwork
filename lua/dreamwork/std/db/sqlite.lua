@@ -65,6 +65,10 @@ end
 ---
 --- Converts a string to a safe string for use in an SQL query.
 ---
+--- ```lua
+--- print( std.sqlite.escape( "a'b" ) ) -- 'a''b'
+--- ```
+---
 ---@param str string | dreamwork.std.null | nil The string to convert.
 ---@return string str The safe string.
 ---@nodiscard
@@ -154,6 +158,10 @@ end
 --- `sql.Query` cuts blob results at the first null byte,
 --- so read them back as `hex( column )` and decode with `sqlite.cast` using the `"blob"` type.
 ---
+--- ```lua
+--- print( std.sqlite.Blob( "hi" ).data ) -- hi
+--- ```
+---
 ---@class dreamwork.std.sqlite.Blob : dreamwork.std.Object
 ---@field __class dreamwork.std.sqlite.BlobClass
 ---@field data string The raw bytes of the blob.
@@ -168,6 +176,10 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Blob` instances.
+---
+--- ```lua
+--- print( std.sqlite.Blob( "hi" ).data ) -- hi
+--- ```
 ---
 ---@class dreamwork.std.sqlite.BlobClass : dreamwork.std.sqlite.Blob, dreamwork.std.Class
 ---@field __base dreamwork.std.sqlite.Blob

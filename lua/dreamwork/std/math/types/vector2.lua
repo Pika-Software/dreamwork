@@ -53,6 +53,12 @@ local setmetatable = std.setmetatable
 --- * `vec2 / vec2`, `vec2 / number`
 --- * `-vec2`
 ---
+--- ```lua
+--- local vec = std.Vector2( 3, 4 )
+---
+--- print( vec:getLength() ) -- 5
+--- ```
+---
 ---@class dreamwork.std.Vector2 : dreamwork.std.Object
 ---@field __class dreamwork.std.Vector2Class
 ---@operator add( dreamwork.std.Vector2 | number ): dreamwork.std.Vector2

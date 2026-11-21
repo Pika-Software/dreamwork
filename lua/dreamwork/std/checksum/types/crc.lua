@@ -269,6 +269,10 @@ end
 ---
 --- The CRC-8 checksum calculation object.
 ---
+--- ```lua
+--- print( std.CRC8():update( "hi" ):digest() ) -- 69
+--- ```
+---
 ---@class dreamwork.std.checksum.CRC8 : dreamwork.std.Object
 ---@field __class dreamwork.std.checksum.CRC8Class
 ---@field protected poly integer The polynomial is used to calculate checksum.
@@ -389,6 +393,10 @@ end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
+--- ```lua
+--- print( std.CRC8.digest( "hi" ) ) -- 69
+--- ```
+---
 ---@class dreamwork.std.checksum.CRC8Class : dreamwork.std.checksum.CRC8, dreamwork.std.Class
 ---@field __base dreamwork.std.checksum.CRC8
 ---@overload fun( poly: integer?, init: integer?, ref_in: boolean?, ref_out: boolean?, xor_out: integer? ): dreamwork.std.checksum.CRC8
@@ -445,6 +453,10 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new CRC-16 checksum calculation instances.
+---
+--- ```lua
+--- print( std.CRC16():update( "hi" ):digest() ) -- 29040
+--- ```
 ---
 ---@class dreamwork.std.checksum.CRC16 : dreamwork.std.checksum.CRC8
 ---@field __parent dreamwork.std.checksum.CRC8
@@ -550,6 +562,10 @@ end
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
 ---
+--- ```lua
+--- print( std.CRC16.digest( "hi" ) ) -- 29040
+--- ```
+---
 ---@class dreamwork.std.checksum.CRC16Class : dreamwork.std.checksum.CRC16, dreamwork.std.checksum.CRC8Class
 ---@field __parent dreamwork.std.checksum.CRC8Class
 ---@field __base dreamwork.std.checksum.CRC16
@@ -611,6 +627,10 @@ end
 --- [SHARED AND MENU]
 ---
 --- The CRC-32 checksum calculation object.
+---
+--- ```lua
+--- print( std.CRC32.digest( "hi" ) ) -- 3633523372
+--- ```
 ---
 ---@class dreamwork.std.checksum.CRC32 : dreamwork.std.checksum.CRC16
 ---@field __parent dreamwork.std.checksum.CRC16
@@ -713,6 +733,10 @@ end
 --- See https://en.wikipedia.org/wiki/Cyclic_redundancy_check for the definition of the CRC-32 checksum.
 ---
 --- [CRC Online](https://www.texttool.com/crc-online)
+---
+--- ```lua
+--- print( std.CRC32.digest( "hi" ) ) -- 3633523372
+--- ```
 ---
 ---@class dreamwork.std.checksum.CRC32Class : dreamwork.std.checksum.CRC32, dreamwork.std.checksum.CRC16Class
 ---@field __parent dreamwork.std.checksum.CRC16Class

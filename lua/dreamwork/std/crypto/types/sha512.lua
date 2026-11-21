@@ -29,6 +29,10 @@ local type = std.type
 ---
 --- SHA512 object.
 ---
+--- ```lua
+--- print( std.crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
+--- ```
+---
 ---@class dreamwork.std.crypto.SHA512 : dreamwork.std.Object
 ---@field __class dreamwork.std.crypto.SHA512Class
 ---@field protected state integer[] | ffi.cdata* The hash state, 8 words as `hi, lo` pairs ( int32 high and uint32 low halves ) or `uint64_t[8]` if FFI is available.
@@ -46,6 +50,10 @@ local SHA512 = class.base( "SHA512" )
 --- Like other hash classes, it takes input data ( string )
 --- and produces a digest ( string ) — a
 --- fixed-size output string that represents that data.
+---
+--- ```lua
+--- print( std.crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
+--- ```
 ---
 ---@class dreamwork.std.crypto.SHA512Class : dreamwork.std.crypto.SHA512, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.SHA512

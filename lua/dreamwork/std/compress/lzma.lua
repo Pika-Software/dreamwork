@@ -43,6 +43,11 @@ local util_AsyncDecompress = glua_util.AsyncDecompress
 --- When HolyLib is installed and the call is made from a coroutine, the work is done on a separate thread
 --- with `util.AsyncCompress` / `util.AsyncDecompress` and the coroutine waits for the result, otherwise the call is synchronous.
 ---
+--- ```lua
+--- local packed = lzma.compress( "hello" )
+--- print( lzma.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.lzma
 ---@field PROPS_SIZE integer The size of the lzma properties in bytes.
 local lzma = { PROPS_SIZE = 5 }

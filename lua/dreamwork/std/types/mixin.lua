@@ -27,6 +27,13 @@ local pcall = std.pcall
 --- Mixins are themselves callable and can be nested inside
 --- one another as handlers.
 ---
+--- ```lua
+--- local mixin = std.Mixin( "score" )
+---
+--- mixin:attach( function( _, new ) return new + 1 end )
+--- print( mixin:call( nil, 1 ) ) -- 2
+--- ```
+---
 ---@class dreamwork.std.Mixin<T> : dreamwork.std.Object
 ---@field __class dreamwork.std.MixinClass
 ---@field name string The name of the mixin.
@@ -167,6 +174,11 @@ Mixin.__call = Mixin.call
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Mixin` instances.
+---
+--- ```lua
+--- local mixin = std.Mixin( "score" )
+--- mixin:attach( function( _, new ) return new end )
+--- ```
 ---
 ---@class dreamwork.std.MixinClass : dreamwork.std.Mixin, dreamwork.std.Class
 ---@field __base dreamwork.std.Mixin

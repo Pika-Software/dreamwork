@@ -30,6 +30,12 @@ local debug_getmetavalue = debug.getmetavalue
 --- (`pi`, `e`, `huge`, `tiny`, `nan`, …).
 --- Assign `math.randomseed` to reseed the PRNG.
 ---
+--- ```lua
+--- print( math.clamp( 12, 0, 1 ) ) -- 1
+--- print( math.lerp( 0.5, 0, 10 ) ) -- 5
+--- print( math.round( 1.6 ) ) -- 2
+--- ```
+---
 ---@class dreamwork.std.math
 ---@field e number Euler's number *e*. [`2.7182818284590`]
 ---@field ln2 number `ln(2)`. [`0.69314718055995`]
@@ -1035,6 +1041,13 @@ do
     --- Each family has `In`, `Out`, and `InOut` variants:
     --- `sine`, `quad`, `cubic`, `quart`, `quint`,
     --- `expo`, `circ`, `back`, `elastic`, `bounce`.
+    ---
+    --- ```lua
+    --- local ease = std.math.ease
+    ---
+    --- print( ease.quadOut( 0 ) ) -- 0
+    --- print( ease.quadOut( 1 ) ) -- 1
+    --- ```
     ---
     ---@class dreamwork.std.math.ease
     local ease = {}

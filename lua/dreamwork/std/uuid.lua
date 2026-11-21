@@ -47,6 +47,26 @@ local SHA1_digest = crypto_SHA1.digest
 --- the generated values are unique, but can be predicted, so never use them as secrets
 --- (session tokens, password reset links, API keys), use `crypto.random.bytes` for those.
 ---
+--- ```lua
+--- print( uuid.v5( uuid.NAMESPACE_DNS, "www.example.com" ) ) -- 2ed6657d-e927-568b-95e1-2665a8aea6a2
+--- print( uuid.v3( uuid.NAMESPACE_DNS, "www.example.com" ) ) -- 5df41881-3aed-3515-88a7-2f4a814cf09e
+--- print( uuid.v5( uuid.NAMESPACE_URL, "https://example.com/" ) ) -- dd2c1780-811a-5296-81c5-178a0ef488bc
+---
+--- print( uuid.v8() ) -- 00000000-0000-8000-8000-000000000000
+--- print( uuid.v8( 0xDE, 0xAD, 0xBE, 0xEF ) ) -- deadbeef-0000-8000-8000-000000000000
+---
+--- print( uuid.toString( string.rep( "\0", 16 ) ) ) -- 00000000-0000-0000-0000-000000000000
+--- print( uuid.toString( uuid.parse( "6BA7B810-9DAD-11D1-80B4-00C04FD430C8" ) ) ) -- 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+--- print( uuid.parse( "not a uuid" ) ) -- nil
+--- print( #uuid.parse( "6ba7b810-9dad-11d1-80b4-00c04fd430c8" ) ) -- 16
+---
+--- print( uuid.v4() ) -- e.g. 7f2225c0-7a9c-4918-8e5a-20102b044f87
+--- print( uuid.v7() ) -- e.g. 01a1fcba-a6f7-76d7-ae37-b64fe0fec364
+--- print( string.sub( uuid.v4(), 15, 15 ) ) -- 4
+--- print( string.sub( uuid.v7(), 15, 15 ) ) -- 7
+--- print( string.sub( uuid.unique(), 15, 15 ) ) -- 8
+--- ```
+---
 ---@class dreamwork.std.uuid
 local uuid = {}
 std.uuid = uuid

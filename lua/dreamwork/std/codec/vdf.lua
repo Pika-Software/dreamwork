@@ -35,6 +35,10 @@ local string_lower = string.lower
 ---
 --- The KeyValues format is used in the Source engine to store meta data for resources, scripts, materials, VGUI elements, and more..
 ---
+--- ```lua
+--- local text = vdf.serialize( { name = "crate" } )
+--- print( vdf.deserialize( text ).name ) -- crate
+--- ```
 ---@class dreamwork.std.vdf
 local vdf = {}
 std.vdf = vdf

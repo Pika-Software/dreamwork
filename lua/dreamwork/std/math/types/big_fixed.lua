@@ -63,6 +63,10 @@ local BigFixed = class.base( "BigFixed", false, nil )
 ---
 --- Arbitrary-precision fixed-point decimal type, backed by `BigInteger`.
 ---
+--- ```lua
+--- print( tostring( std.BigFixed( "1.50" ) + std.BigFixed( "0.50" ) ) ) -- 2.000000000000000000
+--- ```
+---
 ---@class dreamwork.std.BigFixedClass : dreamwork.std.BigFixed, dreamwork.std.Class
 ---@field __base dreamwork.std.BigFixed
 ---@field DEFAULT_SCALE integer

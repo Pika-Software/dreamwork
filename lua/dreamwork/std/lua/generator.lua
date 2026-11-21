@@ -35,6 +35,12 @@ local lexer_countNewlines = lexer.countNewlines
 ---
 --- Comments are not part of the AST and are not generated.
 ---
+--- ```lua
+--- local chunk = std.lua.parser.parse( "return 1" )
+---
+--- print( std.lua.generator.generate( chunk ) ) -- return 1
+--- ```
+---
 ---@class dreamwork.std.lua.generator
 local generator = {}
 lua.generator = generator

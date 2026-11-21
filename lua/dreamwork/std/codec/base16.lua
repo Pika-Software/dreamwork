@@ -25,6 +25,10 @@ local table_concat = table.concat
 ---
 --- See https://en.wikipedia.org/wiki/Hexadecimal
 ---
+--- ```lua
+--- print( base16.encode( "hi" ) ) -- 6869
+--- print( base16.decode( "6869" ) ) -- hi
+--- ```
 ---@class dreamwork.std.base16
 local base16 = {}
 std.base16 = base16

@@ -19,6 +19,13 @@ local debug_getmetatable = debug.getmetatable
 ---
 --- They hold no data and are collected once nothing references them.
 ---
+--- ```lua
+--- local mark = std.Symbol( "x" )
+---
+--- print( mark == std.Symbol( "x" ) ) -- true
+--- print( mark ) -- x
+--- ```
+---
 ---@class dreamwork.std.Symbol : userdata
 
 ---@type table<string, dreamwork.std.Symbol>

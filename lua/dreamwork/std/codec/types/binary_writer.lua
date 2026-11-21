@@ -83,6 +83,11 @@ local BinaryWriter = class.base( "BinaryWriter", false, nil )
 ---
 --- Optional data is converted to a string with `tostring`, the cursor is placed after it (append).
 ---
+--- ```lua
+--- local writer = std.BinaryWriter( "hi" )
+---
+--- print( writer:compile() ) -- hi
+--- ```
 ---@class dreamwork.std.BinaryWriterClass : dreamwork.std.BinaryWriter, dreamwork.std.Class
 ---@field __base dreamwork.std.BinaryWriter
 ---@overload fun( data: any? ): dreamwork.std.BinaryWriter

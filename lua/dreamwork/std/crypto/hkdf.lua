@@ -30,6 +30,18 @@ local hmac_digestWithPads = hmac.digestWithPads
 ---
 --- See [RFC 5869](https://datatracker.ietf.org/doc/html/rfc5869) for the algorithm.
 ---
+--- ```lua
+--- local bytes = std.crypto.hkdf.derive( {
+---     hash = std.crypto.SHA256,
+---     key = "key",
+---     salt = "salt",
+---     info = "info",
+---     length = 8
+--- } )
+---
+--- print( std.base16.encode( bytes ) ) -- 9CA0D662557439E3
+--- ```
+---
 ---@class dreamwork.std.crypto.hkdf
 ---@overload fun( options: dreamwork.std.hkdf.Options ): string
 local hkdf = {}

@@ -294,6 +294,10 @@ end
 ---
 --- The class used to create `ViewportLayout` instances and parse display lengths.
 ---
+--- ```lua
+--- print( std.ViewportLayout.parse( "120px" ) ) -- 120
+--- ```
+---
 ---@class dreamwork.std.ViewportLayoutClass : dreamwork.std.ViewportLayout, dreamwork.std.Class
 ---@field __base dreamwork.std.ViewportLayout The instance prototype shared by all `ViewportLayout` objects.
 ---@overload fun( definitions: table<string, string> ): table<string, integer>

@@ -42,6 +42,11 @@ local error = std.error
 --- Produces and consumes [gzip](https://www.rfc-editor.org/rfc/rfc1952) streams
 --- compatible with the `gzip` tool, `Content-Encoding: gzip` and zlib's `gzopen` / `inflateInit2`.
 ---
+--- ```lua
+--- local packed = gzip.compress( "hello" )
+--- print( gzip.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.gzip
 local gzip = {}
 std.gzip = gzip
@@ -382,6 +387,12 @@ end
 ---
 --- The gzip stream compressor object.
 ---
+--- ```lua
+--- local compressor = std.gzip.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( std.gzip.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.gzip.Compressor : dreamwork.std.deflate.Compressor
 ---@field __class dreamwork.std.gzip.CompressorClass
 ---@field protected header string
@@ -465,6 +476,13 @@ gzip.Compressor = CompressorClass
 --- [SHARED AND MENU]
 ---
 --- The gzip stream decompressor object.
+---
+--- ```lua
+--- local packed = std.gzip.compress( "hello" )
+--- local decompressor = std.gzip.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class dreamwork.std.gzip.Decompressor : dreamwork.std.deflate.Decompressor
 ---@field __class dreamwork.std.gzip.DecompressorClass

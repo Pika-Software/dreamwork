@@ -10,6 +10,10 @@ local class = std.class
 ---
 --- The Fletcher-16 checksum calculation object.
 ---
+--- ```lua
+--- print( std.Fletcher16():update( "hi" ):digest() ) -- 15057
+--- ```
+---
 ---@class dreamwork.std.Fletcher16 : dreamwork.std.Object
 ---@field __class dreamwork.std.Fletcher16Class
 ---@field DigestSize integer The size of the checksum in bytes.
@@ -92,6 +96,10 @@ end
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
 ---
+--- ```lua
+--- print( std.Fletcher16.digest( "hi" ) ) -- 15057
+--- ```
+---
 ---@class dreamwork.std.Fletcher16Class : dreamwork.std.Fletcher16, dreamwork.std.Class
 ---@field __base dreamwork.std.Fletcher16
 ---@overload fun(): dreamwork.std.Fletcher16
@@ -118,6 +126,10 @@ end
 --- [SHARED AND MENU]
 ---
 --- The Fletcher-32 checksum calculation object.
+---
+--- ```lua
+--- print( std.Fletcher32():update( "hi" ):digest() ) -- 1768450408
+--- ```
 ---
 ---@class dreamwork.std.Fletcher32 : dreamwork.std.Fletcher16
 ---@field __parent dreamwork.std.Fletcher16
@@ -239,6 +251,10 @@ end
 --- See [Fletcher's checksum](https://en.wikipedia.org/wiki/Fletcher%27s_checksum) for the definition of the Fletcher-32 checksum.
 ---
 --- [Fletcher Online](https://www.convertcase.com/hashing/fletcher-checksum)
+---
+--- ```lua
+--- print( std.Fletcher32.digest( "hi" ) ) -- 1768450408
+--- ```
 ---
 ---@class dreamwork.std.Fletcher32Class : dreamwork.std.Fletcher32, dreamwork.std.Fletcher16Class
 ---@field __parent dreamwork.std.Fletcher16Class

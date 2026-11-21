@@ -35,6 +35,10 @@ local type = std.type
 ---
 --- MD5 object.
 ---
+--- ```lua
+--- print( std.crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
+--- ```
+---
 ---@class dreamwork.std.crypto.MD5 : dreamwork.std.Object
 ---@field __class dreamwork.std.crypto.MD5Class
 ---@field protected a integer The first word of the hash state ( int32 ).
@@ -63,6 +67,10 @@ local MD5 = class.base( "MD5" )
 ---
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
+---
+--- ```lua
+--- print( std.crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
+--- ```
 ---
 ---@class dreamwork.std.crypto.MD5Class : dreamwork.std.crypto.MD5, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.MD5

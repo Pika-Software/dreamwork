@@ -31,6 +31,10 @@ local table_concat = table.concat
 ---
 --- See https://en.wikipedia.org/wiki/Percent-encoding & https://datatracker.ietf.org/doc/html/rfc3986#section-2.1
 ---
+--- ```lua
+--- print( percent.encode( "a b" ) ) -- a+b
+--- print( percent.decode( "a+b" ) ) -- a b
+--- ```
 ---@class dreamwork.std.percent
 local percent = {}
 std.percent = percent

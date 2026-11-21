@@ -36,6 +36,11 @@ local bytepack_writeUInt32        = bytepack.writeUInt32BE
 --- Networks are described by a prefix length (`0-32`) or by a pair of network and broadcast addresses,
 --- which can be obtained with `ipv4.cidr`.
 ---
+--- ```lua
+--- local ip = ipv4.parse( "127.0.0.1" )
+--- print( ipv4.toString( ip ) ) -- 127.0.0.1
+--- ```
+---
 ---@class dreamwork.std.ipv4
 local ipv4                        = {}
 std.ipv4                          = ipv4

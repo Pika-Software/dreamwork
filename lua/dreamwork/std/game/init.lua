@@ -36,6 +36,10 @@ local LUA_MENU = std.LUA_MENU
 ---
 --- The game library.
 ---
+--- ```lua
+--- print( game.getTimeScale() ) -- 1
+--- ```
+---
 ---@class dreamwork.std.game
 ---@field frame_time number The time it takes to run one frame in seconds. **Client-only**
 ---@field frames_per_second number The number of frames per second. **Client-only**

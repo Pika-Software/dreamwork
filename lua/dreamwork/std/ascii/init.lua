@@ -10,6 +10,11 @@ local std = dreamwork.std
 ---
 --- Figures drawn from characters (schemes, boxes, grids, bars, trees) are `ascii.art`.
 ---
+--- ```lua
+--- print( ascii.isLower( string.byte( "a" ) ) ) -- true
+--- print( ascii.isUpper( string.byte( "A" ) ) ) -- true
+--- ```
+---
 ---@class dreamwork.std.ascii
 ---@field art dreamwork.std.ascii.art
 local ascii = {}

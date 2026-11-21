@@ -2945,6 +2945,7 @@ do
         "Good Enough ♪",
         "Manifest It ♪",
         "MAKE A MOVE ♪",
+        "Unrequited ♪",
         "v" .. dreamwork.Version,
         "Hello World!",
         "all_the_same",

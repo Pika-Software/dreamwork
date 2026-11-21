@@ -80,6 +80,16 @@ local events = Emitter( "Timer" )
 ---
 --- The timer object.
 ---
+--- ```lua
+--- local timer = std.Timer( 1, 3 )
+---
+--- timer:attach( function( timer )
+---     print( timer.name )
+--- end )
+---
+--- timer:start()
+--- ```
+---
 ---@class dreamwork.std.Timer : dreamwork.std.Object
 ---@field __class dreamwork.std.TimerClass
 ---@field name string The internal name of the timer. **Read-only.**
@@ -360,6 +370,11 @@ end
 --- [SHARED AND MENU]
 ---
 --- The class used to create new `Timer` instances.
+---
+--- ```lua
+--- local timer = std.Timer( 1, 1, "once" )
+--- timer:start()
+--- ```
 ---
 ---@class dreamwork.std.TimerClass : dreamwork.std.Timer, dreamwork.std.Class
 ---@field __base dreamwork.std.Timer

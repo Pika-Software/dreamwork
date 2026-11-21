@@ -60,6 +60,18 @@ local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
 ---
 --- The game's server library.
 ---
+--- ```lua
+--- print( std.server.singleplayer ) -- false
+--- print( std.server.dedicated ) -- true
+--- print( std.server.tickrate ) -- 66
+--- print( std.server.slots ) -- 16
+--- print( std.server.gamemode ) -- sandbox
+--- print( std.server.ipv4 ) -- {your_server_address_as_integer}
+--- print( std.ipv4.toString( std.server.ipv4 ) ) -- {your_server_address}
+--- print( std.server.port ) -- {your_server_port}
+--- print( std.server.address ) -- {your_server_address}:{your_server_port}
+--- ```
+---
 ---@class dreamwork.std.server
 ---@field singleplayer boolean `true` if server is running in singleplayer mode, `false` otherwise. **READ-ONLY**
 ---@field dedicated boolean `true` if server is running as a dedicated server, `false` otherwise. **READ-ONLY**

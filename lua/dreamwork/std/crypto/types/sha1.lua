@@ -34,6 +34,10 @@ local type = std.type
 ---
 --- SHA1 object.
 ---
+--- ```lua
+--- print( std.crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
+--- ```
+---
 ---@class dreamwork.std.crypto.SHA1 : dreamwork.std.Object
 ---@field __class dreamwork.std.crypto.SHA1Class
 ---@field protected h1 integer The first word of the hash state ( int32 ).
@@ -63,6 +67,10 @@ local SHA1 = class.base( "SHA1" )
 ---
 --- This violates one of the basic principles
 --- of a secure hash function - collision resistance.
+---
+--- ```lua
+--- print( std.crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
+--- ```
 ---
 ---@class dreamwork.std.crypto.SHA1Class : dreamwork.std.crypto.SHA1, dreamwork.std.crypto.HashClass
 ---@field __base dreamwork.std.crypto.SHA1

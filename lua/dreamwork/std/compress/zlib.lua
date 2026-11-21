@@ -36,6 +36,11 @@ local error = std.error
 --- Produces and consumes [zlib](https://www.rfc-editor.org/rfc/rfc1950) streams
 --- compatible with zlib's `compress` / `uncompress`.
 ---
+--- ```lua
+--- local packed = zlib.compress( "hello" )
+--- print( zlib.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.zlib
 local zlib = {}
 std.zlib = zlib
@@ -175,6 +180,12 @@ end
 ---
 --- The zlib stream compressor object.
 ---
+--- ```lua
+--- local compressor = std.zlib.Compressor()
+--- local packed = compressor:update( "hello" ):flush()
+--- print( std.zlib.decompress( packed ) ) -- hello
+--- ```
+---
 ---@class dreamwork.std.zlib.Compressor : dreamwork.std.deflate.Compressor
 ---@field __class dreamwork.std.zlib.CompressorClass
 ---@field protected header string
@@ -251,6 +262,13 @@ zlib.Compressor = CompressorClass
 --- [SHARED AND MENU]
 ---
 --- The zlib stream decompressor object.
+---
+--- ```lua
+--- local packed = std.zlib.compress( "hello" )
+--- local decompressor = std.zlib.Decompressor()
+--- local text = decompressor:update( packed ):flush()
+--- print( text ) -- hello
+--- ```
 ---
 ---@class dreamwork.std.zlib.Decompressor : dreamwork.std.deflate.Decompressor
 ---@field __class dreamwork.std.zlib.DecompressorClass

@@ -74,6 +74,10 @@ local Angle3Class = std.Angle3
 --- * `quat ^ number` - raises to the power ( scales the rotation angle ), `number ^ quat` - exponent.
 --- * `-quat` - negates all components.
 ---
+--- ```lua
+--- print( tostring( std.Quaternion( 1, 0, 0, 0 ) ) ) -- 1.000000 0.000000 0.000000 0.000000
+--- ```
+---
 ---@class dreamwork.std.Quaternion : dreamwork.std.Object
 ---@field __class dreamwork.std.QuaternionClass
 ---@operator add( dreamwork.std.Quaternion | number ): dreamwork.std.Quaternion

@@ -13,6 +13,17 @@ local std = dreamwork.std
 --- * Iterators — `inext`, `next`
 --- * `raw.bit` — native 32-bit integer bit ops used by `std.bit`
 ---
+--- ```lua
+--- local obj = setmetatable( { hidden = 1 }, {
+---     __index = function()
+---         return "meta"
+---     end
+--- } )
+---
+--- print( raw.get( obj, "hidden" ) ) -- 1
+--- print( obj.missing ) -- meta
+--- ```
+---
 ---@class dreamwork.std.raw
 local raw = {
     assert = assert,

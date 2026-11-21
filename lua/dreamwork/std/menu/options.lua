@@ -16,6 +16,10 @@ local menu = std.menu
 ---
 --- The game's menu options module.
 ---
+--- ```lua
+--- print( std.menu.options.getMasterVolume() ) -- 0
+--- ```
+---
 ---@class dreamwork.std.menu.options
 local options = {}
 menu.options = options
