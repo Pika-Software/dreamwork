@@ -30,19 +30,72 @@ local isString = std.isString
 --- * **class** ( `class.create` ) - the callable table that creates objects, holds static fields.
 ---
 --- ```lua
+--- ---@class my_package.Point : dreamwork.std.Object
+--- ---@field __class my_package.PointClass
+--- ---@field x number
+--- ---@field y number
 --- local Point = class.base( "Point" )
+---
+--- ---@protected
 --- function Point:__init( x, y )
 ---     self.x, self.y = x, y
 --- end
 ---
+--- function Point:length2()
+---     return ( self.x * self.x ) + ( self.y * self.y )
+--- end
+---
+--- --- [SHARED AND MENU]
+--- ---
+--- --- The class used to create new `Point` instances.
+--- ---
+--- ---@class my_package.PointClass : my_package.Point, dreamwork.std.Class
+--- ---@field __base my_package.Point
+--- ---@overload fun( x: number, y: number ): my_package.Point
 --- local PointClass = class.create( Point )
---- local point = PointClass( 1, 2 )
 ---
---- print( point.x, point.y ) -- 1  2
----
+--- local point = PointClass( 3, 4 )
+--- print( point.x, point.y ) -- 3  4
+--- print( point:length2() ) -- 25
 --- print( std.isObject( point ) ) -- true
 --- print( std.isType( point, PointClass ) ) -- true
 --- print( std.type( point ) ) -- Point
+---
+--- ---@class my_package.Vector : my_package.Point
+--- ---@field __class my_package.VectorClass
+--- ---@field __parent my_package.Point
+--- ---@field z number
+--- local Vector = class.base( "Vector", false, PointClass )
+---
+--- ---@protected
+--- function Vector:__init( x, y, z )
+---     Point.__init( self, x, y )
+---     self.z = z
+--- end
+---
+--- function Vector:length2()
+---     return Point.length2( self ) + ( self.z * self.z )
+--- end
+---
+--- function Vector:dot( other )
+---     return ( self.x * other.x ) + ( self.y * other.y ) + ( self.z * other.z )
+--- end
+---
+--- --- [SHARED AND MENU]
+--- ---
+--- --- The class used to create new `Vector` instances.
+--- ---
+--- ---@class my_package.VectorClass : my_package.Vector, my_package.PointClass
+--- ---@field __base my_package.Vector
+--- ---@field __parent my_package.PointClass
+--- ---@overload fun( x: number, y: number, z: number ): my_package.Vector
+--- local VectorClass = class.create( Vector )
+---
+--- local vector = VectorClass( 1, 2, 2 )
+--- print( vector.x, vector.y, vector.z ) -- 1  2  2
+--- print( vector:length2() ) -- 9
+--- print( vector:dot( VectorClass( 1, 0, 0 ) ) ) -- 1
+--- print( class.isInherited( vector, PointClass ) ) -- true
 --- ```
 ---
 ---@class dreamwork.std.class
