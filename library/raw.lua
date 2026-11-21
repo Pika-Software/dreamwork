@@ -2,13 +2,15 @@
 
 --- [SHARED AND MENU]
 ---
---- The raw library, low-level Lua primitives and table access that skips metamethods.
+--- The raw library.
 ---
---- Holds bootstrap copies of core builtins (`assert`, `error`, `tostring`,
---- `tonumber`, `ipairs`, `pairs`, `print`, `select`) plus true raw accessors:
---- `get` / `set` / `len` / `equal` (`rawget` / `rawset` / `rawlen` / `rawequal`),
---- and the `inext` / `next` iterators. Also hosts `raw.bit`, the native 32-bit
---- integer bit library used under `bit`.
+--- Low-level Lua primitives and table access that skip metamethods.
+---
+--- What it holds:
+--- * Bootstrap builtins — `assert`, `error`, `tostring`, `tonumber`, …
+--- * Raw accessors — `get`, `set`, `len`, `equal`
+--- * Iterators — `inext`, `next`
+--- * `raw.bit` — native 32-bit integer bit ops used by `bit`
 ---
 ---@class raw
 raw = {}

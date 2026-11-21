@@ -2,21 +2,37 @@
 
 --- [SHARED AND MENU]
 ---
---- The powerful math library.
+--- The math library.
+---
+--- Standard Lua math plus dreamwork helpers.
+--- Polyfills `atan`, `frexp`, and `ldexp` when missing.
+---
+--- What it adds:
+--- * Predicates — `isNaN`, `isFinite`, `isInteger`, …
+--- * Rounding — `round`, `snap`, `trunc`, `wrap`
+--- * Interpolation — `lerp`, `smooth`, `remap`, `clamp`, …
+--- * 2D geometry — `angle`, `magnitude`, `direction`
+--- * Indexing — `relative`, `range`
+--- * Easing — `math.ease`
+---
+--- Also bit-width conversions and constants
+--- (`pi`, `e`, `huge`, `tiny`, `nan`, …).
+--- Assign `math.randomseed` to reseed the PRNG.
 ---
 ---@class mathlib
----@field e number A variable containing the mathematical constant e. [`2.7182818284590`]
----@field ln2 number A variable containing the mathematical constant natural logarithm of 2. [`0.69314718055995`]
----@field nan number A variable containing number "not a number". [`nan`]
----@field pi number A variable containing the mathematical *π* constant. [`3.1415926535898`]
----@field huge number A variable that effectively represents infinity, in the sense that in any numerical comparison every number will be less than this. [`inf`]
----@field tiny number A variable that effectively represents negative infinity, in the sense that in any numerical comparison every number will be greater than this. [`-inf`]
----@field ln10 number A variable containing the mathematical constant natural logarithm of 10. (2.3025850929940)
----@field log10e number A variable containing the mathematical constant logarithm of 10 to the base e. (0.43429448190325)
----@field log2e number A variable containing the mathematical constant logarithm of 2 to the base e. (1.4426950408889)
----@field sqrt2 number A variable containing the mathematical constant square root of 2. (1.4142135623731)
----@field sqrt1_2 number A variable containing the mathematical constant square root of 1/2. (0.70710678118655)
----@field randomseed number A variable containing the current random seed and can be changed to set a new seed.
+---@field e number Euler's number *e*. [`2.7182818284590`]
+---@field ln2 number `ln(2)`. [`0.69314718055995`]
+---@field nan number Not-a-Number. [`nan`]
+---@field pi number *π*. [`3.1415926535898`]
+---@field huge number Positive infinity. [`inf`]
+---@field tiny number Negative infinity. [`-inf`]
+---@field ln10 number `ln(10)`. [`2.3025850929940`]
+---@field log10e number `log10(e)`. [`0.43429448190325`]
+---@field log2e number `log2(e)`. [`1.4426950408889`]
+---@field sqrt2 number Square root of 2. [`1.4142135623731`]
+---@field sqrt1_2 number Square root of 1/2. [`0.70710678118655`]
+---@field randomseed number Current PRNG seed; assign to reseed.
+---@field ease math.ease Easing curves for `[0, 1]`.
 math = {}
 
 --- [SHARED AND MENU]
@@ -615,7 +631,12 @@ function math.average(...) end
 
 --- [SHARED AND MENU]
 ---
---- The math easing functions.
+--- Easing curves.
+---
+--- Maps a progress fraction in `[0, 1]` to an eased value.
+--- Each family has `In`, `Out`, and `InOut` variants:
+--- `sine`, `quad`, `cubic`, `quart`, `quint`,
+--- `expo`, `circ`, `back`, `elastic`, `bounce`.
 ---
 ---@class math.ease
 local ease = {}
