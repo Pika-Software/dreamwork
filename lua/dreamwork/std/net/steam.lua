@@ -7,9 +7,6 @@ local glua_steamworks = dreamwork_engine.requireLibrary( "steamworks" )
 ---@type garrysmod.system
 local glua_system = dreamwork_engine.requireLibrary( "system" )
 
----@type garrysmod.game
-local glua_game = dreamwork_engine.requireLibrary( "game" )
-
 ---@class dreamwork.std
 local std = dreamwork.std
 
@@ -31,8 +28,9 @@ local clearTimeout = std.clearTimeout
 
 local Future = std.Future
 
+local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
-local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
+local LUA_MENU = std.LUA_MENU
 
 
 --- [SHARED AND MENU]
@@ -103,7 +101,7 @@ else
 
 end
 
-if LUA_CLIENT_MENU then
+if LUA_CLIENT or LUA_MENU then
 
     local steamworks_RequestPlayerInfo = glua_steamworks.RequestPlayerInfo or debug_fempty
 

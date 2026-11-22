@@ -533,7 +533,7 @@
 
 -- end
 
--- if std.LUA_CLIENT_MENU then
+-- if LUA_CLIENT or LUA_MENU then
 
 --     --- [CLIENT AND MENU]
 --     ---

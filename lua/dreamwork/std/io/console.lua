@@ -15,6 +15,10 @@ local std = dreamwork.std
 
 local isNumber = std.isNumber
 
+local LUA_SERVER = std.LUA_SERVER
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_MENU = std.LUA_MENU
+
 --- [SHARED AND MENU]
 ---
 --- The source engine console library.
@@ -29,12 +33,12 @@ local isNumber = std.isNumber
 ---@class dreamwork.std.console
 ---@field visible boolean `true` if the console is visible, `false` otherwise.
 local console = std.console or {
-    visible = std.LUA_SERVER,
+    visible = LUA_SERVER,
 }
 
 std.console = console
 
-if std.LUA_MENU then
+if LUA_MENU then
 
     --- [MENU]
     ---
@@ -75,7 +79,7 @@ end
 local Visibility = console.Visibility or std.Event( "console.Visibility" )
 console.Visibility = Visibility
 
-if std.LUA_CLIENT_MENU then
+if LUA_CLIENT or LUA_MENU then
 
     local gui_IsConsoleVisible = glua_gui.IsConsoleVisible or function() return false end
 
@@ -128,7 +132,7 @@ do
         console_message( "\n" )
     end
 
-    if std.LUA_SERVER then
+    if LUA_SERVER then
 
         --- [SHARED AND MENU]
         ---

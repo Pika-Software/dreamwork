@@ -53,7 +53,6 @@ local Event = std.Event
 local LUA_MENU = std.LUA_MENU
 local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
-local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
 
 
 --- [SHARED AND MENU]
@@ -583,6 +582,6 @@ if LUA_CLIENT or LUA_MENU then
 
 end
 
-dreamwork_load( "std/server/permissions.lua", false, not LUA_CLIENT_MENU )
+dreamwork_load( "std/server/permissions.lua", false, not LUA_CLIENT or LUA_MENU )
 dreamwork_load( "std/server/browser.lua", false, not LUA_MENU )
 dreamwork_load( "std/server/hardware.lua", false, not LUA_SERVER )

@@ -19,7 +19,10 @@ if dreamwork == nil then
         ---@diagnostic disable-next-line: missing-fields
         engine = {},
         ---@diagnostic disable-next-line: missing-fields
-        std = {},
+        std = {
+            GAME_VERSION = VERSION or 0,
+            GAME_BRANCH = BRANCH or "unknown"
+        },
     }
 
     dreamwork.Prefix = "dreamwork@" .. dreamwork.Version
@@ -35,16 +38,11 @@ end
 ---@field LUA_REALM "server" | "client" | "menu" | "unknown" The realm the code is running on.
 ---@field LUA_MENU boolean `true` if code is running on the menu, `false` otherwise.
 ---@field LUA_CLIENT boolean `true` if code is running on the client, `false` otherwise.
----@field LUA_CLIENT_MENU boolean `true` if code is running on the client or menu, `false` otherwise.
----@field LUA_CLIENT_SERVER boolean `true` if code is running on the client or server, `false` otherwise.
 ---@field LUA_SERVER boolean `true` if code is running on the server, `false` otherwise.
 ---@field DEVELOPER integer A cached value of `developer` console variable.
 ---@field null dreamwork.std.null A sentinel symbol that represents an explicit "no value", compare it by identity.
 local std = dreamwork.std
 std._G = std
-
-std.GAME_VERSION = VERSION or 0
-std.GAME_BRANCH = BRANCH or "unknown"
 
 local LUA_MENU = MENU_DLL == true
 std.LUA_MENU = LUA_MENU
@@ -54,15 +52,6 @@ std.LUA_CLIENT = LUA_CLIENT
 
 local LUA_SERVER = SERVER == true and not LUA_MENU
 std.LUA_SERVER = LUA_SERVER
-
-local LUA_CLIENT_MENU = LUA_CLIENT or LUA_MENU
-std.LUA_CLIENT_MENU = LUA_CLIENT_MENU
-
-local LUA_MENU_SERVER = LUA_SERVER or LUA_MENU
-std.LUA_MENU_SERVER = LUA_MENU_SERVER
-
-local LUA_CLIENT_SERVER = LUA_CLIENT or LUA_SERVER
-std.LUA_CLIENT_SERVER = LUA_CLIENT_SERVER
 
 if LUA_SERVER then
     std.LUA_REALM = "server"
@@ -874,20 +863,7 @@ do
 
 end
 
--- symbols
 dreamwork_load( "std/types/symbol.lua" )
-
---- [SHARED AND MENU]
----
---- A sentinel symbol that represents an explicit "no value".
----
---- Unlike `nil`, it can be stored in tables and passed around as a real value,
---- which makes it useful for telling "intentionally empty" apart from "missing".
----
---- It is a singleton, so compare it by identity: `value == std.null`.
----
----@class dreamwork.std.null : dreamwork.std.Symbol
-std.null = std.Symbol( "null" )
 
 do
 

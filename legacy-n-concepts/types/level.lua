@@ -71,7 +71,7 @@
 
 -- level.exists = exists
 
--- if std.LUA_CLIENT_SERVER then
+-- if LUA_CLIENT or LUA_SERVER then
 
 --     level.getEntity = level.getEntity or glua_game.GetWorld
 

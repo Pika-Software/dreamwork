@@ -84,3 +84,15 @@ end
 function std.isSymbol( value )
     return debug_getmetatable( value ) == Symbol
 end
+
+--- [SHARED AND MENU]
+---
+--- A sentinel symbol that represents an explicit "no value".
+---
+--- Unlike `nil`, it can be stored in tables and passed around as a real value,
+--- which makes it useful for telling "intentionally empty" apart from "missing".
+---
+--- It is a singleton, so compare it by identity: `value == std.null`.
+---
+---@class dreamwork.std.null : dreamwork.std.Symbol
+std.null = std.Symbol( "null" )

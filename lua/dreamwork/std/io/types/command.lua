@@ -38,6 +38,10 @@ local tostring = std.tostring
 
 local Emitter = std.Emitter
 
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_SERVER = std.LUA_SERVER
+local LUA_MENU = std.LUA_MENU
+
 
 ---@type table<( dreamwork.std.console.Command | dreamwork.std.console.Variable ), string>
 local names = {}
@@ -191,7 +195,7 @@ function Command:run( ... )
     console_commandRun( name, ... )
 end
 
-if std.LUA_CLIENT_MENU then
+if LUA_CLIENT or LUA_MENU then
 
     ---@type garrysmod.input
     local glua_input = dreamwork_engine.requireLibrary( "input" )

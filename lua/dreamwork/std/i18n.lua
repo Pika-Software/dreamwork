@@ -42,7 +42,7 @@ local Event = std.Event
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
-local LUA_CLIENT_MENU = std.LUA_CLIENT_MENU
+local LUA_MENU = std.LUA_MENU
 
 local vfs = dreamwork.vfs
 local vfs_isFile = vfs.isFile
@@ -256,7 +256,7 @@ function i18n.setFallback( tag )
     update_language()
 end
 
-if LUA_CLIENT_MENU then
+if LUA_CLIENT or LUA_MENU then
 
     local gmod_language = console_Variable.get( "gmod_language", "string" )
 

@@ -20,7 +20,7 @@
 -- local input = std.input or {}
 -- std.input = input
 
--- if std.LUA_CLIENT_MENU then
+-- if LUA_CLIENT or LUA_MENU then
 
 --     -- TODO: use ANALOG somewhere
 
@@ -384,7 +384,7 @@
 
 -- end
 
--- if std.LUA_CLIENT_SERVER then
+-- if LUA_CLIENT or LUA_SERVER then
 
 --     --- [CLIENT AND SERVER]
 --     ---

@@ -52,7 +52,9 @@ local class_isInherited = class.isInherited
 local pcall = std.pcall
 local tostring = std.tostring
 
+local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
+local LUA_MENU = std.LUA_MENU
 
 local dreamwork_load = dreamwork.load
 
@@ -1336,6 +1338,6 @@ end
 
 dreamwork_load( "modules/cli/commands/vfs.lua" )
 dreamwork_load( "modules/cli/commands/http.lua" )
-dreamwork_load( "modules/cli/commands/mcp.lua", false, not std.LUA_CLIENT_SERVER )
-dreamwork_load( "modules/cli/commands/transport.lua", false, std.LUA_MENU )
+dreamwork_load( "modules/cli/commands/mcp.lua", false, not (LUA_CLIENT or LUA_SERVER) )
+dreamwork_load( "modules/cli/commands/transport.lua", false, LUA_MENU )
 dreamwork_load( "modules/cli/commands/package.lua" )

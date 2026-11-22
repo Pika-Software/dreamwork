@@ -337,9 +337,6 @@ local function create_sigil_env( realm )
         LUA_SERVER = is_server,
         LUA_CLIENT = is_client,
         LUA_MENU = is_menu,
-        LUA_CLIENT_SERVER = is_client or is_server,
-        LUA_CLIENT_MENU = is_client or is_menu,
-        LUA_MENU_SERVER = is_menu or is_server,
         SERVER = is_server,
         CLIENT = is_client,
         MENU = is_menu

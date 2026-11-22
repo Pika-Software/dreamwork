@@ -151,7 +151,7 @@ do
 
 end
 
-if std.LUA_CLIENT_SERVER then
+if LUA_CLIENT or LUA_SERVER then
 
     game.getAbsoluteFrameTime = glua_engine.AbsoluteFrameTime
 
