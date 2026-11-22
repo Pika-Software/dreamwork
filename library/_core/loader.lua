@@ -38,16 +38,6 @@ LUA_MENU = nil
 ---@type boolean
 LUA_CLIENT = nil
 
---- `true` if code is running on the client or menu, `false` otherwise.
----
----@type boolean
-LUA_CLIENT_MENU = nil
-
---- `true` if code is running on the client or server, `false` otherwise.
----
----@type boolean
-LUA_CLIENT_SERVER = nil
-
 --- `true` if code is running on the server, `false` otherwise.
 ---
 ---@type boolean
@@ -369,18 +359,6 @@ function hash(value) end
 ---@return string hex_str The hexadecimal identifier of `value`, optionally padded or truncated to `desired_length`.
 ---@nodiscard
 function tohex(value, desired_length) end
-
---- [SHARED AND MENU]
----
---- A sentinel symbol that represents an explicit "no value".
----
---- Unlike `nil`, it can be stored in tables and passed around as a real value,
---- which makes it useful for telling "intentionally empty" apart from "missing".
----
---- It is a singleton, so compare it by identity: `value == null`.
----
----@class null : Symbol
-null = {}
 
 --- `true` if the game is running on OSX.
 ---

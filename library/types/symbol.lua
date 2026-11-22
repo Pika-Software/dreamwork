@@ -38,3 +38,15 @@ function Symbol(name) end
 ---@return boolean is_symbol Returns `true` if the value is a symbol, otherwise `false`.
 ---@nodiscard
 function isSymbol(value) end
+
+--- [SHARED AND MENU]
+---
+--- A sentinel symbol that represents an explicit "no value".
+---
+--- Unlike `nil`, it can be stored in tables and passed around as a real value,
+--- which makes it useful for telling "intentionally empty" apart from "missing".
+---
+--- It is a singleton, so compare it by identity: `value == null`.
+---
+---@class null : Symbol
+null = {}
