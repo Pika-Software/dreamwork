@@ -11,6 +11,8 @@
 --- ```
 ---
 ---@class steam
+---@field connected boolean
+---@field id steam.Identifier | nil
 steam = {}
 
 --- [SHARED AND MENU]
