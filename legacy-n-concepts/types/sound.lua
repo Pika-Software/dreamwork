@@ -3,8 +3,6 @@
     https://wiki.facepunch.com/gmod/Global.SoundDuration
     https://wiki.facepunch.com/gmod/Global.CreateSound
 
-    https://wiki.facepunch.com/gmod/Global.SentenceDuration
-    https://wiki.facepunch.com/gmod/Global.EmitSentence
     https://wiki.facepunch.com/gmod/Global.EmitSound
 
     https://wiki.facepunch.com/gmod/Global.Sound

@@ -1,4 +1,5 @@
 local dreamwork_engine = dreamwork.engine
+local engine_hook = dreamwork_engine.hook
 local dreamwork_load = dreamwork.load
 
 ---@type garrysmod.steamworks
@@ -27,6 +28,7 @@ local setTimeout = std.setTimeout
 local clearTimeout = std.clearTimeout
 
 local Future = std.Future
+local SteamError = std.SteamError
 
 local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
@@ -44,14 +46,36 @@ local LUA_MENU = std.LUA_MENU
 --- ```
 ---
 ---@class dreamwork.std.steam
+---@field connected boolean
+---@field id dreamwork.std.steam.Identifier | nil
 local steam = std.steam or {}
 std.steam = steam
+
+steam.connected = steam.connected or (glua_steamworks.IsConnected or debug_fempty)() ~= false
 
 dreamwork_load( "std/net/steam/types/error.lua" )
 dreamwork_load( "std/net/steam/types/identifier.lua" )
 dreamwork_load( "std/net/steam/achievements.lua", false, LUA_SERVER )
 
-local SteamError = std.SteamError
+local function update_identifier()
+    local id64_str = (glua_steamworks.GetGameServerSteamID or debug_fempty)()
+    if id64_str ~= nil then
+        steam.id = steam.Identifier.from64( id64_str )
+    end
+end
+
+engine_hook.catch( "HolyLib:OnSteamConnect", "std.steam.state", function()
+    steam.connected = true
+    update_identifier()
+end, 1000 )
+
+---@param reason_id integer
+engine_hook.catch( "HolyLib:OnSteamDisconnect", "std.steam.state", function( reason_id )
+    steam.connected = false
+    steam.id = nil
+end, 1000 )
+
+dreamwork_engine.nextTick( update_identifier )
 
 if LUA_SERVER and server.dedicated then
 

@@ -796,16 +796,25 @@ if LUA_SERVER then
     --- Checks if new clients can download the files right away: the files are ready
     --- and the bundle of all files is made with the current settings.
     ---
+    --- With no files there is nothing to download, so a pending notification of that
+    --- empty list does not delay joins. `CheckPassword` rejects until this is true,
+    --- and the loader schedules that notification even when it published nothing.
+    ---
     ---@return boolean is_prepared
     ---@nodiscard
     function transport.isPrepared()
-        if network == nil or not is_ready or update_scheduled then
+        if network == nil or not is_ready then
             return false
         end
 
         local hashes, count = all_hashes()
         if count == 0 then
             return true
+        end
+
+        -- the bundle of the files that are about to be replaced is not worth downloading
+        if update_scheduled then
+            return false
         end
 
         local key = bundle_key( hashes, count )

@@ -3167,6 +3167,7 @@ end
 
 if LUA_SERVER then
 
+    -- https://github.com/unknown-gd/gmsv_workshop
     -- https://github.com/WilliamVenner/gmsv_workshop
     if std.loadbinary( "workshop" ) then
         logger:info( "`gmsv_workshop` was loaded & connected as server-side Steam Workshop API." )

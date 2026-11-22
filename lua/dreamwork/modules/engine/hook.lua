@@ -395,6 +395,7 @@ event_handlers[ "dreamwork.network.message.unhandled" ] = function( handlers, ne
 end
 
 if LUA_SERVER then
+
     event_handlers[ "hltv_rank_camera" ] = handler_one
     event_handlers[ "hltv_rank_entity" ] = handler_one
 
@@ -433,6 +434,11 @@ if LUA_SERVER then
             handlers[ i ]( ply, is_transition )
         end
     end
+
+
+    event_handlers[ "HolyLib:OnSteamConnect" ] = handler_empty
+    event_handlers[ "HolyLib:OnSteamDisconnect" ] = handler_one
+
 end
 
 if LUA_MENU then

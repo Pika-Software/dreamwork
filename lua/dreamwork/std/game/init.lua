@@ -163,9 +163,6 @@ if LUA_CLIENT or LUA_SERVER then
     engine_hook.catch( "ShutDown", "std.game.shutdown", ShutDown, 2 )
     game.ShutDown = ShutDown
 
-    -- TODO: https://wiki.facepunch.com/gmod/Global.PrecacheSentenceFile
-    -- TODO: https://wiki.facepunch.com/gmod/Global.PrecacheSentenceGroup
-
     -- game.getFrameNumber = FrameNumber
 
 end
