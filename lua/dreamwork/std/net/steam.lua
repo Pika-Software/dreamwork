@@ -55,6 +55,8 @@ steam.connected = steam.connected or (glua_steamworks.IsConnected or debug_fempt
 
 dreamwork_load( "std/net/steam/types/error.lua" )
 dreamwork_load( "std/net/steam/types/identifier.lua" )
+dreamwork_load( "std/net/steam/workshop.lua" )
+
 dreamwork_load( "std/net/steam/achievements.lua", false, LUA_SERVER )
 
 local function update_identifier()

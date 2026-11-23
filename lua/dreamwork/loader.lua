@@ -3172,7 +3172,7 @@ if LUA_SERVER then
     if std.loadbinary( "workshop" ) then
         logger:info( "`gmsv_workshop` was loaded & connected as server-side Steam Workshop API." )
     else
-        logger:warn( "`gmsv_workshop` is missing, `steam.workshop.download` will cause an error on the server." )
+        logger:warn( "`gmsv_workshop` is missing, `steam.workshop.Item:download` will cause an error on the server." )
     end
 
     -- https://github.com/WilliamVenner/gmsv_serverstat

@@ -514,3 +514,17 @@ function GetRenderTarget( name, width, height ) end
 ---@param image_format integer Image format, see [IMAGE_FORMAT](https://wiki.facepunch.com/gmod/Enums/IMAGE_FORMAT). Some additional image formats are accepted, but don't have enums. See [VTF Enumerations](https://developer.valvesoftware.com/wiki/Valve_Texture_Format#VTF_enumerations).
 ---@return garrysmod.Texture texture The new render target.
 function GetRenderTargetEx( name, width, height, size_mode, depth_mode, texture_flags, rt_flags, image_format ) end
+
+--- [CLIENT AND MENU]
+---
+--- Loads an image from a `.cache` file (typically under `garrysmod/cache/`) into a material.
+---
+--- Used with `steamworks.Download`, which saves addon preview images as `.cache` files and passes the path to its callback.
+--- Most workshop preview images are 512×512 PNGs.
+---
+--- Works with any image file that has the `.cache` extension, even outside the `/cache` folder.
+--- For normal material paths and `.png` / `.jpg` files, use `Material` instead.
+---
+---@param name string Path to the `.cache` image file (e.g. the path from `steamworks.Download`).
+---@return garrysmod.Material | nil material The material, or `nil` if the file is not an image.
+function AddonMaterial( name ) end
