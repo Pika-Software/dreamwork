@@ -2,10 +2,16 @@
 
 --- [SHARED AND MENU]
 ---
---- SHA512 object.
+--- An incremental SHA-512 hasher.
+---
+--- Feed data with `:update`, then read the 64-byte digest with `:digest`.
+--- `:digest` does not finish the instance, so more `:update` calls can follow.
+--- `:reset` restores the initial state for reuse.
 ---
 --- ```lua
---- print( crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
+--- local sha = crypto.SHA512()
+---
+--- print( sha:update( "hi" ):digest( true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197
 --- ```
 ---
 ---@class crypto.SHA512 : Object
@@ -18,13 +24,13 @@ local SHA512 = {}
 
 --- [SHARED AND MENU]
 ---
---- The class used to create new `SHA512` hash calculation instances.
+--- The class used to create `SHA512` instances.
 ---
---- Secure Hash Algorithm 512-bit, part of the SHA-2 family.
+--- Secure Hash Algorithm 512-bit (SHA-2). Larger digest than SHA-256 for
+--- checksums, integrity checks and keyed constructions such as HMAC.
 ---
---- Like other hash classes, it takes input data ( string )
---- and produces a digest ( string ) — a
---- fixed-size output string that represents that data.
+--- One-shot hashing via `SHA512.digest`, or create an instance and stream with
+--- `:update` / `:digest` / `:reset`.
 ---
 --- ```lua
 --- print( crypto.SHA512.digest( "hi", true ) ) -- 150a14ed5bea6cc731cf86c41566ac427a8db48ef1b9fd626664b3bfbb99071fa4c922f33dde38719b8c8354e2b7ab9d77e0e67fc12843920a712e73d558e197

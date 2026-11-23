@@ -95,6 +95,10 @@ function Addon.isAllowedPath(file_path) end
 ---@protected
 function __Addon:__represent() end
 
+---@return fun( addon: Addon, index: ( integer | nil ) ): ( integer | nil ), ( Addon.File | nil )
+---@protected
+function __Addon:__pairs() end
+
 ---@param data string?
 ---@param ratio number?
 ---@protected
@@ -191,7 +195,8 @@ function __Addon:isAllowed() end
 --- Compiles the addon into a temporary `.gma` in `/garrysmod/data/dreamwork/tmp/` and mounts it into the game.
 ---
 --- The file is written asynchronously when called from a coroutine.
---- Mounted addons cannot be unmounted, so the file stays until the game is closed.
+---
+--- > **NOTE**: Mounted addons cannot be unmounted, so the file stays until the game is closed.
 ---
 ---@return boolean success `true` if the addon was mounted.
 ---@return string[] files If successful, a list of files that have been mounted.

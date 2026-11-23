@@ -2,10 +2,16 @@
 
 --- [SHARED AND MENU]
 ---
---- MD5 object.
+--- An incremental MD5 hasher.
+---
+--- Feed data with `:update`, then read the 16-byte digest with `:digest`.
+--- `:digest` does not finish the instance, so more `:update` calls can follow.
+--- `:reset` restores the initial state for reuse.
 ---
 --- ```lua
---- print( crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
+--- local md5 = crypto.MD5()
+---
+--- print( md5:update( "hi" ):digest( true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b
 --- ```
 ---
 ---@class crypto.MD5 : Object
@@ -20,22 +26,14 @@ local MD5 = {}
 
 --- [SHARED AND MENU]
 ---
---- The class used to create new `MD5` hash calculation instances.
+--- The class used to create `MD5` instances.
 ---
---- Computes a cryptographic 128-bit hash value.
+--- Message Digest 5, a 128-bit hash. Broken by collision attacks — do not use
+--- for security (signatures, passwords, integrity against an adversary). Fine
+--- for non-adversarial checksums when compatibility requires it.
 ---
---- Like other hash classes, it takes input data ( string ) and
---- produces a digest ( string ) — a fixed-size output string that
---- represents that data.
----
---- **MD5 is insecure**
----
---- Because of collision attacks,
---- attackers can find two different inputs
---- that produce the same hash.
----
---- This violates one of the basic principles
---- of a secure hash function - collision resistance.
+--- One-shot hashing via `MD5.digest`, or create an instance and stream with
+--- `:update` / `:digest` / `:reset`.
 ---
 --- ```lua
 --- print( crypto.MD5.digest( "hi", true ) ) -- 49f68a5c8493ec2c0bf489821c21fc3b

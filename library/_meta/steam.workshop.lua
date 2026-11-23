@@ -3,6 +3,22 @@
 
 --- [SHARED AND MENU]
 ---
+--- The Steam Workshop API library.
+---
+--- ```lua
+--- local item = steam.workshop.Item( "104482086" )
+--- item:fetch()
+--- print( item.title )
+---
+--- local collection = steam.workshop.Collection( "910942406" )
+--- collection:fetch()
+--- print( collection.item_count )
+--- ```
+---
+---@class steam.workshop
+
+--- [SHARED AND MENU]
+---
 --- The Steam Workshop publication content type.
 ---
 ---@alias steam.workshop.Item.ContentType "addon" | "save" | "dupe" | "demo"

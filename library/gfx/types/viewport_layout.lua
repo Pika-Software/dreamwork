@@ -73,6 +73,10 @@ function __ViewportLayout:__init(definitions) end
 ---@protected
 function __ViewportLayout:__index(key) end
 
+---@return fun( layout: ViewportLayout, key: any ): string | nil, integer | nil
+---@protected
+function __ViewportLayout:__pairs() end
+
 --- [CLIENT AND MENU]
 ---
 --- Attaches a handler that runs after this layout's pixel values are refreshed

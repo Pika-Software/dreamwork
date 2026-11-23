@@ -40,6 +40,10 @@ function __Queue:__toboolean() end
 ---@protected
 function __Queue:__len() end
 
+---@return fun( queue: Queue, index: integer | nil ): integer | nil, any
+---@protected
+function __Queue:__pairs() end
+
 ---@protected
 function __Queue:__init() end
 

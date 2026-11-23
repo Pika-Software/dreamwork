@@ -46,6 +46,10 @@ Tar = {}
 ---@protected
 function __Tar:__represent() end
 
+---@return fun( tar: Tar, index: ( integer | nil ) ): ( integer | nil ), ( Tar.File | nil )
+---@protected
+function __Tar:__pairs() end
+
 ---@param data string?
 ---@protected
 function __Tar:__init(data) end

@@ -2,7 +2,11 @@
 
 --- [SHARED AND MENU]
 ---
---- SHA256 object.
+--- An incremental SHA-256 hasher.
+---
+--- Feed data with `:update`, then read the 32-byte digest with `:digest`.
+--- `:digest` does not finish the instance, so more `:update` calls can follow.
+--- `:reset` restores the initial state for reuse.
 ---
 --- ```lua
 --- local sha = crypto.SHA256()
@@ -26,20 +30,16 @@ local SHA256 = {}
 
 --- [SHARED AND MENU]
 ---
---- The class used to create new `SHA256` hash calculation instances.
+--- The class used to create `SHA256` instances.
 ---
---- Secure Hash Algorithm 256-bit, part of the SHA-2 family.
+--- Secure Hash Algorithm 256-bit (SHA-2). Fast and collision-resistant for
+--- checksums, integrity checks and keyed constructions such as HMAC.
 ---
---- This hash algorithm is recommended because it is fast and secure.
----
---- Like other hash classes, it takes input data ( string )
---- and produces a digest ( string ) — a
---- fixed-size output string that represents that data.
+--- One-shot hashing via `SHA256.digest`, or create an instance and stream with
+--- `:update` / `:digest` / `:reset`.
 ---
 --- ```lua
---- local sha = crypto.SHA256
----
---- print( sha.digest( "hi", true ) ) -- 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4
+--- print( crypto.SHA256.digest( "hi", true ) ) -- 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4
 --- ```
 ---
 ---@class crypto.SHA256Class : crypto.SHA256, crypto.HashClass

@@ -49,6 +49,10 @@ Zip.Signature = nil
 ---@protected
 function __Zip:__represent() end
 
+---@return fun( zip: Zip, index: ( integer | nil ) ): ( integer | nil ), ( Zip.File | nil )
+---@protected
+function __Zip:__pairs() end
+
 ---@param data string?
 ---@protected
 function __Zip:__init(data) end

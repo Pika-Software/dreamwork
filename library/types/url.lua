@@ -270,6 +270,10 @@ function SearchParams:sort() end
 ---@nodiscard
 function SearchParams:iterator() end
 
+---@return fun(): string?, string?
+---@protected
+function SearchParams:__pairs() end
+
 --- [SHARED AND MENU]
 ---
 --- Returns an iterator over the names, a name that repeats is returned every time.

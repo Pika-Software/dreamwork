@@ -40,6 +40,10 @@ function __Node:__toboolean() end
 ---@protected
 function __Node:__len() end
 
+---@return fun( node: Node, index: integer | nil ): integer | nil, Node | nil
+---@protected
+function __Node:__pairs() end
+
 ---@generic T
 ---@param self Node<T>
 ---@param value T

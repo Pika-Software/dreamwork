@@ -2,13 +2,15 @@
 
 --- [SHARED AND MENU]
 ---
---- SHA384 object.
+--- An incremental SHA-384 hasher.
 ---
---- SHA384 is SHA512 with a different initial state and the digest truncated to 48 bytes,
---- so it inherits all methods from `SHA512` and only overrides the initial state.
+--- Same engine as `SHA512` with a different IV; the digest is truncated to 48 bytes.
+--- Inherits `:update`, `:digest` and `:reset` from `SHA512`.
 ---
 --- ```lua
---- print( crypto.SHA384.digest( "hi", true ) ) -- 0791006df8128477244f53d0fdce210db81f55757510e26acee35c18a6bceaa28dcdbbfd6dc041b9b4dc7b1b54e37f52
+--- local sha = crypto.SHA384()
+---
+--- print( sha:update( "hi" ):digest( true ) ) -- 0791006df8128477244f53d0fdce210db81f55757510e26acee35c18a6bceaa28dcdbbfd6dc041b9b4dc7b1b54e37f52
 --- ```
 ---
 ---@class crypto.SHA384 : crypto.SHA512
@@ -18,13 +20,13 @@ local SHA384 = {}
 
 --- [SHARED AND MENU]
 ---
---- The class used to create new `SHA384` hash calculation instances.
+--- The class used to create `SHA384` instances.
 ---
---- Secure Hash Algorithm 384-bit, part of the SHA-2 family.
+--- Secure Hash Algorithm 384-bit (SHA-2). Built on SHA-512 with a truncated
+--- digest — a middle ground between SHA-256 and full SHA-512.
 ---
---- Like other hash classes, it takes input data ( string )
---- and produces a digest ( string ) — a
---- fixed-size output string that represents that data.
+--- One-shot hashing via `SHA384.digest`, or create an instance and stream with
+--- `:update` / `:digest` / `:reset`.
 ---
 --- ```lua
 --- print( crypto.SHA384.digest( "hi", true ) ) -- 0791006df8128477244f53d0fdce210db81f55757510e26acee35c18a6bceaa28dcdbbfd6dc041b9b4dc7b1b54e37f52

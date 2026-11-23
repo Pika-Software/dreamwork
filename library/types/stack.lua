@@ -36,6 +36,10 @@ function __Stack:__toboolean() end
 ---@protected
 function __Stack:__len() end
 
+---@return fun( stack: Stack, index: integer | nil ): integer | nil, any
+---@protected
+function __Stack:__pairs() end
+
 ---@protected
 function __Stack:__init() end
 
