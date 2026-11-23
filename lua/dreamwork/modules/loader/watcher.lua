@@ -15,7 +15,7 @@ local vfs = dreamwork.vfs
 local vfs_watch = vfs.watch
 local vfs_unwatch = vfs.unwatch
 local vfs_isFile = vfs.isFile
-local vfs_foreach = vfs.foreach
+local vfs_iterator = vfs.iterator
 local vfs_readFile = vfs.readFile
 local vfs_isDirectory = vfs.isDirectory
 
@@ -107,7 +107,7 @@ local function watch_directory( folder, directory_path )
     directories[ directory_path ] = true
     vfs_watch( directory_path )
 
-    for vfs_path, is_directory in vfs_foreach( directory_path ) do
+    for vfs_path, is_directory in vfs_iterator( directory_path ) do
         if is_directory and not directories[ vfs_path ] and not is_hidden( string_sub( vfs_path, #folder + 2 ) ) then
             directories[ vfs_path ] = true
             vfs_watch( vfs_path )

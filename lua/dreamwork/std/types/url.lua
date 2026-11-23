@@ -1960,6 +1960,12 @@ function SearchParams:iterator()
     end
 end
 
+---@return fun(): string?, string?
+---@protected
+function SearchParams:__pairs()
+    return self:iterator()
+end
+
 --- [SHARED AND MENU]
 ---
 --- Returns an iterator over the names, a name that repeats is returned every time.

@@ -8,8 +8,18 @@ local vfs_writeFile = vfs.writeFile
 
 ---@type garrysmod.game
 local glua_game = dreamwork_engine.requireLibrary( "game" )
-local game_MountGMA = glua_game.MountGMA
+local game_MountGMA = glua_game.MountGMA or function() return false, {} end
 
+---@type holylib.addonsystem
+local holylib_addonsystem = dreamwork_engine.requireLibrary( "addonsystem" )
+local holylib_addonsystem_MountFile = holylib_addonsystem.MountFile
+
+if holylib_addonsystem_MountFile ~= nil then
+    function game_MountGMA( file_path )
+        local result, files = holylib_addonsystem_MountFile( file_path )
+        return result ~= 0, files
+    end
+end
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -306,6 +316,26 @@ AddonClass.isAllowedPath = isAllowedPath
 ---@protected
 function Addon:__represent()
     return string_format( "Addon: %p [%s, %d files]", self, self.title, self.file_count )
+end
+
+---@param addon dreamwork.std.Addon
+---@param index integer | nil
+---@return integer | nil
+---@return dreamwork.std.Addon.File | nil
+local function addon_next( addon, index )
+    index = (index or 0) + 1
+
+    if index > addon.file_count then
+        return nil
+    end
+
+    return index, addon.files[ index ]
+end
+
+---@return fun( addon: dreamwork.std.Addon, index: ( integer | nil ) ): ( integer | nil ), ( dreamwork.std.Addon.File | nil )
+---@protected
+function Addon:__pairs()
+    return addon_next
 end
 
 ---@param data string?
@@ -815,7 +845,8 @@ do
     --- Compiles the addon into a temporary `.gma` in `/garrysmod/data/dreamwork/tmp/` and mounts it into the game.
     ---
     --- The file is written asynchronously when called from a coroutine.
-    --- Mounted addons cannot be unmounted, so the file stays until the game is closed.
+    ---
+    --- > **NOTE**: Mounted addons cannot be unmounted, so the file stays until the game is closed.
     ---
     ---@return boolean success `true` if the addon was mounted.
     ---@return string[] files If successful, a list of files that have been mounted.

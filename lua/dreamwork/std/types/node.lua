@@ -59,6 +59,27 @@ function Node:__len()
 end
 
 ---@generic T
+---@param node dreamwork.std.Node<T>
+---@param index integer | nil
+---@return integer | nil
+---@return dreamwork.std.Node<T> | nil
+local function node_next( node, index )
+    index = (index or 0) + 1
+
+    if index > node.width then
+        return nil
+    end
+
+    return index, node[ index ]
+end
+
+---@return fun( node: dreamwork.std.Node, index: integer | nil ): integer | nil, dreamwork.std.Node | nil
+---@protected
+function Node:__pairs()
+    return node_next
+end
+
+---@generic T
 ---@param self dreamwork.std.Node<T>
 ---@param value T
 ---@param parent dreamwork.std.Node<T> | nil

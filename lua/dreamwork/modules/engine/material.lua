@@ -94,3 +94,5 @@ else
     end
 
 end
+
+-- https://github.com/WilliamVenner/gmod-animated-avatars

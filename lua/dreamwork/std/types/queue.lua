@@ -52,6 +52,28 @@ function Queue:__len()
     return self.front - self.back
 end
 
+---@generic T
+---@param queue dreamwork.std.Queue<T>
+---@param index integer | nil
+---@return integer | nil
+---@return T | nil
+local function queue_next( queue, index )
+    index = (index or 0) + 1
+
+    local storage = queue.back + index
+    if storage > queue.front then
+        return nil
+    end
+
+    return index, queue[ storage ]
+end
+
+---@return fun( queue: dreamwork.std.Queue, index: integer | nil ): integer | nil, any
+---@protected
+function Queue:__pairs()
+    return queue_next
+end
+
 ---@protected
 function Queue:__init()
     self.front = 0

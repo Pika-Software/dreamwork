@@ -32,10 +32,16 @@ local type = std.type
 
 --- [SHARED AND MENU]
 ---
---- SHA1 object.
+--- An incremental SHA-1 hasher.
+---
+--- Feed data with `:update`, then read the 20-byte digest with `:digest`.
+--- `:digest` does not finish the instance, so more `:update` calls can follow.
+--- `:reset` restores the initial state for reuse.
 ---
 --- ```lua
---- print( std.crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
+--- local sha = std.crypto.SHA1()
+---
+--- print( sha:update( "hi" ):digest( true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42
 --- ```
 ---
 ---@class dreamwork.std.crypto.SHA1 : dreamwork.std.Object
@@ -51,22 +57,14 @@ local SHA1 = class.base( "SHA1" )
 
 --- [SHARED AND MENU]
 ---
---- The class used to create new `SHA1` hash calculation instances.
+--- The class used to create `SHA1` instances.
 ---
---- Computes a cryptographic 160-bit hash value.
+--- Secure Hash Algorithm 1, a 160-bit hash. Broken by collision attacks — do not
+--- use for security. Prefer SHA-256 or newer; keep SHA-1 only where a protocol
+--- still requires it.
 ---
---- Like other hash classes, it takes input data ( string )
---- and produces a digest ( string ) — a
---- fixed-size output string that represents that data.
----
---- **SHA1 is insecure**
----
---- Because of collision attacks,
---- attackers can find two different inputs
---- that produce the same hash.
----
---- This violates one of the basic principles
---- of a secure hash function - collision resistance.
+--- One-shot hashing via `SHA1.digest`, or create an instance and stream with
+--- `:update` / `:digest` / `:reset`.
 ---
 --- ```lua
 --- print( std.crypto.SHA1.digest( "hi", true ) ) -- c22b5f9178342609428d6f51b2c5af4c0bde6a42

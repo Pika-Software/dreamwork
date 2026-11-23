@@ -3,7 +3,7 @@ local dreamwork = dreamwork
 
 local vfs = dreamwork.vfs
 local vfs_isFile = vfs.isFile
-local vfs_foreach = vfs.foreach
+local vfs_iterator = vfs.iterator
 local vfs_readFile = vfs.readFile
 local vfs_writeFile = vfs.writeFile
 local vfs_deleteFile = vfs.deleteFile
@@ -711,7 +711,7 @@ local function discover_archives()
 
     local offset = #ARCHIVE_DIRECTORY + 2
 
-    for vfs_path, is_directory in vfs_foreach( ARCHIVE_DIRECTORY ) do
+    for vfs_path, is_directory in vfs_iterator( ARCHIVE_DIRECTORY ) do
         if not is_directory and string_hasSuffix( vfs_path, ".dat" ) then
             local repository, file_name = string_match( string_sub( vfs_path, offset ), "^([^/]+/[^/]+/[^/]+)/([^/]+)%.dat$" )
             if repository ~= nil then

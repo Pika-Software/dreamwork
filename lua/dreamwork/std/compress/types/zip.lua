@@ -175,6 +175,26 @@ function Zip:__represent()
     return string_format( "Zip: %p [%d files]", self, self.file_count )
 end
 
+---@param zip dreamwork.std.Zip
+---@param index integer | nil
+---@return integer | nil
+---@return dreamwork.std.Zip.File | nil
+local function zip_next( zip, index )
+    index = (index or 0) + 1
+
+    if index > zip.file_count then
+        return nil
+    end
+
+    return index, zip.files[ index ]
+end
+
+---@return fun( zip: dreamwork.std.Zip, index: ( integer | nil ) ): ( integer | nil ), ( dreamwork.std.Zip.File | nil )
+---@protected
+function Zip:__pairs()
+    return zip_next
+end
+
 ---@param data string?
 ---@protected
 function Zip:__init( data )

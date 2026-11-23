@@ -6,6 +6,7 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_get = raw.get
+local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
 
@@ -227,6 +228,30 @@ function ViewportLayout:__index( key )
     end
 
     return raw_get( ViewportLayout, key )
+end
+
+---@param layout dreamwork.std.ViewportLayout
+---@param key any
+---@return string | nil
+---@return integer | nil
+local function viewport_layout_next( layout, key )
+    local aliases = layout_aliases[ layout ]
+    if aliases == nil then
+        return nil
+    end
+
+    local alias, descriptor = raw_next( aliases, key )
+    if alias == nil then
+        return nil
+    end
+
+    return alias, pixel_cache[ descriptor ] or 0
+end
+
+---@return fun( layout: dreamwork.std.ViewportLayout, key: any ): string | nil, integer | nil
+---@protected
+function ViewportLayout:__pairs()
+    return viewport_layout_next
 end
 
 --- [CLIENT AND MENU]

@@ -48,6 +48,27 @@ function Stack:__len()
     return self.size
 end
 
+---@generic T
+---@param stack dreamwork.std.Stack<T>
+---@param index integer | nil
+---@return integer | nil
+---@return T | nil
+local function stack_next( stack, index )
+    index = (index or 0) + 1
+
+    if index > stack.size then
+        return nil
+    end
+
+    return index, stack[ index ]
+end
+
+---@return fun( stack: dreamwork.std.Stack, index: integer | nil ): integer | nil, any
+---@protected
+function Stack:__pairs()
+    return stack_next
+end
+
 ---@protected
 function Stack:__init()
     self.size = 0

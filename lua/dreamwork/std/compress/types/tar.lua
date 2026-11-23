@@ -95,6 +95,26 @@ function Tar:__represent()
     return string_format( "Tar: %p [%d files]", self, self.file_count )
 end
 
+---@param tar dreamwork.std.Tar
+---@param index integer | nil
+---@return integer | nil
+---@return dreamwork.std.Tar.File | nil
+local function tar_next( tar, index )
+    index = (index or 0) + 1
+
+    if index > tar.file_count then
+        return nil
+    end
+
+    return index, tar.files[ index ]
+end
+
+---@return fun( tar: dreamwork.std.Tar, index: ( integer | nil ) ): ( integer | nil ), ( dreamwork.std.Tar.File | nil )
+---@protected
+function Tar:__pairs()
+    return tar_next
+end
+
 ---@param data string?
 ---@protected
 function Tar:__init( data )

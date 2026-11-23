@@ -36,7 +36,7 @@ local vfs_mount = vfs.mount
 local vfs_search = vfs.search
 local vfs_isFile = vfs.isFile
 local vfs_getInfo = vfs.getInfo
-local vfs_foreach = vfs.foreach
+local vfs_iterator = vfs.iterator
 local vfs_isDirectory = vfs.isDirectory
 local vfs_readFile = vfs.readFile
 local vfs_writeFile = vfs.writeFile
@@ -701,7 +701,7 @@ local function source_files( source )
 
         local offset = #base + 2
 
-        for vfs_path, is_directory in vfs_foreach( base ) do
+        for vfs_path, is_directory in vfs_iterator( base ) do
             if not is_directory then
                 local file_path = string_sub( vfs_path, offset )
                 if string_find( file_path, "^%." ) == nil and string_find( file_path, "/%." ) == nil then

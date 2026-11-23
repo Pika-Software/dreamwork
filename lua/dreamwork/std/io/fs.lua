@@ -2,7 +2,7 @@ local vfs = dreamwork.vfs
 local vfs_size = vfs.size
 local vfs_isFile = vfs.isFile
 local vfs_search = vfs.search
-local vfs_foreach = vfs.foreach
+local vfs_iterator = vfs.iterator
 local vfs_readFile = vfs.readFile
 local vfs_moveFile = vfs.moveFile
 local vfs_touchFile = vfs.touchFile
@@ -238,12 +238,12 @@ local function iterate_directory( directory_path, recursive, directories, stack_
     local cls = directories and DirectoryClass or FileClass
 
     if recursive then
-        local foreach = vfs_foreach( directory_path, stack_level + 1 )
+        local iterator = vfs_iterator( directory_path, stack_level + 1 )
 
         return function()
             ::entry_lookup::
 
-            local entry_path, is_directory = foreach()
+            local entry_path, is_directory = iterator()
             if entry_path == nil then
                 return nil
             end

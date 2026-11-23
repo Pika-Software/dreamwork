@@ -4211,7 +4211,7 @@ end
 --- a directory deleted in the loop is skipped. Mounts nested in the directory are walked too.
 ---
 --- ```lua
---- for vfs_path, is_directory in dreamwork.vfs.foreach( "/garrysmod/data" ) do
+--- for vfs_path, is_directory in dreamwork.vfs.iterator( "/garrysmod/data" ) do
 ---     print( vfs_path, is_directory )
 --- end
 --- ```
@@ -4220,7 +4220,7 @@ end
 ---@param stack_level integer? The stack level of the caller, `1` (default) is the function calling this one, errors blame it and relative paths are resolved against its file.
 ---@return fun(): string | nil, boolean | nil iterator The iterator that returns the absolute virtual path and `true` for directories.
 ---@nodiscard
-function vfs.foreach( directory_path, stack_level )
+function vfs.iterator( directory_path, stack_level )
     stack_level = (stack_level or 1) + 1
 
     local vfs_path = path_resolve( directory_path, stack_level )
