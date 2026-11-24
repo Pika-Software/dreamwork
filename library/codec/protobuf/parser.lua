@@ -1,0 +1,74 @@
+---@meta _
+
+--- [SHARED AND MENU]
+---
+--- The parsed `.proto` file, see `protobuf.parseSchema`.
+---
+---@class protobuf.FileDescriptor
+---@field name string The name of the file, imports refer to it by this name.
+---@field ["package"] string The protobuf package, `""` if the file has none.
+---@field syntax "proto2" | "proto3" The syntax of the file.
+---@field imports protobuf.ImportDescriptor[] The imported files.
+---@field messages protobuf.MessageDescriptor[] The top-level messages.
+---@field enums protobuf.EnumDescriptor[] The top-level enums.
+
+--- [SHARED AND MENU]
+---
+---@class protobuf.ImportDescriptor
+---@field path string The imported file name.
+---@field ["public"] boolean `true` for `import public`.
+---@field weak boolean `true` for `import weak`.
+
+--- [SHARED AND MENU]
+---
+---@class protobuf.MessageDescriptor
+---@field name string The short name.
+---@field full_name string The name with the protobuf package and the parent messages, e.g. `my_pkg.Outer.Inner`.
+---@field fields protobuf.FieldDescriptor[] The fields in declaration order.
+---@field oneofs string[] The names of the `oneof` groups, `FieldDescriptor.oneof` is an index in it.
+---@field messages protobuf.MessageDescriptor[] The nested messages, including the generated `map` entries.
+---@field enums protobuf.EnumDescriptor[] The nested enums.
+---@field map_entry boolean `true` for the generated `map<K, V>` entry messages.
+
+--- [SHARED AND MENU]
+---
+---@class protobuf.FieldDescriptor
+---@field name string The name of the field.
+---@field number integer The field number.
+---@field label "optional" | "required" | "repeated" | nil The label, `nil` for proto3 fields without one.
+---@field type_name string The scalar type (`int32`, `string`, ...) or the referenced message/enum name as written.
+---@field scope string The full name of the message the field is declared in, type names are resolved relative to it.
+---@field oneof integer | nil The index in `MessageDescriptor.oneofs`.
+---@field packed boolean | nil The `packed` option, `nil` if not set.
+---@field default any The `default` option of proto2 fields, already converted to its type when possible.
+---@field resolved protobuf.Type | protobuf.Enum | string | nil The type of generated fields (`protobuf.list`, ...), set instead of resolving `type_name`.
+
+--- [SHARED AND MENU]
+---
+---@class protobuf.EnumDescriptor
+---@field name string The short name.
+---@field full_name string The name with the protobuf package and the parent messages.
+---@field values { name: string, number: integer }[] The values in declaration order.
+
+--- [SHARED AND MENU]
+---
+--- Parses the text of a `.proto` file into a descriptor, without resolving type names or imports.
+---
+--- Supports `proto2` and `proto3`: messages, enums, nested types, `oneof`, `map<K, V>`, `repeated`,
+--- `optional`, `required`, `[packed]`, `[default]` and imports.
+--- Options, `reserved`, `extensions`, `extend` and `service` blocks are parsed and ignored, groups are not supported.
+---
+--- ```lua
+--- local descriptor = protobuf.parseSchema( [[
+---     syntax = "proto3";
+---     message Point { int32 x = 1; int32 y = 2; }
+--- ]], "point.proto" )
+---
+--- print( descriptor.messages[ 1 ].full_name ) -- Point
+--- ```
+---
+---@param source string The text of the file.
+---@param file_name string? The file name used in errors, `"<string>"` by default.
+---@return protobuf.FileDescriptor descriptor The parsed file.
+---@nodiscard
+function protobuf.parseSchema(source, file_name) end

@@ -303,17 +303,17 @@ function Identifier:__represent() end
 ---@nodiscard
 function Identifier.to64(self) end
 
---- Writes the binary SteamID64, 8 little endian bytes like in `.gma` headers.
+--- Returns the protobuf message of the Steam ID, `dreamwork.SteamID` with the SteamID64 as `{ low, high }`.
 ---
----@param writer BinaryWriter The writer to write to.
+---@return table message
 ---@protected
-function Identifier:__serialize(writer) end
+function Identifier:__toProto() end
 
---- Reads the binary SteamID64 written by `__serialize`, overwrites all fields.
+--- Reads the Steam ID from the protobuf message written by `__toProto`, overwrites all fields.
 ---
----@param reader BinaryReader The reader to read from.
+---@param message { steam_id: integer[] }
 ---@protected
-function Identifier:__deserialize(reader) end
+function Identifier:__fromProto(message) end
 
 --- [SHARED AND MENU]
 ---
@@ -332,6 +332,22 @@ function Identifier:toURL(http) end
 ---@return steam.Identifier object The Steam ID.
 ---@nodiscard
 function steam.Identifier.fromAccountID(account_id) end
+
+--- [SHARED AND MENU]
+---
+--- Creates a new Steam ID from the SteamID64 split into unsigned 32-bit halves,
+--- the low half is the account number, the high half holds the universe, the type and the instance.
+---
+--- ```lua
+--- local steamid = steam.Identifier.fromUInt64( 22202, 0x01100001 )
+--- print( steamid:to64() ) -- 76561197960287930
+--- ```
+---
+---@param low integer The low 32 bits.
+---@param high integer The high 32 bits.
+---@return steam.Identifier object The Steam ID.
+---@nodiscard
+function steam.Identifier.fromUInt64(low, high) end
 
 --- [SHARED AND MENU]
 ---

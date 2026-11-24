@@ -87,13 +87,12 @@ function __Quaternion:__tostring() end
 ---@protected
 function __Quaternion:__eq(other) end
 
----@param writer BinaryWriter
+--- The protobuf type of the quaternion, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function __Quaternion:__serialize(writer) end
-
----@param reader BinaryReader .
----@protected
-function __Quaternion:__deserialize(reader) end
+__Quaternion.__proto = "dreamwork.Quaternion"
 
 --- [SHARED AND MENU]
 ---

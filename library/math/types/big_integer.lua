@@ -259,13 +259,23 @@ function __BigInteger:__represent() end
 ---@protected
 function __BigInteger:__concat(value) end
 
----@param writer BinaryWriter
+--- The protobuf type of the integer, `dreamwork/math.proto`.
+---
+---@type string
 ---@protected
-function __BigInteger:__serialize(writer) end
+__BigInteger.__proto = "dreamwork.BigInteger"
 
----@param reader BinaryReader
+--- Returns the protobuf message of the integer, the limbs and the sign.
+---
+---@return table message
 ---@protected
-function __BigInteger:__deserialize(reader) end
+function __BigInteger:__toProto() end
+
+--- Reads the integer from the protobuf message written by `__toProto`.
+---
+---@param message { limbs: integer[], negative: boolean }
+---@protected
+function __BigInteger:__fromProto(message) end
 
 ---@return BigInteger new_obj The new negated big integer object.
 ---@protected

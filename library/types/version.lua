@@ -80,13 +80,11 @@ function __Version:__represent() end
 ---@protected
 function __Version:__tonumber() end
 
----@param writer BinaryWriter
+--- The protobuf type of the version, `dreamwork/types.proto`.
+---
+---@type string
 ---@protected
-function __Version:__serialize(writer) end
-
----@param reader BinaryReader
----@protected
-function __Version:__deserialize(reader) end
+__Version.__proto = "dreamwork.Version"
 
 ---@return integer
 ---@protected

@@ -226,13 +226,11 @@ function FluentNumber:__init(value, options) end
 ---@nodiscard
 function FluentNumber:toString(scope) end
 
----@param writer BinaryWriter
+--- The protobuf type, `dreamwork/fluent.proto`, `options` is a `google.protobuf.Struct`.
+---
+---@type string
 ---@protected
-function FluentNumber:__serialize(writer) end
-
----@param reader BinaryReader
----@protected
-function FluentNumber:__deserialize(reader) end
+FluentNumber.__proto = "dreamwork.FluentNumber"
 
 --- [SHARED AND MENU]
 ---
@@ -269,13 +267,11 @@ function FluentDateTime:__init(value, options) end
 ---@nodiscard
 function FluentDateTime:toString(scope) end
 
----@param writer BinaryWriter
+--- The protobuf type, `dreamwork/fluent.proto`, `options` is a `google.protobuf.Struct`.
+---
+---@type string
 ---@protected
-function FluentDateTime:__serialize(writer) end
-
----@param reader BinaryReader
----@protected
-function FluentDateTime:__deserialize(reader) end
+FluentDateTime.__proto = "dreamwork.FluentDateTime"
 
 --- [SHARED AND MENU]
 ---

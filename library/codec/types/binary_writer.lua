@@ -490,12 +490,3 @@ function __BinaryWriter:writeTime(hours, minutes, seconds, is_little_endian) end
 ---@param year integer? The year (`1980` - `2107`).
 ---@param is_little_endian boolean? `true` for little endian, `false` by default.
 function __BinaryWriter:writeDate(day, month, year, is_little_endian) end
-
---- [SHARED AND MENU]
----
---- Writes the object with its `__serialize( writer, ... )` method,
---- read it back with `BinaryReader:readObject` or `BinaryReader:readClass`.
----
----@param obj Object The object.
----@param ... any The arguments passed to `__serialize`.
-function __BinaryWriter:writeObject(obj, ...) end

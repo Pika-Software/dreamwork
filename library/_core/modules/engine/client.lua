@@ -57,21 +57,21 @@ function __Client:__newindex(key) end
 ---@protected
 function __Client:__eq(other) end
 
---- Writes the player entity index of the client, `0` if it is not known yet.
+--- Returns the protobuf message of the client, `dreamwork.Client` with the player entity index, `0` if it is not known yet.
 ---
----@param writer BinaryWriter The writer to write to.
+---@return table message
 ---@protected
-function __Client:__serialize(writer) end
+function __Client:__toProto() end
 
---- Reads the player entity index written by `__serialize`, the object becomes a view of the client with the index.
+--- Reads the player entity index written by `__toProto`, the object becomes a view of the client with the index.
 ---
 --- An unknown index gives a disconnected client without data, e.g. the client left before the message arrived.
 ---
 --- > **NOTE**: The object is equal (`==`) to the client, but it is a different key in tables.
 ---
----@param reader BinaryReader The reader to read from.
+---@param message { index: integer }
 ---@protected
-function __Client:__deserialize(reader) end
+function __Client:__fromProto(message) end
 
 ---@param user_id integer
 ---@return Client | nil

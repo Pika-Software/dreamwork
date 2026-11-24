@@ -46,15 +46,6 @@ local __HTMLNode = {}
 ---@overload fun( name: string, attributes: ( table<string, string> | nil ), parent: ( HTMLNode | nil ) ): HTMLNode
 HTMLNode = {}
 
---- [SHARED AND MENU]
----
---- Checks whether the value type is a `HTMLNode`.
----
----@param value any
----@return boolean is_html_node
----@nodiscard
-function isHTMLNode(value) end
-
 ---@param name string
 ---@param attributes table<string, string> | nil
 ---@param parent HTMLNode | nil

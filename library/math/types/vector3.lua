@@ -73,13 +73,12 @@ function __Vector3:__tostring() end
 ---@protected
 function __Vector3:__eq(other) end
 
----@param writer BinaryWriter
+--- The protobuf type of the vector, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function __Vector3:__serialize(writer) end
-
----@param reader BinaryReader
----@protected
-function __Vector3:__deserialize(reader) end
+__Vector3.__proto = "dreamwork.Vector3"
 
 --- [SHARED AND MENU]
 ---

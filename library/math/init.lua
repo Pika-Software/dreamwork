@@ -91,6 +91,26 @@ function math.ldexp(x, exponent) end
 
 --- [SHARED AND MENU]
 ---
+--- Returns the signed power of the base, `sign(x) * |x| ^ power`.
+---
+--- A negative base keeps its sign, so fractional powers stay real
+--- and even powers stay negative.
+--- A non-negative base, including signed zero, uses `x ^ power`
+--- (`0 ^ 0` is `1`).
+---
+--- ```lua
+--- print( math.fpow( -8, 1 / 3 ) ) -- -2
+--- print( math.fpow( -2, 2 ) ) -- -4
+--- ```
+---
+---@param x number The base.
+---@param power number The exponent.
+---@return number value The signed power of the base.
+---@nodiscard
+function math.fpow(x, power) end
+
+--- [SHARED AND MENU]
+---
 --- Checks if a number is an unsigned integer.
 ---
 ---@param x number The number to check.

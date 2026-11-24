@@ -61,15 +61,6 @@ local __XMLNode = {}
 ---@overload fun( name: string, attributes: ( table<string, string> | nil ), parent: ( XMLNode | nil ) ): XMLNode
 XMLNode = {}
 
---- [SHARED AND MENU]
----
---- Checks whether the value type is a `XMLNode`.
----
----@param value any
----@return boolean is_xml_node
----@nodiscard
-function isXMLNode(value) end
-
 ---@param name string
 ---@param attributes table<string, string> | nil
 ---@param parent XMLNode | nil

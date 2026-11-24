@@ -47,32 +47,30 @@ function __Queue:__pairs() end
 ---@protected
 function __Queue:__init() end
 
---- Writes the queue, the number of values (`UInt32`), then every value from the one `pop` returns first,
---- each is a presence bit and the value (`writer:writeObject`).
+--- Returns the values of the queue for `protobuf.list`, from the one `pop` returns first,
+--- `n` is the number of values, so `nil` values are kept.
 ---
---- Values must be objects with `__serialize`, or `nil`.
+--- ```
+--- writer:writeProto( queue, protobuf.list( Vector3 ) )
+--- ```
 ---
 ---@generic T
 ---@param self Queue<T>
----@param writer BinaryWriter The writer.
----@param ... any The arguments passed to `__serialize` of every value.
+---@return T[] values The values.
 ---@protected
-function __Queue:__serialize(writer, ...) end
+function __Queue:__toProto() end
 
---- Reads the queue written by `__serialize`, replacing its values,
---- values are read with `reader:readClass( value_class, ... )`.
+--- Replaces the values of the queue with the values decoded by `protobuf.list`.
 ---
 --- ```
---- local queue = reader:readClass( Queue, Vector3 )
+--- local queue = reader:readProto( Queue, protobuf.list( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self Queue<T>
----@param reader BinaryReader The reader.
----@param value_class Class? The class of the values, can be omitted if every value is `nil`.
----@param ... any The arguments passed to `__deserialize` of every value.
+---@param values { n: integer | nil, [integer]: T } The values, `n` is the number of values.
 ---@protected
-function __Queue:__deserialize(reader, value_class, ...) end
+function __Queue:__fromProto(values) end
 
 --- [SHARED AND MENU]
 ---

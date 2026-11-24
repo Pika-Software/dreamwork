@@ -77,13 +77,12 @@ function __Angle3:__tostring() end
 ---@protected
 function __Angle3:__eq(other) end
 
----@param writer BinaryWriter
+--- The protobuf type of the angle, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function __Angle3:__serialize(writer) end
-
----@param reader BinaryReader
----@protected
-function __Angle3:__deserialize(reader) end
+__Angle3.__proto = "dreamwork.Angle3"
 
 --- [SHARED AND MENU]
 ---

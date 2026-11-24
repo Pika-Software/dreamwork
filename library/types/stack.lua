@@ -43,32 +43,30 @@ function __Stack:__pairs() end
 ---@protected
 function __Stack:__init() end
 
---- Writes the stack, the number of values (`UInt32`), then every value from the bottom to the top,
---- each is a presence bit and the value (`writer:writeObject`).
+--- Returns the values of the stack for `protobuf.list`, from the bottom to the top,
+--- `n` is the number of values, so `nil` values are kept.
 ---
---- Values must be objects with `__serialize`, or `nil`.
+--- ```
+--- writer:writeProto( stack, protobuf.list( Vector3 ) )
+--- ```
 ---
 ---@generic T
 ---@param self Stack<T>
----@param writer BinaryWriter The writer.
----@param ... any The arguments passed to `__serialize` of every value.
+---@return T[] values The values.
 ---@protected
-function __Stack:__serialize(writer, ...) end
+function __Stack:__toProto() end
 
---- Reads the stack written by `__serialize`, replacing its values,
---- values are read with `reader:readClass( value_class, ... )`.
+--- Replaces the values of the stack with the values decoded by `protobuf.list`.
 ---
 --- ```
---- local stack = reader:readClass( Stack, Vector3 )
+--- local stack = reader:readProto( Stack, protobuf.list( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self Stack<T>
----@param reader BinaryReader The reader.
----@param value_class Class? The class of the values, can be omitted if every value is `nil`.
----@param ... any The arguments passed to `__deserialize` of every value.
+---@param values { n: integer | nil, [integer]: T } The values, `n` is the number of values.
 ---@protected
-function __Stack:__deserialize(reader, value_class, ...) end
+function __Stack:__fromProto(values) end
 
 --- [SHARED AND MENU]
 ---
