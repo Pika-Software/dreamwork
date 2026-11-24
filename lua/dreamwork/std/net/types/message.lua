@@ -1049,7 +1049,7 @@ end, -1000 )
 ---@type ( dreamwork.std.Client | dreamwork.std.Message.Realm )[]
 local pump_keys = {}
 
-engine_hook.catch( "Think", "net.message.class", function()
+engine_hook.catch( "Tick", "net.message.class", function()
     for key in raw_pairs( spent ) do
         spent[ key ] = nil
     end
