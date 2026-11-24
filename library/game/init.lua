@@ -88,3 +88,17 @@ function game.isConnecting() end
 ---
 ---@param address string? The address of the server. ( IP:Port like `127.0.0.1:27015` )
 function game.connect(address) end
+
+--- [CLIENT AND MENU]
+---
+--- Takes a JPEG screenshot via the `jpeg` console command and saves it to `/garrysmod/screenshots/` under a unique UUID file name.
+---
+--- Waits until the engine writes the file, it takes a few frames after the command.
+---
+--- > **NOTE**: On the client it fails while the main menu is open, because the screenshot would capture the menu instead of the game.
+---
+---@param quality integer? The JPEG quality, from `1` to `100`. Defaults to `90`.
+---@return boolean success `true` if the screenshot was taken, `false` if the main menu is open or the file did not appear in time.
+---@return string path_or_error The path of the screenshot file on success, or the error message on failure.
+---@async
+function game.screenshot(quality) end
