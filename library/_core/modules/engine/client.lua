@@ -67,7 +67,7 @@ function __Client:__serialize(writer) end
 ---
 --- An unknown index gives a disconnected client without data, e.g. the client left before the message arrived.
 ---
---- > NOTE: The object is equal (`==`) to the client, but it is a different key in tables.
+--- > **NOTE**: The object is equal (`==`) to the client, but it is a different key in tables.
 ---
 ---@param reader BinaryReader The reader to read from.
 ---@protected
@@ -100,7 +100,7 @@ function Client.get(user_id) end
 ---
 --- Returns the local client, see `Client:isLocal`.
 ---
---- > NOTE: Always `nil` on a dedicated server.
+--- > **NOTE**: Always `nil` on a dedicated server.
 ---
 ---@return Client | nil client The local client, or `nil` if it is not known yet.
 ---@nodiscard
@@ -162,7 +162,7 @@ function Client.getCount(ignore_bots, ignore_humans, ignore_connecting) end
 --- On the server it works for any client with a player entity,
 --- on the client only for the local one.
 ---
---- > NOTE: The arguments are quoted, so they cannot contain `"`.
+--- > **NOTE**: The arguments are quoted, so they cannot contain `"`.
 ---
 ---@param command string The name of the console command.
 ---@param ... string The arguments of the console command.

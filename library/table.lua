@@ -95,7 +95,7 @@ function table.move(source, start_position, end_position, offset, destination, s
 ---
 --- Returns a shallow copy of the given table.
 ---
---- NOTE: This function is much faster that any other copy function and method,
+--- > **NOTE**: This function is much faster that any other copy function and method,
 --- but works and efficient enough only for small tables (up to 1000 elements).
 ---
 ---@generic V
