@@ -114,6 +114,7 @@ local jit = std.jit
 local jit_version_byte = jit.version_byte
 
 local try = std.try
+local type = std.type
 local pcall = std.pcall
 local error = std.error
 local xpcall = std.xpcall
@@ -125,10 +126,11 @@ local loadstring = std.loadstring
 local loadbytecode = std.loadbytecode
 local setmetatable = std.setmetatable
 
+local Zip = std.Zip
 local Event = std.Event
 local FileClass = std.File
 local DirectoryClass = std.Directory
-local Zip = std.Zip
+
 
 --- [SHARED AND MENU]
 ---
@@ -582,10 +584,10 @@ end
 function Package:__represent()
     local state = package_states[ self ]
     if state == nil then
-        return string_format( "Package: %p", self )
+        return string_format( "%s: %p [%s]", type( self ), self, self.id )
     end
 
-    return string_format( "Package: %p [%s][%s]", self, state.id, state.status )
+    return string_format( "%s: %p [%s][%s]", type( self ), self, state.id, state.status )
 end
 
 ---@return boolean

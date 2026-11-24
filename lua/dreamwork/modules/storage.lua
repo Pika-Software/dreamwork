@@ -39,14 +39,12 @@ local time = std.time
 local time_now = time.now
 local time_tick = time.tick
 
-local console = std.console
-local console_Variable = console.Variable
-
 local error = std.error
 local pcall = std.pcall
 local assert = std.assert
 local tonumber = std.tonumber
 
+local LUA_MENU = std.LUA_MENU
 
 do
 
@@ -145,55 +143,11 @@ do
     ---
     --- A cache of HTTP responses, keyed by URL and validated by ETag.
     ---
-    --- Size and lifetime limits are replicated console variables, set by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`).
+    --- The size and lifetime limits are owned by the caller, see `http.client`.
     ---
     ---@class dreamwork.storage.http
     local http = {}
     storage.http = http
-
-    -- TODO: rename cvars with mn_ for menu
-
-    ---@type dreamwork.std.console.Variable<integer>
-    local cache_size = console_Variable( {
-        name = dreamwork.selectVariableName( "http_cache_size" ),
-        description = "The maximum size of cached content in KB, used for etag caching in http library.",
-        type = "integer",
-        default = 50,
-        min = 0,
-        max = 16384,
-        replicated = true,
-        archive = true,
-        hidden = true,
-        notify = true
-    } )
-
-    ---@type dreamwork.std.console.Variable<integer>
-    local cache_total_size = console_Variable( {
-        name = dreamwork.selectVariableName( "http_cache_total_size" ),
-        description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
-        type = "integer",
-        default = 8192,
-        min = 0,
-        max = 1048576,
-        replicated = true,
-        archive = true,
-        hidden = true,
-        notify = true
-    } )
-
-    ---@type dreamwork.std.console.Variable<integer>
-    local cache_lifetime = console_Variable( {
-        name = dreamwork.selectVariableName( "http_cache_lifetime" ),
-        description = "The number of days cached content is kept for, 0 keeps it forever.",
-        type = "integer",
-        default = 30,
-        min = 0,
-        max = 3650,
-        replicated = true,
-        archive = true,
-        hidden = true,
-        notify = true
-    } )
 
     ---@class dreamwork.storage.http.Record
     ---@field etag string The ETag of the cached response.
@@ -233,24 +187,10 @@ do
     ---
     --- Caches the response for the specified URL, replacing the previous one.
     ---
-    --- Raises an error if the content is larger than the `cache_size` limit.
-    ---
     ---@param url string The URL of the response.
     ---@param etag string The ETag of the response.
     ---@param content string The response body.
-    ---@param ignore_errors boolean? If `true`, too large content is silently skipped instead of raising an error.
-    function http.write( url, etag, content, ignore_errors )
-        -- do not cache content that is larger than `cache_size`
-        local content_size, max_size = #content, cache_size.value * 1024
-        if content_size > max_size then
-            if ignore_errors then return end
-
-            error( string_format(
-                "HTTP cache entry for '%s' is too large: %d bytes, the limit is %d bytes (http client cache_size).",
-                url, content_size, max_size
-            ), 2 )
-        end
-
+    function http.write( url, etag, content )
         sqlite_query(
             "INSERT INTO 'dreamwork.storage.http' (url, etag, timestamp, content) VALUES (?, ?, ?, ?) ON CONFLICT( url ) DO UPDATE SET etag = excluded.etag, timestamp = excluded.timestamp, content = excluded.content",
             url, etag, time_now( "ms", false ), SQLiteBlob( content )
@@ -274,14 +214,15 @@ do
 
     --- [SHARED AND MENU]
     ---
-    --- Removes entries older than the `cache_lifetime` limit, then the oldest ones until the total size fits the `cache_total_size` limit.
+    --- Removes entries older than `lifetime`, then the oldest ones until the total size fits `total_size`.
     ---
     --- Clears the in-memory cache, so the remaining entries are reloaded from the database on demand.
     ---
-    function http.prune()
-        local lifetime = cache_lifetime.value
+    ---@param lifetime integer The time an entry is kept for, in milliseconds, `0` keeps it forever.
+    ---@param total_size integer The size of all entries in bytes.
+    function http.prune( lifetime, total_size )
         if lifetime > 0 then
-            sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE timestamp < ?", time_now( "ms", false ) - lifetime * 86400000 )
+            sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE timestamp < ?", time_now( "ms", false ) - lifetime )
         end
 
         -- running total from the newest entry, everything past the limit goes
@@ -292,14 +233,11 @@ do
                     FROM 'dreamwork.storage.http'
                 ) WHERE total_size > ?
             )
-        ]], 12 ), cache_total_size.value * 1024 )
+        ]], 12 ), total_size )
 
         -- rows were removed in bulk, so the cache cannot be trusted anymore
         cache = {}
     end
-
-    cache_total_size:attach( http.prune )
-    cache_lifetime:attach( http.prune )
 
 end
 
@@ -501,6 +439,72 @@ do
 
 end
 
+if LUA_MENU then
+
+    --- [MENU]
+    ---
+    --- The saved values of the archived Lua-created console variables, the engine does not save them in the menu.
+    ---
+    --- Read and written by `console.Variable`.
+    ---
+    ---@class dreamwork.storage.variables
+    local variables = {}
+    storage.variables = variables
+
+    --- The stored values, loaded once by `storage.init`.
+    ---@type table<string, string>
+    local cache = {}
+
+    --- [MENU]
+    ---
+    --- Returns the saved value of the console variable.
+    ---
+    ---@param name string The name of the console variable.
+    ---@return string | nil value The saved value, or `nil` if the variable has no saved value.
+    ---@nodiscard
+    function variables.read( name )
+        return cache[ name ]
+    end
+
+    --- [MENU]
+    ---
+    --- Saves the value of the console variable, replacing the previous one.
+    ---
+    ---@param name string The name of the console variable.
+    ---@param value string The value to save.
+    function variables.write( name, value )
+        if cache[ name ] == value then return end
+        sqlite_query( "INSERT INTO 'dreamwork.storage.variables' (name, value) VALUES (?, ?) ON CONFLICT( name ) DO UPDATE SET value = excluded.value", name, value )
+        cache[ name ] = value
+    end
+
+    --- [MENU]
+    ---
+    --- Removes the saved value of the console variable, does nothing if the variable has no saved value.
+    ---
+    ---@param name string The name of the console variable.
+    function variables.delete( name )
+        if cache[ name ] == nil then return end
+        sqlite_query( "DELETE FROM 'dreamwork.storage.variables' WHERE name=?", name )
+        cache[ name ] = nil
+    end
+
+    --- [MENU]
+    ---
+    --- Loads the saved values, called by `storage.init` after the migrations.
+    ---
+    function variables.init()
+        local rows = sqlite_query( "SELECT name, value FROM 'dreamwork.storage.variables'" )
+        if rows == nil then return end
+
+        for index = 1, #rows, 1 do
+            local row = rows[ index ]
+            cache[ raw_tostring( row.name ) ] = raw_tostring( row.value )
+        end
+    end
+
+end
+
 do
 
     ---@class dreamwork.storage.Migration
@@ -555,6 +559,16 @@ do
             }
         }
     }
+
+    -- console variables saved by `storage.variables`, the engine does not save them in the menu
+    if LUA_MENU then
+        migrations[ #migrations + 1 ] = {
+            name = "0.1.0-menu",
+            queries = {
+                "CREATE TABLE 'dreamwork.storage.variables' (name TEXT PRIMARY KEY, value TEXT NOT NULL)"
+            }
+        }
+    end
 
     ---@type table<string, integer>
     local migration_indexes = {}
@@ -719,7 +733,7 @@ end
 ---
 --- Initializes the database: tunes the SQLite pragmas and runs all pending migrations.
 ---
---- The HTTP cache is pruned by the `http client` console command (`dreamwork_sci` / `dreamwork_cci`), once its saved limits are applied.
+--- The HTTP cache is pruned by `http.client`, with its console variable limits.
 ---
 function storage.init()
     dreamwork_Logger:info( "Initializing the database..." )
@@ -756,8 +770,9 @@ function storage.init()
 
     storage.migrate()
 
-    -- once, with the archived limits
-    storage.http.prune()
+    if LUA_MENU then
+        storage.variables.init()
+    end
 
     dreamwork_Logger:info( "Database initialized in %.2f ms.", time_tick( "ms" ) )
 end

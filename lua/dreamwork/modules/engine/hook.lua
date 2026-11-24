@@ -579,25 +579,6 @@ if LUA_CLIENT or LUA_SERVER then
     event_handlers[ "ClientSignOnStateChanged" ] = handler_three
 
 
-    -- client stages in their order, see `dreamwork.std.Client.Stage`
-    -- `established` is a separate moment only on the server for humans, elsewhere it comes right before `spawning`
-    -- ( client: dreamwork.std.Client )
-    event_handlers[ "dreamwork.client.connected" ] = handler_one
-    event_handlers[ "dreamwork.client.established" ] = handler_one
-    event_handlers[ "dreamwork.client.spawning" ] = handler_one
-    event_handlers[ "dreamwork.client.spawned" ] = handler_one
-    event_handlers[ "dreamwork.client.initialized" ] = handler_one
-
-    -- ( client: dreamwork.std.Client )
-    event_handlers[ "dreamwork.client.identified" ] = handler_one
-
-    -- ( client: dreamwork.std.Client, previous_name: string )
-    event_handlers[ "dreamwork.client.renamed" ] = handler_two
-
-    -- ( client: dreamwork.std.Client, reason: string | nil )
-    event_handlers[ "dreamwork.client.disconnected" ] = handler_two
-
-
     -- entity
     event_handlers[ "InitPostEntity" ] = handler_empty
     event_handlers[ "PostCleanupMap" ] = handler_empty
@@ -660,6 +641,24 @@ if LUA_CLIENT or LUA_SERVER then
     end
 
 end
+
+-- client stages in their order, see `dreamwork.std.Client.Stage`
+-- `established` is a separate moment only on the server for humans, elsewhere it comes right before `spawning`
+-- ( client: dreamwork.std.Client )
+event_handlers[ "dreamwork.client.connected" ] = handler_one
+event_handlers[ "dreamwork.client.established" ] = handler_one
+event_handlers[ "dreamwork.client.spawning" ] = handler_one
+event_handlers[ "dreamwork.client.spawned" ] = handler_one
+event_handlers[ "dreamwork.client.initialized" ] = handler_one
+
+-- ( client: dreamwork.std.Client )
+event_handlers[ "dreamwork.client.identified" ] = handler_one
+
+-- ( client: dreamwork.std.Client, previous_name: string )
+event_handlers[ "dreamwork.client.renamed" ] = handler_two
+
+-- ( client: dreamwork.std.Client, reason: string | nil )
+event_handlers[ "dreamwork.client.disconnected" ] = handler_two
 
 do
 

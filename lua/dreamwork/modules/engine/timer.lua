@@ -23,6 +23,8 @@ local math = std.math
 local math_max = math.max
 local math_huge = math.huge
 
+local LUA_MENU = std.LUA_MENU
+
 
 ---
 --- Named timers ticked by garry's mod `timer` or the `Think` hook.
@@ -229,7 +231,7 @@ do
 
     exceptions_hide( timer_call )
 
-    local function tick()
+    local function timers_tick()
         if heap_size == 0 then return end
 
         local now = dreamwork_getUpTime()
@@ -241,11 +243,26 @@ do
         end
     end
 
+    ---@type fun()
+    local frame
+
+    if LUA_MENU then
+        local hook_call = engine_hook.call
+
+        -- the menu has no `Tick` hook, it is imitated once per frame, before the timers
+        function frame()
+            timers_tick()
+            hook_call( "Tick" )
+        end
+    else
+        frame = timers_tick
+    end
+
     local timer_api = systimer or timer
     if timer_api == nil then
-        engine_hook.catch( "Think", "modules.engine.timer.think", tick )
+        engine_hook.catch( "Think", "modules.engine.timer.think", frame )
     else
-        timer_api.Create( dreamwork.Prefix .. "::Timers", 0, 0, tick )
+        timer_api.Create( dreamwork.Prefix .. "::Timers", 0, 0, frame )
     end
 
 end

@@ -259,6 +259,5 @@ do
 
 end
 
-dreamwork_load( "std/io/types/variable.lua" )
 dreamwork_load( "std/io/types/command.lua" )
 dreamwork_load( "std/io/types/logger.lua" )

@@ -3,6 +3,11 @@ local dreamwork_getUpTime = dreamwork.getUpTime
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
+local vfs = dreamwork.vfs
+local vfs_isFile = vfs.isFile
+local vfs_watch = vfs.watch
+local vfs_unwatch = vfs.unwatch
+
 ---@type garrysmod.engine
 local glua_engine = dreamwork_engine.requireLibrary( "engine" )
 
@@ -15,12 +20,15 @@ local std = dreamwork.std
 local debug = std.debug
 local debug_fempty = debug.fempty
 
--- local string = std.string
--- local string_format = string.format
-
 local console = std.console
 local console_Command = console.Command
 local console_Variable = console.Variable
+
+local uuid = std.uuid
+local uuid_unique = uuid.unique
+
+local futures = std.futures
+local futures_sleep = futures.sleep
 
 local menu = std.menu
 
@@ -249,38 +257,68 @@ if LUA_CLIENT or LUA_MENU then
 
     end
 
-    -- --- [CLIENT AND MENU]
-    -- ---
-    -- --- Take a screenshot.
-    -- ---
-    -- ---@param quality integer The quality of the screenshot (0-100), only used if `useTGA` is `false`.
-    -- ---@param file_name string The name of the screenshot.
-    -- function game.screenshot( quality, file_name )
-    --     if menu.visible then
-    --         return false, "The menu is open, can't take a screenshot."
-    --     end
+    local SCREENSHOT_DIRECTORY = "/garrysmod/screenshots/"
 
-    --     if file_name == nil then
-    --         file_name = std.level.name
-    --     end
+    --- Seconds `game.screenshot` waits for the engine to write the file.
+    local SCREENSHOT_TIMEOUT = 5
 
-    --     local files = dreamwork.vfs.search( "/garrysmod/screenshots", file_name .. "*.jpg" )
-    --     local last_one = files[ #files ]
-    --     local screenshot_count = 0
+    --- Seconds between the checks of the screenshot file.
+    local SCREENSHOT_POLL_INTERVAL = 0.05
 
-    --     if last_one ~= nil then
-    --         screenshot_count = (raw_tonumber( string_sub( path_splitExtension( last_one, false ), #file_name + 2 ), 10 ) or 0) + 1
-    --     end
+    ---@param uuid_str string
+    ---@return boolean
+    local function is_free( uuid_str )
+        return not vfs_isFile( SCREENSHOT_DIRECTORY .. uuid_str .. ".jpg" )
+    end
 
-    --     file_name = string_format( "%s_%04d", file_name, screenshot_count )
-    --     console_Command.run( "jpeg", file_name, quality or 90 )
+    --- [CLIENT AND MENU]
+    ---
+    --- Takes a JPEG screenshot via the `jpeg` console command and saves it to `/garrysmod/screenshots/` under a unique UUID file name.
+    ---
+    --- Waits until the engine writes the file, it takes a few frames after the command.
+    ---
+    --- > **NOTE**: On the client it fails while the main menu is open, because the screenshot would capture the menu instead of the game.
+    ---
+    ---@param quality integer? The JPEG quality, from `1` to `100`. Defaults to `90`.
+    ---@return boolean success `true` if the screenshot was taken, `false` if the main menu is open or the file did not appear in time.
+    ---@return string path_or_error The path of the screenshot file on success, or the error message on failure.
+    ---@async
+    function game.screenshot( quality )
+        if LUA_CLIENT and menu.visible then
+            return false, "The menu is open, can't take a screenshot."
+        end
 
-    --     return true, "/garrysmod/screenshots/" .. file_name .. ".jpg"
-    -- end
+        local file_name = uuid_unique( is_free )
+        local file_path = SCREENSHOT_DIRECTORY .. file_name .. ".jpg"
+
+        -- the engine writes the file outside of `vfs`, only a watch makes it visible
+        vfs_watch( file_path )
+        console_Command.run( "jpeg", file_name, quality or 90 )
+
+        local deadline = dreamwork_getUpTime() + SCREENSHOT_TIMEOUT
+
+        -- the command is queued and the file is written a few frames later (3 frames in the menu),
+        -- `futures.sleep( 0 )` can resume within the same frame, before the watch had a chance to see it
+        ::wait_for_file::
+
+        futures_sleep( SCREENSHOT_POLL_INTERVAL )
+
+        if vfs_isFile( file_path ) then
+            vfs_unwatch( file_path )
+            return true, file_path
+        end
+
+        if dreamwork_getUpTime() < deadline then
+            goto wait_for_file
+        end
+
+        vfs_unwatch( file_path )
+        return false, "The screenshot file was not written in time."
+    end
 
 end
 
--- TODO: complete library
+-- TODO: complete the library
 
 -- if LUA_CLIENT then
 --     game.getTimeoutInfo = GetTimeoutInfo

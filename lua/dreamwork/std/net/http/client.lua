@@ -8,9 +8,10 @@ local engine_http = dreamwork_engine.http
 local http_ClientName = engine_http.ClientName
 local http_request = engine_http.request
 
-local storage_http = dreamwork_storage.http
-local storage_write = storage_http.write
-local storage_read = storage_http.read
+local http_storage = dreamwork_storage.http
+local http_storage_write = http_storage.write
+local http_storage_read = http_storage.read
+local http_storage_prune = http_storage.prune
 
 local std = dreamwork.std
 
@@ -56,6 +57,8 @@ local URL_SearchParams = URL.SearchParams
 local URL_decodeURIComponent = URL.decodeURIComponent
 
 
+local NOT_LUA_MENU = not std.LUA_MENU
+
 ---@class dreamwork.std.http
 local http = std.http
 
@@ -76,10 +79,10 @@ local timeout_default = console_Variable( {
     default = 60,
     min = 0,
     max = 300,
-    replicated = true,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
     archive = true,
-    hidden = true,
-    notify = true
+    hidden = true
 } )
 
 ---@type dreamwork.std.console.Variable<number>
@@ -90,10 +93,10 @@ local cache_ttl_default = console_Variable( {
     default = 1,
     min = 0,
     max = 40320,
-    replicated = true,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
     archive = true,
-    hidden = true,
-    notify = true
+    hidden = true
 } )
 
 ---@type dreamwork.std.console.Variable<integer>
@@ -104,10 +107,10 @@ local cache_entries = console_Variable( {
     default = 256,
     min = 0,
     max = 65536,
-    replicated = true,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
     archive = true,
-    hidden = true,
-    notify = true
+    hidden = true
 } )
 
 ---@type dreamwork.std.console.Variable<integer>
@@ -118,10 +121,10 @@ local max_redirects_default = console_Variable( {
     default = 10,
     min = 0,
     max = 100,
-    replicated = true,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
     archive = true,
-    hidden = true,
-    notify = true
+    hidden = true
 } )
 
 ---@type dreamwork.std.console.Variable<number>
@@ -132,11 +135,73 @@ local timeout_grace = console_Variable( {
     default = 1,
     min = 0,
     max = 60,
-    replicated = true,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
     archive = true,
-    hidden = true,
-    notify = true
+    hidden = true
 } )
+
+---@type dreamwork.std.console.Variable<integer>
+local cache_size = console_Variable( {
+    name = dreamwork.selectVariableName( "http_cache_size" ),
+    description = "The maximum size of cached content in KB, used for etag caching in http library.",
+    type = "integer",
+    default = 50,
+    min = 0,
+    max = 16384,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
+    archive = true,
+    hidden = true
+} )
+
+---@type dreamwork.std.console.Variable<integer>
+local cache_total_size = console_Variable( {
+    name = dreamwork.selectVariableName( "http_cache_total_size" ),
+    description = "The maximum total size of all cached content in KB, the oldest entries are removed first.",
+    type = "integer",
+    default = 8192,
+    min = 0,
+    max = 1048576,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
+    archive = true,
+    hidden = true
+} )
+
+---@type dreamwork.std.console.Variable<integer>
+local cache_lifetime = console_Variable( {
+    name = dreamwork.selectVariableName( "http_cache_lifetime" ),
+    description = "The number of days cached content is kept for, 0 keeps it forever.",
+    type = "integer",
+    default = 30,
+    min = 0,
+    max = 3650,
+    replicated = NOT_LUA_MENU,
+    notify = NOT_LUA_MENU,
+    archive = true,
+    hidden = true
+} )
+
+--- Prunes the stored etag cache.
+---
+---@param lifetime integer The lifetime limit in days.
+---@param total_size integer The total size limit in KB.
+local function prune_cache( lifetime, total_size )
+    http_storage_prune( lifetime * 86400000, total_size * 1024 )
+end
+
+-- handlers run before `value` is updated, so the new value comes as an argument
+cache_total_size:attach( function( _, value )
+    prune_cache( cache_lifetime.value, value )
+end )
+
+cache_lifetime:attach( function( _, value )
+    prune_cache( value, cache_total_size.value )
+end )
+
+-- once, with the archived limits
+prune_cache( cache_lifetime.value, cache_total_size.value )
 
 ---@type table<string, boolean>
 local supported_methods = {
@@ -602,7 +667,7 @@ local function send_request( options, redirects )
     local etag_content
 
     if etag_caching and not has_if_none_match then
-        local stored = storage_read( url_string )
+        local stored = http_storage_read( url_string )
         if stored ~= nil then
             headers[ "If-None-Match" ] = stored.etag
             etag_content = stored.content
@@ -668,9 +733,10 @@ local function send_request( options, redirects )
                 end
             elseif status == 200 then
                 local etag_value = response_headers.etag
-                if etag_value ~= nil then
-                    -- too large or binary bodies are just not cached
-                    storage_write( url_string, etag_value, response_body, true )
+
+                -- too large bodies are just not cached
+                if etag_value ~= nil and #response_body <= cache_size.value * 1024 then
+                    http_storage_write( url_string, etag_value, response_body )
                 end
             end
         end

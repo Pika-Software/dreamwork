@@ -4,8 +4,10 @@ local std = dreamwork.std
 local cli_error = dreamwork_cli.error
 local cli_printHeader = dreamwork_cli.printHeader
 
-local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
+
+--- The native bridge is loaded in the server and menu states.
+local LUA_HOST = std.LUA_SERVER or std.LUA_MENU
 
 local console_Variable = std.console.Variable
 
@@ -13,13 +15,13 @@ local console_Variable = std.console.Variable
 local mcp = dreamwork.mcp
 
 -- the variables are created by `dreamwork.mcp`
-local ENABLED_VARIABLE = "dreamwork_mcp_enabled"
-local ALLOW_EXEC_VARIABLE = "dreamwork_mcp_allow_exec"
-local ALLOW_CAPTURE_VARIABLE = "dreamwork_mcp_allow_capture"
+local ENABLED_VARIABLE = dreamwork.selectVariableName( "mcp_enabled" )
+local ALLOW_EXEC_VARIABLE = dreamwork.selectVariableName( "mcp_allow_exec" )
+local ALLOW_CAPTURE_VARIABLE = dreamwork.selectVariableName( "mcp_allow_capture" )
 
---- [SHARED]
+--- [SHARED AND MENU]
 ---
---- MCP commands, `dreamwork_sci mcp <command>` / `dreamwork_cci mcp <command>`.
+--- MCP commands, `dreamwork_sci mcp <command>` / `dreamwork_cci mcp <command>` / `dreamwork_mci mcp <command>`.
 ---
 local mcp_group = dreamwork_cli.group( "mcp", "Model Context Protocol (unknown-gd/gm_mcp) controls." )
 
@@ -40,7 +42,7 @@ mcp_group:register( "status", {
         }
 
         if mcp == nil then
-            if LUA_SERVER then
+            if LUA_HOST then
                 lines[ #lines + 1 ] = "enabled: false"
                 lines[ #lines + 1 ] = "bridge: missing"
             elseif LUA_CLIENT then
@@ -48,7 +50,7 @@ mcp_group:register( "status", {
                 lines[ #lines + 1 ] = "allow_capture: false"
             end
         else
-            if LUA_SERVER then
+            if LUA_HOST then
                 if console_Variable.getString( ENABLED_VARIABLE ) == "" then
                     lines[ #lines + 1 ] = "enabled: " .. format_bool( mcp.isEnabled() ) .. " (developer)"
                 else
@@ -65,7 +67,7 @@ mcp_group:register( "status", {
         cli_printHeader( lines, "MCP" )
 
         if not loaded then
-            if LUA_SERVER then
+            if LUA_HOST then
                 cli_error( "MCP module is not loaded (native mcp binary missing)." )
             else
                 cli_error( "MCP module is not loaded on this client." )
@@ -81,7 +83,7 @@ end
 ---@type dreamwork.cli.Setting[]
 local settings = {}
 
-if LUA_SERVER then
+if LUA_HOST then
     settings[ #settings + 1 ] = {
         name = "enabled",
         variable = ENABLED_VARIABLE,

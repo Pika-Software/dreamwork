@@ -51,26 +51,26 @@ function engine.requireLibrary( name, stack_level )
     return library
 end
 
-if LUA_CLIENT or LUA_SERVER then
+--- The metatable of the engine `Entity` class, the base of all other entity classes.
+---
+---@class garrysmod.Entity
+local Entity = debug_initmetatable( "Entity" )
+engine.Entity = Entity
 
-    --- The metatable of the engine `Entity` class, the base of all other entity classes.
-    ---
-    ---@class garrysmod.Entity
-    local Entity = debug_initmetatable( "Entity" )
-    engine.Entity = Entity
-
-    if Entity.EntIndex == nil then
-        function Entity.EntIndex()
-            return 0 -- well
-        end
+if Entity.EntIndex == nil then
+    function Entity.EntIndex()
+        return 0     -- well
     end
+end
 
-    --- The metatable of the engine `Player` class.
-    ---
-    ---@class garrysmod.Player : garrysmod.Entity
-    local Player = debug_initmetatable( "Player" )
-    engine.Player = Player
-    Player.__parent = Entity
+--- The metatable of the engine `Player` class.
+---
+---@class garrysmod.Player : garrysmod.Entity
+local Player = debug_initmetatable( "Player" )
+engine.Player = Player
+Player.__parent = Entity
+
+if LUA_CLIENT or LUA_SERVER then
 
     --- The metatable of the engine `Weapon` class.
     ---

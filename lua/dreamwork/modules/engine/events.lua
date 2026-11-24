@@ -19,7 +19,6 @@ local time = std.time
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
-local LUA_MENU = std.LUA_MENU
 
 
 ---@type garrysmod.engine
@@ -70,15 +69,6 @@ do
         end, true )
 
     end
-
-end
-
-if LUA_MENU then
-
-    -- the menu has no ticks, a timer imitates them once per frame
-    engine_timer.create( "modules.engine.events.tick", 0, 0, function()
-        hook_call( "Tick" )
-    end, true )
 
 end
 

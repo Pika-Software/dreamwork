@@ -36,11 +36,11 @@ local dreamwork_Logger = dreamwork.Logger
 
 local engine_network = dreamwork_engine.network
 
-local network_send = engine_network.send
-local network_start = engine_network.start
+local network_send = engine_network and engine_network.send
+local network_start = engine_network and engine_network.start
 
-local network_readUInt = engine_network.readUInt
-local network_writeUInt = engine_network.writeUInt
+local network_readUInt = engine_network and engine_network.readUInt
+local network_writeUInt = engine_network and engine_network.writeUInt
 
 local engine_hook = dreamwork_engine.hook
 local hook_call = engine_hook.call
@@ -68,8 +68,8 @@ local math = std.math
 local math_max = math.max
 
 local string = std.string
-local string_find = string.find
 local string_sub = string.sub
+local string_find = string.find
 local string_lower = string.lower
 local string_format = string.format
 local string_findByte = string.findByte
@@ -1055,83 +1055,87 @@ local function disconnect( user_id, reason )
     end
 end
 
-engine_hook.catch( "dreamwork.entity.client.spawn", "std.client", attach, 1000 )
+if LUA_CLIENT or LUA_SERVER then
 
----@param pl garrysmod.Player
-engine_hook.catch( "dreamwork.entity.client.destroy", "std.client", function( pl )
-    local client = entity_clients[ pl ]
-    if client == nil then return end
+    engine_hook.catch( "dreamwork.entity.client.spawn", "std.client", attach, 1000 )
 
-    entity_clients[ pl ] = nil
+    ---@param pl garrysmod.Player
+    engine_hook.catch( "dreamwork.entity.client.destroy", "std.client", function( pl )
+        local client = entity_clients[ pl ]
+        if client == nil then return end
 
-    local data = client_data[ client ]
-    if data.entity == pl then
-        data.entity = nil
-    end
-end, -1000 )
+        entity_clients[ pl ] = nil
 
----@param event { userid: integer, oldname: string, newname: string }
-engine_hook.catch( "player_changename", "std.client", function( event )
-    local client = clients[ event.userid ]
-    if client ~= nil then
-        set_name( client, client_data[ client ], event.newname )
-    end
-end )
+        local data = client_data[ client ]
+        if data.entity == pl then
+            data.entity = nil
+        end
+    end, -1000 )
 
----@param event { userid: integer }
-engine_hook.catch( "player_activate", "std.client", function( event )
-    local client, data = ensure( event.userid )
-    if client ~= nil and data ~= nil then
-        advance( client, data, STAGE_SPAWNING )
-    end
-end )
-
----@param event { userid: integer, reason: string }
-engine_hook.catch( "player_disconnect", "std.client", function( event )
-    disconnect( event.userid, event.reason )
-end )
-
----@param user_id integer
----@param new_state integer
-engine_hook.catch( "ClientSignOnStateChanged", "std.client", function( user_id, _, new_state )
-    -- `SIGNONSTATE_NONE` comes after `player_disconnect`, it disconnects the clients without one
-    if new_state == 0 then
-        disconnect( user_id, nil )
-        return
-    end
-
-    local stage = signon_stages[ new_state ]
-    if stage == nil then return end
-
-    local client, data = ensure( user_id )
-    if client ~= nil and data ~= nil then
-        advance( client, data, stage )
-    end
-end )
-
--- the name and the Steam ID of the entity are temporary on its creation, they are updated by the polling
-engine_timer.create( "std.client.poll", 1, 0, function()
-    for i = client_count, 1, -1 do
-        local client = client_list[ i ]
+    ---@param event { userid: integer, oldname: string, newname: string }
+    engine_hook.catch( "player_changename", "std.client", function( event )
+        local client = clients[ event.userid ]
         if client ~= nil then
-            local data = client_data[ client ]
+            set_name( client, client_data[ client ], event.newname )
+        end
+    end )
 
-            local pl = data.entity
-            if pl ~= nil and Entity_IsValid( pl ) then
-                -- only a changed value counts, the engine can cache a stale name
-                local name = Player_Nick( pl )
-                if name ~= data.polled_name then
-                    data.polled_name = name
-                    set_name( client, data, name )
-                end
+    ---@param event { userid: integer }
+    engine_hook.catch( "player_activate", "std.client", function( event )
+        local client, data = ensure( event.userid )
+        if client ~= nil and data ~= nil then
+            advance( client, data, STAGE_SPAWNING )
+        end
+    end )
 
-                if data.steam_id == nil and not data.is_bot then
-                    set_steam_id( client, data, parse_steam_id( Player_SteamID64( pl ) ) )
+    ---@param event { userid: integer, reason: string }
+    engine_hook.catch( "player_disconnect", "std.client", function( event )
+        disconnect( event.userid, event.reason )
+    end )
+
+    ---@param user_id integer
+    ---@param new_state integer
+    engine_hook.catch( "ClientSignOnStateChanged", "std.client", function( user_id, _, new_state )
+        -- `SIGNONSTATE_NONE` comes after `player_disconnect`, it disconnects the clients without one
+        if new_state == 0 then
+            disconnect( user_id, nil )
+            return
+        end
+
+        local stage = signon_stages[ new_state ]
+        if stage == nil then return end
+
+        local client, data = ensure( user_id )
+        if client ~= nil and data ~= nil then
+            advance( client, data, stage )
+        end
+    end )
+
+    -- the name and the Steam ID of the entity are temporary on its creation, they are updated by the polling
+    engine_timer.create( "std.client.poll", 1, 0, function()
+        for i = client_count, 1, -1 do
+            local client = client_list[ i ]
+            if client ~= nil then
+                local data = client_data[ client ]
+
+                local pl = data.entity
+                if pl ~= nil and Entity_IsValid( pl ) then
+                    -- only a changed value counts, the engine can cache a stale name
+                    local name = Player_Nick( pl )
+                    if name ~= data.polled_name then
+                        data.polled_name = name
+                        set_name( client, data, name )
+                    end
+
+                    if data.steam_id == nil and not data.is_bot then
+                        set_steam_id( client, data, parse_steam_id( Player_SteamID64( pl ) ) )
+                    end
                 end
             end
         end
-    end
-end, true )
+    end, true )
+
+end
 
 --- Restores the client of a player entity that existed before the module was loaded, without calling hooks.
 ---

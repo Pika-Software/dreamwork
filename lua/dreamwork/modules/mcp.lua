@@ -16,7 +16,11 @@ local engine_timer_create = engine_timer.create
 local engine_timer_remove = engine_timer.remove
 local engine_timer_start = engine_timer.start
 local engine_timer_stop = engine_timer.stop
+
 local engine_hook = dreamwork_engine.hook
+
+local engine_client = dreamwork_engine.client
+local client_toEntity = engine_client and engine_client.toEntity
 
 ---@class dreamwork.std
 local std = dreamwork.std
@@ -38,7 +42,6 @@ local string_format = string.format
 local string_trimSpaces = string.trimSpaces
 
 local table = std.table
-local table_remove = table.remove
 local table_unpack = table.unpack
 
 local math = std.math
@@ -57,8 +60,19 @@ local loadstring = std.loadstring
 local Emitter = std.Emitter
 local Network = std.Network
 
+local futures_run = std.futures.run
+
+local vfs_readFile = dreamwork.vfs.readFile
+
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
+local LUA_MENU = std.LUA_MENU
+
+--- The native bridge is loaded in the server and menu states.
+local LUA_HOST = LUA_SERVER or LUA_MENU
+
+--- The realm reported for errors of host execs, `"server"` or `"menu"`.
+local HOST_REALM = std.LUA_REALM
 
 
 --- Max Lua payload accepted from the bridge / network (matches the native bridge).
@@ -104,14 +118,17 @@ local PAYLOAD_LENGTH_BITS = 32
 --- Dreamwork MCP: bridges the native [`mcp`](https://github.com/unknown-gd/gm_mcp) module to Garry's Mod
 --- and shuttles client-side exec / screenshot traffic over `std.Network`.
 ---
+--- In the menu state the bridge runs standalone: `state = "server"` execs run in the menu state,
+--- screenshots capture the game window, client execs and player / entity snapshots are unavailable.
+---
 
 --- Native `require( "mcp" )` library, captured before `dreamwork.mcp` shadows the global name.
 ---
 ---@class gm_mcp
-local bridge = LUA_SERVER and mcp or nil
+local bridge = LUA_HOST and mcp or nil
 
 ---@class dreamwork.mcp
----@field bridge gm_mcp | nil The native bridge table, server-only when loaded.
+---@field bridge gm_mcp | nil The native bridge table, server and menu only when loaded.
 ---@field respondResult fun( request_id: string?, ok: boolean, value: any ) Completes a waiting Lua exec with a value or error.
 ---@field respondError fun( request_id_or_message: string, message: string? ): boolean Fails the active or a specific waiting Lua exec.
 ---@field returnResult fun( value: any ): boolean Completes the active waiting exec, also asynchronously; scripts call it as the global `mcp.returnResult`.
@@ -125,13 +142,13 @@ dreamwork.mcp = mcp
 ---@field name string | nil The addon or source name.
 ---@field count integer How many times the error happened within the window.
 
--- the settings of the MCP module, set by the `mcp config` console command (`dreamwork_sci` / `dreamwork_cci`)
+-- the settings of the MCP module, set by the `mcp config` console command (`dreamwork_sci` / `dreamwork_cci` / `dreamwork_mci`)
 
---- Server: `"1"` / `"0"` force the bridge on / off, `""` follows `developer` (`std.DEVELOPER ~= 0`).
+--- Server and menu: `"1"` / `"0"` force the bridge on / off, `""` follows `developer` (`std.DEVELOPER ~= 0`).
 ---@type string
 local enabled = ""
 
---- Server only.
+--- Server and menu only.
 ---@type dreamwork.std.console.Variable<string>
 local enabled_variable
 
@@ -145,7 +162,7 @@ do
 
     local console_Variable = std.console.Variable
 
-    if LUA_SERVER then
+    if LUA_HOST then
         enabled_variable = console_Variable( {
             name = dreamwork.selectVariableName( "mcp_enabled" ),
             description = "When unset (reset), follows the developer convar; 1/0 (true/false) overrides. When 0, tool calls are rejected.",
@@ -194,7 +211,7 @@ do
 
 end
 
---- [SERVER]
+--- [SERVER AND MENU]
 ---
 --- Resolves whether the bridge should accept commands.
 --- Uses the `mcp_enabled` override when set; otherwise follows `std.DEVELOPER ~= 0`.
@@ -539,7 +556,53 @@ local function compile_chunk( code, identifier )
     return chunk, nil
 end
 
-if LUA_SERVER then
+--- Captures the game window into JPEG bytes, client and menu only.
+---@type fun( callback: fun( ok: boolean, payload: string ) ) | nil
+local capture_screenshot
+
+if LUA_CLIENT or LUA_MENU then
+
+    local game_screenshot = std.game.screenshot
+
+    ---@async
+    ---@return boolean ok
+    ---@return string payload The JPEG bytes on success, the error message on failure.
+    local function screenshot_async()
+        local success, path_or_error = game_screenshot( SCREENSHOT_QUALITY )
+        if not success then
+            return false, path_or_error
+        end
+
+        local data = vfs_readFile( path_or_error )
+
+        local data_size = #data
+        if data_size == 0 then
+            return false, "Screenshot is empty."
+        end
+
+        if data_size > MAX_SCREENSHOT_BYTES then
+            return false, format_error( "Screenshot exceeds the %d byte limit.", MAX_SCREENSHOT_BYTES )
+        end
+
+        return true, data
+    end
+
+    --- Takes a screenshot with `std.game.screenshot` and reads the file back.
+    ---
+    ---@param callback fun( ok: boolean, payload: string ) Receives the JPEG bytes or the error message.
+    function capture_screenshot( callback )
+        futures_run( screenshot_async, function( ok, success, payload )
+            if ok then
+                callback( success, payload )
+            else
+                callback( false, "Screenshot capture failed: " .. exceptions_tostring( success ) )
+            end
+        end )
+    end
+
+end
+
+if LUA_HOST then
 
     if bridge == nil or
         not isFunction( bridge.setStatus ) or
@@ -555,17 +618,6 @@ if LUA_SERVER then
     end
 
     mcp.bridge = bridge
-
-    local glua_player = dreamwork_engine.requireLibrary( "player" )
-    local glua_ents = dreamwork_engine.requireLibrary( "ents" )
-    local glua_team = dreamwork_engine.requireLibrary( "team" )
-
-    local player_GetAll = glua_player.GetAll
-    local ents_GetAll = glua_ents.GetAll
-    local team_GetName = glua_team.GetName
-
-    local Client = std.Client
-    local Client_getAll = Client.getAll
 
     ---@type table<string, dreamwork.std.Client>
     local pending_exec = {}
@@ -599,7 +651,7 @@ if LUA_SERVER then
     ---@param request_id string | nil
     ---@param ok boolean
     ---@param payload string
-    ---@param realm string? The realm a failure came from, defaults to `"server"`.
+    ---@param realm string? The realm a failure came from, defaults to the host realm.
     local function respond_lua_raw( request_id, ok, payload, realm )
         if request_id == nil or request_id == "" then
             return
@@ -608,7 +660,7 @@ if LUA_SERVER then
         -- an open error window owns the response: failures join it, results are dropped
         if error_windows[ request_id ] ~= nil then
             if not ok then
-                collect_payload( request_id, payload, realm or "server" )
+                collect_payload( request_id, payload, realm or HOST_REALM )
             end
 
             return
@@ -681,7 +733,7 @@ if LUA_SERVER then
         end
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Fails a waiting MCP Lua exec. Prefer this from console/error hooks over
     --- `respondResult( id, false, ... )` / `respondLua( id, false, ... )`.
@@ -713,188 +765,8 @@ if LUA_SERVER then
             end
         end
 
-        collect_payload( request_id, message, pending_exec[ request_id ] == nil and "server" or "client" )
+        collect_payload( request_id, message, pending_exec[ request_id ] == nil and HOST_REALM or "client" )
         return true
-    end
-
-    ---@param vector garrysmod.Vector
-    ---@return { x: number, y: number, z: number }
-    local function position( vector )
-        return { x = vector.x, y = vector.y, z = vector.z }
-    end
-
-    ---@param ply garrysmod.Player
-    ---@return string | nil
-    local function active_weapon_class( ply )
-        local weapon = ply:GetActiveWeapon()
-        if weapon == nil or not weapon:IsValid() then
-            return nil
-        end
-
-        return weapon:GetClass()
-    end
-
-    --- [SERVER]
-    ---
-    --- Snapshot of connected players for `gmod_players`.
-    ---
-    ---@return table[]
-    function mcp.getPlayers()
-        local players = {}
-        local list = player_GetAll()
-
-        for index = 1, #list, 1 do
-            local ply = list[ index ]
-            if ply ~= nil and ply:IsValid() then
-                players[ #players + 1 ] = {
-                    name = ply:Nick(),
-                    steam_id = ply:SteamID(),
-                    steam_id64 = ply:SteamID64(),
-                    team = team_GetName( ply:Team() ),
-                    team_id = ply:Team(),
-                    alive = ply:Alive(),
-                    health = ply:Health(),
-                    armor = ply:Armor(),
-                    position = position( ply:GetPos() ),
-                    model = ply:GetModel(),
-                    weapon = active_weapon_class( ply )
-                }
-            end
-        end
-
-        return players
-    end
-
-    --- [SERVER]
-    ---
-    --- Snapshot of entities for `gmod_entities`.
-    ---
-    ---@param class_filter string | nil
-    ---@param custom_check string | nil
-    ---@param limit integer | nil
-    ---@return { entities: table[], truncated: boolean }
-    function mcp.getEntities( class_filter, custom_check, limit )
-        limit = math_min( math_max( math_floor( limit or 100 ), 1 ), MAX_ENTITY_LIMIT )
-
-        local filter
-        if class_filter ~= nil and class_filter ~= "" then
-            filter = string_lower( class_filter )
-        end
-
-        ---@type ( fun( entity: garrysmod.Entity ): boolean ) | nil
-        local check
-        if custom_check ~= nil and custom_check ~= "" then
-            if #custom_check > MAX_LUA_CODE_BYTES then
-                error( format_error( "customCheck exceeds the %d byte limit.", MAX_LUA_CODE_BYTES ), 2 )
-            end
-
-            local factory, compile_error = compile_chunk(
-                "return function( entity )\n" .. custom_check .. "\nend",
-                "dreamwork.mcp:customCheck"
-            )
-
-            if factory == nil then
-                error( "customCheck compilation failed: " .. tostring( compile_error ), 2 )
-            end
-
-            local ok, result = pcall( factory )
-            if not ok or not isFunction( result ) then
-                error( "customCheck must compile to a Lua function: " .. tostring( result ), 2 )
-            end
-
-            ---@diagnostic disable-next-line: cast-type-mismatch
-            ---@cast result function
-
-            check = result
-        end
-
-        local entities = {}
-        local truncated = false
-        local list = ents_GetAll()
-
-        for index = 1, #list, 1 do
-            local entity = list[ index ]
-            if entity ~= nil and entity:IsValid() and not entity:IsPlayer() then
-                local class = entity:GetClass()
-                local matches = filter == nil or string_find( string_lower( class ), filter, 1, true ) ~= nil
-
-                if matches and check ~= nil then
-                    local ok, included = pcall( check, entity )
-                    if not ok then
-                        error( "customCheck failed: " .. tostring( included ), 2 )
-                    end
-
-                    matches = included == true
-                end
-
-                if matches then
-                    if #entities >= limit then
-                        truncated = true
-                        break
-                    end
-
-                    entities[ #entities + 1 ] = {
-                        index = entity:EntIndex(),
-                        class = class,
-                        model = entity:GetModel(),
-                        position = position( entity:GetPos() )
-                    }
-                end
-            end
-        end
-
-        return {
-            entities = entities,
-            truncated = truncated
-        }
-    end
-
-    --- [SERVER]
-    ---
-    --- Resolves a client by name, SteamID or SteamID64.
-    ---
-    ---@param target string
-    ---@return dreamwork.std.Client | nil
-    ---@return string | nil
-    function mcp.resolveClient( target )
-        if not isString( target ) then
-            return nil, "client target must be a string."
-        end
-
-        local normalized = string_trimSpaces( target )
-        if normalized == "" then
-            return nil, "client target is empty."
-        end
-
-        if #normalized > MAX_TARGET_BYTES then
-            return nil, format_error( "client target exceeds the %d byte limit.", MAX_TARGET_BYTES )
-        end
-
-        local lowered = string_lower( normalized )
-        local matches = {}
-        local list, count = Client_getAll()
-
-        for index = 1, count, 1 do
-            local client = list[ index ]
-
-            local name = client.name
-            local steam_id = client.steam_id
-
-            if (name ~= nil and string_lower( name ) == lowered)
-                or (steam_id ~= nil and (steam_id:toSteam2() == normalized or steam_id:to64() == normalized)) then
-                matches[ #matches + 1 ] = client
-            end
-        end
-
-        if #matches == 1 then
-            return matches[ 1 ], nil
-        end
-
-        if #matches > 1 then
-            return nil, "client target matches multiple players; use SteamID64."
-        end
-
-        return nil, "no connected player matches client target " .. normalized .. "."
     end
 
     ---@param code string
@@ -913,7 +785,7 @@ if LUA_SERVER then
         if not run_ok then
             if request_id ~= nil and request_id ~= "" and active_exec_request_id == request_id then
                 -- keep the window open for errors of timers / hooks the chunk already created
-                collect_error( request_id, reported_error_entry( run_result, "server" ) )
+                collect_error( request_id, reported_error_entry( run_result, HOST_REALM ) )
             end
 
             return false, run_result
@@ -927,7 +799,7 @@ if LUA_SERVER then
         return true, nil
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Completes the active waiting server exec with a value, also from timers / hooks after the chunk returned.
     ---
@@ -947,22 +819,242 @@ if LUA_SERVER then
 
     bridge.returnResult = mcp.returnResult
 
-    ---@param code string
-    ---@param target string
-    ---@param request_id string | nil
-    ---@return boolean
-    ---@return string | nil
-    local function send_exec_to_client( code, target, request_id )
-        local lowered = string_lower( string_trimSpaces( target ) )
+    --- Server only, client execs over `std.Network`.
+    ---@type fun( code: string, target: string, request_id: string? ): boolean, string?
+    local send_exec_to_client
 
-        if lowered == "all" or lowered == "tout le monde" then
-            if request_id ~= nil and request_id ~= "" then
-                return false, "return_result is not supported with target 'all'."
+    --- Server only, client screenshots over `std.Network`.
+    ---@type fun( command: table )
+    local request_screenshot
+
+    if LUA_SERVER then
+
+        local glua_player = dreamwork_engine.requireLibrary( "player" )
+        local glua_ents = dreamwork_engine.requireLibrary( "ents" )
+        local glua_team = dreamwork_engine.requireLibrary( "team" )
+
+        local player_GetAll = glua_player.GetAll
+        local ents_GetAll = glua_ents.GetAll
+        local team_GetName = glua_team.GetName
+
+        local Client = std.Client
+        local Client_getAll = Client.getAll
+
+        ---@param vector garrysmod.Vector
+        ---@return { x: number, y: number, z: number }
+        local function position( vector )
+            return { x = vector.x, y = vector.y, z = vector.z }
+        end
+
+        ---@param ply garrysmod.Player
+        ---@return string | nil
+        local function active_weapon_class( ply )
+            local weapon = ply:GetActiveWeapon()
+            if weapon == nil or not weapon:IsValid() then
+                return nil
             end
 
-            local list, count = Client_getAll( true )
-            if count == 0 then
-                return false, "no connected players."
+            return weapon:GetClass()
+        end
+
+        --- [SERVER]
+        ---
+        --- Snapshot of connected players for `gmod_players`.
+        ---
+        ---@return table[]
+        function mcp.getPlayers()
+            local players = {}
+            local list = player_GetAll()
+
+            for index = 1, #list, 1 do
+                local ply = list[ index ]
+                if ply ~= nil and ply:IsValid() then
+                    players[ #players + 1 ] = {
+                        name = ply:Nick(),
+                        steam_id = ply:SteamID(),
+                        steam_id64 = ply:SteamID64(),
+                        team = team_GetName( ply:Team() ),
+                        team_id = ply:Team(),
+                        alive = ply:Alive(),
+                        health = ply:Health(),
+                        armor = ply:Armor(),
+                        position = position( ply:GetPos() ),
+                        model = ply:GetModel(),
+                        weapon = active_weapon_class( ply )
+                    }
+                end
+            end
+
+            return players
+        end
+
+        --- [SERVER]
+        ---
+        --- Snapshot of entities for `gmod_entities`.
+        ---
+        ---@param class_filter string | nil
+        ---@param custom_check string | nil
+        ---@param limit integer | nil
+        ---@return { entities: table[], truncated: boolean }
+        function mcp.getEntities( class_filter, custom_check, limit )
+            limit = math_min( math_max( math_floor( limit or 100 ), 1 ), MAX_ENTITY_LIMIT )
+
+            local filter
+            if class_filter ~= nil and class_filter ~= "" then
+                filter = string_lower( class_filter )
+            end
+
+            ---@type ( fun( entity: garrysmod.Entity ): boolean ) | nil
+            local check
+            if custom_check ~= nil and custom_check ~= "" then
+                if #custom_check > MAX_LUA_CODE_BYTES then
+                    error( format_error( "customCheck exceeds the %d byte limit.", MAX_LUA_CODE_BYTES ), 2 )
+                end
+
+                local factory, compile_error = compile_chunk(
+                    "return function( entity )\n" .. custom_check .. "\nend",
+                    "dreamwork.mcp:customCheck"
+                )
+
+                if factory == nil then
+                    error( "customCheck compilation failed: " .. tostring( compile_error ), 2 )
+                end
+
+                local ok, result = pcall( factory )
+                if not ok or not isFunction( result ) then
+                    error( "customCheck must compile to a Lua function: " .. tostring( result ), 2 )
+                end
+
+                ---@diagnostic disable-next-line: cast-type-mismatch
+                ---@cast result function
+
+                check = result
+            end
+
+            local entities = {}
+            local truncated = false
+            local list = ents_GetAll()
+
+            for index = 1, #list, 1 do
+                local entity = list[ index ]
+                if entity ~= nil and entity:IsValid() and not entity:IsPlayer() then
+                    local class = entity:GetClass()
+                    local matches = filter == nil or string_find( string_lower( class ), filter, 1, true ) ~= nil
+
+                    if matches and check ~= nil then
+                        local ok, included = pcall( check, entity )
+                        if not ok then
+                            error( "customCheck failed: " .. tostring( included ), 2 )
+                        end
+
+                        matches = included == true
+                    end
+
+                    if matches then
+                        if #entities >= limit then
+                            truncated = true
+                            break
+                        end
+
+                        entities[ #entities + 1 ] = {
+                            index = entity:EntIndex(),
+                            class = class,
+                            model = entity:GetModel(),
+                            position = position( entity:GetPos() )
+                        }
+                    end
+                end
+            end
+
+            return {
+                entities = entities,
+                truncated = truncated
+            }
+        end
+
+        --- [SERVER]
+        ---
+        --- Resolves a client by name, SteamID or SteamID64.
+        ---
+        ---@param target string
+        ---@return dreamwork.std.Client | nil
+        ---@return string | nil
+        function mcp.resolveClient( target )
+            if not isString( target ) then
+                return nil, "client target must be a string."
+            end
+
+            local normalized = string_trimSpaces( target )
+            if normalized == "" then
+                return nil, "client target is empty."
+            end
+
+            if #normalized > MAX_TARGET_BYTES then
+                return nil, format_error( "client target exceeds the %d byte limit.", MAX_TARGET_BYTES )
+            end
+
+            local lowered = string_lower( normalized )
+            local matches = {}
+            local list, count = Client_getAll()
+
+            for index = 1, count, 1 do
+                local client = list[ index ]
+
+                local name = client.name
+                local steam_id = client.steam_id
+
+                if (name ~= nil and string_lower( name ) == lowered)
+                    or (steam_id ~= nil and (steam_id:toSteam2() == normalized or steam_id:to64() == normalized)) then
+                    matches[ #matches + 1 ] = client
+                end
+            end
+
+            if #matches == 1 then
+                return matches[ 1 ], nil
+            end
+
+            if #matches > 1 then
+                return nil, "client target matches multiple players; use SteamID64."
+            end
+
+            return nil, "no connected player matches client target " .. normalized .. "."
+        end
+
+        ---@param code string
+        ---@param target string
+        ---@param request_id string | nil
+        ---@return boolean
+        ---@return string | nil
+        function send_exec_to_client( code, target, request_id )
+            local lowered = string_lower( string_trimSpaces( target ) )
+
+            if lowered == "all" or lowered == "tout le monde" then
+                if request_id ~= nil and request_id ~= "" then
+                    return false, "return_result is not supported with target 'all'."
+                end
+
+                local list, count = Client_getAll( true )
+                if count == 0 then
+                    return false, "no connected players."
+                end
+
+                local channel = get_network()
+                if channel == nil then
+                    return false, "MCP network channel is unavailable."
+                end
+
+                channel:transmit( function( _, writer )
+                    write_opcode( writer, MSG_EXEC )
+                    write_request_id( writer, "" )
+                    write_payload( writer, code )
+                end, list )
+
+                return true, nil
+            end
+
+            local client, resolve_error = mcp.resolveClient( target )
+            if client == nil then
+                return false, resolve_error
             end
 
             local channel = get_network()
@@ -970,87 +1062,70 @@ if LUA_SERVER then
                 return false, "MCP network channel is unavailable."
             end
 
+            if request_id ~= nil and request_id ~= "" then
+                clear_pending_exec( request_id )
+                pending_exec[ request_id ] = client
+
+                local timer_name = "dreamwork.mcp.exec." .. request_id
+
+                engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
+                    if pending_exec[ request_id ] == client then
+                        clear_pending_exec( request_id )
+                        respond_lua_raw( request_id, false, "Client Lua result timed out." )
+                    end
+                end, true )
+            end
+
             channel:transmit( function( _, writer )
                 write_opcode( writer, MSG_EXEC )
-                write_request_id( writer, "" )
+                write_request_id( writer, request_id or "" )
                 write_payload( writer, code )
-            end, list )
+            end, client )
 
             return true, nil
         end
 
-        local client, resolve_error = mcp.resolveClient( target )
-        if client == nil then
-            return false, resolve_error
-        end
+        ---@param command table
+        function request_screenshot( command )
+            local request_id = command.requestId or command.request_id
+            if not isString( request_id ) or request_id == "" then
+                error( "screenshot request is missing its id", 2 )
+            end
 
-        local channel = get_network()
-        if channel == nil then
-            return false, "MCP network channel is unavailable."
-        end
+            local client, resolve_error = mcp.resolveClient( command.target )
+            if client == nil then
+                ---@cast resolve_error string
+                respond_screenshot( request_id, false, resolve_error )
+                return
+            end
 
-        if request_id ~= nil and request_id ~= "" then
-            clear_pending_exec( request_id )
-            pending_exec[ request_id ] = client
+            local channel = get_network()
+            if channel == nil then
+                respond_screenshot( request_id, false, "MCP network channel is unavailable." )
+                return
+            end
 
-            local timer_name = "dreamwork.mcp.exec." .. request_id
+            clear_pending_screenshot( request_id )
+            pending_screenshots[ request_id ] = client
+
+            local timer_name = "dreamwork.mcp.shot." .. request_id
 
             engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
-                if pending_exec[ request_id ] == client then
-                    clear_pending_exec( request_id )
-                    respond_lua_raw( request_id, false, "Client Lua result timed out." )
+                if pending_screenshots[ request_id ] == client then
+                    clear_pending_screenshot( request_id )
+                    respond_screenshot( request_id, false, "Screenshot timed out." )
                 end
             end, true )
+
+            channel:transmit( function( _, writer )
+                write_opcode( writer, MSG_SCREENSHOT )
+                write_request_id( writer, request_id )
+            end, client )
         end
 
-        channel:transmit( function( _, writer )
-            write_opcode( writer, MSG_EXEC )
-            write_request_id( writer, request_id or "" )
-            write_payload( writer, code )
-        end, client )
-
-        return true, nil
     end
 
-    ---@param command table
-    local function request_screenshot( command )
-        local request_id = command.requestId or command.request_id
-        if not isString( request_id ) or request_id == "" then
-            error( "screenshot request is missing its id", 2 )
-        end
-
-        local client, resolve_error = mcp.resolveClient( command.target )
-        if client == nil then
-            ---@cast resolve_error string
-            respond_screenshot( request_id, false, resolve_error )
-            return
-        end
-
-        local channel = get_network()
-        if channel == nil then
-            respond_screenshot( request_id, false, "MCP network channel is unavailable." )
-            return
-        end
-
-        clear_pending_screenshot( request_id )
-        pending_screenshots[ request_id ] = client
-
-        local timer_name = "dreamwork.mcp.shot." .. request_id
-
-        engine_timer_create( timer_name, CLIENT_RESULT_TIMEOUT, 1, function()
-            if pending_screenshots[ request_id ] == client then
-                clear_pending_screenshot( request_id )
-                respond_screenshot( request_id, false, "Screenshot timed out." )
-            end
-        end, true )
-
-        channel:transmit( function( _, writer )
-            write_opcode( writer, MSG_SCREENSHOT )
-            write_request_id( writer, request_id )
-        end, client )
-    end
-
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Executes one command dequeued from the native bridge.
     ---
@@ -1081,6 +1156,30 @@ if LUA_SERVER then
 
         if tool == "gmod_status" then
             return
+        end
+
+        if LUA_MENU then
+            if tool == "screenshot" then
+                if not isString( request_id ) or request_id == "" then
+                    error( "screenshot request is missing its id", 2 )
+                end
+
+                ---@cast capture_screenshot -nil
+                capture_screenshot( function( ok, payload )
+                    respond_screenshot( request_id, ok, payload )
+                end )
+
+                dreamwork_Logger:debug( "MCP: menu screenshot requested (request=%s).", request_id )
+                return
+            end
+
+            if tool == "gmod_players" or tool == "gmod_entities" then
+                error( tool .. " is unavailable in the menu state, there is no game server", 2 )
+            end
+
+            if tool == "exec_lua_code" and command.state == "client" then
+                error( "client state is unavailable from the menu bridge, use state 'server' to run code in the menu state", 2 )
+            end
         end
 
         if tool == "screenshot" then
@@ -1126,14 +1225,14 @@ if LUA_SERVER then
         if command.state == "server" then
             set_active_exec( request_id )
 
-            local executed, execute_error = compile_and_run( code, "dreamwork.mcp:server", request_id )
+            local executed, execute_error = compile_and_run( code, "dreamwork.mcp:" .. HOST_REALM, request_id )
             if not executed then
-                report_error( "server Lua execution failed (tool=%s, request=%s, %d bytes): %s", tool, request_id or "-", code_length, execute_error, {
+                report_error( "%s Lua execution failed (tool=%s, request=%s, %d bytes): %s", HOST_REALM, tool, request_id or "-", code_length, execute_error, {
                     tool = tool,
                     request_id = request_id
                 } )
             else
-                dreamwork_Logger:debug( "MCP: ran server Lua (tool=%s, request=%s, %d bytes).", tool, request_id or "-", code_length )
+                dreamwork_Logger:debug( "MCP: ran %s Lua (tool=%s, request=%s, %d bytes).", HOST_REALM, tool, request_id or "-", code_length )
             end
 
             return
@@ -1159,76 +1258,80 @@ if LUA_SERVER then
         end
     end
 
-    ---@param reader dreamwork.std.BinaryReader
-    ---@param sender dreamwork.std.Client | nil
-    local function on_network_receive( _, reader, sender )
-        if sender == nil then return end
+    if LUA_SERVER then
 
-        local ok, err = pcall( function()
-            local opcode = read_opcode( reader )
+        ---@param reader dreamwork.std.BinaryReader
+        ---@param sender dreamwork.std.Client | nil
+        local function on_network_receive( _, reader, sender )
+            if sender == nil then return end
 
-            if opcode == MSG_EXEC_RESULT then
-                local request_id = read_request_id( reader )
-                local success = reader:readBoolean()
-                local payload = read_payload( reader )
+            local ok, err = pcall( function()
+                local opcode = read_opcode( reader )
 
-                if pending_exec[ request_id ] ~= sender then
-                    return nil
-                end
+                if opcode == MSG_EXEC_RESULT then
+                    local request_id = read_request_id( reader )
+                    local success = reader:readBoolean()
+                    local payload = read_payload( reader )
 
-                clear_pending_exec( request_id )
-                respond_lua_raw( request_id, success, payload, "client" )
-                return nil
-            end
-
-            if opcode == MSG_SCREENSHOT_RESULT then
-                local request_id = read_request_id( reader )
-                local success = reader:readBoolean()
-                local payload = read_payload( reader )
-
-                if pending_screenshots[ request_id ] ~= sender then
-                    return nil
-                end
-
-                clear_pending_screenshot( request_id )
-
-                if success then
-                    local payload_size = #payload
-                    if payload_size == 0 then
-                        respond_screenshot( request_id, false, "Screenshot is empty." )
-                    elseif payload_size > MAX_SCREENSHOT_BYTES then
-                        respond_screenshot( request_id, false, format_error(
-                            "Screenshot exceeds the %d byte limit.",
-                            MAX_SCREENSHOT_BYTES
-                        ) )
-                    else
-                        respond_screenshot( request_id, true, payload )
+                    if pending_exec[ request_id ] ~= sender then
+                        return nil
                     end
-                else
-                    respond_screenshot( request_id, false, payload )
+
+                    clear_pending_exec( request_id )
+                    respond_lua_raw( request_id, success, payload, "client" )
+                    return nil
                 end
+
+                if opcode == MSG_SCREENSHOT_RESULT then
+                    local request_id = read_request_id( reader )
+                    local success = reader:readBoolean()
+                    local payload = read_payload( reader )
+
+                    if pending_screenshots[ request_id ] ~= sender then
+                        return nil
+                    end
+
+                    clear_pending_screenshot( request_id )
+
+                    if success then
+                        local payload_size = #payload
+                        if payload_size == 0 then
+                            respond_screenshot( request_id, false, "Screenshot is empty." )
+                        elseif payload_size > MAX_SCREENSHOT_BYTES then
+                            respond_screenshot( request_id, false, format_error(
+                                "Screenshot exceeds the %d byte limit.",
+                                MAX_SCREENSHOT_BYTES
+                            ) )
+                        else
+                            respond_screenshot( request_id, true, payload )
+                        end
+                    else
+                        respond_screenshot( request_id, false, payload )
+                    end
+                end
+
+                return nil
+            end )
+
+            if not ok then
+                local steam_id = sender.steam_id
+                local steam_id64 = steam_id ~= nil and steam_id:to64() or "BOT"
+
+                report_error( "failed to handle client message from %s [%s]: %s", sender.name or "unknown", steam_id64, err, {
+                    sender = steam_id64
+                } )
             end
-
-            return nil
-        end )
-
-        if not ok then
-            local steam_id = sender.steam_id
-            local steam_id64 = steam_id ~= nil and steam_id:to64() or "BOT"
-
-            report_error( "failed to handle client message from %s [%s]: %s", sender.name or "unknown", steam_id64, err, {
-                sender = steam_id64
-            } )
         end
-    end
 
-    do
-        local channel = get_network()
-        if channel ~= nil then
-            -- networks are shared by name, drop the receivers of previous module loads
-            channel:clear()
-            channel:attach( on_network_receive )
+        do
+            local channel = get_network()
+            if channel ~= nil then
+                -- networks are shared by name, drop the receivers of previous module loads
+                channel:clear()
+                channel:attach( on_network_receive )
+            end
         end
+
     end
 
     local function poll_commands()
@@ -1300,7 +1403,7 @@ if LUA_SERVER then
         return true
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Applies the effective enabled state without writing the `mcp_enabled` override.
     --- Follows the override when set, otherwise `std.DEVELOPER`.
@@ -1319,7 +1422,7 @@ if LUA_SERVER then
         return ok
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Starts bridge polling and advertises the connected status.
     --- Sets the `mcp_enabled` override to `"1"` (overrides developer auto mode).
@@ -1338,7 +1441,7 @@ if LUA_SERVER then
         return true
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Stops accepting commands and advertises the disabled status.
     --- Sets the `mcp_enabled` override to `"0"` (overrides developer auto mode).
@@ -1350,7 +1453,7 @@ if LUA_SERVER then
         events:emit( mcp, "disable" )
     end
 
-    --- [SERVER]
+    --- [SERVER AND MENU]
     ---
     --- Tears down the bridge and timers.
     ---
@@ -1388,7 +1491,7 @@ if LUA_SERVER then
     -- Fail the active waiting exec with the original error, before it is replaced by the sentinel.
     engine_hook.catch( "dreamwork.error.report", "modules.mcp.error", function( error_value )
         if active_exec_request_id ~= nil then
-            collect_error( active_exec_request_id, reported_error_entry( error_value, "server" ) )
+            collect_error( active_exec_request_id, reported_error_entry( error_value, HOST_REALM ) )
         end
     end, 2000 )
 
@@ -1408,7 +1511,7 @@ if LUA_SERVER then
         if not pl:IsValid() then return end
 
         for request_id, client in raw_pairs( pending_exec ) do
-            if client:getEntity() == pl then
+            if client_toEntity( client ) == pl then
                 collect_error( request_id, lua_error_entry( err, realm, stack, source ) )
             end
         end
@@ -1468,14 +1571,6 @@ if LUA_SERVER then
 end
 
 if LUA_CLIENT then
-
-    local gui_IsGameUIVisible = dreamwork_engine.requireLibrary( "gui" ).IsGameUIVisible or function() return false end
-    local render_Capture = dreamwork_engine.requireLibrary( "render" ).Capture or std.debug.fempty
-
-    local window = std.window
-
-    ---@type string[]
-    local pending_captures = {}
 
     --- Request id of the client Lua exec awaiting `mcp.returnResult` / a result payload.
     ---@type string | nil
@@ -1653,60 +1748,17 @@ if LUA_CLIENT then
     end )
 
     ---@param request_id string
-    local function capture_screenshot( request_id )
+    local function handle_screenshot( request_id )
         if not allow_capture then
             send_screenshot_result( request_id, false, "Client screenshot capture is restricted." )
             return
         end
 
-        if gui_IsGameUIVisible() then
-            send_screenshot_result( request_id, false, "GMod cannot capture while the Escape menu is open." )
-            return
-        end
-
-        pending_captures[ #pending_captures + 1 ] = request_id
+        ---@cast capture_screenshot -nil
+        capture_screenshot( function( ok, payload )
+            send_screenshot_result( request_id, ok, payload )
+        end )
     end
-
-    engine_hook.catch( "PostRender", "modules.mcp.screenshot", function()
-        local request_id = table_remove( pending_captures, 1 )
-        if request_id == nil then
-            return
-        end
-
-        if not allow_capture then
-            send_screenshot_result( request_id, false, "Client screenshot capture is restricted." )
-            return
-        end
-
-        local ok, data = pcall( render_Capture, {
-            format = "jpeg",
-            quality = SCREENSHOT_QUALITY,
-            x = 0,
-            y = 0,
-            w = window.width,
-            h = window.height
-        } )
-
-        if not ok then
-            send_screenshot_result( request_id, false, "Screenshot capture failed: " .. tostring( data ) )
-            return
-        end
-
-        if not isString( data ) or #data == 0 then
-            send_screenshot_result( request_id, false, "GMod cannot capture while the Escape menu is open." )
-            return
-        end
-
-        if #data > MAX_SCREENSHOT_BYTES then
-            send_screenshot_result( request_id, false, format_error(
-                "Screenshot exceeds the %d byte limit.",
-                MAX_SCREENSHOT_BYTES
-            ) )
-            return
-        end
-
-        send_screenshot_result( request_id, true, data )
-    end )
 
     ---@param channel dreamwork.std.Network
     local function attach_client_receiver( channel )
@@ -1730,7 +1782,7 @@ if LUA_CLIENT then
                         return nil
                     end
 
-                    capture_screenshot( request_id )
+                    handle_screenshot( request_id )
                 end
 
                 return nil

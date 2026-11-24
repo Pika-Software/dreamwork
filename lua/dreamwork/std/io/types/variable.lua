@@ -1,11 +1,6 @@
 local dreamwork_engine = dreamwork.engine
 local engine_hook = dreamwork_engine.hook
 
-local std = dreamwork.std
-
----@class dreamwork.std.console
-local console = std.console
-
 local engine_console = dreamwork_engine.console
 local console_variableGet = engine_console.variableGet
 local console_variableGetValue = engine_console.variableGetValue
@@ -14,7 +9,10 @@ local console_variableCreate = engine_console.variableCreate
 local console_variableRemove = engine_console.variableRemove
 local console_variableExists = engine_console.variableExists
 
-local LUA_SERVER = std.LUA_SERVER
+local dreamwork_storage = dreamwork.storage
+local storage_variables = dreamwork_storage.variables
+
+local std = dreamwork.std
 
 local debug = std.debug
 local debug_getmetatable = debug.getmetatable
@@ -38,6 +36,9 @@ local rbit_band = rbit.band
 
 local class = std.class
 
+---@class dreamwork.std.console
+local console = std.console
+
 local type = std.type
 local error = std.error
 local isNumber = std.isNumber
@@ -48,6 +49,9 @@ local setmetatable = std.setmetatable
 local Emitter = std.Emitter
 local Boolean = std.Boolean
 local String = std.String
+
+local LUA_SERVER = std.LUA_SERVER
+local LUA_MENU = std.LUA_MENU
 
 
 local ConsoleVariable = dreamwork_engine.ConsoleVariable
@@ -283,6 +287,38 @@ local events = Emitter( "console.Variable" )
 ---@type table<string, dreamwork.std.console.Variable>
 local named_variables = {}
 
+--- main menu callbacks are broken so here we are
+---@type fun( name: string, variable: dreamwork.std.console.Variable ) | nil
+local poll_variable
+
+if LUA_MENU then
+
+    local ConsoleVariable_GetString = ConsoleVariable.GetString
+    local hook_call = engine_hook.call
+    local raw_pairs = raw.pairs
+
+    ---@param name string
+    ---@param variable dreamwork.std.console.Variable
+    function poll_variable( name, variable )
+        local cvar = variable_cvars[ variable ]
+        if cvar == nil then return end
+
+        local old_string = console_variableGetValue( name )
+        local new_string = ConsoleVariable_GetString( cvar )
+
+        if new_string ~= old_string then
+            hook_call( "dreamwork.console.variable.change", name, old_string, new_string )
+        end
+    end
+
+    -- also catches values typed into the console
+    dreamwork_engine.timer.create( "dreamwork.console.variable.poll", 0.5, 0, function()
+        for name, variable in raw_pairs( named_variables ) do
+            poll_variable( name, variable )
+        end
+    end, true )
+
+end
 
 --- [SHARED AND MENU]
 ---
@@ -352,6 +388,10 @@ function Variable:__newindex( key, value )
             console_variableSetValue( variable_names[ self ], string_format( "%f", parse_number( value ) ) )
         else
             console_variableSetValue( variable_names[ self ], tostring( value ) )
+        end
+
+        if poll_variable ~= nil then
+            poll_variable( variable_names[ self ], self )
         end
     elseif key == "type" then
         variable_types[ self ] = value
@@ -439,6 +479,13 @@ function Variable:__init( options )
         end
 
         cvar = console_variableCreate( name, default_string, flags, description, min, max )
+
+        if LUA_MENU and rbit_band( flags, 128 --[[ FCVAR_ARCHIVE ]] ) ~= 0 then
+            local saved = storage_variables.read( name )
+            if saved ~= nil then
+                console_variableSetValue( name, saved )
+            end
+        end
     end
 
     if cvar == nil then
@@ -817,8 +864,15 @@ engine_hook.catch( "dreamwork.console.variable.change", "console.variable.change
     local new_value = parse_value( new_string, cvar_type )
 
     variable_values[ variable ] = parse_value( old_string, cvar_type )
-
     events:emit( variable, "change", variable, new_value )
-
     variable_values[ variable ] = new_value
+
+    if LUA_MENU and rbit_band( variable_flags[ variable ], 128 --[[ FCVAR_ARCHIVE ]] ) ~= 0 then
+        local cvar = variable_cvars[ variable ]
+        if cvar ~= nil and ConsoleVariable_GetDefault( cvar ) == new_string then
+            storage_variables.delete( name )
+        else
+            storage_variables.write( name, new_string )
+        end
+    end
 end, -1000 )

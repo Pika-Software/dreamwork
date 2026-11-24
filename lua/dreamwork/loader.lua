@@ -1248,27 +1248,65 @@ do
     local getfenv = std.getfenv
     local setfenv = std.setfenv
 
-    -- CompileString( code, name, false ) returns the error message instead of throwing,
-    -- loadstring / load return nil + error message; `nil` as third argument keeps
-    -- LuaJIT `loadstring` happy and selects the default mode in Lua 5.2+ `load`,
-    -- which also takes the environment as fourth argument, so `setfenv` is skipped.
+    ---@alias dreamwork.Compiler fun( lua_code: string, chunk_name: string, handle_error: ( boolean | "t" | nil ), env: table ): ( function | string | nil ), ( string | nil )
 
-    ---@type fun( lua_code: string, chunk_name: string, handle_error: ( boolean | "t" | nil ), env: table ): ( function | string | nil ), ( string | nil )
-    local compiler = CompileString
+    -- Compiler candidates in priority order, each init returns
+    -- `compiler, handle_error, native_env` or `nil` if unavailable,
+    -- the last one always succeeds with a stub that reports the missing compiler.
+    ---@type ( fun(): dreamwork.Compiler?, ( boolean | "t" | nil ), boolean )[]
+    local compilers = {
+        function()
+            return CompileString, false, false
+        end,
+        function()
+            return loadstring, "t", false
+        end,
+        function()
+            return load, "t", true
+        end,
+        function()
+            local RunString = RunString
+            if RunString == nil then
+                return nil, nil, false
+            end
+
+            -- RunString executes the chunk, so the code is wrapped into a function
+            -- and passed back through a global; the header shares the first line
+            -- with the code to keep error line numbers intact.
+            return function( lua_code, chunk_name )
+                local error_message = RunString( "dreamwork.CompileBridge = function( ... ) " .. lua_code .. "\nend", chunk_name, false )
+                if error_message ~= nil then
+                    return nil, error_message
+                end
+
+                local fn = dreamwork.CompileBridge
+                dreamwork.CompileBridge = nil
+
+                return fn, nil
+            end, false, false
+        end,
+        function()
+            return function()
+                return nil, "Lua compiler is missing"
+            end, false, false
+        end
+    }
+
+    ---@type dreamwork.Compiler
+    local compiler
 
     ---@type boolean | "t" | nil
-    local handle_error = false
-    local native_env = false
+    local handle_error
 
-    if compiler == nil then
-        compiler, handle_error = loadstring, "t"
-        if compiler == nil then
-            compiler, native_env = load, true
-            if compiler == nil then
-                function compiler()
-                    return "Lua compiler is missing"
-                end
-            end
+    ---@type boolean
+    local native_env
+
+    for index = 1, #compilers, 1 do
+        local fn
+        fn, handle_error, native_env = compilers[ index ]()
+        if fn ~= nil then
+            compiler = fn
+            break
         end
     end
 
@@ -2829,13 +2867,6 @@ dreamwork_load( "std/io/console.lua" )
 
 local console = std.console
 
-local developer = console.Variable.get( "developer", "integer" )
-std.DEVELOPER = developer.value
-
-developer:attach( function( _, value )
-    std.DEVELOPER = value
-end )
-
 local logger = console.Logger( {
     color = color_scheme.dreamwork_main,
     title = string.gsub( string.lower( dreamwork.DevTeam ), "[^%w]", "-" ) .. "/" .. dreamwork.Prefix,
@@ -2844,8 +2875,24 @@ local logger = console.Logger( {
 
 dreamwork.Logger = logger
 
-dreamwork_load( "std/server/init.lua" )
+dreamwork_load( "std/db/sqlite.lua" )
+dreamwork_load( "modules/storage.lua" )
 
+dreamwork_load( "std/io/types/variable.lua" )
+
+do
+
+    local developer = console.Variable.get( "developer", "integer" )
+
+    developer:attach( function( _, value )
+        std.DEVELOPER = value
+    end )
+
+    std.DEVELOPER = developer.value
+
+end
+
+dreamwork_load( "std/server/init.lua" )
 dreamwork_load( "std/ascii/art.lua" )
 
 -- Welcome message
@@ -3142,6 +3189,8 @@ if ffi ~= nil then
     end
 end
 
+dreamwork.storage.init()
+
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "std/io/fs.lua" )
 
@@ -3190,11 +3239,6 @@ dreamwork_load( "std/gfx/window.lua", false, LUA_SERVER )
 dreamwork_load( "std/gfx/types/viewport_layout.lua", false, LUA_SERVER )
 dreamwork_load( "std/gfx/types/font.lua", false, LUA_SERVER )
 
-dreamwork_load( "std/db/sqlite.lua" )
-dreamwork_load( "modules/storage.lua" )
-
-dreamwork.storage.init()
-
 dreamwork_load( "std/menu/init.lua" )
 
 dreamwork_load( "std/game/types/game.lua" )
@@ -3212,7 +3256,7 @@ dreamwork_load( "std/compress/types/zip.lua" )
 dreamwork_load( "std/compress/types/tar.lua" )
 dreamwork_load( "std/compress/types/addon.lua" )
 
-dreamwork_load( "modules/engine/client.lua", false, LUA_MENU )
+dreamwork_load( "modules/engine/client.lua" )
 dreamwork_load( "modules/engine/injection.lua" )
 
 dreamwork_load( "std/net/types/web_client.lua", false, LUA_SERVER )

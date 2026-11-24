@@ -528,3 +528,21 @@ function GetRenderTargetEx( name, width, height, size_mode, depth_mode, texture_
 ---@param name string Path to the `.cache` image file (e.g. the path from `steamworks.Download`).
 ---@return garrysmod.Material | nil material The material, or `nil` if the file is not an image.
 function AddonMaterial( name ) end
+
+--- [SHARED AND MENU]
+---
+--- Compiles and immediately executes the given Lua code.
+---
+--- Unlike `CompileString`, this runs the code right away instead of returning a function.
+--- Local variables from the calling scope are not visible to the executed code.
+---
+--- ```lua
+--- RunString( [[print( "test" )]] )
+--- -- test
+--- ```
+---
+---@param code string The Lua code to execute.
+---@param identifier string? Name shown in error messages. Defaults to `"RunString(Ex)"`.
+---@param handle_error boolean? If `false`, returns the error message as a string instead of throwing. Defaults to `true`.
+---@return string | nil error_message The error message when `handle_error` is `false` and an error occurred; otherwise nothing.
+function RunString( code, identifier, handle_error ) end

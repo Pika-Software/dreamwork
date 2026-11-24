@@ -55,6 +55,8 @@ local LUA_CLIENT = std.LUA_CLIENT
 local LUA_SERVER = std.LUA_SERVER
 
 
+local NOT_LUA_MENU = not LUA_MENU
+
 --- [SHARED AND MENU]
 ---
 --- The game's server library.
@@ -142,9 +144,9 @@ do
         description = "The public UDP port of the server, kept up to date by the server.",
         default = address_port,
         type = "integer",
-        replicated = true,
-        hidden = true,
-        notify = true
+        replicated = NOT_LUA_MENU,
+        notify = NOT_LUA_MENU,
+        hidden = true
     } )
 
     address_port = server_port.value
@@ -220,9 +222,9 @@ do
         name = dreamwork.selectVariableName( "server_hostname" ),
         description = "The publicly visible name of the server.",
         type = "string",
-        replicated = true,
-        hidden = true,
-        notify = true
+        replicated = NOT_LUA_MENU,
+        notify = NOT_LUA_MENU,
+        hidden = true
     } )
 
     --- [SHARED AND MENU]

@@ -793,11 +793,23 @@ gc_setTableRules( node_modified, true, false )
 local node_memory = {}
 gc_setTableRules( node_memory, true, false )
 
+--- `true` if the data of memory files is held in RAM, the menu cannot write into `DATA`,
+--- its `File` objects have no `Write` methods and `file.Write` leaves the file empty.
+local MEMORY_IN_RAM = LUA_MENU
+
 --- The files in `DATA` that keep the data of memory files, only the tree of the memory layer is held in RAM.
+---
+--- Empty where `MEMORY_IN_RAM` is `true`, see `node_contents`.
 ---
 ---@type table<dreamwork.vfs.Node, string>
 local node_storage = {}
 gc_setTableRules( node_storage, true, false )
+
+--- The data of memory files where `MEMORY_IN_RAM` is `true`, nobody else can change it, so it has no checksums.
+---
+---@type table<dreamwork.vfs.Node, string>
+local node_contents = {}
+gc_setTableRules( node_contents, true, false )
 
 --- The size of memory files in bytes.
 ---
@@ -955,11 +967,16 @@ local function memory_release( node )
         node_memory[ node ], node_whiteout[ node ] = nil, nil
         memory_count = memory_count - 1
 
-        local storage_path = node_storage[ node ]
-        if storage_path ~= nil then
-            memory_bytes = memory_bytes - node_sizes[ node ]
-            node_storage[ node ], node_sizes[ node ], node_checksums[ node ], node_versions[ node ] = nil, nil, nil, nil
-            driver_Delete( storage_path, "DATA" )
+        local file_size = node_sizes[ node ]
+        if file_size ~= nil then
+            memory_bytes = memory_bytes - file_size
+
+            local storage_path = node_storage[ node ]
+            node_storage[ node ], node_contents[ node ], node_sizes[ node ], node_checksums[ node ], node_versions[ node ] = nil, nil, nil, nil, nil
+
+            if storage_path ~= nil then
+                driver_Delete( storage_path, "DATA" )
+            end
         end
     elseif node_merged[ node ] ~= nil then
         node_merged[ node ] = nil
@@ -1601,6 +1618,15 @@ local function read_node_async( node, sync )
     -- the node loses its path once it is deleted while the read is awaited
     local vfs_path = node_path( node )
 
+    if MEMORY_IN_RAM then
+        local data = node_contents[ node ]
+        if data == nil then
+            return nil, string_format( "'%s' was deleted while it was read.", vfs_path )
+        end
+
+        return data
+    end
+
     for _ = 1, 4, 1 do
         local storage_path, version = node_storage[ node ], node_versions[ node ]
         if storage_path == nil then
@@ -1793,6 +1819,14 @@ end
 ---@param data_size integer
 ---@return string | nil message
 local function append_memory_file( node, vfs_path, data, data_size )
+    if MEMORY_IN_RAM then
+        node_contents[ node ] = node_contents[ node ] .. data
+        memory_bytes = memory_bytes + data_size
+        node_sizes[ node ] = node_sizes[ node ] + data_size
+        node_versions[ node ] = node_versions[ node ] + 1
+        return nil
+    end
+
     local storage_path, checksums = node_storage[ node ], node_checksums[ node ]
     local count = #checksums
 
@@ -1880,24 +1914,31 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
         data_size = #data
     end
 
-    local storage_path = storage_allocate()
+    ---@type string | nil
+    local storage_path
 
-    local checksums = { data_size, CRC32_digest( data ) }
+    ---@type integer[] | nil
+    local checksums
 
-    if not write_data_async( "DATA", storage_path, data, false, sync ) then
-        -- the storage directory could be deleted through `/garrysmod/data`
-        driver_CreateDir( storage_directory, "DATA" )
+    if not MEMORY_IN_RAM then
+        storage_path = storage_allocate()
+        checksums = { data_size, CRC32_digest( data ) }
 
         if not write_data_async( "DATA", storage_path, data, false, sync ) then
-            driver_Delete( storage_path, "DATA" )
-            return false, string_format( "'%s' could not be written into '%s'.", vfs_path, storage_path )
-        end
-    end
+            -- the storage directory could be deleted through `/garrysmod/data`
+            driver_CreateDir( storage_directory, "DATA" )
 
-    -- the tree could change while the data was written
-    if not is_attached( directory ) then
-        driver_Delete( storage_path, "DATA" )
-        return false, string_format( "'%s' could not be written, its directory was deleted.", vfs_path )
+            if not write_data_async( "DATA", storage_path, data, false, sync ) then
+                driver_Delete( storage_path, "DATA" )
+                return false, string_format( "'%s' could not be written into '%s'.", vfs_path, storage_path )
+            end
+        end
+
+        -- the tree could change while the data was written
+        if not is_attached( directory ) then
+            driver_Delete( storage_path, "DATA" )
+            return false, string_format( "'%s' could not be written, its directory was deleted.", vfs_path )
+        end
     end
 
     local unix_time = time_now()
@@ -1907,13 +1948,21 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
     local existed = node ~= nil and not node_whiteout[ node ]
 
     if existed and node_children[ node ] ~= nil then
-        driver_Delete( storage_path, "DATA" )
+        if storage_path ~= nil then
+            driver_Delete( storage_path, "DATA" )
+        end
+
         return false, string_format( "'%s' is a directory.", vfs_path )
     end
 
     if existed and node_memory[ node ] then
         ---@cast node dreamwork.vfs.Node
-        driver_Delete( node_storage[ node ], "DATA" )
+
+        local old_storage_path = node_storage[ node ]
+        if old_storage_path ~= nil then
+            driver_Delete( old_storage_path, "DATA" )
+        end
+
         memory_bytes = memory_bytes - node_sizes[ node ]
         node_versions[ node ] = node_versions[ node ] + 1
     else
@@ -1938,6 +1987,10 @@ local function write_memory_file( directory, node, vfs_path, name, data, append_
 
     memory_bytes = memory_bytes + data_size
     node_storage[ node ], node_sizes[ node ], node_checksums[ node ], node_modified[ node ] = storage_path, data_size, checksums, unix_time
+
+    if MEMORY_IN_RAM then
+        node_contents[ node ] = data
+    end
 
     watchdog_change( existed and "dreamwork.vfs.modified" or "dreamwork.vfs.created", vfs_path, false )
     return true
@@ -2095,8 +2148,10 @@ local function delete_tree( search_path, relative_path )
 end
 
 -- memory files of the previous load are lost like the rest of the memory layer
-delete_tree( "DATA", storage_directory )
-driver_CreateDir( storage_directory, "DATA" )
+if not MEMORY_IN_RAM then
+    delete_tree( "DATA", storage_directory )
+    driver_CreateDir( storage_directory, "DATA" )
+end
 
 --- Returns the mount of the file or directory of the search path that is deleted or moved away.
 ---

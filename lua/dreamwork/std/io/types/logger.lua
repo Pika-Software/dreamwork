@@ -66,21 +66,8 @@ local Logger = class.base( "console.Logger" )
 ---@overload fun( options: dreamwork.std.console.LoggerOptions? ) : dreamwork.std.console.Logger
 console.Logger = class.create( Logger )
 
-local developer_cvar = console.Variable.get( "developer", "number" )
-local default_debug_fn
-
-if developer_cvar == nil then
-
-    function default_debug_fn()
-        return true
-    end
-
-else
-
-    function default_debug_fn()
-        return developer_cvar.value ~= 0
-    end
-
+local function default_debug_fn()
+    return std.DEVELOPER ~= 0
 end
 
 local white_color = color_scheme.white

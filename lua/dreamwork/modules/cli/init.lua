@@ -858,7 +858,7 @@ end
 local futures_run = std.futures.run
 
 local console_command = console_Command( {
-    name = LUA_SERVER and "dreamwork_sci" or "dreamwork_cci",
+    name = ("dreamwork_" .. string_sub( std.LUA_REALM, 1, 1 ) .. "ci"),
     description = LUA_SERVER and "Dreamwork server console interface." or "Dreamwork client console interface."
 } )
 
@@ -1338,6 +1338,6 @@ end
 
 dreamwork_load( "modules/cli/commands/vfs.lua" )
 dreamwork_load( "modules/cli/commands/http.lua" )
-dreamwork_load( "modules/cli/commands/mcp.lua", false, not (LUA_CLIENT or LUA_SERVER) )
+dreamwork_load( "modules/cli/commands/mcp.lua" )
 dreamwork_load( "modules/cli/commands/transport.lua", false, LUA_MENU )
 dreamwork_load( "modules/cli/commands/package.lua" )
