@@ -1,6 +1,9 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_select = raw.select
+
 local debug = std.debug
 local debug_getfmain = debug.getfmain
 local debug_getfsource = debug.getfsource
@@ -14,7 +17,6 @@ local string_char, string_byte = string.char, string.byte
 local table = std.table
 local table_concat = table.concat
 
-local len = std.len
 local getfenv = std.getfenv
 local isFunction = std.isFunction
 
@@ -31,7 +33,7 @@ local isFunction = std.isFunction
 --- Nothing here touches the file system; all functions work on the strings only.
 ---
 --- ```lua
---- print( path.join( { "/game", "lua/", "autorun/init.lua" } ) ) -- /game/lua/autorun/init.lua
+--- print( path.join( "/game", "lua/", "autorun/init.lua" ) ) -- /game/lua/autorun/init.lua
 --- print( path.getExtension( "/game/lua/init.lua" ) ) -- lua
 --- ```
 ---
@@ -850,26 +852,24 @@ end
 --- The `segments` table is not modified.
 ---
 --- ```lua
---- path.join( { "/game", "lua/", "autorun/init.lua" } ) -- "/game/lua/autorun/init.lua"
---- path.join( { "/game/lua", "../data", "x.txt" } ) -- "/game/data/x.txt"
---- path.join( { "lua", "/autorun" } ) -- "lua/autorun"
---- path.join( {} ) -- "."
+--- path.join( "/game", "lua/", "autorun/init.lua" ) -- "/game/lua/autorun/init.lua"
+--- path.join( "/game/lua", "../data", "x.txt" ) -- "/game/data/x.txt"
+--- path.join( "lua", "/autorun" ) -- "lua/autorun"
+--- path.join() -- "."
 --- ```
 ---
----@param segments string[] The file paths to join.
----@param segment_count integer? The number of file paths to join, defaults to the length of `segments`.
+---@param ... string The file paths to join.
 ---@return string file_path The joined file path.
 ---@nodiscard
-function path.join( segments, segment_count )
-    if segment_count == nil then
-        segment_count = len( segments )
-    end
+function path.join( ... )
+    ---@type string[]
+    local parts = {}
 
-    -- empty segments are skipped, repeated slashes are collapsed by `normalize`
-    local parts, part_count = {}, 0
+    ---@type integer
+    local part_count = 0
 
-    for index = 1, segment_count, 1 do
-        local segment = segments[ index ]
+    for i = 1, raw_select( "#", ... ), 1 do
+        local segment = raw_select( i, ... )
         if string_byte( segment, 1, 1 ) ~= nil then
             part_count = part_count + 1
             parts[ part_count ] = segment
