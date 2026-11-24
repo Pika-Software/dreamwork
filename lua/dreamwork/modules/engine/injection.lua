@@ -3,7 +3,7 @@ local engine_Player = dreamwork_engine.Player
 local engine_requireLibrary = dreamwork_engine.requireLibrary
 
 local engine_client = dreamwork_engine.client
-local client_fromEntity = engine_client.fromEntity
+local client_fromEntity = engine_client and engine_client.fromEntity
 
 local detour = dreamwork.detour
 
@@ -25,7 +25,7 @@ local json_deserialize = json.deserialize
 local server = std.server
 
 local Client = std.Client
-local Client_getLocal = Client.getLocal
+local Client_getLocal = Client and Client.getLocal
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT

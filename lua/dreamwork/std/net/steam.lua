@@ -59,25 +59,29 @@ dreamwork_load( "std/net/steam/workshop.lua" )
 
 dreamwork_load( "std/net/steam/achievements.lua", false, LUA_SERVER )
 
-local function update_identifier()
-    local id64_str = (glua_steamworks.GetGameServerSteamID or debug_fempty)()
-    if id64_str ~= nil then
-        steam.id = steam.Identifier.from64( id64_str )
+if LUA_SERVER then
+
+    local function update_identifier()
+        local id64_str = (glua_steamworks.GetGameServerSteamID or debug_fempty)()
+        if id64_str ~= nil then
+            steam.id = steam.Identifier.from64( id64_str )
+        end
     end
+
+    engine_hook.catch( "HolyLib:OnSteamConnect", "std.steam.state", function()
+        steam.connected = true
+        update_identifier()
+    end, 1000 )
+
+    ---@param reason_id integer
+    engine_hook.catch( "HolyLib:OnSteamDisconnect", "std.steam.state", function( reason_id )
+        steam.connected = false
+        steam.id = nil
+    end, 1000 )
+
+    dreamwork_engine.nextTick( update_identifier )
+
 end
-
-engine_hook.catch( "HolyLib:OnSteamConnect", "std.steam.state", function()
-    steam.connected = true
-    update_identifier()
-end, 1000 )
-
----@param reason_id integer
-engine_hook.catch( "HolyLib:OnSteamDisconnect", "std.steam.state", function( reason_id )
-    steam.connected = false
-    steam.id = nil
-end, 1000 )
-
-dreamwork_engine.nextTick( update_identifier )
 
 if LUA_SERVER and server.dedicated then
 

@@ -61,7 +61,12 @@ end
 http.ClientName = client_name
 
 if client_fn == nil then
-    dreamwork_Logger:error( "HTTP client '%s' loading failed, sending requests is not possible.", client_name )
+    if client_name == "" then
+        dreamwork_Logger:error( "HTTP client is missing, sending requests is not possible." )
+    else
+        dreamwork_Logger:error( "HTTP client '%s' loading failed, sending requests is not possible.", client_name )
+    end
+
     function client_fn() return false end
 else
     dreamwork_Logger:info( "'%s' was loaded & connected as HTTP client.", client_name )
