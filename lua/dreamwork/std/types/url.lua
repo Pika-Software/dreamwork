@@ -2,6 +2,7 @@
 local std                    = dreamwork.std
 
 local raw                    = std.raw
+local raw_type               = raw.type
 local raw_pairs              = raw.pairs
 local raw_get, raw_set       = raw.get, raw.set
 
@@ -59,10 +60,6 @@ local ipv4_toString          = ipv4.toString
 local class                  = std.class
 
 local tostring               = std.tostring
-
-local isString               = std.isString
-local isNumber               = std.isNumber
-local isTable                = std.isTable
 
 local IPv6                   = std.IPv6
 
@@ -352,7 +349,7 @@ end
 ---@return boolean
 local function is_windows_drive_letter( str, normalized )
     ---@cast str string
-    return isString( str ) and #str == 2 and is_windows_drive_letter_bytes( string_byte( str, 1, 1 ), string_byte( str, 2, 2 ), normalized )
+    return raw_type( str ) == "string" and #str == 2 and is_windows_drive_letter_bytes( string_byte( str, 1, 1 ), string_byte( str, 2, 2 ), normalized )
 end
 
 ---@param str string
@@ -826,10 +823,10 @@ end
 ---@param host string | dreamwork.std.IPv4 | dreamwork.std.IPv6 | nil
 ---@return string | nil
 local function serialize_host( host )
-    if isNumber( host ) then
+    if raw_type( host ) == "number" then
         ---@cast host dreamwork.std.IPv4
         return ipv4_toString( host )
-    elseif isTable( host ) then
+    elseif raw_type( host ) == "table" then
         ---@cast host dreamwork.std.IPv6
         return "[" .. host:toString() .. "]"
     end
@@ -935,7 +932,7 @@ end
 ---@param base dreamwork.std.URL.State | nil
 function parse_no_scheme( state, str, start_position, end_position, base )
     local starts_with_fragment = string_byte( str, start_position, start_position ) == 0x23 --[[ # ]]
-    local base_has_opaque_path = base ~= nil and isString( base.path )
+    local base_has_opaque_path = base ~= nil and raw_type( base.path ) == "string"
 
     if base == nil or (base_has_opaque_path and not starts_with_fragment) then
         error( "Invalid URL: Missing scheme" )
@@ -1280,7 +1277,7 @@ function parse_file_slash( state, str, start_position, end_position, base )
         local base_path = base.path
         ---@cast base_path string[]
 
-        if isTable( base_path ) and not starts_with_windows_drive_letter( str, start_position, end_position ) and is_windows_drive_letter( base_path[ 1 ], true ) then
+        if raw_type( base_path ) == "table" and not starts_with_windows_drive_letter( str, start_position, end_position ) and is_windows_drive_letter( base_path[ 1 ], true ) then
             path[ 1 ] = base_path[ 1 ]
         end
     end
@@ -1481,10 +1478,10 @@ end
 ---@param base string | dreamwork.std.URL | dreamwork.std.URL.State | nil
 ---@return dreamwork.std.URL.State
 local function parse( state, str, base )
-    if isString( base ) then
+    if raw_type( base ) == "string" then
         ---@cast base string
         base = parse( {}, base )
-    elseif isURL( base ) then
+    elseif debug_getmetatable( base ) == URL then
         ---@cast base dreamwork.std.URL
         base = raw_get( base, "state" )
     end
@@ -1568,7 +1565,7 @@ end
 local function serialize( state, exclude_fragment )
     local hostname = state.hostname
     local path = state.path
-    local is_opaque = isString( path )
+    local is_opaque = raw_type( path ) == "string"
 
     local segments, segment_count = {}, 0
 
@@ -1650,7 +1647,7 @@ local function get_origin( state )
         return scheme, state.hostname, state.port
     elseif scheme == "blob" then
         local path = state.path
-        if isString( path ) then
+        if raw_type( path ) == "string" then
             local success, inner_state = pcall( parse, {}, path )
             if success and (inner_state.scheme == "http" or inner_state.scheme == "https") then
                 return get_origin( inner_state )
@@ -1750,7 +1747,7 @@ end
 function SearchParams:__init( query, url )
     self.url = url
 
-    if isString( query ) then
+    if raw_type( query ) == "string" then
         ---@cast query string
 
         -- the query of a URL is used as is, it has no leading "?" to skip
@@ -1759,7 +1756,7 @@ function SearchParams:__init( query, url )
         end
 
         parse_query_string( query, self )
-    elseif isTable( query ) then
+    elseif raw_type( query ) == "table" then
         ---@cast query { [ 1 ]: string, [ 2 ]: string | nil }[]
 
         for index = 1, #query, 1 do
@@ -2066,7 +2063,7 @@ function URL:__index( key )
         end
 
         local path = state.path
-        if isTable( path ) then
+        if raw_type( path ) == "table" then
             ---@cast path string[]
             return cache_value( self, "_pathname", #path == 0 and "" or ("/" .. table_concat( path, "/" )) )
         end
@@ -2104,7 +2101,7 @@ end
 ---@param value string
 ---@param state_override "host" | "hostname"
 local function set_host( url, state, value, state_override )
-    if isString( state.path ) then
+    if raw_type( state.path ) == "string" then
         return
     end
 
@@ -2148,7 +2145,7 @@ function URL:__newindex( key, value )
                 parse_port( state, value, 1, #value, get_special( state ), true )
             end
         elseif key == "query" then
-            if isURLSearchParams( value ) then
+            if debug_getmetatable( value ) == SearchParams then
                 value = serialize_query( value )
             end
 
@@ -2171,7 +2168,7 @@ function URL:__newindex( key, value )
     elseif key == "host" then
         set_host( self, state, value, "host" )
     elseif key == "pathname" then
-        if isString( state.path ) then return end
+        if raw_type( state.path ) == "string" then return end
 
         reset_cache( self )
 

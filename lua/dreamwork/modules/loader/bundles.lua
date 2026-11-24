@@ -11,6 +11,7 @@ local dreamwork_transport = dreamwork.transport
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 
 local string = std.string
@@ -33,7 +34,6 @@ local futures_run = futures.run
 local jit_version_byte = std.jit.version_byte
 
 local pcall = std.pcall
-local isTable = std.isTable
 
 local json = std.json
 local json_serialize = json.serialize
@@ -42,6 +42,7 @@ local json_deserialize = json.deserialize
 local cli_formatBytes = dreamwork.cli.formatBytes
 
 local Zip = std.Zip
+
 
 ---@class dreamwork.loader
 local loader = dreamwork.loader
@@ -207,7 +208,7 @@ local function publish( state )
         -- the client finds repository packages by `repository` too (`import( "user/repo" )`)
         if file_path == "package.json" and source.repository ~= nil then
             local success, data = pcall( json_deserialize, content )
-            if success and isTable( data ) and data.repository == nil then
+            if success and raw_type( data ) == "table" and data.repository == nil then
                 data.repository = source.repository
                 content = json_serialize( data )
             end

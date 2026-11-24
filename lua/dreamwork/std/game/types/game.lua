@@ -17,6 +17,7 @@ local class = std.class
 local class_new = class.new
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_index = raw.index
 local raw_tostring = raw.tostring
 
@@ -24,7 +25,6 @@ local string = std.string
 local string_format = string.format
 
 local error = std.error
-local isString = std.isString
 
 local Directory = std.Directory
 
@@ -112,7 +112,7 @@ local function find_depot( game_id )
         return depot
     end
 
-    if not isString( game_id ) then
+    if raw_type( game_id ) ~= "string" then
         if mounts_GameMap[ game_id ] == nil then
             return nil
         end

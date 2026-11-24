@@ -7,6 +7,7 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_index = raw.index
 local raw_pairs = raw.pairs
 local raw_select = raw.select
@@ -29,11 +30,6 @@ local negative_zero = 1 / -math_huge
 local type = std.type
 local error = std.error
 local setmetatable = std.setmetatable
-local isTable = std.isTable
-local isString = std.isString
-local isNumber = std.isNumber
-local isBoolean = std.isBoolean
-local isFunction = std.isFunction
 local isBigInteger = std.isBigInteger
 
 local exceptions = dreamwork.exceptions
@@ -231,7 +227,7 @@ gc_setTableRules( export_proxies, true, false )
 ---@param value any
 ---@return any
 local function decode_value( value )
-    if isTable( value ) then
+    if raw_type( value ) == "table" then
         local i64 = value.i64
         if i64 ~= nil then
             return BigInteger( i64 )
@@ -275,7 +271,7 @@ end
 ---@param value any
 ---@return string
 local function encode_value( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         if value ~= value then
             return "NaN"
         elseif value == math_huge then
@@ -289,7 +285,7 @@ local function encode_value( value )
         return '"' .. value:toString( 10 ) .. '"'
     elseif value == nil then
         return "undefined"
-    elseif isString( value ) or isBoolean( value ) then
+    elseif raw_type( value ) == "string" or raw_type( value ) == "boolean" then
         return json_encode( value )
     end
 
@@ -537,23 +533,23 @@ function WASM:__init( binary, imports )
     ---@type string | nil
     local glue
 
-    if isString( imports ) then
+    if raw_type( imports ) == "string" then
         ---@cast imports string
         glue, imports = imports, nil
     elseif imports ~= nil then
         ---@cast imports dreamwork.std.WASM.Imports
 
         for module_name, entries in raw_pairs( imports ) do
-            if not (isString( module_name ) and isTable( entries )) then
+            if not (raw_type( module_name ) == "string" and raw_type( entries ) == "table") then
                 error( ValueError( module_name, "WASM import modules must map names to tables" ), 4 )
             end
 
             local module_spec = {}
 
             for name, value in raw_pairs( entries ) do
-                if isFunction( value ) then
+                if raw_type( value ) == "function" then
                     module_spec[ name ] = true
-                elseif isString( value ) then
+                elseif raw_type( value ) == "string" then
                     module_spec[ name ] = value
                 else
                     error( ValueError( value, string_format( "import '%s.%s' must be a Lua function or a JavaScript expression", module_name, raw_tostring( name ) ) ), 4 )
@@ -645,7 +641,7 @@ function WASM:__init( binary, imports )
         local entries = import_tables[ wasm ][ module_name ]
         local fn = entries and entries[ name ]
 
-        if isFunction( fn ) then
+        if raw_type( fn ) == "function" then
             ---@cast fn function
             local values, count = decode_values( arguments_json )
             exceptions_call( fn, table_unpack( values, 1, count ) )

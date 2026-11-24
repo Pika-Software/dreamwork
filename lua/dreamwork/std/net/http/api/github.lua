@@ -11,6 +11,7 @@ local base64 = std.base64
 local base64_decode = base64.decode
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_tonumber = raw.tonumber
 
 local string = std.string
@@ -31,7 +32,6 @@ local console_Variable = console.Variable
 
 local error = std.error
 local pairs = std.pairs
-local isTable = std.isTable
 local tostring = std.tostring
 
 local URL = std.URL
@@ -296,7 +296,7 @@ local function tryApiRequest( method, pathname, headers, body, do_cache, extra )
     end
 
     local data = json_deserialize( response_body )
-    if data == nil or not isTable( data ) then
+    if data == nil or raw_type( data ) ~= "table" then
         return false, "failed to parse JSON response from Github API (" .. tostring( status ) .. ") (" .. tostring( pathname ) .. ")"
     end
 

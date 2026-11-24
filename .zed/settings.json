@@ -18,6 +18,7 @@
               "dreamwork.load": "dofile",
               "std.errorf": "error",
               "std.error": "error",
+              "raw.type": "type",
             },
             "builtin": {
               "basic": "disable",

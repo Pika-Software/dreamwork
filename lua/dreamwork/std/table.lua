@@ -5,9 +5,9 @@ local std = dreamwork.std
 
 local len = std.len
 local next = std.next
-local isTable = std.isTable
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_select = raw.select
 
@@ -1025,7 +1025,7 @@ do
         local copy_tbl = {}
 
         for key, value in raw_pairs( tbl ) do
-            if isTable( value ) then
+            if raw_type( value ) == "table" then
                 copy_tbl[ key ] = copy_fn( value )
             else
                 copy_tbl[ key ] = value

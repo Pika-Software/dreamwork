@@ -1476,20 +1476,3 @@ do
     end
 
 end
-
---- [SHARED AND MENU]
----
---- Writes the object with its `__serialize( writer, ... )` method,
---- read it back with `BinaryReader:readObject` or `BinaryReader:readClass`.
----
----@param obj dreamwork.std.Object The object.
----@param ... any The arguments passed to `__serialize`.
-function BinaryWriter:writeObject( obj, ... )
-    ---@type nil | fun( obj: dreamwork.std.Object, writer: dreamwork.std.BinaryWriter, ...: any )
-    local fn = obj.__serialize
-    if fn == nil then
-        error( "missing '__serialize' method", 2 )
-    end
-
-    fn( obj, self, ... )
-end

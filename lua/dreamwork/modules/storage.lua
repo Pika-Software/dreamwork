@@ -14,10 +14,8 @@ dreamwork.storage = storage
 
 local std = dreamwork.std
 
-local isTable = std.isTable
-local isString = std.isString
-
 local raw = std.raw
+local raw_type = raw.type
 local raw_tostring = raw.tostring
 
 local string = std.string
@@ -474,6 +472,7 @@ if LUA_MENU then
     ---@param value string The value to save.
     function variables.write( name, value )
         if cache[ name ] == value then return end
+
         sqlite_query( "INSERT INTO 'dreamwork.storage.variables' (name, value) VALUES (?, ?) ON CONFLICT( name ) DO UPDATE SET value = excluded.value", name, value )
         cache[ name ] = value
     end
@@ -485,6 +484,7 @@ if LUA_MENU then
     ---@param name string The name of the console variable.
     function variables.delete( name )
         if cache[ name ] == nil then return end
+
         sqlite_query( "DELETE FROM 'dreamwork.storage.variables' WHERE name=?", name )
         cache[ name ] = nil
     end
@@ -609,7 +609,7 @@ do
     ---@return boolean is_success Always `true`, on failure an error is thrown.
     local function migrate_by_table( migration )
         local queries = migration.queries
-        assert( isTable( queries ), "Database migration '%s' has no 'queries' table.", migration.name )
+        assert( raw_type( queries ) == "table", "Database migration '%s' has no 'queries' table.", migration.name )
         dreamwork_Logger:info( "Applying database migration '%s'...", migration.name )
 
         -- the migration record is written in the same transaction, so a crash can't leave it unrecorded
@@ -643,7 +643,7 @@ do
         if history ~= nil then
             for i = 1, #history, 1 do
                 local history_name = history[ i ].name
-                if isString( history_name ) then
+                if raw_type( history_name ) == "string" then
                     ---@cast history_name string
                     finished_migrations[ history_name ] = true
                 end

@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
-local class = std.class
+
+local raw = std.raw
+local raw_type = raw.type
 
 local ffi = std.ffi
 
@@ -19,12 +21,13 @@ local math_cos, math_sin = math.cos, math.sin
 local math_acos, math_atan2 = math.acos, math.atan2
 local math_huge = math.huge
 
-local isNumber = std.isNumber
-local setmetatable = std.setmetatable
+local class = std.class
 
 local isVector3 = std.isVector3
-local Vector3Class = std.Vector3
+local setmetatable = std.setmetatable
+
 local Angle3Class = std.Angle3
+local Vector3Class = std.Vector3
 
 --[[
 
@@ -214,23 +217,12 @@ function Quaternion:__eq( other )
     return isQuaternion( other ) and self.w == other.w and self.x == other.x and self.y == other.y and self.z == other.z
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the quaternion, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function Quaternion:__serialize( writer )
-    writer:writeDouble( self.w, true )
-    writer:writeDouble( self.x, true )
-    writer:writeDouble( self.y, true )
-    writer:writeDouble( self.z, true )
-end
-
----@param reader dreamwork.std.BinaryReader .
----@protected
-function Quaternion:__deserialize( reader )
-    self.w = reader:readDouble( true )
-    self.x = reader:readDouble( true )
-    self.y = reader:readDouble( true )
-    self.z = reader:readDouble( true )
-end
+Quaternion.__proto = "dreamwork.Quaternion"
 
 --- [SHARED AND MENU]
 ---
@@ -559,7 +551,7 @@ end
 ---@param value dreamwork.std.Quaternion | number The other quaternion or a real number.
 ---@return dreamwork.std.Quaternion quat The same quaternion, with the sum.
 local function Quaternion_add( self, value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.w = self.w + value
     else
@@ -579,7 +571,7 @@ Quaternion.add = Quaternion_add
 ---@return dreamwork.std.Quaternion sum The new quaternion.
 ---@protected
 function Quaternion.__add( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast b dreamwork.std.Quaternion
         return Quaternion_add( Quaternion_copy( b ), a )
     end
@@ -596,7 +588,7 @@ end
 ---@param value dreamwork.std.Quaternion | number The other quaternion or a real number.
 ---@return dreamwork.std.Quaternion quat The same quaternion, with the difference.
 local function Quaternion_sub( self, value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.w = self.w - value
     else
@@ -616,7 +608,7 @@ Quaternion.sub = Quaternion_sub
 ---@return dreamwork.std.Quaternion difference The new quaternion.
 ---@protected
 function Quaternion.__sub( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         ---@cast b dreamwork.std.Quaternion
         return Quaternion_create( a - b.w, -b.x, -b.y, -b.z )
@@ -645,7 +637,7 @@ end
 ---@param value dreamwork.std.Quaternion | number The other quaternion or a number.
 ---@return dreamwork.std.Quaternion quat The same quaternion, with the product.
 local function Quaternion_mul( self, value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         return Quaternion_scale( self, value )
     end
@@ -682,7 +674,7 @@ end
 ---@param value dreamwork.std.Quaternion | number The divisor quaternion or number.
 ---@return dreamwork.std.Quaternion quat The same quaternion, divided.
 local function Quaternion_div( self, value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         return Quaternion_scale( self, 1 / value )
     end
@@ -754,7 +746,7 @@ end
 ---@return dreamwork.std.Quaternion | dreamwork.std.Vector3 product The new quaternion, or the new vector for `quat * vec3`.
 ---@protected
 function Quaternion.__mul( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         ---@cast b dreamwork.std.Quaternion
         return Quaternion_scale( Quaternion_copy( b ), a )
@@ -776,7 +768,7 @@ end
 ---@return dreamwork.std.Quaternion quotient The new quaternion.
 ---@protected
 function Quaternion.__div( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         ---@cast b dreamwork.std.Quaternion
         return Quaternion_scale( Quaternion_invert( Quaternion_copy( b ) ), a )
@@ -901,7 +893,7 @@ end
 ---@return dreamwork.std.Quaternion power The new quaternion.
 ---@protected
 function Quaternion.__pow( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         ---@cast b dreamwork.std.Quaternion
         return Quaternion_exp( Quaternion_scale( Quaternion_copy( b ), math_log( a ) ) )

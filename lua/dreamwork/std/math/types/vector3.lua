@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
-local class = std.class
+
+local raw = std.raw
+local raw_type = raw.type
 
 local ffi = std.ffi
 
@@ -19,7 +21,8 @@ local math_deg, math_rad = math.deg, math.rad
 local math_cos, math_sin = math.cos, math.sin
 local math_min, math_max = math.min, math.max
 
-local isNumber = std.isNumber
+local class = std.class
+
 local setmetatable = std.setmetatable
 
 --[[
@@ -215,21 +218,12 @@ function Vector3:__eq( other )
     return isVector3( other ) and self.x == other.x and self.y == other.y and self.z == other.z
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the vector, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function Vector3:__serialize( writer )
-    writer:writeDouble( self.x, true )
-    writer:writeDouble( self.y, true )
-    writer:writeDouble( self.z, true )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function Vector3:__deserialize( reader )
-    self.x = reader:readDouble( true )
-    self.y = reader:readDouble( true )
-    self.z = reader:readDouble( true )
-end
+Vector3.__proto = "dreamwork.Vector3"
 
 --- [SHARED AND MENU]
 ---
@@ -366,7 +360,7 @@ end
 ---@param value dreamwork.std.Vector3 | number The other vector or a number.
 ---@return dreamwork.std.Vector3 vec3 The same vector, with the sum.
 function Vector3:add( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.x, self.y, self.z = self.x + value, self.y + value, self.z + value
     else
@@ -384,10 +378,10 @@ end
 ---@return dreamwork.std.Vector3 sum The new vector.
 ---@protected
 function Vector3.__add( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Vector3_create( a + b.x, a + b.y, a + b.z )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Vector3_create( a.x + b, a.y + b, a.z + b )
     else
@@ -402,7 +396,7 @@ end
 ---@param value dreamwork.std.Vector3 | number The other vector or a number.
 ---@return dreamwork.std.Vector3 vec3 The same vector, with the difference.
 function Vector3:sub( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.x, self.y, self.z = self.x - value, self.y - value, self.z - value
     else
@@ -420,10 +414,10 @@ end
 ---@return dreamwork.std.Vector3 difference The new vector.
 ---@protected
 function Vector3.__sub( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Vector3_create( a - b.x, a - b.y, a - b.z )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Vector3_create( a.x - b, a.y - b, a.z - b )
     end
@@ -438,7 +432,7 @@ end
 ---@param value dreamwork.std.Vector3 | number The other vector or a number.
 ---@return dreamwork.std.Vector3 vec3 The same vector, with the product.
 function Vector3:mul( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.x, self.y, self.z = self.x * value, self.y * value, self.z * value
     else
@@ -456,10 +450,10 @@ end
 ---@return dreamwork.std.Vector3 product The new vector.
 ---@protected
 function Vector3.__mul( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Vector3_create( a * b.x, a * b.y, a * b.z )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Vector3_create( a.x * b, a.y * b, a.z * b )
     else
@@ -476,7 +470,7 @@ end
 ---@param value dreamwork.std.Vector3 | number The divisor vector or number.
 ---@return dreamwork.std.Vector3 vec3 The same vector, divided.
 function Vector3:div( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.x, self.y, self.z = self.x / value, self.y / value, self.z / value
     else
@@ -494,10 +488,10 @@ end
 ---@return dreamwork.std.Vector3 quotient The new vector.
 ---@protected
 function Vector3.__div( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Vector3_create( a / b.x, a / b.y, a / b.z )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Vector3_create( a.x / b, a.y / b, a.z / b )
     end
@@ -814,7 +808,7 @@ end
 local function Vector3_lerp( self, target, frac )
     local x, y, z = self.x, self.y, self.z
 
-    if isNumber( target ) then
+    if raw_type( target ) == "number" then
         ---@cast target number
         self.x, self.y, self.z = x + (target - x) * frac, y + (target - y) * frac, z + (target - z) * frac
     else

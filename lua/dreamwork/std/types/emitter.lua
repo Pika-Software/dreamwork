@@ -13,6 +13,7 @@ local debug_fempty = debug.fempty
 local debug_getmetavalue = debug.getmetavalue
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
 
@@ -20,7 +21,6 @@ local string = std.string
 local string_format = string.format
 
 local type = std.type
-local isFunction = std.isFunction
 
 local Future = std.Future
 
@@ -340,7 +340,7 @@ function Emitter:emit( object, event_name, ... )
                 remove( list, handler )
             end
 
-            if isFunction( handler ) then
+            if raw_type( handler ) == "function" then
                 exceptions_call( handler, ... )
             else
                 exceptions_call( debug_getmetavalue( handler, "__call" ), handler, ... )

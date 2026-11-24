@@ -40,7 +40,7 @@ local error = std.error
 local isError = std.isError
 local tostring = std.tostring
 local setmetatable = std.setmetatable
-local isString, isNumber, isBoolean = std.isString, std.isNumber, std.isBoolean
+local raw_type = raw.type
 
 
 --- [SHARED AND MENU]
@@ -1336,7 +1336,7 @@ end
 local function formatNumber( value, options, locale )
     if locale == nil then
         locale = ROOT
-    elseif isString( locale ) then
+    elseif raw_type( locale ) == "string" then
         ---@cast locale string
         locale = getLocale( locale )
     end
@@ -1438,7 +1438,7 @@ fluent.formatNumber = formatNumber
 local function pluralCategory( value, options, locale )
     if locale == nil then
         locale = ROOT
-    elseif isString( locale ) then
+    elseif raw_type( locale ) == "string" then
         ---@cast locale string
         locale = getLocale( locale )
     end
@@ -1508,7 +1508,7 @@ local UTC_ZONES = { UTC = true, utc = true, GMT = true, [ "Etc/UTC" ] = true, [ 
 local function formatDateTime( timestamp, options, locale )
     if locale == nil then
         locale = ROOT
-    elseif isString( locale ) then
+    elseif raw_type( locale ) == "string" then
         ---@cast locale string
         locale = getLocale( locale )
     end
@@ -1650,7 +1650,7 @@ end
 ---@nodiscard
 function FluentType:toString( scope )
     local value = self.value
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         return formatNumber( value, nil, scope_locale( scope ) )
     end
 
@@ -1711,71 +1711,6 @@ end
 local FluentNoneClass = class.create( FluentNone )
 fluent.None = FluentNoneClass
 
---- Writes the flat formatting options, only string, number and boolean values are kept.
----
----@param writer dreamwork.std.BinaryWriter
----@param options table | nil
-local function write_options( writer, options )
-    if options == nil then
-        writer:writeUInt( 0, 8 )
-        return
-    end
-
-    local count = 0
-
-    for _, value in raw_pairs( options ) do
-        if isString( value ) or isNumber( value ) or isBoolean( value ) then
-            count = count + 1
-        end
-    end
-
-    writer:writeUInt( count, 8 )
-
-    for key, value in raw_pairs( options ) do
-        if isString( value ) then
-            writer:writeString( key )
-            writer:writeUInt( 0, 2 )
-            writer:writeCountedString( value, 16 )
-        elseif isNumber( value ) then
-            writer:writeString( key )
-            writer:writeUInt( 1, 2 )
-            writer:writeDouble( value, true )
-        elseif isBoolean( value ) then
-            writer:writeString( key )
-            writer:writeUInt( 2, 2 )
-            writer:writeBoolean( value )
-        end
-    end
-end
-
---- Reads the options written by `write_options`.
----
----@param reader dreamwork.std.BinaryReader
----@return table | nil options
-local function read_options( reader )
-    local count = reader:readUInt( 8 )
-    if count == 0 then
-        return nil
-    end
-
-    local options = {}
-
-    for _ = 1, count, 1 do
-        local key = reader:readString()
-        local value_type = reader:readUInt( 2 )
-
-        if value_type == 0 then
-            options[ key ] = reader:readCountedString( 16 )
-        elseif value_type == 1 then
-            options[ key ] = reader:readDouble( true )
-        else
-            options[ key ] = reader:readBoolean()
-        end
-    end
-
-    return options
-end
-
 --- [SHARED AND MENU]
 ---
 --- The number with formatting options, numbers passed as variables are wrapped in it automatically.
@@ -1801,19 +1736,11 @@ function FluentNumber:toString( scope )
     return formatNumber( self.value, self.options, scope_locale( scope ) )
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type, `dreamwork/fluent.proto`, `options` is a `google.protobuf.Struct`.
+---
+---@type string
 ---@protected
-function FluentNumber:__serialize( writer )
-    writer:writeDouble( self.value, true )
-    write_options( writer, self.options )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function FluentNumber:__deserialize( reader )
-    self.value = reader:readDouble( true )
-    self.options = read_options( reader )
-end
+FluentNumber.__proto = "dreamwork.FluentNumber"
 
 --- [SHARED AND MENU]
 ---
@@ -1854,19 +1781,11 @@ function FluentDateTime:toString( scope )
     return formatDateTime( self.value, self.options, scope_locale( scope ) )
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type, `dreamwork/fluent.proto`, `options` is a `google.protobuf.Struct`.
+---
+---@type string
 ---@protected
-function FluentDateTime:__serialize( writer )
-    writer:writeDouble( self.value, true )
-    write_options( writer, self.options )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function FluentDateTime:__deserialize( reader )
-    self.value = reader:readDouble( true )
-    self.options = read_options( reader )
-end
+FluentDateTime.__proto = "dreamwork.FluentDateTime"
 
 --- [SHARED AND MENU]
 ---
@@ -2421,7 +2340,7 @@ local function parse_pattern_elements( elements, common_indent )
     end
 
     local last = elements[ count ]
-    if isString( last ) then
+    if raw_type( last ) == "string" then
         ---@cast last string
         elements[ count ] = trim_trailing_spaces( last )
     end
@@ -2432,13 +2351,13 @@ local function parse_pattern_elements( elements, common_indent )
     for index = 1, count, 1 do
         local element = elements[ index ]
 
-        if not isString( element ) and element.type == "indent" then
+        if raw_type( element ) ~= "string" and element.type == "indent" then
             ---@cast element dreamwork.std.fluent.Indent
             local value = element.value
             element = string_sub( value, 1, #value - common_indent )
         end
 
-        if isString( element ) then
+        if raw_type( element ) == "string" then
             ---@cast element string
             if element ~= "" then
                 piece_count = piece_count + 1
@@ -2731,10 +2650,10 @@ local function resolve_variable( scope, name )
         end
     end
 
-    if isString( value ) then
+    if raw_type( value ) == "string" then
         ---@cast value string
         return value
-    elseif isNumber( value ) then
+    elseif raw_type( value ) == "number" then
         ---@cast value number
         return FluentNumberClass( value, nil )
     elseif isType( value ) then
@@ -2845,7 +2764,7 @@ local function resolve_function_reference( scope, expression )
 
     if result == nil then
         return FluentNoneClass( name .. "()" )
-    elseif isNumber( result ) then
+    elseif raw_type( result ) == "number" then
         ---@cast result number
         return FluentNumberClass( result, nil )
     end
@@ -2861,7 +2780,7 @@ local function resolve_select_expression( scope, expression )
     local selector = resolve_expression( scope, expression.selector )
     local variants = expression.variants
 
-    if isString( selector ) then
+    if raw_type( selector ) == "string" then
         for index = 1, #variants, 1 do
             local variant = variants[ index ]
             local key = variant.key
@@ -2955,7 +2874,7 @@ local function resolve_complex_pattern( scope, pattern )
     for index = 1, length, 1 do
         local element = pattern[ index ]
 
-        if isString( element ) then
+        if raw_type( element ) == "string" then
             ---@cast element string
             if transform ~= nil then
                 element = transform( element )
@@ -2971,7 +2890,7 @@ local function resolve_complex_pattern( scope, pattern )
             end
 
             local value = resolve_expression( scope, element )
-            if not isString( value ) then
+            if raw_type( value ) ~= "string" then
                 ---@cast value dreamwork.std.FluentType
                 value = value:toString( scope )
             end
@@ -2997,7 +2916,7 @@ end
 ---@param pattern dreamwork.std.fluent.Pattern
 ---@return dreamwork.std.fluent.Value
 function resolve_pattern( scope, pattern )
-    if isString( pattern ) then
+    if raw_type( pattern ) == "string" then
         ---@cast pattern string
         local transform = scope.bundle.transform
         if transform == nil then
@@ -3043,7 +2962,7 @@ function FluentBundle:__init( locales, options )
     ---@type string[]
     local tags
 
-    if isString( locales ) then
+    if raw_type( locales ) == "string" then
         ---@cast locales string
         tags = { locales }
     else
@@ -3096,7 +3015,7 @@ end
 ---@param allow_overrides boolean? If `true`, existing messages and terms are replaced, otherwise they are kept and reported.
 ---@return string[] errors The override errors, syntax errors of a parsed source are in `FluentResource.errors`.
 function FluentBundle:addResource( resource, allow_overrides )
-    if isString( resource ) then
+    if raw_type( resource ) == "string" then
         ---@cast resource string
         resource = FluentResourceClass( resource )
     end
@@ -3171,7 +3090,7 @@ end
 ---@return string str The formatted string.
 ---@nodiscard
 function FluentBundle:formatPattern( pattern, args, errors )
-    if isString( pattern ) then
+    if raw_type( pattern ) == "string" then
         ---@cast pattern string
         local transform = self.transform
         if transform == nil then
@@ -3206,7 +3125,7 @@ function FluentBundle:formatPattern( pattern, args, errors )
         value = result
     end
 
-    if isString( value ) then
+    if raw_type( value ) == "string" then
         ---@cast value string
         return value
     end

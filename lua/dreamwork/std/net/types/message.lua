@@ -22,6 +22,7 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_index = raw.index
 local raw_tonumber = raw.tonumber
@@ -45,9 +46,6 @@ local base64_decode = base64.decode
 local base64_validate = base64.validate
 
 local class = std.class
-
-local isTable = std.isTable
-local isString = std.isString
 
 local Emitter = std.Emitter
 local BinaryReader = std.BinaryReader
@@ -438,7 +436,7 @@ end
 ---@param target dreamwork.std.Client | dreamwork.std.Message.Realm
 ---@return string
 local function target_tostring( target )
-    if isString( target ) then
+    if raw_type( target ) == "string" then
         ---@cast target dreamwork.std.Message.Realm
         return target
     end
@@ -496,7 +494,7 @@ end
 ---@return boolean
 local function target_valid( target )
     ---@cast target dreamwork.std.Client
-    return isString( target ) or target.is_connected
+    return raw_type( target ) == "string" or target.is_connected
 end
 
 --- Drops the queue of the target, every transfer in it fails.
@@ -679,7 +677,7 @@ local function transmit_to( message, data, target, callback )
             error( "Target client(s) are required on the server.", 3 )
         end
 
-        if isTable( target ) then
+        if raw_type( target ) == "table" then
             ---@cast target dreamwork.std.Client[]
             for i = 1, #target, 1 do
                 transmit( message, data, target[ i ], "client", callback )

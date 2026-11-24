@@ -1,6 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
-local class = std.class
+
+local raw = std.raw
+local raw_type = raw.type
 
 local ffi = std.ffi
 
@@ -18,8 +20,9 @@ local math_deg, math_rad = math.deg, math.rad
 local math_cos, math_sin = math.cos, math.sin
 local math_angleNormalize = math.angleNormalize
 
+local class = std.class
+
 local error = std.error
-local isNumber = std.isNumber
 local setmetatable = std.setmetatable
 
 local Vector3Class = std.Vector3
@@ -241,21 +244,12 @@ function Angle3:__eq( other )
     return isAngle3( other ) and self.pitch == other.pitch and self.yaw == other.yaw and self.roll == other.roll
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the angle, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function Angle3:__serialize( writer )
-    writer:writeDouble( self.pitch )
-    writer:writeDouble( self.yaw )
-    writer:writeDouble( self.roll )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function Angle3:__deserialize( reader )
-    self.pitch = reader:readDouble( true )
-    self.yaw = reader:readDouble( true )
-    self.roll = reader:readDouble( true )
-end
+Angle3.__proto = "dreamwork.Angle3"
 
 --- [SHARED AND MENU]
 ---
@@ -367,7 +361,7 @@ end
 ---@param value dreamwork.std.Angle3 | number The other angle or a number of degrees.
 ---@return dreamwork.std.Angle3 ang3 The same angle, with the sum.
 function Angle3:add( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.pitch, self.yaw, self.roll = self.pitch + value, self.yaw + value, self.roll + value
     else
@@ -385,10 +379,10 @@ end
 ---@return dreamwork.std.Angle3 sum The new angle.
 ---@protected
 function Angle3.__add( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Angle3_create( a + b.pitch, a + b.yaw, a + b.roll )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Angle3_create( a.pitch + b, a.yaw + b, a.roll + b )
     end
@@ -403,7 +397,7 @@ end
 ---@param value dreamwork.std.Angle3 | number The other angle or a number of degrees.
 ---@return dreamwork.std.Angle3 ang3 The same angle, with the difference.
 function Angle3:sub( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
         self.pitch, self.yaw, self.roll = self.pitch - value, self.yaw - value, self.roll - value
     else
@@ -421,10 +415,10 @@ end
 ---@return dreamwork.std.Angle3 difference The new angle.
 ---@protected
 function Angle3.__sub( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         return Angle3_create( a - b.pitch, a - b.yaw, a - b.roll )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast b number
         return Angle3_create( a.pitch - b, a.yaw - b, a.roll - b )
     end
@@ -454,11 +448,11 @@ Angle3.scale = Angle3_mul
 ---@return dreamwork.std.Angle3 product The new angle.
 ---@protected
 function Angle3.__mul( a, b )
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         ---@cast a number
         ---@cast b dreamwork.std.Angle3
         return Angle3_create( a * b.pitch, a * b.yaw, a * b.roll )
-    elseif isNumber( b ) then
+    elseif raw_type( b ) == "number" then
         ---@cast a dreamwork.std.Angle3
         ---@cast b number
         return Angle3_create( a.pitch * b, a.yaw * b, a.roll * b )
@@ -488,7 +482,7 @@ end
 ---@return dreamwork.std.Angle3 quotient The new angle.
 ---@protected
 function Angle3.__div( a, b )
-    if isNumber( b ) then
+    if raw_type( b ) == "number" then
         ---@cast a dreamwork.std.Angle3
         ---@cast b number
         return Angle3_create( a.pitch / b, a.yaw / b, a.roll / b )
@@ -511,7 +505,7 @@ end
 local function Angle3_lerp( self, target, frac )
     local pitch, yaw, roll = self.pitch, self.yaw, self.roll
 
-    if isNumber( target ) then
+    if raw_type( target ) == "number" then
         ---@cast target number
         self.pitch, self.yaw, self.roll = pitch + (target - pitch) * frac, yaw + (target - yaw) * frac, roll + (target - roll) * frac
     else

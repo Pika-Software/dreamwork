@@ -83,8 +83,7 @@ local coroutine = std.coroutine
 local coroutine_isyieldable = coroutine.isyieldable
 
 local error = std.error
-local isString = std.isString
-local isNumber = std.isNumber
+local raw_type = raw.type
 
 
 do
@@ -267,7 +266,7 @@ do
                 complete( key, job, write_status )
             end )
 
-            if isNumber( status ) and status < 0 then
+            if raw_type( status ) == "number" and status < 0 then
                 return status
             end
 
@@ -314,7 +313,7 @@ do
                     exceptions_call( callback, file_path, write_status )
                 end, true )
 
-                if isNumber( status ) and status < 0 then
+                if raw_type( status ) == "number" and status < 0 then
                     return status
                 end
 
@@ -1497,7 +1496,7 @@ local function write_data_async( search_path, relative_path, data, append_mode, 
     end )
 
     -- async_write's `AsyncAppend` returns the last argument instead of the status, rejected paths are never called back
-    if isNumber( status ) and status < 0 and f:isPending() then
+    if raw_type( status ) == "number" and status < 0 and f:isPending() then
         return write_data( "DATA", relative_path, data, append_mode )
     end
 
@@ -1538,7 +1537,7 @@ local function read_data_async( relative_path, search_path, sync )
     end
 
     local result = f:await()
-    if isString( result ) then
+    if raw_type( result ) == "string" then
         return result
     end
 

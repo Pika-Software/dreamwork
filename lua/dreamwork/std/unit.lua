@@ -16,7 +16,7 @@ local table = std.table
 local table_range = table.range
 
 local error = std.error
-local isFunction = std.isFunction
+local raw_type = raw.type
 
 local ValueError = std.ValueError
 
@@ -605,7 +605,7 @@ local function convert_uncached( value, from_unit, to_unit )
 
     local source_anchor, target_anchor = source.to_anchor, target.to_anchor
     local source_shift, target_shift = source.anchor_shift, target.anchor_shift
-    local is_transform = isFunction( bridge )
+    local is_transform = raw_type( bridge ) == "function"
 
     if source_shift == nil and target_shift == nil and not is_transform then
         ---@cast bridge number

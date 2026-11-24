@@ -10,6 +10,7 @@ local dreamwork_Logger = dreamwork.Logger
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_select = raw.select
@@ -22,10 +23,6 @@ local string_match = string.match
 local string_format = string.format
 local string_replace = string.replace
 local string_interpolateByte = string.interpolateByte
-
-local isBoolean = std.isBoolean
-local isNumber = std.isNumber
-local isString = std.isString
 
 local class = std.class
 local class_isInherited = class.isInherited
@@ -205,20 +202,23 @@ local function query( query_str, ... )
         local value = raw_select( index, ... )
         if value == nil or value == null then
             variables[ index ] = "NULL"
-        elseif isString( value ) then
-            ---@cast value string
-            variables[ index ] = escape( value )
-        elseif isBoolean( value ) then
-            ---@cast value boolean
-            variables[ index ] = value and "1" or "0"
-        elseif isNumber( value ) then
-            ---@cast value number
-            variables[ index ] = tostring( value )
-        elseif class_isInherited( value, Blob ) then
-            ---@cast value dreamwork.std.sqlite.Blob
-            variables[ index ] = "X'" .. base16_encode( value.data ) .. "'"
         else
-            std.errorf( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", index, "sqlite.query", "boolean | integer | number | string | dreamwork.std.sqlite.Blob | nil", type( value ) )
+            local value_type = raw_type( value )
+            if value_type == "string" then
+                ---@cast value string
+                variables[ index ] = escape( value )
+            elseif value_type == "boolean" then
+                ---@cast value boolean
+                variables[ index ] = value and "1" or "0"
+            elseif value_type == "number" then
+                ---@cast value number
+                variables[ index ] = tostring( value )
+            elseif class_isInherited( value, Blob ) then
+                ---@cast value dreamwork.std.sqlite.Blob
+                variables[ index ] = "X'" .. base16_encode( value.data ) .. "'"
+            else
+                std.errorf( "bad argument #%s to \'%s\' ('%s' expected, got '%s')", index, "sqlite.query", "boolean | integer | number | string | dreamwork.std.sqlite.Blob | nil", type( value ) )
+            end
         end
     end
 
@@ -309,7 +309,7 @@ function sqlite.cast( row, column_types )
 
     for column_name, column_type in raw_pairs( column_types ) do
         local value = row[ column_name ]
-        if isString( value ) then
+        if raw_type( value ) == "string" then
             ---@cast value string
             if column_type == "number" then
                 row[ column_name ] = tonumber( value, 10 )

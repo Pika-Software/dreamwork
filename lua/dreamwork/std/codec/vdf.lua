@@ -6,11 +6,6 @@ local glua_util = dreamwork_engine.requireLibrary( "util" )
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isTable = std.isTable
-local isString = std.isString
-local isNumber = std.isNumber
-local isBoolean = std.isBoolean
-
 local error = std.error
 local TypeError = std.TypeError
 local DecodeError = std.DecodeError
@@ -18,6 +13,7 @@ local EncodeError = std.EncodeError
 local setmetatable = std.setmetatable
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_tostring = raw.tostring
 local raw_tonumber = raw.tonumber
@@ -76,11 +72,12 @@ if glua_util.TableToKeyValues == nil then
     ---@param value any
     ---@return string | nil str
     local function stringify( value )
-        if isString( value ) then
+        local value_type = raw_type( value )
+        if value_type == "string" then
             return escape( value )
-        elseif isNumber( value ) then
+        elseif value_type == "number" then
             return raw_tostring( value )
-        elseif isBoolean( value ) then
+        elseif value_type == "boolean" then
             return value and "1" or "0"
         end
 
@@ -105,7 +102,7 @@ if glua_util.TableToKeyValues == nil then
         for key, value in raw_pairs( tbl ) do
             local key_str = stringify( key )
             if key_str ~= nil then
-                if isTable( value ) then
+                if raw_type( value ) == "table" then
                     buffer[ buffer_size + 1 ] = indent
                     buffer[ buffer_size + 2 ] = "\""
                     buffer[ buffer_size + 3 ] = key_str
@@ -154,10 +151,6 @@ if glua_util.TableToKeyValues == nil then
     ---@return string key_values The KeyValues string.
     ---@nodiscard
     function vdf.serialize( tbl, root_key )
-        if not isTable( tbl ) then
-            error( TypeError( 1, tbl, "table", "tbl", "vdf.serialize" ), 2 )
-        end
-
         local buffer = {
             "\"",
             stringify( root_key or "TableToKeyValues" ) or "TableToKeyValues",
@@ -449,10 +442,6 @@ end
 ---@return table result The converted table.
 ---@nodiscard
 function vdf.deserialize( key_values, uses_escape_sequences, preserve_key_case )
-    if not isString( key_values ) then
-        error( TypeError( 1, key_values, "string", "key_values", "vdf.deserialize" ), 2 )
-    end
-
     uses_escape_sequences = uses_escape_sequences == true
     next_backslash = 0
 

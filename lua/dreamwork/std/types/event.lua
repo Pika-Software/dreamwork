@@ -7,6 +7,9 @@ local sandbox_track = dreamwork_sandbox.track
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_type = raw.type
+
 local debug = std.debug
 local debug_getmetavalue = debug.getmetavalue
 
@@ -18,9 +21,8 @@ local string_format = string.format
 
 local class = std.class
 
-local isType = std.isType
-local isFunction = std.isFunction
 local error = std.error
+local isType = std.isType
 
 local Future = std.Future
 
@@ -314,7 +316,7 @@ function Event:call( ... )
                 self:detach( handler )
             end
 
-            if isFunction( handler ) then
+            if raw_type( handler ) == "function" then
                 ---@cast handler function
                 exceptions_call( handler, ... )
             else

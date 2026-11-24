@@ -60,6 +60,7 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_next = raw.next
 local raw_index = raw.index
 local raw_pairs = raw.pairs
@@ -120,8 +121,6 @@ local error = std.error
 local xpcall = std.xpcall
 local getfenv = std.getfenv
 local tostring = std.tostring
-local isTable = std.isTable
-local isString = std.isString
 local loadstring = std.loadstring
 local loadbytecode = std.loadbytecode
 local setmetatable = std.setmetatable
@@ -1421,12 +1420,12 @@ local function parse_manifest( json_str )
     ---@cast data table
 
     local name = data.name
-    if not isString( name ) or string_match( name, "^[%w_%-%.]+$" ) == nil or string_find( name, "^%.+$" ) ~= nil then
+    if raw_type( name ) ~= "string" or string_match( name, "^[%w_%-%.]+$" ) == nil or string_find( name, "^%.+$" ) ~= nil then
         return nil, "'name' must be a string of letters, digits, '_', '-' and '.'"
     end
 
     local version = data.version
-    if not isString( version ) or not Version_validate( version ) then
+    if raw_type( version ) ~= "string" or not Version_validate( version ) then
         return nil, "'version' must be a semantic version"
     end
 
@@ -1437,13 +1436,13 @@ local function parse_manifest( json_str )
     local main = {}
 
     local main_value = data.main
-    if isTable( main_value ) then
+    if raw_type( main_value ) == "table" then
         for realm, file_path in raw_pairs( main_value ) do
             if realm ~= "server" and realm ~= "client" and realm ~= "menu" then
                 return nil, string_format( "unknown realm '%s' in 'main', expected 'server', 'client' or 'menu'", tostring( realm ) )
             end
 
-            local entrypoint = isString( file_path ) and normalize_entrypoint( file_path ) or nil
+            local entrypoint = raw_type( file_path ) == "string" and normalize_entrypoint( file_path ) or nil
             if entrypoint == nil then
                 return nil, string_format( "'main.%s' must be a path to a .lua file", realm )
             end
@@ -1451,7 +1450,7 @@ local function parse_manifest( json_str )
             main[ realm ] = entrypoint
         end
     else
-        local entrypoint = normalize_entrypoint( isString( main_value ) and main_value or "lua/init.lua" )
+        local entrypoint = normalize_entrypoint( raw_type( main_value ) == "string" and main_value or "lua/init.lua" )
         if entrypoint == nil then
             return nil, "'main' must be a path to a .lua file"
         end
@@ -1463,7 +1462,7 @@ local function parse_manifest( json_str )
     local realms = DEFAULT_REALMS
 
     local realm_list = data.realms
-    if isTable( realm_list ) then
+    if raw_type( realm_list ) == "table" then
         realms = {}
 
         for index = 1, #realm_list, 1 do
@@ -1486,9 +1485,9 @@ local function parse_manifest( json_str )
     local dependencies = {}
 
     local dependency_map = data.dependencies
-    if isTable( dependency_map ) then
+    if raw_type( dependency_map ) == "table" then
         for dependency_name, spec in raw_pairs( dependency_map ) do
-            if not isString( dependency_name ) or not isString( spec ) then
+            if raw_type( dependency_name ) ~= "string" or raw_type( spec ) ~= "string" then
                 return nil, "'dependencies' must map repositories ('user/repo') to version ranges"
             end
 
@@ -1501,7 +1500,7 @@ local function parse_manifest( json_str )
 
     local client_file_list = data.client_files
     if client_file_list ~= nil then
-        if not isTable( client_file_list ) then
+        if raw_type( client_file_list ) ~= "table" then
             return nil, "'client_files' must be a list of wildcards"
         end
 
@@ -1509,7 +1508,7 @@ local function parse_manifest( json_str )
 
         for index = 1, #client_file_list, 1 do
             local wildcard_str = client_file_list[ index ]
-            if not isString( wildcard_str ) then
+            if raw_type( wildcard_str ) ~= "string" then
                 return nil, "'client_files' must be a list of wildcards"
             end
 
@@ -1523,7 +1522,7 @@ local function parse_manifest( json_str )
 
     local color_value = data.color
     if color_value ~= nil then
-        local digits = isString( color_value ) and string_match( color_value, "^#?(%x+)$" ) or nil
+        local digits = raw_type( color_value ) == "string" and string_match( color_value, "^#?(%x+)$" ) or nil
         if digits == nil or (#digits ~= 3 and #digits ~= 6) then
             return nil, "'color' must be a hex color code, '#RGB' or '#RRGGBB'"
         end
@@ -1542,13 +1541,13 @@ local function parse_manifest( json_str )
     return {
         name = name,
         version = version,
-        author = isString( author ) and author or "unknown",
-        license = isString( license ) and license or "unknown",
-        description = isString( description ) and description or "",
+        author = raw_type( author ) == "string" and author or "unknown",
+        license = raw_type( license ) == "string" and license or "unknown",
+        description = raw_type( description ) == "string" and description or "",
         main = main,
         realms = realms,
         dependencies = dependencies,
-        repository = isString( repository ) and repository or nil,
+        repository = raw_type( repository ) == "string" and repository or nil,
         client_files = client_files,
         color = logger_color
     }

@@ -3,6 +3,7 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_get = raw.get
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
 
@@ -34,15 +35,12 @@ local len = std.len
 local null = std.null
 local type = std.type
 local error = std.error
-local isTable = std.isTable
-local isString = std.isString
 
+local String = std.String
+local Number = std.Number
+local Boolean = std.Boolean
 local DecodeError = std.DecodeError
 local EncodeError = std.EncodeError
-
-local Boolean = std.Boolean
-local Number = std.Number
-local String = std.String
 
 
 --- [SHARED AND MENU]
@@ -356,7 +354,7 @@ end
 function json.deserialize( json_str, max_depth )
     local value, start = parseDocument( json_str, max_depth or MAX_DEPTH )
 
-    if not isTable( value ) then
+    if raw_type( value ) ~= "table" then
         error( DecodeError( "root must be an object or an array", string_find( json_str, "[^ \t\r\n]", start ) or start ), 2 )
     end
 
@@ -504,29 +502,30 @@ end
 ---@param pretty boolean
 ---@return integer buffer_size
 local function serializeValue( buffer, buffer_size, value, depth, max_depth, pretty )
-    local value_metatable = debug_getmetatable( value )
-
-    if value_metatable == String then
-        ---@cast value string
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = quote( value )
-        return buffer_size
-    elseif value_metatable == Number then
-        ---@cast value number
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = encodeNumber( value )
-        return buffer_size
-    elseif value_metatable == Boolean then
-        ---@cast value boolean
-        buffer_size = buffer_size + 1
-        buffer[ buffer_size ] = value and "true" or "false"
-        return buffer_size
-    elseif value == nil or value == null then
+    if value == nil or value == null then
         ---@cast value dreamwork.std.null
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = "null"
         return buffer_size
-    elseif not isTable( value ) or isCustomObject( value ) then
+    end
+
+    local value_type = raw_type( value )
+    if value_type == "string" then
+        ---@cast value string
+        buffer_size = buffer_size + 1
+        buffer[ buffer_size ] = quote( value )
+        return buffer_size
+    elseif value_type == "number" then
+        ---@cast value number
+        buffer_size = buffer_size + 1
+        buffer[ buffer_size ] = encodeNumber( value )
+        return buffer_size
+    elseif value_type == "boolean" then
+        ---@cast value boolean
+        buffer_size = buffer_size + 1
+        buffer[ buffer_size ] = value and "true" or "false"
+        return buffer_size
+    elseif value_type ~= "table" or isCustomObject( value ) then
         buffer_size = buffer_size + 1
         buffer[ buffer_size ] = convertObject( value )
         return buffer_size
@@ -583,7 +582,7 @@ local function serializeValue( buffer, buffer_size, value, depth, max_depth, pre
         ---@type string
         local key_str
 
-        if isString( key ) then
+        if raw_type( key ) == "string" then
             key_str = key
         else
             key_str = convertKey( key )

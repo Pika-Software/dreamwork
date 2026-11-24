@@ -2,6 +2,7 @@
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_select = raw.select
 
 local debug = std.debug
@@ -18,7 +19,6 @@ local table = std.table
 local table_concat = table.concat
 
 local getfenv = std.getfenv
-local isFunction = std.isFunction
 
 
 --- [SHARED AND MENU]
@@ -700,7 +700,7 @@ do
     ---@nodiscard
     local function get( f )
         local fn
-        if isFunction( f ) then
+        if raw_type( f ) == "function" then
             ---@cast f function
             fn = f
         else

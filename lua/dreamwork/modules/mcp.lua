@@ -11,6 +11,9 @@ local dreamwork_exceptions = dreamwork.exceptions
 local exceptions_Sentinel = dreamwork_exceptions.Sentinel
 local exceptions_tostring = dreamwork_exceptions.tostring
 
+local vfs = dreamwork.vfs
+local vfs_readFile = vfs.readFile
+
 local engine_timer = dreamwork_engine.timer
 local engine_timer_create = engine_timer.create
 local engine_timer_remove = engine_timer.remove
@@ -26,14 +29,10 @@ local client_toEntity = engine_client and engine_client.toEntity
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_select = raw.select
 local raw_tonumber = raw.tonumber
-
-local isTable = std.isTable
-local isError = std.isError
-local isString = std.isString
-local isFunction = std.isFunction
 
 local string = std.string
 local string_find = string.find
@@ -62,7 +61,7 @@ local Network = std.Network
 
 local futures_run = std.futures.run
 
-local vfs_readFile = dreamwork.vfs.readFile
+local isError = std.isError
 
 local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
@@ -258,7 +257,7 @@ local function report_error( fmt, ... )
     ---@type table | nil
     local context
 
-    if arg_count ~= 0 and isTable( raw_select( arg_count, ... ) ) then
+    if arg_count ~= 0 and raw_type( raw_select( arg_count, ... ) ) == "table" then
         context = raw_select( arg_count, ... )
         arg_count = arg_count - 1
     end
@@ -338,7 +337,7 @@ local function encode_result( value )
         return nil, "Lua result is not JSON serializable."
     end
 
-    if not isString( encoded ) then
+    if raw_type( encoded ) ~= "string" then
         return nil, "Lua result is not JSON serializable."
     end
 
@@ -429,7 +428,7 @@ local function take_errors( request_id )
         dropped = dropped ~= 0 and dropped or nil
     } )
 
-    if ok and isString( payload ) then
+    if ok and raw_type( payload ) == "string" then
         return payload
     end
 
@@ -505,13 +504,13 @@ end
 local function collect_payload( request_id, payload, realm )
     if string_find( payload, "\"errors\":", 1, true ) ~= nil then
         local ok, batch = pcall( json_deserialize, payload )
-        if ok and isTable( batch ) and isTable( batch.errors ) then
+        if ok and raw_type( batch ) == "table" and raw_type( batch.errors ) == "table" then
             ---@type dreamwork.mcp.ErrorEntry[]
             ---@diagnostic disable-next-line: assign-type-mismatch
             local entries = batch.errors
             for index = 1, #entries, 1 do
                 local value = entries[ index ]
-                if isTable( value ) then
+                if raw_type( value ) == "table" then
                     local entry = lua_error_entry( value.message, value.realm or realm, value.stack, value.name )
                     entry.count = math_max( 1, math_floor( raw_tonumber( value.count ) or 1 ) )
                     collect_error( request_id, entry, true )
@@ -530,7 +529,7 @@ end
 ---@return function | nil chunk
 ---@return string | nil err
 local function compile_chunk( code, identifier )
-    if not isString( code ) then
+    if raw_type( code ) ~= "string" then
         return nil, "Lua code must be a string."
     end
 
@@ -549,7 +548,7 @@ local function compile_chunk( code, identifier )
         return nil, tostring( chunk )
     end
 
-    if not isFunction( chunk ) then
+    if raw_type( chunk ) ~= "function" then
         return nil, "Lua compiler returned an invalid chunk."
     end
 
@@ -605,14 +604,14 @@ end
 if LUA_HOST then
 
     if bridge == nil or
-        not isFunction( bridge.setStatus ) or
-        not isFunction( bridge.getStatus ) or
-        not isFunction( bridge.pollCommand ) or
-        not isFunction( bridge.shutdown ) or
-        not isFunction( bridge.isRunning ) or
-        not isFunction( bridge.respondLua ) or
-        not isFunction( bridge.respondError ) or
-        not isFunction( bridge.respondScreenshot ) then
+        raw_type( bridge.setStatus ) ~= "function" or
+        raw_type( bridge.getStatus ) ~= "function" or
+        raw_type( bridge.pollCommand ) ~= "function" or
+        raw_type( bridge.shutdown ) ~= "function" or
+        raw_type( bridge.isRunning ) ~= "function" or
+        raw_type( bridge.respondLua ) ~= "function" or
+        raw_type( bridge.respondError ) ~= "function" or
+        raw_type( bridge.respondScreenshot ) ~= "function" then
         report_error( "native bridge API is unavailable (require('mcp') did not export setStatus/pollCommand/respondLua/respondError/respondScreenshot)." )
         return
     end
@@ -636,7 +635,7 @@ if LUA_HOST then
 
     ---@param request_id string | nil
     local function set_active_exec( request_id )
-        if isString( request_id ) and request_id ~= "" then
+        if raw_type( request_id ) == "string" and request_id ~= "" then
             active_exec_request_id = request_id
         end
     end
@@ -921,7 +920,7 @@ if LUA_HOST then
                 end
 
                 local ok, result = pcall( factory )
-                if not ok or not isFunction( result ) then
+                if not ok or raw_type( result ) ~= "function" then
                     error( "customCheck must compile to a Lua function: " .. tostring( result ), 2 )
                 end
 
@@ -980,7 +979,7 @@ if LUA_HOST then
         ---@return dreamwork.std.Client | nil
         ---@return string | nil
         function mcp.resolveClient( target )
-            if not isString( target ) then
+            if raw_type( target ) ~= "string" then
                 return nil, "client target must be a string."
             end
 
@@ -1088,7 +1087,7 @@ if LUA_HOST then
         ---@param command table
         function request_screenshot( command )
             local request_id = command.requestId or command.request_id
-            if not isString( request_id ) or request_id == "" then
+            if raw_type( request_id ) ~= "string" or request_id == "" then
                 error( "screenshot request is missing its id", 2 )
             end
 
@@ -1131,14 +1130,14 @@ if LUA_HOST then
     ---
     ---@param command table
     function mcp.executeCommand( command )
-        if not isTable( command ) then
+        if raw_type( command ) ~= "table" then
             error( "invalid MCP command", 2 )
         end
 
         local request_id = command.requestId or command.request_id
 
         if not mcp.isEnabled() then
-            if isString( request_id ) and request_id ~= "" then
+            if raw_type( request_id ) == "string" and request_id ~= "" then
                 local tool = command.tool or "exec_lua_code"
                 if tool == "screenshot" then
                     respond_screenshot( request_id, false, "MCP is disabled." )
@@ -1160,7 +1159,7 @@ if LUA_HOST then
 
         if LUA_MENU then
             if tool == "screenshot" then
-                if not isString( request_id ) or request_id == "" then
+                if raw_type( request_id ) ~= "string" or request_id == "" then
                     error( "screenshot request is missing its id", 2 )
                 end
 
@@ -1183,7 +1182,7 @@ if LUA_HOST then
         end
 
         if tool == "screenshot" then
-            if command.state ~= "client" or not isString( command.target ) or string_trimSpaces( command.target ) == "" then
+            if command.state ~= "client" or raw_type( command.target ) ~= "string" or string_trimSpaces( command.target ) == "" then
                 error( "screenshot requires one client target", 2 )
             end
 
@@ -1216,7 +1215,7 @@ if LUA_HOST then
 
         local code = command.code
 
-        if not isString( command.state ) or not isString( code ) then
+        if raw_type( command.state ) ~= "string" or raw_type( code ) ~= "string" then
             error( "invalid exec_lua_code command", 2 )
         end
 
@@ -1238,13 +1237,13 @@ if LUA_HOST then
             return
         end
 
-        if command.state ~= "client" or not isString( command.target ) or string_trimSpaces( command.target ) == "" then
+        if command.state ~= "client" or raw_type( command.target ) ~= "string" or string_trimSpaces( command.target ) == "" then
             error( "client exec_lua_code requires a target", 2 )
         end
 
         local sent, send_error = send_exec_to_client( code, command.target, request_id )
         if not sent then
-            if isString( request_id ) and request_id ~= "" then
+            if raw_type( request_id ) == "string" and request_id ~= "" then
                 respond_lua_raw( request_id, false, tostring( send_error ) )
             end
 
@@ -1351,15 +1350,15 @@ if LUA_HOST then
 
         local execute_ok, execute_error = pcall( mcp.executeCommand, command )
         if not execute_ok then
-            local request_id = isTable( command ) and command.requestId or nil
-            local tool_name = isTable( command ) and command.tool or "unknown"
+            local request_id = raw_type( command ) == "table" and command.requestId or nil
+            local tool_name = raw_type( command ) == "table" and command.tool or "unknown"
 
-            report_error( "bridge command failed (tool=%s, request=%s, state=%s, target=%s): %s", tool_name, request_id or "-", isTable( command ) and tostring( command.state ) or "-", isTable( command ) and tostring( command.target or "-" ) or "-", execute_error, {
-                tool = isTable( command ) and command.tool or nil,
+            report_error( "bridge command failed (tool=%s, request=%s, state=%s, target=%s): %s", tool_name, request_id or "-", raw_type( command ) == "table" and tostring( command.state ) or "-", raw_type( command ) == "table" and tostring( command.target or "-" ) or "-", execute_error, {
+                tool = raw_type( command ) == "table" and command.tool or nil,
                 request_id = request_id
             } )
 
-            if isString( request_id ) and request_id ~= "" then
+            if raw_type( request_id ) == "string" and request_id ~= "" then
                 local tool = command.tool or "exec_lua_code"
                 if tool == "screenshot" then
                     respond_screenshot( request_id, false, tostring( execute_error ) )
@@ -1561,7 +1560,7 @@ if LUA_HOST then
     local status_ok, status = pcall( bridge.getStatus )
     local running = false
 
-    if status_ok and isTable( status ) then
+    if status_ok and raw_type( status ) == "table" then
         running = bridge.isRunning() == true
         dreamwork_Logger:info( "MCP: bridge module ready (listener %s, status='%s').", running and "running" or "stopped", tostring( status.message or "" ) )
     else

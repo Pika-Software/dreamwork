@@ -10,6 +10,9 @@ local exceptions_Stack = dreamwork_exceptions.Stack
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_type = raw.type
+
 local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
@@ -35,11 +38,9 @@ local copy = std.copy
 local error = std.error
 local xpcall = std.xpcall
 local toError = std.toError
+local isError = std.isError
 local tostring = std.tostring
 local setTimeout = std.setTimeout
-
-local isError = std.isError
-local isFunction = std.isFunction
 
 local Queue = std.Queue
 local AsyncError = std.AsyncError
@@ -196,7 +197,7 @@ do
     ---@return boolean has_listener
     local function call_listener( co, ... )
         local fn = Listeners[ co ]
-        if not isFunction( fn ) then
+        if raw_type( fn ) ~= "function" then
             return false
         end
 
@@ -1220,7 +1221,7 @@ end
 local function cancelList( awaitables )
     for i = 1, len( awaitables ), 1 do
         local awaitable = awaitables[ i ]
-        if isFunction( awaitable.cancel ) then
+        if raw_type( awaitable.cancel ) == "function" then
             awaitable:cancel()
         end
     end

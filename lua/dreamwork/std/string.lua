@@ -7,10 +7,10 @@ local ascii = std.ascii
 local ascii_isSpace = ascii.isSpace
 
 local len = std.len
-local isTable = std.isTable
 
 local raw = std.raw
 local raw_tonumber = raw.tonumber
+local raw_type = raw.type
 
 local math = std.math
 local math_abs = math.abs
@@ -144,7 +144,7 @@ function string.byteMap( ... )
     for i = 1, select( "#", ... ), 1 do
         local value = select( i, ... )
 
-        if isTable( value ) then
+        if raw_type( value ) == "table" then
             ---@cast value dreamwork.std.string.ByteMapRange
             for j = string_byte( value.leading_byte ), string_byte( value.trailing_byte ), (value.step_size or 1) do
                 byte_map[ j ] = true

@@ -1,7 +1,6 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isTable = std.isTable
 local setmetatable = std.setmetatable
 
 local string = std.string
@@ -14,11 +13,11 @@ local debug_getmetatable = debug.getmetatable
 local debug_getmetavalue = debug.getmetavalue
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_get, raw_set = raw.get, raw.set
 
 local error = std.error
-local isString = std.isString
 
 
 --- [SHARED AND MENU]
@@ -145,10 +144,10 @@ std.class = class
 ---@return boolean is_class `true` if `value` is a class, `false` otherwise.
 ---@nodiscard
 function std.isClass( value )
-    if not isTable( value ) then return false end
+    if raw_type( value ) ~= "table" then return false end
 
     local base = raw_get( value, "__base" )
-    if not isTable( base ) then return false end
+    if raw_type( base ) ~= "table" then return false end
 
     return raw_get( base, "__class" ) == value
 end
@@ -167,7 +166,7 @@ function std.isObject( value )
     if base == nil then return false end
 
     local cls = raw_get( base, "__class" )
-    if not isTable( cls ) or raw_get( cls, "__base" ) ~= base then
+    if raw_type( cls ) ~= "table" or raw_get( cls, "__base" ) ~= base then
         return false
     end
 
@@ -248,12 +247,12 @@ do
         raw_set( base, "__ancestors", ancestors )
 
         if parent ~= nil then
-            if not isTable( parent ) then
+            if raw_type( parent ) ~= "table" then
                 error( "Parent must be a class.", 2 )
             end
 
             local parent_base = raw_get( parent, "__base" )
-            if not isTable( parent_base ) then
+            if raw_type( parent_base ) ~= "table" then
                 error( "Parent class has no `__base` variable.", 2 )
             end
 
@@ -272,7 +271,7 @@ do
 
             -- copy metamethods from parent
             for key, value in raw_pairs( parent_base ) do
-                if isString( key ) and not non_inheritable[ key ] then
+                if raw_type( key ) == "string" and not non_inheritable[ key ] then
                     local uint8_1, uint8_2 = string_byte( key, 1, 2 )
                     if uint8_1 == 0x5F --[[ "_" ]] and uint8_2 == 0x5F --[[ "_" ]] then
                         base[ key ] = value
@@ -371,12 +370,12 @@ end
 ---@param base dreamwork.std.Object The base object, aka metatable.
 ---@return dreamwork.std.Class | unknown cls The class.
 function class.create( base )
-    if not isTable( base ) then
+    if raw_type( base ) ~= "table" then
         error( "Class base must be a table.", 2 )
     end
 
     local name = raw_get( base, "__type" )
-    if not isString( name ) then
+    if raw_type( name ) ~= "string" then
         error( "Class base has no `__type` variable.", 2 )
     end
 
@@ -448,7 +447,7 @@ end
 ---@return boolean is_instance `true` if `obj` is an instance of the given class, `false` otherwise.
 ---@nodiscard
 function class.isInherited( obj, cls )
-    if not isTable( cls ) then
+    if raw_type( cls ) ~= "table" then
         error( "bad argument #2 to 'isInherited' (class or base expected)", 2 )
     end
 

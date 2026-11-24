@@ -16,6 +16,7 @@ local debug = std.debug
 local debug_fempty = debug.fempty
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_next = raw.next
 local raw_select = raw.select
 
@@ -45,12 +46,10 @@ local class = std.class
 
 local error = std.error
 local tostring = std.tostring
-local isTable = std.isTable
-local isString = std.isString
-local isNumber = std.isNumber
+
+local HTTPError = std.HTTPError
 local ValueError = std.ValueError
 local SteamError = std.SteamError
-local HTTPError = std.HTTPError
 
 local Future = std.Future
 local setTimeout = std.setTimeout
@@ -119,7 +118,7 @@ local DEFAULT_TIMEOUT = 30
 local function setup_timeout( future, seconds, message )
     local delay = DEFAULT_TIMEOUT
 
-    if isNumber( seconds ) then
+    if raw_type( seconds ) == "number" then
         ---@cast seconds number
         delay = seconds
     end
@@ -164,7 +163,7 @@ local function normalize_id( value )
     local lowered = string_lower( id )
     local from_link = string_match( lowered, WORKSHOP_LINK .. "(%d+)$" )
         or string_match( lowered, WORKSHOP_LINK .. "(%d+)[&/#?]" )
-    if isString( from_link ) then
+    if raw_type( from_link ) == "string" then
         ---@cast from_link string
         id, length = from_link, #from_link
     end
@@ -498,20 +497,20 @@ do
         local tag_list = {}
         local raw_tags = info.tags
 
-        if isTable( raw_tags ) then
+        if raw_type( raw_tags ) == "table" then
             ---@cast raw_tags ( dreamwork.std.steam.workshop.WebTag | string )[]
 
             for i = 1, #raw_tags, 1 do
                 local entry = raw_tags[ i ]
-                if isTable( entry ) then
+                if raw_type( entry ) == "table" then
                     ---@cast entry dreamwork.std.steam.workshop.WebTag
                     tag_list[ i ] = string_lower( entry.tag or "" )
-                elseif isString( entry ) then
+                elseif raw_type( entry ) == "string" then
                     ---@cast entry string
                     tag_list[ i ] = string_lower( entry )
                 end
             end
-        elseif isString( raw_tags ) then
+        elseif raw_type( raw_tags ) == "string" then
             ---@cast raw_tags string
             local tags, tag_count = string_byteSplit( raw_tags, 0x2C --[[ , ]] )
             for i = 1, tag_count, 1 do
@@ -533,7 +532,7 @@ do
         state.description = info.description
 
         local visibility = info.visibility
-        if isNumber( visibility ) then
+        if raw_type( visibility ) == "number" then
             ---@cast visibility integer
             state.visibility = ERemoteStoragePublishedFileVisibility[ visibility ] or "unknown"
         else
@@ -646,7 +645,7 @@ do
         end
 
         local steam_response = json_data.response
-        if not isTable( steam_response ) then
+        if raw_type( steam_response ) ~= "table" then
             error( "No response - API returned invalid data", 2 )
         end
 
@@ -664,7 +663,7 @@ do
         local items = {}
         for i = 1, id_count, 1 do
             local details = publishedfiledetails[ i ]
-            if not isTable( details ) then
+            if raw_type( details ) ~= "table" then
                 error( "No publishedfiledetails - API returned invalid data", 2 )
             end
 
@@ -859,7 +858,7 @@ do
             file_path = publish_path( file_path )
 
             steamworks_Publish( file_path, image_path, title, description or "", tags, function( wsid, errorMsg )
-                if isString( errorMsg ) then
+                if raw_type( errorMsg ) == "string" then
                     ---@cast errorMsg string
                     f:setError( errorMsg )
                 else
@@ -892,7 +891,7 @@ do
             file_path = publish_path( file_path )
 
             steamworks_Publish( file_path, image_path, title, description or "", tags, function( _, errorMsg )
-                if isString( errorMsg ) then
+                if raw_type( errorMsg ) == "string" then
                     ---@cast errorMsg string
                     f:setError( errorMsg )
                 else
@@ -986,7 +985,7 @@ do
 
             local data = f:await()
 
-            if not isTable( data ) then
+            if raw_type( data ) ~= "table" then
                 error( "No response - workshop search returned invalid data", 2 )
             end
 
@@ -1178,7 +1177,7 @@ do
         local ranked = {}
         for i = 1, child_count, 1 do
             local child = children[ i ]
-            if not isTable( child ) then
+            if raw_type( child ) ~= "table" then
                 error( "No collectiondetails - API returned invalid data", 2 )
             end
 
@@ -1232,7 +1231,7 @@ do
         end
 
         local steam_response = json_data.response
-        if not isTable( steam_response ) then
+        if raw_type( steam_response ) ~= "table" then
             error( "No response - API returned invalid data", 2 )
         end
 
@@ -1243,7 +1242,7 @@ do
         end
 
         local collectiondetails = steam_response.collectiondetails
-        if collectiondetails == nil or not isTable( collectiondetails[ 1 ] ) then
+        if collectiondetails == nil or raw_type( collectiondetails[ 1 ] ) ~= "table" then
             error( "No collectiondetails - API returned invalid data", 2 )
         end
 
@@ -1293,7 +1292,7 @@ do
         end
 
         local steam_response = json_data.response
-        if not isTable( steam_response ) then
+        if raw_type( steam_response ) ~= "table" then
             error( "No response - API returned invalid data", 2 )
         end
 
@@ -1311,7 +1310,7 @@ do
         local collections = {}
         for i = 1, id_count, 1 do
             local entry = collectiondetails[ i ]
-            if not isTable( entry ) then
+            if raw_type( entry ) ~= "table" then
                 error( "No collectiondetails - API returned invalid data", 2 )
             end
 

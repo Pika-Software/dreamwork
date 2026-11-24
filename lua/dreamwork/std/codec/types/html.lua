@@ -1,10 +1,10 @@
 ---@class dreamwork.std
 local std                        = dreamwork.std
 
-local isString                   = std.isString
 local tostring                   = std.tostring
 
 local raw                        = std.raw
+local raw_type                   = raw.type
 local raw_pairs                  = raw.pairs
 local raw_select                 = raw.select
 local raw_tonumber               = raw.tonumber
@@ -91,9 +91,6 @@ std.HTMLNode        = HTMLNodeClass
 local function isHTMLNode( value )
     return debug_getmetatable( value ) == HTMLNode
 end
-
-std.isHTMLNode = isHTMLNode
-
 
 ---@type table<string, boolean>
 local html_void = {
@@ -367,7 +364,7 @@ end
 ---@param value any
 ---@return dreamwork.std.HTMLNode.Value
 local function html_value( value )
-    if isString( value ) or isHTMLNode( value ) then
+    if raw_type( value ) == "string" or isHTMLNode( value ) then
         return value
     end
 
@@ -388,7 +385,7 @@ local function html_append_text( node, text )
     local length = #children
 
     local last = children[ length ]
-    if isString( last ) then
+    if raw_type( last ) == "string" then
         children[ length ] = last .. text
     else
         children[ length + 1 ] = text
@@ -481,7 +478,7 @@ function HTMLNode:setAttribute( name, value )
 
     if value == true then
         value = ""
-    elseif not isString( value ) then
+    elseif raw_type( value ) ~= "string" then
         value = tostring( value )
     end
 
@@ -873,7 +870,7 @@ local function collect_text( node, buffer, count )
 
     for i = 1, #children, 1 do
         local child = children[ i ]
-        if isString( child ) then
+        if raw_type( child ) == "string" then
             ---@cast child string
             count = count + 1
             buffer[ count ] = child
@@ -898,7 +895,7 @@ function HTMLNode:getText()
         return ""
     end
 
-    if #children == 1 and isString( children[ 1 ] ) then
+    if #children == 1 and raw_type( children[ 1 ] ) == "string" then
         ---@cast children string[]
         return children[ 1 ]
     end
@@ -916,7 +913,7 @@ end
 function HTMLNode:setText( text )
     self:clear()
 
-    if not isString( text ) then
+    if raw_type( text ) ~= "string" then
         text = tostring( text )
     end
 
@@ -1752,7 +1749,7 @@ do
             local key = keys[ i ]
 
             local value = attributes[ key ]
-            if not isString( value ) then
+            if raw_type( value ) ~= "string" then
                 value = tostring( value )
             end
 
@@ -1803,7 +1800,7 @@ do
 
             for i = 1, #children, 1 do
                 local child = children[ i ]
-                if isString( child ) then
+                if raw_type( child ) == "string" then
                     ---@cast child string
                     count = count + 1
 
@@ -1910,7 +1907,7 @@ do
         if children ~= nil then
             for i = 1, #children, 1 do
                 local child = children[ i ]
-                if isString( child ) then
+                if raw_type( child ) == "string" then
                     ---@cast child string
                     local text = string_match( child, "^%s*(.-)%s*$" )
                     if text ~= "" then
@@ -1980,7 +1977,7 @@ do
 
         for i = 1, #children, 1 do
             local child = children[ i ]
-            if isString( child ) then
+            if raw_type( child ) == "string" then
                 ---@cast child string
                 count = count + 1
 

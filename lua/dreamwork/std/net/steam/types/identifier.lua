@@ -4,6 +4,7 @@ local math = std.math
 local math_floor = math.floor
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_tonumber = raw.tonumber
 
 local rbit = raw.bit
@@ -22,7 +23,6 @@ local ascii_isDigit = ascii.isDigit
 local class = std.class
 
 local error = std.error
-local isNumber = std.isNumber
 local setmetatable = std.setmetatable
 
 local ValueError = std.ValueError
@@ -312,7 +312,7 @@ end
 ---@protected
 function Identifier.__add( a, b )
     -- `number + identifier`
-    if isNumber( a ) then
+    if raw_type( a ) == "number" then
         a, b = b, a
     end
 
@@ -327,7 +327,7 @@ end
 ---@return dreamwork.std.steam.Identifier
 ---@protected
 function Identifier:__sub( int32 )
-    if isNumber( self ) then
+    if raw_type( self ) == "number" then
         error( "attempt to subtract an identifier from a number, only `identifier - number` is supported", 2 )
     end
 
@@ -606,22 +606,27 @@ end
 
 Identifier.to64 = to64
 
---- Writes the binary SteamID64, 8 little endian bytes like in `.gma` headers.
+--- Returns the protobuf message of the Steam ID, `dreamwork.SteamID` with the SteamID64 as `{ low, high }`.
 ---
----@param writer dreamwork.std.BinaryWriter The writer to write to.
+---@return table message
 ---@protected
-function Identifier:__serialize( writer )
-    writer:writeUInt( self.id, 32, true )
-    writer:writeUInt( self.high, 32, true )
+function Identifier:__toProto()
+    return {
+        steam_id = {
+            self.id,
+            self.high,
+        },
+    }
 end
 
---- Reads the binary SteamID64 written by `__serialize`, overwrites all fields.
+--- Reads the Steam ID from the protobuf message written by `__toProto`, overwrites all fields.
 ---
----@param reader dreamwork.std.BinaryReader The reader to read from.
+---@param message { steam_id: integer[] }
 ---@protected
-function Identifier:__deserialize( reader )
-    self.id = reader:readUInt( 32, true )
-    self.high = reader:readUInt( 32, true )
+function Identifier:__fromProto( message )
+    local steam_id = message.steam_id
+    self.id = steam_id[ 1 ]
+    self.high = steam_id[ 2 ]
     self.uint64_str = nil
 end
 
@@ -662,6 +667,24 @@ end
 ---@nodiscard
 function IdentifierClass.fromAccountID( account_id )
     return create( pack( UNIVERSE_PUBLIC, TYPE_INDIVIDUAL, INSTANCE_DESKTOP ), account_id )
+end
+
+--- [SHARED AND MENU]
+---
+--- Creates a new Steam ID from the SteamID64 split into unsigned 32-bit halves,
+--- the low half is the account number, the high half holds the universe, the type and the instance.
+---
+--- ```lua
+--- local steamid = steam.Identifier.fromUInt64( 22202, 0x01100001 )
+--- print( steamid:to64() ) -- 76561197960287930
+--- ```
+---
+---@param low integer The low 32 bits.
+---@param high integer The high 32 bits.
+---@return dreamwork.std.steam.Identifier object The Steam ID.
+---@nodiscard
+function IdentifierClass.fromUInt64( low, high )
+    return create( high, low )
 end
 
 --- [SHARED AND MENU]
@@ -965,3 +988,5 @@ function IdentifierClass.parse( str )
 
     return object
 end
+
+std.protobuf.Type.bind( "dreamwork.SteamID", IdentifierClass )

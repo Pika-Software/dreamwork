@@ -33,9 +33,10 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_index = raw.index
-local raw_tostring = raw.tostring
 local raw_pairs = raw.pairs
+local raw_tostring = raw.tostring
 
 local string = std.string
 local string_format = string.format
@@ -48,7 +49,6 @@ local table_concat = table.concat
 
 local type = std.type
 local error = std.error
-local isFunction = std.isFunction
 
 local Emitter = std.Emitter
 
@@ -433,7 +433,7 @@ function panel_methods:OnCallback( library, name, arguments )
     if bridges == nil then return end
 
     local fn = bridges[ library .. "." .. name ]
-    if isFunction( fn ) then
+    if raw_type( fn ) == "function" then
         ---@cast fn dreamwork.std.WebClient.JSCallback
         return fn( table_unpack( arguments ) )
     end

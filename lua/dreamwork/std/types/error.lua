@@ -20,6 +20,7 @@ local exceptions_Stack = dreamwork_exceptions.Stack
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_select = raw.select
 
 local math = std.math
@@ -49,12 +50,11 @@ local color_Scheme = color.Scheme
 
 local class = std.class
 
-local represent = std.represent
-local tostring = std.tostring
-local isString = std.isString
-local isClass = std.isClass
-local isType = std.isType
 local type = std.type
+local isType = std.isType
+local isClass = std.isClass
+local tostring = std.tostring
+local represent = std.represent
 
 
 local COLOR_WHITE_SMOKE = color_Scheme.white_smoke
@@ -552,7 +552,7 @@ local function to_error( error_value, error_class )
         end
     elseif error_value == nil then
         error_object = error_class( "unknown error" )
-    elseif isString( error_value ) then
+    elseif raw_type( error_value ) == "string" then
         ---@cast error_value string
         error_object = error_class( string_match( error_value, "^[^\n]-:%d+: (.*)$" ) or error_value )
     else
@@ -577,7 +577,7 @@ do
         end
 
         local result = exceptions_report( to_error( error_value ) )
-        if isString( result ) then
+        if raw_type( result ) == "string" then
             return result
         end
 
@@ -631,7 +631,7 @@ end
 ---@return dreamwork.std.Error | any error_object
 ---@nodiscard
 function dreamwork_exceptions.catch( error_value )
-    if error_value == nil or isString( error_value ) or isError( error_value ) then
+    if error_value == nil or raw_type( error_value ) == "string" or isError( error_value ) then
         return to_error( error_value )
     end
 
@@ -715,7 +715,7 @@ do
             error_object = value
         elseif value == nil then
             error_object = RuntimeErrorClass( "unknown error" )
-        elseif isString( value ) then
+        elseif raw_type( value ) == "string" then
             ---@cast value string
             error_object = RuntimeErrorClass( value )
         else
@@ -776,7 +776,7 @@ do
     function std_error( value, stack_level )
         local is_protected = coroutine_running() ~= nil or debug_calledby( 2, pcall, xpcall )
 
-        if is_protected and not (value == nil or isString( value ) or isError( value )) then
+        if is_protected and not (value == nil or raw_type( value ) == "string" or isError( value )) then
             return glua_error( value, 0 )
         end
 
@@ -834,7 +834,7 @@ function std.assert( value, message, ... )
 
     if message == nil then
         return std_error( "assertion failed!", 1 )
-    elseif isString( message ) then
+    elseif raw_type( message ) == "string" then
         ---@cast message string
 
         if raw_select( "#", ... ) == 0 then

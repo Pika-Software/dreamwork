@@ -2,7 +2,6 @@
 local std = dreamwork.std
 
 local raw = std.raw
-local raw_get = raw.get
 
 local debug = std.debug
 local debug_getmetatable = debug.getmetatable
@@ -935,54 +934,4 @@ do
         return bytepack_readDate( pack_readUInt( self.data, advance( self, 16, 2 ), 16, is_little_endian ) )
     end
 
-end
-
---- [SHARED AND MENU]
----
---- Reads the object in place with its `__deserialize( reader, ... )` method.
----
----@generic T: dreamwork.std.Object
----@param obj T The object to read into.
----@param ... any The arguments passed to `__deserialize`.
----@return T obj The same object.
-function BinaryReader:readObject( obj, ... )
-    ---@type nil | fun( obj: dreamwork.std.Object, reader: dreamwork.std.BinaryReader, ...: any )
-    local fn = obj.__deserialize
-    if fn == nil then
-        error( "missing '__deserialize' method", 2 )
-    end
-
-    fn( obj, self, ... )
-    return obj
-end
-
---- [SHARED AND MENU]
----
---- Creates a new instance of the class without calling `__init`,
---- and reads it with its `__deserialize( reader, ... )` method.
----
---- ```
---- local vector = reader:readClass( Vector2 )
---- ```
----
----@param cls dreamwork.std.Object | dreamwork.std.Class | any The class to create.
----@param ... any The arguments passed to `__deserialize`.
----@return any obj The new object.
----@nodiscard
-function BinaryReader:readClass( cls, ... )
-    ---@type nil | dreamwork.std.Object
-    local base = raw_get( cls, "__base" )
-    if base == nil then
-        error( "missing '__base' metavalue", 2 )
-    end
-
-    ---@type nil | fun( obj: dreamwork.std.Object, reader: dreamwork.std.BinaryReader, ...: any )
-    local fn = base.__deserialize
-    if fn == nil then
-        error( "missing '__deserialize' method", 2 )
-    end
-
-    local obj = class.new( base )
-    fn( obj, self, ... )
-    return obj
 end

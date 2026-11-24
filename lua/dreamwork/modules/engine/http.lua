@@ -7,7 +7,9 @@ local dreamwork_Logger = dreamwork.Logger
 
 local std = dreamwork.std
 
-local isFunction = std.isFunction
+local raw = std.raw
+local raw_type = raw.type
+
 local loadbinary = std.loadbinary
 
 
@@ -53,7 +55,7 @@ if loadbinary( "reqwest" ) then
 elseif loadbinary( "chttp" ) then
     client_fn = CHTTP
     client_name = "chttp"
-elseif isFunction( HTTP ) then
+elseif raw_type( HTTP ) == "function" then
     client_fn = HTTP
     client_name = "garrysmod"
 end

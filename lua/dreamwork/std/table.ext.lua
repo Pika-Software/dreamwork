@@ -1,10 +1,12 @@
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_type = raw.type
+
 local string = std.string
 local string_sub = string.sub
 local string_byte = string.byte
 
-local isTable = std.isTable
 
 ---@class dreamwork.std.table
 local table = std.table
@@ -43,7 +45,7 @@ function table.get( tbl, path, separator )
         if string_byte( path, position, position ) == separator then
             tbl = tbl[ string_sub( path, split_position + 1, position - 1 ) ]
 
-            if not isTable( tbl ) then
+            if raw_type( tbl ) ~= "table" then
                 return nil
             end
 
@@ -88,7 +90,7 @@ function table.set( tbl, path, value, separator )
             local key = string_sub( path, split_position + 1, position - 1 )
 
             local tbl_value = tbl[ key ]
-            if isTable( tbl_value ) then
+            if raw_type( tbl_value ) == "table" then
                 tbl = tbl_value
             else
                 tbl_value = {}

@@ -12,13 +12,8 @@ local vfs_isDirectory = vfs.isDirectory
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local LUA_SERVER = std.LUA_SERVER
-local LUA_CLIENT = std.LUA_CLIENT
-local LUA_REALM = std.LUA_REALM
-
-local class = std.class
-
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 
 local string = std.string
@@ -42,14 +37,19 @@ local Version = std.Version
 local Version_validate = Version.validate
 local Version_fromString = Version.fromString
 
+local class = std.class
+
 local pcall = std.pcall
 local error = std.error
 local tostring = std.tostring
-local isString = std.isString
 
 local URL = std.URL
-
 local Zip = std.Zip
+
+local LUA_CLIENT = std.LUA_CLIENT
+local LUA_SERVER = std.LUA_SERVER
+local LUA_REALM = std.LUA_REALM
+
 
 ---@class dreamwork.loader
 local loader = dreamwork.loader
@@ -121,7 +121,7 @@ providers[ DEFAULT_ORIGIN ] = {
 
         for index = 1, #tags, 1 do
             local tag_name = tags[ index ].name
-            if isString( tag_name ) then
+            if raw_type( tag_name ) == "string" then
                 tag_count = tag_count + 1
                 tag_names[ tag_count ] = tag_name
             end

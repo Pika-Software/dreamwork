@@ -14,7 +14,7 @@ local json = std.json
 local json_encode = json.encode
 
 local error = std.error
-local isString = std.isString
+local raw_type = raw.type
 local loadbinary = std.loadbinary
 
 
@@ -122,7 +122,7 @@ if loadbinary( "gwsockets" ) and GWSockets ~= nil and GWSockets.createWebSocket 
         local headers = options.headers
         if headers ~= nil then
             for name, value in raw_pairs( headers ) do
-                if isString( name ) and isString( value ) then
+                if raw_type( name ) == "string" and raw_type( value ) == "string" then
                     handle:setHeader( name, value )
                 end
             end

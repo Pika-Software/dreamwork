@@ -58,9 +58,6 @@ local raw_type = raw.type
 local raw_index = raw.index
 local raw_tonumber = raw.tonumber
 
-local rbit = raw.bit
-local rbit_width = rbit.width
-
 local debug = std.debug
 local debug_fempty = debug.fempty
 
@@ -103,11 +100,6 @@ local LUA_SERVER = std.LUA_SERVER
 ---@class dreamwork.engine.client
 local engine_client = dreamwork_engine.client or {}
 dreamwork_engine.client = engine_client
-
---- The number of bits of a serialized client, its player entity index.
----
---- Player entities take the indexes from `1` to `server.slots`, which is the same on the server and the client.
-local index_bits = rbit_width( server.slots )
 
 local STAGE_NONE = 0
 local STAGE_CONNECTED = 1
@@ -167,12 +159,13 @@ local temporary_names = {
 }
 
 --- The metamethods readable through the client object, `raw.index` hides them,
---- but `BinaryWriter:writeObject` and `BinaryReader:readObject` look them up on the object.
+--- but `protobuf` looks them up on the object.
 ---
 ---@type table<string, boolean>
 local public_metamethods = {
-    __serialize = true,
-    __deserialize = true
+    __proto = true,
+    __toProto = true,
+    __fromProto = true
 }
 
 --- The fields of `dreamwork.std.Client.Data` readable through the client object.
@@ -338,24 +331,24 @@ function Client:__eq( other )
     return client_data[ self ] == client_data[ other ]
 end
 
---- Writes the player entity index of the client, `0` if it is not known yet.
+--- Returns the protobuf message of the client, `dreamwork.Client` with the player entity index, `0` if it is not known yet.
 ---
----@param writer dreamwork.std.BinaryWriter The writer to write to.
+---@return table message
 ---@protected
-function Client:__serialize( writer )
-    writer:writeUInt( client_data[ self ].entity_id or 0, index_bits )
+function Client:__toProto()
+    return { index = client_data[ self ].entity_id or 0 }
 end
 
---- Reads the player entity index written by `__serialize`, the object becomes a view of the client with the index.
+--- Reads the player entity index written by `__toProto`, the object becomes a view of the client with the index.
 ---
 --- An unknown index gives a disconnected client without data, e.g. the client left before the message arrived.
 ---
 --- > **NOTE**: The object is equal (`==`) to the client, but it is a different key in tables.
 ---
----@param reader dreamwork.std.BinaryReader The reader to read from.
+---@param message { index: integer }
 ---@protected
-function Client:__deserialize( reader )
-    local index = reader:readUInt( index_bits )
+function Client:__fromProto( message )
+    local index = message.index
 
     local client = index_clients[ index ]
     if client ~= nil then
@@ -372,6 +365,8 @@ function Client:__deserialize( reader )
         is_bot = false
     }
 end
+
+std.protobuf.Type.bind( "dreamwork.Client", ClientClass )
 
 ---@param user_id integer
 ---@return dreamwork.std.Client | nil

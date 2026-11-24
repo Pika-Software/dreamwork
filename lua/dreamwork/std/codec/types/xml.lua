@@ -1,13 +1,8 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isString = std.isString
-local isTable = std.isTable
-
-local tostring = std.tostring
-local pairs = std.pairs
-
 local raw = std.raw
+local raw_type = raw.type
 local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
@@ -22,13 +17,16 @@ local table = std.table
 local table_concat = table.concat
 
 local string = std.string
+local string_sub = string.sub
+local string_gmatch = string.gmatch
 local string_byteRep = string.byteRep
 local string_toNumber = string.toNumber
-local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 local string_gsub, string_match = string.gsub, string.match
 local string_find, string_format = string.find, string.format
-local string_gmatch = string.gmatch
+
+local pairs = std.pairs
+local tostring = std.tostring
 
 
 --- [SHARED AND MENU]
@@ -104,14 +102,12 @@ local function isNode( value )
     return debug_getmetatable( value ) == XMLNode
 end
 
-std.isXMLNode = isNode
-
 --- Checks whether the value is a list of node values.
 ---
 ---@param value any
 ---@return boolean is_list
 local function isList( value )
-    return isTable( value ) and debug_getmetatable( value ) ~= XMLNode
+    return raw_type( value ) == "table" and debug_getmetatable( value ) ~= XMLNode
 end
 
 --- Returns the data table key for the given key, numeric keys fall back to number keys like in `get`, `"1"` is the text slot.
@@ -137,7 +133,12 @@ end
 ---@param value any
 ---@return dreamwork.std.XMLNode.Value | dreamwork.std.XMLNode.Value[] | nil
 local function to_value( value )
-    if value == nil or isString( value ) or isTable( value ) then
+    if value == nil then
+        return value
+    end
+
+    local value_type = raw_type( value )
+    if value_type == "string" or value_type == "table" then
         return value
     end
 
@@ -154,7 +155,7 @@ local function node_data_table( node )
         data = {}
         node.data = data
         node.order = {}
-    elseif isString( data ) then
+    elseif raw_type( data ) == "string" then
         ---@cast data string
         node.texts = { data }
         node.order = { 1 }
@@ -316,7 +317,7 @@ local function collect_children( node, keys, values, consumed )
         return 0
     end
 
-    if isString( data ) then
+    if raw_type( data ) == "string" then
         keys[ 1 ], values[ 1 ] = false, data
         return 1
     end
@@ -326,7 +327,7 @@ local function collect_children( node, keys, values, consumed )
     local order, texts = node.order, node.texts
 
     local text = data[ 1 ]
-    if not isString( text ) then
+    if raw_type( text ) ~= "string" then
         text = nil
     end
 
@@ -350,7 +351,7 @@ local function collect_children( node, keys, values, consumed )
     if order ~= nil then
         for i = 1, #order, 1 do
             local entry = order[ i ]
-            if isString( entry ) then
+            if raw_type( entry ) == "string" then
                 local value = data[ entry ]
                 if value ~= nil then
                     if isList( value ) then
@@ -548,7 +549,7 @@ function XMLNode:get( key )
         end
     end
 
-    if isString( data ) then
+    if raw_type( data ) == "string" then
         ---@cast data string
 
         if key_end == nil and name == "" and (index == nil or index == 1) then
@@ -693,7 +694,7 @@ local function resolve_data( node, key )
     end
 
     local data = owner.data
-    if data == nil or isString( data ) then
+    if data == nil or raw_type( data ) == "string" then
         return nil, key_name, nil
     end
 
@@ -739,7 +740,7 @@ end
 ---@nodiscard
 function XMLNode:containsString( key )
     local data, key_name = resolve_data( self, key )
-    return data ~= nil and isString( data[ key_name ] )
+    return data ~= nil and raw_type( data[ key_name ] ) == "string"
 end
 
 --- [SHARED AND MENU]
@@ -803,7 +804,7 @@ function XMLNode:push( key, value )
 
     local data_value = data[ value_key ]
 
-    if value_key == 1 and isString( inner_value ) and (data_value == nil or isString( data_value )) then
+    if value_key == 1 and raw_type( inner_value ) == "string" and (data_value == nil or raw_type( data_value ) == "string") then
         ---@cast inner_value string
         text_append( node, data, inner_value )
         return
@@ -910,7 +911,7 @@ function XMLNode:iterator( key )
         return debug_fempty
     end
 
-    if isString( data ) then
+    if raw_type( data ) == "string" then
         ---@cast data string
         local wait = true
 
@@ -1147,7 +1148,7 @@ do
         local line_count = 0
 
         for key, value in raw_pairs( attributes ) do
-            if not isString( value ) then
+            if raw_type( value ) ~= "string" then
                 value = tostring( value )
             end
 
@@ -1190,7 +1191,7 @@ do
             return line_count
         end
 
-        if isString( data ) then
+        if raw_type( data ) == "string" then
             ---@cast data string
             line_count = line_count + 1
             lines[ line_count ] = open_tag .. ">" .. escape_text( data ) .. "</" .. name .. ">"
@@ -1220,7 +1221,7 @@ do
             elseif isNode( value ) then
                 ---@cast value dreamwork.std.XMLNode
                 line_count = node_to_string( lines, line_count, value, key, child_indent, pretty, buffers, depth + 1 )
-            elseif isString( value ) then
+            elseif raw_type( value ) == "string" then
                 ---@cast value string
                 line_count = line_count + 1
                 lines[ line_count ] = child_indent .. "<" .. key .. ">" .. escape_text( value ) .. "</" .. key .. ">"
@@ -1279,7 +1280,7 @@ do
             return {}
         end
 
-        if isString( data ) then
+        if raw_type( data ) == "string" then
             ---@cast data string
             return { [ 1 ] = data }
         end
@@ -1369,7 +1370,7 @@ do
         local data = node.data
         if data == nil then
             data = ""
-        elseif not isString( data ) then
+        elseif raw_type( data ) ~= "string" then
             return
         end
 
@@ -1379,7 +1380,7 @@ do
         if parent == nil then return end
 
         local parent_data = parent.data
-        if parent_data == nil or isString( parent_data ) then return end
+        if parent_data == nil or raw_type( parent_data ) == "string" then return end
 
         ---@cast parent_data table<string, (string | dreamwork.std.XMLNode | dreamwork.std.XMLNode.Value[])>
 
@@ -1411,7 +1412,7 @@ do
         local data = node.data
         if data == nil then
             node.data = text
-        elseif isString( data ) then
+        elseif raw_type( data ) == "string" then
             ---@cast data string
             node.data = data .. text
         else
@@ -1433,7 +1434,7 @@ do
 
         -- text slot from `toTable` has no position, so it goes first like in the serializer
         local text = tbl[ 1 ]
-        if isString( text ) then
+        if raw_type( text ) == "string" then
             ---@cast text string
             tree_text( node, text )
         end
@@ -1443,20 +1444,22 @@ do
                 goto skip_entry
             end
 
-            if not isString( key ) then
+            if raw_type( key ) ~= "string" then
                 key = tostring( key )
             end
 
-            if key == "1" and isString( value ) then
+            local value_type = raw_type( value )
+
+            if value_type == "string" and key == "1" then
                 ---@cast value string
                 tree_text( node, value )
             elseif isNode( value ) then
                 ---@cast value dreamwork.std.XMLNode
                 node:push( key, value )
-            elseif isTable( value ) then
+            elseif value_type == "table" then
                 ---@cast value table
                 node:push( key, XMLNodeClass.fromTable( value, key ) )
-            elseif isString( value ) then
+            elseif value_type == "string" then
                 ---@cast value string
                 node:push( key, value )
             else

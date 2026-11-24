@@ -93,65 +93,49 @@ function Node:__init( value, parent )
     end
 end
 
---- Writes the node and its whole subtree, depth-first,
---- every node is a presence bit, its value (`writer:writeObject`), the number of children (`UInt32`) and the children.
----
---- Values must be objects with `__serialize`, or `nil`.
+--- Returns the node for `protobuf.tree`, `{ value = any, children = { ... } }`,
+--- the children are converted the same way when they are written.
 ---
 --- ```
---- writer:writeObject( root ) -- calls `value:__serialize( writer )` for every value
+--- writer:writeProto( root, protobuf.tree( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Node<T>
----@param writer dreamwork.std.BinaryWriter The writer.
----@param ... any The arguments passed to `__serialize` of every value.
+---@return { value: T, children: dreamwork.std.Node<T>[] } message The node.
 ---@protected
-function Node:__serialize( writer, ... )
-    local value = self.value
-
-    -- presence bit, `nil` has no `__serialize`
-    if value == nil then
-        writer:writeBit( 0 )
-    else
-        writer:writeBit( 1 )
-        writer:writeObject( value, ... )
-    end
-
+function Node:__toProto()
     local width = self.width
-    writer:writeUInt( width, 32 )
+
+    ---@type dreamwork.std.Node[]
+    local children = {}
 
     for index = 1, width, 1 do
-        writer:writeObject( self[ index ], ... )
+        children[ index ] = self[ index ]
     end
+
+    return { value = self.value, children = children }
 end
 
---- Reads the subtree written by `__serialize` into the node, replacing its values and children.
+local Node_fromProto
+
+--- Reads the subtree decoded by `protobuf.tree` into the node, replacing its values and children.
 ---
---- Values are read with `reader:readClass( value_class, ... )`,
---- existing children are reused, new ones are created with the class of this node,
+--- Existing children are reused, new ones are created with the class of this node,
 --- `parent` and `depth` are restored from the tree.
 ---
 --- ```
---- local root = reader:readClass( Node, Vector3 )
+--- local root = reader:readProto( Node, protobuf.tree( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Node<T>
----@param reader dreamwork.std.BinaryReader The reader.
----@param value_class dreamwork.std.Class? The class of the values, can be omitted if every value is `nil`.
----@param ... any The arguments passed to `__deserialize` of every value.
+---@param message { value: T, children: table[] } The decoded node.
 ---@protected
-function Node:__deserialize( reader, value_class, ... )
-    if reader:readBit() == 0 then
-        self.value = nil
-    elseif value_class == nil then
-        error( "node has a value, but `value_class` is missing" )
-    else
-        self.value = reader:readClass( value_class, ... )
-    end
+function Node:__fromProto( message )
+    self.value = message.value
 
-    -- `readClass` creates the root without `__init`
+    -- `readProto` creates the root without `__init`
     local depth = self.depth
     if depth == nil then
         depth = 0
@@ -159,13 +143,14 @@ function Node:__deserialize( reader, value_class, ... )
     end
 
     local old_width = self.width or 0
-    local width = reader:readUInt( 32 )
+
+    local children = message.children
+    local width = #children
 
     -- children get the class of this node, so subclasses stay subclasses
     local base = debug_getmetatable( self )
     ---@cast base dreamwork.std.Node
 
-    -- every child takes at least 33 bits, so a broken width runs out of data instead of memory
     for index = 1, width, 1 do
         ---@type dreamwork.std.Node | nil
         local child = self[ index ]
@@ -174,10 +159,9 @@ function Node:__deserialize( reader, value_class, ... )
             self[ index ] = child
         end
 
-        -- `readObject`, not `readClass`: existing children are reused,
-        -- and `depth` must be set before the child reads its own children
+        -- `depth` must be set before the child reads its own children
         child.parent, child.depth = self, depth + 1
-        reader:readObject( child, value_class, ... )
+        Node_fromProto( child, children[ index ] )
     end
 
     for index = width + 1, old_width, 1 do
@@ -186,6 +170,8 @@ function Node:__deserialize( reader, value_class, ... )
 
     self.width = width
 end
+
+Node_fromProto = Node.__fromProto
 
 --- [SHARED AND MENU]
 ---

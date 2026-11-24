@@ -5,13 +5,11 @@ local setmetatable = std.setmetatable
 local tostring = std.tostring
 local tonumber = std.tonumber
 
-local isString = std.isString
-local isNumber = std.isNumber
-
 local ascii = std.ascii
 local ascii_toInteger = ascii.toInteger
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_equal = raw.equal
 local raw_select = raw.select
 local raw_tonumber = raw.tonumber
@@ -695,7 +693,7 @@ do
     ---@param base integer | nil
     ---@param stack_level integer
     local function fromAny( obj, value, base, stack_level )
-        if isString( value ) then
+        if raw_type( value ) == "string" then
             ---@cast value string
             BigInteger_fromString( obj, value, base )
             return
@@ -704,7 +702,7 @@ do
         ---@type integer | nil
         local number_value
 
-        if isNumber( value ) then
+        if raw_type( value ) == "number" then
             ---@cast value number
             number_value = value
         else
@@ -1220,34 +1218,39 @@ do
 
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the integer, `dreamwork/math.proto`.
+---
+---@type string
 ---@protected
-function BigInteger:__serialize( writer )
+BigInteger.__proto = "dreamwork.BigInteger"
+
+--- Returns the protobuf message of the integer, the limbs and the sign.
+---
+---@return table message
+---@protected
+function BigInteger:__toProto()
     local limbs = self.limbs
-    local limb_count = limbs[ 0 ]
 
-    writer:writeUInt( limb_count, 16, true )
-
-    for i = 1, limb_count, 1 do
-        writer:writeUInt( limbs[ i ], 16, true )
-    end
-
-    writer:writeBoolean( self.sign )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function BigInteger:__deserialize( reader )
-    local limbs = {
-        [ 0 ] = reader:readUInt( 16, true )
-    }
+    ---@type integer[]
+    local message_limbs = {}
 
     for i = 1, limbs[ 0 ], 1 do
-        limbs[ i ] = reader:readUInt( 16, true )
+        message_limbs[ i ] = limbs[ i ]
     end
 
+    return { limbs = message_limbs, negative = self.sign }
+end
+
+--- Reads the integer from the protobuf message written by `__toProto`.
+---
+---@param message { limbs: integer[], negative: boolean }
+---@protected
+function BigInteger:__fromProto( message )
+    local limbs = message.limbs
+    limbs[ 0 ] = #limbs
+
     self.limbs = limbs
-    self.sign = reader:readBoolean()
+    self.sign = message.negative
 end
 
 local BigInteger_negate = BigInteger.negate

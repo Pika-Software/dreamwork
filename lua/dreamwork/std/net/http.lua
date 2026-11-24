@@ -10,6 +10,7 @@ local std = dreamwork.std
 
 local raw = std.raw
 local raw_get = raw.get
+local raw_type = raw.type
 local raw_tonumber = raw.tonumber
 
 local string = std.string
@@ -31,9 +32,6 @@ local time_now = time.now
 local time_timestampFromCivil = time.timestampFromCivil
 
 local class = std.class
-
-local isTable = std.isTable
-local isString = std.isString
 
 local URL = std.URL
 local TypeError = std.TypeError
@@ -185,7 +183,7 @@ end
 ---@return boolean is_secure `true` for `https://` and `wss://`.
 ---@return boolean is_ip `true` if the host is an IP address.
 local function get_location( url )
-    if isString( url ) then
+    if raw_type( url ) == "string" then
         ---@cast url string
         url = URL( url )
     end
@@ -196,7 +194,7 @@ local function get_location( url )
     local state = raw_get( url, "state" )
     local scheme, hostname = state.scheme, state.hostname
 
-    return url.hostname or "", url.pathname or "/", scheme == "https" or scheme == "wss", hostname ~= nil and not isString( hostname )
+    return url.hostname or "", url.pathname or "/", scheme == "https" or scheme == "wss", hostname ~= nil and raw_type( hostname ) ~= "string"
 end
 
 --- Removes leading and trailing spaces and tabs (RFC 6265 WSP).
@@ -505,11 +503,11 @@ end
 ---@param options dreamwork.std.http.CookieOptions The cookie options, `domain` or `url` is required.
 ---@return dreamwork.std.http.Cookie cookie The cookie.
 function CookieJar:set( name, value, options )
-    if not isString( name ) then
+    if raw_type( name ) ~= "string" then
         error( TypeError( 1, name, "string", "name", "http.CookieJar:set" ), 2 )
-    elseif not isString( value ) then
+    elseif raw_type( value ) ~= "string" then
         error( TypeError( 2, value, "string", "value", "http.CookieJar:set" ), 2 )
-    elseif not isTable( options ) then
+    elseif raw_type( options ) ~= "table" then
         error( TypeError( 3, options, "table", "options", "http.CookieJar:set" ), 2 )
     end
 
@@ -634,13 +632,13 @@ function CookieJar:store( set_cookie, url )
         return
     end
 
-    if isString( set_cookie ) then
+    if raw_type( set_cookie ) == "string" then
         ---@cast set_cookie string
         parse_set_cookies( self, set_cookie, host, request_path, is_secure, is_ip )
         return
     end
 
-    if not isTable( set_cookie ) then
+    if raw_type( set_cookie ) ~= "table" then
         error( TypeError( 1, set_cookie, "string or table", "set_cookie", "http.CookieJar:store" ), 2 )
     end
 
@@ -708,7 +706,7 @@ end
 ---
 ---@param name string The name to save the jar under.
 function CookieJar:save( name )
-    if not isString( name ) then
+    if raw_type( name ) ~= "string" then
         error( TypeError( 1, name, "string", "name", "http.CookieJar:save" ), 2 )
     end
 
@@ -751,7 +749,7 @@ end
 ---@param name string The name the jar was saved under.
 ---@return integer count The number of loaded cookies, `0` if nothing was saved.
 function CookieJar:load( name )
-    if not isString( name ) then
+    if raw_type( name ) ~= "string" then
         error( TypeError( 1, name, "string", "name", "http.CookieJar:load" ), 2 )
     end
 

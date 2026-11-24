@@ -1,6 +1,10 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
+local raw = std.raw
+local raw_type = raw.type
+local raw_tostring = raw.tostring
+
 local math = std.math
 local math_min = math.min
 local math_max = math.max
@@ -21,17 +25,12 @@ local unicode = std.unicode
 local unicode_wrap = unicode.wrap
 local unicode_displayWidth = unicode.displayWidth
 
-local raw = std.raw
-local raw_tostring = raw.tostring
-
 local server = std.server
-
-local error = std.error
-local isString = std.isString
 
 ---@class dreamwork.std.ascii
 local ascii = std.ascii
 
+local error = std.error
 
 --- [SHARED AND MENU]
 ---
@@ -725,7 +724,7 @@ function art.frame( lines, width, scheme )
     ---@type string[]
     local rows
 
-    if isString( lines ) then
+    if raw_type( lines ) == "string" then
         ---@cast lines string
         rows = split_lines( lines )
     else

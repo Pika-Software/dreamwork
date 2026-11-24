@@ -6,7 +6,6 @@
 -- local util = dreamwork_engine.requireLibrary( "util" )
 
 -- local setmetatable = std.setmetatable
--- local isString = std.isString
 -- local error = std.error
 
 -- -- TODO: rewrite this crap

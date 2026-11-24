@@ -13,7 +13,7 @@ local debug_fempty = debug.fempty
 ---
 ---
 ---@class dreamwork.std.gfx2d
-local gfx2d = std.gfx2d or {}
+local gfx2d = {}
 std.gfx2d = gfx2d
 
 

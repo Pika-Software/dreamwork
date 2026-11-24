@@ -24,7 +24,8 @@ end
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local class = std.class
+local raw = std.raw
+local raw_type = raw.type
 
 local string = std.string
 local string_sub = string.sub
@@ -50,19 +51,20 @@ local CRC32_digest = CRC32.digest
 
 local steam = std.steam
 local SteamIdentifier = steam.Identifier
+local SteamIdentifier_fromUInt64 = SteamIdentifier.fromUInt64
 
 local uuid = std.uuid
 local uuid_unique = uuid.unique
 
-local BinaryReader = std.BinaryReader
-local BinaryWriter = std.BinaryWriter
+local class = std.class
 
 local error = std.error
 local pcall = std.pcall
-local isTable = std.isTable
 local tostring = std.tostring
-local DecodeError = std.DecodeError
 
+local DecodeError = std.DecodeError
+local BinaryReader = std.BinaryReader
+local BinaryWriter = std.BinaryWriter
 
 --- `GMAD` as little endian uint32.
 ---
@@ -406,7 +408,7 @@ local function parseDescription( addon, description_str )
     local tag_list = {}
 
     local raw_tags = description.tags
-    if isTable( raw_tags ) then
+    if raw_type( raw_tags ) == "table" then
         for i = 1, #raw_tags, 1 do
             tag_list[ i ] = string_lower( tostring( raw_tags[ i ] ) )
         end
@@ -455,8 +457,11 @@ function Addon:parse( data, ratio )
         error( DecodeError( "unsupported addon version " .. format_version, 5 ), 2 )
     end
 
-    ---@type dreamwork.std.steam.Identifier
-    local steamid = reader:readClass( SteamIdentifier )
+    local steamid = SteamIdentifier_fromUInt64(
+        reader:readUInt( 32, true ),
+        reader:readUInt( 32, true )
+    )
+
     local timestamp = reader:readInt( 64, true )
 
     local required_content, required_count = {}, 0
@@ -581,9 +586,15 @@ function Addon:compile()
     local format_version = self.format_version
 
     local writer = BinaryWriter()
+
     writer:writeUInt( GMA_SIGNATURE, 32, true )
     writer:writeUInt( format_version, 8 )
-    writer:writeObject( self.steamid )
+
+    -- the SteamID64, 8 little endian bytes
+    local steamid = self.steamid
+    writer:writeUInt( steamid.id, 32, true )
+    writer:writeUInt( steamid.high, 32, true )
+
     writer:writeInt( self.timestamp, 64, true )
 
     if format_version > 1 then

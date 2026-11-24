@@ -11,11 +11,8 @@ local sandbox_prefix = dreamwork_sandbox.prefix
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isString, isNumber, isObject = std.isString, std.isNumber, std.isObject
-local setmetatable = std.setmetatable
-local error = std.error
-
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 
 local class = std.class
@@ -33,15 +30,19 @@ local console_Variable = console.Variable
 local fluent = std.fluent
 local fluent_normalizeTag = fluent.normalizeTag
 
+local FluentNumber = fluent.Number
 local FluentBundle = fluent.Bundle
 local FluentResource = fluent.Resource
-local FluentNumber = fluent.Number
 local FluentDateTime = fluent.DateTime
+
+local error = std.error
+local isObject = std.isObject
+local setmetatable = std.setmetatable
 
 local Event = std.Event
 
-local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
+local LUA_SERVER = std.LUA_SERVER
 local LUA_MENU = std.LUA_MENU
 
 local vfs = dreamwork.vfs
@@ -691,11 +692,11 @@ if LUA_SERVER then
         for name, value in raw_pairs( args ) do
             writer:writeString( name )
 
-            if isString( value ) then
+            if raw_type( value ) == "string" then
                 ---@cast value string
                 writer:writeUInt( ARG_STRING, 8 )
                 writer:writeCountedString( value, 16 )
-            elseif isNumber( value ) then
+            elseif raw_type( value ) == "number" then
                 ---@cast value number
                 writer:writeUInt( ARG_NUMBER, 8 )
                 writer:writeDouble( value, true )
@@ -710,7 +711,7 @@ if LUA_SERVER then
                     error( string_format( "variable '%s' can not be sent, only strings, numbers, `fluent.Number` and `fluent.DateTime` are supported", name ), 3 )
                 end
 
-                writer:writeObject( value )
+                writer:writeProto( value )
             end
         end
     end
@@ -804,9 +805,9 @@ else
             elseif value_type == ARG_NUMBER then
                 args[ name ] = reader:readDouble( true )
             elseif value_type == ARG_FLUENT_NUMBER then
-                args[ name ] = reader:readClass( FluentNumber )
+                args[ name ] = reader:readProto( FluentNumber )
             elseif value_type == ARG_FLUENT_DATETIME then
-                args[ name ] = reader:readClass( FluentDateTime )
+                args[ name ] = reader:readProto( FluentDateTime )
             end
         end
 

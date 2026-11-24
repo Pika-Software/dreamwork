@@ -4,12 +4,18 @@ if dreamwork == nil then
     ---
     --- Dreamwork global table: a cross-realm Lua runtime (standard library) and package manager.
     ---
-    --- Provides the `std` standard library, an `engine` abstraction over the host game engine,
-    --- and the loader for addons and packages.
+    --- - `std` is the standard library (types, codecs, filesystem, networking).
+    --- - `engine` is the link to the host game: entities, hooks, console, timers, networking.
+    ---
+    --- Framework files are pulled in with `dreamwork.load`; packages sit on top of that.
     ---
     ---@class dreamwork
     ---@field Version string Framework version in semver format (e.g., `"0.1.0"`).
     ---@field Prefix string Framework name and version joined by `@`, used in logs and identifiers (e.g., `"dreamwork@0.1.0"`).
+    ---@field License string SPDX license id of the framework (`"GPL-3.0"`).
+    ---@field DevTeam string Team that maintains the framework (`"Pika Software"`).
+    ---@field Copyright string Copyright line built from `Prefix`, the current year, `DevTeam`, and `License`.
+    ---@field InitTime number `getUpTime()` captured when the runtime finishes starting, in seconds.
     ---@field std dreamwork.std Standard library: the Lua runtime environment (types, utilities, filesystem, etc.).
     ---@field engine dreamwork.engine Engine linking interface: glue between the framework and the host engine's native API.
     dreamwork = {
@@ -1239,10 +1245,6 @@ do
 
 end
 
-local isFunction = std.isFunction
-local isString = std.isString
-local isNumber = std.isNumber
-
 do
 
     local getfenv = std.getfenv
@@ -1327,7 +1329,7 @@ do
 
         ---@diagnostic disable-next-line: param-type-mismatch
         local fn, err_msg = compiler( lua_code, chunk_name or "=(loadstring)", handle_error, env )
-        if isFunction( fn ) then
+        if raw_type( fn ) == "function" then
             ---@cast fn function
 
             if not native_env then
@@ -1405,7 +1407,6 @@ end
 
 do
 
-    local isInteger = std.isInteger
     local next = std.next
 
     --- [SHARED AND MENU]
@@ -1426,7 +1427,7 @@ do
 
         key, value = next( tbl, key )
 
-        if isInteger( key ) then
+        if raw_type( key ) == "number" and (key % 1) == 0 then
             goto knext_loop
         end
 
@@ -1509,8 +1510,8 @@ dreamwork_load( "std/class.lua" )
 
 do
 
-    local isInherited = std.class.isInherited
     local isClass = std.isClass
+    local isInherited = std.class.isInherited
 
     --- [SHARED AND MENU]
     ---
@@ -1706,11 +1707,11 @@ do
         function Scheme:__index( name )
             local color
 
-            if isString( name ) then
+            if raw_type( name ) == "string" then
                 ---@cast name string
                 local engine_color = NamedColor( name ) or tmp
                 color = color_fromRGB( engine_color.r, engine_color.g, engine_color.b )
-            elseif isNumber( name ) then
+            elseif raw_type( name ) == "number" then
                 ---@cast name integer
                 color = color_fromRGB( name, name, name )
             else
@@ -1812,7 +1813,7 @@ do
     ---@return any
     ---@nodiscard
     function raw.index( tbl, key )
-        if isString( key ) then
+        if raw_type( key ) == "string" then
             ---@cast key string
             if string_hasPrefix( key, "__" ) then
                 return nil
@@ -1997,7 +1998,7 @@ do
 
         for i = 1, type_count, 1 do
             local expected = raw_select( i, ... )
-            if isString( expected ) then
+            if raw_type( expected ) == "string" then
                 if expected == value_type then return end
             elseif equal( expected, value ) or isType( value, expected ) then
                 return
@@ -2009,9 +2010,9 @@ do
 
         for i = 1, type_count, 1 do
             local expected = raw_select( i, ... )
-            if isString( expected ) then
+            if raw_type( expected ) == "string" then
                 expected_name = expected
-            elseif isTable( expected ) then
+            elseif raw_type( expected ) == "table" then
                 expected_name = expected.__type or represent( expected )
             else
                 expected_name = represent( expected )
@@ -2163,14 +2164,14 @@ do
 
         for i = 1, input_count, 1 do
             local input = inputs[ i ]
-            if not isFunction( input.fn ) then
+            if raw_type( input.fn ) ~= "function" then
                 error( TypeError( i, input.fn, "function", "fn", "dispatch" ), 2 )
             end
 
             local input_match = input.match
             if input_match == nil then
                 error( TypeError( i, input.fn, "string, string[]", "match", "dispatch" ), 2 )
-            elseif isString( input_match ) then
+            elseif raw_type( input_match ) == "string" then
                 ---@cast input_match string
                 input.match = { [ 0 ] = 1, input_match }
             else
@@ -2228,7 +2229,7 @@ do
 
             for i = 1, out_arg_count, 1 do
                 local value = out_args[ i ]
-                if isNumber( value ) and (value % 1) == 0 then
+                if raw_type( value ) == "number" and (value % 1) == 0 then
                     out_args[ i ] = math_floor( value )
                     in_arg_count = math_max( in_arg_count, value )
                 else
@@ -2298,7 +2299,7 @@ end
 function std.overload( main_fn, match, overload_fn )
     local required_args = 0
 
-    if isString( match ) then
+    if raw_type( match ) == "string" then
         ---@cast match string
         required_args = 1
     else
@@ -2500,9 +2501,9 @@ do
             goto print_table_loop
         end
 
-        if isString( key ) then
+        if raw_type( key ) == "string" then
             output[ output_size + 1 ] = string_indent( "[ \"" .. string_escape( key, true ) .. "\" ]", depth * 2 )
-        elseif isNumber( key ) then
+        elseif raw_type( key ) == "number" then
             output[ output_size + 1 ] = string_indent( string_format( "[ %.14g ]", key ), depth * 2 )
         else
             output[ output_size + 1 ] = string_indent( string_format( "[ %s ]", represent( key ) ), depth * 2 )
@@ -2515,7 +2516,7 @@ do
 
         output_size = output_size + 4
 
-        if isTable( value ) then
+        if raw_type( value ) == "table" then
             if value == tbl or parents[ value ] ~= nil then
                 output[ output_size + 1 ] = represent( value )
                 output[ output_size + 2 ] = COLOR_SANDSTONE
@@ -3194,6 +3195,8 @@ dreamwork.storage.init()
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "std/io/fs.lua" )
 
+dreamwork_load( "std/codec/protobuf.lua" )
+
 local vfs = dreamwork.vfs
 
 dreamwork_load( "modules/sigil.lua" )
@@ -3202,7 +3205,7 @@ do
 
     local HolyLib = HolyLib
 
-    if HolyLib ~= nil and isFunction( HolyLib.GetRegistry ) then
+    if HolyLib ~= nil and raw_type( HolyLib.GetRegistry ) == "function" then
         -- https://github.com/RaphaelIT7/gmod-holylib
         debug.setregistry( HolyLib.GetRegistry() )
         logger:info( "`holylib` was connected, enjoy full access to `debug.getregistry`." )
@@ -3295,7 +3298,7 @@ do
     local compile_bytecode
 
     -- https://github.com/unknown-gd/gm_bytecode
-    if std.loadbinary( "bytecode" ) and isFunction( load_bytecode ) then
+    if std.loadbinary( "bytecode" ) and raw_type( load_bytecode ) == "function" then
         logger:info( "'gm_bytecode' was loaded & connected as LuaJIT bytecode compiler." )
         compile_bytecode = load_bytecode
     else
@@ -3333,7 +3336,7 @@ do
     ---@nodiscard
     function std.loadbytecode( bytecode, env )
         local success, result = pcall( compile_bytecode, bytecode )
-        if success and isFunction( result ) then
+        if success and raw_type( result ) == "function" then
             ---@cast result function
             setfenv( result, env or getfenv( 2 ) )
             return result

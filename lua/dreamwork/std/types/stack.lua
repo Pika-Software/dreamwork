@@ -74,47 +74,48 @@ function Stack:__init()
     self.size = 0
 end
 
---- Writes the stack, the number of values (`UInt32`), then every value from the bottom to the top,
---- each is a presence bit and the value (`writer:writeObject`).
+--- Returns the values of the stack for `protobuf.list`, from the bottom to the top,
+--- `n` is the number of values, so `nil` values are kept.
 ---
---- Values must be objects with `__serialize`, or `nil`.
+--- ```
+--- writer:writeProto( stack, protobuf.list( Vector3 ) )
+--- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Stack<T>
----@param writer dreamwork.std.BinaryWriter The writer.
----@param ... any The arguments passed to `__serialize` of every value.
+---@return T[] values The values.
 ---@protected
-function Stack:__serialize( writer, ... )
+function Stack:__toProto()
     local size = self.size
-    writer:writeUInt( size, 32 )
+
+    local values = { n = size }
 
     for index = 1, size, 1 do
-        writer:writeObject( self[ index ], ... )
+        values[ index ] = self[ index ]
     end
+
+    return values
 end
 
---- Reads the stack written by `__serialize`, replacing its values,
---- values are read with `reader:readClass( value_class, ... )`.
+--- Replaces the values of the stack with the values decoded by `protobuf.list`.
 ---
 --- ```
---- local stack = reader:readClass( Stack, Vector3 )
+--- local stack = reader:readProto( Stack, protobuf.list( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Stack<T>
----@param reader dreamwork.std.BinaryReader The reader.
----@param value_class dreamwork.std.Class? The class of the values, can be omitted if every value is `nil`.
----@param ... any The arguments passed to `__deserialize` of every value.
+---@param values { n: integer | nil, [integer]: T } The values, `n` is the number of values.
 ---@protected
-function Stack:__deserialize( reader, value_class, ... )
+function Stack:__fromProto( values )
     for index = 1, self.size or 0, 1 do
         self[ index ] = nil
     end
 
-    local size = reader:readUInt( 32 )
+    local size = values.n or #values
 
     for index = 1, size, 1 do
-        self[ index ] = reader:readClass( value_class, ... )
+        self[ index ] = values[ index ]
     end
 
     self.size = size

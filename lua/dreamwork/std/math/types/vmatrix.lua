@@ -305,23 +305,12 @@ end
 
 VMatrix.setUnpacked = VMatrix_setUnpacked
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the matrix, `dreamwork/math.proto`,
+--- declared here since the ffi metatype can't be changed after this file.
+---
+---@type string
 ---@protected
-function VMatrix:__serialize( writer )
-    writer:writeDouble( self.m11, true ); writer:writeDouble( self.m12, true ); writer:writeDouble( self.m13, true ); writer:writeDouble( self.m14, true )
-    writer:writeDouble( self.m21, true ); writer:writeDouble( self.m22, true ); writer:writeDouble( self.m23, true ); writer:writeDouble( self.m24, true )
-    writer:writeDouble( self.m31, true ); writer:writeDouble( self.m32, true ); writer:writeDouble( self.m33, true ); writer:writeDouble( self.m34, true )
-    writer:writeDouble( self.m41, true ); writer:writeDouble( self.m42, true ); writer:writeDouble( self.m43, true ); writer:writeDouble( self.m44, true )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function VMatrix:__deserialize( reader )
-    self.m11, self.m12, self.m13, self.m14 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
-    self.m21, self.m22, self.m23, self.m24 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
-    self.m31, self.m32, self.m33, self.m34 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
-    self.m41, self.m42, self.m43, self.m44 = reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true ), reader:readDouble( true )
-end
+VMatrix.__proto = "dreamwork.VMatrix"
 
 --- [SHARED AND MENU]
 ---

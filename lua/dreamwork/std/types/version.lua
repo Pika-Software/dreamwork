@@ -4,7 +4,13 @@ local std = dreamwork.std
 local gc = std.gc
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_tonumber = raw.tonumber
+
+local rbit = raw.bit
+local rbit_bor = rbit.bor
+local rbit_lshift = rbit.lshift
+local rbit_unsign = rbit.unsign
 
 local math = std.math
 local math_min, math_max = math.min, math.max
@@ -18,16 +24,10 @@ local string_sub = string.sub
 local string_char, string_byte = string.char, string.byte
 local string_format, string_find = string.format, string.find
 
-local rbit = raw.bit
-local rbit_bor = rbit.bor
-local rbit_lshift = rbit.lshift
-local rbit_unsign = rbit.unsign
-
 local class = std.class
 
 local len = std.len
 local error = std.error
-local isString = std.isString
 
 
 ---@param str string
@@ -475,27 +475,11 @@ function Version:__tonumber()
     return rbit_unsign( rbit_bor( rbit_lshift( self.major, 22 ), rbit_lshift( self.minor, 11 ), self.patch ), 32 )
 end
 
----@param writer dreamwork.std.BinaryWriter
+--- The protobuf type of the version, `dreamwork/types.proto`.
+---
+---@type string
 ---@protected
-function Version:__serialize( writer )
-    writer:writeUInt( self.major, 10 )
-    writer:writeUInt( self.minor, 11 )
-    writer:writeUInt( self.patch, 11 )
-
-    writer:writeTerminatedString( self.pre_release or "", 0 )
-    writer:writeTerminatedString( self.build or "", 0 )
-end
-
----@param reader dreamwork.std.BinaryReader
----@protected
-function Version:__deserialize( reader )
-    self.major = reader:readUInt( 10 )
-    self.minor = reader:readUInt( 11 )
-    self.patch = reader:readUInt( 11 )
-
-    self.pre_release = reader:readTerminatedString( 0 )
-    self.build = reader:readTerminatedString( 0 )
-end
+Version.__proto = "dreamwork.Version"
 
 ---@return integer
 ---@protected
@@ -1109,7 +1093,7 @@ local Version_match = Version.match
 ---@nodiscard
 ---@protected
 function Version.__mod( a, b )
-    if isString( a ) then
+    if raw_type( a ) == "string" then
         ---@cast a string
         ---@cast b dreamwork.std.Version
         return Version_match( b, a )

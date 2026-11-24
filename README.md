@@ -22,6 +22,7 @@ Realm tags used below: `[SHARED]` = server + client, `[MENU]`, `[CLIENT]`, `[SER
 ## Table of Contents
 
 - [Packages](#packages)
+  - [Protocol Buffers](#protocol-buffers)
 - [File Transport](#file-transport)
 - [Developer Tools](#developer-tools)
 - [Optional Native Integrations](#optional-native-integrations)
@@ -36,14 +37,14 @@ On the server, client Lua is preprocessed by `sigil` (`#if LUA_SERVER` branches 
 
 ### Where packages come from
 
-| Source                                     | Realms        | Notes                                                                                            |
-| ------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------ |
-| `addons/*/packages/*/package.json`         | server, menu  | Package folders, one addon (one git repository) holds as many as needed; the folder names do not matter. |
-| `addons/*/packages/*.zip`                  | server, menu  | Package archives, `package.json` at the root of the archive.                                     |
-| `packages/*/package.json`, `packages/*.zip` | server, menu | Package folders and archives in `garrysmod/packages`, outside of any addon.                      |
-| `data_static/packages/*.zip.dat` of any addon | server, menu | `.zip` package archives inside Workshop addons, `.dat` is what the `gmad` whitelist allows there. |
-| `data/dreamwork/packages/**`               | server, menu  | Archives downloaded from GitHub with `package install` or `import( "user/repo" )`, `package.json` at the root of the repository. |
-| The server                                 | client        | The client runs only what the server sent.                                                       |
+| Source                                        | Realms       | Notes                                                                                                                            |
+| --------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `addons/*/packages/*/package.json`            | server, menu | Package folders, one addon (one git repository) holds as many as needed; the folder names do not matter.                         |
+| `addons/*/packages/*.zip`                     | server, menu | Package archives, `package.json` at the root of the archive.                                                                     |
+| `packages/*/package.json`, `packages/*.zip`   | server, menu | Package folders and archives in `garrysmod/packages`, outside of any addon.                                                      |
+| `data_static/packages/*.zip.dat` of any addon | server, menu | `.zip` package archives inside Workshop addons, `.dat` is what the `gmad` whitelist allows there.                                |
+| `data/dreamwork/packages/**`                  | server, menu | Archives downloaded from GitHub with `package install` or `import( "user/repo" )`, `package.json` at the root of the repository. |
+| The server                                    | client       | The client runs only what the server sent.                                                                                       |
 
 Packages are identified by `{author}/{name}@{version}` from their `package.json`, never by the folder or file name (`addons/my_addon/packages/libdd_test/package.json` with `"name": "my_lib"` is `{author}/my_lib@{version}`); `{author}` is the lowercase `author` with `_` in place of spaces and symbols, `"Pika Software"` is `pika_software`.
 `package.json` right in a `packages` folder is ignored with a warning, every package goes into its own folder.
@@ -69,37 +70,37 @@ Nothing is mounted into the game (its file system mixes the files of every mount
 
 ```json
 {
-    "name": "my_pkg",
-    "version": "1.2.0",
-    "author": "Pika Software",
-    "license": "MIT",
-    "description": "What the package does.",
-    "repository": "user/my_pkg",
-    "main": { "server": "lua/init.lua", "client": "lua/cl_init.lua" },
-    "realms": [ "server", "client" ],
-    "dependencies": {
-        "pika_software/my_lib": "^1.0.0",
-        "user/other_lib": "~2.1.0",
-        "user/edge_lib": ""
-    },
-    "client_files": [ "lua/client/**", "lua/shared/*.lua", "materials/**" ],
-    "color": "#4fc3f7"
+  "name": "my_pkg",
+  "version": "1.2.0",
+  "author": "Pika Software",
+  "license": "MIT",
+  "description": "What the package does.",
+  "repository": "user/my_pkg",
+  "main": { "server": "lua/init.lua", "client": "lua/cl_init.lua" },
+  "realms": ["server", "client"],
+  "dependencies": {
+    "pika_software/my_lib": "^1.0.0",
+    "user/other_lib": "~2.1.0",
+    "user/edge_lib": ""
+  },
+  "client_files": ["lua/client/**", "lua/shared/*.lua", "materials/**"],
+  "color": "#4fc3f7"
 }
 ```
 
-| Field          | Type                    | Default                    | Description                                                                                                                                                                       |
-| -------------- | ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`         | string, **required**    |                            | Letters, digits, `_`, `-` and `.` (not only dots). With `author` it makes `{author}/{name}`, which `import( "author/name" )` finds among the installed packages.                   |
-| `version`      | string, **required**    |                            | A [SemVer](https://semver.org/) version, a leading `v` is allowed (`v1.0.0` and `1.0.0` are the same package).                                                                    |
-| `author`       | string                  | `"unknown"`                | The author, part of the package id and its folder, also written into exported `.gma` files.                                                                                       |
-| `license`      | string                  | `"unknown"`                | The license.                                                                                                                                                                      |
-| `description`  | string                  | `""`                       | The description, also written into exported `.gma` files.                                                                                                                         |
-| `repository`   | string                  | the download source        | The repository of the package, `user/repo` or `https://github.com/user/repo`. Lets `import( "user/repo" )` find the installed package when `{author}/{name}` differs from it.      |
-| `main`         | string or `{ [realm]: string }` | `"lua/init.lua"`   | The entrypoint, relative to the package root, must end with `.lua`. A string is used in every realm, a map picks the entrypoint per realm, see below. Its return value is what `import` gives to other packages. |
-| `realms`       | string[]                | `[ "server", "client" ]`   | Where the package runs: `server`, `client`, `menu`. A package with `client` is sent to the clients even if it does not run on the server.                                         |
-| `dependencies` | `{ [repo]: range }`     | `{}`                       | Packages loaded before this one, see below.                                                                                                                                       |
-| `client_files` | string[]                | only the client entrypoint | Wildcards of the files sent to the clients, see below.                                                                                                                            |
-| `color`        | string                  | the DreamWork color        | The title color of the package logger, a hex color code: `"#RGB"` or `"#RRGGBB"`, `#` is optional.                                                                                |
+| Field          | Type                            | Default                    | Description                                                                                                                                                                                                      |
+| -------------- | ------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`         | string, **required**            |                            | Letters, digits, `_`, `-` and `.` (not only dots). With `author` it makes `{author}/{name}`, which `import( "author/name" )` finds among the installed packages.                                                 |
+| `version`      | string, **required**            |                            | A [SemVer](https://semver.org/) version, a leading `v` is allowed (`v1.0.0` and `1.0.0` are the same package).                                                                                                   |
+| `author`       | string                          | `"unknown"`                | The author, part of the package id and its folder, also written into exported `.gma` files.                                                                                                                      |
+| `license`      | string                          | `"unknown"`                | The license.                                                                                                                                                                                                     |
+| `description`  | string                          | `""`                       | The description, also written into exported `.gma` files.                                                                                                                                                        |
+| `repository`   | string                          | the download source        | The repository of the package, `user/repo` or `https://github.com/user/repo`. Lets `import( "user/repo" )` find the installed package when `{author}/{name}` differs from it.                                    |
+| `main`         | string or `{ [realm]: string }` | `"lua/init.lua"`           | The entrypoint, relative to the package root, must end with `.lua`. A string is used in every realm, a map picks the entrypoint per realm, see below. Its return value is what `import` gives to other packages. |
+| `realms`       | string[]                        | `[ "server", "client" ]`   | Where the package runs: `server`, `client`, `menu`. A package with `client` is sent to the clients even if it does not run on the server.                                                                        |
+| `dependencies` | `{ [repo]: range }`             | `{}`                       | Packages loaded before this one, see below.                                                                                                                                                                      |
+| `client_files` | string[]                        | only the client entrypoint | Wildcards of the files sent to the clients, see below.                                                                                                                                                           |
+| `color`        | string                          | the DreamWork color        | The title color of the package logger, a hex color code: `"#RGB"` or `"#RRGGBB"`, `#` is optional.                                                                                                               |
 
 An invalid `package.json` (bad JSON, missing or invalid `name`/`version`, an entrypoint not ending with `.lua`, an unknown realm in `realms` or `main`, a realm from `realms` without an entrypoint in `main`, a dependency that is not `"user/repo": "range"`, a `client_files` entry that is not a string, a `color` that is not `#RGB` or `#RRGGBB`) is reported in the console and the package is skipped. Optional fields of the wrong type fall back to their defaults.
 
@@ -118,10 +119,10 @@ The client entrypoint is always sent to the clients, even if `client_files` does
 
 Each key is the repository of the dependency, `user/repo` (or `https://github.com/user/repo`), each value is a version range, the same as `import( "user/repo@range" )`:
 
-| Range                              | Installed package                                       | Missing package is downloaded from         |
-| ---------------------------------- | ------------------------------------------------------- | ------------------------------------------ |
-| `""`, `"*"`, `"latest"`            | Any version.                                            | The default branch.                        |
-| `"^1.2.0"`, `"~1.2.0"`, `"1.2.x"`  | A version in the range.                                 | The newest version tag in the range.       |
+| Range                             | Installed package       | Missing package is downloaded from   |
+| --------------------------------- | ----------------------- | ------------------------------------ |
+| `""`, `"*"`, `"latest"`           | Any version.            | The default branch.                  |
+| `"^1.2.0"`, `"~1.2.0"`, `"1.2.x"` | A version in the range. | The newest version tag in the range. |
 
 Ranges are npm-style, also `>=1.2.3 <2.0.0`, `1.2.3 - 2.3.4` and `1.x \|\| >=2.5.0`.
 An installed package matches when its `{author}/{name}` is `user/repo` (local packages), or it was downloaded from the repository, or its `repository` field names it.
@@ -133,15 +134,118 @@ The client never installs anything, it gets the dependencies from the server. A 
 Only the matching files are sent, so server-only code and data never leave the server. Without `client_files` the clients get only `package.json` and the client entrypoint, so a forgotten list never sends the whole project (e.g. a video next to the code); list everything else the client needs, like `lua/**` or `materials/**`.
 The paths are relative to the package root (a leading `./` or `/` is ignored), the syntax is `std.path.wildcard`:
 
-| Pattern          | Matches                                                                  |
-| ---------------- | ------------------------------------------------------------------------ |
-| `*`              | Any characters except `/`, e.g. `lua/*.lua`.                              |
-| `**`             | Any characters, `**/` also matches no directory, e.g. `materials/**`.     |
-| `?`              | One character except `/`.                                                 |
-| `[abc]`, `[a-z]` | One character from the set, `[!a-z]` or `[^a-z]` negates it.              |
-| `\x`             | The literal character, e.g. `\*`.                                         |
+| Pattern          | Matches                                                               |
+| ---------------- | --------------------------------------------------------------------- |
+| `*`              | Any characters except `/`, e.g. `lua/*.lua`.                          |
+| `**`             | Any characters, `**/` also matches no directory, e.g. `materials/**`. |
+| `?`              | One character except `/`.                                             |
+| `[abc]`, `[a-z]` | One character from the set, `[!a-z]` or `[^a-z]` negates it.          |
+| `\x`             | The literal character, e.g. `\*`.                                     |
 
 `package.json` and the client entrypoint (`main` or `main.client`) are always sent. `#include` is resolved on the server, so client files can include files that are not sent.
+
+### Protocol Buffers
+
+`protobuf` [SHARED] [MENU] reads and writes [Protocol Buffers](https://protobuf.dev/) wire data. A package keeps its types in `.proto` files and loads them with `protobuf.load`; the path is relative to the package root, and `import "proto/common.proto"` loads another file of the same package.
+
+The types belong to the package: `protobuf.find` in that package sees them, and they are dropped when the package unloads. `google/protobuf/*.proto` and `dreamwork/*.proto` are built in and seen by every package. File names with those prefixes are reserved.
+
+List every `.proto` file the client loads in `client_files` (`"proto/**"`). Both sides register the schema; what travels over the network is the wire data.
+
+```
+garrysmod/addons/my_addon/packages/my_pkg/proto/items.proto
+garrysmod/addons/my_addon/packages/my_pkg/lua/init.lua
+```
+
+```proto
+syntax = "proto3";
+package my_pkg;
+
+import "dreamwork/math.proto";
+
+enum Rarity {
+    COMMON = 0;
+    RARE = 1;
+}
+
+message Item {
+    uint32 id = 1;
+    string name = 2;
+    Rarity rarity = 3;
+    dreamwork.Vector3 position = 4;
+}
+```
+
+Package code reads missing globals from `std`, so the calls are on `protobuf` directly:
+
+```lua
+protobuf.load( "proto/items.proto" )
+
+local Item = protobuf.find( "my_pkg.Item" )
+
+local data = Item:encode( {
+    id = 1,
+    name = "crowbar",
+    rarity = "RARE",
+    position = Vector3( 1, 2, 3 )
+} )
+
+local item = Item:decode( data )
+-- { id = 1, name = "crowbar", rarity = 1, position = Vector3( 1, 2, 3 ) }
+```
+
+| Protobuf field                                     | Lua value                                                                                                |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `float`, `double`, 32-bit integers                 | number                                                                                                   |
+| `int64`, `uint64`, `sint64`, `fixed64`, `sfixed64` | `{ low, high }` of 32-bit halves (`high` is signed for signed types); a number is accepted when encoding |
+| `bool`                                             | boolean                                                                                                  |
+| `string`, `bytes`                                  | string                                                                                                   |
+| enum                                               | number; the value name is accepted when encoding                                                         |
+| `repeated`                                         | array                                                                                                    |
+| `map<K, V>`                                        | table                                                                                                    |
+| message                                            | table, or an object of a class bound with `Type:bind`                                                    |
+
+A proto3 field without a label comes back as its default (`0`, `""`, `false`) when it is missing. `optional`, `oneof` and message fields come back as `nil`. `dreamwork.Vector2`, `Vector3`, `Angle3`, `Quaternion`, `VMatrix`, `BigInteger` and `Version` decode as the matching `std` objects. `google.protobuf.Struct`, `Value` and `ListValue` are plain Lua values.
+
+`protobuf.parse` registers the same way from source text, and its imports are loaded from the package. Parsing a file name that is already registered replaces its types.
+
+A class takes the message over with `Type:bind`. Fields are read and written under the same names. `__toProto( self )` returns the value to encode in place of the object, `__fromProto( self, value )` fills a new object from the decoded table.
+
+```lua
+local ItemBase = class.base( "Item" )
+local ItemClass = class.create( ItemBase )
+Item:bind( ItemClass )
+
+local item = Item:decode( data ) -- ItemClass, item.name == "crowbar"
+local data = Item:encode( item )
+```
+
+`BinaryWriter:writeProto` and `BinaryReader:readProto` add a length prefix, so a `Network` [SHARED] or a `Message` [SHARED] [MENU] can carry the message. A bound object and the built-in `std` objects already know their type.
+
+```lua
+local items = Network( "items" )
+
+items:transmit( function( _, writer )
+    writer:writeProto( item )
+    writer:writeProto( Vector3( 1, 2, 3 ) )
+end, client ) -- target client, required on the server
+
+items:attach( function( _, reader )
+    local item = reader:readProto( Item )
+    local position = reader:readProto( Vector3 )
+end )
+```
+
+`protobuf.list` is an array that keeps `nil` (`list.n` or `#list` is the length, a decoded array has `n` set). `protobuf.tree` is `{ value, children }`, and `Node` converts itself to it.
+
+```lua
+-- `writer` / `reader` are the BinaryWriter and BinaryReader from transmit / attach
+writer:writeProto( queue, protobuf.list( Vector3 ) )
+local queue = reader:readProto( Queue, protobuf.list( Vector3 ) )
+
+writer:writeProto( root, protobuf.tree( "string" ) )
+local root = reader:readProto( Node, protobuf.tree( "string" ) )
+```
 
 ### Installing from GitHub
 
@@ -162,11 +266,11 @@ The client never downloads anything, it gets the packages from the server.
 
 #### Repository URLs
 
-| Spec                                        | Repository                           |
-| ------------------------------------------- | ------------------------------------ |
-| `user/repo`                                 | `https://github.com/user/repo`       |
-| `github.com/user/repo`                      | `https://github.com/user/repo`       |
-| `https://github.com/user/repo.git`          | `https://github.com/user/repo`       |
+| Spec                               | Repository                     |
+| ---------------------------------- | ------------------------------ |
+| `user/repo`                        | `https://github.com/user/repo` |
+| `github.com/user/repo`             | `https://github.com/user/repo` |
+| `https://github.com/user/repo.git` | `https://github.com/user/repo` |
 
 Without a scheme the scheme is `https`, without a host the host is `github.com`. The hosting service is chosen by the scheme and the host, only GitHub is supported for now. User and repository names are case-insensitive.
 
@@ -179,11 +283,11 @@ Without a scheme the scheme is `https`, without a host the host is `github.com`.
 
 #### Console and Lua
 
-| Command (`dreamwork_sci` on the server, `dreamwork_cci` in the menu) | Lua                           | Description                                                                                                                   |
-| --------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `package install <user/repo[@range]>`         | `loader.install( spec )`             | Finds or installs the package and loads it in this realm, returns the package and whether it is loaded.                       |
-| `package upgrade [name[@range]]`              | `loader.upgrade( package )`          | A package from the default branch is downloaded again, a package from a tag gets the newest version tag (all packages from repositories without a name). The packages that depend on it are loaded again and pick the new version if their ranges allow it, then the old version is removed. |
-| `package remove <name[@range]>`               | `loader.uninstall( package )`        | Unloads the package and the packages that depend on it, deletes its downloaded archive. The dependents are loaded again with another installed version that fits them, if there is one. Local packages (`addons/*/packages`) cannot be removed, delete their folders instead. |
+| Command (`dreamwork_sci` on the server, `dreamwork_cci` in the menu) | Lua                           | Description                                                                                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package install <user/repo[@range]>`                                | `loader.install( spec )`      | Finds or installs the package and loads it in this realm, returns the package and whether it is loaded.                                                                                                                                                                                      |
+| `package upgrade [name[@range]]`                                     | `loader.upgrade( package )`   | A package from the default branch is downloaded again, a package from a tag gets the newest version tag (all packages from repositories without a name). The packages that depend on it are loaded again and pick the new version if their ranges allow it, then the old version is removed. |
+| `package remove <name[@range]>`                                      | `loader.uninstall( package )` | Unloads the package and the packages that depend on it, deletes its downloaded archive. The dependents are loaded again with another installed version that fits them, if there is one. Local packages (`addons/*/packages`) cannot be removed, delete their folders instead.                |
 
 A new commit on the default branch with the same `version` is the same package, bump `version` to make `package upgrade` replace it.
 
@@ -236,21 +340,21 @@ Lua files are packed as they are, the clients still get them preprocessed. The s
 
 Pick one with `dreamwork_transport` (or `dreamwork_sci transport config type <name>`). The change applies when the transport starts again (map change).
 
-| Transport | Server needs                        | How segments travel                                                                                                                         |
-| --------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `network` | nothing                             | `std.Network` over the game connection. Works everywhere, but is the slowest and shares bandwidth with the game.                             |
-| `http`    | HolyLib                             | `http.Server` inside srcds on `dreamwork_transport_http_port`. Segments are base64 (HolyLib cuts bodies at `\0`), so transfers are ~33% larger. |
-| `static`  | a web server (Caddy, nginx, …)      | Raw segment files written to `data/dreamwork/transport/<bundle>-<index>.dat`, served by your web server. No HolyLib, no base64, not kept in RAM. |
+| Transport | Server needs                   | How segments travel                                                                                                                              |
+| --------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `network` | nothing                        | `std.Network` over the game connection. Works everywhere, but is the slowest and shares bandwidth with the game.                                 |
+| `http`    | HolyLib                        | `http.Server` inside srcds on `dreamwork_transport_http_port`. Segments are base64 (HolyLib cuts bodies at `\0`), so transfers are ~33% larger.  |
+| `static`  | a web server (Caddy, nginx, …) | Raw segment files written to `data/dreamwork/transport/<bundle>-<index>.dat`, served by your web server. No HolyLib, no base64, not kept in RAM. |
 
 ### Performance
 
 Measured on 2026-11-13: a fresh client download of a 16 MiB incompressible bundle (6 files, 8 segments of 2 MiB, 4 connections), client → Cloudflare → Caddy → srcds on one machine.
 
-| Transport | Time         | Speed        | Notes                                                                                     |
-| --------- | ------------ | ------------ | ----------------------------------------------------------------------------------------- |
-| `network` | 32.8 s       | ~0.5 MiB/s   | Limited by the game's net channel, regardless of the connection speed.                     |
-| `http`    | 3.1 s        | ~5.2 MiB/s   | 2.6 s on a repeat run, with the segments cached by Cloudflare. One of three runs stalled for ~60 s on a slow request. |
-| `static`  | 2.32–2.36 s  | ~6.8 MiB/s   | Steady across runs, not cached by Cloudflare (`.dat` is not cached by default).             |
+| Transport | Time        | Speed      | Notes                                                                                                                 |
+| --------- | ----------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `network` | 32.8 s      | ~0.5 MiB/s | Limited by the game's net channel, regardless of the connection speed.                                                |
+| `http`    | 3.1 s       | ~5.2 MiB/s | 2.6 s on a repeat run, with the segments cached by Cloudflare. One of three runs stalled for ~60 s on a slow request. |
+| `static`  | 2.32–2.36 s | ~6.8 MiB/s | Steady across runs, not cached by Cloudflare (`.dat` is not cached by default).                                       |
 
 - Every HTTP request through a CDN costs about 0.5 s of round trip whatever its size, so the number of request rounds dominates. By default (`dreamwork_transport_segment_size 0`) a bundle is split into two segments per connection, 256 KiB to 4 MiB each.
 - `dreamwork_transport_compression auto` compresses a sample with lzma and deflate and keeps the bundle uncompressed if neither saves 3%. Without HolyLib, lzma blocks the main thread, so bundles over 4 MiB use deflate.
@@ -311,17 +415,17 @@ dreamwork_transport_http_url https://example.com/dreamwork/transport/
 
 ### Console variables
 
-| Variable                               | Default   | Description                                                                                          |
-| -------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `dreamwork_transport`                  | `network` | `network`, `http` or `static`.                                                                       |
-| `dreamwork_transport_http_connections` | `8`       | Segments a client downloads at once with `http` and `static` (1–16).                                 |
+| Variable                               | Default   | Description                                                                                                           |
+| -------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------- |
+| `dreamwork_transport`                  | `network` | `network`, `http` or `static`.                                                                                        |
+| `dreamwork_transport_http_connections` | `8`       | Segments a client downloads at once with `http` and `static` (1–16).                                                  |
 | `dreamwork_transport_http_url`         | empty     | The public URL of the segments. Optional for `http` (defaults to the server address and port), required for `static`. |
-| `dreamwork_transport_http_port`        | `27080`   | The port of the `http` server.                                                                       |
-| `dreamwork_transport_http_whitelist`   | `1`       | `http` only: serve only the IP addresses of connected players.                                       |
-| `dreamwork_transport_compression`      | `auto`    | `auto`, `lzma`, `deflate`, `gzip` or `none`.                                                         |
-| `dreamwork_transport_segment_size`     | `0`       | Segment size in bytes, `0` picks it from the bundle size and the connection count.                   |
-| `dreamwork_transport_cache_lifetime`   | `30`      | Client: days a cached file is kept for since its last use, `0` keeps it forever.                     |
-| `dreamwork_transport_cache_size`       | `2048`    | Client: size of the cache in MiB, the least recently used files go first, `0` is unlimited.          |
+| `dreamwork_transport_http_port`        | `27080`   | The port of the `http` server.                                                                                        |
+| `dreamwork_transport_http_whitelist`   | `1`       | `http` only: serve only the IP addresses of connected players.                                                        |
+| `dreamwork_transport_compression`      | `auto`    | `auto`, `lzma`, `deflate`, `gzip` or `none`.                                                                          |
+| `dreamwork_transport_segment_size`     | `0`       | Segment size in bytes, `0` picks it from the bundle size and the connection count.                                    |
+| `dreamwork_transport_cache_lifetime`   | `30`      | Client: days a cached file is kept for since its last use, `0` keeps it forever.                                      |
+| `dreamwork_transport_cache_size`       | `2048`    | Client: size of the cache in MiB, the least recently used files go first, `0` is unlimited.                           |
 
 ## Developer Tools
 
@@ -337,17 +441,17 @@ dreamwork_transport_http_url https://example.com/dreamwork/transport/
 
 DreamWork works without any of these, but picks them up when they are installed:
 
-| Module | Used for |
-| ------ | -------- |
-| [HolyLib](https://holylib.raphaelit7.com/) | FFI (`std.ffi`), `debug.getregistry`, threaded LZMA, `http.Server` / transport `http`, `os.getenv`, and fixed `newproxy`/`__gc` behaviour. |
-| [`gm_getregistry`](https://github.com/wrefgtzweve/gm_getregistry) | `debug.getregistry` when HolyLib is not present. |
-| [`reqwest`](https://github.com/WilliamVenner/gmsv_reqwest) / [`chttp`](https://github.com/timschumi/gmod-chttp) | Preferred HTTP clients (then the built-in `HTTP`). |
-| [`gwsockets`](https://github.com/FredyH/GWSockets) / [`gm_tungstenite`](https://github.com/shockpast/gm_tungstenite) | Native WebSocket backends (then a `WebClient` / browser fallback on client and menu). |
-| [`gm_asyncio`](https://github.com/Pika-Software/gm_asyncio) / [`gm_async_write`](https://github.com/WilliamVenner/gm_async_write) | Async file I/O for the VFS (`DATA` reads/writes). |
-| [`gmsv_workshop`](https://github.com/WilliamVenner/gmsv_workshop) | Server-side Steam Workshop downloads (`steam.workshop`). |
-| [`gmsv_serverstat`](https://github.com/WilliamVenner/gmsv_serverstat) | Server hardware / process stats (`std.server.hardware`). |
-| [`gm_bytecode`](https://github.com/unknown-gd/gm_bytecode) | LuaJIT bytecode loading (`std.loadbytecode`). |
-| [`gm_mcp`](https://github.com/unknown-gd/gm_mcp) | The MCP bridge. |
+| Module                                                                                                                            | Used for                                                                                                                                   |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [HolyLib](https://holylib.raphaelit7.com/)                                                                                        | FFI (`std.ffi`), `debug.getregistry`, threaded LZMA, `http.Server` / transport `http`, `os.getenv`, and fixed `newproxy`/`__gc` behaviour. |
+| [`gm_getregistry`](https://github.com/wrefgtzweve/gm_getregistry)                                                                 | `debug.getregistry` when HolyLib is not present.                                                                                           |
+| [`reqwest`](https://github.com/WilliamVenner/gmsv_reqwest) / [`chttp`](https://github.com/timschumi/gmod-chttp)                   | Preferred HTTP clients (then the built-in `HTTP`).                                                                                         |
+| [`gwsockets`](https://github.com/FredyH/GWSockets) / [`gm_tungstenite`](https://github.com/shockpast/gm_tungstenite)              | Native WebSocket backends (then a `WebClient` / browser fallback on client and menu).                                                      |
+| [`gm_asyncio`](https://github.com/Pika-Software/gm_asyncio) / [`gm_async_write`](https://github.com/WilliamVenner/gm_async_write) | Async file I/O for the VFS (`DATA` reads/writes).                                                                                          |
+| [`gmsv_workshop`](https://github.com/WilliamVenner/gmsv_workshop)                                                                 | Server-side Steam Workshop downloads (`steam.workshop`).                                                                                   |
+| [`gmsv_serverstat`](https://github.com/WilliamVenner/gmsv_serverstat)                                                             | Server hardware / process stats (`std.server.hardware`).                                                                                   |
+| [`gm_bytecode`](https://github.com/unknown-gd/gm_bytecode)                                                                        | LuaJIT bytecode loading (`std.loadbytecode`).                                                                                              |
+| [`gm_mcp`](https://github.com/unknown-gd/gm_mcp)                                                                                  | The MCP bridge.                                                                                                                            |
 
 ## Bugs and Suggestions
 

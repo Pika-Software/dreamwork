@@ -16,6 +16,7 @@ local http_storage_prune = http_storage.prune
 local std = dreamwork.std
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_pairs = raw.pairs
 local raw_tonumber = raw.tonumber
 local raw_tostring = raw.tostring
@@ -43,8 +44,6 @@ local console_Variable = console.Variable
 local error = std.error
 local pcall = std.pcall
 local pairs = std.pairs
-local isString = std.isString
-local isNumber = std.isNumber
 local setTimeout = std.setTimeout
 local clearTimeout = std.clearTimeout
 local isURLSearchParams = std.isURLSearchParams
@@ -275,7 +274,7 @@ local function sorted_pairs( tbl, lowercase )
     local list, count = {}, 0
 
     for name, value in pairs( tbl ) do
-        if isString( name ) and isString( value ) then
+        if raw_type( name ) == "string" and raw_type( value ) == "string" then
             count = count + 1
 
             if lowercase then
@@ -422,7 +421,7 @@ local function cache_update( entry, response )
 
     -- `s-maxage` is meant for shared caches, this one is private
     local max_age = cache_options[ "max-age" ]
-    if isNumber( max_age ) then
+    if raw_type( max_age ) == "number" then
         ---@cast max_age number
         if max_age <= 0 then
             cache_remove( entry )
@@ -509,7 +508,7 @@ local function send_request( options, redirects )
     local method = options.method
     if method == nil then
         method = "GET"
-    elseif isString( method ) then
+    elseif raw_type( method ) == "string" then
         method = string_upper( method )
     end
 
@@ -521,7 +520,7 @@ local function send_request( options, redirects )
     local url
 
     local url_value = options.url
-    if isString( url_value ) then
+    if raw_type( url_value ) == "string" then
         ---@cast url_value string
         url = URL( url_value )
     else
@@ -676,7 +675,7 @@ local function send_request( options, redirects )
 
     -- request timeout
     local timeout = options.timeout
-    if not isNumber( timeout ) then
+    if raw_type( timeout ) ~= "number" then
         timeout = timeout_default.value
     end
 
@@ -692,7 +691,7 @@ local function send_request( options, redirects )
         ---@cast identifier string
 
         local cache_ttl = options.cache_ttl
-        if not isNumber( cache_ttl ) then
+        if raw_type( cache_ttl ) ~= "number" then
             cache_ttl = cache_ttl_default.value * 60
         end
 
@@ -837,7 +836,7 @@ local function send_request( options, redirects )
             if location ~= nil then
                 -- copied into the options of every hop by `redirect_options`
                 local max_redirects = options.max_redirects
-                if not isNumber( max_redirects ) then
+                if raw_type( max_redirects ) ~= "number" then
                     max_redirects = max_redirects_default.value
                 end
 

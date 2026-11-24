@@ -20,9 +20,10 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_index = raw.index
-local raw_tostring = raw.tostring
 local raw_pairs = raw.pairs
+local raw_tostring = raw.tostring
 
 local math = std.math
 local math_min = math.min
@@ -35,15 +36,14 @@ local string_format = string.format
 local type = std.type
 local error = std.error
 local pcall = std.pcall
-local isString = std.isString
 
 local setTimeout = std.setTimeout
 local clearTimeout = std.clearTimeout
 
-local ValueError = std.ValueError
-local TypeError = std.TypeError
-local Emitter = std.Emitter
 local URL = std.URL
+local Emitter = std.Emitter
+local TypeError = std.TypeError
+local ValueError = std.ValueError
 
 
 ---@alias dreamwork.std.WebSocket.Status
@@ -328,7 +328,7 @@ function connect( socket )
 
             if headers ~= nil then
                 for name, value in raw_pairs( headers ) do
-                    if isString( name ) and isString( value ) then
+                    if raw_type( name ) == "string" and raw_type( value ) == "string" then
                         merged[ name ] = value
                         if string_lower( name ) == "cookie" then
                             cookie_name = name
@@ -463,7 +463,7 @@ function WebSocket:__init( url, options )
     ---@type dreamwork.std.URL
     local url_object
 
-    if isString( url ) then
+    if raw_type( url ) == "string" then
         ---@cast url string
         url_object = URL( url )
     else
@@ -549,7 +549,7 @@ end
 ---@param message string The payload to send.
 ---@param is_binary boolean? Send as a binary frame. Defaults to `false`.
 function WebSocket:send( message, is_binary )
-    if not isString( message ) then
+    if raw_type( message ) ~= "string" then
         error( TypeError( 1, message, "string", "message", "WebSocket:send" ), 2 )
     end
 

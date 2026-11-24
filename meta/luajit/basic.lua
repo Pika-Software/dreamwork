@@ -920,7 +920,7 @@ do
     ---
     --- This event happens when Lua tries to call a non-function value (that is, `func` is not a function).
     ---
-    --- Instead of use `isFunction( value )` you can use `isCallable( value )` that checks  if a value is callable.
+    --- Instead of `raw.type( value ) == "function"` you can use `isCallable( value )` that checks if a value is callable.
     ---
     --- The metamethod is looked up in `func`.
     ---
@@ -968,21 +968,25 @@ do
     metatable.__copy = nil
 
     ---
-    --- Serializes the object into a writer.
+    --- The protobuf type of the object, its full name (`"dreamwork.Vector3"`) or the `protobuf.Type`.
     ---
-    --- Writes the object's state into `writer`; any extra arguments come from the caller of
-    --- the serializer. The counterpart of `__deserialize`.
+    --- Set by `protobuf.Type:bind`, `BinaryWriter:writeProto` uses it to find the type of the object.
     ---
-    ---@type fun( self: any, writer: dreamwork.std.BinaryWriter, ...: any? )
-    metatable.__serialize = nil
+    ---@type string | dreamwork.std.protobuf.Type
+    metatable.__proto = nil
 
     ---
-    --- Deserializes the object from a reader.
+    --- Returns the value to encode as protobuf message in place of the object,
+    --- usually a table with the fields of the message. The counterpart of `__fromProto`.
     ---
-    --- Reads the object's state back from `reader`, mirroring what `__serialize` wrote.
+    ---@type fun( self: any ): any
+    metatable.__toProto = nil
+
     ---
-    ---@type fun( self: any, reader: dreamwork.std.BinaryReader, ...: any? )
-    metatable.__deserialize = nil
+    --- Fills a new object from the decoded protobuf message, the value `__toProto` returned before encoding.
+    ---
+    ---@type fun( self: any, value: any )
+    metatable.__fromProto = nil
 
     ---
     --- Checks whether the object is valid, for example that it hasn't been removed or

@@ -20,6 +20,7 @@ local debug_getmetatable = debug.getmetatable
 local raw = std.raw
 local raw_get = raw.get
 local raw_set = raw.set
+local raw_type = raw.type
 local raw_index = raw.index
 
 local math = std.math
@@ -41,7 +42,6 @@ local console = std.console
 
 local type = std.type
 local error = std.error
-local isNumber = std.isNumber
 local tostring = std.tostring
 local toboolean = std.toboolean
 local setmetatable = std.setmetatable
@@ -68,7 +68,7 @@ local ConsoleVariable_GetMin, ConsoleVariable_GetMax = ConsoleVariable.GetMin, C
 ---@param value string | number
 ---@return number
 local function parse_number( value )
-    if isNumber( value ) then
+    if raw_type( value ) == "number" then
         ---@cast value number
 
         if value ~= value then

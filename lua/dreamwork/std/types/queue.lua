@@ -80,69 +80,53 @@ function Queue:__init()
     self.back = 0
 end
 
---- Writes the queue, the number of values (`UInt32`), then every value from the one `pop` returns first,
---- each is a presence bit and the value (`writer:writeObject`).
+--- Returns the values of the queue for `protobuf.list`, from the one `pop` returns first,
+--- `n` is the number of values, so `nil` values are kept.
 ---
---- Values must be objects with `__serialize`, or `nil`.
+--- ```
+--- writer:writeProto( queue, protobuf.list( Vector3 ) )
+--- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Queue<T>
----@param writer dreamwork.std.BinaryWriter The writer.
----@param ... any The arguments passed to `__serialize` of every value.
+---@return T[] values The values.
 ---@protected
-function Queue:__serialize( writer, ... )
+function Queue:__toProto()
     local back, front = self.back, self.front
-    writer:writeUInt( front - back, 32 )
+
+    local values = { n = front - back }
 
     for index = back + 1, front, 1 do
-        local value = self[ index ]
-
-        -- presence bit, `nil` has no `__serialize`
-        if value == nil then
-            writer:writeBit( 0 )
-        else
-            writer:writeBit( 1 )
-            writer:writeObject( value, ... )
-        end
+        values[ index - back ] = self[ index ]
     end
+
+    return values
 end
 
---- Reads the queue written by `__serialize`, replacing its values,
---- values are read with `reader:readClass( value_class, ... )`.
+--- Replaces the values of the queue with the values decoded by `protobuf.list`.
 ---
 --- ```
---- local queue = reader:readClass( Queue, Vector3 )
+--- local queue = reader:readProto( Queue, protobuf.list( Vector3 ) )
 --- ```
 ---
 ---@generic T
 ---@param self dreamwork.std.Queue<T>
----@param reader dreamwork.std.BinaryReader The reader.
----@param value_class dreamwork.std.Class? The class of the values, can be omitted if every value is `nil`.
----@param ... any The arguments passed to `__deserialize` of every value.
+---@param values { n: integer | nil, [integer]: T } The values, `n` is the number of values.
 ---@protected
-function Queue:__deserialize( reader, value_class, ... )
+function Queue:__fromProto( values )
     local back, front = self.back or 0, self.front or 0
 
     for index = back + 1, front, 1 do
         self[ index ] = nil
     end
 
-    self.back, self.front = 0, 0
-
-    -- every value takes at least 1 bit, so a broken count runs out of data instead of memory
-    local count = reader:readUInt( 32 )
+    local count = values.n or #values
 
     for index = 1, count, 1 do
-        if reader:readBit() == 1 then
-            if value_class == nil then
-                error( "queue has a value, but `value_class` is missing" )
-            end
-
-            self[ index ] = reader:readClass( value_class, ... )
-        end
-
-        self.front = index
+        self[ index ] = values[ index ]
     end
+
+    self.back, self.front = 0, count
 end
 
 --- [SHARED AND MENU]

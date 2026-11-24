@@ -5,10 +5,8 @@ local setmetatable = std.setmetatable
 local tostring = std.tostring
 local tonumber = std.tonumber
 
-local isString = std.isString
-local isNumber = std.isNumber
-
 local raw = std.raw
+local raw_type = raw.type
 local raw_equal = raw.equal
 
 local debug = std.debug
@@ -255,13 +253,13 @@ do
             return
         end
 
-        if isString( value ) then
+        if raw_type( value ) == "string" then
             ---@cast value string
             fromString( self, value, scale )
             return
         end
 
-        if isNumber( value ) then
+        if raw_type( value ) == "number" then
             ---@cast value number
             fromNumber( self, value, scale )
             return
@@ -313,7 +311,7 @@ local function toOperand( value, scale )
         return setmetatable( { mantissa = value, scale = 0 }, BigFixed )
     end
 
-    if isNumber( value ) and math_floor( value ) == value and value ~= math_huge and value ~= -math_huge then
+    if raw_type( value ) == "number" and math_floor( value ) == value and value ~= math_huge and value ~= -math_huge then
         return setmetatable( { mantissa = toBigInteger( value ), scale = 0 }, BigFixed )
     end
 

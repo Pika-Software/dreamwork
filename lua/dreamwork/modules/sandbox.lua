@@ -19,6 +19,7 @@ local gc = std.gc
 local gc_setTableRules = gc.setTableRules
 
 local raw = std.raw
+local raw_type = raw.type
 local raw_next = raw.next
 local raw_pairs = raw.pairs
 local raw_tostring = raw.tostring
@@ -30,10 +31,8 @@ local string_hasPrefix = string.hasPrefix
 
 local error = std.error
 local getfenv = std.getfenv
-local isTable = std.isTable
 local isClass = std.isClass
 local isObject = std.isObject
-local isFunction = std.isFunction
 
 
 --- [SHARED AND MENU]
@@ -115,7 +114,7 @@ do
     ---@return any
     ---@nodiscard
     function proxy_value( value )
-        if isTable( value ) then
+        if raw_type( value ) == "table" then
             local proxy = proxies[ value ]
             if proxy ~= nil then
                 return proxy
@@ -205,7 +204,7 @@ end
 ---@return dreamwork.sandbox.Owner | nil owner
 ---@nodiscard
 local function sandbox_ownerOf( fn )
-    if isFunction( fn ) then
+    if raw_type( fn ) == "function" then
         return environment_owners[ getfenv( fn ) ]
     end
 

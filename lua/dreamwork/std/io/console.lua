@@ -13,11 +13,13 @@ local glua_gui = dreamwork_engine.requireLibrary( "gui" )
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local isNumber = std.isNumber
+local raw = std.raw
+local raw_type = raw.type
 
-local LUA_SERVER = std.LUA_SERVER
 local LUA_CLIENT = std.LUA_CLIENT
+local LUA_SERVER = std.LUA_SERVER
 local LUA_MENU = std.LUA_MENU
+
 
 --- [SHARED AND MENU]
 ---
@@ -110,7 +112,7 @@ do
         for i = 1, select( "#", ... ), 1 do
             ---@type string | dreamwork.std.Color
             local value = select( i, ... )
-            if isNumber( value ) then
+            if raw_type( value ) == "number" then
                 ---@cast value integer
                 color = value
             else
