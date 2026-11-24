@@ -12,7 +12,7 @@
 --- Nothing here touches the file system; all functions work on the strings only.
 ---
 --- ```lua
---- print( path.join( { "/game", "lua/", "autorun/init.lua" } ) ) -- /game/lua/autorun/init.lua
+--- print( path.join( "/game", "lua/", "autorun/init.lua" ) ) -- /game/lua/autorun/init.lua
 --- print( path.getExtension( "/game/lua/init.lua" ) ) -- lua
 --- ```
 ---
@@ -414,17 +414,16 @@ function path.relative(from, to, stack_level) end
 --- The `segments` table is not modified.
 ---
 --- ```lua
---- path.join( { "/game", "lua/", "autorun/init.lua" } ) -- "/game/lua/autorun/init.lua"
---- path.join( { "/game/lua", "../data", "x.txt" } ) -- "/game/data/x.txt"
---- path.join( { "lua", "/autorun" } ) -- "lua/autorun"
---- path.join( {} ) -- "."
+--- path.join( "/game", "lua/", "autorun/init.lua" ) -- "/game/lua/autorun/init.lua"
+--- path.join( "/game/lua", "../data", "x.txt" ) -- "/game/data/x.txt"
+--- path.join( "lua", "/autorun" ) -- "lua/autorun"
+--- path.join() -- "."
 --- ```
 ---
----@param segments string[] The file paths to join.
----@param segment_count integer? The number of file paths to join, defaults to the length of `segments`.
+---@param ... string The file paths to join.
 ---@return string file_path The joined file path.
 ---@nodiscard
-function path.join(segments, segment_count) end
+function path.join(...) end
 
 --- [SHARED AND MENU]
 ---
