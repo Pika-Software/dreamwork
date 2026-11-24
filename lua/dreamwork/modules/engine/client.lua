@@ -538,7 +538,21 @@ end
 
 do
 
-    local Player_ConCommand = engine_Player.ConCommand
+    local Player_RunConsoleCommand = engine_Player.RunConsoleCommand
+
+    if Player_RunConsoleCommand == nil then
+        local Player_ConCommand = engine_Player.ConCommand
+
+        function Player_RunConsoleCommand( pl, command, ... )
+            local arguments = { ... }
+
+            for i = 1, #arguments, 1 do
+                command = command .. " \"" .. arguments[ i ] .. "\""
+            end
+
+            Player_ConCommand( pl, command )
+        end
+    end
 
     --- [SHARED]
     ---
@@ -559,12 +573,12 @@ do
         end
 
         if LUA_CLIENT then
-            if not data.is_local then
-                return false
+            if data.is_local then
+                console_commandRun( command, ... )
+                return true
             end
 
-            console_commandRun( command, ... )
-            return true
+            return false
         end
 
         local pl = data.entity
@@ -572,13 +586,7 @@ do
             return false
         end
 
-        local arguments = { ... }
-
-        for i = 1, #arguments, 1 do
-            command = command .. " \"" .. arguments[ i ] .. "\""
-        end
-
-        Player_ConCommand( pl, command )
+        Player_RunConsoleCommand( pl, command, ... )
         return true
     end
 

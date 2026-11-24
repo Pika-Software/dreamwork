@@ -150,6 +150,26 @@ function Player:ConCommand( command, skip_queue ) end
 
 --- [SERVER]
 ---
+--- Runs a console command on the player, with each argument passed separately.
+---
+--- Prefer this over `Player:ConCommand` when arguments come from untrusted input:
+--- `ConCommand` takes a single string, so characters like `;` can inject extra commands.
+---
+--- Does not work on bots. For the local client realm, use `RunConsoleCommand` instead.
+---
+--- > **NOTE**: Some commands/convars are blocked from being run/changed using this function.
+--- > See [Blocked ConCommands](https://wiki.facepunch.com/gmod/Blocked_ConCommands).
+---
+--- ```lua
+--- Entity( 1 ):RunConsoleCommand( "my_fancy_variable", "my_fancy_value" )
+--- ```
+---
+---@param command string The console command to run on the player.
+---@param ... string Arguments to the command; each must be a separate string.
+function Player:RunConsoleCommand( command, ... ) end
+
+--- [SERVER]
+---
 --- Creates the player's death ragdoll entity and deletes the old one.
 ---
 --- This is normally used when a player dies, to create their death ragdoll.
