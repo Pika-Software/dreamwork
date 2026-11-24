@@ -3237,7 +3237,7 @@ if (LUA_SERVER or LUA_MENU) then
         dreamwork_load( "modules/mcp.lua" )
         logger:info( "'gm_mcp' was loaded & connected as MCP bridge." )
     end
-elseif (LUA_CLIENT or LUA_MENU) and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
+elseif LUA_CLIENT and vfs.isFile( "/game/lua/dreamwork/modules/mcp.lua" ) then
     dreamwork_load( "modules/mcp.lua" )
     -- TODO: server request to check is mcp available
 end

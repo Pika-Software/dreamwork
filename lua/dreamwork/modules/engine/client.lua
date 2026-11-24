@@ -350,7 +350,7 @@ end
 ---
 --- An unknown index gives a disconnected client without data, e.g. the client left before the message arrived.
 ---
---- > NOTE: The object is equal (`==`) to the client, but it is a different key in tables.
+--- > **NOTE**: The object is equal (`==`) to the client, but it is a different key in tables.
 ---
 ---@param reader dreamwork.std.BinaryReader The reader to read from.
 ---@protected
@@ -416,7 +416,7 @@ end
 ---
 --- Returns the local client, see `Client:isLocal`.
 ---
---- > NOTE: Always `nil` on a dedicated server.
+--- > **NOTE**: Always `nil` on a dedicated server.
 ---
 ---@return dreamwork.std.Client | nil client The local client, or `nil` if it is not known yet.
 ---@nodiscard
@@ -547,7 +547,7 @@ do
     --- On the server it works for any client with a player entity,
     --- on the client only for the local one.
     ---
-    --- > NOTE: The arguments are quoted, so they cannot contain `"`.
+    --- > **NOTE**: The arguments are quoted, so they cannot contain `"`.
     ---
     ---@param command string The name of the console command.
     ---@param ... string The arguments of the console command.
@@ -604,7 +604,7 @@ end
 ---
 --- Returns the player entity of the client.
 ---
---- > NOTE: `nil` until the entity is created on this side, after the entity is removed and after the client disconnects.
+--- > **NOTE**: `nil` until the entity is created on this side, after the entity is removed and after the client disconnects.
 ---
 ---@param client dreamwork.std.Client
 ---@return garrysmod.Player | nil pl The player entity, or `nil` if there is none.

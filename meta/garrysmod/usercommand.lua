@@ -24,7 +24,7 @@ function UserCommand:AddKey( key ) end
 ---
 --- Removes all keys from the command.
 ---
---- > NOTE: If you are looking to affect player movement, you may need to use `CUserCmd:ClearMovement` instead of clearing the buttons.
+--- > **NOTE**: If you are looking to affect player movement, you may need to use `CUserCmd:ClearMovement` instead of clearing the buttons.
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:ClearButtons)
 function UserCommand:ClearButtons() end
@@ -188,7 +188,7 @@ function UserCommand:RemoveKey( button ) end
 ---
 --- This may not work immediately if the current command is in prediction. Use [input.SelectWeapon](https://wiki.facepunch.com/gmod/input.SelectWeapon) to switch the weapon from the client when the next available command can do so.
 ---
---- > NOTE: This is the ideal function to use to create a custom weapon selection HUD, as it allows prediction to run properly for [WEAPON:Deploy](https://wiki.facepunch.com/gmod/WEAPON:Deploy) and [GM:PlayerSwitchWeapon](https://wiki.facepunch.com/gmod/GM:PlayerSwitchWeapon).
+--- > **NOTE**: This is the ideal function to use to create a custom weapon selection HUD, as it allows prediction to run properly for [WEAPON:Deploy](https://wiki.facepunch.com/gmod/WEAPON:Deploy) and [GM:PlayerSwitchWeapon](https://wiki.facepunch.com/gmod/GM:PlayerSwitchWeapon).
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:SelectWeapon)
 ---
@@ -199,7 +199,7 @@ function UserCommand:SelectWeapon( weapon ) end
 ---
 --- Sets the buttons as a bitflag. See also `CUserCmd:GetButtons`.
 ---
---- > NOTE: If you are looking to affect player movement, you may need to use `CUserCmd:SetForwardMove` instead of setting the keys.
+--- > **NOTE**: If you are looking to affect player movement, you may need to use `CUserCmd:SetForwardMove` instead of setting the keys.
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:SetButtons)
 ---
@@ -282,7 +282,7 @@ function UserCommand:SetSideMove( speed ) end
 --- Sets speed the client wishes to move upwards with, negative to move down.
 ---
 --- See also `CUserCmd:SetSideMove` and  `CUserCmd:SetForwardMove`.
---- > NOTE: This function does **not** move the client up/down ladders. To force ladder movement, consider `CUserCMD:SetButtons` and use IN_FORWARD from [Enums/IN](https://wiki.facepunch.com/gmod/Enums/IN).
+--- > **NOTE**: This function does **not** move the client up/down ladders. To force ladder movement, consider `CUserCMD:SetButtons` and use IN_FORWARD from [Enums/IN](https://wiki.facepunch.com/gmod/Enums/IN).
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:SetUpMove)
 ---
@@ -293,8 +293,8 @@ function UserCommand:SetUpMove( speed ) end
 ---
 --- Sets the direction the client wants to move in.
 ---
---- > NOTE: For human players, the pitch (vertical) angle should be clamped to +/- 89° to prevent the player's view from glitching.
---- > NOTE: For fake clients (those created with `player.CreateNextBot`), this functionally dictates the 'move angles' of the bot. This typically functions separately from the colloquial view angles. This can be utilized by `CUserCmd:SetForwardMove` and its related functions.
+--- > **NOTE**: For human players, the pitch (vertical) angle should be clamped to +/- 89° to prevent the player's view from glitching.
+--- > **NOTE**: For fake clients (those created with `player.CreateNextBot`), this functionally dictates the 'move angles' of the bot. This typically functions separately from the colloquial view angles. This can be utilized by `CUserCmd:SetForwardMove` and its related functions.
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:SetViewAngles)
 ---
@@ -305,9 +305,9 @@ function UserCommand:SetViewAngles( view_angles ) end
 ---
 --- Returns tick count since joining the server.
 ---
---- > NOTE: This will always return 0 for bots.
+--- > **NOTE**: This will always return 0 for bots.
 ---
---- > NOTE: Returns 0 clientside during prediction calls. If you are trying to use CUserCmd:Set*() on the client in a movement or command hook, keep doing so till TickCount returns a non-zero number to maintain prediction.
+--- > **NOTE**: Returns 0 clientside during prediction calls. If you are trying to use CUserCmd:Set*() on the client in a movement or command hook, keep doing so till TickCount returns a non-zero number to maintain prediction.
 ---
 --- [View wiki](https://wiki.facepunch.com/gmod/CUserCmd:TickCount)
 ---

@@ -147,9 +147,9 @@ end
 ---
 --- This function allows you to enable the listening of engine events from the game engine directly into the Dreamwork hook system.
 ---
---- > NOTE: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
+--- > **NOTE**: Ideally, this function should **never** be used, as the **hook library automatically detects** the need to request these events.
 ---
---- > NOTE: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
+--- > **NOTE**: Use it only if the required event **is missing** in Dreamwork (i.e., check first without calling this function).
 ---
 ---@param ... string The names of the game events to listen for.
 function hook.listenEvents( ... )
@@ -746,9 +746,9 @@ do
     ---
     --- Game events are automatically requested from the engine, see `hook.listenEvents`.
     ---
-    --- > NOTE: Raises an error if the event is not supported by Dreamwork.
+    --- > **NOTE**: Raises an error if the event is not supported by Dreamwork.
     ---
-    --- > NOTE: Attaching during the event call does not affect the running call, the change applies to the next one.
+    --- > **NOTE**: Attaching during the event call does not affect the running call, the change applies to the next one.
     ---
     ---@param event_name string The name of the engine event.
     ---@param identifier string The unique identifier of the handler within the event.
@@ -786,9 +786,9 @@ do
     ---
     --- Detaches a handler from an engine event.
     ---
-    --- > NOTE: Detaching during the event call does not affect the running call, the change applies to the next one.
+    --- > **NOTE**: Detaching during the event call does not affect the running call, the change applies to the next one.
     ---
-    --- > NOTE: Game events requested from the engine keep being listened to.
+    --- > **NOTE**: Game events requested from the engine keep being listened to.
     ---
     ---@param event_name string The name of the engine event.
     ---@param identifier string The identifier the handler was attached with.

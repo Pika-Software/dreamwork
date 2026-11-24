@@ -13,7 +13,7 @@ local Entity = {}
 ---
 --- Activates the entity. This needs to be used on some entities (like constraints) after being spawned.
 ---
---- > NOTE: For some entity types when this function is used after [Entity:SetModelScale](https://wiki.facepunch.com/gmod/Entity:SetModelScale), the physics object will be recreated with the new scale. [Source-sdk-2013](https://github.com/ValveSoftware/source-sdk-2013/blob/55ed12f8d1eb6887d348be03aee5573d44177ffb/mp/src/game/server/baseanimating.cpp#L321-L327).
+--- > **NOTE**: For some entity types when this function is used after [Entity:SetModelScale](https://wiki.facepunch.com/gmod/Entity:SetModelScale), the physics object will be recreated with the new scale. [Source-sdk-2013](https://github.com/ValveSoftware/source-sdk-2013/blob/55ed12f8d1eb6887d348be03aee5573d44177ffb/mp/src/game/server/baseanimating.cpp#L321-L327).
 --- >
 --- > Calling this method after [Entity:SetModelScale](https://wiki.facepunch.com/gmod/Entity:SetModelScale) will recreate a new scaled `SOLID_VPHYSICS` [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) on scripted entities. This can be a problem if you made a properly scaled [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) of another kind (using [Entity:PhysicsInitSphere](https://wiki.facepunch.com/gmod/Entity:PhysicsInitSphere) for instance) or if you edited the [PhysObj](https://wiki.facepunch.com/gmod/PhysObj)'s properties. This is especially the behavior of the Sandbox spawn menu.
 ---
@@ -61,9 +61,9 @@ function Entity:AddFlags( flag ) end
 ---
 --- See [Entity:AddGestureSequence](https://wiki.facepunch.com/gmod/Entity:AddGestureSequence) and [Entity:AddLayeredSequence](https://wiki.facepunch.com/gmod/Entity:AddLayeredSequence) for functions that takes sequences instead of [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
---- > NOTE: (return value) If a layer has already been allocated for supplied [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT), it will return existing layer ID instead of allocating a new layer.
+--- > **NOTE**: (return value) If a layer has already been allocated for supplied [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT), it will return existing layer ID instead of allocating a new layer.
 ---
 ---@param activity integer The activity to play as the gesture. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---@param autokill boolean? Automatically remove the gesture when it fully plays ([Entity:GetLayerCycle](https://wiki.facepunch.com/gmod/Entity:GetLayerCycle) reaches 1). Defaults to `true`.
@@ -78,7 +78,7 @@ function Entity:AddGesture( activity, autokill ) end
 ---
 --- See also [Entity:AddLayeredSequence](https://wiki.facepunch.com/gmod/Entity:AddLayeredSequence).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param sequence integer The sequence ID to play as the gesture. See [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence).
 ---@param autokill boolean? Automatically remove the gesture when it fully plays ([Entity:GetLayerCycle](https://wiki.facepunch.com/gmod/Entity:GetLayerCycle) reaches 1). Defaults to `true`.
@@ -93,7 +93,7 @@ function Entity:AddGestureSequence( sequence, autokill ) end
 ---
 --- See [Entity:AddGesture](https://wiki.facepunch.com/gmod/Entity:AddGesture) for a function that takes [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param sequence integer The sequence ID to play as the gesture. See [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence).
 ---@param priority integer
@@ -115,7 +115,7 @@ function Entity:AddSolidFlags( flags ) end
 ---
 --- You can remove added [PhysObj](https://wiki.facepunch.com/gmod/PhysObj)ects by using [Entity:RemoveFromMotionController](https://wiki.facepunch.com/gmod/Entity:RemoveFromMotionController).
 ---
---- > NOTE: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type
+--- > **NOTE**: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type
 ---
 ---@param phys_obj garrysmod.Physics The [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) to add to the motion controller.
 function Entity:AddToMotionController( phys_obj ) end
@@ -124,7 +124,7 @@ function Entity:AddToMotionController( phys_obj ) end
 ---
 --- Returns an angle based on the ones inputted that you can use to align an object.
 ---
---- > NOTE: This function doesn't change the angle of the entity on its own (see example).
+--- > **NOTE**: This function doesn't change the angle of the entity on its own (see example).
 ---
 ---@param from garrysmod.Angle The angle you want to align from
 ---@param to garrysmod.Angle The angle you want to align to
@@ -164,7 +164,7 @@ function Entity:Blocked( entity ) end
 ---
 --- Returns a centered vector of this entity, NPCs use this internally to aim at their targets.
 ---
---- > NOTE: This only works on players and NPCs.
+--- > **NOTE**: This only works on players and NPCs.
 ---
 ---@param origin garrysmod.Vector The vector of where the the attack comes from.
 ---@param noisy boolean? Decides if it should return the centered vector with a random offset to it. Defaults to `false`.
@@ -239,7 +239,7 @@ function Entity:CopyBoneMatrix( bone_id, data ) end
 ---
 --- You must call [Entity:UpdateBoneFollowers](https://wiki.facepunch.com/gmod/Entity:UpdateBoneFollowers) every tick for bone followers to update their positions.
 ---
---- > NOTE: This function only works on `anim`, `nextbot` and `ai` type entities.
+--- > **NOTE**: This function only works on `anim`, `nextbot` and `ai` type entities.
 ---
 ---@param bone_whitelist table? If set, a whitelist of bone names to create bone followers for. If a models' bone name is not in this list, a bone follower entity will not be created for it.
 function Entity:CreateBoneFollowers( bone_whitelist ) end
@@ -255,7 +255,7 @@ function Entity:CreatedByMap() end
 ---
 --- Creates a clientside particle system attached to the entity. See also [Global.CreateParticleSystem](https://wiki.facepunch.com/gmod/Global.CreateParticleSystem)
 ---
---- > NOTE: The particle effect must be precached with [Global.PrecacheParticleSystem](https://wiki.facepunch.com/gmod/Global.PrecacheParticleSystem) and the file its from must be added via [game.AddParticles](https://wiki.facepunch.com/gmod/game.AddParticles) before it can be used!
+--- > **NOTE**: The particle effect must be precached with [Global.PrecacheParticleSystem](https://wiki.facepunch.com/gmod/Global.PrecacheParticleSystem) and the file its from must be added via [game.AddParticles](https://wiki.facepunch.com/gmod/game.AddParticles) before it can be used!
 ---
 ---@param particle string The particle name to create
 ---@param attachment integer Attachment ID to attach the particle to
@@ -280,7 +280,7 @@ function Entity:DeleteOnRemove( entity_to_remove ) end
 ---
 --- Destroys bone followers created by [Entity:CreateBoneFollowers](https://wiki.facepunch.com/gmod/Entity:CreateBoneFollowers).
 ---
---- > NOTE: This function only works on `anim` type entities.
+--- > **NOTE**: This function only works on `anim` type entities.
 ---
 function Entity:DestroyBoneFollowers() end
 
@@ -290,7 +290,7 @@ function Entity:DestroyBoneFollowers() end
 ---
 --- The shadow will be recreated as soon as the entity wakes.
 ---
---- > NOTE: Doesn't affect shadows from flashlight/lamps/env_projectedtexture.
+--- > **NOTE**: Doesn't affect shadows from flashlight/lamps/env_projectedtexture.
 ---
 function Entity:DestroyShadow() end
 
@@ -307,7 +307,7 @@ function Entity:DisableMatrix( matrix_type ) end
 ---
 --- > WARNING: Calling this function on the victim entity in [ENTITY:OnTakeDamage](https://wiki.facepunch.com/gmod/ENTITY:OnTakeDamage) can cause infinite loops.
 ---
---- > NOTE: This function correctly applies damage to [func_breakable_surf](https://developer.valvesoftware.com/wiki/Func_breakable_surf) entities, unlike [Entity:TakeDamageInfo](https://wiki.facepunch.com/gmod/Entity:TakeDamageInfo).
+--- > **NOTE**: This function correctly applies damage to [func_breakable_surf](https://developer.valvesoftware.com/wiki/Func_breakable_surf) entities, unlike [Entity:TakeDamageInfo](https://wiki.facepunch.com/gmod/Entity:TakeDamageInfo).
 ---
 ---@param damage_info garrysmod.DamageInfo The damage to apply.
 ---@param trace_res table Trace result to use to deal damage. See [Structures/TraceResult](https://wiki.facepunch.com/gmod/Structures/TraceResult)
@@ -330,7 +330,7 @@ function Entity:Dissolve( type, magnitude, origin, delay ) end
 ---
 --- This removes the argument entity from an ent's list of entities to 'delete on remove'
 ---
---- > NOTE: Also see [Entity:DeleteOnRemove](https://wiki.facepunch.com/gmod/Entity:DeleteOnRemove)
+--- > **NOTE**: Also see [Entity:DeleteOnRemove](https://wiki.facepunch.com/gmod/Entity:DeleteOnRemove)
 ---
 ---@param entity_to_unremove garrysmod.Entity The entity to be removed from the list of entities to delete
 function Entity:DontDeleteOnRemove( entity_to_unremove ) end
@@ -374,7 +374,7 @@ function Entity:DropToFloor( mask, ignore_entity, max_dist ) end
 --- If run clientside, the sound will only be heard locally.
 --- If used on a player or NPC character with the mouth rigged, the character will "lip-sync" if the sound file contains lipsync data. See [this page](https://developer.valvesoftware.com/wiki/Choreography_creation/Lip_syncing) for more information.
 ---
---- > NOTE: When using this function with weapons, use the [Weapon](https://wiki.facepunch.com/gmod/Weapon) itself as the entity, not its owner!
+--- > **NOTE**: When using this function with weapons, use the [Weapon](https://wiki.facepunch.com/gmod/Weapon) itself as the entity, not its owner!
 ---
 --- > WARNING: Due to engine quirks, [sound scripts](https://developer.valvesoftware.com/wiki/Soundscripts) can't have their soundlevel, pitch, volume, or channel changed when played from an entity—the sound script parameters will override whatever you pass to this function.
 --- >
@@ -433,7 +433,7 @@ function Entity:EnableCustomCollisions() end
 ---
 --- If your old scales are wrong due to a recent update, use [Entity:SetLegacyTransform](https://wiki.facepunch.com/gmod/Entity:SetLegacyTransform) as a quick fix.
 ---
---- > NOTE: The matrix can also be modified to apply a custom rotation and offset via the [VMatrix:SetAngles](https://wiki.facepunch.com/gmod/VMatrix:SetAngles) and [VMatrix:SetTranslation](https://wiki.facepunch.com/gmod/VMatrix:SetTranslation) functions.
+--- > **NOTE**: The matrix can also be modified to apply a custom rotation and offset via the [VMatrix:SetAngles](https://wiki.facepunch.com/gmod/VMatrix:SetAngles) and [VMatrix:SetTranslation](https://wiki.facepunch.com/gmod/VMatrix:SetTranslation) functions.
 ---
 --- > BUG: This does not scale procedural bones, and disables inverse kinematics of the entity.
 --- > See [issue #3502](https://github.com/Facepunch/garrysmod-issues/issues/3502).
@@ -446,7 +446,7 @@ function Entity:EnableMatrix( matrix_type, matrix ) end
 ---
 --- Gets the unique entity index of an entity.
 ---
---- > NOTE: Entity indices are marked as unused after deletion, and can be reused by newly-created entities
+--- > **NOTE**: Entity indices are marked as unused after deletion, and can be reused by newly-created entities
 ---
 ---@return integer index The index of the entity. `-1` for clientside-only or `0` for serverside-only and [NULL](https://wiki.facepunch.com/gmod/NULL) entities.
 function Entity:EntIndex() end
@@ -485,7 +485,7 @@ function Entity:EyePos() end
 ---
 --- Searches the [Entity's](https://wiki.facepunch.com/gmod/Entity) model for a Body Group with a given name.
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@param name string The name to search for.
 ---@return integer body_group_id The [Body Group's ID](https://wiki.facepunch.com/gmod/Structures/BodyGroupData#id) or `-1` if no Body Group has the provided name.
@@ -495,7 +495,7 @@ function Entity:FindBodygroupByName( name ) end
 ---
 --- Searches the currently active layers for a layer playing animation with given activity.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param activity integer The activity to search for. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---@return integer layer_id A layer ID for given activity, or `-1` if not found.
@@ -505,7 +505,7 @@ function Entity:FindGestureLayer( activity ) end
 ---
 --- Searches the currently active layers for a layer playing animation with given sequence.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param sequence_id integer The sequence ID to search for. See [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence).
 ---@return integer layer_id A layer ID for given sequence, or `-1` if not found.
@@ -558,7 +558,7 @@ function Entity:FireBullets( bullet_info, suppress_host_events ) end
 --- Internally this function calls [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent)( parent, boneid ), [Entity:AddEffects](https://wiki.facepunch.com/gmod/Entity:AddEffects)( EF_FOLLOWBONE
 --- ) and sets an internal flag to always rebuild all bones.
 ---
---- > NOTE: If the entity vibrates or stops following the parent, you probably need to run [Entity:SetPredictable](https://wiki.facepunch.com/gmod/Entity:SetPredictable)( true ) clientside.
+--- > **NOTE**: If the entity vibrates or stops following the parent, you probably need to run [Entity:SetPredictable](https://wiki.facepunch.com/gmod/Entity:SetPredictable)( true ) clientside.
 ---
 --- > WARNING: This function will not work if the target bone's parent bone is invalid or if the bone is not used by VERTEX LOD0
 ---
@@ -590,7 +590,7 @@ function Entity:FrameAdvance() end
 ---
 --- Returns the entity's velocity.
 ---
---- > NOTE: Actually binds to CBaseEntity::GetLocalVelocity() which retrieves the velocity of the entity due to its movement in the world from forces such as gravity. Does not include velocity from entity-on-entity collision.
+--- > **NOTE**: Actually binds to CBaseEntity::GetLocalVelocity() which retrieves the velocity of the entity due to its movement in the world from forces such as gravity. Does not include velocity from entity-on-entity collision.
 ---
 ---@return garrysmod.Vector velocity The velocity of the entity.
 function Entity:GetAbsVelocity() end
@@ -624,7 +624,7 @@ function Entity:GetAnimCount() end
 ---
 --- Returns a table containing the number of frames, flags, name, and FPS of an entity's animation ID.
 ---
---- > NOTE: Animation ID is not the same as sequence ID. See [Entity:GetAnimCount](https://wiki.facepunch.com/gmod/Entity:GetAnimCount)
+--- > **NOTE**: Animation ID is not the same as sequence ID. See [Entity:GetAnimCount](https://wiki.facepunch.com/gmod/Entity:GetAnimCount)
 ---
 ---@param anim_index integer The animation ID to look up, starting at 0.
 ---@return table | nil info Information about the animation, or `nil` if the index is out of bounds. A table with the following keys: * [string](https://wiki.facepunch.com/gmod/string) label - Animation name * [number](https://wiki.facepunch.com/gmod/number) fps - How many frames per second the animation should be played at * [number](https://wiki.facepunch.com/gmod/number) flags - [STUDIO_](https://github.com/ZeqMacaw/Crowbar/blob/0d46f3b6a694b74453db407c72c12a9685d8eb1d/Crowbar/Core/GameModel/SourceCommon/SourceMdlFileData/SourceMdlAnimationDesc.vb#L181) flags, such as looping * [number](https://wiki.facepunch.com/gmod/number) numframes - Number of frames the animation has
@@ -650,7 +650,7 @@ function Entity:GetAnimTimeInterval() end
 ---
 --- Gets the orientation and position of the attachment by its ID, returns nothing if the attachment does not exist.
 ---
---- > NOTE: The update rate of this function is limited by the setting of ENT.AutomaticFrameAdvance for [Scripted Entities](https://wiki.facepunch.com/gmod/Scripted_Entities)!
+--- > **NOTE**: The update rate of this function is limited by the setting of ENT.AutomaticFrameAdvance for [Scripted Entities](https://wiki.facepunch.com/gmod/Scripted_Entities)!
 ---
 --- > BUG: This will return improper values for viewmodels if used in [GM:CalcView](https://wiki.facepunch.com/gmod/GM:CalcView).
 --- > See [issue #1255](https://github.com/Facepunch/garrysmod-issues/issues/1255).
@@ -687,7 +687,7 @@ function Entity:GetBloodColor() end
 ---
 --- Returns the [Sub Model ID](https://wiki.facepunch.com/gmod/Structures/BodyGroupData#submodels) for the currently active [Sub Model](https://wiki.facepunch.com/gmod/Entity:GetSubModels) of the Body Group corresponding to the given [Body Group ID](https://wiki.facepunch.com/gmod/Structures/BodyGroupData#id).
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@param body_group_id integer The Body Group ID to retrieve the active Sub Model ID for. Body Group IDs start at `0`.
 ---@return integer sub_model_id The currently active Sub Model ID. Sub Model IDs start at `0`.
@@ -697,7 +697,7 @@ function Entity:GetBodygroup( body_group_id ) end
 ---
 --- Returns the number of [Sub Models](https://wiki.facepunch.com/gmod/Entity:GetSubModels) in the Body Group corresponding to a given [Body Group ID](https://wiki.facepunch.com/gmod/Structures/BodyGroupData#id) of the [Entity's](https://wiki.facepunch.com/gmod/Entity) model.
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@param body_group_id integer The Body Group ID to retrieve the Sub Model count of. Body Group IDs start at `0`.
 ---@return integer count The number of Sub Models in the Body Group.
@@ -707,7 +707,7 @@ function Entity:GetBodygroupCount( body_group_id ) end
 ---
 --- Retrieves the name of the Body Group corresponding to a given [Body Group ID](https://wiki.facepunch.com/gmod/Structures/BodyGroupData#id) on the [Entity's](https://wiki.facepunch.com/gmod/Entity) model.
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@param body_group_id integer The Body Group ID to get the name of.
 ---@return string name The name of the Body Group.
@@ -717,7 +717,7 @@ function Entity:GetBodygroupName( body_group_id ) end
 ---
 --- Returns a list of information about each Body Group present on the [Entity's](https://wiki.facepunch.com/gmod/Entity) model.
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@return table body_groups A table of Body Group information where each value is a [Structures/BodyGroupData](https://wiki.facepunch.com/gmod/Structures/BodyGroupData).
 function Entity:GetBodyGroups() end
@@ -734,7 +734,7 @@ function Entity:GetBoneContents( bone ) end
 ---
 --- Returns the value of the bone controller with the specified ID.
 ---
---- > NOTE: This is the precursor of pose parameters, and only works for Half Life 1: Source models supporting it.
+--- > **NOTE**: This is the precursor of pose parameters, and only works for Half Life 1: Source models supporting it.
 ---
 ---@param bone_id integer ID of the bone controller. Goes from 0 to 3.
 ---@return number value The value set on the bone controller.
@@ -744,7 +744,7 @@ function Entity:GetBoneController( bone_id ) end
 ---
 --- Returns the amount of bones in the entity.
 ---
---- > NOTE: Will return `0` for [Global.ClientsideModel](https://wiki.facepunch.com/gmod/Global.ClientsideModel) or undrawn entities until [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) is called on the entity.
+--- > **NOTE**: Will return `0` for [Global.ClientsideModel](https://wiki.facepunch.com/gmod/Global.ClientsideModel) or undrawn entities until [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) is called on the entity.
 ---
 ---@return integer count The amount of bones in given entity, starting at index 0.
 function Entity:GetBoneCount() end
@@ -781,7 +781,7 @@ function Entity:GetBoneName( index ) end
 ---
 --- Returns parent bone of given bone.
 ---
---- > NOTE: Will return -1 for [Global.ClientsideModel](https://wiki.facepunch.com/gmod/Global.ClientsideModel) until [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) is called on the entity.
+--- > **NOTE**: Will return -1 for [Global.ClientsideModel](https://wiki.facepunch.com/gmod/Global.ClientsideModel) until [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) is called on the entity.
 ---
 ---@param bone integer The bone ID of the bone to get parent of, starting at index 0.
 ---@return integer parent_bone_id Parent bone ID or -1 if we failed for some reason.
@@ -801,7 +801,7 @@ function Entity:GetBoneParent( bone ) end
 --- > end
 --- > ```
 ---
---- > NOTE: This function returns the bone position from the last tick, so if your framerate is higher than the server's tickrate it may appear to lag behind if used on a fast moving entity. You can fix this by using the bone's matrix instead:
+--- > **NOTE**: This function returns the bone position from the last tick, so if your framerate is higher than the server's tickrate it may appear to lag behind if used on a fast moving entity. You can fix this by using the bone's matrix instead:
 --- > ```lua
 --- > local matrix = entity:GetBoneMatrix(0)
 --- > local pos = matrix:GetTranslation()
@@ -870,7 +870,7 @@ function Entity:GetCallbacks( hook ) end
 ---
 --- Gets the children of the entity - that is, every entity whose move parent is this entity.
 ---
---- > NOTE: This function returns [Entity:SetMoveParent](https://wiki.facepunch.com/gmod/Entity:SetMoveParent) children, **NOT** [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent)!
+--- > **NOTE**: This function returns [Entity:SetMoveParent](https://wiki.facepunch.com/gmod/Entity:SetMoveParent) children, **NOT** [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent)!
 --- >
 --- > [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent) however also calls [Entity:SetMoveParent](https://wiki.facepunch.com/gmod/Entity:SetMoveParent).
 --- >
@@ -1098,7 +1098,7 @@ function Entity:GetFlexName( id ) end
 ---
 --- Returns the number of flex controllers this entity's model has.
 ---
---- > NOTE: Please note that while this function can return the real number of flex controllers, the game supports only a certain amount due to networking limitations. See [Entity:SetFlexWeight](https://wiki.facepunch.com/gmod/Entity:SetFlexWeight).
+--- > **NOTE**: Please note that while this function can return the real number of flex controllers, the game supports only a certain amount due to networking limitations. See [Entity:SetFlexWeight](https://wiki.facepunch.com/gmod/Entity:SetFlexWeight).
 ---
 ---@return integer count The number of flexes.
 function Entity:GetFlexNum() end
@@ -1257,7 +1257,7 @@ function Entity:GetKeyValues() end
 ---
 --- Returns the animation cycle/frame for given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@return number cycle The animation cycle/frame for given layer.
@@ -1267,7 +1267,7 @@ function Entity:GetLayerCycle( layer_id ) end
 ---
 --- Returns the duration of given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@return number duration The duration of the layer
@@ -1277,7 +1277,7 @@ function Entity:GetLayerDuration( layer_id ) end
 ---
 --- Returns the layer playback rate. See also [Entity:GetLayerDuration](https://wiki.facepunch.com/gmod/Entity:GetLayerDuration).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@return number rate The current playback rate.
@@ -1287,7 +1287,7 @@ function Entity:GetLayerPlaybackRate( layer_id ) end
 ---
 --- Returns the sequence id of given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID.
 ---@return integer sequence_id The sequenceID of the layer.
@@ -1297,7 +1297,7 @@ function Entity:GetLayerSequence( layer_id ) end
 ---
 --- Returns the current weight of the layer. See [Entity:SetLayerWeight](https://wiki.facepunch.com/gmod/Entity:SetLayerWeight) for more information.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@return number weight The current weight of the layer
@@ -1703,7 +1703,7 @@ function Entity:GetNetworkedVector( key, fallback ) end
 ---
 --- Gets networked origin for entity.
 ---
---- > NOTE: On the Client, this seems to return the position relative to the parent (if it has one). On the server-side this will return what you expect even if it has a parent.
+--- > **NOTE**: On the Client, this seems to return the position relative to the parent (if it has one). On the server-side this will return what you expect even if it has a parent.
 ---
 ---@return garrysmod.Vector origin The last received origin of the entity.
 function Entity:GetNetworkOrigin() end
@@ -1712,7 +1712,7 @@ function Entity:GetNetworkOrigin() end
 ---
 --- Returns if the entity's rendering and transmitting has been disabled.
 ---
---- > NOTE: This is equivalent to calling [Entity:IsEffectActive](https://wiki.facepunch.com/gmod/Entity:IsEffectActive)( EF_NODRAW )
+--- > **NOTE**: This is equivalent to calling [Entity:IsEffectActive](https://wiki.facepunch.com/gmod/Entity:IsEffectActive)( EF_NODRAW )
 ---
 ---@return boolean no_draw Whether the entity's rendering and transmitting has been disabled.
 function Entity:GetNoDraw() end
@@ -1721,7 +1721,7 @@ function Entity:GetNoDraw() end
 ---
 --- Returns the number of Body Groups that the [Entity's](https://wiki.facepunch.com/gmod/Entity) model contains.
 ---
---- > NOTE: Weapons will return results from their viewmodels.
+--- > **NOTE**: Weapons will return results from their viewmodels.
 ---
 ---@return integer count The amount of Body Groups on the Entity's model.
 function Entity:GetNumBodyGroups() end
@@ -1894,7 +1894,7 @@ function Entity:GetNWVector( key, fallback ) end
 ---
 --- Returns the owner entity of this entity. See [Entity:SetOwner](https://wiki.facepunch.com/gmod/Entity:SetOwner) for more info.
 ---
---- > NOTE: This function is generally used to disable physics interactions on projectiles being fired by their owner, but can also be used for normal ownership in case physics interactions are not involved at all. The Gravity gun will be able to pick up the entity even if the owner can't collide with it, the Physics gun however will not.
+--- > **NOTE**: This function is generally used to disable physics interactions on projectiles being fired by their owner, but can also be used for normal ownership in case physics interactions are not involved at all. The Gravity gun will be able to pick up the entity even if the owner can't collide with it, the Physics gun however will not.
 ---
 ---@return garrysmod.Entity owner The owner entity of this entity.
 function Entity:GetOwner() end
@@ -1912,7 +1912,7 @@ function Entity:GetParent() end
 ---
 --- This is set by second argument of [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent) or the **SetParentAttachment** input.
 ---
---- > NOTE: (return value) Will return bone index instead of attachment index if the **EF_FOLLOWBONE** effect is active on the entity. See [Entity:IsEffectActive](https://wiki.facepunch.com/gmod/Entity:IsEffectActive).
+--- > **NOTE**: (return value) Will return bone index instead of attachment index if the **EF_FOLLOWBONE** effect is active on the entity. See [Entity:IsEffectActive](https://wiki.facepunch.com/gmod/Entity:IsEffectActive).
 ---
 ---@return integer attachment_id The parented attachment/bone index
 function Entity:GetParentAttachment() end
@@ -1944,7 +1944,7 @@ function Entity:GetPersistent() end
 ---
 --- Returns player who is claiming kills of physics damage the entity deals.
 ---
---- > NOTE: (`time_limit` argument) Some entities such as the Combine Ball disregard the time limit and always return the physics attacker.
+--- > **NOTE**: (`time_limit` argument) Some entities such as the Combine Ball disregard the time limit and always return the physics attacker.
 ---
 ---@param time_limit number? The time to check if the entity was still a proper physics attacker. Defaults to `1`.
 ---@return garrysmod.Player attacker The player. If entity that was set is not a player, it will return NULL entity.
@@ -1954,7 +1954,7 @@ function Entity:GetPhysicsAttacker( time_limit ) end
 ---
 --- Returns the entity's physics object, if the entity has physics. Same as `ent:GetPhysicsObjectNum( 0 )`
 ---
---- > NOTE: Entities don't have clientside physics objects by default, so this will return `[NULL PHYSOBJ]` on the client in most cases.
+--- > **NOTE**: Entities don't have clientside physics objects by default, so this will return `[NULL PHYSOBJ]` on the client in most cases.
 ---
 ---@return garrysmod.Physics physics_object The entity's physics object.
 function Entity:GetPhysicsObject() end
@@ -2089,7 +2089,7 @@ function Entity:GetRotatedAABB( min, max ) end
 ---
 --- These tables are not the same between the client and the server, and different entities may have different fields.
 ---
---- > NOTE: It is highly recommended to use [Entity:GetInternalVariable](https://wiki.facepunch.com/gmod/Entity:GetInternalVariable) for retrieving a single key of the save table for performance reasons.
+--- > **NOTE**: It is highly recommended to use [Entity:GetInternalVariable](https://wiki.facepunch.com/gmod/Entity:GetInternalVariable) for retrieving a single key of the save table for performance reasons.
 ---
 --- You can get the list different fields an entity has by looking at it's source code (the 2013 SDK can be found [online](https://github.com/ValveSoftware/source-sdk-2013)). Accessible fields are defined by each `DEFINE_FIELD` and `DEFINE_KEYFIELD` inside the `DATADESC` block.
 ---
@@ -2321,7 +2321,7 @@ function Entity:GetTable() end
 ---
 --- Returns the last trace used in the collision callbacks such as [ENTITY:StartTouch](https://wiki.facepunch.com/gmod/ENTITY:StartTouch), [ENTITY:Touch](https://wiki.facepunch.com/gmod/ENTITY:Touch) and [ENTITY:EndTouch](https://wiki.facepunch.com/gmod/ENTITY:EndTouch).
 ---
---- > NOTE: This returns the last collision trace used, regardless of the entity that caused it. As such, it's only reliable when used in the hooks mentioned above
+--- > **NOTE**: This returns the last collision trace used, regardless of the entity that caused it. As such, it's only reliable when used in the hooks mentioned above
 ---
 ---@return garrysmod.Trace.output trace The [Structures/TraceResult](https://wiki.facepunch.com/gmod/Structures/TraceResult)
 function Entity:GetTouchTrace() end
@@ -2386,7 +2386,7 @@ function Entity:GetWorldTransformMatrix() end
 ---
 --- If called on server, the gibs will be spawned on the currently connected clients and will not be synchronized. Otherwise the gibs will be spawned only for the client the function is called on.
 ---
---- > NOTE: this function will not remove or hide the entity it is called on.
+--- > **NOTE**: this function will not remove or hide the entity it is called on.
 --- > For more expensive version of this function see [Entity:GibBreakServer](https://wiki.facepunch.com/gmod/Entity:GibBreakServer).
 ---
 ---@param force garrysmod.Vector The force to apply to the created gibs.
@@ -2409,7 +2409,7 @@ function Entity:GibBreakClient( force, color ) end
 --- >
 --- > You can avoid this cost by spawning the gibs on the client using [Entity:GibBreakClient](https://wiki.facepunch.com/gmod/Entity:GibBreakClient)
 ---
---- > NOTE: Despite existing on client, it doesn't actually do anything on client.
+--- > **NOTE**: Despite existing on client, it doesn't actually do anything on client.
 ---
 ---@param force garrysmod.Vector The force to apply to the created gibs
 function Entity:GibBreakServer( force ) end
@@ -2445,7 +2445,7 @@ function Entity:HasSpawnFlags( spawn_flags ) end
 ---
 --- Returns the position of the head of this entity, NPCs use this internally to aim at their targets.
 ---
---- > NOTE: This only works on players and NPCs.
+--- > **NOTE**: This only works on players and NPCs.
 ---
 ---@param origin garrysmod.Vector The vector of where the attack comes from.
 ---@return garrysmod.Vector position The head position.
@@ -2549,7 +2549,7 @@ function Entity:IsFlagSet( flag ) end
 ---
 --- Returns whether the entity is in the world (not inside a wall or outside of the map).
 ---
---- > NOTE: Internally this function uses [util.IsInWorld](https://wiki.facepunch.com/gmod/util.IsInWorld), that means that this function only checks [Entity:GetPos](https://wiki.facepunch.com/gmod/Entity:GetPos) of the entity. If an entity is only partially inside a wall, or has a weird GetPos offset, this function may not give reliable output.
+--- > **NOTE**: Internally this function uses [util.IsInWorld](https://wiki.facepunch.com/gmod/util.IsInWorld), that means that this function only checks [Entity:GetPos](https://wiki.facepunch.com/gmod/Entity:GetPos) of the entity. If an entity is only partially inside a wall, or has a weird GetPos offset, this function may not give reliable output.
 ---
 ---@return boolean is_in_world False if the entity is inside a wall or outside of the map, true otherwise.
 function Entity:IsInWorld() end
@@ -2565,7 +2565,7 @@ function Entity:IsLagCompensated() end
 ---
 --- Returns true if the target is in line of sight.
 ---
---- > NOTE: This will only work when called on CBaseCombatCharacter entities. This includes players, NPCs, grenades, RPG rockets, crossbow bolts, and physics cannisters.
+--- > **NOTE**: This will only work when called on CBaseCombatCharacter entities. This includes players, NPCs, grenades, RPG rockets, crossbow bolts, and physics cannisters.
 ---
 ---@param target garrysmod.Vector The target to test. You can also supply an [Entity](https://wiki.facepunch.com/gmod/Entity) instead of a [Vector](https://wiki.facepunch.com/gmod/Vector)
 ---@return boolean is_line_of_sight_clear Returns true if the line of sight is clear
@@ -2635,7 +2635,7 @@ function Entity:IsPlayerHolding() end
 ---
 --- Returns whether there's a gesture with the given activity being played.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param activity integer The activity to test. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---@return boolean is_playing_gesture Whether there's a gesture is given activity being played.
@@ -2688,7 +2688,7 @@ function Entity:IsSolid() end
 --- * It is not a [NULL](https://wiki.facepunch.com/gmod/Global_Variables) entity
 --- * It is not the worldspawn entity ([game.GetWorld](https://wiki.facepunch.com/gmod/game.GetWorld))
 ---
---- > NOTE: Instead of calling this method directly, it's a good idea to call the global [Global.IsValid](https://wiki.facepunch.com/gmod/Global.IsValid) instead, however if you're sure the variable you're using is always an entity object it's better to use this method
+--- > **NOTE**: Instead of calling this method directly, it's a good idea to call the global [Global.IsValid](https://wiki.facepunch.com/gmod/Global.IsValid) instead, however if you're sure the variable you're using is always an entity object it's better to use this method
 ---
 --- It will check whether the given variable contains an object (an Entity) or nothing at all for you. See examples.
 ---
@@ -2703,7 +2703,7 @@ function Entity:IsValid() end
 ---
 --- Returns whether the given layer ID is valid and exists on this entity.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@return boolean is_valid_layer Whether the given layer ID is valid and exists on this entity.
@@ -2758,7 +2758,7 @@ function Entity:LookupAttachment( attachment_name ) end
 ---
 --- Gets the bone index of the given bone name, returns `nil` if the bone does not exist.
 ---
---- > NOTE: When called on [Weapon](https://wiki.facepunch.com/gmod/Weapon)s equipped by any Player, this will return their viewmodel's bone index instead of worldmodel.
+--- > **NOTE**: When called on [Weapon](https://wiki.facepunch.com/gmod/Weapon)s equipped by any Player, this will return their viewmodel's bone index instead of worldmodel.
 ---
 --- See [Entity:GetBoneName](https://wiki.facepunch.com/gmod/Entity:GetBoneName) for the inverse of this function.
 ---
@@ -2793,7 +2793,7 @@ function Entity:LookupSequence( name ) end
 ---
 --- A physics shadow can be used to have static entities that never move by setting both arguments to false.
 ---
---- > NOTE: Unlike [Entity:PhysicsInitShadow](https://wiki.facepunch.com/gmod/Entity:PhysicsInitShadow), this function doesn't remove the current physics object.
+--- > **NOTE**: Unlike [Entity:PhysicsInitShadow](https://wiki.facepunch.com/gmod/Entity:PhysicsInitShadow), this function doesn't remove the current physics object.
 ---
 ---@param allow_physics_movement boolean? Whether to allow the physics shadow to move under stress. Defaults to `true`.
 ---@param allow_physics_rotation boolean? Whether to allow the physics shadow to rotate under stress. Defaults to `true`.
@@ -2837,7 +2837,7 @@ function Entity:ManipulateBonePosition( bone_id, position, networking ) end
 --- > BUG: This does not scale procedural bones.
 --- > See [issue #3502](https://github.com/Facepunch/garrysmod-issues/issues/3502).
 ---
---- > NOTE: This silently fails when given a Vector with nan values, hiding the vertices associated with the bone. See example below.
+--- > **NOTE**: This silently fails when given a Vector with nan values, hiding the vertices associated with the bone. See example below.
 ---
 ---@param bone_id integer Index of the bone you want to manipulate
 ---@param scale garrysmod.Vector Scale vector to apply. Note that the scale is relative to the original bone scale, not relative to the world or the entity.
@@ -2851,7 +2851,7 @@ function Entity:ManipulateBoneScale( bone_id, scale ) end
 ---
 --- To be used in conjunction with [ents.GetMapCreatedEntity](https://wiki.facepunch.com/gmod/ents.GetMapCreatedEntity). See also [Entity:CreatedByMap](https://wiki.facepunch.com/gmod/Entity:CreatedByMap).
 ---
---- > NOTE: (return value) If the ID exists, it is identical to the entity's order number as it appears in Lump 1 of the BSP file. It is believed to start at 1234 for some reason.
+--- > **NOTE**: (return value) If the ID exists, it is identical to the entity's order number as it appears in Lump 1 of the BSP file. It is believed to start at 1234 for some reason.
 ---
 ---@return integer creation_id The map creation ID or -1 if the entity is not compiled into the map.
 function Entity:MapCreationID() end
@@ -2928,7 +2928,7 @@ function Entity:OBBMins() end
 ---
 --- Even though the function is defined shared, it is not guaranteed to return the same value across states.
 ---
---- > NOTE: The enums for this are not currently implemented in Lua, however you can access the defines [here](https://github.com/ValveSoftware/source-sdk-2013/blob/55ed12f8d1eb6887d348be03aee5573d44177ffb/mp/src/game/shared/baseentity_shared.h#L21-L38).
+--- > **NOTE**: The enums for this are not currently implemented in Lua, however you can access the defines [here](https://github.com/ValveSoftware/source-sdk-2013/blob/55ed12f8d1eb6887d348be03aee5573d44177ffb/mp/src/game/shared/baseentity_shared.h#L21-L38).
 ---
 ---@return integer caps The bitfield, a combination of the [FCAP_](https://github.com/ValveSoftware/source-sdk-2013/blob/55ed12f8d1eb6887d348be03aee5573d44177ffb/mp/src/game/shared/baseentity_shared.h#L21-L38) flags.
 function Entity:ObjectCaps() end
@@ -2948,7 +2948,7 @@ function Entity:OnGround() end
 ---
 --- This will call [ENTITY:PassesDamageFilter](https://wiki.facepunch.com/gmod/ENTITY:PassesDamageFilter) on scripted entities of the type "filter".
 ---
---- > NOTE: This function only works on entities of the type "filter". ( filter_* entities, including base game filter entites )
+--- > **NOTE**: This function only works on entities of the type "filter". ( filter_* entities, including base game filter entites )
 ---
 ---@param damage_info garrysmod.DamageInfo The damage info to test
 ---@return boolean passes Whether the damage info passes the entity filter.
@@ -2960,7 +2960,7 @@ function Entity:PassesDamageFilter( damage_info ) end
 ---
 --- This will call [ENTITY:PassesFilter](https://wiki.facepunch.com/gmod/ENTITY:PassesFilter) on scripted entities of the type "filter".
 ---
---- > NOTE: This function only works on entities of the type "filter". ( filter_* entities, including base game filter entites )
+--- > **NOTE**: This function only works on entities of the type "filter". ( filter_* entities, including base game filter entites )
 ---
 ---@param caller garrysmod.Entity The initiator of the test. For example the trigger this filter entity is used in.
 ---@param entity garrysmod.Entity The entity to test against the entity filter.
@@ -2971,7 +2971,7 @@ function Entity:PassesFilter( caller, entity ) end
 ---
 --- Destroys the current physics object of an entity.
 ---
---- > NOTE: Cannot be used on a ragdoll or the world entity.
+--- > **NOTE**: Cannot be used on a ragdoll or the world entity.
 ---
 --- > WARNING: This function cannot be used when called from a physics callback.
 ---
@@ -2997,7 +2997,7 @@ function Entity:PhysicsFromMesh( vertices, surfaceprop, mass_center_override ) e
 ---
 --- If the entity's current model has no physics mesh associated to it, no physics object will be created and the previous object will still exist, if applicable.
 ---
---- > NOTE: When called clientside, this will not create a valid [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) if the model hasn't been [precached](https://wiki.facepunch.com/gmod/util.PrecacheModel) serverside.
+--- > **NOTE**: When called clientside, this will not create a valid [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) if the model hasn't been [precached](https://wiki.facepunch.com/gmod/util.PrecacheModel) serverside.
 --- >
 --- > If successful, this function will automatically call [Entity:SetSolid](https://wiki.facepunch.com/gmod/Entity:SetSolid)( solidType ) and [Entity:SetSolidFlags](https://wiki.facepunch.com/gmod/Entity:SetSolidFlags)( 0 ).
 ---
@@ -3006,7 +3006,7 @@ function Entity:PhysicsFromMesh( vertices, surfaceprop, mass_center_override ) e
 --- > A workaround is available on the [Entity:PhysicsInitConvex](https://wiki.facepunch.com/gmod/Entity:PhysicsInitConvex) page.
 --- > See [issue #5060](https://github.com/Facepunch/garrysmod-issues/issues/5060).
 ---
---- > NOTE: (`solid_type` argument) Using `SOLID_NONE` will only delete the current physics object - it does not create a new one.
+--- > **NOTE**: (`solid_type` argument) Using `SOLID_NONE` will only delete the current physics object - it does not create a new one.
 ---
 ---@param solid_type integer The solid type of the physics object to create, see [Enums/SOLID](https://wiki.facepunch.com/gmod/Enums/SOLID). Should be `SOLID_VPHYSICS` in most cases.
 ---@param mass_center_override garrysmod.Vector? If set, overwrites the center of mass for the created physics object.
@@ -3022,7 +3022,7 @@ function Entity:PhysicsInit( solid_type, mass_center_override ) end
 --- * [Entity:SetMoveType](https://wiki.facepunch.com/gmod/Entity:SetMoveType)( `MOVETYPE_VPHYSICS` )
 --- * [Entity:SetCollisionBounds](https://wiki.facepunch.com/gmod/Entity:SetCollisionBounds)( `mins`, `maxs` )
 ---
---- > NOTE: If the volume of the resulting box is 0 (the mins and maxs are the same), the mins and maxs will be changed to [Global.Vector](https://wiki.facepunch.com/gmod/Global.Vector)( -1, -1, -1 ) and [Global.Vector](https://wiki.facepunch.com/gmod/Global.Vector)( 1, 1, 1 ), respectively.
+--- > **NOTE**: If the volume of the resulting box is 0 (the mins and maxs are the same), the mins and maxs will be changed to [Global.Vector](https://wiki.facepunch.com/gmod/Global.Vector)( -1, -1, -1 ) and [Global.Vector](https://wiki.facepunch.com/gmod/Global.Vector)( 1, 1, 1 ), respectively.
 ---
 --- > BUG: Clientside physics objects on serverside entities do not move properly in some cases. Physics objects should only created on the server or you will experience incorrect physgun beam position, prediction issues, and other unexpected behavior.
 --- >
@@ -3134,7 +3134,7 @@ function Entity:PhysicsInitSphere( radius, surfaceprop ) end
 ---
 --- If the entity's current model has no physics mesh associated to it, no physics object will be created.
 ---
---- > NOTE: This function will automatically call [Entity:SetSolid](https://wiki.facepunch.com/gmod/Entity:SetSolid)( `solidType` ).
+--- > **NOTE**: This function will automatically call [Entity:SetSolid](https://wiki.facepunch.com/gmod/Entity:SetSolid)( `solidType` ).
 ---
 --- > BUG: Clientside physics objects on serverside entities do not move properly in some cases. Physics objects should only created on the server or you will experience incorrect physgun beam position, prediction issues, and other unexpected behavior.
 --- >
@@ -3213,9 +3213,9 @@ function Entity:RemoveAllDecals() end
 ---
 --- Removes and stops all gestures.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
---- > NOTE: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
+--- > **NOTE**: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
 ---
 function Entity:RemoveAllGestures() end
 
@@ -3254,7 +3254,7 @@ function Entity:RemoveFlags( flag ) end
 ---
 --- You must first create a motion controller with [Entity:StartMotionController](https://wiki.facepunch.com/gmod/Entity:StartMotionController).
 ---
---- > NOTE: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type
+--- > **NOTE**: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type
 ---
 ---@param phys_obj garrysmod.Physics The [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) to remove from the motion controller.
 function Entity:RemoveFromMotionController( phys_obj ) end
@@ -3263,9 +3263,9 @@ function Entity:RemoveFromMotionController( phys_obj ) end
 ---
 --- Removes and stops the gesture with given activity. Same as [Entity:RemoveLayer](https://wiki.facepunch.com/gmod/Entity:RemoveLayer) with [Entity:FindGestureLayer](https://wiki.facepunch.com/gmod/Entity:FindGestureLayer).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
---- > NOTE: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
+--- > **NOTE**: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
 ---
 ---@param activity integer The activity remove. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 function Entity:RemoveGesture( activity ) end
@@ -3283,9 +3283,9 @@ function Entity:RemoveInternalConstraint( num ) end
 ---
 --- Removes the given layer by ID. See also [Entity:RemoveGesture](https://wiki.facepunch.com/gmod/Entity:RemoveGesture).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
---- > NOTE: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
+--- > **NOTE**: Layer removal procedures aren't immediate. Layer removal functions actually manipulate [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) down to 0, then remove the layer in next intervals. If the targeted layer's weight keeps changing, your layer will not be removed.
 ---
 ---@param layer_id integer The layer ID to remove.
 function Entity:RemoveLayer( layer_id ) end
@@ -3303,13 +3303,13 @@ function Entity:RemoveSolidFlags( flags ) end
 ---
 --- > WARNING: This will not reset the animation on viewmodels, use [Entity:SendViewModelMatchingSequence](https://wiki.facepunch.com/gmod/Entity:SendViewModelMatchingSequence) instead.
 ---
---- > NOTE: This will not work properly if called directly after calling [Entity:SetModel](https://wiki.facepunch.com/gmod/Entity:SetModel). Consider waiting until the next Tick.
+--- > **NOTE**: This will not work properly if called directly after calling [Entity:SetModel](https://wiki.facepunch.com/gmod/Entity:SetModel). Consider waiting until the next Tick.
 --- >
 --- > Will not work on players due to the animations being reset every frame by the base gamemode animation system. See [GM:CalcMainActivity](https://wiki.facepunch.com/gmod/GM:CalcMainActivity).
 --- >
 --- > For custom scripted entities you will want to apply example from [ENTITY:Think](https://wiki.facepunch.com/gmod/ENTITY:Think) to make animations work.
 ---
---- > NOTE: (`sequence` argument) If set to a string, the function will automatically call [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence) to retrieve the sequence ID as a number.
+--- > **NOTE**: (`sequence` argument) If set to a string, the function will automatically call [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence) to retrieve the sequence ID as a number.
 ---
 ---@param sequence integer | string The sequence to play. Also accepts strings.
 function Entity:ResetSequence( sequence ) end
@@ -3333,7 +3333,7 @@ function Entity:Respawn() end
 ---
 --- Restarts the entity's animation gesture. If the given gesture is already playing, it will reset it and play it from the beginning.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites.
 ---
 ---@param activity integer The activity number to send to the entity. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT) and [Entity:GetSequenceActivity](https://wiki.facepunch.com/gmod/Entity:GetSequenceActivity)
 ---@param add_if_missing boolean? Add/start the gesture to if it has not been yet started. Defaults to `true`.
@@ -3372,7 +3372,7 @@ function Entity:SelectWeightedSequenceSeeded( act, seed ) end
 ---
 --- This function is only usable on view models.
 ---
---- > NOTE: Predicted viewmodels will have their sequence and cycle reset during prediction checks, making this function appear to do nothing unless also called on the server.
+--- > **NOTE**: Predicted viewmodels will have their sequence and cycle reset during prediction checks, making this function appear to do nothing unless also called on the server.
 ---
 ---@param sequence_id integer The sequence ID returned by [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence) or  [Entity:SelectWeightedSequence](https://wiki.facepunch.com/gmod/Entity:SelectWeightedSequence).
 function Entity:SendViewModelMatchingSequence( sequence_id ) end
@@ -3392,7 +3392,7 @@ function Entity:SequenceDuration( sequence_id ) end
 ---
 --- Sets the entity's velocity.
 ---
---- > NOTE: Actually binds to CBaseEntity::SetLocalVelocity() which sets the entity's velocity due to movement in the world from forces such as gravity. Does not include velocity from entity-on-entity collision or other world movement.
+--- > **NOTE**: Actually binds to CBaseEntity::SetLocalVelocity() which sets the entity's velocity due to movement in the world from forces such as gravity. Does not include velocity from entity-on-entity collision or other world movement.
 ---
 ---@param velocity garrysmod.Vector The new velocity to set.
 function Entity:SetAbsVelocity( velocity ) end
@@ -3401,7 +3401,7 @@ function Entity:SetAbsVelocity( velocity ) end
 ---
 --- Sets the angles of the entity.
 ---
---- > NOTE: To set a player's angles, use [Player:SetEyeAngles](https://wiki.facepunch.com/gmod/Player:SetEyeAngles) instead.
+--- > **NOTE**: To set a player's angles, use [Player:SetEyeAngles](https://wiki.facepunch.com/gmod/Player:SetEyeAngles) instead.
 ---
 ---@param angles garrysmod.Angle The new angles.
 function Entity:SetAngles( angles ) end
@@ -3447,7 +3447,7 @@ function Entity:SetBloodColor( blood_color ) end
 ---
 --- Bodygroups, for which [Entity:GetBodygroupCount](https://wiki.facepunch.com/gmod/Entity:GetBodygroupCount) returns `1` or less are considered invalid, and will have no effect in-game.
 ---
---- > NOTE: When used on a Weapon, this will modify its viewmodel.
+--- > **NOTE**: When used on a Weapon, this will modify its viewmodel.
 ---
 ---@param body_group_id integer The Body Group ID to set the Sub Model ID of. Body Group IDs start at `0`.
 ---@param sub_model_id integer The Sub Model ID to set as active for this Body Group. Sub Model IDs start at `0`.
@@ -3459,7 +3459,7 @@ function Entity:SetBodygroup( body_group_id, sub_model_id ) end
 ---
 --- This is a convenience function for [Entity:SetBodygroup](https://wiki.facepunch.com/gmod/Entity:SetBodygroup).
 ---
---- > NOTE: When used on a Weapon, this will modify its viewmodel.
+--- > **NOTE**: When used on a Weapon, this will modify its viewmodel.
 ---
 ---@param sub_model_ids string The Sub Model IDs to activate for each Body Group on the Entity's model. The first character corresponds with Body Group ID `0`, the second character coressponds to Body Group ID `1`, etc. To support Body Groups with more than `0`-`9` options, values above `9` are represented using alphabetical characters starting with `a` and ending with `z`.
 function Entity:SetBodyGroups( sub_model_ids ) end
@@ -3468,7 +3468,7 @@ function Entity:SetBodyGroups( sub_model_ids ) end
 ---
 --- Sets the specified value on the bone controller with the given ID of this entity, it's used in HL1 to change the head rotation of NPCs, turret aiming and so on.
 ---
---- > NOTE: This is the precursor of pose parameters, and only works for Half Life 1: Source models supporting it.
+--- > **NOTE**: This is the precursor of pose parameters, and only works for Half Life 1: Source models supporting it.
 ---
 ---@param bone_controller_id integer The ID of the bone controller to set the value to. Goes from 0 to 3.
 ---@param value number The value to set on the specified bone controller.
@@ -3478,7 +3478,7 @@ function Entity:SetBoneController( bone_controller_id, value ) end
 ---
 --- Sets the bone matrix of given bone to given matrix. See also [Entity:GetBoneMatrix](https://wiki.facepunch.com/gmod/Entity:GetBoneMatrix). Will cause a uncatchable error when used on `__INVALIDBONE__` bones, see the examples on a way to prevent this.
 ---
---- > NOTE: Despite existing serverside, it does nothing.
+--- > **NOTE**: Despite existing serverside, it does nothing.
 ---
 ---@param bone_id integer The ID of the bone
 ---@param matrix garrysmod.VMatrix The matrix to set.
@@ -3502,7 +3502,7 @@ function Entity:SetBonePosition( bone_id, position, angles ) end
 --- Input bounds are relative to [Entity:GetPos](https://wiki.facepunch.com/gmod/Entity:GetPos)!
 --- See also [Entity:SetCollisionBoundsWS](https://wiki.facepunch.com/gmod/Entity:SetCollisionBoundsWS).
 ---
---- > NOTE: Player collision bounds are reset every frame to player's [Player:SetHull](https://wiki.facepunch.com/gmod/Player:SetHull) values.
+--- > **NOTE**: Player collision bounds are reset every frame to player's [Player:SetHull](https://wiki.facepunch.com/gmod/Player:SetHull) values.
 ---
 ---@param mins garrysmod.Vector The minimum vector of the bounds.
 ---@param maxs garrysmod.Vector The maximum vector of the bounds.
@@ -3538,7 +3538,7 @@ function Entity:SetColor4Part( r, g, b, a ) end
 ---
 --- Marks the entity to call [GM:ShouldCollide](https://wiki.facepunch.com/gmod/GM:ShouldCollide). Not to be confused with [Entity:EnableCustomCollisions](https://wiki.facepunch.com/gmod/Entity:EnableCustomCollisions).
 ---
---- > NOTE: Make sure to use [Entity:CollisionRulesChanged](https://wiki.facepunch.com/gmod/Entity:CollisionRulesChanged) after changing this value.
+--- > **NOTE**: Make sure to use [Entity:CollisionRulesChanged](https://wiki.facepunch.com/gmod/Entity:CollisionRulesChanged) after changing this value.
 --- > Otherwise it can cause crashes.
 ---
 ---@param enable boolean Enable or disable the custom collision check
@@ -3610,7 +3610,7 @@ function Entity:SetDTInt( key, value ) end
 ---
 --- Sets the specified string on the entity's datatable.
 ---
---- > NOTE: The length of these strings are capped at 512 characters.
+--- > **NOTE**: The length of these strings are capped at 512 characters.
 ---
 ---@param key integer Goes from 0 to 3.
 ---@param value string The string to write on the entity's datatable, can't be more than 512 characters per string.
@@ -3661,7 +3661,7 @@ function Entity:SetFlexScale( scale ) end
 ---
 --- Setting flex weights spawns an internal networked entity (one per entity face posed) to accommodate networking to clients.
 ---
---- > NOTE: Only `96` flex controllers can be set! Flex controllers on models with higher amounts will not be accessible.
+--- > **NOTE**: Only `96` flex controllers can be set! Flex controllers on models with higher amounts will not be accessible.
 ---
 ---@param flex_id integer The ID of the flex to modify weight of.  The range is between `0` and [Entity:GetFlexNum](https://wiki.facepunch.com/gmod/Entity:GetFlexNum) - 1.
 ---@param weight number The new weight to set. The range is [0,1] for entities with [Entity:HasFlexManipulatior](https://wiki.facepunch.com/gmod/Entity:HasFlexManipulatior), and the model-defined input range otherwise ([Entity:GetFlexBounds](https://wiki.facepunch.com/gmod/Entity:GetFlexBounds)) Exceeding the range is allowed, and will amplify the effect (to possibly bad results), exactly like [Entity:SetFlexScale](https://wiki.facepunch.com/gmod/Entity:SetFlexScale) does.
@@ -3698,7 +3698,7 @@ function Entity:SetGroundEntity( entity ) end
 ---
 --- Sets the health of the entity.
 ---
---- > NOTE: You may want to take [Entity:GetMaxHealth](https://wiki.facepunch.com/gmod/Entity:GetMaxHealth) into account when calculating what to set health to, in case a gamemode has a different max health than 100.
+--- > **NOTE**: You may want to take [Entity:GetMaxHealth](https://wiki.facepunch.com/gmod/Entity:GetMaxHealth) into account when calculating what to set health to, in case a gamemode has a different max health than 100.
 --- > In some cases, setting health only serverside can cause hitches in movement, for example if something is modifying the player speed based on health.
 --- > To solve this issue, it is better to set it shared in a predicted hook.
 ---
@@ -3737,7 +3737,7 @@ function Entity:SetKeyValue( key, value ) end
 ---
 --- This allows the entity to be lag compensated during [Player:LagCompensation](https://wiki.facepunch.com/gmod/Player:LagCompensation).
 ---
---- > NOTE: Players are lag compensated by default and there's no need to call this function for them.
+--- > **NOTE**: Players are lag compensated by default and there's no need to call this function for them.
 --- >
 --- > It's best to not enable lag compensation on parented entities, as the system does not handle it that well ( they will be moved back but then the entity will lag behind ).
 --- > Parented entities move back with the parent if it's lag compensated, so if you are making some kind of armor piece you shouldn't do anything.
@@ -3751,7 +3751,7 @@ function Entity:SetLagCompensated( enable ) end
 ---
 --- Sets the autokill flag on the layer, making the layer be automatically removed once the animation playback finishes.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param layer_id integer The layer ID to change.
 ---@param auto_kill boolean Whether to set or unset the autokill flag.
@@ -3761,7 +3761,7 @@ function Entity:SetLayerAutokill( layer_id, auto_kill ) end
 ---
 --- Sets the interval the layer will fully blend in since startup, based on [Entity:GetLayerCycle](https://wiki.facepunch.com/gmod/Entity:GetLayerCycle). Setting this above 0 will enable internal blending of [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 --- > BUG: Enabling this will prevent looping gestures with autokill disabled to be removed with [Entity:RemoveGesture](https://wiki.facepunch.com/gmod/Entity:RemoveGesture) or [Entity:RemoveAllGestures](https://wiki.facepunch.com/gmod/Entity:RemoveAllGestures) because layer removal functions mark the layer to decrement [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) and unallocate layer ID in next frames if the layer weight is `0`, but blending functions will still keep manipulating layer weight.
 --- >
@@ -3775,7 +3775,7 @@ function Entity:SetLayerBlendIn( layer_id, blend_in ) end
 ---
 --- Sets the interval the layer will fully blend out, based on [Entity:GetLayerCycle](https://wiki.facepunch.com/gmod/Entity:GetLayerCycle). Setting this above 0 will enable internal blending of [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 --- > BUG: Enabling this will prevent looping gestures with autokill disabled to be removed with [Entity:RemoveGesture](https://wiki.facepunch.com/gmod/Entity:RemoveGesture) or [Entity:RemoveAllGestures](https://wiki.facepunch.com/gmod/Entity:RemoveAllGestures) because layer removal functions mark the layer to decrement [Entity:GetLayerWeight](https://wiki.facepunch.com/gmod/Entity:GetLayerWeight) and unallocate layer ID in next frames if the layer weight is `0`, but blending functions will still keep manipulating layer weight.
 --- >
@@ -3789,7 +3789,7 @@ function Entity:SetLayerBlendOut( layer_id, blend_out ) end
 ---
 --- Sets the animation cycle/frame of given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@param cycle number The new animation cycle/frame for given layer.
@@ -3799,7 +3799,7 @@ function Entity:SetLayerCycle( layer_id, cycle ) end
 ---
 --- Sets the duration of given layer. This internally overrides the [Entity:SetLayerPlaybackRate](https://wiki.facepunch.com/gmod/Entity:SetLayerPlaybackRate).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 --- > BUG: This stops layer playback if layer sequence conists of 1 frame. Use `Entity:SetLayerPlaybackRate(layerID,1/duration)` instead.
 ---
@@ -3811,7 +3811,7 @@ function Entity:SetLayerDuration( layer_id, duration ) end
 ---
 --- Sets whether the layer should loop or not.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param layer_id integer The Layer ID
 ---@param loop boolean Whether the layer should loop or not.
@@ -3821,7 +3821,7 @@ function Entity:SetLayerLooping( layer_id, loop ) end
 ---
 --- Sets the layer playback rate. See also [Entity:SetLayerDuration](https://wiki.facepunch.com/gmod/Entity:SetLayerDuration).
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID
 ---@param rate number The new playback rate.
@@ -3831,7 +3831,7 @@ function Entity:SetLayerPlaybackRate( layer_id, rate ) end
 ---
 --- Sets the priority of given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entites!
 ---
 ---@param layer_id integer The Layer ID
 ---@param priority integer The new priority of the layer.
@@ -3841,7 +3841,7 @@ function Entity:SetLayerPriority( layer_id, priority ) end
 ---
 --- Sets the sequence of given layer.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
 ---@param layer_id integer The Layer ID.
 ---@param sequence_id integer The sequenceID to set. See [Entity:LookupSequence](https://wiki.facepunch.com/gmod/Entity:LookupSequence).
@@ -3851,9 +3851,9 @@ function Entity:SetLayerSequence( layer_id, sequence_id ) end
 ---
 --- Sets the layer weight. This influences how strongly the animation should be overriding the normal animations of the entity.
 ---
---- > NOTE: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
+--- > **NOTE**: This function only works on [BaseAnimatingOverlay](https://wiki.facepunch.com/gmod/BaseAnimatingOverlay) entities.
 ---
---- > NOTE: Setting either [Entity:SetLayerBlendIn](https://wiki.facepunch.com/gmod/Entity:SetLayerBlendIn) or [Entity:SetLayerBlendOut](https://wiki.facepunch.com/gmod/Entity:SetLayerBlendOut) above 0 will turn on automatic weight blending, so you shouldn't be using this if you use any of above.
+--- > **NOTE**: Setting either [Entity:SetLayerBlendIn](https://wiki.facepunch.com/gmod/Entity:SetLayerBlendIn) or [Entity:SetLayerBlendOut](https://wiki.facepunch.com/gmod/Entity:SetLayerBlendOut) above 0 will turn on automatic weight blending, so you shouldn't be using this if you use any of above.
 ---
 ---@param layer_id integer The Layer ID
 ---@param weight number The new layer weight.
@@ -3924,7 +3924,7 @@ function Entity:SetLOD( lod ) end
 ---
 --- If you wish to override a single material on the model, use [Entity:SetSubMaterial](https://wiki.facepunch.com/gmod/Entity:SetSubMaterial) instead.
 ---
---- > NOTE: To apply materials to models, that material **must** have **VertexLitGeneric** shader. For that reason you cannot apply map textures onto models, map textures use a different material shader - **LightmappedGeneric**, which can be used on brush entities.
+--- > **NOTE**: To apply materials to models, that material **must** have **VertexLitGeneric** shader. For that reason you cannot apply map textures onto models, map textures use a different material shader - **LightmappedGeneric**, which can be used on brush entities.
 ---
 --- > BUG: The server's value takes priority on the client.
 --- > See [issue #3362](https://github.com/Facepunch/garrysmod-issues/issues/3362).
@@ -3969,7 +3969,7 @@ function Entity:SetModelName( model_name ) end
 ---
 --- If your old scales are wrong, use [Entity:SetLegacyTransform](https://wiki.facepunch.com/gmod/Entity:SetLegacyTransform) as a quick fix.
 ---
---- > NOTE: If you do not want the physics to be affected by [Entity:Activate](https://wiki.facepunch.com/gmod/Entity:Activate), you can use [Entity:ManipulateBoneScale](https://wiki.facepunch.com/gmod/Entity:ManipulateBoneScale)`( 0, Vector( scale, scale, scale ) )` instead.
+--- > **NOTE**: If you do not want the physics to be affected by [Entity:Activate](https://wiki.facepunch.com/gmod/Entity:Activate), you can use [Entity:ManipulateBoneScale](https://wiki.facepunch.com/gmod/Entity:ManipulateBoneScale)`( 0, Vector( scale, scale, scale ) )` instead.
 ---
 --- > BUG: On the client, `anim` types' collision testing prediction fails for changed model scales: you can use `cl_showerror 2` to see by how much. Essentially, the client will freak out when you stand/run past on a Scripted Entity or prop that has been modified using this method.
 --- > See [issue #6405](https://github.com/Facepunch/garrysmod-issues/issues/6405).
@@ -4029,7 +4029,7 @@ function Entity:SetNetworkAngles( angles ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWAngle](https://wiki.facepunch.com/gmod/Entity:SetNWAngle) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4046,7 +4046,7 @@ function Entity:SetNetworked2Angle( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWBool](https://wiki.facepunch.com/gmod/Entity:SetNWBool) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4063,7 +4063,7 @@ function Entity:SetNetworked2Bool( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWEntity](https://wiki.facepunch.com/gmod/Entity:SetNWEntity) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4082,7 +4082,7 @@ function Entity:SetNetworked2Entity( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWFloat](https://wiki.facepunch.com/gmod/Entity:SetNWFloat) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4101,7 +4101,7 @@ function Entity:SetNetworked2Float( key, value ) end
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS.
 --- > The integer has a 32 bit limit. Use [Entity:SetNWInt](https://wiki.facepunch.com/gmod/Entity:SetNWInt) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4118,7 +4118,7 @@ function Entity:SetNetworked2Int( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWString](https://wiki.facepunch.com/gmod/Entity:SetNWString) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4145,7 +4145,7 @@ function Entity:SetNetworked2String( key, value ) end
 ---
 --- > WARNING: Trying to network a type that is not listed above leads to the value not being networked!
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only ne networked once and not every 10 seconds.
 ---
@@ -4162,7 +4162,7 @@ function Entity:SetNetworked2Var( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWVector](https://wiki.facepunch.com/gmod/Entity:SetNWVector) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4177,7 +4177,7 @@ function Entity:SetNetworked2Vector( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedAngle](https://wiki.facepunch.com/gmod/Entity:GetNetworkedAngle) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWAngle](https://wiki.facepunch.com/gmod/Entity:SetNWAngle) instead.
 ---@param key string The key to associate the value with
@@ -4190,7 +4190,7 @@ function Entity:SetNetworkedAngle( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedBool](https://wiki.facepunch.com/gmod/Entity:GetNetworkedBool) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWBool](https://wiki.facepunch.com/gmod/Entity:SetNWBool) instead.
 ---@param key string The key to associate the value with
@@ -4203,7 +4203,7 @@ function Entity:SetNetworkedBool( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedEntity](https://wiki.facepunch.com/gmod/Entity:GetNetworkedEntity) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWEntity](https://wiki.facepunch.com/gmod/Entity:SetNWEntity) instead.
 ---@param key string The key to associate the value with
@@ -4218,7 +4218,7 @@ function Entity:SetNetworkedEntity( key, value ) end
 ---
 --- Seems to be the same as [Entity:GetNetworkedInt](https://wiki.facepunch.com/gmod/Entity:GetNetworkedInt).
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWFloat](https://wiki.facepunch.com/gmod/Entity:SetNWFloat) instead.
 ---@param key string The key to associate the value with
@@ -4231,7 +4231,7 @@ function Entity:SetNetworkedFloat( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedInt](https://wiki.facepunch.com/gmod/Entity:GetNetworkedInt) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWInt](https://wiki.facepunch.com/gmod/Entity:SetNWInt) instead.
 ---@param key string The key to associate the value with
@@ -4253,7 +4253,7 @@ function Entity:SetNetworkedNumber( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedString](https://wiki.facepunch.com/gmod/Entity:GetNetworkedString) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWString](https://wiki.facepunch.com/gmod/Entity:SetNWString) instead.
 ---@param key string The key to associate the value with
@@ -4279,7 +4279,7 @@ function Entity:SetNetworkedString( key, value ) end
 --- > WARNING: Trying to network a type that is not listed above leads to the value not being networked!
 --- > the value will only be updated clientside if the entity is or enters the clients PVS.
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4294,7 +4294,7 @@ function Entity:SetNetworkedVar( key, value ) end
 ---
 --- The value then can be accessed with [Entity:GetNetworkedVector](https://wiki.facepunch.com/gmod/Entity:GetNetworkedVector) both from client and server.
 ---
---- > NOTE: Running this function clientside will only set it clientside for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it clientside for the client it is called on.
 ---
 ---@deprecated You should use [Entity:SetNWVector](https://wiki.facepunch.com/gmod/Entity:SetNWVector) instead.
 ---@param key string The key to associate the value with
@@ -4305,7 +4305,7 @@ function Entity:SetNetworkedVector( key, value ) end
 ---
 --- Virtually changes entity position for clients. Does almost the same thing as [Entity:SetPos](https://wiki.facepunch.com/gmod/Entity:SetPos) when used serverside.
 ---
---- > NOTE: Unlike [Entity:SetPos](https://wiki.facepunch.com/gmod/Entity:SetPos) it directly changes the position without checking for any unreasonable position.
+--- > **NOTE**: Unlike [Entity:SetPos](https://wiki.facepunch.com/gmod/Entity:SetPos) it directly changes the position without checking for any unreasonable position.
 ---
 ---@param origin garrysmod.Vector The position to make clients think this entity is at.
 function Entity:SetNetworkOrigin( origin ) end
@@ -4343,7 +4343,7 @@ function Entity:SetNotSolid( is_not_solid ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWAngle](https://wiki.facepunch.com/gmod/Entity:SetNWAngle) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4362,7 +4362,7 @@ function Entity:SetNW2Angle( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWBool](https://wiki.facepunch.com/gmod/Entity:SetNWBool) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4381,7 +4381,7 @@ function Entity:SetNW2Bool( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWEntity](https://wiki.facepunch.com/gmod/Entity:SetNWEntity) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4402,7 +4402,7 @@ function Entity:SetNW2Entity( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWFloat](https://wiki.facepunch.com/gmod/Entity:SetNWFloat) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4424,7 +4424,7 @@ function Entity:SetNW2Float( key, value ) end
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS.
 --- > The integer has a 32 bit limit. Use [Entity:SetNWInt](https://wiki.facepunch.com/gmod/Entity:SetNWInt) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4443,7 +4443,7 @@ function Entity:SetNW2Int( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWString](https://wiki.facepunch.com/gmod/Entity:SetNWString) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4473,7 +4473,7 @@ function Entity:SetNW2String( key, value ) end
 --- > BUG: You should not use the NW2 System on entities that are based on a Lua Entity or else NW2Vars could get mixed up, updated multiple times or not be set.
 --- > See [issue #5455](https://github.com/Facepunch/garrysmod-issues/issues/5455).
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4492,7 +4492,7 @@ function Entity:SetNW2Var( key, value ) end
 ---
 --- > WARNING: The value will only be updated clientside if the entity is or enters the clients PVS. use [Entity:SetNWVector](https://wiki.facepunch.com/gmod/Entity:SetNWVector) instead
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 --- > The value will only be networked if it isn't the same as the current value and unlike SetNW*
 --- > the value will only be networked once and not every 10 seconds.
 ---
@@ -4508,7 +4508,7 @@ function Entity:SetNW2Vector( key, value ) end
 ---
 --- > WARNING: There's a 4095 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Angle](https://wiki.facepunch.com/gmod/Entity:SetNW2Angle). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value garrysmod.Angle The value to set
@@ -4522,7 +4522,7 @@ function Entity:SetNWAngle( key, value ) end
 ---
 --- > WARNING: There's a 4096 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Bool](https://wiki.facepunch.com/gmod/Entity:SetNW2Bool). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value boolean The value to set
@@ -4536,7 +4536,7 @@ function Entity:SetNWBool( key, value ) end
 ---
 --- > WARNING: There's a 4096 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Entity](https://wiki.facepunch.com/gmod/Entity:SetNW2Entity). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value garrysmod.Entity The value to set
@@ -4552,7 +4552,7 @@ function Entity:SetNWEntity( key, value ) end
 ---
 --- > WARNING: There's a 4095 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Float](https://wiki.facepunch.com/gmod/Entity:SetNW2Float). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value number The value to set
@@ -4568,7 +4568,7 @@ function Entity:SetNWFloat( key, value ) end
 ---
 --- > WARNING: There's a 4095 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Int](https://wiki.facepunch.com/gmod/Entity:SetNW2Int). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 --- > BUG: This function will not round decimal values as it actually networks a float internally.
 --- > See [issue #3374](https://github.com/Facepunch/garrysmod-issues/issues/3374).
@@ -4585,7 +4585,7 @@ function Entity:SetNWInt( key, value ) end
 ---
 --- > WARNING: There's a 4095 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2String](https://wiki.facepunch.com/gmod/Entity:SetNW2String). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value string The value to set, up to 199 characters.
@@ -4593,7 +4593,7 @@ function Entity:SetNWString( key, value ) end
 
 --- [SHARED]
 ---
---- > NOTE: Only one NWVarProxy can be set per-var
+--- > **NOTE**: Only one NWVarProxy can be set per-var
 --- > Running this function will only set it for the realm it is called on.
 ---
 --- Sets a function to be called when the NWVar changes.
@@ -4610,7 +4610,7 @@ function Entity:SetNWVarProxy( key, callback ) end
 ---
 --- > WARNING: There's a 4095 slots Network limit. If you need more, consider using the [net](https://wiki.facepunch.com/gmod/net) library or [Entity:SetNW2Vector](https://wiki.facepunch.com/gmod/Entity:SetNW2Vector). You should also consider the fact that you have way too many variables. You can learn more about this limit here: [Networking_Usage#nwlimits](https://wiki.facepunch.com/gmod/Networking_Usage#nwlimits)
 ---
---- > NOTE: Running this function clientside will only set it for the client it is called on.
+--- > **NOTE**: Running this function clientside will only set it for the client it is called on.
 ---
 ---@param key string The key to associate the value with
 ---@param value garrysmod.Vector The value to set
@@ -4620,7 +4620,7 @@ function Entity:SetNWVector( key, value ) end
 ---
 --- Sets the owner of this entity, disabling all physics interaction with it.
 ---
---- > NOTE: This function is generally used to disable physics interactions on projectiles being fired by their owner, but can also be used for normal ownership in case physics interactions are not involved at all. The Gravity gun will be able to pick up the entity even if the owner can't collide with it, the Physics gun however will not.
+--- > **NOTE**: This function is generally used to disable physics interactions on projectiles being fired by their owner, but can also be used for normal ownership in case physics interactions are not involved at all. The Gravity gun will be able to pick up the entity even if the owner can't collide with it, the Physics gun however will not.
 ---
 ---@param owner garrysmod.Entity? The entity to be set as owner. Defaults to `NULL`.
 function Entity:SetOwner( owner ) end
@@ -4631,13 +4631,13 @@ function Entity:SetOwner( owner ) end
 ---
 --- All children of the parent get removed whenever it gets removed.
 ---
---- > NOTE: This does not work on [the world](https://wiki.facepunch.com/gmod/game.GetWorld).
+--- > **NOTE**: This does not work on [the world](https://wiki.facepunch.com/gmod/game.GetWorld).
 ---
 --- > WARNING: This can cause undefined physics behavior when used on entities that don't support parenting. See the [Valve developer wiki](https://developer.valvesoftware.com/wiki/Entity_Hierarchy_(parenting)) for more information.
 ---
---- > NOTE: (`attachment_or_bone_id` argument) You must call [Entity:SetMoveType](https://wiki.facepunch.com/gmod/Entity:SetMoveType)( MOVETYPE_NONE ) on the child for this argument to have any effect!
+--- > **NOTE**: (`attachment_or_bone_id` argument) You must call [Entity:SetMoveType](https://wiki.facepunch.com/gmod/Entity:SetMoveType)( MOVETYPE_NONE ) on the child for this argument to have any effect!
 ---
---- > NOTE: (`attachment_or_bone_id` argument) Parenting to attachment IDs more than `255` is unsupported and will output a LUA error.
+--- > **NOTE**: (`attachment_or_bone_id` argument) Parenting to attachment IDs more than `255` is unsupported and will output a LUA error.
 ---
 ---@param parent garrysmod.Entity? The entity to parent to. Setting this to nil will clear the parent. Defaults to `NULL`.
 ---@param attachment_or_bone_id integer? The attachment or bone id to use when parenting. Defaults to -1 or whatever the parent had set previously. Use [Entity:AddEffects](https://wiki.facepunch.com/gmod/Entity:AddEffects)( EF_FOLLOWBONE ) to treat this argument as a Bone ID instead of an Attachment ID. Similar to [Entity:FollowBone](https://wiki.facepunch.com/gmod/Entity:FollowBone).
@@ -4647,7 +4647,7 @@ function Entity:SetParent( parent, attachment_or_bone_id ) end
 ---
 --- Sets the parent of an entity to another entity with the given physics bone number. Similar to [Entity:SetParent](https://wiki.facepunch.com/gmod/Entity:SetParent), except it is parented to a physbone. This function is useful mainly for ragdolls.
 ---
---- > NOTE: Despite this function being available server side, it doesn't actually do anything server side.
+--- > **NOTE**: Despite this function being available server side, it doesn't actually do anything server side.
 ---
 ---@param bone integer Physics bone number to attach to. Use 0 for objects with only one physics bone. (See [Entity:GetPhysicsObjectNum](https://wiki.facepunch.com/gmod/Entity:GetPhysicsObjectNum))
 function Entity:SetParentPhysNum( bone ) end
@@ -4658,7 +4658,7 @@ function Entity:SetParentPhysNum( bone ) end
 ---
 --- In sandbox, this can be set on an entity by opening the context menu, right clicking the entity, and choosing `"Make Persistent"`.
 ---
---- > NOTE: Persistence can only be enabled with the sbox_persist convar, which works as an identifier for the current set of persistent entities. An empty identifier (which is the default value) disables this feature.
+--- > **NOTE**: Persistence can only be enabled with the sbox_persist convar, which works as an identifier for the current set of persistent entities. An empty identifier (which is the default value) disables this feature.
 ---
 ---@param persist boolean Whether or not the entity should be persistent.
 function Entity:SetPersistent( persist ) end
@@ -4677,7 +4677,7 @@ function Entity:SetPhysConstraintObjects( phys1, phys2 ) end
 ---
 --- Sets the player who gets credit if this entity kills something with physics damage within the time limit.
 ---
---- > NOTE: Only functional on props, "anim" type SENTs, vehicles and a few other select entities.
+--- > **NOTE**: Only functional on props, "anim" type SENTs, vehicles and a few other select entities.
 ---
 ---@param attacker garrysmod.Player Player who gets the kills. Setting this to a non-player entity will not work.
 ---@param time_limit number? Time in seconds until the entity forgets its physics attacker and prevents it from getting the kill credit. Defaults to `5`.
@@ -4689,7 +4689,7 @@ function Entity:SetPhysicsAttacker( attacker, time_limit ) end
 ---
 --- It is networked to clients, but limited to [-4,12] range when networking.
 ---
---- > NOTE: This function does not affect gestures.
+--- > **NOTE**: This function does not affect gestures.
 --- > Use [Entity:SetLayerPlaybackRate](https://wiki.facepunch.com/gmod/Entity:SetLayerPlaybackRate) instead.
 ---
 ---@param speed number How fast the animation will play.
@@ -4701,7 +4701,7 @@ function Entity:SetPlaybackRate( speed ) end
 ---
 --- Some entities, such as ragdolls, will continually reset their position. Consider using [PhysObj:SetPos](https://wiki.facepunch.com/gmod/PhysObj:SetPos) on every physics object to move ragdolls.
 ---
---- > NOTE: If the new position doesn't take effect right away, you can use [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) to force it to do so. This issue is especially common when trying to render the same entity twice or more in a single frame at different positions.
+--- > **NOTE**: If the new position doesn't take effect right away, you can use [Entity:SetupBones](https://wiki.facepunch.com/gmod/Entity:SetupBones) to force it to do so. This issue is especially common when trying to render the same entity twice or more in a single frame at different positions.
 ---
 --- > WARNING: Entities with [Entity:GetSolid](https://wiki.facepunch.com/gmod/Entity:GetSolid) of `SOLID_BBOX` will have their angles reset!
 ---
@@ -4717,7 +4717,7 @@ function Entity:SetPos( position ) end
 ---
 --- You should call [Entity:InvalidateBoneCache](https://wiki.facepunch.com/gmod/Entity:InvalidateBoneCache) after calling this function.
 ---
---- > NOTE: Avoid calling this in draw hooks, especially when animating things, as it might cause visual artifacts.
+--- > **NOTE**: Avoid calling this in draw hooks, especially when animating things, as it might cause visual artifacts.
 ---
 ---@param pose_name string Name of the pose parameter. [Entity:GetPoseParameterName](https://wiki.facepunch.com/gmod/Entity:GetPoseParameterName) might come in handy here. Can also be a pose parameter ID.
 ---@param pose_value number The value to set the pose to.
@@ -4735,9 +4735,9 @@ function Entity:SetPoseParameter( pose_name, pose_value ) end
 --- Visit  for a list of all predicted hooks, and the [Prediction](https://wiki.facepunch.com/gmod/Prediction) page.
 --- For further technical information on the subject, visit [valve's wiki](https://developer.valvesoftware.com/wiki/Prediction).
 ---
---- > NOTE: This function resets the datatable variables everytime it's called, it should ideally be called when a player starts using the entity and when he stops
+--- > **NOTE**: This function resets the datatable variables everytime it's called, it should ideally be called when a player starts using the entity and when he stops
 ---
---- > NOTE: Entities set as predictable with this function will be unmarked when the user lags and receives a full packet update, to handle such case visit [GM:NotifyShouldTransmit](https://wiki.facepunch.com/gmod/GM:NotifyShouldTransmit)
+--- > **NOTE**: Entities set as predictable with this function will be unmarked when the user lags and receives a full packet update, to handle such case visit [GM:NotifyShouldTransmit](https://wiki.facepunch.com/gmod/GM:NotifyShouldTransmit)
 ---
 ---@param set_predictable boolean whether to make this entity predictable or not.
 function Entity:SetPredictable( set_predictable ) end
@@ -4746,7 +4746,7 @@ function Entity:SetPredictable( set_predictable ) end
 ---
 --- Prevents the server from sending any further information about the entity to a player.
 ---
---- > NOTE: You must also call this function on all entity's children. See [Entity:GetChildren](https://wiki.facepunch.com/gmod/Entity:GetChildren).
+--- > **NOTE**: You must also call this function on all entity's children. See [Entity:GetChildren](https://wiki.facepunch.com/gmod/Entity:GetChildren).
 --- >
 --- > [issue tracker](https://github.com/Facepunch/garrysmod-issues/issues/1736)
 --- >
@@ -4847,7 +4847,7 @@ function Entity:SetSaveValue( name, value ) end
 ---
 --- In some cases you want to run [Entity:ResetSequenceInfo](https://wiki.facepunch.com/gmod/Entity:ResetSequenceInfo) to make this function run.
 ---
---- > NOTE: This will not work properly if called directly after calling [Entity:SetModel](https://wiki.facepunch.com/gmod/Entity:SetModel). Consider waiting until the next Tick.
+--- > **NOTE**: This will not work properly if called directly after calling [Entity:SetModel](https://wiki.facepunch.com/gmod/Entity:SetModel). Consider waiting until the next Tick.
 --- >
 --- > Will not work on players due to the animations being reset every frame by the base gamemode animation system. See [GM:CalcMainActivity](https://wiki.facepunch.com/gmod/GM:CalcMainActivity).
 --- >
@@ -4861,7 +4861,7 @@ function Entity:SetSequence( sequence ) end
 ---
 --- Sets if entity should create a server ragdoll on death or a client one.
 ---
---- > NOTE: This is reset for players when they respawn ([Entity:Spawn](https://wiki.facepunch.com/gmod/Entity:Spawn)).
+--- > **NOTE**: This is reset for players when they respawn ([Entity:Spawn](https://wiki.facepunch.com/gmod/Entity:Spawn)).
 --- >
 --- > Player ragdolls created with this enabled will have an owner set, see [Entity:SetOwner](https://wiki.facepunch.com/gmod/Entity:SetOwner) for more information on what effects this has.
 ---
@@ -4899,7 +4899,7 @@ function Entity:SetSolidFlags( flags ) end
 ---
 --- See [Entity:GetSpawnEffect](https://wiki.facepunch.com/gmod/Entity:GetSpawnEffect) for more information on how the effect is applied.
 ---
---- > NOTE: This function will only have an effect when the entity spawns. After that it will do nothing even is set to true.
+--- > **NOTE**: This function will only have an effect when the entity spawns. After that it will do nothing even is set to true.
 ---
 ---@param spawn_effect boolean Sets if we should show a spawn effect.
 function Entity:SetSpawnEffect( spawn_effect ) end
@@ -4915,7 +4915,7 @@ function Entity:SetSpawnEffect( spawn_effect ) end
 --- > BUG: The server's value takes priority on the client.
 --- > See [issue #3362](https://github.com/Facepunch/garrysmod-issues/issues/3362).
 ---
---- > NOTE: (`index` argument) If called with no arguments, all sub materials will be reset.
+--- > **NOTE**: (`index` argument) If called with no arguments, all sub materials will be reset.
 ---
 ---@param index integer? Index of the material to override, acceptable values are from `0` to `31`. Indexes are by [Entity:GetMaterials](https://wiki.facepunch.com/gmod/Entity:GetMaterials), but you have to subtract `1` from them.
 ---@param material string? The material to override the default one with. Set to [nil](https://wiki.facepunch.com/gmod/nil) to revert to default material.
@@ -4951,7 +4951,7 @@ function Entity:SetTable( data ) end
 ---
 --- When this flag is set the entity will only transmit to the player when its parent is transmitted. This is useful for things like viewmodel attachments since without this flag they will transmit to everyone (and cause the viewmodels to transmit to everyone too).
 ---
---- > NOTE: In the case of scripted entities, this will override [ENTITY:UpdateTransmitState](https://wiki.facepunch.com/gmod/ENTITY:UpdateTransmitState)
+--- > **NOTE**: In the case of scripted entities, this will override [ENTITY:UpdateTransmitState](https://wiki.facepunch.com/gmod/ENTITY:UpdateTransmitState)
 ---
 ---@param enabled boolean Will set the TransmitWithParent flag on or off
 function Entity:SetTransmitWithParent( enabled ) end
@@ -4969,7 +4969,7 @@ function Entity:SetTrigger( is_trigger ) end
 ---
 --- Forces the entity to reconfigure its bones. You might need to call this after changing your model's scales or when manually drawing the entity multiple times at different positions.
 ---
---- > NOTE: This calls the BuildBonePositions callback added via [Entity:AddCallback](https://wiki.facepunch.com/gmod/Entity:AddCallback), so avoid calling this function inside it to prevent an infinite loop.
+--- > **NOTE**: This calls the BuildBonePositions callback added via [Entity:AddCallback](https://wiki.facepunch.com/gmod/Entity:AddCallback), so avoid calling this function inside it to prevent an infinite loop.
 ---
 function Entity:SetupBones() end
 
@@ -4977,7 +4977,7 @@ function Entity:SetupBones() end
 ---
 --- Initializes the class names of an entity's phoneme mappings (mouth movement data). This is called by default with argument "phonemes" when a flex-based entity (such as an [NPC](https://wiki.facepunch.com/gmod/NPC)) is created.
 ---
---- > NOTE: TF2 phonemes can be accessed by using a path such as "player/scout/phonemes/phonemes" , check TF2's "tf2_misc_dir.vpk" with GCFScape for other paths, however it seems that TF2 sounds don't contain phoneme definitions anymore after being converted to mp3 and only rely on VCD animations, this needs to be further investigated
+--- > **NOTE**: TF2 phonemes can be accessed by using a path such as "player/scout/phonemes/phonemes" , check TF2's "tf2_misc_dir.vpk" with GCFScape for other paths, however it seems that TF2 sounds don't contain phoneme definitions anymore after being converted to mp3 and only rely on VCD animations, this needs to be further investigated
 ---
 ---@param file_root string The file prefix of the phoneme mappings (relative to "garrysmod/expressions/").
 function Entity:SetupPhonemeMappings( file_root ) end
@@ -4993,7 +4993,7 @@ function Entity:SetUseType( use_type ) end
 ---
 --- Sets the entity's velocity. For entities with physics, consider using [PhysObj:SetVelocity](https://wiki.facepunch.com/gmod/PhysObj:SetVelocity) on the [PhysObj](https://wiki.facepunch.com/gmod/PhysObj) of the entity.
 ---
---- > NOTE: Actually binds to CBaseEntity::SetBaseVelocity() which sets the entity's velocity due to forces applied by other entities.
+--- > **NOTE**: Actually binds to CBaseEntity::SetBaseVelocity() which sets the entity's velocity due to forces applied by other entities.
 ---
 --- > WARNING: If applied to a player, this will actually **ADD** velocity, not set it. (due to how movement code handles base velocity)
 ---
@@ -5006,7 +5006,7 @@ function Entity:SetVelocity( velocity ) end
 ---
 --- This is used internally when the player switches weapon.
 ---
---- > NOTE: View models are not drawn without a weapons associated to them.
+--- > **NOTE**: View models are not drawn without a weapons associated to them.
 ---
 --- > WARNING: This will silently fail if the entity is not a viewmodel.
 ---
@@ -5066,7 +5066,7 @@ function Entity:StartLoopingSound( sound_name ) end
 ---
 --- Also see [Entity:AddToMotionController](https://wiki.facepunch.com/gmod/Entity:AddToMotionController) and [Entity:RemoveFromMotionController](https://wiki.facepunch.com/gmod/Entity:RemoveFromMotionController).
 ---
---- > NOTE: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type.
+--- > **NOTE**: Only works on a scripted [Entity](https://wiki.facepunch.com/gmod/Entity) of anim type.
 ---
 function Entity:StartMotionController() end
 
@@ -5152,7 +5152,7 @@ function Entity:TakeDamage( damage_amount, attacker, inflictor ) end
 ---
 --- > WARNING: This function does not seem to do any damage if you apply it to a player who is driving a prop_vehicle_jeep or prop_vehicle_jeep_old vehicle. You need to call it on the vehicle instead.
 ---
---- > NOTE: This function does not apply damage to [func_breakable_surf](https://developer.valvesoftware.com/wiki/Func_breakable_surf) entities correctly. To do this, you will need to use [Entity:DispatchTraceAttack](https://wiki.facepunch.com/gmod/Entity:DispatchTraceAttack) instead.
+--- > **NOTE**: This function does not apply damage to [func_breakable_surf](https://developer.valvesoftware.com/wiki/Func_breakable_surf) entities correctly. To do this, you will need to use [Entity:DispatchTraceAttack](https://wiki.facepunch.com/gmod/Entity:DispatchTraceAttack) instead.
 ---
 ---@param damage_info garrysmod.DamageInfo The damage to apply.
 function Entity:TakeDamageInfo( damage_info ) end
@@ -5170,7 +5170,7 @@ function Entity:TakePhysicsDamage( damage_info ) end
 ---
 --- See also [Entity:IsDormant](https://wiki.facepunch.com/gmod/Entity:IsDormant).
 ---
---- > NOTE: The function won't take in to account [Global.AddOriginToPVS](https://wiki.facepunch.com/gmod/Global.AddOriginToPVS) and the like.
+--- > **NOTE**: The function won't take in to account [Global.AddOriginToPVS](https://wiki.facepunch.com/gmod/Global.AddOriginToPVS) and the like.
 ---
 ---@param test_point garrysmod.Vector | garrysmod.Entity [Entity](https://wiki.facepunch.com/gmod/Entity) or [Vector](https://wiki.facepunch.com/gmod/Vector) to test against. If an entity is given, this function will test using its bounding box.
 ---@return boolean in_pvs `true` if the testPoint is within our PVS.
@@ -5202,7 +5202,7 @@ function Entity:TranslatePhysBoneToBone( phys_num ) end
 ---
 --- This should be called every tick.
 ---
---- > NOTE: This function only works on `anim`, `nextbot` and `ai` type entities.
+--- > **NOTE**: This function only works on `anim`, `nextbot` and `ai` type entities.
 ---
 function Entity:UpdateBoneFollowers() end
 
@@ -5224,7 +5224,7 @@ function Entity:Use( activator, caller, use_type, value ) end
 
 --- [SHARED]
 ---
---- > NOTE: Does nothing on server.
+--- > **NOTE**: Does nothing on server.
 ---
 --- Animations will be handled purely clientside instead of a fixed animtime, enabling interpolation. This does not affect layers and gestures.
 ---
@@ -5239,7 +5239,7 @@ function Entity:UseClientSideAnimation() end
 ---
 --- Valve use trigger boxes for all pickup items. Their bloat size is 24, a surprisingly large figure.
 ---
---- > NOTE: The trigger boxes can be made visible as a light blue box by using the **ent_bbox** console command while looking at the entity. Alternatively a classname or entity index can be used as the first argument.
+--- > **NOTE**: The trigger boxes can be made visible as a light blue box by using the **ent_bbox** console command while looking at the entity. Alternatively a classname or entity index can be used as the first argument.
 --- >
 --- > This requires **developer** to be set to **1**.
 ---
@@ -5293,9 +5293,9 @@ function Entity:WaterLevel() end
 ---
 --- Sets the activity of the entity's active weapon.
 ---
---- > NOTE: This does nothing on the client.
+--- > **NOTE**: This does nothing on the client.
 ---
---- > NOTE: Only works for CBaseCombatCharacter entities, which includes players and NPCs.
+--- > **NOTE**: Only works for CBaseCombatCharacter entities, which includes players and NPCs.
 ---
 ---@param act integer Activity number. See [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---@param duration number How long the animation should take in seconds.
@@ -5305,7 +5305,7 @@ function Entity:Weapon_SetActivity( act, duration ) end
 ---
 --- Calls and returns [WEAPON:TranslateActivity](https://wiki.facepunch.com/gmod/WEAPON:TranslateActivity) on the weapon the entity (player or NPC) carries.
 ---
---- > NOTE: Doesn't return anything on client, despite existing there.
+--- > **NOTE**: Doesn't return anything on client, despite existing there.
 ---
 ---@param act integer The NPC activity to translate
 ---@return integer activity The translated activity. Defaults to `act` input when a translation doesn't exist.

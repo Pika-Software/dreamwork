@@ -45,10 +45,10 @@ function Material( file_path, params ) end
 --- Only the common parameters are listed here (and which of them apply depends on the shader),
 --- any other shader parameter can be set the same way.
 ---
---- > NOTE: Textures are given by name (see `Texture:GetName`), not as `garrysmod.Texture` objects,
+--- > **NOTE**: Textures are given by name (see `Texture:GetName`), not as `garrysmod.Texture` objects,
 --- > and have to be loaded with `Material` first.
 ---
---- > NOTE: Many boolean parameters are stored as bits of `$flags` (see [Material Flags](https://wiki.facepunch.com/gmod/Material_Flags)),
+--- > **NOTE**: Many boolean parameters are stored as bits of `$flags` (see [Material Flags](https://wiki.facepunch.com/gmod/Material_Flags)),
 --- > use `0`/`1` for them.
 ---
 ---@class garrysmod.Material.KeyValues
@@ -175,7 +175,7 @@ function Material:GetFloat( name ) end
 ---
 --- Returns the specified material value as an integer, rounds the value if it's a float, or `nil` if the value is not set.
 ---
---- > NOTE: Certain material flags such as `$model` are stored in the `$flags` variable
+--- > **NOTE**: Certain material flags such as `$model` are stored in the `$flags` variable
 --- > and cannot be directly retrieved with this function, see [Material Flags](https://wiki.facepunch.com/gmod/Material_Flags).
 ---
 ---@param name string The name of the material integer.
@@ -283,7 +283,7 @@ function Material:IsError() end
 --- Recomputes the material's snapshot.
 --- This needs to be called if you have changed variables on your material and it isn't changing.
 ---
---- > NOTE: This function is slow, so try to call it only when needed!
+--- > **NOTE**: This function is slow, so try to call it only when needed!
 ---
 function Material:Recompute() end
 
@@ -312,7 +312,7 @@ function Material:SetFloat( name, value ) end
 ---
 --- Calls `Material:Recompute` internally.
 ---
---- > NOTE: Certain material flags such as `$model` are stored in the `$flags` variable
+--- > **NOTE**: Certain material flags such as `$model` are stored in the `$flags` variable
 --- > and cannot be directly set with this function, see [Material Flags](https://wiki.facepunch.com/gmod/Material_Flags).
 ---
 ---@param name string The name of the material integer.

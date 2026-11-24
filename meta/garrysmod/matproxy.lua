@@ -39,7 +39,7 @@ matproxy = {}
 --- If a proxy with the same name is already registered, it is replaced
 --- and all its active instances are re-initialized.
 ---
---- > NOTE: The `name` and `bind` fields are required, the proxy is silently ignored without them.
+--- > **NOTE**: The `name` and `bind` fields are required, the proxy is silently ignored without them.
 --- > The `init` function won't run without `bind` set.
 ---
 ---@param proxy garrysmod.MatProxyData The information about the proxy.

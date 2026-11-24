@@ -18,7 +18,7 @@ vgui = {}
 ---
 --- Creates a panel by the specified classname.
 ---
---- > NOTE: Custom VGUI elements are not loaded instantly. Use
+--- > **NOTE**: Custom VGUI elements are not loaded instantly. Use
 --- > [GM:OnGamemodeLoaded](https://wiki.facepunch.com/gmod/GM:OnGamemodeLoaded) to create them on
 --- > startup.
 ---

@@ -180,7 +180,7 @@ function engine.IsRecordingDemo() end
 ---
 --- You'll need to call `render.RedownloadAllLightmaps` clientside to refresh the lightmaps to this new color.
 ---
---- > NOTE: Calling this function with arguments `0` and `"a"` will cause dynamic lights such as those produced by the Light tool to stop working.
+--- > **NOTE**: Calling this function with arguments `0` and `"a"` will cause dynamic lights such as those produced by the Light tool to stop working.
 ---
 ---@param lightstyle integer The lightstyle to edit, `0` to `63`. If you want to edit map lighting, you want to set this to `0`.
 ---@param pattern string The pattern to change the lightstyle to. `a` is the darkest, `z` is the brightest. You can use stuff like `"abcxyz"` to make flashing patterns. The normal brightness for a map is `m`. Values over `z` are allowed, `~` for instance.

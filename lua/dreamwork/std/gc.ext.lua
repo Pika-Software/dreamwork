@@ -60,10 +60,10 @@ end
 --- Calling it again with the same table and type replaces the instruction,
 --- one table can be registered for several types.
 ---
---- > NOTE: The registry does not keep the table alive, but LuaJIT weak tables are not ephemerons,
+--- > **NOTE**: The registry does not keep the table alive, but LuaJIT weak tables are not ephemerons,
 --- > so an `instruction` that captures `tbl` as an upvalue keeps it alive forever.
 ---
---- > NOTE: The `instruction` is called during the entity removal and must not call `gc.setup` or raise errors,
+--- > **NOTE**: The `instruction` is called during the entity removal and must not call `gc.setup` or raise errors,
 --- > an error skips the cleanup of the remaining tables.
 ---
 ---@param tbl table The table to clean up.

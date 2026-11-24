@@ -12,7 +12,7 @@ local NPC = {}
 ---
 --- Makes the NPC like, hate, feel neutral towards, or fear the entity in question. If you want to setup relationship towards a certain entity `class`, use [NPC:AddRelationship](https://wiki.facepunch.com/gmod/NPC:AddRelationship).
 ---
---- > NOTE: NPCs do not see [NextBot](https://wiki.facepunch.com/gmod/NextBot)s by default. This can be fixed by adding the [FL_OBJECT](https://wiki.facepunch.com/gmod/Enums/FL) flag to the NextBot.
+--- > **NOTE**: NPCs do not see [NextBot](https://wiki.facepunch.com/gmod/NextBot)s by default. This can be fixed by adding the [FL_OBJECT](https://wiki.facepunch.com/gmod/Enums/FL) flag to the NextBot.
 ---
 ---@param target garrysmod.Entity The entity for the relationship to be applied to.
 ---@param disposition integer A [Enums/D](https://wiki.facepunch.com/gmod/Enums/D) representing the relationship type.
@@ -162,7 +162,7 @@ function NPC:ConditionName( condition ) end
 ---
 --- Returns the way the NPC "feels" about a given entity. See [NPC:AddEntityRelationship](https://wiki.facepunch.com/gmod/NPC:AddEntityRelationship).
 ---
---- > NOTE: For `ai` type entities, this will return [ENTITY:GetRelationship](https://wiki.facepunch.com/gmod/ENTITY:GetRelationship). If it returns `nil` or for engine NPCs, this will return whatever was last set by [NPC:AddEntityRelationship](https://wiki.facepunch.com/gmod/NPC:AddEntityRelationship). As a last resort, engine will decide on the disposition based on this NPC's [NPC:Classify](https://wiki.facepunch.com/gmod/NPC:Classify).
+--- > **NOTE**: For `ai` type entities, this will return [ENTITY:GetRelationship](https://wiki.facepunch.com/gmod/ENTITY:GetRelationship). If it returns `nil` or for engine NPCs, this will return whatever was last set by [NPC:AddEntityRelationship](https://wiki.facepunch.com/gmod/NPC:AddEntityRelationship). As a last resort, engine will decide on the disposition based on this NPC's [NPC:Classify](https://wiki.facepunch.com/gmod/NPC:Classify).
 ---
 ---@param entity garrysmod.Entity The entity to test our disposition towards.
 ---@return integer disposition The NPCs disposition, see [Enums/D](https://wiki.facepunch.com/gmod/Enums/D).
@@ -214,7 +214,7 @@ function NPC:GetActivity() end
 ---
 --- Returns the aim vector of the NPC. NPC alternative of [Player:GetAimVector](https://wiki.facepunch.com/gmod/Player:GetAimVector).
 ---
---- > NOTE: If the NPC has both [NPC:GetEnemy](https://wiki.facepunch.com/gmod/NPC:GetEnemy) and [NPC:GetActiveWeapon](https://wiki.facepunch.com/gmod/NPC:GetActiveWeapon), engine will automatically call [ENTITY:GetAttackSpread](https://wiki.facepunch.com/gmod/ENTITY:GetAttackSpread) to add random spread degrees to the return value.
+--- > **NOTE**: If the NPC has both [NPC:GetEnemy](https://wiki.facepunch.com/gmod/NPC:GetEnemy) and [NPC:GetActiveWeapon](https://wiki.facepunch.com/gmod/NPC:GetActiveWeapon), engine will automatically call [ENTITY:GetAttackSpread](https://wiki.facepunch.com/gmod/ENTITY:GetAttackSpread) to add random spread degrees to the return value.
 ---
 ---@return garrysmod.Vector aim_vector The aim direction of the NPC, usually a noisy direction to it's [NPC:GetEnemy](https://wiki.facepunch.com/gmod/NPC:GetEnemy). This will default to [Entity:GetForward](https://wiki.facepunch.com/gmod/Entity:GetForward) when there's no enemy. Thus, [NPC:GetCurrentWeaponProficiency](https://wiki.facepunch.com/gmod/NPC:GetCurrentWeaponProficiency) will be used.
 function NPC:GetAimVector() end
@@ -396,7 +396,7 @@ function NPC:GetHullType() end
 ---
 --- Returns the ideal activity the NPC currently wants to achieve.
 ---
---- > NOTE: By default, base NPCs will automatically attempt to play a sequence bound to the ideal activity. To prevent ideal activity from overriding NPC's active sequence, set this to `ACT_DO_NOT_DISTURB`.
+--- > **NOTE**: By default, base NPCs will automatically attempt to play a sequence bound to the ideal activity. To prevent ideal activity from overriding NPC's active sequence, set this to `ACT_DO_NOT_DISTURB`.
 ---
 ---@return integer ideal_activity The ideal activity. [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 function NPC:GetIdealActivity() end
@@ -933,7 +933,7 @@ function NPC:NavSetGoal( position, length, direction ) end
 ---
 --- Creates a path to closest node at given position. This won't actually force the NPC to move.
 ---
---- > NOTE: This will call either [NPC:TaskComplete](https://wiki.facepunch.com/gmod/NPC:TaskComplete) or [NPC:TaskFail](https://wiki.facepunch.com/gmod/NPC:TaskFail) for the current schedule and task, forcing the current task to progress to next task or fail.
+--- > **NOTE**: This will call either [NPC:TaskComplete](https://wiki.facepunch.com/gmod/NPC:TaskComplete) or [NPC:TaskFail](https://wiki.facepunch.com/gmod/NPC:TaskFail) for the current schedule and task, forcing the current task to progress to next task or fail.
 ---
 --- See also [NPC:NavSetRandomGoal](https://wiki.facepunch.com/gmod/NPC:NavSetRandomGoal).
 ---
@@ -1182,7 +1182,7 @@ function NPC:SetIgnoreConditions( conditions, size ) end
 ---
 --- Sets the last registered or memorized position for this NPC. When using scheduling, the NPC will focus on navigating to the last position via nodes.
 ---
---- > NOTE: The navigation requires ground nodes to function properly, otherwise the NPC could only navigate in a small area. (https://developer.valvesoftware.com/wiki/Info_node)
+--- > **NOTE**: The navigation requires ground nodes to function properly, otherwise the NPC could only navigate in a small area. (https://developer.valvesoftware.com/wiki/Info_node)
 ---
 ---@param position garrysmod.Vector Where the NPC's last position will be set.
 function NPC:SetLastPosition( position ) end
@@ -1283,7 +1283,7 @@ function NPC:SetSquad( name ) end
 ---
 --- Sets the SNPC step height.
 ---
---- > NOTE: This only works for [scripted NPCs](https://wiki.facepunch.com/gmod/Scripted_Entities).
+--- > **NOTE**: This only works for [scripted NPCs](https://wiki.facepunch.com/gmod/Scripted_Entities).
 ---
 ---@param height number The new step height. Default is 18 Hammer Units.
 function NPC:SetStepHeight( height ) end
@@ -1385,7 +1385,7 @@ function NPC:UpdateYaw( speed ) end
 
 --- [SERVER]
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 ---@return boolean success If we succeeded setting the behavior.
 function NPC:UseActBusyBehavior() end
@@ -1394,14 +1394,14 @@ function NPC:UseActBusyBehavior() end
 ---
 --- Enables the AI's [Assault Behavior](https://developer.valvesoftware.com/wiki/Assault "Assault Behavior") when an `ai_goal_assault` is set for this SENT.
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 ---@return boolean success Whether the action succeeded.
 function NPC:UseAssaultBehavior() end
 
 --- [SERVER]
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 ---@return boolean success If we succeeded setting the behavior.
 function NPC:UseFollowBehavior() end
@@ -1410,7 +1410,7 @@ function NPC:UseFollowBehavior() end
 ---
 --- Orders the SNPC to control any nearby `func_tank`s looking for an NPC to operate itself, if available.
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 ---@return boolean success Whether the action succeeded.
 function NPC:UseFuncTankBehavior() end
@@ -1419,7 +1419,7 @@ function NPC:UseFuncTankBehavior() end
 ---
 --- Enables the AI's [Lead Behavior](https://developer.valvesoftware.com/wiki/ai_goal_lead "Lead Behavior") when an `ai_goal_lead` is set for this SENT.
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 ---@return boolean success Whether the action succeeded.
 function NPC:UseLeadBehavior() end
@@ -1428,6 +1428,6 @@ function NPC:UseLeadBehavior() end
 ---
 --- Undoes the other `Use*Behavior` functions.
 ---
---- > NOTE: This function only works on `ai` type [SENTs](Scripted_Entities).
+--- > **NOTE**: This function only works on `ai` type [SENTs](Scripted_Entities).
 ---
 function NPC:UseNoBehavior() end

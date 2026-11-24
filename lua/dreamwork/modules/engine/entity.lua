@@ -139,7 +139,7 @@ do
     ---
     --- Returns the cached list of all entities and its size.
     ---
-    --- > NOTE: The returned table is the internal snapshot, do not modify it.
+    --- > **NOTE**: The returned table is the internal snapshot, do not modify it.
     ---
     ---@return garrysmod.Entity[] entities The list of all entities.
     ---@return integer entity_count The number of entities in the list.
@@ -152,7 +152,7 @@ do
     ---
     --- Checks if the entity is in the cached entity list, i.e. its `dreamwork.entity.spawn` event has been called.
     ---
-    --- > NOTE: An engine entity can be valid before it is registered. The list follows the engine entity cache, and `update` rebuilds it immediately.
+    --- > **NOTE**: An engine entity can be valid before it is registered. The list follows the engine entity cache, and `update` rebuilds it immediately.
     ---
     ---@param entity garrysmod.Entity The entity to check.
     ---@return boolean is_registered `true` if the entity is in the cached entity list, `false` otherwise.

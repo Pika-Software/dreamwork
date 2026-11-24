@@ -121,7 +121,7 @@ function ents.FindByName( name ) end
 ---
 --- This internally uses a Spatial Partition to avoid looping through all entities, so it is more efficient than using `ents.GetAll` for this purpose.
 ---
---- > NOTE: Clientside entities will not be returned by this function. Serverside only entities without networked edicts (entity indexes), such as point logic or Constraints are not returned either.
+--- > **NOTE**: Clientside entities will not be returned by this function. Serverside only entities without networked edicts (entity indexes), such as point logic or Constraints are not returned either.
 ---
 ---@param box_mins garrysmod.Vector The box minimum coordinates.
 ---@param box_maxs garrysmod.Vector The box maximum coordinates.
@@ -145,7 +145,7 @@ function ents.FindInCone( origin, normal, range, angle_cos ) end
 ---
 --- Finds all entities that lie within a [PVS (Potential Visibility Set)](https://developer.valvesoftware.com/wiki/PVS).
 ---
---- > NOTE: The function won't take in to account [AddOriginToPVS](https://wiki.facepunch.com/gmod/Global.AddOriginToPVS) and the like.
+--- > **NOTE**: The function won't take in to account [AddOriginToPVS](https://wiki.facepunch.com/gmod/Global.AddOriginToPVS) and the like.
 ---
 ---@param view_point garrysmod.Entity | garrysmod.Vector Entity or Vector to find entities within the PVS of. If a player is given, this function will use the player's view entity.
 ---@return garrysmod.Entity[] entities The found entities.

@@ -319,7 +319,7 @@ function Vehicle:SetVehicleEntryAnim( on ) end
 ---
 --- Sets the vehicle parameters for given vehicle.
 ---
---- > NOTE: Not all variables from the [Structures/VehicleParams](https://wiki.facepunch.com/gmod/Structures/VehicleParams) can be set.
+--- > **NOTE**: Not all variables from the [Structures/VehicleParams](https://wiki.facepunch.com/gmod/Structures/VehicleParams) can be set.
 ---
 ---@param params table The new new vehicle parameters. See [Structures/VehicleParams](https://wiki.facepunch.com/gmod/Structures/VehicleParams).
 function Vehicle:SetVehicleParams( params ) end

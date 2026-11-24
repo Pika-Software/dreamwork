@@ -36,7 +36,7 @@ function Weapon:CallOnClient( function_name, data ) end
 ---
 --- Returns how much primary ammo is in the magazine.
 ---
---- > NOTE: This is not shared between clients and will instead return the maximum primary clip size.
+--- > **NOTE**: This is not shared between clients and will instead return the maximum primary clip size.
 ---
 ---@return integer ammo The amount of primary ammo in the magazine.
 function Weapon:Clip1() end
@@ -45,7 +45,7 @@ function Weapon:Clip1() end
 ---
 --- Returns how much secondary ammo is in the magazine.
 ---
---- > NOTE: This is not shared between clients and will instead return the maximum secondary clip size.
+--- > **NOTE**: This is not shared between clients and will instead return the maximum secondary clip size.
 ---
 ---@return integer ammo The amount of secondary ammo in the magazine.
 function Weapon:Clip2() end
@@ -58,7 +58,7 @@ function Weapon:Clip2() end
 ---
 --- [Primary attack](https://wiki.facepunch.com/gmod/Weapon:SetNextPrimaryFire) and [secondary attack](https://wiki.facepunch.com/gmod/Weapon:SetNextSecondaryFire) will be unavailable for the duration of the reload (or until the weapon is switched away from)
 ---
---- > NOTE: This will stop the [Weapon:Think](https://wiki.facepunch.com/gmod/Weapon:Think) function from getting called while the weapon is reloading!
+--- > **NOTE**: This will stop the [Weapon:Think](https://wiki.facepunch.com/gmod/Weapon:Think) function from getting called while the weapon is reloading!
 ---
 ---@param act integer View model activity (animation) to play. This is usually `ACT_VM_RELOAD`. Uses the [Enums/ACT](https://wiki.facepunch.com/gmod/Enums/ACT).
 ---@return boolean success Did reloading actually take place (`true`) or fail (`false`), such as when no reload was necessary.
@@ -127,9 +127,9 @@ function Weapon:GetPrimaryAmmoType() end
 ---
 --- Returns the non-internal name of the weapon, that should be for displaying.
 ---
---- > NOTE: If that returns an untranslated message (#HL2_XX), use [language.GetPhrase](https://wiki.facepunch.com/gmod/language.GetPhrase) to see the "nice" name.
+--- > **NOTE**: If that returns an untranslated message (#HL2_XX), use [language.GetPhrase](https://wiki.facepunch.com/gmod/language.GetPhrase) to see the "nice" name.
 ---
---- > NOTE: If SWEP.PrintName is not set in the Weapon or the Weapon Base then "<MISSING SWEP PRINT NAME>" will be returned.
+--- > **NOTE**: If SWEP.PrintName is not set in the Weapon or the Weapon Base then "<MISSING SWEP PRINT NAME>" will be returned.
 ---
 ---@return string print_name The "nice" name of the weapon.
 function Weapon:GetPrintName() end
@@ -145,7 +145,7 @@ function Weapon:GetSecondaryAmmoType() end
 ---
 --- Returns the slot of the weapon.
 ---
---- > NOTE: The slot numbers start from 0.
+--- > **NOTE**: The slot numbers start from 0.
 ---
 ---@return integer slot The slot of the weapon.
 function Weapon:GetSlot() end
@@ -182,7 +182,7 @@ function Weapon:GetWeight() end
 ---
 --- Returns whether the weapon has ammo left or not. It will return false when there's no ammo left in the magazine **and** when there's no reserve ammo left.
 ---
---- > NOTE: This will return true for weapons like crowbar, gravity gun, etc.
+--- > **NOTE**: This will return true for weapons like crowbar, gravity gun, etc.
 ---
 ---@return boolean has_ammo Whether the weapon has ammo or not.
 function Weapon:HasAmmo() end
@@ -251,7 +251,7 @@ function Weapon:SetClip2( ammo ) end
 ---
 --- Sets the hold type of the weapon. This function also calls [WEAPON:SetWeaponHoldType](https://wiki.facepunch.com/gmod/WEAPON:SetWeaponHoldType) and properly networks it to all clients.
 ---
---- > NOTE: This only works on scripted weapons.
+--- > **NOTE**: This only works on scripted weapons.
 ---
 --- > BUG: Using this function on weapons held by bots will not network holdtype changes to clients if the world model is set to an empty string (SWEP.WorldModel = "").
 ---
@@ -271,7 +271,7 @@ function Weapon:SetLastShootTime( time ) end
 ---
 --- Sets when the weapon can fire again. Time should be based on [Global.CurTime](https://wiki.facepunch.com/gmod/Global.CurTime).
 ---
---- > NOTE: The standard HL2 Pistol (`weapon_pistol`) bypasses this function due to an [internal implementation](https://github.com/ValveSoftware/source-sdk-2013/blob/master/src/game/server/hl2/weapon_pistol.cpp#L313-L317).
+--- > **NOTE**: The standard HL2 Pistol (`weapon_pistol`) bypasses this function due to an [internal implementation](https://github.com/ValveSoftware/source-sdk-2013/blob/master/src/game/server/hl2/weapon_pistol.cpp#L313-L317).
 ---
 --- > BUG: This will fire extra bullets if the time is set to less than [Global.CurTime](https://wiki.facepunch.com/gmod/Global.CurTime).
 --- > See [issue #3786](https://github.com/Facepunch/garrysmod-issues/issues/3786).

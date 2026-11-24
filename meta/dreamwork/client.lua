@@ -15,7 +15,7 @@
 --- Every stage hook (`dreamwork.client.<stage>`) is called once per client and in this order,
 --- a stage the engine skips is still called, right before the next one.
 ---
---- > NOTE: `established` and `spawning` are separate moments only on the server and only for humans,
+--- > **NOTE**: `established` and `spawning` are separate moments only on the server and only for humans,
 --- `established` starts the download and map loading phase, which can take seconds.
 --- Bots go from `SIGNONSTATE_CONNECTED` straight to `SIGNONSTATE_FULL`, and the client gets no sign-on states
 --- of the other players (the local one starts at `SIGNONSTATE_SPAWN`), so there both hooks are called back to back.

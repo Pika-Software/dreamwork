@@ -67,7 +67,7 @@ function Texture:Height() end
 ---
 --- Returns whether the texture failed to load.
 ---
---- > NOTE: The "error" texture is a valid texture, and therefore this function will return `false` when used on it.
+--- > **NOTE**: The "error" texture is a valid texture, and therefore this function will return `false` when used on it.
 --- > Use `Texture:IsErrorTexture` instead.
 ---
 ---@return boolean is_error `true` if the texture was not loaded successfully.

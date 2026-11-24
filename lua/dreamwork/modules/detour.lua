@@ -59,7 +59,7 @@ gc.setTableRules( keys, true, false )
 ---
 --- If the slot is empty, `new_fn` itself is installed as the hook, so don't reuse the same `new_fn` for multiple empty slots.
 ---
---- > NOTE: Re-hooking installs a new function into the slot, references to the previous hook cached elsewhere (e.g. `hook.Call` cached by the engine) keep calling the previous `new_fn`.
+--- > **NOTE**: Re-hooking installs a new function into the slot, references to the previous hook cached elsewhere (e.g. `hook.Call` cached by the engine) keep calling the previous `new_fn`.
 ---
 ---@generic F: function
 ---@param new_fn F The new function to call instead of the original.
@@ -227,7 +227,7 @@ end
 ---
 --- If the slot was empty before hooking, it is emptied again and `original` is `nil`.
 ---
---- > NOTE: References to `fn` cached elsewhere (e.g. `hook.Call` cached by the engine) keep calling the hook.
+--- > **NOTE**: References to `fn` cached elsewhere (e.g. `hook.Call` cached by the engine) keep calling the hook.
 ---
 ---@generic F: function
 ---@param fn F The hooked function.

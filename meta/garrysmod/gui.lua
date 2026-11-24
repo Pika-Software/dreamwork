@@ -38,7 +38,7 @@ function gui.AddCaption( caption_stream, duration, from_player ) end
 ---
 --- See `vgui.CursorVisible` for a function to see if the cursor is visible or not.
 ---
---- > NOTE: Some `CUserCmd` functions will return incorrect values when this function is active
+--- > **NOTE**: Some `CUserCmd` functions will return incorrect values when this function is active
 --- > because [the user input is getting overtaken by the vgui system](https://github.com/Facepunch/garrysmod-issues/issues/982#issuecomment-505671531).
 ---
 ---@param enabled boolean `true` to enable the cursor, `false` to disable it.
@@ -89,7 +89,7 @@ function gui.InternalKeyCodeTyped( key ) end
 --- Simulates an ASCII symbol writing.
 --- Use to write text in the chat or in VGUI.
 ---
---- > NOTE: Doesn't work while the main menu is open!
+--- > **NOTE**: Doesn't work while the main menu is open!
 ---
 ---@param code integer The ASCII code of the symbol, see [this chart](https://files.facepunch.com/wiki/files/ab571/8dc389806d65b98.gif).
 function gui.InternalKeyTyped( code ) end
@@ -163,7 +163,7 @@ function gui.MouseY() end
 ---
 --- Opens the specified URL in the steam overlay browser.
 ---
---- > NOTE: When called clientside, the user will be asked for confirmation before the website will open.
+--- > **NOTE**: When called clientside, the user will be asked for confirmation before the website will open.
 ---
 ---@param url string The URL to open, it has to start with either `http://` or `https://`.
 function gui.OpenURL( url ) end

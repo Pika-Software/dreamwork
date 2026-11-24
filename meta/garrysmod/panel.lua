@@ -123,7 +123,7 @@ function Panel:DoModal() end
 --- You may need to use [Panel:SetZPos](https://wiki.facepunch.com/gmod/Panel:SetZPos) to ensure child
 --- panels ([TextEntry](https://wiki.facepunch.com/gmod/TextEntry)) stay in a specific order.
 ---
---- > NOTE: After using this function, if you want to get the correct panel's bounds (position, size),
+--- > **NOTE**: After using this function, if you want to get the correct panel's bounds (position, size),
 --- > use [Panel:InvalidateParent](https://wiki.facepunch.com/gmod/Panel:InvalidateParent) (use `true` as
 --- > argument if you need to update immediately)
 ---
@@ -181,7 +181,7 @@ function Panel:DrawOutlinedRect() end
 --- skin. This is usually called within the
 --- [SKIN:PaintTextEntry](https://wiki.facepunch.com/gmod/SKIN:PaintTextEntry) skin hook.
 ---
---- > NOTE: Will silently fail if any of arguments are not given.
+--- > **NOTE**: Will silently fail if any of arguments are not given.
 ---
 ---@param text_col table The colour of the main text.
 ---@param highlight_col table The colour of the selection highlight (when selecting text).
@@ -232,7 +232,7 @@ function Panel:GetAlpha() end
 --- [RichText](https://wiki.facepunch.com/gmod/RichText), [Label](https://wiki.facepunch.com/gmod/Label)
 --- or panel.
 ---
---- > NOTE: This doesn't apply to all VGUI elements and its function varies between them
+--- > **NOTE**: This doesn't apply to all VGUI elements and its function varies between them
 ---
 ---@return garrysmod.Color color The [Color](https://wiki.facepunch.com/gmod/Color).
 function Panel:GetBGColor() end
@@ -262,7 +262,7 @@ function Panel:GetCaretPos() end
 --- [Panel:ChildCount](https://wiki.facepunch.com/gmod/Panel:ChildCount).
 ---
 ---@param child_index number The index of the child to get.
---- > NOTE: This index starts at 0, except when you use this on a [Menu](https://wiki.facepunch.com/gmod/Menu).
+--- > **NOTE**: This index starts at 0, except when you use this on a [Menu](https://wiki.facepunch.com/gmod/Menu).
 ---@return garrysmod.Panel value The child panel, or a `nil`
 function Panel:GetChild( child_index ) end
 
@@ -286,7 +286,7 @@ function Panel:GetClassName() end
 ---
 --- Returns the alignment of the text of a [Label](https://wiki.facepunch.com/gmod/Label).
 ---
---- > NOTE: This function only works on [Label](https://wiki.facepunch.com/gmod/Label) panels and its
+--- > **NOTE**: This function only works on [Label](https://wiki.facepunch.com/gmod/Label) panels and its
 --- > derivatives.
 ---
 ---@return garrysmod.Panel.ContentAlignment alignment The direction of the content, based on the number pad.
@@ -349,7 +349,7 @@ function Panel:GetDockPadding() end
 --- For a [Label](https://wiki.facepunch.com/gmod/Label) or
 --- [RichText](https://wiki.facepunch.com/gmod/RichText), this is the color of its text.
 ---
---- > NOTE: This doesn't apply to all VGUI elements (such as
+--- > **NOTE**: This doesn't apply to all VGUI elements (such as
 --- > [Label](https://wiki.facepunch.com/gmod/Label)) and its function varies between them
 ---
 ---@return garrysmod.Color color The [Color](https://wiki.facepunch.com/gmod/Color).
@@ -361,7 +361,7 @@ function Panel:GetFGColor() end
 --- This is the same font name set with
 --- [Panel:SetFontInternal](https://wiki.facepunch.com/gmod/Panel:SetFontInternal).
 ---
---- > NOTE: Only works on [Label](https://wiki.facepunch.com/gmod/Label) and
+--- > **NOTE**: Only works on [Label](https://wiki.facepunch.com/gmod/Label) and
 --- > [TextEntry](https://wiki.facepunch.com/gmod/TextEntry) and their derived panels by default (such as
 --- > [Label](https://wiki.facepunch.com/gmod/Label) and
 --- > [TextEntry](https://wiki.facepunch.com/gmod/TextEntry)), and on any panel that manually
@@ -510,7 +510,7 @@ function Panel:GetTextSize() end
 --- [Label](https://wiki.facepunch.com/gmod/Label) and
 --- [TextEntry](https://wiki.facepunch.com/gmod/TextEntry) as a string.
 ---
---- > NOTE: This function is limited to 8092 Bytes. If using
+--- > **NOTE**: This function is limited to 8092 Bytes. If using
 --- > [TextEntry](https://wiki.facepunch.com/gmod/TextEntry), use
 --- > [Panel:GetText](https://wiki.facepunch.com/gmod/Panel:GetText) for unlimited bytes.
 ---
@@ -595,7 +595,7 @@ function Panel:InsertClickableTextEnd() end
 --- The hook [PANEL:OnTextClicked](https://wiki.facepunch.com/gmod/PANEL:OnTextClicked) is called when
 --- the text is clicked.
 ---
---- > NOTE: The clickable text is a separate VGUI panel which will not inherit the current font from
+--- > **NOTE**: The clickable text is a separate VGUI panel which will not inherit the current font from
 --- > the `RichText`.
 ---
 ---@param signal_value string The text passed as the action signal's value.
@@ -772,7 +772,7 @@ function Panel:LoadTGAImage( image_name, str_path ) end
 --- > [PANEL:Think](https://wiki.facepunch.com/gmod/PANEL:Think) or
 --- > [PANEL:PerformLayout](https://wiki.facepunch.com/gmod/PANEL:PerformLayout) within the last frame.
 ---
---- > NOTE: If the panel uses [Panel:Dock](https://wiki.facepunch.com/gmod/Panel:Dock), this function
+--- > **NOTE**: If the panel uses [Panel:Dock](https://wiki.facepunch.com/gmod/Panel:Dock), this function
 --- > will return 0, 0 when the panel was created. The position will be updated in the next frame.
 ---
 ---@param pos_x number The X coordinate of the position on the panel to translate.
@@ -789,7 +789,7 @@ function Panel:LocalToScreen( pos_x, pos_y ) end
 --- [Panel:SetKeyboardInputEnabled](https://wiki.facepunch.com/gmod/Panel:SetKeyboardInputEnabled(lowercase))
 --- and sets them to `true`.
 ---
---- > NOTE: Panels derived from [Panel](https://wiki.facepunch.com/gmod/Panel) will not work properly
+--- > **NOTE**: Panels derived from [Panel](https://wiki.facepunch.com/gmod/Panel) will not work properly
 --- > with this function. Due to this, any children will not be intractable with keyboard. Derive from
 --- > [EditablePanel](https://wiki.facepunch.com/gmod/EditablePanel) instead. For non gui related mouse
 --- > focus, you can use
@@ -826,7 +826,7 @@ function Panel:MoveToFront() end
 --- See [render.SetScissorRect](https://wiki.facepunch.com/gmod/render.SetScissorRect) if you wish to
 --- set the clipping rect instead.
 ---
---- > NOTE: This only disabled clipping for the Paint Related functions (as far as i can tell at the
+--- > **NOTE**: This only disabled clipping for the Paint Related functions (as far as i can tell at the
 --- > current moment, more testing should be done) so things like the text of a
 --- > [Label](https://wiki.facepunch.com/gmod/Label) will still be clipped to the parent. To fully
 --- > disable the clipping of any children see
@@ -869,7 +869,7 @@ function Panel:ParentToHUD() end
 ---
 --- > DEPRECATED: Due to privacy concerns, this function has been disabled
 ---
---- > NOTE: Tab characters will be dropped from the pasted text
+--- > **NOTE**: Tab characters will be dropped from the pasted text
 ---
 function Panel:Paste() end
 
@@ -891,7 +891,7 @@ function Panel:RebuildSpawnIcon() end
 --- [Global.PositionSpawnIcon](https://wiki.facepunch.com/gmod/Global.PositionSpawnIcon) can be used to
 --- easily calculate the necessary camera parameters.
 ---
---- > NOTE: This function does **not** accept the standard
+--- > **NOTE**: This function does **not** accept the standard
 --- > [Structures/CamData](https://wiki.facepunch.com/gmod/Structures/CamData).
 ---
 ---@param data table A table containing the information needed to re-render the icon:
@@ -970,7 +970,7 @@ function Panel:SelectAllText( reset_cursor_pos ) end
 ---
 --- Deselects all items in a panel object. For text-based objects, this will deselect all text.
 ---
---- > NOTE: Only works on [RichText](https://wiki.facepunch.com/gmod/RichText) and
+--- > **NOTE**: Only works on [RichText](https://wiki.facepunch.com/gmod/RichText) and
 --- > [TextEntry](https://wiki.facepunch.com/gmod/TextEntry) and their derived panels by default (such as
 --- > [TextEntry](https://wiki.facepunch.com/gmod/TextEntry)), and on any panel that manually
 --- > reimplemented this method.
@@ -1034,7 +1034,7 @@ function Panel:SetCaretPos( offset ) end
 ---
 --- > WARNING: This function cannot interact with serverside convars unless you are host
 ---
---- > NOTE: Blocked convars will not work with this, see [Blocked
+--- > **NOTE**: Blocked convars will not work with this, see [Blocked
 --- > ConCommands](https://wiki.facepunch.com/gmod/Blocked_ConCommands)
 ---
 ---@param convar string The console variable to check.
@@ -1044,10 +1044,10 @@ function Panel:SetConVar( convar ) end
 ---
 --- Sets the alignment of the contents.
 ---
---- > NOTE: This function only works on [Label](https://wiki.facepunch.com/gmod/Label) panels and its
+--- > **NOTE**: This function only works on [Label](https://wiki.facepunch.com/gmod/Label) panels and its
 --- > derivatives.
 ---
---- > NOTE: This function doesnt work, if [Panel:SetWrap](https://wiki.facepunch.com/gmod/Panel:SetWrap)
+--- > **NOTE**: This function doesnt work, if [Panel:SetWrap](https://wiki.facepunch.com/gmod/Panel:SetWrap)
 --- > is true.
 ---
 ---@param alignment garrysmod.Panel.ContentAlignment The direction of the content, based on the number pad.
@@ -1100,7 +1100,7 @@ function Panel:SetDrawLanguageIDAtLeft( left ) end
 --- Priority is given based on the last call, so of two panels that call this method, the second will
 --- draw in front of the first.
 ---
---- > NOTE: This only makes the panel **draw** above other panels. If there's another panel that would
+--- > **NOTE**: This only makes the panel **draw** above other panels. If there's another panel that would
 --- > have otherwise covered it, users will not be able to interact with it. Completely disregards
 --- > [PANEL:ParentToHUD](https://wiki.facepunch.com/gmod/PANEL:ParentToHUD).
 ---
@@ -1127,7 +1127,7 @@ function Panel:SetEnabled( enable ) end
 ---
 --- Adds a shadow falling to the bottom right corner of the panel's text.
 ---
---- > NOTE: This works only on panels that derive from [Label](https://wiki.facepunch.com/gmod/Label).
+--- > **NOTE**: This works only on panels that derive from [Label](https://wiki.facepunch.com/gmod/Label).
 ---
 ---@param distance number The distance of the shadow from the panel.
 ---@param color garrysmod.Color The color of the shadow. Uses [Color](https://wiki.facepunch.com/gmod/Color).
@@ -1149,7 +1149,7 @@ function Panel:SetFGColorEx( r, g, b, a ) end
 --- Sets the panel that owns this FocusNavGroup to be the root in the focus traversal hierarchy. This
 --- function will only work on EditablePanel class panels and its derivatives.
 ---
---- > NOTE: Child panels that should be part of the tab navigation need
+--- > **NOTE**: Child panels that should be part of the tab navigation need
 --- > [Panel:SetTabPosition](https://wiki.facepunch.com/gmod/Panel:SetTabPosition) called on them.
 ---
 ---@param state boolean
@@ -1203,7 +1203,7 @@ function Panel:SetMinimumSize( min_w, min_h ) end
 ---
 --- Sets the model to be displayed by [SpawnIcon](https://wiki.facepunch.com/gmod/SpawnIcon).
 ---
---- > NOTE: This must be called after setting size if you wish to use a different size spawnicon
+--- > **NOTE**: This must be called after setting size if you wish to use a different size spawnicon
 ---
 ---@param model_path string The path of the model to set
 ---@param skin number? The skin to set Defaults to `0`.
@@ -1214,7 +1214,7 @@ function Panel:SetModel( model_path, skin, bodygroups ) end
 ---
 --- Enables or disables the mouse input for the panel.
 ---
---- > NOTE: Panels parented to the context menu will not be clickable unless
+--- > **NOTE**: Panels parented to the context menu will not be clickable unless
 --- > [Panel:SetKeyboardInputEnabled](https://wiki.facepunch.com/gmod/Panel:SetKeyboardInputEnabled(lowercase))
 --- > is enabled or [Panel:MakePopup](https://wiki.facepunch.com/gmod/Panel:MakePopup) has been called. If
 --- > you want the panel to have mouse input but you do not want to prevent players from moving, set
@@ -1268,7 +1268,7 @@ function Panel:SetPaintedManually( painted_manually ) end
 ---
 --- Sets the parent of the panel.
 ---
---- > NOTE: Panels parented to the context menu will not be clickable unless
+--- > **NOTE**: Panels parented to the context menu will not be clickable unless
 --- > [Panel:SetMouseInputEnabled](https://wiki.facepunch.com/gmod/Panel:SetMouseInputEnabled) and
 --- > [Panel:SetKeyboardInputEnabled](https://wiki.facepunch.com/gmod/Panel:SetKeyboardInputEnabled(lowercase))
 --- > are both true or [Panel:MakePopup](https://wiki.facepunch.com/gmod/Panel:MakePopup) has been called.
@@ -1307,7 +1307,7 @@ function Panel:SetPopupStayAtBack( stay_at_back ) end
 --- See also [Panel:SetX](https://wiki.facepunch.com/gmod/Panel:SetX) and
 --- [Panel:SetY](https://wiki.facepunch.com/gmod/Panel:SetY).
 ---
---- > NOTE: If you wish to position and re-size panels without much guesswork and have them look good on
+--- > **NOTE**: If you wish to position and re-size panels without much guesswork and have them look good on
 --- > different screen resolutions, you may find [Panel:Dock](https://wiki.facepunch.com/gmod/Panel:Dock)
 --- > useful
 ---
@@ -1332,7 +1332,7 @@ function Panel:SetRenderInScreenshots( render_in_screenshot ) end
 --- See also [Panel:SetWidth](https://wiki.facepunch.com/gmod/Panel:SetWidth) and
 --- [Panel:SetHeight](https://wiki.facepunch.com/gmod/Panel:SetHeight).
 ---
---- > NOTE: If you wish to position and re-size panels without much guesswork and have them look good on
+--- > **NOTE**: If you wish to position and re-size panels without much guesswork and have them look good on
 --- > different screen resolutions, you may find [Panel:Dock](https://wiki.facepunch.com/gmod/Panel:Dock)
 --- > useful
 ---
@@ -1362,7 +1362,7 @@ function Panel:SetSteamID( steamid, size ) end
 ---
 --- When TAB is pressed, the next selectable panel in the number sequence is selected.
 ---
---- > NOTE: This function requires
+--- > **NOTE**: This function requires
 --- > [Panel:SetFocusTopLevel](https://wiki.facepunch.com/gmod/Panel:SetFocusTopLevel) to be called on the
 --- > parent panel for tab navigation to work.
 ---
@@ -1431,7 +1431,7 @@ function Panel:SetTextSelectionColors( text_color, background_color ) end
 --- Sets the height of a [RichText](https://wiki.facepunch.com/gmod/RichText) element to accommodate the
 --- text inside.
 ---
---- > NOTE: This function internally relies on
+--- > **NOTE**: This function internally relies on
 --- > [Panel:GetNumLines](https://wiki.facepunch.com/gmod/Panel:GetNumLines), so it should be called at
 --- > least a couple frames after modifying the text using
 --- > [Panel:AppendText](https://wiki.facepunch.com/gmod/Panel:AppendText)
@@ -1515,11 +1515,11 @@ function Panel:SetZPos( z_index ) end
 ---
 --- Resizes the panel to fit the bounds of its children.
 ---
---- > NOTE: Your panel must have its layout updated
+--- > **NOTE**: Your panel must have its layout updated
 --- > ([Panel:InvalidateLayout](https://wiki.facepunch.com/gmod/Panel:InvalidateLayout)) for this function
 --- > to work properly.
 ---
---- > NOTE: The sizeW and sizeH parameters are false by default. Therefore, calling this function with
+--- > **NOTE**: The sizeW and sizeH parameters are false by default. Therefore, calling this function with
 --- > no arguments will result in a no-op.
 ---
 ---@param size_w boolean? Resize with width of the panel. Defaults to `false`.
@@ -1530,7 +1530,7 @@ function Panel:SizeToChildren( size_w, size_h ) end
 ---
 --- Resizes the panel so that its width and height fit all of the content inside.
 ---
---- > NOTE: Only works on [Label](https://wiki.facepunch.com/gmod/Label) derived panels such as
+--- > **NOTE**: Only works on [Label](https://wiki.facepunch.com/gmod/Label) derived panels such as
 --- > [Label](https://wiki.facepunch.com/gmod/Label) by default, and on any panel that manually
 --- > implemented the [Panel:SizeToContents](https://wiki.facepunch.com/gmod/Panel:SizeToContents) method,
 --- > such as panel and
@@ -1663,12 +1663,12 @@ function HTML:GoToHistoryOffset( offset ) end
 --- Determines whether or not an [HTML](https://wiki.facepunch.com/gmod/HTML), `Chromium`, or
 --- [Awesomium](https://wiki.facepunch.com/gmod/Awesomium) element is currently loading a page.
 ---
---- > NOTE: Before calling [HTML:SetHTML](https://wiki.facepunch.com/gmod/Panel:SetHTML) or
+--- > **NOTE**: Before calling [HTML:SetHTML](https://wiki.facepunch.com/gmod/Panel:SetHTML) or
 --- > [HTML:OpenURL](https://wiki.facepunch.com/gmod/Panel:OpenURL), the result seems to be `false` with
 --- > the Awesomium web renderer and `true` for the Chromium web renderer. This difference can be used to
 --- > determine the available HTML5 capabilities.
 ---
---- > NOTE: On Awesomium, the result remains `true` until the root document is loaded and when in-page
+--- > **NOTE**: On Awesomium, the result remains `true` until the root document is loaded and when in-page
 --- > content is loading (when adding pictures, frames, etc.). During this state, the HTML texture is not
 --- > refreshed and the panel is not painted (it becomes invisible). On Chromium, the value is only
 --- > `true` when the root document is not ready. The rendering is not suspended when in-page elements are
@@ -1703,10 +1703,10 @@ function HTML:Refresh( ignore_cache ) end
 ---
 --- Executes a string as JavaScript code on a web document panel.
 ---
---- > NOTE: This function does **NOT** allow you to pass variables from JavaScript (JS) to Lua context.
+--- > **NOTE**: This function does **NOT** allow you to pass variables from JavaScript (JS) to Lua context.
 --- > If you wish to pass/return values from JS to Lua, you need a separate JS↔Lua bridge.
 ---
---- > NOTE: The Awesomium web renderer automatically delays the code execution if the document is not
+--- > **NOTE**: The Awesomium web renderer automatically delays the code execution if the document is not
 --- > ready, but the Chromium web renderer does not! This means that with Chromium, you cannot
 --- > JavaScript run code immediatly after calling
 --- > [HTML:SetHTML](https://wiki.facepunch.com/gmod/Panel:SetHTML) or
@@ -1745,10 +1745,10 @@ function HTML:StopLoading() end
 --- This is only useful if the panel is not normally visible, i.e the panel exists purely for its HTML
 --- Material.
 ---
---- > NOTE: Only works on with panels that have a HTML Material. See
+--- > **NOTE**: Only works on with panels that have a HTML Material. See
 --- > [HTML:GetHTMLMaterial](https://wiki.facepunch.com/gmod/Panel:GetHTMLMaterial) for more details.
 ---
---- > NOTE: A good place to call this is in the
+--- > **NOTE**: A good place to call this is in the
 --- > [GM:PreRender](https://wiki.facepunch.com/gmod/GM:PreRender) hook
 ---
 function HTML:UpdateHTMLTexture() end

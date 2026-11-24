@@ -41,7 +41,7 @@ game = {}
 ---
 --- > WARNING: This function **must** be called on both the client and server in `GM:Initialize` or you will have unexpected problems.
 ---
---- > NOTE: There is a limit of 256 ammo types, including the default ones.
+--- > **NOTE**: There is a limit of 256 ammo types, including the default ones.
 ---
 ---@param ammo_data garrysmod.AmmoData The attributes of the ammo.
 function game.AddAmmoType( ammo_data ) end
@@ -60,7 +60,7 @@ function game.AddDecal( decal_name, material_name ) end
 ---
 --- Loads a particle file. Individual particle systems will still need to be precached with `PrecacheParticleSystem`.
 ---
---- > NOTE: You will still need to call this function clientside regardless if you create the particle effects serverside.
+--- > **NOTE**: You will still need to call this function clientside regardless if you create the particle effects serverside.
 ---
 ---@param file_path string The path of the file to add, must be a `.pcf` file.
 function game.AddParticles( file_path ) end
@@ -90,7 +90,7 @@ function game.BuildAmmoTypes() end
 ---
 --- Calling this destroys all BASS streams.
 ---
---- > NOTE: The `EFL_KEEP_ON_RECREATE_ENTITIES` flag doesn't prevent an entity from being recreated,
+--- > **NOTE**: The `EFL_KEEP_ON_RECREATE_ENTITIES` flag doesn't prevent an entity from being recreated,
 --- > which means flagged entities will be duplicated since they are both kept and recreated.
 ---
 ---@param dont_send_to_clients boolean? If set to `true`, don't run this function on all clients.
@@ -217,9 +217,9 @@ function game.GetGlobalState( name ) end
 --- Returns the public IP address and port of the current server.
 --- This will return the IP/port that you are connecting through when ran clientside.
 ---
---- > NOTE: Returns `"loopback"` in singleplayer.
+--- > **NOTE**: Returns `"loopback"` in singleplayer.
 ---
---- > NOTE: Returns `"0.0.0.0:<port>"` on the server when called too early, including in `GM:Initialize` and `GM:InitPostEntity`.
+--- > **NOTE**: Returns `"0.0.0.0:<port>"` on the server when called too early, including in `GM:Initialize` and `GM:InitPostEntity`.
 --- > This bug seems to only happen the first time a server is launched, and will return the correct value after switching maps.
 ---
 ---@return "loopback" | string address The IP address and port in the format `"x.x.x.x:x"`.
@@ -259,7 +259,7 @@ function game.GetMapNext() end
 --- Map revision is the amount of times the map file was saved in Hammer at the time of the map being compiled.
 --- This is useful to detect when a map has changed.
 ---
---- > NOTE: Not to be confused with the [VBSP version](https://developer.valvesoftware.com/wiki/Source_BSP_File_Format#Versions).
+--- > **NOTE**: Not to be confused with the [VBSP version](https://developer.valvesoftware.com/wiki/Source_BSP_File_Format#Versions).
 ---
 ---@return integer revision The revision of the currently loaded map.
 ---@return integer version The BSP version.
@@ -272,7 +272,7 @@ function game.GetMapVersion() end
 --- > TIP: You can use this function in your scripted NPCs or Nextbots to make them stronger,
 --- > however, it is a good idea to lock powerful attacks behind the highest difficulty instead of just increasing the health.
 ---
---- > NOTE: Internally this is tied to the gamerules entity,
+--- > **NOTE**: Internally this is tied to the gamerules entity,
 --- > so you'll have to wait until `GM:InitPostEntity` is called to return the skill level.
 ---
 ---@return integer level The difficulty level: Easy (`1`), Normal (`2`), Hard (`3`).
@@ -353,7 +353,7 @@ function game.MaxPlayers() end
 --- Mounts a GMA addon from the disk.
 --- Can be used with `steamworks.DownloadUGC`.
 ---
---- > NOTE: Any error models currently loaded that the mounted addon provides will be reloaded.
+--- > **NOTE**: Any error models currently loaded that the mounted addon provides will be reloaded.
 --- > Any error materials currently loaded that the mounted addon provides will **not** be reloaded.
 --- > That means that this cannot be used to fix missing map materials, as the map materials are loaded before you are able to call this.
 ---
