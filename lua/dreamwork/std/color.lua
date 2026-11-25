@@ -1,9 +1,6 @@
 ---@class dreamwork.std
 local std = dreamwork.std
 
-local ascii = std.ascii
-local ascii_isHexDigit = ascii.isHexDigit
-
 local string = std.string
 local string_format = string.format
 local string_byte, string_char = string.byte, string.char
@@ -27,8 +24,10 @@ local error = std.error
 local DIV255_CONST = 1 / 255
 
 
---- A packed 24-bit RGB color as an integer: `0xRRGGBB`
---- ( red in bits 16-23, green in 8-15, blue in 0-7 ). No alpha channel.
+--- A packed 32-bit RGBA color as an unsigned integer: `0xRRGGBBAA`
+--- ( red in bits 24-31, green in 16-23, blue in 8-15, alpha in 0-7 ).
+---
+--- Always in the range [0, 0xFFFFFFFF], so hex literals like `0xFF8000FF` compare equal to built colors.
 ---
 ---@alias dreamwork.std.Color integer
 
@@ -36,20 +35,22 @@ local DIV255_CONST = 1 / 255
 ---
 --- The color library.
 ---
---- Packed `0xRRGGBB` integers for RGB math and conversion
+--- Packed `0xRRGGBBAA` integers for RGBA math and conversion
 --- (see `dreamwork.std.Color`). Colors are plain integers, not tables.
 ---
 --- Creating / unpacking:
---- * `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
---- * Matching `to*` functions
+--- * `fromRGBA`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
+--- * Matching `to*` functions, alpha is the last returned value
 ---
 --- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
 --- and HSL / HSV / HWB getters / setters return a new packed color.
+--- Setters keep the alpha channel of the source color.
 ---
 --- ```lua
---- local orange = color.fromRGB( 255, 128, 0 )
---- local r, g, b = color.toRGB( orange )
---- print( r .. ", " .. g .. ", " .. b ) -- 255, 128, 0
+--- local orange = color.fromRGBA( 255, 128, 0 )
+--- local r, g, b, a = color.toRGBA( orange )
+--- print( r .. ", " .. g .. ", " .. b .. ", " .. a ) -- 255, 128, 0, 255
+--- print( orange == 0xFF8000FF ) -- true
 --- ```
 ---
 ---@class dreamwork.std.color
@@ -63,17 +64,18 @@ std.color = color_lib
 ---@param red integer The 8-bit red channel, in the range [0, 255].
 ---@param green integer The 8-bit green channel, in the range [0, 255].
 ---@param blue integer The 8-bit blue channel, in the range [0, 255].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return dreamwork.std.Color color The color value.
 ---@nodiscard
-local function fromRGB( red, green, blue )
-    return bit_bor(
-        bit_lshift( bit_band( red, 0xFF ), 16 ),
-        bit_lshift( bit_band( green, 0xFF ), 8 ),
-        bit_band( blue, 0xFF )
+local function fromRGBA( red, green, blue, alpha )
+    return (bit_band( red, 0xFF ) * 0x1000000) + bit_bor(
+        bit_lshift( bit_band( green, 0xFF ), 16 ),
+        bit_lshift( bit_band( blue, 0xFF ), 8 ),
+        alpha ~= nil and bit_band( alpha, 0xFF ) or 0xFF
     )
 end
 
-color_lib.fromRGB = fromRGB
+color_lib.fromRGBA = fromRGBA
 
 --- [SHARED AND MENU]
 ---
@@ -83,120 +85,149 @@ color_lib.fromRGB = fromRGB
 ---@return integer red The 8-bit red channel, in the range [0, 255].
 ---@return integer green The 8-bit green channel, in the range [0, 255].
 ---@return integer blue The 8-bit blue channel, in the range [0, 255].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
-local function toRGB( color )
-    return bit_band( bit_rshift( color, 16 ), 0xFF ),
+local function toRGBA( color )
+    return bit_rshift( color, 24 ),
+        bit_band( bit_rshift( color, 16 ), 0xFF ),
         bit_band( bit_rshift( color, 8 ), 0xFF ),
         bit_band( color, 0xFF )
 end
 
-color_lib.toRGB = toRGB
+color_lib.toRGBA = toRGBA
 
 --- [SHARED AND MENU]
 ---
---- Inverts a color value.
+--- Returns the color's alpha channel.
+---
+---@param color dreamwork.std.Color The color to get the alpha of.
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
+---@nodiscard
+function color_lib.getAlpha( color )
+    return bit_band( color, 0xFF )
+end
+
+--- [SHARED AND MENU]
+---
+--- Sets the color's alpha channel.
+---
+---@param color dreamwork.std.Color The color to set the alpha of.
+---@param alpha integer The 8-bit alpha channel, in the range [0, 255].
+---@return dreamwork.std.Color new_color The new color.
+---@nodiscard
+function color_lib.setAlpha( color, alpha )
+    return (color - bit_band( color, 0xFF )) + bit_band( alpha, 0xFF )
+end
+
+--- [SHARED AND MENU]
+---
+--- Inverts the RGB channels of a color value, alpha is kept.
 ---
 ---@param color dreamwork.std.Color The color value to invert.
 ---@return dreamwork.std.Color The inverted color value.
 ---@nodiscard
 function color_lib.invert( color )
-    local r, g, b = toRGB( color )
-
-    return fromRGB(
-        math_abs( 255 - r ),
-        math_abs( 255 - g ),
-        math_abs( 255 - b )
-    )
+    local r, g, b, a = toRGBA( color )
+    return fromRGBA( 255 - r, 255 - g, 255 - b, a )
 end
 
 --- [SHARED AND MENU]
 ---
---- Adds two colors.
+--- Adds two colors channel by channel ( alpha included ), results are clamped to [0, 255].
 ---
 ---@param value1 dreamwork.std.Color The first color to add.
 ---@param value2 dreamwork.std.Color The second color to add.
+---@return dreamwork.std.Color new_color The result of the addition.
+---@nodiscard
 function color_lib.add( value1, value2 )
-    local r1, g1, b1 = toRGB( value1 )
-    local r2, g2, b2 = toRGB( value2 )
+    local r1, g1, b1, a1 = toRGBA( value1 )
+    local r2, g2, b2, a2 = toRGBA( value2 )
 
-    return fromRGB(
-        math_ceil( r1 + r2 ),
-        math_ceil( g1 + g2 ),
-        math_ceil( b1 + b2 )
+    return fromRGBA(
+        math_min( r1 + r2, 255 ),
+        math_min( g1 + g2, 255 ),
+        math_min( b1 + b2, 255 ),
+        math_min( a1 + a2, 255 )
     )
 end
 
 --- [SHARED AND MENU]
 ---
---- Subtracts two colors.
+--- Subtracts two colors channel by channel ( alpha included ), results are clamped to [0, 255].
 ---
 ---@param value1 dreamwork.std.Color The first color to subtract.
 ---@param value2 dreamwork.std.Color The second color to subtract.
 ---@return dreamwork.std.Color new_color The result of the subtraction.
 ---@nodiscard
 function color_lib.sub( value1, value2 )
-    local r1, g1, b1 = toRGB( value1 )
-    local r2, g2, b2 = toRGB( value2 )
+    local r1, g1, b1, a1 = toRGBA( value1 )
+    local r2, g2, b2, a2 = toRGBA( value2 )
 
-    return fromRGB(
-        math_ceil( r1 - r2 ),
-        math_ceil( g1 - g2 ),
-        math_ceil( b1 - b2 )
+    return fromRGBA(
+        math_max( r1 - r2, 0 ),
+        math_max( g1 - g2, 0 ),
+        math_max( b1 - b2, 0 ),
+        math_max( a1 - a2, 0 )
     )
 end
 
 --- [SHARED AND MENU]
 ---
---- Multiplies two colors.
+--- Multiplies two colors channel by channel ( alpha included ),
+--- channels are fractions of `255`, so white is the identity.
 ---
 ---@param value1 dreamwork.std.Color The first color to multiply.
 ---@param value2 dreamwork.std.Color The second color to multiply.
 ---@return dreamwork.std.Color new_color The result of the multiplication.
 ---@nodiscard
 function color_lib.mul( value1, value2 )
-    local r1, g1, b1 = toRGB( value1 )
-    local r2, g2, b2 = toRGB( value2 )
+    local r1, g1, b1, a1 = toRGBA( value1 )
+    local r2, g2, b2, a2 = toRGBA( value2 )
 
-    return fromRGB(
-        math_ceil( r1 * r2 ),
-        math_ceil( g1 * g2 ),
-        math_ceil( b1 * b2 )
+    return fromRGBA(
+        math_ceil( r1 * r2 * DIV255_CONST ),
+        math_ceil( g1 * g2 * DIV255_CONST ),
+        math_ceil( b1 * b2 * DIV255_CONST ),
+        math_ceil( a1 * a2 * DIV255_CONST )
     )
 end
 
 --- [SHARED AND MENU]
 ---
---- Divides two colors.
+--- Divides two colors channel by channel ( alpha included ),
+--- channels are fractions of `255`, results are clamped to [0, 255] ( division by zero is `255` ).
 ---
 ---@param value1 dreamwork.std.Color The first color to divide.
 ---@param value2 dreamwork.std.Color The second color to divide.
 ---@return dreamwork.std.Color new_color The result of the division.
 ---@nodiscard
 function color_lib.div( value1, value2 )
-    local r1, g1, b1 = toRGB( value1 )
-    local r2, g2, b2 = toRGB( value2 )
+    local r1, g1, b1, a1 = toRGBA( value1 )
+    local r2, g2, b2, a2 = toRGBA( value2 )
 
-    return fromRGB(
-        math_ceil( r1 / r2 ),
-        math_ceil( g1 / g2 ),
-        math_ceil( b1 / b2 )
+    -- `x / 0` is `inf` ( or `nan` for `0 / 0` ), `math.min` maps both to `255`
+    return fromRGBA(
+        math_ceil( math_min( r1 * 255 / r2, 255 ) ),
+        math_ceil( math_min( g1 * 255 / g2, 255 ) ),
+        math_ceil( math_min( b1 * 255 / b2, 255 ) ),
+        math_ceil( math_min( a1 * 255 / a2, 255 ) )
     )
 end
 
 --- [SHARED AND MENU]
 ---
---- Returns the color as binary string.
+--- Returns the color as a 4-byte binary string ( `R, G, B, A` ).
 ---
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string binary_string The color as binary string.
 ---@nodiscard
 function color_lib.toString( color )
-    return string_char( toRGB( color ) )
+    return string_char( toRGBA( color ) )
 end
 
 --- [SHARED AND MENU]
 ---
---- Parses a color from a binary string.
+--- Parses a color from a 4-byte binary string ( `R, G, B, A` ).
 ---
 ---@param str string The binary string to parse.
 ---@param start_position integer? The starting position in the string.
@@ -216,12 +247,12 @@ function color_lib.fromString( str, start_position, str_length )
         error( "not enough bytes in string to parse color", 2 )
     end
 
-    return fromRGB( string_byte( str, start_position, start_position + 3 ) )
+    return fromRGBA( string_byte( str, start_position, start_position + 3 ) )
 end
 
 --- [SHARED AND MENU]
 ---
---- Smoothing two colors by fraction.
+--- Smoothing two colors by fraction, alpha included.
 ---
 ---@param frac number The interpolation factor.
 ---@param color dreamwork.std.Color The starting color.
@@ -229,105 +260,79 @@ end
 ---@return dreamwork.std.Color The interpolated color.
 ---@nodiscard
 function color_lib.lerp( frac, color, color2 )
-    local r, g, b = toRGB( color )
-    local r2, g2, b2 = toRGB( color2 )
+    local r, g, b, a = toRGBA( color )
+    local r2, g2, b2, a2 = toRGBA( color2 )
 
-    return fromRGB(
+    return fromRGBA(
         math_lerp( frac, r, r2 ),
         math_lerp( frac, g, g2 ),
-        math_lerp( frac, b, b2 )
+        math_lerp( frac, b, b2 ),
+        math_lerp( frac, a, a2 )
     )
 end
 
 --- [SHARED AND MENU]
 ---
---- Converts a color value to a hexadecimal string.
+--- Converts a color value to a hexadecimal string, `RRGGBBAA` without prefix.
 ---
 ---@param color dreamwork.std.Color The color to convert.
 ---@return string The hexadecimal representation of the color.
 ---@nodiscard
 local function toHex( color )
-    return string_format( "%02x%02x%02x", toRGB( color ) )
+    return string_format( "%02x%02x%02x%02x", toRGBA( color ) )
 end
 
 color_lib.toHex = toHex
-
----@param uint8 integer | nil
----@return integer | nil
-local function fromByte( uint8 )
-    if uint8 == nil then
-        return nil
-    elseif ascii_isHexDigit( uint8 ) then
-        return bytepack_readHex8( uint8, uint8 )
-    else
-        return uint8
-    end
-end
-
----@param uint8_1 integer
----@param uint8_2 integer
----@param uint8_3 integer
----@param uint8_4 integer
----@param uint8_5 integer
----@param uint8_6 integer
----@return integer | nil
----@return integer | nil
----@return integer | nil
-local function fromBytes( uint8_1, uint8_2, uint8_3, uint8_4, uint8_5, uint8_6 )
-    if uint8_1 == nil then
-        return 0x000000
-    elseif uint8_2 == nil then
-        return bytepack_readHex8( uint8_1, 0x00 ), 0x00, 0x00
-    elseif uint8_3 == nil then
-        return bytepack_readHex8( uint8_1, uint8_2 ), 0x00, 0x00
-    elseif uint8_4 == nil then
-        return bytepack_readHex8( uint8_1, uint8_2 ), bytepack_readHex8( uint8_3, 0x00 ), 0x00
-    elseif uint8_5 == nil then
-        return bytepack_readHex8( uint8_1, uint8_2 ), bytepack_readHex8( uint8_3, uint8_4 ), 0x00
-    elseif uint8_6 == nil then
-        return bytepack_readHex8( uint8_1, uint8_2 ),
-            bytepack_readHex8( uint8_3, uint8_4 ),
-            bytepack_readHex8( uint8_5, 0x00 )
-    else
-        return bytepack_readHex8( uint8_1, uint8_2 ),
-            bytepack_readHex8( uint8_3, uint8_4 ),
-            bytepack_readHex8( uint8_5, uint8_6 )
-    end
-end
 
 --- [SHARED AND MENU]
 ---
 --- Converts a hexadecimal color string to color.
 ---
---- Formats:
+--- Formats ( `0x`, `#` or no prefix ):
 ---
---- `0xRRGGBB` / `#RRGGBB` / `RRGGBB`
+--- `RGB` / `RGBA` ( every digit doubled, CSS style ) / `RRGGBB` / `RRGGBBAA`
+---
+--- Alpha is `255` when not given, invalid digit pairs are `0`.
 ---
 ---@param hex_str string The hexadecimal color string to convert.
 ---@return dreamwork.std.Color color The color value.
 ---@nodiscard
 local function fromHex( hex_str )
-    local uint8_1 = string_byte( hex_str, 1, 1 )
-    if uint8_1 == nil then
-        return 0x000000
-    end
+    local start_position = 1
 
-    local uint8_2 = string_byte( hex_str, 2, 2 )
-    if uint8_2 == nil then
-        return fromRGB( fromByte( uint8_1 ) or 0, 0, 0 )
-    end
-
-    local r, g, b
-
+    local uint8_1, uint8_2 = string_byte( hex_str, 1, 2 )
     if uint8_1 == 0x23 --[[ # ]] then
-        r, g, b = fromBytes( uint8_2, string_byte( hex_str, 3, 9 ) )
+        start_position = 2
     elseif uint8_1 == 0x30 --[[ 0 ]] and (uint8_2 == 0x58 --[[ X ]] or uint8_2 == 0x78 --[[ x ]]) then
-        r, g, b = fromBytes( string_byte( hex_str, 3, 10 ) )
-    else
-        r, g, b = fromBytes( uint8_1, uint8_2, string_byte( hex_str, 3, 8 ) )
+        start_position = 3
     end
 
-    return fromRGB( r or 0, g or 0, b or 0 )
+    local digit_count = #hex_str - start_position + 1
+    local d1, d2, d3, d4, d5, d6, d7, d8 = string_byte( hex_str, start_position, start_position + 7 )
+
+    if digit_count == 3 then
+        return fromRGBA(
+            bytepack_readHex8( d1, d1 ) or 0,
+            bytepack_readHex8( d2, d2 ) or 0,
+            bytepack_readHex8( d3, d3 ) or 0,
+            0xFF
+        )
+    elseif digit_count == 4 then
+        return fromRGBA(
+            bytepack_readHex8( d1, d1 ) or 0,
+            bytepack_readHex8( d2, d2 ) or 0,
+            bytepack_readHex8( d3, d3 ) or 0,
+            bytepack_readHex8( d4, d4 ) or 0
+        )
+    end
+
+    -- `RRGGBB` / `RRGGBBAA`, missing digits are `0`
+    return fromRGBA(
+        bytepack_readHex8( d1 or 0x30, d2 or 0x30 ) or 0,
+        bytepack_readHex8( d3 or 0x30, d4 or 0x30 ) or 0,
+        bytepack_readHex8( d5 or 0x30, d6 or 0x30 ) or 0,
+        d7 == nil and 0xFF or (bytepack_readHex8( d7, d8 or 0x30 ) or 0)
+    )
 end
 
 color_lib.fromHex = fromHex
@@ -339,9 +344,10 @@ color_lib.fromHex = fromHex
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param lightness number The lightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
-local function fromHSL( hue, saturation, lightness )
+local function fromHSL( hue, saturation, lightness, alpha )
     hue = hue % 360
 
     local c = (1 - math_abs( 2 * lightness - 1 )) * saturation
@@ -363,10 +369,11 @@ local function fromHSL( hue, saturation, lightness )
         r, g, b = c, 0, x
     end
 
-    return fromRGB(
+    return fromRGBA(
         math_floor( (r + m) * 255 ),
         math_floor( (g + m) * 255 ),
-        math_floor( (b + m) * 255 )
+        math_floor( (b + m) * 255 ),
+        alpha
     )
 end
 
@@ -380,9 +387,10 @@ color_lib.fromHSL = fromHSL
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number lightness The lightness as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 local function toHSL( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue, alpha = toRGBA( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local min_value, max_value = math_min( red, green, blue ), math_max( red, green, blue )
@@ -409,10 +417,10 @@ local function toHSL( color )
 
         hue = hue * 60
 
-        return hue < 0 and hue + 360 or hue, saturation, lightness
+        return hue < 0 and hue + 360 or hue, saturation, lightness, alpha
     end
 
-    return 0, 0, lightness
+    return 0, 0, lightness, alpha
 end
 
 color_lib.toHSL = toHSL
@@ -424,9 +432,10 @@ color_lib.toHSL = toHSL
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
-local function fromHSV( hue, saturation, brightness )
+local function fromHSV( hue, saturation, brightness, alpha )
     hue = hue % 360
 
     local c = brightness * saturation
@@ -448,10 +457,11 @@ local function fromHSV( hue, saturation, brightness )
         r, g, b = c, 0, x
     end
 
-    return fromRGB(
+    return fromRGBA(
         math_floor( (r + m) * 255 ),
         math_floor( (g + m) * 255 ),
-        math_floor( (b + m) * 255 )
+        math_floor( (b + m) * 255 ),
+        alpha
     )
 end
 
@@ -465,9 +475,10 @@ color_lib.fromHSV = fromHSV
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number value The value as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 local function toHSV( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue, alpha = toRGBA( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local min_value, max_value = math_min( red, green, blue ), math_max( red, green, blue )
@@ -493,7 +504,7 @@ local function toHSV( color )
 
     hue = hue * 60
 
-    return hue < 0 and hue + 360 or hue, saturation, max_value
+    return hue < 0 and hue + 360 or hue, saturation, max_value, alpha
 end
 
 color_lib.toHSV = toHSV
@@ -505,11 +516,12 @@ color_lib.toHSV = toHSV
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
-local function fromHWB( hue, saturation, brightness )
+local function fromHWB( hue, saturation, brightness, alpha )
     brightness = 1 - brightness
-    return fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness )
+    return fromHSV( hue, (brightness > 0) and (1 - (saturation / brightness)) or 0, brightness, alpha )
 end
 
 color_lib.fromHWB = fromHWB
@@ -522,10 +534,11 @@ color_lib.fromHWB = fromHWB
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number whiteness The whiteness as fraction [0, 1].
 ---@return number blackness The blackness as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 local function toHWB( color )
-    local hue, saturation, brightness = toHSL( color )
-    return hue, (1 - saturation) * brightness, 1 - brightness
+    local hue, saturation, brightness, alpha = toHSL( color )
+    return hue, (1 - saturation) * brightness, 1 - brightness, alpha
 end
 
 color_lib.toHWB = toHWB
@@ -538,17 +551,19 @@ color_lib.toHWB = toHWB
 ---@param magenta number The magenta as fraction [0, 1].
 ---@param yellow number The yellow as fraction [0, 1].
 ---@param black number The black as fraction [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
-function color_lib.fromCMYK( cyan, magenta, yellow, black )
+function color_lib.fromCMYK( cyan, magenta, yellow, black, alpha )
     cyan, magenta, yellow, black = cyan * 0.01, magenta * 0.01, yellow * 0.01, black * 0.01
 
     local mk = 1 - black
 
-    return fromRGB(
+    return fromRGBA(
         math_floor( ((1 - cyan) * mk) * 255 ),
         math_floor( ((1 - magenta) * mk) * 255 ),
-        math_floor( ((1 - yellow) * mk) * 255 )
+        math_floor( ((1 - yellow) * mk) * 255 ),
+        alpha
     )
 end
 
@@ -561,11 +576,12 @@ end
 ---@return number magenta The magenta as fraction [0, 1].
 ---@return number yellow The yellow as fraction [0, 1].
 ---@return number black The black as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color_lib.toCMYK( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue, alpha = toRGBA( color )
     local m = math_max( red, green, blue )
-    return (m - red) / m, (m - green) / m, (m - blue) / m, math_min( red, green, blue ) * DIV255_CONST
+    return (m - red) / m, (m - green) / m, (m - blue) / m, math_min( red, green, blue ) * DIV255_CONST, alpha
 end
 
 --- [SHARED AND MENU]
@@ -576,7 +592,7 @@ end
 ---@return integer hue The hue in degrees [0, 360].
 ---@nodiscard
 function color_lib.getHue( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue = toRGBA( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local max_value = math_max( red, green, blue )
@@ -609,8 +625,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setHue( color, hue )
-    local _, saturation, lightness = toHSL( color )
-    return fromHSL( hue, saturation, lightness )
+    local _, saturation, lightness, alpha = toHSL( color )
+    return fromHSL( hue, saturation, lightness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -621,7 +637,7 @@ end
 ---@return number saturation The saturation as fraction [0, 1].
 ---@nodiscard
 function color_lib.getSaturation( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue = toRGBA( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     local max_value = math_max( red, green, blue )
@@ -637,8 +653,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setSaturation( color, saturation )
-    local hue, _, lightness = toHSL( color )
-    return fromHSL( hue, saturation, lightness )
+    local hue, _, lightness, alpha = toHSL( color )
+    return fromHSL( hue, saturation, lightness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -649,7 +665,7 @@ end
 ---@return number brightness The brightness as fraction [0, 1].
 ---@nodiscard
 function color_lib.getBrightness( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue = toRGBA( color )
     return math_max( red, green, blue ) * DIV255_CONST
 end
 
@@ -662,8 +678,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setBrightness( color, brightness )
-    local hue, saturation, _ = toHSV( color )
-    return fromHSV( hue, saturation, brightness )
+    local hue, saturation, _, alpha = toHSV( color )
+    return fromHSV( hue, saturation, brightness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -674,7 +690,7 @@ end
 ---@return number lightness The lightness as fraction [0, 1].
 ---@nodiscard
 function color_lib.getLightness( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue = toRGBA( color )
     red, green, blue = red * DIV255_CONST, green * DIV255_CONST, blue * DIV255_CONST
 
     return (math_max( red, green, blue ) + math_min( red, green, blue )) * 0.5
@@ -689,8 +705,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setLightness( color, lightness )
-    local hue, saturation, _ = toHSL( color )
-    return fromHSL( hue, saturation, lightness )
+    local hue, saturation, _, alpha = toHSL( color )
+    return fromHSL( hue, saturation, lightness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -714,8 +730,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setWhiteness( color, whiteness )
-    local hue, _, blackness = toHWB( color )
-    return fromHWB( hue, whiteness, blackness )
+    local hue, _, blackness, alpha = toHWB( color )
+    return fromHWB( hue, whiteness, blackness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -739,8 +755,8 @@ end
 ---@return dreamwork.std.Color new_color The new color.
 ---@nodiscard
 function color_lib.setBlackness( color, blackness )
-    local hue, saturation, _ = toHSL( color )
-    return fromHSL( hue, saturation, blackness )
+    local hue, saturation, _, alpha = toHSL( color )
+    return fromHSL( hue, saturation, blackness, alpha )
 end
 
 --- [SHARED AND MENU]
@@ -751,6 +767,6 @@ end
 ---@return number luminance The luminance as integer [0, 255].
 ---@nodiscard
 function color_lib.getLuminance( color )
-    local red, green, blue = toRGB( color )
+    local red, green, blue = toRGBA( color )
     return math_ceil( red * 0.2126 + green * 0.7152 + blue * 0.0722 )
 end

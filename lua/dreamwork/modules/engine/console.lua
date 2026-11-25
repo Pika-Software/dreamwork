@@ -607,7 +607,7 @@ do
     ---@param color dreamwork.std.Color The color to print the string with.
     function console.messageColored( str, color )
         local index, str_length = 1, utf8_len( str, nil, nil, true )
-        color_buffer:update( color or 0xFFFFFF )
+        color_buffer:update( color or 0xFFFFFFFF )
 
         while str_length ~= 0 do
             -- https://developer.valvesoftware.com/wiki/Developer_Console_Control

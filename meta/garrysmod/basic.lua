@@ -124,7 +124,7 @@ function Msg( ... ) end
 --- A `Color` sets the color of the text that follows it, until the next `Color`. Other arguments are converted to strings and printed with no separator and no trailing newline.
 ---
 --- ```lua
---- MsgC( Color( 255, 0, 0 ), "Error: ", color_white, "something broke\n" )
+--- MsgC( { r = 255, g = 0, b = 0 }, "Error: ", color_white, "something broke\n" )
 --- ```
 ---
 ---@param ... any | garrysmod.Color Colors and values to print.

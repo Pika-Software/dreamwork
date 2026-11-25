@@ -1685,7 +1685,7 @@ color_lib.Scheme = color_scheme
 
 do
 
-    local color_fromRGB = color_lib.fromRGB
+    local color_fromRGBA = color_lib.fromRGBA
 
     do
 
@@ -1710,10 +1710,10 @@ do
             if raw_type( name ) == "string" then
                 ---@cast name string
                 local engine_color = NamedColor( name ) or tmp
-                color = color_fromRGB( engine_color.r, engine_color.g, engine_color.b )
+                color = color_fromRGBA( engine_color.r, engine_color.g, engine_color.b, engine_color.a )
             elseif raw_type( name ) == "number" then
                 ---@cast name integer
-                color = color_fromRGB( name, name, name )
+                color = color_fromRGBA( name, name, name, 0xFF )
             else
                 error( "color name must be string or integer to resolve color.", 3 )
             end
@@ -1725,63 +1725,63 @@ do
     end
 
     -- Basic Colors
-    color_scheme.white = 0xFFFFFF
-    color_scheme.white_smoke = 0xF0F0F0
+    color_scheme.white = 0xFFFFFFFF
+    color_scheme.white_smoke = 0xF0F0F0FF
 
-    color_scheme.black = 0x000000
+    color_scheme.black = 0x000000FF
 
-    color_scheme.red = 0xFF0000
-    color_scheme.mona_lisa = 0xFF8A80
+    color_scheme.red = 0xFF0000FF
+    color_scheme.mona_lisa = 0xFF8A80FF
 
-    color_scheme.green = 0x00FF00
+    color_scheme.green = 0x00FF00FF
 
-    color_scheme.blue = 0x0000FF
-    color_scheme.spray = 0x7EC8E3
-    color_scheme.robin_egg_blue = 0x7EC8E3
+    color_scheme.blue = 0x0000FFFF
+    color_scheme.spray = 0x7EC8E3FF
+    color_scheme.robin_egg_blue = 0x7EC8E3FF
 
-    color_scheme.yellow = 0xFFFF00
-    color_scheme.sandstone = 0xC9B896
+    color_scheme.yellow = 0xFFFF00FF
+    color_scheme.sandstone = 0xC9B896FF
 
-    color_scheme.cyan = 0x00FFFF
-    color_scheme.magenta = 0xFF00FF
+    color_scheme.cyan = 0x00FFFFFF
+    color_scheme.magenta = 0xFF00FFFF
 
-    color_scheme.gray = 0x808080
-    color_scheme.dark_gray = 0xA9A9A9
-    color_scheme.light_gray = 0xD0D0D0
-    color_scheme.suva_gray = 0x8A8A8A
+    color_scheme.gray = 0x808080FF
+    color_scheme.dark_gray = 0xA9A9A9FF
+    color_scheme.light_gray = 0xD0D0D0FF
+    color_scheme.suva_gray = 0x8A8A8AFF
 
-    color_scheme.turquoise = 0x40e0d0
-    color_scheme.dark_turquoise = 0x00D0D0
+    color_scheme.turquoise = 0x40E0D0FF
+    color_scheme.dark_turquoise = 0x00D0D0FF
 
     -- https://palettehex.com/palette/star-sky-color-palette/
-    color_scheme.starlight = 0x87CEEB
+    color_scheme.starlight = 0x87CEEBFF
 
     -- https://officialcolorregistry.com/colors/lists/space-and-galaxy-colors
-    color_scheme.moonlight = 0xF5DEB3
+    color_scheme.moonlight = 0xF5DEB3FF
 
     -- Garry's Mod
     -- Thank you code_gs <3
     -- https://discord.com/channels/565105920414318602/565108080300261398/905385921283756062
-    color_scheme.server_message = color_lib.fromRGB( 156, 241, 255 )
-    color_scheme.server_error = color_lib.fromRGB( 136, 221, 255 )
+    color_scheme.server_message = color_fromRGBA( 156, 241, 255 )
+    color_scheme.server_error = color_fromRGBA( 136, 221, 255 )
 
-    color_scheme.client_message = color_lib.fromRGB( 255, 241, 122 )
-    color_scheme.client_error = color_lib.fromRGB( 255, 221, 102 )
+    color_scheme.client_message = color_fromRGBA( 255, 241, 122 )
+    color_scheme.client_error = color_fromRGBA( 255, 221, 102 )
 
-    color_scheme.menu_message = color_lib.fromRGB( 100, 220, 100 )
-    color_scheme.menu_error = color_lib.fromRGB( 120, 220, 100 )
+    color_scheme.menu_message = color_fromRGBA( 100, 220, 100 )
+    color_scheme.menu_error = color_fromRGBA( 120, 220, 100 )
 
     -- DreamWork
-    color_scheme.dreamwork_main = color_lib.fromRGB( 180, 180, 255 )
+    color_scheme.dreamwork_main = color_fromRGBA( 180, 180, 255 )
 
-    color_scheme.dreamwork_info = color_lib.fromRGB( 70, 135, 255 )
-    color_scheme.dreamwork_warn = color_lib.fromRGB( 255, 130, 90 )
-    color_scheme.dreamwork_error = color_lib.fromRGB( 250, 55, 40 )
-    color_scheme.dreamwork_debug = color_lib.fromRGB( 0, 200, 150 )
+    color_scheme.dreamwork_info = color_fromRGBA( 70, 135, 255 )
+    color_scheme.dreamwork_warn = color_fromRGBA( 255, 130, 90 )
+    color_scheme.dreamwork_error = color_fromRGBA( 250, 55, 40 )
+    color_scheme.dreamwork_debug = color_fromRGBA( 0, 200, 150 )
 
-    color_scheme.dreamwork_menu = color_lib.fromRGB( 75, 175, 80 )
-    color_scheme.dreamwork_client = color_lib.fromRGB( 225, 170, 10 )
-    color_scheme.dreamwork_server = color_lib.fromRGB( 5, 170, 250 )
+    color_scheme.dreamwork_menu = color_fromRGBA( 75, 175, 80 )
+    color_scheme.dreamwork_client = color_fromRGBA( 225, 170, 10 )
+    color_scheme.dreamwork_server = color_fromRGBA( 5, 170, 250 )
 
     -- Dynamic
     if LUA_CLIENT then

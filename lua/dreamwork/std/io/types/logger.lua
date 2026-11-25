@@ -94,7 +94,7 @@ function Logger:__init( options )
 
     local color = options.color
     if color == nil then
-        self.title_color = 0xFFFFFF
+        self.title_color = 0xFFFFFFFF
     else
         self.title_color = color
     end

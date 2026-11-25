@@ -23,7 +23,7 @@ function ColorToHSL( color ) end
 ---
 --- Converts a `Color` into the HSV color space.
 ---
---- Example: `ColorToHSV( Color( 255, 255, 0 ) )` returns `60, 1, 1`.
+--- Example: `ColorToHSV( { r = 255, g = 255, b = 0 } )` returns `60, 1, 1`.
 ---
 ---@param color garrysmod.Color The color to convert.
 ---@return number hue The hue in degrees, from `0` to `360`.

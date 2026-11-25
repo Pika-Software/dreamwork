@@ -1523,15 +1523,12 @@ local function parse_manifest( json_str )
     local color_value = data.color
     if color_value ~= nil then
         local digits = raw_type( color_value ) == "string" and string_match( color_value, "^#?(%x+)$" ) or nil
-        if digits == nil or (#digits ~= 3 and #digits ~= 6) then
-            return nil, "'color' must be a hex color code, '#RGB' or '#RRGGBB'"
+        local digit_count = digits ~= nil and #digits or 0
+        if digit_count ~= 3 and digit_count ~= 4 and digit_count ~= 6 and digit_count ~= 8 then
+            return nil, "'color' must be a hex color code, '#RGB', '#RGBA', '#RRGGBB' or '#RRGGBBAA'"
         end
 
-        -- `#RGB` is `#RRGGBB` with every digit doubled
-        if #digits == 3 then
-            digits = string_gsub( digits, "%x", "%0%0" )
-        end
-
+        ---@cast digits string
         logger_color = color_fromHex( digits )
     end
 

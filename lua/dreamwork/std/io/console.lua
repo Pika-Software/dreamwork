@@ -107,7 +107,7 @@ do
     ---@param ... string | dreamwork.std.Color The message to write to the console.
     local function console_write( ... )
         ---@type dreamwork.std.Color
-        local color = 0xFFFFFF
+        local color = 0xFFFFFFFF
 
         for i = 1, select( "#", ... ), 1 do
             ---@type string | dreamwork.std.Color
