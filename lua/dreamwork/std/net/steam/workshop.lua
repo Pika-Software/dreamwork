@@ -4,6 +4,9 @@ local vfs = dreamwork.vfs
 local vfs_isFile = vfs.isFile
 local vfs_writeFile = vfs.writeFile
 
+local cleanup = dreamwork.cleanup
+local cleanup_registerTemporary = cleanup.registerTemporary
+
 ---@type holylib.addonsystem
 local holylib_addonsystem = dreamwork_engine.requireLibrary( "addonsystem" )
 
@@ -686,12 +689,6 @@ do
 
         local CACHE_DIRECTORY = "/garrysmod/data/dreamwork/cache/workshop/"
 
-        if vfs.isDirectory( CACHE_DIRECTORY ) then
-            vfs.deleteDirectory( CACHE_DIRECTORY, true, true )
-        else
-            vfs.createDirectory( CACHE_DIRECTORY )
-        end
-
         ---@param uuid_str string
         ---@return boolean
         local function is_free( uuid_str )
@@ -716,12 +713,16 @@ do
 
             local new_path = CACHE_DIRECTORY .. uuid_unique( is_free ) .. ".gma"
             vfs_writeFile( new_path, file_class:Read( file_class:Size() ) )
+            cleanup_registerTemporary( new_path )
             f:setResult( new_path )
         end
 
         --- [SHARED AND MENU]
         ---
         --- Downloads this item's `.gma` from the Steam Workshop.
+        ---
+        --- A copy outside of the game file system is written to `/garrysmod/data/dreamwork/cache/workshop/`
+        --- and registered with `dreamwork.cleanup`. It is deleted once its time to live passes.
         ---
         ---@param seconds number? Timeout in seconds, `30` by default.
         ---@return string file_path Absolute path to the downloaded `.gma`.

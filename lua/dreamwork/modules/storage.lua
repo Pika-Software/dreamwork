@@ -437,6 +437,94 @@ do
 
 end
 
+do
+
+    --- [SHARED AND MENU]
+    ---
+    --- The records of the cached and temporary files of `dreamwork.cleanup`, by their paths: the last use and the lifetime.
+    ---
+    ---@class dreamwork.storage.files
+    local files = {}
+    storage.files = files
+
+    --- [SHARED AND MENU]
+    ---
+    --- Marks the files as used, they expire `lifetime` after `timestamps` (now, when it is omitted).
+    ---
+    ---@param file_paths string[] The absolute paths of the files.
+    ---@param file_count integer The number of files.
+    ---@param lifetime integer The time the files are kept for since their timestamp, in milliseconds, `0` keeps them forever.
+    ---@param timestamps integer[]? The last use of each file, unix time in milliseconds, now by default.
+    function files.write( file_paths, file_count, lifetime, timestamps )
+        local timestamp = time_now( "ms", false )
+
+        sqlite_transaction( function( query )
+            for index = 1, file_count, 1 do
+                if timestamps ~= nil then
+                    timestamp = timestamps[ index ]
+                end
+
+                query( "INSERT INTO 'dreamwork.storage.files' (path, timestamp, lifetime) VALUES (?, ?, ?) ON CONFLICT( path ) DO UPDATE SET timestamp = excluded.timestamp, lifetime = excluded.lifetime", file_paths[ index ], timestamp, lifetime )
+            end
+        end )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Sets the last use of the file to now. The lifetime stays as it was registered.
+    ---
+    ---@param file_path string The absolute path to the file.
+    ---@return boolean updated `true` if the file has a record.
+    function files.touch( file_path )
+        if sqlite_queryFirst( "SELECT path FROM 'dreamwork.storage.files' WHERE path=? LIMIT 1", file_path ) == nil then
+            return false
+        end
+
+        sqlite_query( "UPDATE 'dreamwork.storage.files' SET timestamp=? WHERE path=?", time_now( "ms", false ), file_path )
+        return true
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Removes the records of the files, the files themselves are kept.
+    ---
+    ---@param file_paths string[] The absolute paths of the files.
+    ---@param file_count integer The number of files.
+    function files.delete( file_paths, file_count )
+        sqlite_transaction( function( query )
+            for index = 1, file_count, 1 do
+                query( "DELETE FROM 'dreamwork.storage.files' WHERE path=?", file_paths[ index ] )
+            end
+        end )
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Returns the paths of the files whose time to live has passed.
+    ---
+    ---@return string[] file_paths The paths of the expired files.
+    ---@return integer file_count
+    ---@nodiscard
+    function files.expired()
+        ---@type string[]
+        local file_paths = {}
+
+        local rows = sqlite_query( "SELECT path FROM 'dreamwork.storage.files' WHERE lifetime>0 AND timestamp+lifetime<?", time_now( "ms", false ) )
+        if rows == nil then
+            return file_paths, 0
+        end
+
+        local file_count = #rows
+
+        for index = 1, file_count, 1 do
+            file_paths[ index ] = raw_tostring( rows[ index ].path )
+        end
+
+        return file_paths, file_count
+    end
+
+end
+
 if LUA_MENU then
 
     --- [MENU]
@@ -554,6 +642,15 @@ do
                         same_site TEXT NOT NULL,
                         expires REAL NOT NULL,
                         PRIMARY KEY ( jar, name, domain, path )
+                    )
+                ]],
+
+                -- cached and temporary files of `dreamwork.cleanup`
+                [[
+                    CREATE TABLE 'dreamwork.storage.files' (
+                        path TEXT PRIMARY KEY,
+                        timestamp INTEGER NOT NULL,
+                        lifetime INTEGER NOT NULL CHECK(lifetime >= 0)
                     )
                 ]]
             }

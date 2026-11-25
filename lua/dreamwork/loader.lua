@@ -3195,6 +3195,7 @@ dreamwork.storage.init()
 dreamwork_load( "modules/vfs.lua" )
 dreamwork_load( "std/io/fs.lua" )
 
+dreamwork_load( "modules/cleanup.lua" )
 dreamwork_load( "std/codec/protobuf.lua" )
 
 local vfs = dreamwork.vfs

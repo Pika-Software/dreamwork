@@ -427,6 +427,19 @@ dreamwork_transport_http_url https://example.com/dreamwork/transport/
 | `dreamwork_transport_cache_lifetime`   | `30`      | Client: days a cached file is kept for since its last use, `0` keeps it forever.                                      |
 | `dreamwork_transport_cache_size`       | `2048`    | Client: size of the cache in MiB, the least recently used files go first, `0` is unlimited.                           |
 
+## Cache and Temporary Files
+
+`dreamwork.cleanup` [SHARED AND MENU] deletes cached and temporary files once their time to live has passed. It runs when the module loads, after the database migration, and again every hour.
+
+- Cached materials are kept in `data/dreamwork/cache/materials`. Mounted addons are kept in `data/dreamwork/tmp/`, Workshop downloads in `data/dreamwork/cache/workshop/`.
+- A file is registered when it is written. `cleanup.access` moves that time forward while the file is still in use, so it expires `dreamwork_cache_lifetime` or `dreamwork_temporary_lifetime` after the last use.
+- The transport cache and the HTTP cache have their own limits, see [File Transport](#file-transport).
+
+| Variable                       | Default | Description                                                              |
+| ------------------------------ | ------- | ------------------------------------------------------------------------ |
+| `dreamwork_cache_lifetime`     | `30`    | Days a cached file is kept for since its last use, `0` keeps it forever. |
+| `dreamwork_temporary_lifetime` | `1`     | Hours a temporary file is kept for, `0` keeps it forever.                |
+
 ## Developer Tools
 
 - **CLI**: `dreamwork_sci` (server) and `dreamwork_cci` (client and menu) console interfaces. They provide grouped commands with `help`, autocompletion and colored output:

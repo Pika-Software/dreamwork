@@ -35,6 +35,21 @@
 ---@return number time_took How long it took for the function to run, in seconds.
 function Material( file_path, params ) end
 
+--- [CLIENT AND MENU]
+---
+--- Creates a new material with the given name and shader, or returns the existing material of the name.
+---
+--- The material can be found later with `Material( "!" .. name )`.
+---
+--- > **NOTE**: Materials cannot be freed, and an existing material of the name is returned unchanged
+--- > ( its shader and parameters are not replaced ).
+---
+---@param name string The material name, should be unique.
+---@param shader_name string The name of the shader, e.g. `"UnlitGeneric"`, see [Shaders](https://developer.valvesoftware.com/wiki/Category:Shaders).
+---@param key_values garrysmod.Material.KeyValues The shader parameters, the same as in a `.vmt` file.
+---@return garrysmod.Material material The created material.
+function CreateMaterial( name, shader_name, key_values ) end
+
 --- [SHARED AND MENU]
 ---
 --- The key values of a material, as returned by `Material:GetKeyValues` and accepted by `CreateMaterial`.

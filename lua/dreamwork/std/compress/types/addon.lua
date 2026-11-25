@@ -5,6 +5,9 @@ local vfs           = dreamwork.vfs
 local vfs_isFile    = vfs.isFile
 local vfs_writeFile = vfs.writeFile
 
+local cleanup = dreamwork.cleanup
+local cleanup_registerTemporary = cleanup.registerTemporary
+
 
 ---@type garrysmod.game
 local glua_game = dreamwork_engine.requireLibrary( "game" )
@@ -839,11 +842,8 @@ do
 
     local TMP_DIRECTORY = "/garrysmod/data/dreamwork/tmp/"
 
-    if vfs.isDirectory( TMP_DIRECTORY ) then
-        vfs.deleteDirectory( TMP_DIRECTORY, true, true )
-    else
-        vfs.createDirectory( TMP_DIRECTORY )
-    end
+    --- The same directory relative to `garrysmod/`, for `game.MountGMA`.
+    local TMP_ENGINE_DIRECTORY = "data/dreamwork/tmp/"
 
     ---@param uuid_str string
     ---@return boolean
@@ -857,15 +857,19 @@ do
     ---
     --- The file is written asynchronously when called from a coroutine.
     ---
-    --- > **NOTE**: Mounted addons cannot be unmounted, so the file stays until the game is closed.
+    --- > **NOTE**: Mounted addons cannot be unmounted. The file is registered with `dreamwork.cleanup` and deleted once its time to live passes. `cleanup.access` keeps a file that is still in use.
     ---
     ---@return boolean success `true` if the addon was mounted.
     ---@return string[] files If successful, a list of files that have been mounted.
     ---@async
     function Addon:mount()
         local file_name = uuid_unique( is_free ) .. ".gma"
-        vfs_writeFile( TMP_DIRECTORY .. file_name, self:compile() )
-        return game_MountGMA( "data/dreamwork/tmp/" .. file_name )
+        local file_path = TMP_DIRECTORY .. file_name
+
+        vfs_writeFile( file_path, self:compile() )
+        cleanup_registerTemporary( file_path )
+
+        return game_MountGMA( TMP_ENGINE_DIRECTORY .. file_name )
     end
 
 end
