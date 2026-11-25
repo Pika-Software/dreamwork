@@ -196,7 +196,7 @@ function __Addon:isAllowed() end
 ---
 --- The file is written asynchronously when called from a coroutine.
 ---
---- > **NOTE**: Mounted addons cannot be unmounted, so the file stays until the game is closed.
+--- > **NOTE**: Mounted addons cannot be unmounted. The file is registered with `dreamwork.cleanup` and deleted once its time to live passes. `cleanup.access` keeps a file that is still in use.
 ---
 ---@return boolean success `true` if the addon was mounted.
 ---@return string[] files If successful, a list of files that have been mounted.

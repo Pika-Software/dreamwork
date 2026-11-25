@@ -33,7 +33,7 @@
 ---@field dependencies table<string, string> The dependencies, repository (`user/repo`, `host/user/repo` or `https://host/user/repo`) -> version range, `""` installs the default branch if the package is missing.
 ---@field repository string | nil The repository of the package, e.g. `"user/my_lib"` or `"https://github.com/user/my_lib"`, the download source for repository packages without it.
 ---@field client_files string[] | nil The wildcards of the files sent to clients (see `path.wildcard`), relative to the package root, e.g. `"lua/**"`. `package.json` and `main.client` are always sent, `nil` sends only them.
----@field color Color | nil The title color of the package logger, `"#RGB"` or `"#RRGGBB"` in `package.json` (`#` is optional), the DreamWork color by default.
+---@field color Color | nil The title color of the package logger, `"#RGB"`, `"#RGBA"`, `"#RRGGBB"` or `"#RRGGBBAA"` in `package.json` (`#` is optional), the DreamWork color by default.
 
 ---@alias dreamwork.PackageRealm
 ---| "server"

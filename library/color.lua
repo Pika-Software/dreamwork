@@ -1,7 +1,9 @@
 ---@meta _
 
---- A packed 24-bit RGB color as an integer: `0xRRGGBB`
---- ( red in bits 16-23, green in 8-15, blue in 0-7 ). No alpha channel.
+--- A packed 32-bit RGBA color as an unsigned integer: `0xRRGGBBAA`
+--- ( red in bits 24-31, green in 16-23, blue in 8-15, alpha in 0-7 ).
+---
+--- Always in the range [0, 0xFFFFFFFF], so hex literals like `0xFF8000FF` compare equal to built colors.
 ---
 ---@alias Color integer
 
@@ -9,20 +11,22 @@
 ---
 --- The color library.
 ---
---- Packed `0xRRGGBB` integers for RGB math and conversion
+--- Packed `0xRRGGBBAA` integers for RGBA math and conversion
 --- (see `Color`). Colors are plain integers, not tables.
 ---
 --- Creating / unpacking:
---- * `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
---- * Matching `to*` functions
+--- * `fromRGBA`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
+--- * Matching `to*` functions, alpha is the last returned value
 ---
 --- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
 --- and HSL / HSV / HWB getters / setters return a new packed color.
+--- Setters keep the alpha channel of the source color.
 ---
 --- ```lua
---- local orange = color.fromRGB( 255, 128, 0 )
---- local r, g, b = color.toRGB( orange )
---- print( r .. ", " .. g .. ", " .. b ) -- 255, 128, 0
+--- local orange = color.fromRGBA( 255, 128, 0 )
+--- local r, g, b, a = color.toRGBA( orange )
+--- print( r .. ", " .. g .. ", " .. b .. ", " .. a ) -- 255, 128, 0, 255
+--- print( orange == 0xFF8000FF ) -- true
 --- ```
 ---
 ---@class color
@@ -35,9 +39,10 @@ color = {}
 ---@param red integer The 8-bit red channel, in the range [0, 255].
 ---@param green integer The 8-bit green channel, in the range [0, 255].
 ---@param blue integer The 8-bit blue channel, in the range [0, 255].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return Color color The color value.
 ---@nodiscard
-function color.fromRGB(red, green, blue) end
+function color.fromRGBA(red, green, blue, alpha) end
 
 --- [SHARED AND MENU]
 ---
@@ -47,12 +52,32 @@ function color.fromRGB(red, green, blue) end
 ---@return integer red The 8-bit red channel, in the range [0, 255].
 ---@return integer green The 8-bit green channel, in the range [0, 255].
 ---@return integer blue The 8-bit blue channel, in the range [0, 255].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
-function color.toRGB(color) end
+function color.toRGBA(color) end
 
 --- [SHARED AND MENU]
 ---
---- Inverts a color value.
+--- Returns the color's alpha channel.
+---
+---@param color Color The color to get the alpha of.
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
+---@nodiscard
+function color.getAlpha(color) end
+
+--- [SHARED AND MENU]
+---
+--- Sets the color's alpha channel.
+---
+---@param color Color The color to set the alpha of.
+---@param alpha integer The 8-bit alpha channel, in the range [0, 255].
+---@return Color new_color The new color.
+---@nodiscard
+function color.setAlpha(color, alpha) end
+
+--- [SHARED AND MENU]
+---
+--- Inverts the RGB channels of a color value, alpha is kept.
 ---
 ---@param color Color The color value to invert.
 ---@return Color The inverted color value.
@@ -61,15 +86,17 @@ function color.invert(color) end
 
 --- [SHARED AND MENU]
 ---
---- Adds two colors.
+--- Adds two colors channel by channel ( alpha included ), results are clamped to [0, 255].
 ---
 ---@param value1 Color The first color to add.
 ---@param value2 Color The second color to add.
+---@return Color new_color The result of the addition.
+---@nodiscard
 function color.add(value1, value2) end
 
 --- [SHARED AND MENU]
 ---
---- Subtracts two colors.
+--- Subtracts two colors channel by channel ( alpha included ), results are clamped to [0, 255].
 ---
 ---@param value1 Color The first color to subtract.
 ---@param value2 Color The second color to subtract.
@@ -79,7 +106,8 @@ function color.sub(value1, value2) end
 
 --- [SHARED AND MENU]
 ---
---- Multiplies two colors.
+--- Multiplies two colors channel by channel ( alpha included ),
+--- channels are fractions of `255`, so white is the identity.
 ---
 ---@param value1 Color The first color to multiply.
 ---@param value2 Color The second color to multiply.
@@ -89,7 +117,8 @@ function color.mul(value1, value2) end
 
 --- [SHARED AND MENU]
 ---
---- Divides two colors.
+--- Divides two colors channel by channel ( alpha included ),
+--- channels are fractions of `255`, results are clamped to [0, 255] ( division by zero is `255` ).
 ---
 ---@param value1 Color The first color to divide.
 ---@param value2 Color The second color to divide.
@@ -99,7 +128,7 @@ function color.div(value1, value2) end
 
 --- [SHARED AND MENU]
 ---
---- Returns the color as binary string.
+--- Returns the color as a 4-byte binary string ( `R, G, B, A` ).
 ---
 ---@param color Color The color to convert.
 ---@return string binary_string The color as binary string.
@@ -108,7 +137,7 @@ function color.toString(color) end
 
 --- [SHARED AND MENU]
 ---
---- Parses a color from a binary string.
+--- Parses a color from a 4-byte binary string ( `R, G, B, A` ).
 ---
 ---@param str string The binary string to parse.
 ---@param start_position integer? The starting position in the string.
@@ -119,7 +148,7 @@ function color.fromString(str, start_position, str_length) end
 
 --- [SHARED AND MENU]
 ---
---- Smoothing two colors by fraction.
+--- Smoothing two colors by fraction, alpha included.
 ---
 ---@param frac number The interpolation factor.
 ---@param color Color The starting color.
@@ -130,7 +159,7 @@ function color.lerp(frac, color, color2) end
 
 --- [SHARED AND MENU]
 ---
---- Converts a color value to a hexadecimal string.
+--- Converts a color value to a hexadecimal string, `RRGGBBAA` without prefix.
 ---
 ---@param color Color The color to convert.
 ---@return string The hexadecimal representation of the color.
@@ -141,9 +170,11 @@ function color.toHex(color) end
 ---
 --- Converts a hexadecimal color string to color.
 ---
---- Formats:
+--- Formats ( `0x`, `#` or no prefix ):
 ---
---- `0xRRGGBB` / `#RRGGBB` / `RRGGBB`
+--- `RGB` / `RGBA` ( every digit doubled, CSS style ) / `RRGGBB` / `RRGGBBAA`
+---
+--- Alpha is `255` when not given, invalid digit pairs are `0`.
 ---
 ---@param hex_str string The hexadecimal color string to convert.
 ---@return Color color The color value.
@@ -157,9 +188,10 @@ function color.fromHex(hex_str) end
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param lightness number The lightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return Color new_color The new color.
 ---@nodiscard
-function color.fromHSL(hue, saturation, lightness) end
+function color.fromHSL(hue, saturation, lightness, alpha) end
 
 --- [SHARED AND MENU]
 ---
@@ -169,6 +201,7 @@ function color.fromHSL(hue, saturation, lightness) end
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number lightness The lightness as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color.toHSL(color) end
 
@@ -179,9 +212,10 @@ function color.toHSL(color) end
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return Color new_color The new color.
 ---@nodiscard
-function color.fromHSV(hue, saturation, brightness) end
+function color.fromHSV(hue, saturation, brightness, alpha) end
 
 --- [SHARED AND MENU]
 ---
@@ -191,6 +225,7 @@ function color.fromHSV(hue, saturation, brightness) end
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number saturation The saturation as fraction [0, 1].
 ---@return number value The value as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color.toHSV(color) end
 
@@ -201,9 +236,10 @@ function color.toHSV(color) end
 ---@param hue integer The hue in degrees [0, 360].
 ---@param saturation number The saturation [0, 1].
 ---@param brightness number The brightness [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return Color new_color The new color.
 ---@nodiscard
-function color.fromHWB(hue, saturation, brightness) end
+function color.fromHWB(hue, saturation, brightness, alpha) end
 
 --- [SHARED AND MENU]
 ---
@@ -213,6 +249,7 @@ function color.fromHWB(hue, saturation, brightness) end
 ---@return integer hue The hue in degrees [0, 360].
 ---@return number whiteness The whiteness as fraction [0, 1].
 ---@return number blackness The blackness as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color.toHWB(color) end
 
@@ -224,9 +261,10 @@ function color.toHWB(color) end
 ---@param magenta number The magenta as fraction [0, 1].
 ---@param yellow number The yellow as fraction [0, 1].
 ---@param black number The black as fraction [0, 1].
+---@param alpha integer? The 8-bit alpha channel, in the range [0, 255], `255` by default.
 ---@return Color new_color The new color.
 ---@nodiscard
-function color.fromCMYK(cyan, magenta, yellow, black) end
+function color.fromCMYK(cyan, magenta, yellow, black, alpha) end
 
 --- [SHARED AND MENU]
 ---
@@ -237,6 +275,7 @@ function color.fromCMYK(cyan, magenta, yellow, black) end
 ---@return number magenta The magenta as fraction [0, 1].
 ---@return number yellow The yellow as fraction [0, 1].
 ---@return number black The black as fraction [0, 1].
+---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color.toCMYK(color) end
 

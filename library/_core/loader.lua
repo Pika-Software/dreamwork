@@ -614,47 +614,47 @@ function os.exit() end
 ---@class color.Scheme
 color.Scheme = {}
 
-color.Scheme.white = 0xFFFFFF
+color.Scheme.white = 0xFFFFFFFF
 
-color.Scheme.white_smoke = 0xF0F0F0
+color.Scheme.white_smoke = 0xF0F0F0FF
 
-color.Scheme.black = 0x000000
+color.Scheme.black = 0x000000FF
 
-color.Scheme.red = 0xFF0000
+color.Scheme.red = 0xFF0000FF
 
-color.Scheme.mona_lisa = 0xFF8A80
+color.Scheme.mona_lisa = 0xFF8A80FF
 
-color.Scheme.green = 0x00FF00
+color.Scheme.green = 0x00FF00FF
 
-color.Scheme.blue = 0x0000FF
+color.Scheme.blue = 0x0000FFFF
 
-color.Scheme.spray = 0x7EC8E3
+color.Scheme.spray = 0x7EC8E3FF
 
-color.Scheme.robin_egg_blue = 0x7EC8E3
+color.Scheme.robin_egg_blue = 0x7EC8E3FF
 
-color.Scheme.yellow = 0xFFFF00
+color.Scheme.yellow = 0xFFFF00FF
 
-color.Scheme.sandstone = 0xC9B896
+color.Scheme.sandstone = 0xC9B896FF
 
-color.Scheme.cyan = 0x00FFFF
+color.Scheme.cyan = 0x00FFFFFF
 
-color.Scheme.magenta = 0xFF00FF
+color.Scheme.magenta = 0xFF00FFFF
 
-color.Scheme.gray = 0x808080
+color.Scheme.gray = 0x808080FF
 
-color.Scheme.dark_gray = 0xA9A9A9
+color.Scheme.dark_gray = 0xA9A9A9FF
 
-color.Scheme.light_gray = 0xD0D0D0
+color.Scheme.light_gray = 0xD0D0D0FF
 
-color.Scheme.suva_gray = 0x8A8A8A
+color.Scheme.suva_gray = 0x8A8A8AFF
 
-color.Scheme.turquoise = 0x40e0d0
+color.Scheme.turquoise = 0x40E0D0FF
 
-color.Scheme.dark_turquoise = 0x00D0D0
+color.Scheme.dark_turquoise = 0x00D0D0FF
 
-color.Scheme.starlight = 0x87CEEB
+color.Scheme.starlight = 0x87CEEBFF
 
-color.Scheme.moonlight = 0xF5DEB3
+color.Scheme.moonlight = 0xF5DEB3FF
 
 --- [SHARED AND MENU]
 ---

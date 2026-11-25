@@ -215,6 +215,9 @@ function ItemClass.fetchMany(ids, id_count, timeout) end
 ---
 --- Downloads this item's `.gma` from the Steam Workshop.
 ---
+--- A copy outside of the game file system is written to `/garrysmod/data/dreamwork/cache/workshop/`
+--- and registered with `dreamwork.cleanup`. It is deleted once its time to live passes.
+---
 ---@param seconds number? Timeout in seconds, `30` by default.
 ---@return string file_path Absolute path to the downloaded `.gma`.
 ---@async
