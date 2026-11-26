@@ -1223,7 +1223,7 @@ function render.SetModelLighting( light_direction, red, green, blue ) end
 ---
 --- Sets the render target to the specified rt.
 ---
----@param texture garrysmod.Texture The new render target to be used.
+---@param texture garrysmod.Texture | nil The new render target to be used, `nil` for the main frame buffer.
 function render.SetRenderTarget( texture ) end
 
 --- [CLIENT]

@@ -21,7 +21,15 @@ local storage_files_touch = storage_files.touch
 local storage_files_delete = storage_files.delete
 local storage_files_expired = storage_files.expired
 
+local storage_http = dreamwork_storage.http
+
 local std = dreamwork.std
+
+local raw_pairs = std.raw.pairs
+
+local gc = std.gc
+local gc_collect = gc.collect
+local gc_getMemory = gc.getMemory
 
 local console = std.console
 local console_Variable = console.Variable
@@ -29,14 +37,23 @@ local console_Variable = console.Variable
 
 --- [SHARED AND MENU]
 ---
---- Deletes cached and temporary files once their time to live has passed.
+--- Deletes cached and temporary files once their time to live has passed,
+--- and empties in-memory Lua caches before a full garbage collection.
 ---
 --- A file is registered when it is written. `access` moves that time forward while the file is still in use.
 --- Expired files are deleted when this module loads, which is after `storage.init`, and again every hour.
 ---
+--- Lua caches are emptied every `dreamwork_gc_interval` seconds ( `dreamwork_menu_gc_interval` on the menu ), then the garbage is collected.
+---
 --- ```lua
 --- dreamwork.cleanup.register( "/garrysmod/data/my_addon/dump.dat", 3600 )
 --- dreamwork.cleanup.access( "/garrysmod/data/my_addon/dump.dat" )
+---
+--- local cache = {}
+---
+--- dreamwork.cleanup.attachCache( "my_addon.cache", function()
+---     cache = {}
+--- end )
 --- ```
 ---
 ---@class dreamwork.cleanup
@@ -142,3 +159,77 @@ end, true )
 
 -- `storage.init` has already run. vfs is loaded, so the expired files can be deleted now.
 exceptions_call( cleanup.sweep )
+
+---@type table<string, fun()>
+local cache_clearers = {}
+
+--- [SHARED AND MENU]
+---
+--- Registers a function that empties an in-memory Lua cache, or replaces the one with the same name.
+---
+--- It is called by `cleanup.collect` before the garbage is collected.
+--- Entries still in use must be recreated on demand, the cache can be emptied at any time.
+---
+---@param name string The unique name of the cache.
+---@param clear fun() The function that empties the cache.
+function cleanup.attachCache( name, clear )
+    cache_clearers[ name ] = clear
+end
+
+--- [SHARED AND MENU]
+---
+--- Removes the cache function registered under the name, does nothing if there is none.
+---
+---@param name string The unique name of the cache.
+function cleanup.detachCache( name )
+    cache_clearers[ name ] = nil
+end
+
+--- [SHARED AND MENU]
+---
+--- Empties every registered Lua cache, then performs a full garbage collection.
+---
+--- An error in one cache function is reported and does not stop the others.
+---
+---@return number freed The memory freed, in kilobytes.
+function cleanup.collect()
+    local memory = gc_getMemory()
+
+    for _, clear in raw_pairs( cache_clearers ) do
+        exceptions_call( clear )
+    end
+
+    gc_collect()
+
+    local freed = memory - gc_getMemory()
+    dreamwork.Logger:debug( "Cleanup: Lua caches emptied, %.2f MB of garbage collected.", freed / 1024 )
+    return freed
+end
+
+cleanup.attachCache( "dreamwork.storage", dreamwork_storage.clearCache )
+cleanup.attachCache( "dreamwork.storage.http", storage_http.clearCache )
+
+---@type dreamwork.std.console.Variable<integer>
+local gc_interval = console_Variable( {
+    name = dreamwork.selectVariableName( "gc_interval" ),
+    description = "The number of seconds between emptying Lua caches and collecting the garbage, '0' disables it.",
+    type = "integer",
+    default = 600,
+    min = 0,
+    max = 86400,
+    archive = true,
+    hidden = true
+} )
+
+---@param interval integer
+local function schedule( interval )
+    engine_timer_create( "dreamwork.cleanup.collect", interval, 0, function()
+        exceptions_call( cleanup.collect )
+    end, interval ~= 0 )
+end
+
+schedule( gc_interval.value )
+
+gc_interval:attach( function( _, value )
+    schedule( value )
+end )

@@ -1685,6 +1685,7 @@ color_lib.Scheme = color_scheme
 
 do
 
+    local color_fromRGB = color_lib.fromRGB
     local color_fromRGBA = color_lib.fromRGBA
 
     do
@@ -1713,7 +1714,7 @@ do
                 color = color_fromRGBA( engine_color.r, engine_color.g, engine_color.b, engine_color.a )
             elseif raw_type( name ) == "number" then
                 ---@cast name integer
-                color = color_fromRGBA( name, name, name, 0xFF )
+                color = color_fromRGB( name, name, name )
             else
                 error( "color name must be string or integer to resolve color.", 3 )
             end
@@ -1762,26 +1763,26 @@ do
     -- Garry's Mod
     -- Thank you code_gs <3
     -- https://discord.com/channels/565105920414318602/565108080300261398/905385921283756062
-    color_scheme.server_message = color_fromRGBA( 156, 241, 255 )
-    color_scheme.server_error = color_fromRGBA( 136, 221, 255 )
+    color_scheme.server_message = color_fromRGB( 156, 241, 255 )
+    color_scheme.server_error = color_fromRGB( 136, 221, 255 )
 
-    color_scheme.client_message = color_fromRGBA( 255, 241, 122 )
-    color_scheme.client_error = color_fromRGBA( 255, 221, 102 )
+    color_scheme.client_message = color_fromRGB( 255, 241, 122 )
+    color_scheme.client_error = color_fromRGB( 255, 221, 102 )
 
-    color_scheme.menu_message = color_fromRGBA( 100, 220, 100 )
-    color_scheme.menu_error = color_fromRGBA( 120, 220, 100 )
+    color_scheme.menu_message = color_fromRGB( 100, 220, 100 )
+    color_scheme.menu_error = color_fromRGB( 120, 220, 100 )
 
     -- DreamWork
-    color_scheme.dreamwork_main = color_fromRGBA( 180, 180, 255 )
+    color_scheme.dreamwork_main = color_fromRGB( 180, 180, 255 )
 
-    color_scheme.dreamwork_info = color_fromRGBA( 70, 135, 255 )
-    color_scheme.dreamwork_warn = color_fromRGBA( 255, 130, 90 )
-    color_scheme.dreamwork_error = color_fromRGBA( 250, 55, 40 )
-    color_scheme.dreamwork_debug = color_fromRGBA( 0, 200, 150 )
+    color_scheme.dreamwork_info = color_fromRGB( 70, 135, 255 )
+    color_scheme.dreamwork_warn = color_fromRGB( 255, 130, 90 )
+    color_scheme.dreamwork_error = color_fromRGB( 250, 55, 40 )
+    color_scheme.dreamwork_debug = color_fromRGB( 0, 200, 150 )
 
-    color_scheme.dreamwork_menu = color_fromRGBA( 75, 175, 80 )
-    color_scheme.dreamwork_client = color_fromRGBA( 225, 170, 10 )
-    color_scheme.dreamwork_server = color_fromRGBA( 5, 170, 250 )
+    color_scheme.dreamwork_menu = color_fromRGB( 75, 175, 80 )
+    color_scheme.dreamwork_client = color_fromRGB( 225, 170, 10 )
+    color_scheme.dreamwork_server = color_fromRGB( 5, 170, 250 )
 
     -- Dynamic
     if LUA_CLIENT then

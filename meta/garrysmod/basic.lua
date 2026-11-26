@@ -185,6 +185,37 @@ function CompileString( code, identifier, handleError ) end
 ---@param info string The debugging information to be written to the screen.
 function DebugInfo( slot, info ) end
 
+--- [CLIENT AND MENU]
+---
+--- Sets whether 2D drawing is clipped to the panel being painted.
+---
+--- Call this inside a 2D paint hook (`PANEL:Paint`, `HUDPaint`, …). Restore the previous
+--- value when finished so later draws stay clipped.
+---
+--- `Panel:NoClipping` only affects that panel's own paint. This disables clipping for
+--- everything drawn until it is turned back on, including children.
+---
+--- ```lua
+--- function PANEL:Paint()
+---     local previous = DisableClipping( true )
+---     draw.RoundedBox( 0, -50, -50, 25, 25, color_white )
+---     DisableClipping( previous )
+--- end
+--- ```
+---
+---@param disable boolean `true` to draw outside the panel, `false` to clip again.
+---@return boolean previous `true` if clipping was already disabled.
+function DisableClipping( disable ) end
+
+--- [CLIENT AND MENU]
+---
+--- Returns how many frames have been rendered since the game started.
+---
+--- The value stays the same for the whole frame, so it can mark work that should run once per frame.
+---
+---@return integer frame The rendered frame count.
+function FrameNumber() end
+
 --- [SHARED AND MENU]
 ---
 --- Returns whether the given value is a `table`.

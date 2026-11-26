@@ -39,8 +39,8 @@ local DIV255_CONST = 1 / 255
 --- (see `dreamwork.std.Color`). Colors are plain integers, not tables.
 ---
 --- Creating / unpacking:
---- * `fromRGBA`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
---- * Matching `to*` functions, alpha is the last returned value
+--- * `fromRGBA`, `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
+--- * Matching `to*` functions, alpha is the last returned value ( `toRGB` skips it )
 ---
 --- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
 --- and HSL / HSV / HWB getters / setters return a new packed color.
@@ -95,6 +95,38 @@ local function toRGBA( color )
 end
 
 color_lib.toRGBA = toRGBA
+
+--- [SHARED AND MENU]
+---
+--- Converts RGB components to an opaque color value ( alpha is `255` ).
+---
+---@param red integer The 8-bit red channel, in the range [0, 255].
+---@param green integer The 8-bit green channel, in the range [0, 255].
+---@param blue integer The 8-bit blue channel, in the range [0, 255].
+---@return dreamwork.std.Color color The color value.
+---@nodiscard
+function color_lib.fromRGB( red, green, blue )
+    return (bit_band( red, 0xFF ) * 0x1000000) + bit_bor(
+        bit_lshift( bit_band( green, 0xFF ), 16 ),
+        bit_lshift( bit_band( blue, 0xFF ), 8 ),
+        0xFF
+    )
+end
+
+--- [SHARED AND MENU]
+---
+--- Converts a color value to RGB components, alpha is skipped.
+---
+---@param color dreamwork.std.Color The color value to convert.
+---@return integer red The 8-bit red channel, in the range [0, 255].
+---@return integer green The 8-bit green channel, in the range [0, 255].
+---@return integer blue The 8-bit blue channel, in the range [0, 255].
+---@nodiscard
+function color_lib.toRGB( color )
+    return bit_rshift( color, 24 ),
+        bit_band( bit_rshift( color, 16 ), 0xFF ),
+        bit_band( bit_rshift( color, 8 ), 0xFF )
+end
 
 --- [SHARED AND MENU]
 ---

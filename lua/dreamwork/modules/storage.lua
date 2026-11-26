@@ -103,6 +103,14 @@ do
         cache[ key ] = nil
     end
 
+    --- [SHARED AND MENU]
+    ---
+    --- Empties the in-memory cache, values are loaded from the database again on demand.
+    ---
+    function storage.clearCache()
+        cache = {}
+    end
+
 end
 
 --- [SHARED AND MENU]
@@ -208,6 +216,14 @@ do
     function http.delete( url )
         sqlite_query( "DELETE FROM 'dreamwork.storage.http' WHERE url=?", url )
         cache[ url ] = nil
+    end
+
+    --- [SHARED AND MENU]
+    ---
+    --- Empties the in-memory cache, records are loaded from the database again on demand.
+    ---
+    function http.clearCache()
+        cache = {}
     end
 
     --- [SHARED AND MENU]

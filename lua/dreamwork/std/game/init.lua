@@ -49,11 +49,12 @@ local LUA_MENU = std.LUA_MENU
 --- ```
 ---
 ---@class dreamwork.std.game
----@field frame_time number The time it takes to run one frame in seconds. **Client-only**
----@field frames_per_second number The number of frames per second. **Client-only**
+---@field frame_time number The time it takes to run one frame in seconds.
+---@field frames_per_second number The number of frames per second.
 ---@field tick_time number The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
 ---@field ticks_per_second number The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
----@field tick_count integer The id of the last processed tick, the menu counts imitated ticks. **READ-ONLY**
+---@field tick_count integer The id of the last processed tick, the menu counts imitated ticks.
+---@field frame_count integer The number of the current frame, updated every frame, matches `FrameNumber` where it exists.
 local game = {}
 std.game = game
 
@@ -136,6 +137,52 @@ do
 
 end
 
+if LUA_CLIENT or LUA_MENU then
+
+    local glua_FrameNumber = FrameNumber
+
+    if glua_FrameNumber == nil then
+        local frame_count = 0
+
+        function glua_FrameNumber()
+            frame_count = frame_count + 1
+            return frame_count
+        end
+    end
+
+    local last_call = dreamwork_getUpTime()
+
+    game.frame_time = 1 / 60
+    game.frames_per_second = 60
+    game.frame_count = glua_FrameNumber()
+
+    engine_hook.catch( LUA_CLIENT and "PreRender" or "DrawOverlay", "std.game.frame.capture", function()
+        local elapsed_time = dreamwork_getUpTime()
+
+        local frame_time = elapsed_time - last_call
+        last_call = elapsed_time
+
+        game.frame_time = frame_time
+        game.frames_per_second = 1 / frame_time
+        game.frame_count = glua_FrameNumber()
+    end, 1000 )
+
+end
+
+if LUA_CLIENT or LUA_SERVER then
+
+    game.getAbsoluteFrameTime = glua_engine.AbsoluteFrameTime
+
+    --- [SHARED]
+    ---
+    --- Called when the game is shutting down.
+    ---
+    local ShutDown = Event( "game.ShutDown" )
+    engine_hook.catch( "ShutDown", "std.game.shutdown", ShutDown, 2 )
+    game.ShutDown = ShutDown
+
+end
+
 do
 
     --- [SHARED AND MENU]
@@ -156,41 +203,6 @@ do
             return Mount( game_object, is_mounted )
         end
     end )
-
-end
-
-if LUA_CLIENT or LUA_SERVER then
-
-    game.getAbsoluteFrameTime = glua_engine.AbsoluteFrameTime
-
-    --- [SHARED]
-    ---
-    --- Called when the game is shutting down.
-    ---
-    local ShutDown = Event( "game.ShutDown" )
-    engine_hook.catch( "ShutDown", "std.game.shutdown", ShutDown, 2 )
-    game.ShutDown = ShutDown
-
-    -- game.getFrameNumber = FrameNumber
-
-end
-
-if LUA_CLIENT or LUA_MENU then
-
-    local last_call = dreamwork_getUpTime()
-
-    game.frame_time = 1 / 60
-    game.frames_per_second = 60
-
-    engine_hook.catch( "Think", "std.game.frame.capture", function()
-        local elapsed_time = dreamwork_getUpTime()
-
-        local frame_time = elapsed_time - last_call
-        last_call = elapsed_time
-
-        game.frame_time = frame_time
-        game.frames_per_second = 1 / frame_time
-    end, 1000 )
 
 end
 
