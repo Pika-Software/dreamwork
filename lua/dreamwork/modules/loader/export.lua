@@ -7,7 +7,8 @@ local std = dreamwork.std
 -- the client only receives packages from the server
 if std.LUA_CLIENT then return end
 
-local vfs_writeFile = dreamwork.vfs.writeFile
+local vfs = dreamwork.vfs
+local vfs_writeFile = vfs.writeFile
 
 local string = std.string
 local string_gsub = string.gsub

@@ -1,7 +1,7 @@
 ---@meta garrysmod.vmatrix
 
 
---- [SHARED AND MENU]
+--- [SHARED]
 ---
 --- Creates a new VMatrix.
 ---

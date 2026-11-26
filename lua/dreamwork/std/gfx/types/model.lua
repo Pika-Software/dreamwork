@@ -1699,3 +1699,5 @@
 
 -- -- game.getAnimEventName = glua_util.GetAnimEventNameByID
 -- -- game.getAnimEventID = glua_util.GetAnimEventIDByName
+
+-- https://gmodwiki.com/util.GetModelMeshes
