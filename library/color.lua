@@ -15,8 +15,8 @@
 --- (see `Color`). Colors are plain integers, not tables.
 ---
 --- Creating / unpacking:
---- * `fromRGBA`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
---- * Matching `to*` functions, alpha is the last returned value
+--- * `fromRGBA`, `fromRGB`, `fromHex`, `fromHSL`, `fromHSV`, `fromHWB`, `fromCMYK`
+--- * Matching `to*` functions, alpha is the last returned value ( `toRGB` skips it )
 ---
 --- Channel ops (`add`, `sub`, `mul`, `div`, `lerp`, `invert`)
 --- and HSL / HSV / HWB getters / setters return a new packed color.
@@ -55,6 +55,28 @@ function color.fromRGBA(red, green, blue, alpha) end
 ---@return integer alpha The 8-bit alpha channel, in the range [0, 255].
 ---@nodiscard
 function color.toRGBA(color) end
+
+--- [SHARED AND MENU]
+---
+--- Converts RGB components to an opaque color value ( alpha is `255` ).
+---
+---@param red integer The 8-bit red channel, in the range [0, 255].
+---@param green integer The 8-bit green channel, in the range [0, 255].
+---@param blue integer The 8-bit blue channel, in the range [0, 255].
+---@return Color color The color value.
+---@nodiscard
+function color.fromRGB(red, green, blue) end
+
+--- [SHARED AND MENU]
+---
+--- Converts a color value to RGB components, alpha is skipped.
+---
+---@param color Color The color value to convert.
+---@return integer red The 8-bit red channel, in the range [0, 255].
+---@return integer green The 8-bit green channel, in the range [0, 255].
+---@return integer blue The 8-bit blue channel, in the range [0, 255].
+---@nodiscard
+function color.toRGB(color) end
 
 --- [SHARED AND MENU]
 ---

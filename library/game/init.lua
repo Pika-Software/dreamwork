@@ -9,11 +9,12 @@
 --- ```
 ---
 ---@class game
----@field frame_time number The time it takes to run one frame in seconds. **Client-only**
----@field frames_per_second number The number of frames per second. **Client-only**
+---@field frame_time number The time it takes to run one frame in seconds.
+---@field frames_per_second number The number of frames per second.
 ---@field tick_time number The measured time between ticks in seconds, averaged over half a second, the menu imitates a tick every frame.
 ---@field ticks_per_second number The measured number of ticks per second, averaged over half a second, the menu imitates a tick every frame.
----@field tick_count integer The id of the last processed tick, the menu counts imitated ticks. **READ-ONLY**
+---@field tick_count integer The id of the last processed tick, the menu counts imitated ticks.
+---@field frame_count integer The number of the current frame, updated every frame, matches `FrameNumber` where it exists.
 game = {}
 
 --- [SHARED AND MENU]
@@ -39,14 +40,7 @@ function game.getTimeScale() end
 ---@type Event
 game.Tick = nil
 
---- [SHARED AND MENU]
----
---- Called when the content of a game is mounted or unmounted, after its `path` is updated in the virtual file system.
----
---- Arguments: `game: Game`, `is_mounted: boolean`.
----
----@type Event
-game.Mount = nil
+game.frames_per_second = 60
 
 --- [SHARED]
 ---
@@ -55,7 +49,14 @@ game.Mount = nil
 ---@type Event
 game.ShutDown = nil
 
-game.frames_per_second = 60
+--- [SHARED AND MENU]
+---
+--- Called when the content of a game is mounted or unmounted, after its `path` is updated in the virtual file system.
+---
+--- Arguments: `game: Game`, `is_mounted: boolean`.
+---
+---@type Event
+game.Mount = nil
 
 --- [CLIENT AND MENU]
 ---
