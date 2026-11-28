@@ -871,11 +871,15 @@ end
 ---@param data dreamwork.std.Client.Data
 ---@param address string | nil
 local function set_address( data, address )
-    -- `none` for bots, `Error!` from `Player:IPAddress` of bots
-    if address == nil or address == "" or address == "none" or address == "Error!" then return end
+    -- `none` for bots, `Error!` from `Player:IPAddress` of bots, p2p too
+    if address == nil or address == "" or
+        address == "none" or address == "Error!" or
+        string_hasPrefix( address, "p2p:" ) then
+        return
+    end
 
     -- `p2p:{steam_id}` for Steam P2P (listen server invites) clients, the real address is unknown
-    if address == "loopback" or string_hasPrefix( address, "p2p:" ) then
+    if address == "loopback" then
         data.ip = 0x7F000001
         data.port = nil
         return
