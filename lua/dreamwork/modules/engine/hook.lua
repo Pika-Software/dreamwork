@@ -306,6 +306,9 @@ event_handlers[ "dreamwork.error.occurred" ] = handler_five
 -- ( err: string, realm: string, stack: table, addon_name: string | nil, addon_id: string | nil )
 event_handlers[ "OnLuaError" ] = handler_five
 
+-- gm_efsw ( action: gm_efsw.Action, watch_id: integer, file_path: string )
+event_handlers[ "FileWatchEvent" ] = handler_three
+
 -- ( info: dreamwork.engine.mounts.GameInfo | dreamwork.engine.mounts.AddonInfo, is_mounted: boolean )
 event_handlers[ "dreamwork.game.mount" ] = handler_two
 event_handlers[ "dreamwork.addon.mount" ] = handler_two

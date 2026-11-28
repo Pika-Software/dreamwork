@@ -112,18 +112,10 @@ local VMatrix = class.base( "VMatrix", false )
 local VMatrixClass = class.create( VMatrix )
 std.VMatrix = VMatrixClass
 
---- Creates a new matrix without any checks, all 16 arguments ( row by row ) must be numbers.
----
 ---@type fun( m11: number, m12: number, m13: number, m14: number, m21: number, m22: number, m23: number, m24: number, m31: number, m32: number, m33: number, m34: number, m41: number, m42: number, m43: number, m44: number ): dreamwork.std.VMatrix
 local VMatrix_create
 
---- [SHARED AND MENU]
----
---- Returns `true` if the value is a `VMatrix`.
----
---- In FFI mode only `VMatrix` cdata objects are accepted.
----
----@type fun( value: any ): ( is_vmatrix: boolean )
+---@type fun( value: any ): is_vmatrix: boolean
 local isVMatrix
 
 if ffi == nil then
@@ -153,8 +145,6 @@ if ffi == nil then
     --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is a `VMatrix`.
-    ---
-    --- Only tables with the exact `VMatrix` metatable are accepted.
     ---
     ---@param value any The value to check.
     ---@return boolean is_vmatrix `true` if the value is a `VMatrix`, `false` otherwise.
@@ -186,11 +176,6 @@ end
 
 std.isVMatrix = isVMatrix
 
---- Creates a new matrix from 16 values ( row by row ).
----
---- Without arguments creates an identity matrix ( like `Matrix()` in Garry's Mod ),
---- otherwise missing values default to `0`.
----
 ---@param m11 number?
 ---@param m12 number?
 ---@param m13 number?
@@ -207,7 +192,7 @@ std.isVMatrix = isVMatrix
 ---@param m42 number?
 ---@param m43 number?
 ---@param m44 number?
----@return dreamwork.std.VMatrix matrix The new matrix.
+---@return dreamwork.std.VMatrix matrix
 ---@protected
 function VMatrixClass:__new( m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44 )
     if m11 == nil and m12 == nil and m13 == nil and m14 == nil and m21 == nil and m22 == nil and m23 == nil and m24 == nil and
@@ -236,9 +221,7 @@ local function angleMatrix( pitch, yaw, roll )
         -sp, sr * cp, cr * cp
 end
 
---- Debug representation, the address and all rows with 2 decimals.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function VMatrix:__represent()
     return string_format( "VMatrix: %p\n[\n%.2f %.2f %.2f %.2f,\n%.2f %.2f %.2f %.2f,\n%.2f %.2f %.2f %.2f,\n%.2f %.2f %.2f %.2f\n]", self,
@@ -249,9 +232,7 @@ function VMatrix:__represent()
     )
 end
 
---- String conversion, four rows separated by new lines, e.g. `1.000000 0.000000 0.000000 0.000000\n...`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function VMatrix:__tostring()
     return string_format( "%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
@@ -262,10 +243,8 @@ function VMatrix:__tostring()
     )
 end
 
---- Exact component-wise comparison, comparing with a non-matrix value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are matrices with equal values.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function VMatrix:__eq( other )
     return isVMatrix( other ) and
@@ -541,11 +520,9 @@ function VMatrix:transformDirection( vector )
     )
 end
 
---- `matrix * matrix` ( matrix product ) and `matrix * vec3` ( transforms the point ).
----
 ---@param a dreamwork.std.VMatrix
 ---@param b dreamwork.std.VMatrix | dreamwork.std.Vector3
----@return dreamwork.std.VMatrix | dreamwork.std.Vector3 product The new matrix, or the new vector for `matrix * vec3`.
+---@return dreamwork.std.VMatrix | dreamwork.std.Vector3 product
 ---@nodiscard
 ---@protected
 function VMatrix.__mul( a, b )
@@ -558,11 +535,9 @@ function VMatrix.__mul( a, b )
     return multiply( VMatrix_create( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ), a, b )
 end
 
---- `matrix + matrix` ( component-wise ).
----
 ---@param a dreamwork.std.VMatrix
 ---@param b dreamwork.std.VMatrix
----@return dreamwork.std.VMatrix sum The new matrix.
+---@return dreamwork.std.VMatrix sum
 ---@protected
 function VMatrix.__add( a, b )
     return VMatrix_create(
@@ -573,11 +548,9 @@ function VMatrix.__add( a, b )
     )
 end
 
---- `matrix - matrix` ( component-wise ).
----
 ---@param a dreamwork.std.VMatrix
 ---@param b dreamwork.std.VMatrix
----@return dreamwork.std.VMatrix difference The new matrix.
+---@return dreamwork.std.VMatrix difference
 ---@protected
 function VMatrix.__sub( a, b )
     return VMatrix_create(

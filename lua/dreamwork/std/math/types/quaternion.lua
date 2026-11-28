@@ -176,42 +176,36 @@ end
 
 std.isQuaternion = isQuaternion
 
---- Creates a new quaternion, missing components default to `0`.
----
---- Note that `std.Quaternion()` is a zero quaternion, not identity.
----
----@param r number? The real component ( `w` ), defaults to `0`.
----@param i number? The first imaginary component ( `x` ), defaults to `0`.
----@param j number? The second imaginary component ( `y` ), defaults to `0`.
----@param k number? The third imaginary component ( `z` ), defaults to `0`.
----@return dreamwork.std.Quaternion quat The new quaternion.
+---@param r number?
+---@param i number?
+---@param j number?
+---@param k number?
+---@return dreamwork.std.Quaternion quat
 ---@protected
 function QuaternionClass:__new( r, i, j, k )
     return Quaternion_create( r or 0, i or 0, j or 0, k or 0 )
 end
 
---- Debug representation, e.g. `Quaternion: 0x01234567 [1.000000, 0.000000, 0.000000, 0.000000]`.
----
----@return string str The debug representation.
+---@return dreamwork.std.Quaternion negated
+---@protected
+function Quaternion:__unm()
+    return Quaternion_create( -self.w, -self.x, -self.y, -self.z )
+end
+
+---@return string str
 ---@protected
 function Quaternion:__represent()
     return string_format( "Quaternion: %p [%f, %f, %f, %f]", self, self.w, self.x, self.y, self.z )
 end
 
---- String conversion in `w x y z` order, e.g. `1.000000 0.000000 0.000000 0.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function Quaternion:__tostring()
     return string_format( "%f %f %f %f", self.w, self.x, self.y, self.z )
 end
 
---- Exact component-wise comparison, comparing with a non-quaternion value returns `false`.
----
---- `q` and `-q` are not equal even though they represent the same rotation.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are quaternions with equal components.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function Quaternion:__eq( other )
     return isQuaternion( other ) and self.w == other.w and self.x == other.x and self.y == other.y and self.z == other.z
@@ -440,14 +434,6 @@ end
 function Quaternion:negate()
     self.w, self.x, self.y, self.z = -self.w, -self.x, -self.y, -self.z
     return self
-end
-
---- `-quat`
----
----@return dreamwork.std.Quaternion negated The new quaternion.
----@protected
-function Quaternion:__unm()
-    return Quaternion_create( -self.w, -self.x, -self.y, -self.z )
 end
 
 --- [SHARED AND MENU]

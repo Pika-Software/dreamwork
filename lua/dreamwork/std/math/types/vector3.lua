@@ -95,18 +95,10 @@ local Vector3 = class.base( "Vector3", false )
 local Vector3Class = class.create( Vector3 )
 std.Vector3 = Vector3Class
 
---- Creates a new vector without any checks, all arguments must be numbers.
----
 ---@type fun( x: number, y: number, z: number ): dreamwork.std.Vector3
 local Vector3_create
 
---- [SHARED AND MENU]
----
---- Returns `true` if the value is a `Vector3`.
----
---- In FFI mode only `Vector3` cdata objects are accepted.
----
----@type fun( value: any ): ( is_vector3: boolean )
+---@type fun( value: any ): is_vector3: boolean
 local isVector3
 
 if ffi == nil then
@@ -122,8 +114,6 @@ if ffi == nil then
     --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is a `Vector3`.
-    ---
-    --- Only tables with the exact `Vector3` metatable are accepted.
     ---
     ---@param value any The value to check.
     ---@return boolean is_vector3 `true` if the value is a `Vector3`, `false` otherwise.
@@ -158,18 +148,17 @@ end
 
 std.isVector3 = isVector3
 
---- Creates a new vector, missing coordinates default to `0`.
----
----@param x number? The X coordinate ( forward ), defaults to `0`.
----@param y number? The Y coordinate ( left ), defaults to `0`.
----@param z number? The Z coordinate ( up ), defaults to `0`.
----@return dreamwork.std.Vector3 vec3 The new vector.
+---@param x number?
+---@param y number?
+---@param z number?
+---@return dreamwork.std.Vector3 vec3
 ---@protected
 function Vector3Class:__new( x, y, z )
     return Vector3_create( x or 0, y or 0, z or 0 )
 end
 
 --- Source `AngleMatrix`, returns the 3x3 rotation matrix ( row-major ) of the angle.
+---
 ---@return number, number, number, number, number, number, number, number, number
 local function angleMatrix( pitch, yaw, roll )
     local p, y, r = math_rad( pitch ), math_rad( yaw ), math_rad( roll )
@@ -183,6 +172,7 @@ local function angleMatrix( pitch, yaw, roll )
 end
 
 --- Source `MatrixAngles`, returns pitch, yaw and roll of the 3x3 rotation matrix ( row-major ).
+---
 ---@return number, number, number
 local function matrixAngles( a11, a12, _, a21, a22, _, a31, a32, a33 )
     local xy_distance = math_sqrt( a11 * a11 + a21 * a21 )
@@ -193,26 +183,20 @@ local function matrixAngles( a11, a12, _, a21, a22, _, a31, a32, a33 )
     return math_deg( math_atan2( -a31, xy_distance ) ), math_deg( math_atan2( -a12, a22 ) ), 0
 end
 
---- Debug representation, e.g. `Vector3: 0x01234567 [1.000000, 2.000000, 3.000000]`.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function Vector3:__represent()
     return string_format( "Vector3: %p [%f, %f, %f]", self, self.x, self.y, self.z )
 end
 
---- String conversion in Garry's Mod `Vector` format, e.g. `1.000000 2.000000 3.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function Vector3:__tostring()
     return string_format( "%f %f %f", self.x, self.y, self.z )
 end
 
---- Exact component-wise comparison, comparing with a non-vector value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are vectors with equal coordinates.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function Vector3:__eq( other )
     return isVector3( other ) and self.x == other.x and self.y == other.y and self.z == other.z
@@ -320,9 +304,7 @@ function Vector3:negate()
     return self
 end
 
---- `-vec3`
----
----@return dreamwork.std.Vector3 negated The new vector.
+---@return dreamwork.std.Vector3 negated
 ---@protected
 function Vector3:__unm()
     return Vector3_create( -self.x, -self.y, -self.z )

@@ -69,7 +69,10 @@ do
     ---@type table<string, boolean>
     local run_events = {
         OnLuaError = true,
-        OnClientLuaError = true
+        OnClientLuaError = true,
+
+        -- gm_efsw
+        FileWatchEvent = true
     }
 
     detour.simple( function( event_name, _, ... )

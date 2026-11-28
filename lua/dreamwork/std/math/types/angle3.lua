@@ -119,18 +119,10 @@ local Angle3 = class.base( "Angle3", false )
 local Angle3Class = class.create( Angle3 )
 std.Angle3 = Angle3Class
 
---- Creates a new angle without any checks, all arguments must be numbers.
----
 ---@type fun( pitch: number, yaw: number, roll: number ): dreamwork.std.Angle3
 local Angle3_create
 
---- [SHARED AND MENU]
----
---- Returns `true` if the value is an `Angle3`.
----
---- In FFI mode only `Angle3` cdata objects are accepted.
----
----@type fun( value: any ): ( is_angle3: boolean )
+---@type fun( value: any ): is_angle3: boolean
 local isAngle3
 
 if ffi == nil then
@@ -146,8 +138,6 @@ if ffi == nil then
     --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is an `Angle3`.
-    ---
-    --- Only tables with the exact `Angle3` metatable are accepted.
     ---
     ---@param value any The value to check.
     ---@return boolean is_angle3 `true` if the value is an `Angle3`, `false` otherwise.
@@ -182,18 +172,23 @@ end
 
 std.isAngle3 = isAngle3
 
---- Creates a new angle, missing values default to `0`.
----
----@param pitch number? The pitch in degrees, defaults to `0`.
----@param yaw number? The yaw in degrees, defaults to `0`.
----@param roll number? The roll in degrees, defaults to `0`.
----@return dreamwork.std.Angle3 ang3 The new angle.
+---@param pitch number?
+---@param yaw number?
+---@param roll number?
+---@return dreamwork.std.Angle3 ang3
 ---@protected
 function Angle3Class:__new( pitch, yaw, roll )
     return Angle3_create( pitch or 0, yaw or 0, roll or 0 )
 end
 
+---@return dreamwork.std.Angle3 negated
+---@protected
+function Angle3:__unm()
+    return Angle3_create( -self.pitch, -self.yaw, -self.roll )
+end
+
 --- Source `AngleMatrix`, returns the 3x3 rotation matrix ( row-major ) of the angle.
+---
 ---@return number, number, number, number, number, number, number, number, number
 local function angleMatrix( pitch, yaw, roll )
     local p, y, r = math_rad( pitch ), math_rad( yaw ), math_rad( roll )
@@ -217,28 +212,20 @@ local function matrixAngles( a11, a12, _, a21, a22, _, a31, a32, a33 )
     return math_deg( math_atan2( -a31, xy_distance ) ), math_deg( math_atan2( -a12, a22 ) ), 0
 end
 
---- Debug representation, e.g. `Angle3: 0x01234567 [0.000000, 90.000000, 0.000000]`.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function Angle3:__represent()
     return string_format( "Angle3: %p [%f, %f, %f]", self, self.pitch, self.yaw, self.roll )
 end
 
---- String conversion in Garry's Mod `Angle` format, e.g. `0.000000 90.000000 0.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function Angle3:__tostring()
     return string_format( "%f %f %f", self.pitch, self.yaw, self.roll )
 end
 
---- Exact component-wise comparison without normalization, comparing with a non-angle value returns `false`.
----
---- `( 0, 360, 0 )` and `( 0, 0, 0 )` are not equal, use `getNormalized` first if needed.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are angles with equal values.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function Angle3:__eq( other )
     return isAngle3( other ) and self.pitch == other.pitch and self.yaw == other.yaw and self.roll == other.roll
@@ -344,14 +331,6 @@ end
 function Angle3:negate()
     self.pitch, self.yaw, self.roll = -self.pitch, -self.yaw, -self.roll
     return self
-end
-
---- `-ang3`
----
----@return dreamwork.std.Angle3 negated The new angle.
----@protected
-function Angle3:__unm()
-    return Angle3_create( -self.pitch, -self.yaw, -self.roll )
 end
 
 --- [SHARED AND MENU]

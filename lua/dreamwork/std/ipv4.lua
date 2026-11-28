@@ -20,6 +20,11 @@ local bytepack                    = std.bytepack
 local bytepack_readUInt32         = bytepack.readUInt32BE
 local bytepack_writeUInt32        = bytepack.writeUInt32BE
 
+local error                       = std.error
+
+local ValueError                  = std.ValueError
+
+
 --- The classful network class of an IPv4 address, see [Classful network](https://en.wikipedia.org/wiki/Classful_network).
 ---@alias dreamwork.std.IPv4.Class "A" | "B" | "C" | "D" | "E"
 
@@ -42,10 +47,10 @@ local bytepack_writeUInt32        = bytepack.writeUInt32BE
 --- ```
 ---
 ---@class dreamwork.std.ipv4
-local ipv4                        = {}
-std.ipv4                          = ipv4
+local ipv4 = {}
+std.ipv4 = ipv4
 
-local bin_masks                   = {}
+local bin_masks = {}
 
 for i = 0, 32, 1 do
     bin_masks[ i ] = bit_lshift( (2 ^ i) - 1, 32 - i )
@@ -116,7 +121,7 @@ ipv4.fromOctets = fromOctets
 ---
 --- The prefix length must be decimal digits only.
 ---
---- Throws an error if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
+--- Raises `ValueError` if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
 --- or if the prefix length is empty, contains invalid characters or is greater than `32`.
 ---
 ---@param ipv4_str string The IPv4 address string to parse.
@@ -133,7 +138,7 @@ function ipv4.parse( ipv4_str, start_position, end_position )
     local cidr_position = string_findByte( ipv4_str, 0x2F --[[ / ]], start_index, end_index )
     if cidr_position ~= nil then
         if cidr_position == end_index then
-            std.errorf( "ipv4 prefix length is empty" )
+            error( ValueError( ipv4_str, "ipv4 prefix length is empty" ), 2 )
         end
 
         prefix_length = 0
@@ -141,13 +146,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
         for index = cidr_position + 1, end_index, 1 do
             local uint8 = string_byte( ipv4_str, index, index )
             if uint8 < 0x30 --[[ 0 ]] or uint8 > 0x39 --[[ 9 ]] then
-                std.errorf( "invalid characters in ipv4 prefix length" )
+                error( ValueError( ipv4_str, "invalid characters in ipv4 prefix length" ), 2 )
             end
 
             prefix_length = prefix_length * 10 + (uint8 - 0x30)
 
             if prefix_length > 32 then
-                std.errorf( "ipv4 prefix length out of range, max 32" )
+                error( ValueError( ipv4_str, "ipv4 prefix length out of range, max 32" ), 2 )
             end
         end
 
@@ -172,13 +177,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
     end
 
     if octet_count == 4 then
-        std.errorf( "too many ipv4 octets, max 4" )
+        error( ValueError( ipv4_str, "too many ipv4 octets, max 4" ), 2 )
     end
 
     octet_count = octet_count + 1
 
     if octet_end < start_index then
-        std.errorf( "ipv4 octet %d is empty", octet_count )
+        error( ValueError( ipv4_str, string_format( "ipv4 octet %d is empty", octet_count ) ), 2 )
     end
 
     local base, digits_start = 10, start_index
@@ -209,13 +214,13 @@ function ipv4.parse( ipv4_str, start_position, end_position )
         end
 
         if digit == nil or digit >= base then
-            std.errorf( "invalid characters in ipv4 octet %d", octet_count )
+            error( ValueError( ipv4_str, string_format( "invalid characters in ipv4 octet %d", octet_count ) ), 2 )
         end
 
         octet = octet * base + digit
 
         if octet > 255 then
-            std.errorf( "ipv4 octet %d out of range, max 255", octet_count )
+            error( ValueError( ipv4_str, string_format( "ipv4 octet %d out of range, max 255", octet_count ) ), 2 )
         end
     end
 
@@ -280,7 +285,7 @@ end
 function ipv4.fromPrefix( prefix_length )
     local mask = bin_masks[ math_clamp( prefix_length, 0, 32 ) ]
     if mask == nil then
-        std.errorf( "invalid ipv4 prefix length '%s', must be an integer", prefix_length )
+        error( ValueError( prefix_length, "ipv4 prefix length must be an integer" ), 2 )
     end
 
     return bit_unsign( mask )
@@ -295,14 +300,14 @@ end
 --- ```
 ---
 ---@param ip_address dreamwork.std.IPv4 The IP address.
----@param prefix_length integer The CIDR prefix length. <0-32>, throws an error if out of range.
+---@param prefix_length integer The CIDR prefix length. <0-32>, raises `ValueError` if out of range.
 ---@return dreamwork.std.IPv4 network_address The network (first) address.
 ---@return dreamwork.std.IPv4 broadcast_address The broadcast (last) address.
 ---@nodiscard
 local function cidr( ip_address, prefix_length )
     local mask = bin_masks[ prefix_length ]
     if mask == nil then
-        std.errorf( "invalid ipv4 prefix length '%s', must be an integer in range 0-32", prefix_length )
+        error( ValueError( prefix_length, "ipv4 prefix length must be an integer in range 0-32" ), 2 )
     end
 
     local network_address   = bit_band( ip_address, mask )

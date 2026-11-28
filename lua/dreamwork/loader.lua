@@ -1573,9 +1573,6 @@ dreamwork_load( "std/codec/bytepack.lua" )
 dreamwork_load( "std/string.ext.lua" )
 dreamwork_load( "std/table.ext.lua" )
 
-dreamwork_load( "std/ipv4.lua" )
-dreamwork_load( "std/ipv6.lua" )
-
 dreamwork_load( "std/types/version.lua" )
 
 dreamwork_load( "std/checksum/types/crc.lua" )
@@ -1962,6 +1959,9 @@ end
 
 dreamwork_load( "std/types/error.lua" )
 error = std.error
+
+dreamwork_load( "std/ipv4.lua" )
+dreamwork_load( "std/ipv6.lua" )
 
 dreamwork_load( "std/unit.lua" )
 dreamwork_load( "modules/engine/utils.lua" )

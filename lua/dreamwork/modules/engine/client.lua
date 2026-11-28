@@ -70,6 +70,7 @@ local string_find = string.find
 local string_lower = string.lower
 local string_format = string.format
 local string_findByte = string.findByte
+local string_hasPrefix = string.hasPrefix
 
 local ipv4 = std.ipv4
 local ipv4_parse = ipv4.parse
@@ -873,7 +874,8 @@ local function set_address( data, address )
     -- `none` for bots, `Error!` from `Player:IPAddress` of bots
     if address == nil or address == "" or address == "none" or address == "Error!" then return end
 
-    if address == "loopback" then
+    -- `p2p:{steam_id}` for Steam P2P (listen server invites) clients, the real address is unknown
+    if address == "loopback" or string_hasPrefix( address, "p2p:" ) then
         data.ip = 0x7F000001
         data.port = nil
         return
@@ -883,10 +885,11 @@ local function set_address( data, address )
     if colon_position == nil then
         data.ip = ipv4_parse( address )
         data.port = nil
-    else
-        data.ip = ipv4_parse( address, 1, colon_position - 1 )
-        data.port = raw_tonumber( string_sub( address, colon_position + 1 ), 10 )
+        return
     end
+
+    data.ip = ipv4_parse( address, 1, colon_position - 1 )
+    data.port = raw_tonumber( string_sub( address, colon_position + 1 ), 10 )
 end
 
 ---@param client dreamwork.std.Client

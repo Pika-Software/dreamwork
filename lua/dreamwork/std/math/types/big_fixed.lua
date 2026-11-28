@@ -30,6 +30,7 @@ local BigIntegerClass = std.BigInteger
 local toBigInteger = std.toBigInteger
 local isBigInteger = std.isBigInteger
 
+
 --- [SHARED AND MENU]
 ---
 --- Represents an arbitrary-precision signed fixed-point decimal number.

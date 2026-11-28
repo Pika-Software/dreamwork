@@ -24,6 +24,7 @@ local class = std.class
 
 local setmetatable = std.setmetatable
 
+
 --[[
 
     Vector2 structure:
@@ -89,18 +90,10 @@ local Vector2 = class.base( "Vector2", false )
 local Vector2Class = class.create( Vector2 )
 std.Vector2 = Vector2Class
 
---- Creates a new vector without any checks, all arguments must be numbers.
----
 ---@type fun( x: number, y: number ): dreamwork.std.Vector2
 local Vector2_create
 
---- [SHARED AND MENU]
----
---- Returns `true` if the value is a `Vector2`.
----
---- In FFI mode only `Vector2` cdata objects are accepted.
----
----@type fun( value: any ): ( is_vector2: boolean )
+---@type fun( value: any ): is_vector2: boolean
 local isVector2
 
 if ffi == nil then
@@ -115,8 +108,6 @@ if ffi == nil then
     --- [SHARED AND MENU]
     ---
     --- Returns `true` if the value is a `Vector2`.
-    ---
-    --- Only tables with the exact `Vector2` metatable are accepted.
     ---
     ---@param value any The value to check.
     ---@return boolean is_vector2 `true` if the value is a `Vector2`, `false` otherwise.
@@ -150,36 +141,28 @@ end
 
 std.isVector2 = isVector2
 
---- Creates a new vector, missing coordinates default to `0`.
----
----@param x number? The X coordinate, defaults to `0`.
----@param y number? The Y coordinate, defaults to `0`.
----@return dreamwork.std.Vector2 vec2 The new vector.
+---@param x number?
+---@param y number?
+---@return dreamwork.std.Vector2 vec2
 ---@protected
 function Vector2Class:__new( x, y )
     return Vector2_create( x or 0, y or 0 )
 end
 
---- Debug representation, e.g. `Vector2: 0x01234567 [1.000000, 2.000000]`.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function Vector2:__represent()
     return string_format( "Vector2: %p [%f, %f]", self, self.x, self.y )
 end
 
---- String conversion, e.g. `1.000000 2.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function Vector2:__tostring()
     return string_format( "%f %f", self.x, self.y )
 end
 
---- Exact component-wise comparison, comparing with a non-vector value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are vectors with equal coordinates.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function Vector2:__eq( other )
     return isVector2( other ) and self.x == other.x and self.y == other.y
@@ -283,9 +266,7 @@ function Vector2:negate()
     return self
 end
 
---- `-vec2`
----
----@return dreamwork.std.Vector2 negated The new vector.
+---@return dreamwork.std.Vector2 negated
 ---@protected
 function Vector2:__unm()
     return Vector2_create( -self.x, -self.y )
