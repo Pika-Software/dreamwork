@@ -47,33 +47,27 @@ Angle3 = {}
 ---@nodiscard
 function isAngle3(value) end
 
---- Creates a new angle, missing values default to `0`.
----
----@param pitch number? The pitch in degrees, defaults to `0`.
----@param yaw number? The yaw in degrees, defaults to `0`.
----@param roll number? The roll in degrees, defaults to `0`.
----@return Angle3 ang3 The new angle.
+---@param pitch number?
+---@param yaw number?
+---@param roll number?
+---@return Angle3 ang3
 ---@protected
 function Angle3:__new(pitch, yaw, roll) end
 
---- Debug representation, e.g. `Angle3: 0x01234567 [0.000000, 90.000000, 0.000000]`.
----
----@return string str The debug representation.
+---@return Angle3 negated
+---@protected
+function __Angle3:__unm() end
+
+---@return string str
 ---@protected
 function __Angle3:__represent() end
 
---- String conversion in Garry's Mod `Angle` format, e.g. `0.000000 90.000000 0.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function __Angle3:__tostring() end
 
---- Exact component-wise comparison without normalization, comparing with a non-angle value returns `false`.
----
---- `( 0, 360, 0 )` and `( 0, 0, 0 )` are not equal, use `getNormalized` first if needed.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are angles with equal values.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function __Angle3:__eq(other) end
 
@@ -154,12 +148,6 @@ function __Angle3:isNear(angle, tolerance) end
 ---
 ---@return Angle3 ang3 The same angle, negated.
 function __Angle3:negate() end
-
---- `-ang3`
----
----@return Angle3 negated The new angle.
----@protected
-function __Angle3:__unm() end
 
 --- [SHARED AND MENU]
 ---

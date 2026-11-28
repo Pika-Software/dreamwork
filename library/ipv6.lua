@@ -99,7 +99,7 @@ function IPv6:__new(group1, group2, group3, group4, group5, group6, group7, grou
 ---
 --- Embedded IPv4 notation (`::ffff:1.2.3.4`) and zone indices (`fe80::1%eth0`) are not supported.
 ---
---- Throws an error if a group is empty, contains invalid characters or more than 4 hex digits,
+--- Raises `ValueError` if a group is empty, contains invalid characters or more than 4 hex digits,
 --- the address has a wrong number of groups or more than one `::`, or the prefix length is not an integer in range 0-128.
 ---
 ---@param ipv6_str string The IPv6 address string to parse.
@@ -158,7 +158,7 @@ function __IPv6:inRange(network, broadcast) end
 --- print( IPv6.fromPrefix( 64 ) ) -- ffff:ffff:ffff:ffff::
 --- ```
 ---
----@param prefix integer The CIDR prefix length. <0-128>, throws an error if out of range.
+---@param prefix integer The CIDR prefix length. <0-128>, raises `ValueError` if out of range.
 ---@return IPv6 mask_address The network mask address.
 ---@nodiscard
 function IPv6.fromPrefix(prefix) end
@@ -174,7 +174,7 @@ function IPv6.fromPrefix(prefix) end
 --- local network, broadcast = address:cidr( prefix_length ) -- 2001:db8::, 2001:db8:ffff:ffff:ffff:ffff:ffff:ffff
 --- ```
 ---
----@param prefix_length integer The CIDR prefix length. <0-128>, throws an error if out of range.
+---@param prefix_length integer The CIDR prefix length. <0-128>, raises `ValueError` if out of range.
 ---@return IPv6 network_address The network (first) address.
 ---@return IPv6 broadcast_address The last address of the network.
 ---@nodiscard

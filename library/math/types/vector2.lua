@@ -46,30 +46,22 @@ Vector2 = {}
 ---@nodiscard
 function isVector2(value) end
 
---- Creates a new vector, missing coordinates default to `0`.
----
----@param x number? The X coordinate, defaults to `0`.
----@param y number? The Y coordinate, defaults to `0`.
----@return Vector2 vec2 The new vector.
+---@param x number?
+---@param y number?
+---@return Vector2 vec2
 ---@protected
 function Vector2:__new(x, y) end
 
---- Debug representation, e.g. `Vector2: 0x01234567 [1.000000, 2.000000]`.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function __Vector2:__represent() end
 
---- String conversion, e.g. `1.000000 2.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function __Vector2:__tostring() end
 
---- Exact component-wise comparison, comparing with a non-vector value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are vectors with equal coordinates.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function __Vector2:__eq(other) end
 
@@ -149,9 +141,7 @@ function __Vector2:isNear(vector, tolerance) end
 ---@return Vector2 vec2 The same vector, negated.
 function __Vector2:negate() end
 
---- `-vec2`
----
----@return Vector2 negated The new vector.
+---@return Vector2 negated
 ---@protected
 function __Vector2:__unm() end
 

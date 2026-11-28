@@ -58,11 +58,6 @@ VMatrix = {}
 ---@nodiscard
 function isVMatrix(value) end
 
---- Creates a new matrix from 16 values ( row by row ).
----
---- Without arguments creates an identity matrix ( like `Matrix()` in Garry's Mod ),
---- otherwise missing values default to `0`.
----
 ---@param m11 number?
 ---@param m12 number?
 ---@param m13 number?
@@ -79,26 +74,20 @@ function isVMatrix(value) end
 ---@param m42 number?
 ---@param m43 number?
 ---@param m44 number?
----@return VMatrix matrix The new matrix.
+---@return VMatrix matrix
 ---@protected
 function VMatrix:__new(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44) end
 
---- Debug representation, the address and all rows with 2 decimals.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function __VMatrix:__represent() end
 
---- String conversion, four rows separated by new lines, e.g. `1.000000 0.000000 0.000000 0.000000\n...`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function __VMatrix:__tostring() end
 
---- Exact component-wise comparison, comparing with a non-matrix value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are matrices with equal values.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function __VMatrix:__eq(other) end
 
@@ -261,28 +250,22 @@ function __VMatrix.transformPoint(self, vector) end
 ---@nodiscard
 function __VMatrix:transformDirection(vector) end
 
---- `matrix * matrix` ( matrix product ) and `matrix * vec3` ( transforms the point ).
----
 ---@param a VMatrix
 ---@param b VMatrix | Vector3
----@return VMatrix | Vector3 product The new matrix, or the new vector for `matrix * vec3`.
+---@return VMatrix | Vector3 product
 ---@nodiscard
 ---@protected
 function __VMatrix.__mul(a, b) end
 
---- `matrix + matrix` ( component-wise ).
----
 ---@param a VMatrix
 ---@param b VMatrix
----@return VMatrix sum The new matrix.
+---@return VMatrix sum
 ---@protected
 function __VMatrix.__add(a, b) end
 
---- `matrix - matrix` ( component-wise ).
----
 ---@param a VMatrix
 ---@param b VMatrix
----@return VMatrix difference The new matrix.
+---@return VMatrix difference
 ---@protected
 function __VMatrix.__sub(a, b) end
 

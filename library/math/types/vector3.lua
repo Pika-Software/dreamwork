@@ -45,31 +45,23 @@ Vector3 = {}
 ---@nodiscard
 function isVector3(value) end
 
---- Creates a new vector, missing coordinates default to `0`.
----
----@param x number? The X coordinate ( forward ), defaults to `0`.
----@param y number? The Y coordinate ( left ), defaults to `0`.
----@param z number? The Z coordinate ( up ), defaults to `0`.
----@return Vector3 vec3 The new vector.
+---@param x number?
+---@param y number?
+---@param z number?
+---@return Vector3 vec3
 ---@protected
 function Vector3:__new(x, y, z) end
 
---- Debug representation, e.g. `Vector3: 0x01234567 [1.000000, 2.000000, 3.000000]`.
----
----@return string str The debug representation.
+---@return string str
 ---@protected
 function __Vector3:__represent() end
 
---- String conversion in Garry's Mod `Vector` format, e.g. `1.000000 2.000000 3.000000`.
----
----@return string str The string representation.
+---@return string str
 ---@protected
 function __Vector3:__tostring() end
 
---- Exact component-wise comparison, comparing with a non-vector value returns `false`.
----
----@param other any The value to compare with.
----@return boolean is_equal `true` if both are vectors with equal coordinates.
+---@param other any
+---@return boolean is_equal
 ---@protected
 function __Vector3:__eq(other) end
 
@@ -151,9 +143,7 @@ function __Vector3:isNear(vector, tolerance) end
 ---@return Vector3 vec3 The same vector, negated.
 function __Vector3:negate() end
 
---- `-vec3`
----
----@return Vector3 negated The new vector.
+---@return Vector3 negated
 ---@protected
 function __Vector3:__unm() end
 

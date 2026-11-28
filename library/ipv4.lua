@@ -72,7 +72,7 @@ function ipv4.fromOctets(a, b, c, d) end
 ---
 --- The prefix length must be decimal digits only.
 ---
---- Throws an error if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
+--- Raises `ValueError` if an octet is empty, contains invalid characters, is out of range or there are more than 4 octets,
 --- or if the prefix length is empty, contains invalid characters or is greater than `32`.
 ---
 ---@param ipv4_str string The IPv4 address string to parse.
@@ -133,7 +133,7 @@ function ipv4.fromPrefix(prefix_length) end
 --- ```
 ---
 ---@param ip_address IPv4 The IP address.
----@param prefix_length integer The CIDR prefix length. <0-32>, throws an error if out of range.
+---@param prefix_length integer The CIDR prefix length. <0-32>, raises `ValueError` if out of range.
 ---@return IPv4 network_address The network (first) address.
 ---@return IPv4 broadcast_address The broadcast (last) address.
 ---@nodiscard
